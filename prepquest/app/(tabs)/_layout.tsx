@@ -1,14 +1,21 @@
 import { View, StyleSheet } from 'react-native';
-import { Slot } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { NavBar } from '@/components/NavBar';
 
 export default function TabLayout() {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Slot />
-      </View>
-      <NavBar />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+        }}
+        tabBar={() => <NavBar />}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="account" />
+        <Tabs.Screen name="statistics" />
+        <Tabs.Screen name="awards" />
+      </Tabs>
     </View>
   );
 }
@@ -16,8 +23,5 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
+  }
 });

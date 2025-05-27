@@ -6,7 +6,7 @@ import { Link, usePathname } from 'expo-router';
 const ICON_SIZE = 28;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const NAV_HEIGHT = 80;
-const BOTTOM_SPACING = 15;
+const BOTTOM_SPACING = 20;
 
 type IconType = 'ionicons' | 'material';
 

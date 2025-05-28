@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
 import { Link, usePathname } from 'expo-router';
@@ -66,24 +66,14 @@ export function NavBar() {
     );
 
     return {
-      transform: [
-        {
-          translateY: interpolate(
-            accountAnimation.value,
-            [0, 1],
-            [0, -CIRCLE_SIZE * 0.8]
-          )
-        }
-      ],
-      backgroundColor: 'white',
-      borderRadius: WHITE_CIRCLE_SIZE,
       position: 'absolute',
-      width: WHITE_CIRCLE_SIZE,
-      height: WHITE_CIRCLE_SIZE,
+      width: 133,
+      height: 38,
       justifyContent: 'center',
       alignItems: 'center',
       opacity,
-      zIndex: 1
+      zIndex: 1,
+      bottom: -22 // Position it just above the navbar
     };
   });
 
@@ -156,7 +146,18 @@ export function NavBar() {
               >
                 {isAccount && (
                   <>
-                    <Animated.View style={whiteCircleStyle} />
+                    <Animated.View style={whiteCircleStyle}>
+                      <Image 
+                        source={require('../assets/images/ellipseForNavBar.png')}
+                        style={{
+                          width: 133,
+                          height: 38,
+                          resizeMode: 'contain',
+                          position: 'absolute',
+                          bottom: 0
+                        }}
+                      />
+                    </Animated.View>
                     <Animated.View style={accountCircleStyle} />
                   </>
                 )}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Text } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
@@ -61,8 +61,13 @@ const NAV_ITEMS: NavItem[] = [
 
 export function NavBar() {
   const pathname = usePathname();
-  const slideAnimation = useSharedValue(0);
+  const slideAnimation = useSharedValue(1);
   const isFirstRender = useSharedValue(true);
+
+  useEffect(() => {
+    // Trigger animation for Decks tab on first render
+    slideAnimation.value = withSpring(1, SPRING_CONFIG);
+  }, []);
 
   const getIconComponent = useCallback((item: NavItem) => {
     return item.iconType === 'material' ? MaterialIcons : Ionicons;
@@ -100,7 +105,7 @@ export function NavBar() {
       height: 38,
       justifyContent: 'center',
       alignItems: 'center',
-      opacity: isFirstRender.value ? 0 : 1,
+      opacity: 1,
       zIndex: 0,
       bottom: 22,
       transform: [

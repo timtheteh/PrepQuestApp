@@ -73,7 +73,7 @@ export function NavBar() {
       alignItems: 'center',
       opacity,
       zIndex: 1,
-      bottom: -22 // Position it just above the navbar
+      bottom: 22 // Position it just above the navbar
     };
   });
 

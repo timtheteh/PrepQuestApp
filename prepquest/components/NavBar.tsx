@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Dimensions, Text } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
 import { Link, usePathname } from 'expo-router';
@@ -94,6 +94,31 @@ export function NavBar() {
     };
   });
 
+  const labelAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      accountAnimation.value,
+      [0, 0.2, 0.8, 1],
+      [0, 0, 1, 1]
+    );
+
+    return {
+      position: 'absolute',
+      width: 133,
+      alignItems: 'center',
+      opacity,
+      bottom: -1, // Position it below the SVG
+      transform: [
+        {
+          translateY: interpolate(
+            accountAnimation.value,
+            [0, 1],
+            [30, 0] // Rise up from below
+          )
+        }
+      ]
+    };
+  });
+
   const accountCircleStyle = useAnimatedStyle(() => {
     const backgroundColor = isFirstRender.value 
       ? 'transparent'
@@ -166,6 +191,9 @@ export function NavBar() {
                     <Animated.View style={whiteCircleStyle}>
                       <EllipseForNavBar />
                     </Animated.View>
+                    <Animated.View style={labelAnimatedStyle}>
+                      <Text style={styles.accountLabel}>Account</Text>
+                    </Animated.View>
                     <Animated.View style={accountCircleStyle} />
                   </>
                 )}
@@ -217,5 +245,10 @@ const styles = StyleSheet.create({
     height: CIRCLE_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  accountLabel: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   }
 }); 

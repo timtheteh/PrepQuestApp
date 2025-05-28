@@ -146,7 +146,7 @@ export function NavBar() {
           return 18
         }
         else {
-          return 27
+          return 27.5
         }
       };
       return 0; // Other tabs

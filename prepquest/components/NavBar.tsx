@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions, Image } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
 import { Link, usePathname } from 'expo-router';
@@ -11,6 +11,23 @@ import Animated, {
   interpolate,
   Easing
 } from 'react-native-reanimated';
+import { Svg, Path } from 'react-native-svg';
+
+const EllipseForNavBar = () => (
+  <Svg 
+    width={133} 
+    height={38} 
+    viewBox="0 0 133 38" 
+    fill="none"
+    style={{
+      position: 'absolute',
+      bottom: 0,
+      left: -0.5
+    }}
+  >
+    <Path d="M133 0C93.4009 0 103.227 38 66.5 38C29.7731 38 39.5991 0 0 0C39.5991 0 29.7731 0 66.5 0C103.227 0 93.4009 0 133 0Z" fill="white" />
+  </Svg>
+);
 
 const ICON_SIZE = 28;
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -147,16 +164,7 @@ export function NavBar() {
                 {isAccount && (
                   <>
                     <Animated.View style={whiteCircleStyle}>
-                      <Image 
-                        source={require('../assets/images/ellipseForNavBar.png')}
-                        style={{
-                          width: 133,
-                          height: 38,
-                          resizeMode: 'contain',
-                          position: 'absolute',
-                          bottom: 0
-                        }}
-                      />
+                      <EllipseForNavBar />
                     </Animated.View>
                     <Animated.View style={accountCircleStyle} />
                   </>

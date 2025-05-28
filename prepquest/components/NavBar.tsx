@@ -36,6 +36,12 @@ const BOTTOM_SPACING = 20;
 const CIRCLE_SIZE = ICON_SIZE * 2;
 const WHITE_CIRCLE_SIZE = CIRCLE_SIZE * 1.5;
 const TAB_WIDTH = (SCREEN_WIDTH - 56) / 4; // 56 is total horizontal padding (28 * 2)
+const SPRING_CONFIG = {
+  damping: 10,
+  stiffness: 150,
+  mass: 0.1,
+  velocity: 0.8
+};
 
 type IconType = 'ionicons' | 'material';
 
@@ -99,12 +105,7 @@ export function NavBar() {
       bottom: 22,
       transform: [
         {
-          translateX: withSpring(slideAnimation.value * TAB_WIDTH + offset, {
-            damping: 20,
-            stiffness: 90,
-            mass: 0.5,
-            velocity: 0.4
-          })
+          translateX: withSpring(slideAnimation.value * TAB_WIDTH + offset, SPRING_CONFIG)
         }
       ]
     };
@@ -113,25 +114,29 @@ export function NavBar() {
   const getLabelAnimatedStyle = (index: number) => {
     return useAnimatedStyle(() => {
       const isSelected = slideAnimation.value === index;
+      const progress = isSelected ? 1 : 0;
+
       const opacity = interpolate(
-        isSelected ? 1 : 0,
-        [0, 0.2, 0.8, 1],
-        [0, 0, 1, 1]
+        progress,
+        [0, 0.5, 1],
+        [0, 0.5, 1]
+      );
+
+      const translateY = interpolate(
+        progress,
+        [0, 1],
+        [20, 0]
       );
 
       return {
         position: 'absolute',
         width: 133,
         alignItems: 'center',
-        opacity,
+        opacity: withSpring(opacity, SPRING_CONFIG),
         bottom: -1,
         transform: [
           {
-            translateY: interpolate(
-              isSelected ? 1 : 0,
-              [0, 1],
-              [30, 0]
-            )
+            translateY: withSpring(translateY, SPRING_CONFIG)
           }
         ]
       };
@@ -145,14 +150,23 @@ export function NavBar() {
         ? 'transparent'
         : '#4F41D8';
 
+      const progress = isSelected ? 1 : 0;
+      const translateY = interpolate(
+        progress,
+        [0, 1],
+        [0, -CIRCLE_SIZE * 0.6]
+      );
+
+      const opacity = interpolate(
+        progress,
+        [0, 0.5, 1],
+        [0, 0.5, 1]
+      );
+
       return {
         transform: [
           {
-            translateY: interpolate(
-              isSelected ? 1 : 0,
-              [0, 1],
-              [0, -CIRCLE_SIZE * 0.6]
-            )
+            translateY: withSpring(translateY, SPRING_CONFIG)
           }
         ],
         backgroundColor,
@@ -162,13 +176,7 @@ export function NavBar() {
         height: CIRCLE_SIZE,
         justifyContent: 'center',
         alignItems: 'center',
-        opacity: withTiming(
-          (!isSelected && isFirstRender.value) ? 0 : 1,
-          {
-            duration: 300,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1)
-          }
-        ),
+        opacity: withSpring(opacity, SPRING_CONFIG),
         zIndex: 4
       };
     });
@@ -179,12 +187,7 @@ export function NavBar() {
       isFirstRender.value = false;
     }
     
-    slideAnimation.value = withSpring(index, {
-      damping: 20,
-      stiffness: 90,
-      mass: 0.5,
-      velocity: 0.4
-    });
+    slideAnimation.value = withSpring(index, SPRING_CONFIG);
   };
 
   return (

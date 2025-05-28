@@ -55,102 +55,138 @@ const NAV_ITEMS: NavItem[] = [
 export function NavBar() {
   const pathname = usePathname();
   const accountAnimation = useSharedValue(0);
+  const decksAnimation = useSharedValue(0);
   const isFirstRender = useSharedValue(true);
 
   const getIconComponent = useCallback((item: NavItem) => {
     return item.iconType === 'material' ? MaterialIcons : Ionicons;
   }, []);
 
-  const sharedAnimationStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        {
-          translateY: interpolate(
-            accountAnimation.value,
-            [0, 1],
-            [0, -CIRCLE_SIZE * 0.6]
-          )
-        }
-      ]
+  const getAnimatedStyle = (animationValue: Animated.SharedValue<number>) => {
+    return useAnimatedStyle(() => {
+      return {
+        transform: [
+          {
+            translateY: interpolate(
+              animationValue.value,
+              [0, 1],
+              [0, -CIRCLE_SIZE * 0.6]
+            )
+          }
+        ]
+      };
+    });
+  };
+
+  const getWhiteCircleStyle = (animationValue: Animated.SharedValue<number>) => {
+    return useAnimatedStyle(() => {
+      const opacity = interpolate(
+        animationValue.value,
+        [0, 0.2, 0.8, 1],
+        [0, 0, 1, 1]
+      );
+
+      return {
+        position: 'absolute',
+        width: 133,
+        height: 38,
+        justifyContent: 'center',
+        alignItems: 'center',
+        opacity,
+        zIndex: 1,
+        bottom: 22 // Position it just above the navbar
+      };
+    });
+  };
+
+  const getLabelAnimatedStyle = (animationValue: Animated.SharedValue<number>) => {
+    return useAnimatedStyle(() => {
+      const opacity = interpolate(
+        animationValue.value,
+        [0, 0.2, 0.8, 1],
+        [0, 0, 1, 1]
+      );
+
+      return {
+        position: 'absolute',
+        width: 133,
+        alignItems: 'center',
+        opacity,
+        bottom: -1,
+        transform: [
+          {
+            translateY: interpolate(
+              animationValue.value,
+              [0, 1],
+              [30, 0]
+            )
+          }
+        ]
+      };
+    });
+  };
+
+  const getCircleStyle = (animationValue: Animated.SharedValue<number>) => {
+    return useAnimatedStyle(() => {
+      const backgroundColor = isFirstRender.value 
+        ? 'transparent'
+        : '#4F41D8';
+
+      return {
+        transform: [
+          {
+            translateY: interpolate(
+              animationValue.value,
+              [0, 1],
+              [0, -CIRCLE_SIZE * 0.6]
+            )
+          }
+        ],
+        backgroundColor,
+        borderRadius: CIRCLE_SIZE,
+        position: 'absolute',
+        width: CIRCLE_SIZE,
+        height: CIRCLE_SIZE,
+        justifyContent: 'center',
+        alignItems: 'center',
+        opacity: withTiming(
+          animationValue.value === 0 && isFirstRender.value ? 0 : 1,
+          {
+            duration: 300,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+          }
+        ),
+        zIndex: 2
+      };
+    });
+  };
+
+  const handleTabPress = (tabName: string) => {
+    if (isFirstRender.value) {
+      isFirstRender.value = false;
+    }
+
+    const springConfig = {
+      damping: 20,
+      stiffness: 90,
+      mass: 0.5,
+      velocity: 0.4
     };
-  });
 
-  const whiteCircleStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      accountAnimation.value,
-      [0, 0.2, 0.8, 1],
-      [0, 0, 1, 1]
-    );
-
-    return {
-      position: 'absolute',
-      width: 133,
-      height: 38,
-      justifyContent: 'center',
-      alignItems: 'center',
-      opacity,
-      zIndex: 1,
-      bottom: 22 // Position it just above the navbar
-    };
-  });
-
-  const labelAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      accountAnimation.value,
-      [0, 0.2, 0.8, 1],
-      [0, 0, 1, 1]
-    );
-
-    return {
-      position: 'absolute',
-      width: 133,
-      alignItems: 'center',
-      opacity,
-      bottom: -1, // Position it below the SVG
-      transform: [
-        {
-          translateY: interpolate(
-            accountAnimation.value,
-            [0, 1],
-            [30, 0] // Rise up from below
-          )
-        }
-      ]
-    };
-  });
-
-  const accountCircleStyle = useAnimatedStyle(() => {
-    const backgroundColor = isFirstRender.value 
-      ? 'transparent'
-      : '#4F41D8';
-
-    return {
-      transform: [
-        {
-          translateY: interpolate(
-            accountAnimation.value,
-            [0, 1],
-            [0, -CIRCLE_SIZE * 0.6]
-          )
-        }
-      ],
-      backgroundColor,
-      borderRadius: CIRCLE_SIZE,
-      position: 'absolute',
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      justifyContent: 'center',
-      alignItems: 'center',
-      opacity: withTiming(
-        accountAnimation.value === 0 && isFirstRender.value ? 0 : 1,
-        {
-          duration: 300,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
-        }
-      ),
-      zIndex: 2
-    };
-  });
+    if (tabName === 'Account') {
+      decksAnimation.value = withSpring(0, springConfig);
+      accountAnimation.value = withSpring(
+        accountAnimation.value === 0 ? 1 : 0,
+        springConfig
+      );
+    } else if (tabName === 'Decks') {
+      accountAnimation.value = withSpring(0, springConfig);
+      decksAnimation.value = withSpring(
+        decksAnimation.value === 0 ? 1 : 0,
+        springConfig
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -159,6 +195,8 @@ export function NavBar() {
           const IconComponent = getIconComponent(item);
           const isActive = pathname === item.route;
           const isAccount = item.name === 'Account';
+          const isDecks = item.name === 'Decks';
+          const animationValue = isAccount ? accountAnimation : isDecks ? decksAnimation : null;
           
           return (
             <Link
@@ -170,38 +208,27 @@ export function NavBar() {
                 style={styles.tab}
                 activeOpacity={1}
                 onPress={() => {
-                  if (isAccount) {
-                    if (isFirstRender.value) {
-                      isFirstRender.value = false;
-                    }
-                    accountAnimation.value = withSpring(
-                      accountAnimation.value === 0 ? 1 : 0,
-                      {
-                        damping: 20,
-                        stiffness: 90,
-                        mass: 0.5,
-                        velocity: 0.4
-                      }
-                    );
+                  if (isAccount || isDecks) {
+                    handleTabPress(item.name);
                   }
                 }}
               >
-                {isAccount && (
+                {(isAccount || isDecks) && animationValue && (
                   <>
-                    <Animated.View style={whiteCircleStyle}>
+                    <Animated.View style={getWhiteCircleStyle(animationValue)}>
                       <EllipseForNavBar />
                     </Animated.View>
-                    <Animated.View style={labelAnimatedStyle}>
-                      <Text style={styles.accountLabel}>Account</Text>
+                    <Animated.View style={getLabelAnimatedStyle(animationValue)}>
+                      <Text style={styles.accountLabel}>{item.name}</Text>
                     </Animated.View>
-                    <Animated.View style={accountCircleStyle} />
+                    <Animated.View style={getCircleStyle(animationValue)} />
                   </>
                 )}
                 <Animated.View
                   style={[
                     styles.iconContainer,
-                    isAccount && sharedAnimationStyle,
-                    isAccount && { zIndex: 3 }
+                    animationValue && getAnimatedStyle(animationValue),
+                    (isAccount || isDecks) && { zIndex: 3 }
                   ]}
                 >
                   <IconComponent 

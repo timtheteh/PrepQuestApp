@@ -1,3 +1,4 @@
+import React from 'react';
 import { StyleSheet, View, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
@@ -16,6 +17,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const NAV_HEIGHT = 80;
 const BOTTOM_SPACING = 20;
 const CIRCLE_SIZE = ICON_SIZE * 2;
+const WHITE_CIRCLE_SIZE = CIRCLE_SIZE * 1.5; // Larger white circle
 
 type IconType = 'ionicons' | 'material';
 
@@ -56,6 +58,35 @@ export function NavBar() {
     };
   });
 
+  const whiteCircleStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      accountAnimation.value,
+      [0, 0.2, 0.8, 1],
+      [0, 0, 1, 1]
+    );
+
+    return {
+      transform: [
+        {
+          translateY: interpolate(
+            accountAnimation.value,
+            [0, 1],
+            [0, -CIRCLE_SIZE * 0.8]
+          )
+        }
+      ],
+      backgroundColor: 'white',
+      borderRadius: WHITE_CIRCLE_SIZE,
+      position: 'absolute',
+      width: WHITE_CIRCLE_SIZE,
+      height: WHITE_CIRCLE_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+      opacity,
+      zIndex: 1
+    };
+  });
+
   const accountCircleStyle = useAnimatedStyle(() => {
     const backgroundColor = isFirstRender.value 
       ? 'transparent'
@@ -84,7 +115,8 @@ export function NavBar() {
           duration: 300,
           easing: Easing.bezier(0.25, 0.1, 0.25, 1)
         }
-      )
+      ),
+      zIndex: 2
     };
   });
 
@@ -123,12 +155,16 @@ export function NavBar() {
                 }}
               >
                 {isAccount && (
-                  <Animated.View style={accountCircleStyle} />
+                  <>
+                    <Animated.View style={whiteCircleStyle} />
+                    <Animated.View style={accountCircleStyle} />
+                  </>
                 )}
                 <Animated.View
                   style={[
                     styles.iconContainer,
-                    isAccount && sharedAnimationStyle
+                    isAccount && sharedAnimationStyle,
+                    isAccount && { zIndex: 3 }
                   ]}
                 >
                   <IconComponent 
@@ -152,12 +188,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#4F41D8',
     justifyContent: 'flex-end',
     paddingBottom: BOTTOM_SPACING,
+    zIndex: 0,
   },
   content: {
     flexDirection: 'row',
     paddingHorizontal: 28,
     justifyContent: 'space-between',
     alignItems: 'center',
+    zIndex: 0,
   },
   tab: {
     width: ICON_SIZE * 2,

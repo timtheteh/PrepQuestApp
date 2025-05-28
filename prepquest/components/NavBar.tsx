@@ -48,7 +48,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { name: 'Account', icon: 'person', route: '/(tabs)/account', iconType: 'ionicons' },
   { name: 'Decks', icon: 'library-books', route: '/(tabs)', iconType: 'material' },
-  { name: 'stats-chart', icon: 'stats-chart', route: '/(tabs)/statistics', iconType: 'ionicons' },
+  { name: 'Statistics', icon: 'stats-chart', route: '/(tabs)/statistics', iconType: 'ionicons' },
   { name: 'Awards', icon: 'trophy', route: '/(tabs)/awards', iconType: 'ionicons' },
 ];
 
@@ -56,6 +56,8 @@ export function NavBar() {
   const pathname = usePathname();
   const accountAnimation = useSharedValue(0);
   const decksAnimation = useSharedValue(0);
+  const statisticsAnimation = useSharedValue(0);
+  const awardsAnimation = useSharedValue(0);
   const isFirstRender = useSharedValue(true);
 
   const getIconComponent = useCallback((item: NavItem) => {
@@ -173,18 +175,26 @@ export function NavBar() {
       velocity: 0.4
     };
 
-    if (tabName === 'Account') {
-      decksAnimation.value = withSpring(0, springConfig);
-      accountAnimation.value = withSpring(
-        accountAnimation.value === 0 ? 1 : 0,
-        springConfig
-      );
-    } else if (tabName === 'Decks') {
-      accountAnimation.value = withSpring(0, springConfig);
-      decksAnimation.value = withSpring(
-        decksAnimation.value === 0 ? 1 : 0,
-        springConfig
-      );
+    // Reset all animations
+    accountAnimation.value = withSpring(0, springConfig);
+    decksAnimation.value = withSpring(0, springConfig);
+    statisticsAnimation.value = withSpring(0, springConfig);
+    awardsAnimation.value = withSpring(0, springConfig);
+
+    // Animate the selected tab
+    switch (tabName) {
+      case 'Account':
+        accountAnimation.value = withSpring(1, springConfig);
+        break;
+      case 'Decks':
+        decksAnimation.value = withSpring(1, springConfig);
+        break;
+      case 'Statistics':
+        statisticsAnimation.value = withSpring(1, springConfig);
+        break;
+      case 'Awards':
+        awardsAnimation.value = withSpring(1, springConfig);
+        break;
     }
   };
 
@@ -196,7 +206,20 @@ export function NavBar() {
           const isActive = pathname === item.route;
           const isAccount = item.name === 'Account';
           const isDecks = item.name === 'Decks';
-          const animationValue = isAccount ? accountAnimation : isDecks ? decksAnimation : null;
+          const isStatistics = item.name === 'Statistics';
+          const isAwards = item.name === 'Awards';
+          
+          const animationValue = isAccount 
+            ? accountAnimation 
+            : isDecks 
+            ? decksAnimation 
+            : isStatistics
+            ? statisticsAnimation
+            : isAwards
+            ? awardsAnimation
+            : null;
+          
+          const shouldAnimate = isAccount || isDecks || isStatistics || isAwards;
           
           return (
             <Link
@@ -208,18 +231,20 @@ export function NavBar() {
                 style={styles.tab}
                 activeOpacity={1}
                 onPress={() => {
-                  if (isAccount || isDecks) {
+                  if (shouldAnimate) {
                     handleTabPress(item.name);
                   }
                 }}
               >
-                {(isAccount || isDecks) && animationValue && (
+                {shouldAnimate && animationValue && (
                   <>
                     <Animated.View style={getWhiteCircleStyle(animationValue)}>
                       <EllipseForNavBar />
                     </Animated.View>
                     <Animated.View style={getLabelAnimatedStyle(animationValue)}>
-                      <Text style={styles.accountLabel}>{item.name}</Text>
+                      <Text style={styles.accountLabel}>
+                        {item.name === 'Statistics' ? 'Stats' : item.name}
+                      </Text>
                     </Animated.View>
                     <Animated.View style={getCircleStyle(animationValue)} />
                   </>
@@ -228,7 +253,7 @@ export function NavBar() {
                   style={[
                     styles.iconContainer,
                     animationValue && getAnimatedStyle(animationValue),
-                    (isAccount || isDecks) && { zIndex: 3 }
+                    shouldAnimate && { zIndex: 3 }
                   ]}
                 >
                   <IconComponent 

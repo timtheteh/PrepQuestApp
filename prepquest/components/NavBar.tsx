@@ -68,7 +68,7 @@ export function NavBar() {
           translateY: interpolate(
             accountAnimation.value,
             [0, 1],
-            [0, -CIRCLE_SIZE * 0.8]
+            [0, -CIRCLE_SIZE * 0.6]
           )
         }
       ]
@@ -130,7 +130,7 @@ export function NavBar() {
           translateY: interpolate(
             accountAnimation.value,
             [0, 1],
-            [0, -CIRCLE_SIZE * 0.8]
+            [0, -CIRCLE_SIZE * 0.6]
           )
         }
       ],

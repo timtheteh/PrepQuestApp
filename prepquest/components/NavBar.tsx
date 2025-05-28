@@ -34,7 +34,8 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const NAV_HEIGHT = 80;
 const BOTTOM_SPACING = 20;
 const CIRCLE_SIZE = ICON_SIZE * 2;
-const WHITE_CIRCLE_SIZE = CIRCLE_SIZE * 1.5; // Larger white circle
+const WHITE_CIRCLE_SIZE = CIRCLE_SIZE * 1.5;
+const TAB_WIDTH = (SCREEN_WIDTH - 56) / 4; // 56 is total horizontal padding (28 * 2)
 
 type IconType = 'ionicons' | 'material';
 
@@ -54,23 +55,21 @@ const NAV_ITEMS: NavItem[] = [
 
 export function NavBar() {
   const pathname = usePathname();
-  const accountAnimation = useSharedValue(0);
-  const decksAnimation = useSharedValue(0);
-  const statisticsAnimation = useSharedValue(0);
-  const awardsAnimation = useSharedValue(0);
+  const slideAnimation = useSharedValue(0);
   const isFirstRender = useSharedValue(true);
 
   const getIconComponent = useCallback((item: NavItem) => {
     return item.iconType === 'material' ? MaterialIcons : Ionicons;
   }, []);
 
-  const getAnimatedStyle = (animationValue: Animated.SharedValue<number>) => {
+  const getAnimatedStyle = (index: number) => {
     return useAnimatedStyle(() => {
+      const isSelected = slideAnimation.value === index;
       return {
         transform: [
           {
             translateY: interpolate(
-              animationValue.value,
+              isSelected ? 1 : 0,
               [0, 1],
               [0, -CIRCLE_SIZE * 0.6]
             )
@@ -80,31 +79,42 @@ export function NavBar() {
     });
   };
 
-  const getWhiteCircleStyle = (animationValue: Animated.SharedValue<number>) => {
-    return useAnimatedStyle(() => {
-      const opacity = interpolate(
-        animationValue.value,
-        [0, 0.2, 0.8, 1],
-        [0, 0, 1, 1]
-      );
+  const getWhiteCircleStyle = useAnimatedStyle(() => {
+    // Calculate offset based on the current tab
+    const offset = (() => {
+      if (slideAnimation.value === 0) return -10; // Account tab
+      if (slideAnimation.value === 3) return 18;  
+      if (slideAnimation.value === 2) return 9// Awards tab
+      return 0; // Other tabs
+    })();
 
-      return {
-        position: 'absolute',
-        width: 133,
-        height: 38,
-        justifyContent: 'center',
-        alignItems: 'center',
-        opacity,
-        zIndex: 1,
-        bottom: 22 // Position it just above the navbar
-      };
-    });
-  };
+    return {
+      position: 'absolute',
+      width: 133,
+      height: 38,
+      justifyContent: 'center',
+      alignItems: 'center',
+      opacity: isFirstRender.value ? 0 : 1,
+      zIndex: 0,
+      bottom: 22,
+      transform: [
+        {
+          translateX: withSpring(slideAnimation.value * TAB_WIDTH + offset, {
+            damping: 20,
+            stiffness: 90,
+            mass: 0.5,
+            velocity: 0.4
+          })
+        }
+      ]
+    };
+  });
 
-  const getLabelAnimatedStyle = (animationValue: Animated.SharedValue<number>) => {
+  const getLabelAnimatedStyle = (index: number) => {
     return useAnimatedStyle(() => {
+      const isSelected = slideAnimation.value === index;
       const opacity = interpolate(
-        animationValue.value,
+        isSelected ? 1 : 0,
         [0, 0.2, 0.8, 1],
         [0, 0, 1, 1]
       );
@@ -118,7 +128,7 @@ export function NavBar() {
         transform: [
           {
             translateY: interpolate(
-              animationValue.value,
+              isSelected ? 1 : 0,
               [0, 1],
               [30, 0]
             )
@@ -128,9 +138,10 @@ export function NavBar() {
     });
   };
 
-  const getCircleStyle = (animationValue: Animated.SharedValue<number>) => {
+  const getCircleStyle = (index: number) => {
     return useAnimatedStyle(() => {
-      const backgroundColor = isFirstRender.value 
+      const isSelected = slideAnimation.value === index;
+      const backgroundColor = isFirstRender.value && !isSelected
         ? 'transparent'
         : '#4F41D8';
 
@@ -138,7 +149,7 @@ export function NavBar() {
         transform: [
           {
             translateY: interpolate(
-              animationValue.value,
+              isSelected ? 1 : 0,
               [0, 1],
               [0, -CIRCLE_SIZE * 0.6]
             )
@@ -152,74 +163,39 @@ export function NavBar() {
         justifyContent: 'center',
         alignItems: 'center',
         opacity: withTiming(
-          animationValue.value === 0 && isFirstRender.value ? 0 : 1,
+          (!isSelected && isFirstRender.value) ? 0 : 1,
           {
             duration: 300,
             easing: Easing.bezier(0.25, 0.1, 0.25, 1)
           }
         ),
-        zIndex: 2
+        zIndex: 4
       };
     });
   };
 
-  const handleTabPress = (tabName: string) => {
+  const handleTabPress = (index: number) => {
     if (isFirstRender.value) {
       isFirstRender.value = false;
     }
-
-    const springConfig = {
+    
+    slideAnimation.value = withSpring(index, {
       damping: 20,
       stiffness: 90,
       mass: 0.5,
       velocity: 0.4
-    };
-
-    // Reset all animations
-    accountAnimation.value = withSpring(0, springConfig);
-    decksAnimation.value = withSpring(0, springConfig);
-    statisticsAnimation.value = withSpring(0, springConfig);
-    awardsAnimation.value = withSpring(0, springConfig);
-
-    // Animate the selected tab
-    switch (tabName) {
-      case 'Account':
-        accountAnimation.value = withSpring(1, springConfig);
-        break;
-      case 'Decks':
-        decksAnimation.value = withSpring(1, springConfig);
-        break;
-      case 'Statistics':
-        statisticsAnimation.value = withSpring(1, springConfig);
-        break;
-      case 'Awards':
-        awardsAnimation.value = withSpring(1, springConfig);
-        break;
-    }
+    });
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {NAV_ITEMS.map((item) => {
+        <Animated.View style={getWhiteCircleStyle}>
+          <EllipseForNavBar />
+        </Animated.View>
+        {NAV_ITEMS.map((item, index) => {
           const IconComponent = getIconComponent(item);
           const isActive = pathname === item.route;
-          const isAccount = item.name === 'Account';
-          const isDecks = item.name === 'Decks';
-          const isStatistics = item.name === 'Statistics';
-          const isAwards = item.name === 'Awards';
-          
-          const animationValue = isAccount 
-            ? accountAnimation 
-            : isDecks 
-            ? decksAnimation 
-            : isStatistics
-            ? statisticsAnimation
-            : isAwards
-            ? awardsAnimation
-            : null;
-          
-          const shouldAnimate = isAccount || isDecks || isStatistics || isAwards;
           
           return (
             <Link
@@ -230,30 +206,19 @@ export function NavBar() {
               <TouchableOpacity 
                 style={styles.tab}
                 activeOpacity={1}
-                onPress={() => {
-                  if (shouldAnimate) {
-                    handleTabPress(item.name);
-                  }
-                }}
+                onPress={() => handleTabPress(index)}
               >
-                {shouldAnimate && animationValue && (
-                  <>
-                    <Animated.View style={getWhiteCircleStyle(animationValue)}>
-                      <EllipseForNavBar />
-                    </Animated.View>
-                    <Animated.View style={getLabelAnimatedStyle(animationValue)}>
-                      <Text style={styles.accountLabel}>
-                        {item.name === 'Statistics' ? 'Stats' : item.name}
-                      </Text>
-                    </Animated.View>
-                    <Animated.View style={getCircleStyle(animationValue)} />
-                  </>
-                )}
+                <Animated.View style={getLabelAnimatedStyle(index)}>
+                  <Text style={styles.accountLabel}>
+                    {item.name === 'Statistics' ? 'Stats' : item.name}
+                  </Text>
+                </Animated.View>
+                <Animated.View style={getCircleStyle(index)} />
                 <Animated.View
                   style={[
                     styles.iconContainer,
-                    animationValue && getAnimatedStyle(animationValue),
-                    shouldAnimate && { zIndex: 3 }
+                    getAnimatedStyle(index),
+                    { zIndex: 5 }
                   ]}
                 >
                   <IconComponent 

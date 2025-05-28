@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   accountLabel: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: 'Satoshi-Medium',
   }
 }); 

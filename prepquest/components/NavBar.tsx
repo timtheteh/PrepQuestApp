@@ -93,9 +93,62 @@ export function NavBar() {
   const getWhiteCircleStyle = useAnimatedStyle(() => {
     // Calculate offset based on the current tab
     const offset = (() => {
-      if (slideAnimation.value === 0) return -10; // Account tab
-      if (slideAnimation.value === 3) return 18;  
-      if (slideAnimation.value === 2) return 9// Awards tab
+      if (slideAnimation.value === 0) {
+        if (SCREEN_WIDTH <= 375) {
+          return -10
+        }
+        else if (SCREEN_WIDTH <= 390) {
+          return -10
+        }
+        else if (SCREEN_WIDTH <= 428) {
+          return -10
+        }
+        else {
+          return -10
+        }
+      }; // Account tab
+      if (slideAnimation.value === 1) {
+        if (SCREEN_WIDTH <= 375) {
+          return -2
+        }
+        else if (SCREEN_WIDTH <= 390) {
+          return 0
+        }
+        else if (SCREEN_WIDTH <= 428) {
+          return 0
+        }
+        else {
+          return 3
+        }
+      }; // Account tab
+      if (slideAnimation.value === 2) {
+        if (SCREEN_WIDTH <= 375) {
+          return 6
+        }
+        else if (SCREEN_WIDTH <= 390) {
+          return 9
+        }
+        else if (SCREEN_WIDTH <= 428) {
+          return 9
+        }
+        else {
+          return 15
+        }
+      };// Awards tab
+      if (slideAnimation.value === 3) {
+        if (SCREEN_WIDTH <= 375) {
+          return 13
+        }
+        else if (SCREEN_WIDTH <= 390) {
+          return 18
+        }
+        else if (SCREEN_WIDTH <= 428) {
+          return 18
+        }
+        else {
+          return 27
+        }
+      };
       return 0; // Other tabs
     })();
 

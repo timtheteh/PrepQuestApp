@@ -5,11 +5,14 @@ import { Feather } from '@expo/vector-icons';
 import { HeaderIconButtons } from '@/components/HeaderIconButtons';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { Title } from '@/components/Title';
+import { useState } from 'react';
 
 export default function DecksScreen() {
+  const [isInterviewMode, setIsInterviewMode] = useState(false);
+
   const handleToggle = (isRightSide: boolean) => {
-    // Handle navigation or state changes based on toggle
-    console.log(isRightSide ? 'Interview Mode' : 'Study Mode');
+    setIsInterviewMode(isRightSide);
   };
 
   const handleFabPress = () => {
@@ -37,6 +40,9 @@ export default function DecksScreen() {
             rightLabel="Interview"
             onToggle={handleToggle}
           />
+          <Title style={styles.title}>
+            {isInterviewMode ? 'My Interview Decks' : 'My Study Decks'}
+          </Title>
         </View>
 
         <FloatingActionButton
@@ -67,10 +73,13 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 70 : 16,
   },
   menuButton: {
-    padding: 8,
+    padding: 0,
   },
   content: {
     paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  title: {
     marginTop: 16,
   },
   fab: {

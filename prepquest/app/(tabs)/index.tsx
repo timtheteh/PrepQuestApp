@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Feather } from '@expo/vector-icons';
 import { HeaderIconButtons } from '@/components/HeaderIconButtons';
+import { RoundedContainer } from '@/components/RoundedContainer';
 
 export default function DecksScreen() {
   return (
@@ -17,6 +18,10 @@ export default function DecksScreen() {
           </TouchableOpacity>
           
           <HeaderIconButtons />
+        </View>
+        
+        <View style={styles.content}>
+          <RoundedContainer />
         </View>
       </ThemedView>
     </SafeAreaView>
@@ -41,5 +46,9 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     padding: 8,
+  },
+  content: {
+    paddingHorizontal: 16,
+    marginTop: 16,
   }
 });

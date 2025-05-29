@@ -17,10 +17,7 @@ export function Card({ style, children, onPress, backgroundImage, pressedBackgro
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
 
   return (
-    <View style={[
-      styles.shadowContainer,
-      isPressed && styles.noShadow
-    ]}>
+    <View style={styles.shadowContainer}>
       <Pressable 
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
@@ -50,13 +47,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.5,
         shadowRadius: 4,
-      },
-    }),
-  },
-  noShadow: {
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0,
       },
     }),
   },

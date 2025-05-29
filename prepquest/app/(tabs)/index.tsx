@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Feather } from '@expo/vector-icons';
@@ -7,6 +7,9 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
 import { useState, useRef } from 'react';
+
+const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
+const BOTTOM_SPACING = 40; // Required spacing from navbar
 
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
@@ -75,6 +78,17 @@ export default function DecksScreen() {
               <Text style={styles.selectButton}>Select</Text>
             </TouchableOpacity>
           </View>
+          
+          <View style={styles.scrollWrapper}>
+            <ScrollView 
+              style={styles.scrollContainer}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Temporary content to show scrolling */}
+              <View style={{ height: 1000, backgroundColor: 'yellow' }} />
+            </ScrollView>
+          </View>
         </View>
 
         <FloatingActionButton
@@ -108,6 +122,7 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   content: {
+    flex: 1,
     paddingHorizontal: 16,
     marginTop: 16,
   },
@@ -130,6 +145,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Satoshi-Medium',
     color: '#44B88A',
+  },
+  scrollWrapper: {
+    flex: 1,
+    marginTop: 12,
+    marginBottom: BOTTOM_SPACING,
+  },
+  scrollContainer: {
+    flex: 1,
+    // marginHorizontal: -16, // Remove the horizontal padding from parent
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   fab: {
     position: 'absolute',

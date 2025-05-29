@@ -4,11 +4,17 @@ import { ThemedView } from '@/components/ThemedView';
 import { Feather } from '@expo/vector-icons';
 import { HeaderIconButtons } from '@/components/HeaderIconButtons';
 import { RoundedContainer } from '@/components/RoundedContainer';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
 
 export default function DecksScreen() {
   const handleToggle = (isRightSide: boolean) => {
     // Handle navigation or state changes based on toggle
     console.log(isRightSide ? 'Interview Mode' : 'Study Mode');
+  };
+
+  const handleFabPress = () => {
+    // Handle FAB press
+    console.log('FAB pressed');
   };
 
   return (
@@ -32,6 +38,13 @@ export default function DecksScreen() {
             onToggle={handleToggle}
           />
         </View>
+
+        <FloatingActionButton
+          style={styles.fab}
+          onPress={handleFabPress}
+        >
+          <Feather name="plus" size={30} color="white" />
+        </FloatingActionButton>
       </ThemedView>
     </SafeAreaView>
   );
@@ -59,5 +72,10 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     marginTop: 16,
-  }
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 90 : 70, // Positioned above navbar
+    right: 16,
+  },
 });

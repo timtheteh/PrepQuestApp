@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Feather } from '@expo/vector-icons';
@@ -18,6 +18,11 @@ export default function DecksScreen() {
   const handleFabPress = () => {
     // Handle FAB press
     console.log('FAB pressed');
+  };
+
+  const handleSelect = () => {
+    // Handle select press
+    console.log('Select pressed');
   };
 
   return (
@@ -40,9 +45,14 @@ export default function DecksScreen() {
             rightLabel="Interview"
             onToggle={handleToggle}
           />
-          <Title style={styles.title}>
-            {isInterviewMode ? 'My Interview Decks' : 'My Study Decks'}
-          </Title>
+          <View style={styles.titleRow}>
+            <Title>
+              {isInterviewMode ? 'My Interview Decks' : 'My Study Decks'}
+            </Title>
+            <TouchableOpacity onPress={handleSelect}>
+              <Text style={styles.selectButton}>Select</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <FloatingActionButton
@@ -79,12 +89,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 16,
   },
-  title: {
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 16,
+  },
+  selectButton: {
+    fontSize: 20,
+    fontFamily: 'Satoshi-Medium',
+    color: '#44B88A',
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15, // Positioned above navbar
+    bottom: Platform.OS === 'ios' ? 20 : 15,
     right: 16,
   },
 });

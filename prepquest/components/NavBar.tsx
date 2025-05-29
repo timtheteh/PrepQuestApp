@@ -47,7 +47,7 @@ const BASE_SPRING_CONFIG = {
 // Optimized for Android sliding
 const SPRING_CONFIG = Platform.OS === 'ios' ? BASE_SPRING_CONFIG : {
   damping: 12,
-  stiffness: 100,
+  stiffness: 50,
   mass: 0.1,
   velocity: 1,
   overshootClamping: false,

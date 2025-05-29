@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable } from 'react-native';
+import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
 
 interface CardProps {
   style?: ViewStyle;
@@ -9,6 +12,7 @@ interface CardProps {
 
 export function Card({ style, children, onPress }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
+  const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
 
   return (
     <View style={styles.shadowContainer}>
@@ -23,7 +27,10 @@ export function Card({ style, children, onPress }: CardProps) {
             : require('@/assets/images/deckCover1.png')
           }
           style={[styles.container, style]}
-          imageStyle={styles.backgroundImage}
+          imageStyle={[
+            styles.backgroundImage,
+            { resizeMode: isLargeScreen ? 'stretch' : 'contain' }
+          ]}
         >
           {children}
         </ImageBackground>
@@ -53,6 +60,5 @@ const styles = StyleSheet.create({
   backgroundImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
 });

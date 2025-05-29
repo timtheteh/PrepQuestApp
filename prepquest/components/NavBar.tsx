@@ -94,15 +94,18 @@ export function NavBar() {
     // Calculate offset based on the current tab
     const offset = (() => {
       if (slideAnimation.value === 0) {
+        // iphone SE
         if (SCREEN_WIDTH <= 375) {
           return -10
         }
         else if (SCREEN_WIDTH <= 390) {
           return -10
         }
+        // iphone 16, 16 pro, Pixel 9, Pixel 9 Pro, Pixel 8, PIxel 7
         else if (SCREEN_WIDTH <= 428) {
           return -10
         }
+        // iphone 16 Plus, 16 Pro Max, Pixel 9 Pro XL
         else {
           return -10
         }
@@ -160,7 +163,7 @@ export function NavBar() {
       alignItems: 'center',
       opacity: 1,
       zIndex: 0,
-      bottom: 22,
+      bottom: 23,
       transform: [
         {
           translateX: withSpring(slideAnimation.value * TAB_WIDTH + offset, SPRING_CONFIG)

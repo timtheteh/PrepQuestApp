@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions, Text } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Dimensions, Text, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
 import { Link, usePathname } from 'expo-router';
@@ -36,11 +36,37 @@ const BOTTOM_SPACING = 20;
 const CIRCLE_SIZE = ICON_SIZE * 2;
 const WHITE_CIRCLE_SIZE = CIRCLE_SIZE * 1.5;
 const TAB_WIDTH = (SCREEN_WIDTH - 56) / 4; // 56 is total horizontal padding (28 * 2)
-const SPRING_CONFIG = {
-  damping: 10,
-  stiffness: 150,
+
+const BASE_SPRING_CONFIG = {
+  damping: 20,
+  stiffness: 80,
+  mass: 0.5,
+  velocity: 0.4,
+};
+
+// Optimized for Android sliding
+const SPRING_CONFIG = Platform.OS === 'ios' ? BASE_SPRING_CONFIG : {
+  damping: 12,
+  stiffness: 100,
   mass: 0.1,
-  velocity: 0.8
+  velocity: 1,
+  overshootClamping: false,
+};
+
+const ANDROID_SPRING = {
+  damping: 15,
+  stiffness: 40,
+  mass: 0.3,
+  velocity: 0.3,
+  overshootClamping: true,
+};
+
+const LABEL_SPRING = Platform.OS === 'ios' ? BASE_SPRING_CONFIG : {
+  damping: 15,
+  stiffness: 35,
+  mass: 0.3,
+  velocity: 0.3,
+  overshootClamping: true,
 };
 
 type IconType = 'ionicons' | 'material';
@@ -66,7 +92,15 @@ export function NavBar() {
 
   useEffect(() => {
     // Trigger animation for Decks tab on first render
-    slideAnimation.value = withSpring(1, SPRING_CONFIG);
+    if (Platform.OS === 'ios') {
+      slideAnimation.value = withSpring(1, SPRING_CONFIG);
+    } else {
+      // Use timing for more predictable sliding on Android
+      slideAnimation.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
   }, []);
 
   const getIconComponent = useCallback((item: NavItem) => {
@@ -79,15 +113,14 @@ export function NavBar() {
       return {
         transform: [
           {
-            translateY: interpolate(
-              isSelected ? 1 : 0,
-              [0, 1],
-              [0, -CIRCLE_SIZE * 0.6]
+            translateY: withSpring(
+              isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+              Platform.OS === 'ios' ? SPRING_CONFIG : ANDROID_SPRING
             )
           }
         ]
       };
-    });
+    }, []);
   };
 
   const getWhiteCircleStyle = useAnimatedStyle(() => {
@@ -166,42 +199,38 @@ export function NavBar() {
       bottom: 23,
       transform: [
         {
-          translateX: withSpring(slideAnimation.value * TAB_WIDTH + offset, SPRING_CONFIG)
+          translateX: Platform.OS === 'ios' 
+            ? withSpring(slideAnimation.value * TAB_WIDTH + offset, SPRING_CONFIG)
+            : withTiming(slideAnimation.value * TAB_WIDTH + offset, {
+                duration: 200,
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+              })
         }
       ]
     };
-  });
+  }, []);
 
   const getLabelAnimatedStyle = (index: number) => {
     return useAnimatedStyle(() => {
       const isSelected = slideAnimation.value === index;
       const progress = isSelected ? 1 : 0;
 
-      const opacity = interpolate(
-        progress,
-        [0, 0.5, 1],
-        [0, 0.5, 1]
-      );
-
-      const translateY = interpolate(
-        progress,
-        [0, 1],
-        [20, 0]
-      );
-
       return {
         position: 'absolute',
         width: 133,
         alignItems: 'center',
-        opacity: withSpring(opacity, SPRING_CONFIG),
+        opacity: withSpring(progress, LABEL_SPRING),
         bottom: -1,
         transform: [
           {
-            translateY: withSpring(translateY, SPRING_CONFIG)
+            translateY: withSpring(
+              progress === 1 ? 0 : 20,
+              LABEL_SPRING
+            )
           }
         ]
       };
-    });
+    }, []);
   };
 
   const getCircleStyle = (index: number) => {
@@ -211,23 +240,13 @@ export function NavBar() {
         ? 'transparent'
         : '#4F41D8';
 
-      const progress = isSelected ? 1 : 0;
-      const translateY = interpolate(
-        progress,
-        [0, 1],
-        [0, -CIRCLE_SIZE * 0.6]
-      );
-
-      const opacity = interpolate(
-        progress,
-        [0, 0.5, 1],
-        [0, 0.5, 1]
-      );
-
       return {
         transform: [
           {
-            translateY: withSpring(translateY, SPRING_CONFIG)
+            translateY: withSpring(
+              isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+              SPRING_CONFIG
+            )
           }
         ],
         backgroundColor,
@@ -237,10 +256,10 @@ export function NavBar() {
         height: CIRCLE_SIZE,
         justifyContent: 'center',
         alignItems: 'center',
-        opacity: withSpring(opacity, SPRING_CONFIG),
+        opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
         zIndex: 4
       };
-    });
+    }, []);
   };
 
   const handleTabPress = (index: number) => {
@@ -248,7 +267,14 @@ export function NavBar() {
       isFirstRender.value = false;
     }
     
-    slideAnimation.value = withSpring(index, SPRING_CONFIG);
+    if (Platform.OS === 'ios') {
+      slideAnimation.value = withSpring(index, SPRING_CONFIG);
+    } else {
+      slideAnimation.value = withTiming(index, {
+        duration: 200,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
   };
 
   return (

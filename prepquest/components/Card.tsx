@@ -1,21 +1,33 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle, ImageBackground, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable } from 'react-native';
 
 interface CardProps {
   style?: ViewStyle;
   children?: React.ReactNode;
+  onPress?: () => void;
 }
 
-export function Card({ style, children }: CardProps) {
+export function Card({ style, children, onPress }: CardProps) {
+  const [isPressed, setIsPressed] = useState(false);
+
   return (
     <View style={styles.shadowContainer}>
-      <ImageBackground 
-        source={require('@/assets/images/deckCover1.png')}
-        style={[styles.container, style]}
-        imageStyle={styles.backgroundImage}
+      <Pressable 
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => setIsPressed(false)}
+        onPress={onPress}
       >
-        {children}
-      </ImageBackground>
+        <ImageBackground 
+          source={isPressed 
+            ? require('@/assets/images/deckCover1Pressed.png')
+            : require('@/assets/images/deckCover1.png')
+          }
+          style={[styles.container, style]}
+          imageStyle={styles.backgroundImage}
+        >
+          {children}
+        </ImageBackground>
+      </Pressable>
     </View>
   );
 }

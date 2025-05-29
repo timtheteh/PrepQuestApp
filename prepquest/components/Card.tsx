@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions } from 'react-native';
+import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions, ImageSourcePropType } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
@@ -8,9 +8,11 @@ interface CardProps {
   style?: ViewStyle;
   children?: React.ReactNode;
   onPress?: () => void;
+  backgroundImage: ImageSourcePropType;
+  pressedBackgroundImage: ImageSourcePropType;
 }
 
-export function Card({ style, children, onPress }: CardProps) {
+export function Card({ style, children, onPress, backgroundImage, pressedBackgroundImage }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
 
@@ -25,10 +27,7 @@ export function Card({ style, children, onPress }: CardProps) {
         onPress={onPress}
       >
         <ImageBackground 
-          source={isPressed 
-            ? require('@/assets/images/deckCover1Pressed.png')
-            : require('@/assets/images/deckCover1.png')
-          }
+          source={isPressed ? pressedBackgroundImage : backgroundImage}
           style={[styles.container, style]}
           imageStyle={[
             styles.backgroundImage,

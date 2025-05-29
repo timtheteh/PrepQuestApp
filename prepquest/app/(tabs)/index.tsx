@@ -12,6 +12,25 @@ import { useState, useRef } from 'react';
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
 
+const cardDesigns = [
+  {
+    background: require('@/assets/images/deckCover1.png'),
+    pressed: require('@/assets/images/deckCover1Pressed.png'),
+  },
+  {
+    background: require('@/assets/images/deckCover2.png'),
+    pressed: require('@/assets/images/deckCover2Pressed.png'),
+  },
+  {
+    background: require('@/assets/images/deckCover3.png'),
+    pressed: require('@/assets/images/deckCover3Pressed.png'),
+  },
+  {
+    background: require('@/assets/images/deckCover4.png'),
+    pressed: require('@/assets/images/deckCover4Pressed.png'),
+  },
+];
+
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -45,6 +64,22 @@ export default function DecksScreen() {
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
+
+  const renderCards = () => {
+    return Array(8).fill(null).map((_, index) => {
+      const design = cardDesigns[index % 4];
+      const style = index === 0 ? styles.firstCard : styles.card;
+      
+      return (
+        <Card
+          key={index}
+          style={style}
+          backgroundImage={design.background}
+          pressedBackgroundImage={design.pressed}
+        />
+      );
+    });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -85,17 +120,8 @@ export default function DecksScreen() {
               style={styles.scrollContainer}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
-              scrollEnabled={true}
-              alwaysBounceVertical={false}
             >
-              <Card style={styles.firstCard} />
-              <Card style={styles.card} />
-              <Card style={styles.card} />
-              <Card style={styles.card} />
-              <Card style={styles.card} />
-              <Card style={styles.card} />
-              <Card style={styles.card} />
-              <Card style={styles.card} />
+              {renderCards()}
             </ScrollView>
           </View>
         </View>

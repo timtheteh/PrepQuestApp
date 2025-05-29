@@ -1,11 +1,13 @@
-import { StyleSheet, Text, TextProps, Platform } from 'react-native';
+import { StyleSheet, Text, TextProps, Platform, Animated } from 'react-native';
 import { useFonts } from 'expo-font';
 
-interface TitleProps extends TextProps {
+interface TitleProps extends Omit<TextProps, 'style'> {
   children: string;
+  style?: any;
+  animatedOpacity?: Animated.AnimatedInterpolation<number> | Animated.Value;
 }
 
-export function Title({ style, children, ...props }: TitleProps) {
+export function Title({ style, children, animatedOpacity, ...props }: TitleProps) {
   const [fontsLoaded] = useFonts({
     'Neuton-Regular': require('@/assets/fonts/Neuton-Regular.ttf'),
   });
@@ -14,10 +16,18 @@ export function Title({ style, children, ...props }: TitleProps) {
     return null;
   }
 
+  if (animatedOpacity) {
+    return (
+      <Animated.Text style={[styles.title, style, { opacity: animatedOpacity }]} {...props}>
+        {children}
+      </Animated.Text>
+    );
+  }
+
   return (
-    <Text style={[styles.title, style]} {...props}>
+    <Animated.Text style={[styles.title, style]} {...props}>
       {children}
-    </Text>
+    </Animated.Text>
   );
 }
 

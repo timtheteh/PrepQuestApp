@@ -6,6 +6,7 @@ import { HeaderIconButtons } from '@/components/HeaderIconButtons';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
+import { Card } from '@/components/Card';
 import { useState, useRef } from 'react';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
@@ -84,9 +85,17 @@ export default function DecksScreen() {
               style={styles.scrollContainer}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
+              scrollEnabled={true}
+              alwaysBounceVertical={false}
             >
-              {/* Temporary content to show scrolling */}
-              <View style={{ height: 1000, backgroundColor: 'yellow' }} />
+              <Card style={styles.firstCard} />
+              <Card style={styles.card} />
+              <Card style={styles.card} />
+              <Card style={styles.card} />
+              <Card style={styles.card} />
+              <Card style={styles.card} />
+              <Card style={styles.card} />
+              <Card style={styles.card} />
             </ScrollView>
           </View>
         </View>
@@ -156,11 +165,18 @@ const styles = StyleSheet.create({
     // marginHorizontal: -16, // Remove the horizontal padding from parent
   },
   scrollContent: {
-    flexGrow: 1,
+    flexGrow: 0,
+    alignItems: 'center',
   },
   fab: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 20 : 15,
     right: 16,
+  },
+  firstCard: {
+    marginTop: 5,
+  },
+  card: {
+    marginTop: 26,
   },
 });

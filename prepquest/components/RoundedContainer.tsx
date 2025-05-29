@@ -1,4 +1,4 @@
-import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing } from 'react-native';
 import { useState, useRef } from 'react';
 
 interface RoundedContainerProps extends ViewProps {
@@ -16,16 +16,20 @@ export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
   const togglePosition = () => {
     const toValue = isRightSide ? 0 : 1;
     setIsRightSide(!isRightSide);
+
+    const animationConfig = {
+      toValue,
+      duration: 500,
+      easing: Easing.bezier(0.4, 0.0, 0.2, 1), // Material Design standard easing
+    };
     
     Animated.parallel([
       Animated.timing(positionAnim, {
-        toValue,
-        duration: 1000,
+        ...animationConfig,
         useNativeDriver: true,
       }),
       Animated.timing(colorAnim, {
-        toValue,
-        duration: 1000,
+        ...animationConfig,
         useNativeDriver: false,
       })
     ]).start();
@@ -37,13 +41,13 @@ export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
   });
 
   const leftTextColor = colorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['#FFFFFF', '#D5D4DD']
+    inputRange: [0, 0.4, 0.6, 1],
+    outputRange: ['#FFFFFF', '#FFFFFF', '#D5D4DD', '#D5D4DD']
   });
 
   const rightTextColor = colorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['#D5D4DD', '#FFFFFF']
+    inputRange: [0, 0.4, 0.6, 1],
+    outputRange: ['#D5D4DD', '#D5D4DD', '#FFFFFF', '#FFFFFF']
   });
 
   return (

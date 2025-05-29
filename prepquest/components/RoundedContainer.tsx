@@ -2,13 +2,23 @@ import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, 
 import { useState, useRef } from 'react';
 
 interface RoundedContainerProps extends ViewProps {
-  children?: React.ReactNode;
+  leftLabel: string;
+  rightLabel: string;
+  onToggle?: (isRightSide: boolean) => void;
+  initialPosition?: 'left' | 'right';
 }
 
-export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
-  const [isRightSide, setIsRightSide] = useState(false);
-  const positionAnim = useRef(new Animated.Value(0)).current;
-  const colorAnim = useRef(new Animated.Value(0)).current;
+export function RoundedContainer({ 
+  style, 
+  leftLabel,
+  rightLabel,
+  onToggle,
+  initialPosition = 'left',
+  ...props 
+}: RoundedContainerProps) {
+  const [isRightSide, setIsRightSide] = useState(initialPosition === 'right');
+  const positionAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
+  const colorAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
   const { width } = useWindowDimensions();
   const containerWidth = width - 32; // Accounting for parent padding
   const slideDistance = containerWidth / 2;
@@ -32,7 +42,9 @@ export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
         ...animationConfig,
         useNativeDriver: false,
       })
-    ]).start();
+    ]).start(() => {
+      onToggle?.(!isRightSide);
+    });
   };
 
   const translateX = positionAnim.interpolate({
@@ -63,12 +75,12 @@ export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
           <View style={styles.labelContainer}>
             <View style={[styles.labelSection, styles.leftSection]}>
               <Animated.Text style={[styles.label, { color: leftTextColor }]}>
-                Study
+                {leftLabel}
               </Animated.Text>
             </View>
             <View style={[styles.labelSection, styles.rightSection]}>
               <Animated.Text style={[styles.label, { color: rightTextColor }]}>
-                Interview
+                {rightLabel}
               </Animated.Text>
             </View>
           </View>

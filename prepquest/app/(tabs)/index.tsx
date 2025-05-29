@@ -6,6 +6,11 @@ import { HeaderIconButtons } from '@/components/HeaderIconButtons';
 import { RoundedContainer } from '@/components/RoundedContainer';
 
 export default function DecksScreen() {
+  const handleToggle = (isRightSide: boolean) => {
+    // Handle navigation or state changes based on toggle
+    console.log(isRightSide ? 'Interview Mode' : 'Study Mode');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView style={styles.container}>
@@ -21,7 +26,11 @@ export default function DecksScreen() {
         </View>
         
         <View style={styles.content}>
-          <RoundedContainer />
+          <RoundedContainer 
+            leftLabel="Study"
+            rightLabel="Interview"
+            onToggle={handleToggle}
+          />
         </View>
       </ThemedView>
     </SafeAreaView>

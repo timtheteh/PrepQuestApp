@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TextProps } from 'react-native';
+import { StyleSheet, Text, TextProps, Platform } from 'react-native';
 import { useFonts } from 'expo-font';
 
 interface TitleProps extends TextProps {
@@ -25,5 +25,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontFamily: 'Neuton-Regular',
+    lineHeight: Platform.OS === 'android' ? 32 : 24,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
 }); 

@@ -38,10 +38,10 @@ const WHITE_CIRCLE_SIZE = CIRCLE_SIZE * 1.5;
 const TAB_WIDTH = (SCREEN_WIDTH - 56) / 4; // 56 is total horizontal padding (28 * 2)
 
 const BASE_SPRING_CONFIG = {
-  damping: 20,
-  stiffness: 80,
-  mass: 0.5,
-  velocity: 0.4,
+  damping: 10,
+  stiffness: 120,
+  mass: 0.1,
+  velocity: 0.8,
 };
 
 // Optimized for Android sliding

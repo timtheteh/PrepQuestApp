@@ -7,7 +7,8 @@ interface RoundedContainerProps extends ViewProps {
 
 export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
   const [isRightSide, setIsRightSide] = useState(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const positionAnim = useRef(new Animated.Value(0)).current;
+  const colorAnim = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const containerWidth = width - 32; // Accounting for parent padding
   const slideDistance = containerWidth / 2;
@@ -16,16 +17,33 @@ export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
     const toValue = isRightSide ? 0 : 1;
     setIsRightSide(!isRightSide);
     
-    Animated.timing(slideAnim, {
-      toValue,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(positionAnim, {
+        toValue,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(colorAnim, {
+        toValue,
+        duration: 1000,
+        useNativeDriver: false,
+      })
+    ]).start();
   };
 
-  const translateX = slideAnim.interpolate({
+  const translateX = positionAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, slideDistance],
+  });
+
+  const leftTextColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#FFFFFF', '#D5D4DD']
+  });
+
+  const rightTextColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#D5D4DD', '#FFFFFF']
   });
 
   return (
@@ -39,11 +57,15 @@ export function RoundedContainer({ style, ...props }: RoundedContainerProps) {
             ]} 
           />
           <View style={styles.labelContainer}>
-            <View style={styles.labelSection}>
-              <Text style={styles.label}>Study</Text>
+            <View style={[styles.labelSection, styles.leftSection]}>
+              <Animated.Text style={[styles.label, { color: leftTextColor }]}>
+                Study
+              </Animated.Text>
             </View>
-            <View style={styles.labelSection}>
-              <Text style={styles.label}>Interview</Text>
+            <View style={[styles.labelSection, styles.rightSection]}>
+              <Animated.Text style={[styles.label, { color: rightTextColor }]}>
+                Interview
+              </Animated.Text>
             </View>
           </View>
         </View>
@@ -58,6 +80,7 @@ const styles = StyleSheet.create({
     height: 46,
     backgroundColor: '#F8F8F8',
     borderRadius: 30,
+    overflow: 'hidden',
   },
   innerContainer: {
     flex: 1,
@@ -79,9 +102,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  leftSection: {
+    paddingRight: 8,
+  },
+  rightSection: {
+    paddingLeft: 8,
+  },
   label: {
     fontSize: 20,
     fontFamily: 'Satoshi-Medium',
-    color: '#D5D4DD'
   },
 }); 

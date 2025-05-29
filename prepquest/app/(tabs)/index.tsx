@@ -43,7 +43,7 @@ export default function DecksScreen() {
           style={styles.fab}
           onPress={handleFabPress}
         >
-          <Feather name="plus" size={30} color="white" />
+          <Feather name="plus" size={38} color="white" />
         </FloatingActionButton>
       </ThemedView>
     </SafeAreaView>
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 90 : 70, // Positioned above navbar
+    bottom: Platform.OS === 'ios' ? 20 : 15, // Positioned above navbar
     right: 16,
   },
 });

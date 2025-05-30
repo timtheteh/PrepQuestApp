@@ -7,6 +7,7 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
+import { CircleIconButton } from '@/components/CircleIconButton';
 import { useState, useRef } from 'react';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
@@ -38,6 +39,7 @@ export default function DecksScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
   const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
+  const actionRowOpacity = useRef(new Animated.Value(0)).current;
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
@@ -62,6 +64,11 @@ export default function DecksScreen() {
         toValue: !isSelectMode ? BOTTOM_SPACING + SHIFT_DISTANCE : BOTTOM_SPACING,
         duration: 300,
         useNativeDriver: false,
+      }),
+      Animated.timing(actionRowOpacity, {
+        toValue: !isSelectMode ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
       })
     ]).start();
   };
@@ -120,6 +127,23 @@ export default function DecksScreen() {
               rightLabel="Interview"
               onToggle={handleToggle}
             />
+
+            <Animated.View style={[
+              styles.actionButtonsRow,
+              {
+                opacity: actionRowOpacity,
+                transform: [{
+                  translateY: actionRowOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0]
+                  })
+                }]
+              }
+            ]}>
+              <CircleIconButton iconName="share-outline" />
+              <CircleIconButton iconName="trash-outline" />
+            </Animated.View>
+
             <Animated.View 
               style={[
                 styles.shiftableContent,
@@ -230,10 +254,24 @@ const styles = StyleSheet.create({
   },
   shiftableContent: {
     flex: 1,
+    marginTop: 16,
   },
   fab: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 20 : 15,
     right: 16,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingRight: 16,
+    gap: 9,
+    height: 48,
+    position: 'absolute',
+    top: 62,
+    right: 0,
+    left: 0,
+    zIndex: 1,
   },
 });

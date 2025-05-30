@@ -14,6 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
+const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
 const cardDesigns = [
   {
@@ -44,13 +45,26 @@ export default function DecksScreen() {
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
   const selectTextAnim = useRef(new Animated.Value(0)).current;
   const fabOpacity = useRef(new Animated.Value(1)).current;
+  const screenOpacity = useRef(new Animated.Value(0)).current;
 
   const selectUnselectedDuration = 200;
 
-  // Reset selection mode when returning to the tab
+  // Handle screen transitions
+  useEffect(() => {
+    if (isFocused) {
+      Animated.timing(screenOpacity, {
+        toValue: 1,
+        duration: SCREEN_TRANSITION_DURATION,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      screenOpacity.setValue(0);
+    }
+  }, [isFocused]);
+
+  // Reset selection mode when leaving the tab
   useEffect(() => {
     if (!isFocused) {
-      // Immediately reset all selection-related values when leaving the tab
       setIsSelectMode(false);
       shiftAnim.setValue(0);
       marginAnim.setValue(BOTTOM_SPACING);
@@ -249,136 +263,142 @@ export default function DecksScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ThemedView style={styles.container}>
-        <View style={styles.navBar}>
-          <TouchableOpacity 
-            style={styles.menuButton}
-            activeOpacity={0.5}
-          >
-            <Feather name="menu" size={30} color="black" />
-          </TouchableOpacity>
-          
-          <HeaderIconButtons />
-        </View>
-        
-        <Animated.View style={[
-          styles.mainContentWrapper,
-          { marginBottom: marginAnim }
-        ]}>
-          <View style={styles.content}>
-            <RoundedContainer 
-              leftLabel="Study"
-              rightLabel="Interview"
-              onToggle={handleToggle}
-            />
-
-            <Animated.View style={[
-              styles.actionButtonsRow,
-              {
-                opacity: actionRowOpacity,
-                transform: [{
-                  translateY: actionRowOpacity.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-20, 0]
-                  })
-                }]
-              }
-            ]}>
-              <ActionButtonsRow
-                iconNames={['folder', 'trash']}
-                onCancel={handleCancel}
-                onIconPress={handleActionIconPress}
-                iconColors={['black', '#FF3B30']}
-              />
-            </Animated.View>
-
-            <Animated.View 
-              style={[
-                styles.shiftableContent,
-                { transform: [{ translateY: shiftAnim }] }
-              ]}
+    <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
+      <SafeAreaView style={styles.safeArea}>
+        <ThemedView style={styles.container}>
+          <View style={styles.navBar}>
+            <TouchableOpacity 
+              style={styles.menuButton}
+              activeOpacity={0.5}
             >
-              <View style={styles.titleRow}>
-                <View style={styles.titleContainer}>
-                  <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                    My Study Decks
-                  </Title>
-                  <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                    My Interview Decks
-                  </Title>
-                </View>
-                <TouchableOpacity 
-                  onPress={isSelectMode ? undefined : handleSelect}
-                  style={styles.selectButtonContainer}
-                >
-                  <Animated.Text style={[
-                    styles.selectButton,
-                    styles.selectButtonAbsolute,
-                    { opacity: selectOpacity }
-                  ]}>
-                    Select
-                  </Animated.Text>
-                  <Animated.Text style={[
-                    styles.selectButton,
-                    styles.selectButtonAbsolute,
-                    { opacity: selectAllOpacity }
-                  ]}>
-                    Select All
-                  </Animated.Text>
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.scrollWrapper}>
-                {/* Study Mode ScrollView */}
-                <Animated.View style={[
-                  styles.scrollViewContainer,
-                  { opacity: studyOpacity }
-                ]}>
-                  <ScrollView 
-                    style={styles.scrollContainer}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    {renderStudyCards()}
-                  </ScrollView>
-                </Animated.View>
-
-                {/* Interview Mode ScrollView */}
-                <Animated.View style={[
-                  styles.scrollViewContainer,
-                  { opacity: interviewOpacity }
-                ]}>
-                  <ScrollView 
-                    style={styles.scrollContainer}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    {renderInterviewCards()}
-                  </ScrollView>
-                </Animated.View>
-              </View>
-            </Animated.View>
+              <Feather name="menu" size={30} color="black" />
+            </TouchableOpacity>
+            
+            <HeaderIconButtons />
           </View>
-        </Animated.View>
+          
+          <Animated.View style={[
+            styles.mainContentWrapper,
+            { marginBottom: marginAnim }
+          ]}>
+            <View style={styles.content}>
+              <RoundedContainer 
+                leftLabel="Study"
+                rightLabel="Interview"
+                onToggle={handleToggle}
+              />
 
-        <Animated.View style={[
-          styles.fabContainer,
-          { opacity: fabOpacity }
-        ]}>
-          <FloatingActionButton
-            style={styles.fab}
-            onPress={handleFabPress}
-          >
-            <Feather name="plus" size={38} color="white" />
-          </FloatingActionButton>
-        </Animated.View>
-      </ThemedView>
-    </SafeAreaView>
+              <Animated.View style={[
+                styles.actionButtonsRow,
+                {
+                  opacity: actionRowOpacity,
+                  transform: [{
+                    translateY: actionRowOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-20, 0]
+                    })
+                  }]
+                }
+              ]}>
+                <ActionButtonsRow
+                  iconNames={['folder', 'trash']}
+                  onCancel={handleCancel}
+                  onIconPress={handleActionIconPress}
+                  iconColors={['black', '#FF3B30']}
+                />
+              </Animated.View>
+
+              <Animated.View 
+                style={[
+                  styles.shiftableContent,
+                  { transform: [{ translateY: shiftAnim }] }
+                ]}
+              >
+                <View style={styles.titleRow}>
+                  <View style={styles.titleContainer}>
+                    <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
+                      My Study Decks
+                    </Title>
+                    <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
+                      My Interview Decks
+                    </Title>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={isSelectMode ? undefined : handleSelect}
+                    style={styles.selectButtonContainer}
+                  >
+                    <Animated.Text style={[
+                      styles.selectButton,
+                      styles.selectButtonAbsolute,
+                      { opacity: selectOpacity }
+                    ]}>
+                      Select
+                    </Animated.Text>
+                    <Animated.Text style={[
+                      styles.selectButton,
+                      styles.selectButtonAbsolute,
+                      { opacity: selectAllOpacity }
+                    ]}>
+                      Select All
+                    </Animated.Text>
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.scrollWrapper}>
+                  {/* Study Mode ScrollView */}
+                  <Animated.View style={[
+                    styles.scrollViewContainer,
+                    { opacity: studyOpacity }
+                  ]}>
+                    <ScrollView 
+                      style={styles.scrollContainer}
+                      contentContainerStyle={styles.scrollContent}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {renderStudyCards()}
+                    </ScrollView>
+                  </Animated.View>
+
+                  {/* Interview Mode ScrollView */}
+                  <Animated.View style={[
+                    styles.scrollViewContainer,
+                    { opacity: interviewOpacity }
+                  ]}>
+                    <ScrollView 
+                      style={styles.scrollContainer}
+                      contentContainerStyle={styles.scrollContent}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {renderInterviewCards()}
+                    </ScrollView>
+                  </Animated.View>
+                </View>
+              </Animated.View>
+            </View>
+          </Animated.View>
+
+          <Animated.View style={[
+            styles.fabContainer,
+            { opacity: fabOpacity }
+          ]}>
+            <FloatingActionButton
+              style={styles.fab}
+              onPress={handleFabPress}
+            >
+              <Feather name="plus" size={38} color="white" />
+            </FloatingActionButton>
+          </Animated.View>
+        </ThemedView>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  animatedContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',

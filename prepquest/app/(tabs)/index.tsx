@@ -8,6 +8,7 @@ import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
+import { MenuButton } from '@/components/MenuButton';
 import { useState, useRef, useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 
@@ -373,12 +374,9 @@ export default function DecksScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
           <View style={styles.navBar}>
-            <TouchableOpacity 
+            <MenuButton 
               style={styles.menuButton}
-              activeOpacity={0.5}
-            >
-              <Feather name="menu" size={30} color="black" />
-            </TouchableOpacity>
+            />
             
             <HeaderIconButtons />
           </View>

@@ -40,6 +40,8 @@ export default function DecksScreen() {
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedStudyCards, setSelectedStudyCards] = useState<Set<number>>(new Set());
   const [selectedInterviewCards, setSelectedInterviewCards] = useState<Set<number>>(new Set());
+  const [studyCardsCount, setStudyCardsCount] = useState(0);
+  const [interviewCardsCount, setInterviewCardsCount] = useState(0);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -52,6 +54,12 @@ export default function DecksScreen() {
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
 
   const selectUnselectedDuration = 300;
+
+  // Update card counts
+  useEffect(() => {
+    setStudyCardsCount(8); // Current number of study cards
+    setInterviewCardsCount(6); // Current number of interview cards
+  }, []); // Empty dependency array as these are constant in the current implementation
 
   // Handle screen transitions
   useEffect(() => {
@@ -299,8 +307,18 @@ export default function DecksScreen() {
     });
   };
 
+  const handleSelectAll = () => {
+    if (isInterviewMode) {
+      const allInterviewIndices = new Set(Array.from({ length: interviewCardsCount }, (_, i) => i));
+      setSelectedInterviewCards(allInterviewIndices);
+    } else {
+      const allStudyIndices = new Set(Array.from({ length: studyCardsCount }, (_, i) => i));
+      setSelectedStudyCards(allStudyIndices);
+    }
+  };
+
   const renderStudyCards = () => {
-    return Array(8).fill(null).map((_, index) => {
+    const cards = Array(8).fill(null).map((_, index) => {
       const design = cardDesigns[index % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
       
@@ -318,10 +336,11 @@ export default function DecksScreen() {
         />
       );
     });
+    return cards;
   };
 
   const renderInterviewCards = () => {
-    return Array(6).fill(null).map((_, index) => {
+    const cards = Array(6).fill(null).map((_, index) => {
       const design = cardDesigns[(index + 2) % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
       
@@ -339,6 +358,7 @@ export default function DecksScreen() {
         />
       );
     });
+    return cards;
   };
 
   return (
@@ -403,7 +423,7 @@ export default function DecksScreen() {
                     </Title>
                   </View>
                   <TouchableOpacity 
-                    onPress={isSelectMode ? undefined : handleSelect}
+                    onPress={isSelectMode ? handleSelectAll : handleSelect}
                     style={styles.selectButtonContainer}
                   >
                     <Animated.Text style={[

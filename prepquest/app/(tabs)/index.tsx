@@ -7,7 +7,7 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
-import { CircleIconButton } from '@/components/CircleIconButton';
+import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { useState, useRef } from 'react';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
@@ -71,6 +71,39 @@ export default function DecksScreen() {
         useNativeDriver: true,
       })
     ]).start();
+  };
+
+  const handleCancel = () => {
+    setIsSelectMode(false);
+    
+    Animated.parallel([
+      Animated.timing(shiftAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(marginAnim, {
+        toValue: BOTTOM_SPACING,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(actionRowOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const handleActionIconPress = (index: number) => {
+    switch (index) {
+      case 0: // Share
+        console.log('Share pressed');
+        break;
+      case 1: // Trash
+        console.log('Trash pressed');
+        break;
+    }
   };
 
   const handleFabPress = () => {
@@ -140,8 +173,11 @@ export default function DecksScreen() {
                 }]
               }
             ]}>
-              <CircleIconButton iconName="share-outline" />
-              <CircleIconButton iconName="trash-outline" />
+              <ActionButtonsRow
+                iconNames={['share-outline', 'trash-outline']}
+                onCancel={handleCancel}
+                onIconPress={handleActionIconPress}
+              />
             </Animated.View>
 
             <Animated.View 
@@ -262,12 +298,6 @@ const styles = StyleSheet.create({
     right: 16,
   },
   actionButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingRight: 16,
-    gap: 9,
-    height: 48,
     position: 'absolute',
     top: 62,
     right: 0,

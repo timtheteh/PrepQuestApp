@@ -29,7 +29,7 @@ export function RoundedContainer({
 
     const animationConfig = {
       toValue,
-      duration: 500,
+      duration: 300,
       easing: Easing.bezier(0.4, 0.0, 0.2, 1), // Material Design standard easing
     };
     

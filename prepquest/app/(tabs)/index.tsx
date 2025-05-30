@@ -42,14 +42,47 @@ export default function DecksScreen() {
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
   const selectTextAnim = useRef(new Animated.Value(0)).current;
 
+  const selectUnselectedDuration = 200;
+
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
     
-    Animated.timing(fadeAnim, {
-      toValue: isRightSide ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+    // If in select mode, reset it first
+    if (isSelectMode) {
+      setIsSelectMode(false);
+    }
+    
+    Animated.parallel([
+      // Mode toggle animation
+      Animated.timing(fadeAnim, {
+        toValue: isRightSide ? 1 : 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      // Cancel animations (only run if was in select mode)
+      ...(isSelectMode ? [
+        Animated.timing(shiftAnim, {
+          toValue: 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(marginAnim, {
+          toValue: BOTTOM_SPACING,
+          duration: selectUnselectedDuration,
+          useNativeDriver: false,
+        }),
+        Animated.timing(actionRowOpacity, {
+          toValue: 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(selectTextAnim, {
+          toValue: 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        })
+      ] : [])
+    ]).start();
   };
 
   const handleSelect = () => {
@@ -109,7 +142,7 @@ export default function DecksScreen() {
   const handleActionIconPress = (index: number) => {
     switch (index) {
       case 0: // Share
-        console.log('Share pressed');
+        console.log('Folder pressed');
         break;
       case 1: // Trash
         console.log('Trash pressed');

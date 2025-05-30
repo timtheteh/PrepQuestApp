@@ -11,6 +11,7 @@ import { useState, useRef } from 'react';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
+const SHIFT_DISTANCE = 40; // Distance to shift content down
 
 const cardDesigns = [
   {
@@ -33,7 +34,10 @@ const cardDesigns = [
 
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const shiftAnim = useRef(new Animated.Value(0)).current;
+  const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
@@ -45,14 +49,25 @@ export default function DecksScreen() {
     }).start();
   };
 
-  const handleFabPress = () => {
-    // Handle FAB press
-    console.log('FAB pressed');
+  const handleSelect = () => {
+    setIsSelectMode(!isSelectMode);
+    
+    Animated.parallel([
+      Animated.timing(shiftAnim, {
+        toValue: !isSelectMode ? SHIFT_DISTANCE : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(marginAnim, {
+        toValue: !isSelectMode ? BOTTOM_SPACING + SHIFT_DISTANCE : BOTTOM_SPACING,
+        duration: 300,
+        useNativeDriver: false,
+      })
+    ]).start();
   };
 
-  const handleSelect = () => {
-    // Handle select press
-    console.log('Select pressed');
+  const handleFabPress = () => {
+    console.log('FAB pressed');
   };
 
   const studyOpacity = fadeAnim.interpolate({
@@ -95,36 +110,48 @@ export default function DecksScreen() {
           <HeaderIconButtons />
         </View>
         
-        <View style={styles.content}>
-          <RoundedContainer 
-            leftLabel="Study"
-            rightLabel="Interview"
-            onToggle={handleToggle}
-          />
-          <View style={styles.titleRow}>
-            <View style={styles.titleContainer}>
-              <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                My Study Decks
-              </Title>
-              <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                My Interview Decks
-              </Title>
-            </View>
-            <TouchableOpacity onPress={handleSelect}>
-              <Text style={styles.selectButton}>Select</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.scrollWrapper}>
-            <ScrollView 
-              style={styles.scrollContainer}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
+        <Animated.View style={[
+          styles.mainContentWrapper,
+          { marginBottom: marginAnim }
+        ]}>
+          <View style={styles.content}>
+            <RoundedContainer 
+              leftLabel="Study"
+              rightLabel="Interview"
+              onToggle={handleToggle}
+            />
+            <Animated.View 
+              style={[
+                styles.shiftableContent,
+                { transform: [{ translateY: shiftAnim }] }
+              ]}
             >
-              {renderCards()}
-            </ScrollView>
+              <View style={styles.titleRow}>
+                <View style={styles.titleContainer}>
+                  <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
+                    My Study Decks
+                  </Title>
+                  <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
+                    My Interview Decks
+                  </Title>
+                </View>
+                <TouchableOpacity onPress={handleSelect}>
+                  <Text style={styles.selectButton}>Select</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.scrollWrapper}>
+                <ScrollView 
+                  style={styles.scrollContainer}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {renderCards()}
+                </ScrollView>
+              </View>
+            </Animated.View>
           </View>
-        </View>
+        </Animated.View>
 
         <FloatingActionButton
           style={styles.fab}
@@ -153,13 +180,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'android' ? 70 : 16,
   },
-  menuButton: {
-    padding: 0,
+  mainContentWrapper: {
+    flex: 1,
   },
   content: {
     flex: 1,
     paddingHorizontal: 16,
     marginTop: 16,
+  },
+  menuButton: {
+    padding: 0,
   },
   titleRow: {
     flexDirection: 'row',
@@ -183,26 +213,26 @@ const styles = StyleSheet.create({
   },
   scrollWrapper: {
     flex: 1,
-    marginTop: 12,
-    marginBottom: BOTTOM_SPACING,
   },
   scrollContainer: {
     flex: 1,
-    // marginHorizontal: -16, // Remove the horizontal padding from parent
   },
   scrollContent: {
     flexGrow: 0,
     alignItems: 'center',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15,
-    right: 16,
   },
   firstCard: {
     marginTop: 5,
   },
   card: {
     marginTop: 26,
+  },
+  shiftableContent: {
+    flex: 1,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 20 : 15,
+    right: 16,
   },
 });

@@ -98,6 +98,13 @@ export default function DecksScreen() {
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
     
+    // Clear the selection state for the mode we're leaving
+    if (isRightSide) {
+      setSelectedStudyCards(new Set());
+    } else {
+      setSelectedInterviewCards(new Set());
+    }
+    
     // If in select mode, reset it first
     if (isSelectMode) {
       setIsSelectMode(false);
@@ -143,10 +150,10 @@ export default function DecksScreen() {
       ]).start();
       
       // Separate animation for circle button
-      Animated.timing(circleButtonOpacity, {
-        toValue: 0,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
+        Animated.timing(circleButtonOpacity, {
+          toValue: 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
       }).start();
     } else {
       // Just toggle mode

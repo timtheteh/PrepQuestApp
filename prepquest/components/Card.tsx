@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions, ImageSourcePropType, Animated } from 'react-native';
+import { CircleSelectButton } from './CircleSelectButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
@@ -12,6 +13,8 @@ interface CardProps {
   pressedBackgroundImage: ImageSourcePropType;
   containerWidthPercentage?: Animated.Value;
   isSelectMode?: boolean;
+  selected?: boolean;
+  onSelectPress?: () => void;
 }
 
 export function Card({ 
@@ -21,7 +24,9 @@ export function Card({
   backgroundImage, 
   pressedBackgroundImage,
   containerWidthPercentage = new Animated.Value(100),
-  isSelectMode = false
+  isSelectMode = false,
+  selected = false,
+  onSelectPress
 }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
@@ -68,10 +73,14 @@ export function Card({
         </Pressable>
       </View>
       {isSelectMode && (
-        <View style={[
-          styles.circleSelectButton,
-          style?.marginTop === 5 && styles.firstCardCircleButton
-        ]} />
+        <CircleSelectButton
+          style={{
+            ...styles.circleSelectButton,
+            ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {})
+          }}
+          selected={selected}
+          onPress={onSelectPress}
+        />
       )}
     </View>
   );
@@ -111,12 +120,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 8,
     top: '50%',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'white',
-    borderWidth: 3,
-    borderColor: '#4F41D8',
     zIndex: 1,
   },
   firstCardCircleButton: {

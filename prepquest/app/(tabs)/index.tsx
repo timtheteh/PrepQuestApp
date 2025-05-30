@@ -40,6 +40,7 @@ export default function DecksScreen() {
   const shiftAnim = useRef(new Animated.Value(0)).current;
   const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
+  const selectTextAnim = useRef(new Animated.Value(0)).current;
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
@@ -52,21 +53,26 @@ export default function DecksScreen() {
   };
 
   const handleSelect = () => {
-    setIsSelectMode(!isSelectMode);
+    setIsSelectMode(true);
     
     Animated.parallel([
       Animated.timing(shiftAnim, {
-        toValue: !isSelectMode ? SHIFT_DISTANCE : 0,
+        toValue: SHIFT_DISTANCE,
         duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
-        toValue: !isSelectMode ? BOTTOM_SPACING + SHIFT_DISTANCE : BOTTOM_SPACING,
+        toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
         duration: 300,
         useNativeDriver: false,
       }),
       Animated.timing(actionRowOpacity, {
-        toValue: !isSelectMode ? 1 : 0,
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(selectTextAnim, {
+        toValue: 1,
         duration: 300,
         useNativeDriver: true,
       })
@@ -74,8 +80,6 @@ export default function DecksScreen() {
   };
 
   const handleCancel = () => {
-    setIsSelectMode(false);
-    
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
@@ -91,8 +95,15 @@ export default function DecksScreen() {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
+      }),
+      Animated.timing(selectTextAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
       })
-    ]).start();
+    ]).start(() => {
+      setIsSelectMode(false);
+    });
   };
 
   const handleActionIconPress = (index: number) => {
@@ -116,6 +127,16 @@ export default function DecksScreen() {
   });
 
   const interviewOpacity = fadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const selectOpacity = selectTextAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  const selectAllOpacity = selectTextAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
@@ -196,8 +217,24 @@ export default function DecksScreen() {
                     My Interview Decks
                   </Title>
                 </View>
-                <TouchableOpacity onPress={handleSelect}>
-                  <Text style={styles.selectButton}>Select</Text>
+                <TouchableOpacity 
+                  onPress={isSelectMode ? undefined : handleSelect}
+                  style={styles.selectButtonContainer}
+                >
+                  <Animated.Text style={[
+                    styles.selectButton,
+                    styles.selectButtonAbsolute,
+                    { opacity: selectOpacity }
+                  ]}>
+                    Select
+                  </Animated.Text>
+                  <Animated.Text style={[
+                    styles.selectButton,
+                    styles.selectButtonAbsolute,
+                    { opacity: selectAllOpacity }
+                  ]}>
+                    Select All
+                  </Animated.Text>
                 </TouchableOpacity>
               </View>
               
@@ -267,10 +304,20 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
   },
+  selectButtonContainer: {
+    position: 'relative',
+    width: 85, // Adjust based on your text width
+    height: 24, // Adjust based on your text height
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
   selectButton: {
     fontSize: 20,
     fontFamily: 'Satoshi-Medium',
     color: '#44B88A',
+  },
+  selectButtonAbsolute: {
+    position: 'absolute',
   },
   scrollWrapper: {
     flex: 1,

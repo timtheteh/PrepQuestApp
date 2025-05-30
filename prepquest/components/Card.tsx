@@ -15,6 +15,7 @@ interface CardProps {
   isSelectMode?: boolean;
   selected?: boolean;
   onSelectPress?: () => void;
+  circleButtonOpacity?: Animated.Value;
 }
 
 export function Card({ 
@@ -26,7 +27,8 @@ export function Card({
   containerWidthPercentage = new Animated.Value(100),
   isSelectMode = false,
   selected = false,
-  onSelectPress
+  onSelectPress,
+  circleButtonOpacity = new Animated.Value(1)
 }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
@@ -76,7 +78,8 @@ export function Card({
         <CircleSelectButton
           style={{
             ...styles.circleSelectButton,
-            ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {})
+            ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {}),
+            opacity: circleButtonOpacity
           }}
           selected={selected}
           onPress={onSelectPress}

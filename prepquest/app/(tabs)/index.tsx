@@ -47,8 +47,9 @@ export default function DecksScreen() {
   const fabOpacity = useRef(new Animated.Value(1)).current;
   const screenOpacity = useRef(new Animated.Value(0)).current;
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
+  const circleButtonOpacity = useRef(new Animated.Value(0)).current;
 
-  const selectUnselectedDuration = 200;
+  const selectUnselectedDuration = 300;
 
   // Handle screen transitions
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function DecksScreen() {
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
       cardWidthPercentage.setValue(100);
+      circleButtonOpacity.setValue(0);
     }
   }, [isFocused]);
 
@@ -87,17 +89,15 @@ export default function DecksScreen() {
     // If in select mode, reset it first
     if (isSelectMode) {
       setIsSelectMode(false);
-    }
-    
-    Animated.parallel([
-      // Mode toggle animation
-      Animated.timing(fadeAnim, {
-        toValue: isRightSide ? 1 : 0,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }),
-      // Cancel animations (only run if was in select mode)
-      ...(isSelectMode ? [
+      
+      Animated.parallel([
+        // Mode toggle animation
+        Animated.timing(fadeAnim, {
+          toValue: isRightSide ? 1 : 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        // Cancel animations
         Animated.timing(shiftAnim, {
           toValue: 0,
           duration: selectUnselectedDuration,
@@ -127,9 +127,21 @@ export default function DecksScreen() {
           toValue: 100,
           duration: selectUnselectedDuration,
           useNativeDriver: false,
+        }),
+        Animated.timing(circleButtonOpacity, {
+          toValue: 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
         })
-      ] : [])
-    ]).start();
+      ]).start();
+    } else {
+      // Just toggle mode
+      Animated.timing(fadeAnim, {
+        toValue: isRightSide ? 1 : 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
   const handleSelect = () => {
@@ -138,33 +150,38 @@ export default function DecksScreen() {
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: SHIFT_DISTANCE,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
         toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),
       Animated.timing(actionRowOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(selectTextAnim, {
         toValue: 1,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(fabOpacity, {
         toValue: 0,
-        duration: 200,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(cardWidthPercentage, {
         toValue: 85,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: false,
+      }),
+      Animated.timing(circleButtonOpacity, {
+        toValue: 1,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
       })
     ]).start();
   };
@@ -173,33 +190,38 @@ export default function DecksScreen() {
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
         toValue: BOTTOM_SPACING,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),
       Animated.timing(actionRowOpacity, {
         toValue: 0,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(selectTextAnim, {
         toValue: 0,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(fabOpacity, {
         toValue: 1,
-        duration: 200,
+        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(cardWidthPercentage, {
         toValue: 100,
-        duration: 300,
+        duration: selectUnselectedDuration,
         useNativeDriver: false,
+      }),
+      Animated.timing(circleButtonOpacity, {
+        toValue: 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
       })
     ]).start(() => {
       setIsSelectMode(false);
@@ -258,6 +280,7 @@ export default function DecksScreen() {
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
+          circleButtonOpacity={circleButtonOpacity}
         />
       );
     });
@@ -276,6 +299,7 @@ export default function DecksScreen() {
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
+          circleButtonOpacity={circleButtonOpacity}
         />
       );
     });

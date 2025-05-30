@@ -46,30 +46,43 @@ export function Card({
   };
 
   return (
-    <View style={styles.shadowContainer}>
-      <Pressable 
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-      >
-        <Animated.View style={[styles.container, containerStyle, style]}>
-          <ImageBackground 
-            source={isPressed && !isSelectMode ? pressedBackgroundImage : backgroundImage}
-            style={styles.imageBackground}
-            imageStyle={[
-              styles.backgroundImage,
-              { resizeMode: isLargeScreen ? 'stretch' : 'contain' }
-            ]}
-          >
-            {children}
-          </ImageBackground>
-        </Animated.View>
-      </Pressable>
+    <View style={styles.outerContainer}>
+      <View style={styles.shadowContainer}>
+        <Pressable 
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={onPress}
+        >
+          <Animated.View style={[styles.container, containerStyle, style]}>
+            <ImageBackground 
+              source={isPressed && !isSelectMode ? pressedBackgroundImage : backgroundImage}
+              style={styles.imageBackground}
+              imageStyle={[
+                styles.backgroundImage,
+                { resizeMode: isLargeScreen ? 'stretch' : 'contain' }
+              ]}
+            >
+              {children}
+            </ImageBackground>
+          </Animated.View>
+        </Pressable>
+      </View>
+      {isSelectMode && (
+        <View style={[
+          styles.circleSelectButton,
+          style?.marginTop === 5 && styles.firstCardCircleButton
+        ]} />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    width: '100%',
+    position: 'relative',
+    alignItems: 'center',
+  },
   shadowContainer: {
     width: '97%',
     ...Platform.select({
@@ -93,5 +106,20 @@ const styles = StyleSheet.create({
   backgroundImage: {
     width: '100%',
     height: '100%',
+  },
+  circleSelectButton: {
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'white',
+    borderWidth: 3,
+    borderColor: '#4F41D8',
+    zIndex: 1,
+  },
+  firstCardCircleButton: {
+    transform: [{ translateY: -15 }],
   },
 });

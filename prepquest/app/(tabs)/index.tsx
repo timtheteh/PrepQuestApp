@@ -9,8 +9,9 @@ import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { MenuButton } from '@/components/MenuButton';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { useIsFocused } from '@react-navigation/native';
+import { MenuContext } from './_layout';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
@@ -43,6 +44,7 @@ export default function DecksScreen() {
   const [selectedInterviewCards, setSelectedInterviewCards] = useState<Set<number>>(new Set());
   const [studyCardsCount, setStudyCardsCount] = useState(0);
   const [interviewCardsCount, setInterviewCardsCount] = useState(0);
+  const { setIsMenuOpen, menuOverlayOpacity } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -369,6 +371,15 @@ export default function DecksScreen() {
     return cards;
   };
 
+  const handleMenuPress = () => {
+    setIsMenuOpen(true);
+    Animated.timing(menuOverlayOpacity, {
+      toValue: 0.4,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -376,6 +387,7 @@ export default function DecksScreen() {
           <View style={styles.navBar}>
             <MenuButton 
               style={styles.menuButton}
+              onPress={handleMenuPress}
             />
             
             <HeaderIconButtons />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity, Animated } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 
 interface CircleSelectButtonProps {
   style?: ViewStyle;
@@ -30,7 +31,11 @@ export function CircleSelectButton({
         <View style={[
           styles.circle,
           selected && styles.selected
-        ]} />
+        ]}>
+          {selected && (
+            <Feather name="check" size={18} color="white" />
+          )}
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -52,6 +57,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderWidth: 3,
     borderColor: '#4F41D8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selected: {
     backgroundColor: '#4F41D8',

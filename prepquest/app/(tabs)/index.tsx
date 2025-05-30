@@ -8,7 +8,8 @@ import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
@@ -36,6 +37,7 @@ const cardDesigns = [
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
   const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
@@ -44,6 +46,24 @@ export default function DecksScreen() {
   const fabOpacity = useRef(new Animated.Value(1)).current;
 
   const selectUnselectedDuration = 200;
+
+  // Reset selection mode when returning to the tab
+  useEffect(() => {
+    if (!isFocused) {
+      // Immediately reset all selection-related values when leaving the tab
+      setIsSelectMode(false);
+      shiftAnim.setValue(0);
+      marginAnim.setValue(BOTTOM_SPACING);
+      actionRowOpacity.setValue(0);
+      selectTextAnim.setValue(0);
+      fabOpacity.setValue(1);
+    }
+  }, [isFocused]);
+
+  // Set initial mode animation when component mounts
+  useEffect(() => {
+    fadeAnim.setValue(isInterviewMode ? 1 : 0);
+  }, []);
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);

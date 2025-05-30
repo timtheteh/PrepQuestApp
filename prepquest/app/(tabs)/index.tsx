@@ -41,6 +41,7 @@ export default function DecksScreen() {
   const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
   const selectTextAnim = useRef(new Animated.Value(0)).current;
+  const fabOpacity = useRef(new Animated.Value(1)).current;
 
   const selectUnselectedDuration = 200;
 
@@ -80,6 +81,11 @@ export default function DecksScreen() {
           toValue: 0,
           duration: selectUnselectedDuration,
           useNativeDriver: true,
+        }),
+        Animated.timing(fabOpacity, {
+          toValue: 1,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
         })
       ] : [])
     ]).start();
@@ -108,6 +114,11 @@ export default function DecksScreen() {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
+      }),
+      Animated.timing(fabOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
       })
     ]).start();
   };
@@ -133,6 +144,11 @@ export default function DecksScreen() {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
+      }),
+      Animated.timing(fabOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
       })
     ]).start(() => {
       setIsSelectMode(false);
@@ -151,7 +167,11 @@ export default function DecksScreen() {
   };
 
   const handleFabPress = () => {
-    console.log('FAB pressed');
+    if (isInterviewMode) {
+      console.log("Interview state FAB clicked!");
+    } else {
+      console.log("Study state FAB clicked!");
+    }
   };
 
   const studyOpacity = fadeAnim.interpolate({
@@ -322,12 +342,17 @@ export default function DecksScreen() {
           </View>
         </Animated.View>
 
-        <FloatingActionButton
-          style={styles.fab}
-          onPress={handleFabPress}
-        >
-          <Feather name="plus" size={38} color="white" />
-        </FloatingActionButton>
+        <Animated.View style={[
+          styles.fabContainer,
+          { opacity: fabOpacity }
+        ]}>
+          <FloatingActionButton
+            style={styles.fab}
+            onPress={handleFabPress}
+          >
+            <Feather name="plus" size={38} color="white" />
+          </FloatingActionButton>
+        </Animated.View>
       </ThemedView>
     </SafeAreaView>
   );
@@ -423,6 +448,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 20 : 15,
     right: 16,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100, // Make sure this is tall enough to contain the FAB
+    zIndex: 1,
   },
   actionButtonsRow: {
     position: 'absolute',

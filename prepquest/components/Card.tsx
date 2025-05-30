@@ -15,6 +15,7 @@ interface CardProps {
   isSelectMode?: boolean;
   selected?: boolean;
   onSelectPress?: () => void;
+  circleButtonOpacity?: Animated.Value;
 }
 
 export function Card({ 
@@ -26,7 +27,8 @@ export function Card({
   containerWidthPercentage = new Animated.Value(100),
   isSelectMode = false,
   selected = false,
-  onSelectPress
+  onSelectPress,
+  circleButtonOpacity
 }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
@@ -80,6 +82,7 @@ export function Card({
           }}
           selected={selected}
           onPress={onSelectPress}
+          opacity={circleButtonOpacity}
         />
       )}
     </View>

@@ -367,7 +367,7 @@ export default function DecksScreen() {
                   {/* Study Mode ScrollView */}
                   <Animated.View style={[
                     styles.scrollViewContainer,
-                    { opacity: studyOpacity }
+                    { opacity: studyOpacity, display: isInterviewMode ? 'none' : 'flex' }
                   ]}>
                     <ScrollView 
                       style={styles.scrollContainer}
@@ -381,7 +381,7 @@ export default function DecksScreen() {
                   {/* Interview Mode ScrollView */}
                   <Animated.View style={[
                     styles.scrollViewContainer,
-                    { opacity: interviewOpacity }
+                    { opacity: interviewOpacity, display: isInterviewMode ? 'flex' : 'none' }
                   ]}>
                     <ScrollView 
                       style={styles.scrollContainer}
@@ -477,21 +477,17 @@ const styles = StyleSheet.create({
   scrollWrapper: {
     flex: 1,
     marginTop: 10,
-    position: 'relative',
   },
   scrollViewContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 0,
+    flexGrow: 1,
     alignItems: 'center',
+    paddingBottom: BOTTOM_SPACING,
   },
   firstCard: {
     marginTop: 5,

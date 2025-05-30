@@ -44,7 +44,7 @@ export default function DecksScreen() {
   const [selectedInterviewCards, setSelectedInterviewCards] = useState<Set<number>>(new Set());
   const [studyCardsCount, setStudyCardsCount] = useState(0);
   const [interviewCardsCount, setInterviewCardsCount] = useState(0);
-  const { setIsMenuOpen, menuOverlayOpacity } = useContext(MenuContext);
+  const { setIsMenuOpen, menuOverlayOpacity, menuTranslateX } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -371,13 +371,22 @@ export default function DecksScreen() {
     return cards;
   };
 
+  const slidingMenuDuration = 300;
+
   const handleMenuPress = () => {
     setIsMenuOpen(true);
-    Animated.timing(menuOverlayOpacity, {
-      toValue: 0.4,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.4,
+        duration: slidingMenuDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(menuTranslateX, {
+        toValue: 0,
+        duration: slidingMenuDuration,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   return (

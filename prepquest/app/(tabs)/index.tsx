@@ -174,14 +174,32 @@ export default function DecksScreen() {
     outputRange: [0, 1],
   });
 
-  const renderCards = () => {
+  const renderStudyCards = () => {
+    // This will be replaced with actual study deck data later
     return Array(8).fill(null).map((_, index) => {
       const design = cardDesigns[index % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
         <Card
-          key={index}
+          key={`study-${index}`}
+          style={style}
+          backgroundImage={design.background}
+          pressedBackgroundImage={design.pressed}
+        />
+      );
+    });
+  };
+
+  const renderInterviewCards = () => {
+    // This will be replaced with actual interview deck data later
+    return Array(6).fill(null).map((_, index) => {
+      const design = cardDesigns[(index + 2) % 4]; // Offset by 2 to have different initial cards
+      const style = index === 0 ? styles.firstCard : styles.card;
+      
+      return (
+        <Card
+          key={`interview-${index}`}
           style={style}
           backgroundImage={design.background}
           pressedBackgroundImage={design.pressed}
@@ -272,13 +290,33 @@ export default function DecksScreen() {
               </View>
               
               <View style={styles.scrollWrapper}>
-                <ScrollView 
-                  style={styles.scrollContainer}
-                  contentContainerStyle={styles.scrollContent}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {renderCards()}
-                </ScrollView>
+                {/* Study Mode ScrollView */}
+                <Animated.View style={[
+                  styles.scrollViewContainer,
+                  { opacity: studyOpacity }
+                ]}>
+                  <ScrollView 
+                    style={styles.scrollContainer}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {renderStudyCards()}
+                  </ScrollView>
+                </Animated.View>
+
+                {/* Interview Mode ScrollView */}
+                <Animated.View style={[
+                  styles.scrollViewContainer,
+                  { opacity: interviewOpacity }
+                ]}>
+                  <ScrollView 
+                    style={styles.scrollContainer}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {renderInterviewCards()}
+                  </ScrollView>
+                </Animated.View>
               </View>
             </Animated.View>
           </View>
@@ -339,8 +377,8 @@ const styles = StyleSheet.create({
   },
   selectButtonContainer: {
     position: 'relative',
-    width: 85, // Adjust based on your text width
-    height: 24, // Adjust based on your text height
+    width: 85,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'flex-end',
   },
@@ -354,7 +392,15 @@ const styles = StyleSheet.create({
   },
   scrollWrapper: {
     flex: 1,
-    marginTop: 10
+    marginTop: 10,
+    position: 'relative',
+  },
+  scrollViewContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   scrollContainer: {
     flex: 1,

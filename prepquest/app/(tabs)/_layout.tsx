@@ -8,6 +8,7 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          tabBarStyle: { display: 'none' },
         }}
         tabBar={() => <NavBar />}
       >
@@ -23,5 +24,6 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'white',
   }
 });

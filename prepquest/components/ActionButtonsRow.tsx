@@ -8,13 +8,15 @@ interface ActionButtonsRowProps {
   iconNames: Array<keyof typeof Ionicons.glyphMap>;
   onCancel: () => void;
   onIconPress?: (index: number) => void;
+  iconColors?: string[];
 }
 
 export function ActionButtonsRow({ 
   style,
   iconNames,
   onCancel,
-  onIconPress
+  onIconPress,
+  iconColors = []
 }: ActionButtonsRowProps) {
   return (
     <View style={[styles.container, style]}>
@@ -23,6 +25,7 @@ export function ActionButtonsRow({
           key={index}
           iconName={iconName}
           onPress={() => onIconPress?.(index)}
+          color={iconColors[index] || 'black'}
         />
       ))}
       <TouchableOpacity onPress={onCancel}>
@@ -39,7 +42,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingRight: 16,
     gap: 9,
-    height: 48,
+    height: 44,
   },
   cancelButton: {
     fontSize: 16,

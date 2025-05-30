@@ -174,9 +174,10 @@ export default function DecksScreen() {
               }
             ]}>
               <ActionButtonsRow
-                iconNames={['share-outline', 'trash-outline']}
+                iconNames={['folder', 'trash']}
                 onCancel={handleCancel}
                 onIconPress={handleActionIconPress}
+                iconColors={['black', '#FF3B30']}
               />
             </Animated.View>
 
@@ -255,7 +256,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
   },
   titleContainer: {
     position: 'relative',

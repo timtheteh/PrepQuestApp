@@ -5,12 +5,14 @@ interface CircleIconButtonProps {
   iconName: keyof typeof Ionicons.glyphMap;
   size?: number;
   onPress?: () => void;
+  color?: string;
 }
 
 export function CircleIconButton({ 
   iconName, 
   size = 24,
-  onPress 
+  onPress,
+  color = 'black'
 }: CircleIconButtonProps) {
   return (
     <TouchableOpacity 
@@ -21,7 +23,7 @@ export function CircleIconButton({
       onPressOut={(e) => e.currentTarget.setNativeProps({ style: styles.circleButton })}
       onPress={onPress}
     >
-      <Ionicons name={iconName} size={size} color="black" />
+      <Ionicons name={iconName} size={size} color={color} />
     </TouchableOpacity>
   );
 }

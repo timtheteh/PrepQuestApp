@@ -1,28 +1,32 @@
 import React from 'react';
-import { StyleSheet, Animated, Dimensions } from 'react-native';
+import { StyleSheet, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface GreyOverlayBackgroundProps {
   visible: boolean;
   opacity?: Animated.Value;
+  onPress?: () => void;
 }
 
 export function GreyOverlayBackground({ 
   visible,
-  opacity = new Animated.Value(0)
+  opacity = new Animated.Value(0),
+  onPress
 }: GreyOverlayBackgroundProps) {
   if (!visible) return null;
 
   return (
-    <Animated.View 
-      style={[
-        styles.overlay,
-        {
-          opacity: opacity
-        }
-      ]}
-    />
+    <TouchableWithoutFeedback onPress={onPress}>
+      <Animated.View 
+        style={[
+          styles.overlay,
+          {
+            opacity: opacity
+          }
+        ]}
+      />
+    </TouchableWithoutFeedback>
   );
 }
 

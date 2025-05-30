@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   scrollWrapper: {
     flex: 1,
-    marginTop: 5
+    marginTop: 10
   },
   scrollContainer: {
     flex: 1,

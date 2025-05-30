@@ -11,6 +11,7 @@ interface CardProps {
   backgroundImage: ImageSourcePropType;
   pressedBackgroundImage: ImageSourcePropType;
   containerWidthPercentage?: Animated.Value;
+  isSelectMode?: boolean;
 }
 
 export function Card({ 
@@ -19,7 +20,8 @@ export function Card({
   onPress, 
   backgroundImage, 
   pressedBackgroundImage,
-  containerWidthPercentage = new Animated.Value(100)
+  containerWidthPercentage = new Animated.Value(100),
+  isSelectMode = false
 }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
@@ -31,16 +33,28 @@ export function Card({
     })
   };
 
+  const handlePressIn = () => {
+    if (!isSelectMode) {
+      setIsPressed(true);
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!isSelectMode) {
+      setIsPressed(false);
+    }
+  };
+
   return (
     <View style={styles.shadowContainer}>
       <Pressable 
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={onPress}
       >
         <Animated.View style={[styles.container, containerStyle, style]}>
           <ImageBackground 
-            source={isPressed ? pressedBackgroundImage : backgroundImage}
+            source={isPressed && !isSelectMode ? pressedBackgroundImage : backgroundImage}
             style={styles.imageBackground}
             imageStyle={[
               styles.backgroundImage,

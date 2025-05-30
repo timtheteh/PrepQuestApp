@@ -257,6 +257,7 @@ export default function DecksScreen() {
           backgroundImage={design.background}
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
+          isSelectMode={isSelectMode}
         />
       );
     });
@@ -274,6 +275,7 @@ export default function DecksScreen() {
           backgroundImage={design.background}
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
+          isSelectMode={isSelectMode}
         />
       );
     });

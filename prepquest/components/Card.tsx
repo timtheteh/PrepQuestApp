@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions, ImageSourcePropType } from 'react-native';
+import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions, ImageSourcePropType, Animated } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
@@ -10,29 +10,60 @@ interface CardProps {
   onPress?: () => void;
   backgroundImage: ImageSourcePropType;
   pressedBackgroundImage: ImageSourcePropType;
+  containerWidthPercentage?: Animated.Value;
+  isSelectMode?: boolean;
 }
 
-export function Card({ style, children, onPress, backgroundImage, pressedBackgroundImage }: CardProps) {
+export function Card({ 
+  style, 
+  children, 
+  onPress, 
+  backgroundImage, 
+  pressedBackgroundImage,
+  containerWidthPercentage = new Animated.Value(100),
+  isSelectMode = false
+}: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
+
+  const containerStyle = {
+    width: containerWidthPercentage.interpolate({
+      inputRange: [85, 100],
+      outputRange: ['85%', '100%']
+    })
+  };
+
+  const handlePressIn = () => {
+    if (!isSelectMode) {
+      setIsPressed(true);
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!isSelectMode) {
+      setIsPressed(false);
+    }
+  };
 
   return (
     <View style={styles.shadowContainer}>
       <Pressable 
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={onPress}
       >
-        <ImageBackground 
-          source={isPressed ? pressedBackgroundImage : backgroundImage}
-          style={[styles.container, style]}
-          imageStyle={[
-            styles.backgroundImage,
-            { resizeMode: isLargeScreen ? 'stretch' : 'contain' }
-          ]}
-        >
-          {children}
-        </ImageBackground>
+        <Animated.View style={[styles.container, containerStyle, style]}>
+          <ImageBackground 
+            source={isPressed && !isSelectMode ? pressedBackgroundImage : backgroundImage}
+            style={styles.imageBackground}
+            imageStyle={[
+              styles.backgroundImage,
+              { resizeMode: isLargeScreen ? 'stretch' : 'contain' }
+            ]}
+          >
+            {children}
+          </ImageBackground>
+        </Animated.View>
       </Pressable>
     </View>
   );
@@ -52,9 +83,12 @@ const styles = StyleSheet.create({
   },
   container: {
     height: 124,
-    width: '100%',
     borderRadius: 20,
     overflow: 'hidden', // This ensures the image respects the border radius
+  },
+  imageBackground: {
+    height: '100%',
+    width: '100%',
   },
   backgroundImage: {
     width: '100%',

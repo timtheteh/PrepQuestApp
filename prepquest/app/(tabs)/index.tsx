@@ -50,7 +50,6 @@ export default function DecksScreen() {
   const screenOpacity = useRef(new Animated.Value(0)).current;
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
-  const circleButtonOpacity = useRef(new Animated.Value(0)).current;
 
   const selectUnselectedDuration = 300;
 
@@ -79,7 +78,6 @@ export default function DecksScreen() {
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
       cardWidthPercentage.setValue(100);
-      circleButtonOpacity.setValue(0);
       circleButtonOpacity.setValue(0);
     }
   }, [isFocused]);
@@ -159,47 +157,39 @@ export default function DecksScreen() {
       Animated.timing(shiftAnim, {
         toValue: SHIFT_DISTANCE,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
         toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-        duration: selectUnselectedDuration,
         duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),
       Animated.timing(actionRowOpacity, {
         toValue: 1,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(selectTextAnim, {
         toValue: 1,
-        duration: selectUnselectedDuration,
         duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(fabOpacity, {
         toValue: 0,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(cardWidthPercentage, {
         toValue: 85,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),
+      Animated.timing(circleButtonOpacity, {
+        toValue: 1,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      })
     ]).start();
-
-    // Separate animation for circle button
-    Animated.timing(circleButtonOpacity, {
-      toValue: 1,
-      duration: selectUnselectedDuration,
-      useNativeDriver: true,
-    }).start();
   };
 
   const handleCancel = () => {
@@ -207,47 +197,39 @@ export default function DecksScreen() {
       Animated.timing(shiftAnim, {
         toValue: 0,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
         toValue: BOTTOM_SPACING,
-        duration: selectUnselectedDuration,
         duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),
       Animated.timing(actionRowOpacity, {
         toValue: 0,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(selectTextAnim, {
         toValue: 0,
-        duration: selectUnselectedDuration,
         duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(fabOpacity, {
         toValue: 1,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: true,
       }),
       Animated.timing(cardWidthPercentage, {
         toValue: 100,
         duration: selectUnselectedDuration,
-        duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),
-    ]).start();
-
-    // Separate animation for circle button
-    Animated.timing(circleButtonOpacity, {
-      toValue: 0,
-      duration: selectUnselectedDuration,
-      useNativeDriver: true,
-    }).start(() => {
+      Animated.timing(circleButtonOpacity, {
+        toValue: 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
       setIsSelectMode(false);
       setSelectedStudyCards(new Set());
       setSelectedInterviewCards(new Set());
@@ -330,6 +312,8 @@ export default function DecksScreen() {
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
+          selected={selectedStudyCards.has(index)}
+          onSelectPress={() => handleStudyCardSelection(index, !selectedStudyCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
         />
       );
@@ -349,6 +333,8 @@ export default function DecksScreen() {
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
+          selected={selectedInterviewCards.has(index)}
+          onSelectPress={() => handleInterviewCardSelection(index, !selectedInterviewCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
         />
       );

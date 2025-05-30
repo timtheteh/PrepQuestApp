@@ -31,7 +31,6 @@ export function Card({
   circleButtonOpacity
 }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
-  const [isSelected, setIsSelected] = useState(selected);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
 
   const containerStyle = {
@@ -51,12 +50,6 @@ export function Card({
     if (!isSelectMode) {
       setIsPressed(false);
     }
-  };
-
-  const handleSelectPress = () => {
-    const newSelectedState = !isSelected;
-    setIsSelected(newSelectedState);
-    onSelectionChange?.(newSelectedState);
   };
 
   return (

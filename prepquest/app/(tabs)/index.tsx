@@ -46,6 +46,7 @@ export default function DecksScreen() {
   const selectTextAnim = useRef(new Animated.Value(0)).current;
   const fabOpacity = useRef(new Animated.Value(1)).current;
   const screenOpacity = useRef(new Animated.Value(0)).current;
+  const cardWidthPercentage = useRef(new Animated.Value(100)).current;
 
   const selectUnselectedDuration = 200;
 
@@ -71,6 +72,7 @@ export default function DecksScreen() {
       actionRowOpacity.setValue(0);
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
+      cardWidthPercentage.setValue(100);
     }
   }, [isFocused]);
 
@@ -120,6 +122,11 @@ export default function DecksScreen() {
           toValue: 1,
           duration: selectUnselectedDuration,
           useNativeDriver: true,
+        }),
+        Animated.timing(cardWidthPercentage, {
+          toValue: 100,
+          duration: selectUnselectedDuration,
+          useNativeDriver: false,
         })
       ] : [])
     ]).start();
@@ -153,6 +160,11 @@ export default function DecksScreen() {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
+      }),
+      Animated.timing(cardWidthPercentage, {
+        toValue: 85,
+        duration: 300,
+        useNativeDriver: false,
       })
     ]).start();
   };
@@ -183,6 +195,11 @@ export default function DecksScreen() {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
+      }),
+      Animated.timing(cardWidthPercentage, {
+        toValue: 100,
+        duration: 300,
+        useNativeDriver: false,
       })
     ]).start(() => {
       setIsSelectMode(false);
@@ -229,7 +246,6 @@ export default function DecksScreen() {
   });
 
   const renderStudyCards = () => {
-    // This will be replaced with actual study deck data later
     return Array(8).fill(null).map((_, index) => {
       const design = cardDesigns[index % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
@@ -240,15 +256,15 @@ export default function DecksScreen() {
           style={style}
           backgroundImage={design.background}
           pressedBackgroundImage={design.pressed}
+          containerWidthPercentage={cardWidthPercentage}
         />
       );
     });
   };
 
   const renderInterviewCards = () => {
-    // This will be replaced with actual interview deck data later
     return Array(6).fill(null).map((_, index) => {
-      const design = cardDesigns[(index + 2) % 4]; // Offset by 2 to have different initial cards
+      const design = cardDesigns[(index + 2) % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
@@ -257,6 +273,7 @@ export default function DecksScreen() {
           style={style}
           backgroundImage={design.background}
           pressedBackgroundImage={design.pressed}
+          containerWidthPercentage={cardWidthPercentage}
         />
       );
     });

@@ -16,6 +16,7 @@ interface CardProps {
   selected?: boolean;
   onSelectPress?: () => void;
   circleButtonOpacity?: Animated.Value;
+  onSelectionChange?: (selected: boolean) => void;
 }
 
 export function Card({ 
@@ -28,9 +29,11 @@ export function Card({
   isSelectMode = false,
   selected = false,
   onSelectPress,
-  circleButtonOpacity = new Animated.Value(1)
+  circleButtonOpacity = new Animated.Value(1),
+  onSelectionChange
 }: CardProps) {
   const [isPressed, setIsPressed] = useState(false);
+  const [isSelected, setIsSelected] = useState(selected);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
 
   const containerStyle = {
@@ -50,6 +53,12 @@ export function Card({
     if (!isSelectMode) {
       setIsPressed(false);
     }
+  };
+
+  const handleSelectPress = () => {
+    const newSelectedState = !isSelected;
+    setIsSelected(newSelectedState);
+    onSelectionChange?.(newSelectedState);
   };
 
   return (
@@ -78,11 +87,11 @@ export function Card({
         <CircleSelectButton
           style={{
             ...styles.circleSelectButton,
-            ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {}),
-            opacity: circleButtonOpacity
+            ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {})
           }}
-          selected={selected}
-          onPress={onSelectPress}
+          selected={isSelected}
+          onPress={handleSelectPress}
+          opacity={circleButtonOpacity}
         />
       )}
     </View>

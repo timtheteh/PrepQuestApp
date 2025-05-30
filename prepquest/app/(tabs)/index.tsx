@@ -38,6 +38,8 @@ const cardDesigns = [
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedStudyCards, setSelectedStudyCards] = useState<Set<number>>(new Set());
+  const [selectedInterviewCards, setSelectedInterviewCards] = useState<Set<number>>(new Set());
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -68,6 +70,8 @@ export default function DecksScreen() {
   useEffect(() => {
     if (!isFocused) {
       setIsSelectMode(false);
+      setSelectedStudyCards(new Set());
+      setSelectedInterviewCards(new Set());
       shiftAnim.setValue(0);
       marginAnim.setValue(BOTTOM_SPACING);
       actionRowOpacity.setValue(0);
@@ -89,6 +93,8 @@ export default function DecksScreen() {
     // If in select mode, reset it first
     if (isSelectMode) {
       setIsSelectMode(false);
+      setSelectedStudyCards(new Set());
+      setSelectedInterviewCards(new Set());
       
       Animated.parallel([
         // Mode toggle animation
@@ -225,6 +231,8 @@ export default function DecksScreen() {
       })
     ]).start(() => {
       setIsSelectMode(false);
+      setSelectedStudyCards(new Set());
+      setSelectedInterviewCards(new Set());
     });
   };
 
@@ -267,6 +275,30 @@ export default function DecksScreen() {
     outputRange: [0, 1],
   });
 
+  const handleStudyCardSelection = (index: number, selected: boolean) => {
+    setSelectedStudyCards(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(index);
+      } else {
+        newSet.delete(index);
+      }
+      return newSet;
+    });
+  };
+
+  const handleInterviewCardSelection = (index: number, selected: boolean) => {
+    setSelectedInterviewCards(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(index);
+      } else {
+        newSet.delete(index);
+      }
+      return newSet;
+    });
+  };
+
   const renderStudyCards = () => {
     return Array(8).fill(null).map((_, index) => {
       const design = cardDesigns[index % 4];
@@ -280,7 +312,9 @@ export default function DecksScreen() {
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
+          selected={selectedStudyCards.has(index)}
           circleButtonOpacity={circleButtonOpacity}
+          onSelectionChange={(selected) => handleStudyCardSelection(index, selected)}
         />
       );
     });
@@ -299,7 +333,9 @@ export default function DecksScreen() {
           pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
+          selected={selectedInterviewCards.has(index)}
           circleButtonOpacity={circleButtonOpacity}
+          onSelectionChange={(selected) => handleInterviewCardSelection(index, selected)}
         />
       );
     });

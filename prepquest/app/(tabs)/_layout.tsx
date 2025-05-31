@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import { NavBar } from '@/components/NavBar';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { SlidingMenu } from '@/components/SlidingMenu';
+import { AIPromptModal } from '@/components/AIPromptModal';
 import { createContext, useState, useRef, useCallback } from 'react';
 import { Animated } from 'react-native';
 
@@ -15,6 +16,9 @@ export const MenuContext = createContext<{
   handleDismissMenu: () => void;
   showSlidingMenu: boolean;
   setShowSlidingMenu: (value: boolean) => void;
+  isAIPromptOpen: boolean;
+  setIsAIPromptOpen: (value: boolean) => void;
+  aiPromptOpacity: Animated.Value;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
@@ -23,18 +27,38 @@ export const MenuContext = createContext<{
   handleDismissMenu: () => {},
   showSlidingMenu: false,
   setShowSlidingMenu: () => {},
+  isAIPromptOpen: false,
+  setIsAIPromptOpen: () => {},
+  aiPromptOpacity: new Animated.Value(0),
 });
 
 export default function TabLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSlidingMenu, setShowSlidingMenu] = useState(false);
+  const [isAIPromptOpen, setIsAIPromptOpen] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
+  const aiPromptOpacity = useRef(new Animated.Value(0)).current;
 
   const slidingMenuDuration = 300;
 
   const handleDismissMenu = useCallback(() => {
-    if (showSlidingMenu) {
+    if (isAIPromptOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        }),
+      Animated.timing(aiPromptOpacity, {
+        toValue: 0,
+        duration: slidingMenuDuration,
+        useNativeDriver: true,
+      })]).start(() => {
+        setIsMenuOpen(false);
+        setIsAIPromptOpen(false);
+      });
+    } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
@@ -59,7 +83,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu]);
+  }, [showSlidingMenu, isAIPromptOpen]);
 
   return (
     <MenuContext.Provider value={{ 
@@ -69,7 +93,10 @@ export default function TabLayout() {
       setIsMenuOpen,
       handleDismissMenu,
       showSlidingMenu,
-      setShowSlidingMenu
+      setShowSlidingMenu,
+      isAIPromptOpen,
+      setIsAIPromptOpen,
+      aiPromptOpacity
     }}>
       <View style={styles.container}>
         <Tabs
@@ -95,6 +122,10 @@ export default function TabLayout() {
             translateX={menuTranslateX}
           />
         )}
+        <AIPromptModal
+          visible={isAIPromptOpen}
+          opacity={aiPromptOpacity}
+        />
       </View>
     </MenuContext.Provider>
   );

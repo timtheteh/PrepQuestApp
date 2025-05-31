@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, View, Animated, ViewStyle, Text, TouchableOpacity, Dimensions, TextInput, Platform, TouchableWithoutFeedback } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { useState, useRef } from 'react';
 import Feather from '@expo/vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
+import { MenuContext } from '@/app/(tabs)/_layout';
 
 interface HeaderIconButtonsProps {
   onAIPress?: () => void;
@@ -31,6 +32,13 @@ export function HeaderIconButtons({
   onFilterPress,
   onSearchPress
 }: HeaderIconButtonsProps) {
+  const { 
+    setIsMenuOpen, 
+    menuOverlayOpacity,
+    setIsAIPromptOpen,
+    aiPromptOpacity
+  } = useContext(MenuContext);
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [selectedField, setSelectedField] = useState<SortField>(DEFAULT_SORT_FIELD);
@@ -123,6 +131,34 @@ export function HeaderIconButtons({
     collapseFilter();
   };
 
+  const handleAIPress = () => {
+    if (isExpanded) {
+      collapseFilter();
+    }
+    if (isSearchMode) {
+      handleCloseSearch();
+    }
+    
+    setIsMenuOpen(true);
+    setIsAIPromptOpen(true);
+    
+    Animated.timing(aiPromptOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
+    Animated.timing(menuOverlayOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
+    if (onAIPress) {
+      onAIPress();
+    }
+  };
+
   const filterStyle: Animated.WithAnimatedObject<ViewStyle> = {
     width: expandAnim.interpolate({
       inputRange: [0, 1],
@@ -194,7 +230,7 @@ export function HeaderIconButtons({
       <CircleIconButton 
         iconName="sparkles" 
         size={20} 
-        onPress={() => handleOtherButtonPress(onAIPress)} 
+        onPress={handleAIPress}
       />
       <CircleIconButton 
         iconName="calendar" 

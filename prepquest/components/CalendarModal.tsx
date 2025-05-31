@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text, TouchableOpacity } from 'react-native';
+import { ModalButton } from './ModalButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -34,6 +35,26 @@ export function CalendarModal({
             <Text style={styles.doneButton}>Done</Text>
           </TouchableOpacity>
         </View>
+        <View style={styles.buttonRow}>
+          <ModalButton 
+            text="Today"
+            onPress={() => {}}
+          />
+          <ModalButton 
+            text="This Week"
+            onPress={() => {}}
+          />
+        </View>
+        <View style={styles.buttonRow}>
+          <ModalButton 
+            text="This Month"
+            onPress={() => {}}
+          />
+          <ModalButton 
+            text="All Time"
+            onPress={() => {}}
+          />
+        </View>
       </View>
     </Animated.View>
   );
@@ -48,7 +69,7 @@ const styles = StyleSheet.create({
     height: 504,
     marginLeft: -175, // Half of width
     marginTop: -252, // Half of height
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 30,
     zIndex: 1001, // Higher than GreyOverlayBackground
   },
@@ -60,6 +81,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 24,
   },
   title: {
     fontSize: 24,
@@ -72,5 +94,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     color: '#44B88A',
     paddingTop: 2
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
 }); 

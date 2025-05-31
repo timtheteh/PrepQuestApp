@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text, TouchableOpacity } from 'react-native';
 import { ModalButton } from './ModalButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+type TimeFilter = 'today' | 'week' | 'month' | 'all';
 
 interface CalendarModalProps {
   visible: boolean;
@@ -15,6 +17,8 @@ export function CalendarModal({
   opacity = new Animated.Value(0),
   onDone
 }: CalendarModalProps) {
+  const [selectedFilter, setSelectedFilter] = useState<TimeFilter>('week');
+
   if (!visible) return null;
 
   return (
@@ -38,21 +42,25 @@ export function CalendarModal({
         <View style={styles.buttonRow}>
           <ModalButton 
             text="Today"
-            onPress={() => {}}
+            selected={selectedFilter === 'today'}
+            onPress={() => setSelectedFilter('today')}
           />
           <ModalButton 
             text="This Week"
-            onPress={() => {}}
+            selected={selectedFilter === 'week'}
+            onPress={() => setSelectedFilter('week')}
           />
         </View>
         <View style={styles.buttonRow}>
           <ModalButton 
             text="This Month"
-            onPress={() => {}}
+            selected={selectedFilter === 'month'}
+            onPress={() => setSelectedFilter('month')}
           />
           <ModalButton 
             text="All Time"
-            onPress={() => {}}
+            selected={selectedFilter === 'all'}
+            onPress={() => setSelectedFilter('all')}
           />
         </View>
       </View>

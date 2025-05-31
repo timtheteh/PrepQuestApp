@@ -1,6 +1,8 @@
-import { StyleSheet, View, Animated, ViewStyle } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Animated, ViewStyle, Text, TouchableOpacity } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { useState, useRef } from 'react';
+import Feather from '@expo/vector-icons/Feather';
 
 interface HeaderIconButtonsProps {
   onAIPress?: () => void;
@@ -9,6 +11,18 @@ interface HeaderIconButtonsProps {
   onSearchPress?: () => void;
 }
 
+type SortDirection = 'asc' | 'desc';
+type SortField = 'name' | 'dateAdded' | 'lastModified';
+
+const FIELD_LABELS: Record<SortField, string> = {
+  name: 'Name',
+  dateAdded: 'Date Added',
+  lastModified: 'Last Modified'
+};
+
+const DEFAULT_SORT_FIELD: SortField = 'lastModified';
+const DEFAULT_SORT_DIRECTION: SortDirection = 'desc';
+
 export function HeaderIconButtons({
   onAIPress,
   onCalendarPress,
@@ -16,13 +30,19 @@ export function HeaderIconButtons({
   onSearchPress
 }: HeaderIconButtonsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedField, setSelectedField] = useState<SortField>(DEFAULT_SORT_FIELD);
+  const [sortDirections, setSortDirections] = useState<Record<SortField, SortDirection>>({
+    name: 'desc',
+    dateAdded: 'desc',
+    lastModified: DEFAULT_SORT_DIRECTION
+  });
   const expandAnim = useRef(new Animated.Value(0)).current;
 
   const collapseFilter = () => {
     setIsExpanded(false);
     Animated.timing(expandAnim, {
       toValue: 0,
-      duration: 200,
+      duration: 300,
       useNativeDriver: false,
     }).start();
   };
@@ -31,7 +51,7 @@ export function HeaderIconButtons({
     setIsExpanded(!isExpanded);
     Animated.timing(expandAnim, {
       toValue: isExpanded ? 0 : 1,
-      duration: 200,
+      duration: 300,
       useNativeDriver: false,
     }).start();
     
@@ -47,6 +67,26 @@ export function HeaderIconButtons({
     if (callback) {
       callback();
     }
+  };
+
+  const handleSortPress = (field: SortField) => {
+    if (selectedField === field) {
+      // If same field is selected, just toggle direction
+      setSortDirections(prev => ({
+        ...prev,
+        [field]: prev[field] === 'desc' ? 'asc' : 'desc'
+      }));
+    } else {
+      // If different field is selected, update selection and set direction to desc
+      setSelectedField(field);
+      setSortDirections(prev => ({
+        ...prev,
+        [field]: 'desc'
+      }));
+    }
+    
+    // Collapse the filter button after selection
+    collapseFilter();
   };
 
   const filterStyle: Animated.WithAnimatedObject<ViewStyle> = {
@@ -94,10 +134,66 @@ export function HeaderIconButtons({
             }
           ]}
         >
-          <View style={styles.row} />
-          <View style={styles.row} />
-          <View style={styles.row} />
-          <View style={[styles.row, styles.lastRow]} />
+          <TouchableOpacity 
+            style={[
+              styles.row, 
+              styles.summaryRow,
+              { borderBottomWidth: 3 }
+            ]}
+            onPress={collapseFilter}
+          >
+            <Text style={styles.rowText}>{FIELD_LABELS[selectedField]}</Text>
+            <Feather 
+              name={sortDirections[selectedField] === 'desc' ? 'arrow-down' : 'arrow-up'} 
+              size={24} 
+              color="black" 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[
+              styles.row,
+              { borderBottomWidth: 1 },
+              selectedField === 'name' && styles.selectedRow
+            ]} 
+            onPress={() => handleSortPress('name')}
+          >
+            <Text style={styles.rowText}>Name</Text>
+            <Feather 
+              name={sortDirections.name === 'desc' ? 'arrow-down' : 'arrow-up'} 
+              size={24} 
+              color="black" 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[
+              styles.row,
+              { borderBottomWidth: 1 },
+              selectedField === 'dateAdded' && styles.selectedRow
+            ]}
+            onPress={() => handleSortPress('dateAdded')}
+          >
+            <Text style={styles.rowText}>Date Added</Text>
+            <Feather 
+              name={sortDirections.dateAdded === 'desc' ? 'arrow-down' : 'arrow-up'} 
+              size={24} 
+              color="black" 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[
+              styles.row,
+              styles.lastRow,
+              selectedField === 'lastModified' && styles.selectedRow
+            ]}
+            onPress={() => handleSortPress('lastModified')}
+          >
+            <Text style={styles.rowText}>Last Modified</Text>
+            <Feather 
+              name={sortDirections.lastModified === 'desc' ? 'arrow-down' : 'arrow-up'} 
+              size={24} 
+              color="black" 
+            />
+          </TouchableOpacity>
         </Animated.View>
       </Animated.View>
       <CircleIconButton 
@@ -124,10 +220,24 @@ const styles = StyleSheet.create({
   },
   row: {
     height: 46,
-    borderBottomWidth: 1,
+    flexDirection: 'row',
+    paddingLeft: 8,
+    paddingRight: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
     borderBottomColor: '#D5D4DD',
+  },
+  summaryRow: {
+    backgroundColor: '#F8F8F8',
+  },
+  selectedRow: {
+    backgroundColor: 'white',
   },
   lastRow: {
     borderBottomWidth: 0,
+  },
+  rowText: {
+    fontSize: 16,
+    fontFamily: 'Satoshi-Medium',
   },
 }); 

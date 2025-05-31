@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text, TouchableOpacity } from 'react-native';
 import { ModalButton } from './ModalButton';
+import { MenuContext } from '@/app/(tabs)/_layout';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type TimeFilter = 'today' | 'week' | 'month' | 'all';
+type TimeFilter = 'today' | 'week' | 'month' | 'all' | null;
 
 interface CalendarModalProps {
   visible: boolean;
   opacity?: Animated.Value;
-  onDone?: () => void;
+  onDone?: (selectedFilter: TimeFilter) => void;
 }
 
 export function CalendarModal({ 
@@ -17,7 +18,33 @@ export function CalendarModal({
   opacity = new Animated.Value(0),
   onDone
 }: CalendarModalProps) {
-  const [selectedFilter, setSelectedFilter] = useState<TimeFilter>('week');
+  const { handleDismissMenu } = useContext(MenuContext);
+  // Persistent selection that's remembered between modal opens
+  const [confirmedFilter, setConfirmedFilter] = useState<TimeFilter>('all');
+  // Temporary selection while modal is open
+  const [currentFilter, setCurrentFilter] = useState<TimeFilter>('all');
+
+  // Reset current selection to confirmed selection when modal opens
+  React.useEffect(() => {
+    if (visible) {
+      setCurrentFilter(confirmedFilter);
+    }
+  }, [visible]);
+
+  const handleDone = () => {
+    // If no selection is made, default to 'all'
+    const finalFilter = currentFilter === null ? 'all' : currentFilter;
+    setConfirmedFilter(finalFilter);
+    if (onDone) {
+      onDone(finalFilter);
+    }
+    handleDismissMenu();
+  };
+
+  const handleButtonPress = (filter: TimeFilter) => {
+    // If the same button is pressed again, deselect it
+    setCurrentFilter(currentFilter === filter ? null : filter);
+  };
 
   if (!visible) return null;
 
@@ -35,32 +62,32 @@ export function CalendarModal({
           <Text style={styles.title}>
             Filter decks based on{'\n'}date added
           </Text>
-          <TouchableOpacity onPress={onDone}>
+          <TouchableOpacity onPress={handleDone}>
             <Text style={styles.doneButton}>Done</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.buttonRow}>
           <ModalButton 
             text="Today"
-            selected={selectedFilter === 'today'}
-            onPress={() => setSelectedFilter('today')}
+            selected={currentFilter === 'today'}
+            onPress={() => handleButtonPress('today')}
           />
           <ModalButton 
             text="This Week"
-            selected={selectedFilter === 'week'}
-            onPress={() => setSelectedFilter('week')}
+            selected={currentFilter === 'week'}
+            onPress={() => handleButtonPress('week')}
           />
         </View>
         <View style={styles.buttonRow}>
           <ModalButton 
             text="This Month"
-            selected={selectedFilter === 'month'}
-            onPress={() => setSelectedFilter('month')}
+            selected={currentFilter === 'month'}
+            onPress={() => handleButtonPress('month')}
           />
           <ModalButton 
             text="All Time"
-            selected={selectedFilter === 'all'}
-            onPress={() => setSelectedFilter('all')}
+            selected={currentFilter === 'all'}
+            onPress={() => handleButtonPress('all')}
           />
         </View>
       </View>

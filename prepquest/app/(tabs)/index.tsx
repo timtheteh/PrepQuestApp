@@ -417,12 +417,14 @@ export default function DecksScreen() {
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <View style={styles.navBar}>
+          <View style={styles.topBar}>
             <MenuButton 
               style={styles.menuButton}
               onPress={handleMenuPress}
             />
-            
+          </View>
+          
+          <View style={styles.headerIconsContainer}>
             <HeaderIconButtons 
               onAIPress={handleSparklesPress}
               onCalendarPress={handleCalendarPress}
@@ -559,12 +561,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 70 : 16,
+  topBar: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 70 : 16,
+    left: 16,
+    zIndex: 1,
+  },
+  headerIconsContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 70 : 16,
+    right: 16,
+    zIndex: 1,
+  },
+  menuButton: {
+    paddingTop: 8,
   },
   mainContentWrapper: {
     flex: 1,
@@ -572,10 +582,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  menuButton: {
-    padding: 0,
+    marginTop: Platform.OS === 'android' ? 132 : 78,
   },
   titleRow: {
     flexDirection: 'row',

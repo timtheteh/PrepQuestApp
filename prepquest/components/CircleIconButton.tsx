@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface CircleIconButtonProps {
@@ -6,17 +6,19 @@ interface CircleIconButtonProps {
   size?: number;
   onPress?: () => void;
   color?: string;
+  style?: ViewStyle;
 }
 
 export function CircleIconButton({ 
   iconName, 
   size = 24,
   onPress,
-  color = 'black'
+  color = 'black',
+  style
 }: CircleIconButtonProps) {
   return (
     <TouchableOpacity 
-      style={styles.circleButton}
+      style={[styles.circleButton, style]}
       activeOpacity={1}
       pressRetentionOffset={{ top: 0, left: 0, bottom: 0, right: 0 }}
       onPressIn={(e) => e.currentTarget.setNativeProps({ style: styles.circleButtonPressed })}

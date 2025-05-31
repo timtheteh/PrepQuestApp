@@ -44,7 +44,12 @@ export default function DecksScreen() {
   const [selectedInterviewCards, setSelectedInterviewCards] = useState<Set<number>>(new Set());
   const [studyCardsCount, setStudyCardsCount] = useState(0);
   const [interviewCardsCount, setInterviewCardsCount] = useState(0);
-  const { setIsMenuOpen, menuOverlayOpacity, menuTranslateX } = useContext(MenuContext);
+  const { 
+    setIsMenuOpen, 
+    menuOverlayOpacity, 
+    menuTranslateX,
+    setShowSlidingMenu 
+  } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -375,6 +380,7 @@ export default function DecksScreen() {
 
   const handleMenuPress = () => {
     setIsMenuOpen(true);
+    setShowSlidingMenu(true);
     Animated.parallel([
       Animated.timing(menuOverlayOpacity, {
         toValue: 0.4,
@@ -389,6 +395,15 @@ export default function DecksScreen() {
     ]).start();
   };
 
+  const handleSparklesPress = () => {
+    setIsMenuOpen(true);
+    Animated.timing(menuOverlayOpacity, {
+      toValue: 0.4,
+      duration: slidingMenuDuration,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -399,7 +414,9 @@ export default function DecksScreen() {
               onPress={handleMenuPress}
             />
             
-            <HeaderIconButtons />
+            <HeaderIconButtons 
+              onAIPress={handleSparklesPress}
+            />
           </View>
           
           <Animated.View style={[

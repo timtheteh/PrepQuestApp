@@ -13,45 +13,63 @@ export const MenuContext = createContext<{
   menuTranslateX: Animated.Value;
   setIsMenuOpen: (value: boolean) => void;
   handleDismissMenu: () => void;
+  showSlidingMenu: boolean;
+  setShowSlidingMenu: (value: boolean) => void;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
   menuTranslateX: new Animated.Value(-171),
   setIsMenuOpen: () => {},
   handleDismissMenu: () => {},
+  showSlidingMenu: false,
+  setShowSlidingMenu: () => {},
 });
 
 export default function TabLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showSlidingMenu, setShowSlidingMenu] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
 
   const slidingMenuDuration = 300;
 
   const handleDismissMenu = useCallback(() => {
-    Animated.parallel([
+    if (showSlidingMenu) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(menuTranslateX, {
+          toValue: -171,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setShowSlidingMenu(false);
+      });
+    } else {
       Animated.timing(menuOverlayOpacity, {
         toValue: 0,
         duration: slidingMenuDuration,
         useNativeDriver: true,
-      }),
-      Animated.timing(menuTranslateX, {
-        toValue: -171,
-        duration: slidingMenuDuration,
-        useNativeDriver: true,
-      })
-    ]).start(() => {
-      setIsMenuOpen(false);
-    });
-  }, []);
+      }).start(() => {
+        setIsMenuOpen(false);
+      });
+    }
+  }, [showSlidingMenu]);
 
   return (
     <MenuContext.Provider value={{ 
       isMenuOpen, 
-      menuOverlayOpacity,
+      menuOverlayOpacity, 
       menuTranslateX,
       setIsMenuOpen,
-      handleDismissMenu 
+      handleDismissMenu,
+      showSlidingMenu,
+      setShowSlidingMenu
     }}>
       <View style={styles.container}>
         <Tabs
@@ -71,10 +89,12 @@ export default function TabLayout() {
           opacity={menuOverlayOpacity}
           onPress={handleDismissMenu}
         />
-        <SlidingMenu
-          visible={isMenuOpen}
-          translateX={menuTranslateX}
-        />
+        {showSlidingMenu && (
+          <SlidingMenu
+            visible={isMenuOpen}
+            translateX={menuTranslateX}
+          />
+        )}
       </View>
     </MenuContext.Provider>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Animated, Dimensions, Text, View, Image } from 'react-native';
+import { StyleSheet, Animated, Dimensions, Text, View } from 'react-native';
+import { AIDeckCard } from './AIDeckCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -7,6 +8,21 @@ interface AIPromptModalProps {
   visible: boolean;
   opacity?: Animated.Value;
 }
+
+const AI_DECKS = [
+  {
+    normal: require('@/assets/images/AIDeckCover1.png'),
+    pressed: require('@/assets/images/AIDeckCover1Pressed.png'),
+  },
+  {
+    normal: require('@/assets/images/AIDeckCover2.png'),
+    pressed: require('@/assets/images/AIDeckCover2Pressed.png'),
+  },
+  {
+    normal: require('@/assets/images/AIDeckCover3.png'),
+    pressed: require('@/assets/images/AIDeckCover3Pressed.png'),
+  },
+];
 
 export function AIPromptModal({ 
   visible,
@@ -28,21 +44,14 @@ export function AIPromptModal({
           Try these AI Decks created just for you!
         </Text>
         <View style={styles.imageContainer}>
-          <Image 
-            source={require('@/assets/images/AIDeckCover1.png')}
-            style={styles.deckCover}
-            resizeMode="contain"
-          />
-          <Image 
-            source={require('@/assets/images/AIDeckCover2.png')}
-            style={styles.deckCover}
-            resizeMode="contain"
-          />
-          <Image 
-            source={require('@/assets/images/AIDeckCover3.png')}
-            style={styles.deckCover}
-            resizeMode="contain"
-          />
+          {AI_DECKS.map((deck, index) => (
+            <AIDeckCard
+              key={index}
+              backgroundImage={deck.normal}
+              pressedBackgroundImage={deck.pressed}
+              onPress={() => console.log(`AI Deck ${index + 1} pressed`)}
+            />
+          ))}
         </View>
       </View>
     </Animated.View>
@@ -77,10 +86,5 @@ const styles = StyleSheet.create({
   imageContainer: {
     flex: 1,
     gap: 8,
-  },
-  deckCover: {
-    width: '100%',
-    height: 120,
-    borderRadius: 20,
   },
 }); 

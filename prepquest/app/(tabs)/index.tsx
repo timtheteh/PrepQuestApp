@@ -404,6 +404,15 @@ export default function DecksScreen() {
     }).start();
   };
 
+  const handleCalendarPress = () => {
+    setIsMenuOpen(true);
+    Animated.timing(menuOverlayOpacity, {
+      toValue: 0.4,
+      duration: slidingMenuDuration,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -416,6 +425,7 @@ export default function DecksScreen() {
             
             <HeaderIconButtons 
               onAIPress={handleSparklesPress}
+              onCalendarPress={handleCalendarPress}
             />
           </View>
           

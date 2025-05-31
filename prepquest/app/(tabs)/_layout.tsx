@@ -4,6 +4,7 @@ import { NavBar } from '@/components/NavBar';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { SlidingMenu } from '@/components/SlidingMenu';
 import { AIPromptModal } from '@/components/AIPromptModal';
+import { CalendarModal } from '@/components/CalendarModal';
 import { createContext, useState, useRef, useCallback } from 'react';
 import { Animated } from 'react-native';
 
@@ -19,6 +20,9 @@ export const MenuContext = createContext<{
   isAIPromptOpen: boolean;
   setIsAIPromptOpen: (value: boolean) => void;
   aiPromptOpacity: Animated.Value;
+  isCalendarOpen: boolean;
+  setIsCalendarOpen: (value: boolean) => void;
+  calendarOpacity: Animated.Value;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
@@ -30,15 +34,20 @@ export const MenuContext = createContext<{
   isAIPromptOpen: false,
   setIsAIPromptOpen: () => {},
   aiPromptOpacity: new Animated.Value(0),
+  isCalendarOpen: false,
+  setIsCalendarOpen: () => {},
+  calendarOpacity: new Animated.Value(0),
 });
 
 export default function TabLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSlidingMenu, setShowSlidingMenu] = useState(false);
   const [isAIPromptOpen, setIsAIPromptOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
+  const calendarOpacity = useRef(new Animated.Value(0)).current;
 
   const slidingMenuDuration = 300;
 
@@ -50,13 +59,30 @@ export default function TabLayout() {
           duration: slidingMenuDuration,
           useNativeDriver: true,
         }),
-      Animated.timing(aiPromptOpacity, {
-        toValue: 0,
-        duration: slidingMenuDuration,
-        useNativeDriver: true,
-      })]).start(() => {
+        Animated.timing(aiPromptOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
         setIsMenuOpen(false);
         setIsAIPromptOpen(false);
+      });
+    } else if (isCalendarOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(calendarOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsCalendarOpen(false);
       });
     } else if (showSlidingMenu) {
       Animated.parallel([
@@ -83,7 +109,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen]);
 
   return (
     <MenuContext.Provider value={{ 
@@ -96,7 +122,10 @@ export default function TabLayout() {
       setShowSlidingMenu,
       isAIPromptOpen,
       setIsAIPromptOpen,
-      aiPromptOpacity
+      aiPromptOpacity,
+      isCalendarOpen,
+      setIsCalendarOpen,
+      calendarOpacity
     }}>
       <View style={styles.container}>
         <Tabs
@@ -125,6 +154,10 @@ export default function TabLayout() {
         <AIPromptModal
           visible={isAIPromptOpen}
           opacity={aiPromptOpacity}
+        />
+        <CalendarModal
+          visible={isCalendarOpen}
+          opacity={calendarOpacity}
         />
       </View>
     </MenuContext.Provider>

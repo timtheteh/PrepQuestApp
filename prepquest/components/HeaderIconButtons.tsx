@@ -36,7 +36,9 @@ export function HeaderIconButtons({
     setIsMenuOpen, 
     menuOverlayOpacity,
     setIsAIPromptOpen,
-    aiPromptOpacity
+    aiPromptOpacity,
+    setIsCalendarOpen,
+    calendarOpacity
   } = useContext(MenuContext);
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -159,6 +161,34 @@ export function HeaderIconButtons({
     }
   };
 
+  const handleCalendarPress = () => {
+    if (isExpanded) {
+      collapseFilter();
+    }
+    if (isSearchMode) {
+      handleCloseSearch();
+    }
+    
+    setIsMenuOpen(true);
+    setIsCalendarOpen(true);
+    
+    Animated.timing(calendarOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
+    Animated.timing(menuOverlayOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
+    if (onCalendarPress) {
+      onCalendarPress();
+    }
+  };
+
   const filterStyle: Animated.WithAnimatedObject<ViewStyle> = {
     width: expandAnim.interpolate({
       inputRange: [0, 1],
@@ -234,7 +264,7 @@ export function HeaderIconButtons({
       />
       <CircleIconButton 
         iconName="calendar" 
-        onPress={() => handleOtherButtonPress(onCalendarPress)} 
+        onPress={handleCalendarPress}
       />
       <Animated.View style={[styles.filterButton, filterStyle]}>
         {!isExpanded && (

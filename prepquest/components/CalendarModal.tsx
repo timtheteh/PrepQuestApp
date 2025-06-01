@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Neuton-Regular',
     flex: 1,
-    lineHeight: 16,
+    lineHeight: 24,
   },
   title: {
     fontSize: 24,

@@ -4,7 +4,7 @@ import { Calendar } from 'react-native-calendars';
 import { MenuContext } from '@/app/(tabs)/_layout';
 import { ModalButton } from './ModalButton';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'custom' | null;
 
@@ -160,9 +160,9 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     width: 350,
-    height: 504,
+    height: SCREEN_HEIGHT > 900 ? 600 : 504,
     marginLeft: -175,
-    marginTop: -252,
+    marginTop: SCREEN_HEIGHT > 900 ? -300 : -252,
     backgroundColor: '#FFFFFF',
     borderRadius: 30,
     zIndex: 1001,

@@ -33,7 +33,7 @@ export function AddDeckModal({
           <View style={styles.toggleRow}>
             <InterviewStudyToggle />
           </View>
-          <View style={styles.buttonRow}>
+          <View style={styles.firstButtonRow}>
             <AddDeckModalButton>
               {/* Button 1 content */}
             </AddDeckModalButton>
@@ -91,6 +91,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 8,
     paddingLeft: 8,
+  },
+  firstButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    paddingHorizontal: 6
   },
   buttonRow: {
     flexDirection: 'row',

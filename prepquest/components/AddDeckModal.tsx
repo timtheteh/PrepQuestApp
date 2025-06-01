@@ -66,6 +66,8 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     flexDirection: 'column',
+    borderWidth: 1,
+    borderColor: 'red',
   },
   titleRow: {
     alignItems: 'center',
@@ -78,6 +80,7 @@ const styles = StyleSheet.create({
   toggleRow: {
     alignItems: 'center',
     marginVertical: 8,
+    paddingLeft: 8,
   },
   row: {
     marginBottom: 24,

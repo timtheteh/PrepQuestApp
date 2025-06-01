@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text } from 'react-native';
 import { InterviewStudyToggle } from './InterviewStudyToggle';
+import { AddDeckModalButton } from './AddDeckModalButton';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -32,11 +33,21 @@ export function AddDeckModal({
           <View style={styles.toggleRow}>
             <InterviewStudyToggle />
           </View>
-          <View style={styles.row}>
-            {/* Third row content will be added here */}
+          <View style={styles.buttonRow}>
+            <AddDeckModalButton>
+              {/* Button 1 content */}
+            </AddDeckModalButton>
+            <AddDeckModalButton>
+              {/* Button 2 content */}
+            </AddDeckModalButton>
           </View>
-          <View style={styles.row}>
-            {/* Fourth row content will be added here */}
+          <View style={styles.buttonRow}>
+            <AddDeckModalButton>
+              {/* Button 3 content */}
+            </AddDeckModalButton>
+            <AddDeckModalButton>
+              {/* Button 4 content */}
+            </AddDeckModalButton>
           </View>
         </View>
       </View>
@@ -66,8 +77,7 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     flexDirection: 'column',
-    borderWidth: 1,
-    borderColor: 'red',
+
   },
   titleRow: {
     alignItems: 'center',
@@ -82,7 +92,10 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     paddingLeft: 8,
   },
-  row: {
-    marginBottom: 24,
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    paddingHorizontal: 6
   },
 }); 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Animated, Dimensions, View } from 'react-native';
+import { StyleSheet, Animated, Dimensions, View, Text } from 'react-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -24,7 +24,20 @@ export function AddDeckModal({
       ]}
     >
       <View style={styles.content}>
-        {/* Content will be added here */}
+        <View style={styles.column}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Add Deck</Text>
+          </View>
+          <View style={styles.row}>
+            {/* Second row content will be added here */}
+          </View>
+          <View style={styles.row}>
+            {/* Third row content will be added here */}
+          </View>
+          <View style={styles.row}>
+            {/* Fourth row content will be added here */}
+          </View>
+        </View>
       </View>
     </Animated.View>
   );
@@ -46,6 +59,22 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  column: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  titleRow: {
+    alignItems: 'center',
+  },
+  title: {
+    fontFamily: 'Neuton-Regular',
+    fontSize: 32,
+    textAlign: 'center',
+  },
+  row: {
+    marginBottom: 24,
   },
 }); 

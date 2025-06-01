@@ -1,8 +1,10 @@
 import { StyleSheet, TouchableOpacity, ViewProps } from 'react-native';
-import { ReactNode } from 'react';
+import { ReactNode, useContext } from 'react';
+import { MenuContext } from '@/app/(tabs)/_layout';
+import { Animated } from 'react-native';
 
 interface FloatingActionButtonProps extends ViewProps {
-  onPress: () => void;
+  onPress?: () => void;
   children: ReactNode;
 }
 
@@ -12,10 +14,39 @@ export function FloatingActionButton({
   children,
   ...props 
 }: FloatingActionButtonProps) {
+  const { 
+    setIsMenuOpen, 
+    setIsAddDeckOpen, 
+    menuOverlayOpacity, 
+    addDeckOpacity 
+  } = useContext(MenuContext);
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    }
+
+    setIsMenuOpen(true);
+    setIsAddDeckOpen(true);
+
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.5,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(addDeckOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
   return (
     <TouchableOpacity
       style={[styles.button, style]}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.8}
       {...props}
     >

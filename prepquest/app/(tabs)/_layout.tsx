@@ -5,6 +5,7 @@ import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { SlidingMenu } from '@/components/SlidingMenu';
 import { AIPromptModal } from '@/components/AIPromptModal';
 import { CalendarModal } from '@/components/CalendarModal';
+import { AddDeckModal } from '@/components/AddDeckModal';
 import { createContext, useState, useRef, useCallback } from 'react';
 import { Animated } from 'react-native';
 
@@ -23,6 +24,9 @@ export const MenuContext = createContext<{
   isCalendarOpen: boolean;
   setIsCalendarOpen: (value: boolean) => void;
   calendarOpacity: Animated.Value;
+  isAddDeckOpen: boolean;
+  setIsAddDeckOpen: (value: boolean) => void;
+  addDeckOpacity: Animated.Value;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
@@ -37,6 +41,9 @@ export const MenuContext = createContext<{
   isCalendarOpen: false,
   setIsCalendarOpen: () => {},
   calendarOpacity: new Animated.Value(0),
+  isAddDeckOpen: false,
+  setIsAddDeckOpen: () => {},
+  addDeckOpacity: new Animated.Value(0),
 });
 
 export default function TabLayout() {
@@ -44,10 +51,12 @@ export default function TabLayout() {
   const [showSlidingMenu, setShowSlidingMenu] = useState(false);
   const [isAIPromptOpen, setIsAIPromptOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isAddDeckOpen, setIsAddDeckOpen] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
   const calendarOpacity = useRef(new Animated.Value(0)).current;
+  const addDeckOpacity = useRef(new Animated.Value(0)).current;
 
   const slidingMenuDuration = 300;
 
@@ -84,6 +93,22 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsCalendarOpen(false);
       });
+    } else if (isAddDeckOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(addDeckOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsAddDeckOpen(false);
+      });
     } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -109,7 +134,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen]);
 
   return (
     <MenuContext.Provider value={{ 
@@ -125,7 +150,10 @@ export default function TabLayout() {
       aiPromptOpacity,
       isCalendarOpen,
       setIsCalendarOpen,
-      calendarOpacity
+      calendarOpacity,
+      isAddDeckOpen,
+      setIsAddDeckOpen,
+      addDeckOpacity
     }}>
       <View style={styles.container}>
         <Tabs
@@ -158,6 +186,10 @@ export default function TabLayout() {
         <CalendarModal
           visible={isCalendarOpen}
           opacity={calendarOpacity}
+        />
+        <AddDeckModal
+          visible={isAddDeckOpen}
+          opacity={addDeckOpacity}
         />
       </View>
     </MenuContext.Provider>

@@ -1,16 +1,17 @@
 import React, { useState, useContext } from 'react';
-import { StyleSheet, Animated, Dimensions, View, Text, TouchableOpacity } from 'react-native';
-import { ModalButton } from './ModalButton';
+import { StyleSheet, Animated, Dimensions, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { MenuContext } from '@/app/(tabs)/_layout';
+import { ModalButton } from './ModalButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type TimeFilter = 'today' | 'week' | 'month' | 'all' | null;
+type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'custom' | null;
 
 interface CalendarModalProps {
   visible: boolean;
   opacity?: Animated.Value;
-  onDone?: (selectedFilter: TimeFilter) => void;
+  onDone?: (selectedFilter: TimeFilter, customDate?: string) => void;
 }
 
 export function CalendarModal({ 
@@ -19,31 +20,39 @@ export function CalendarModal({
   onDone
 }: CalendarModalProps) {
   const { handleDismissMenu } = useContext(MenuContext);
-  // Persistent selection that's remembered between modal opens
   const [confirmedFilter, setConfirmedFilter] = useState<TimeFilter>('all');
-  // Temporary selection while modal is open
   const [currentFilter, setCurrentFilter] = useState<TimeFilter>('all');
+  const [confirmedDate, setConfirmedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>('');
 
-  // Reset current selection to confirmed selection when modal opens
+  // Reset to last confirmed selection when modal opens
   React.useEffect(() => {
     if (visible) {
       setCurrentFilter(confirmedFilter);
+      setSelectedDate(confirmedDate);
     }
-  }, [visible]);
+  }, [visible, confirmedFilter, confirmedDate]);
 
   const handleDone = () => {
-    // If no selection is made, default to 'all'
     const finalFilter = currentFilter === null ? 'all' : currentFilter;
     setConfirmedFilter(finalFilter);
+    setConfirmedDate(finalFilter === 'custom' ? selectedDate : '');
     if (onDone) {
-      onDone(finalFilter);
+      onDone(finalFilter, finalFilter === 'custom' ? selectedDate : undefined);
     }
     handleDismissMenu();
   };
 
   const handleButtonPress = (filter: TimeFilter) => {
-    // If the same button is pressed again, deselect it
     setCurrentFilter(currentFilter === filter ? null : filter);
+    if (filter !== 'custom') {
+      setSelectedDate('');
+    }
+  };
+
+  const handleDateSelect = (date: any) => {
+    setSelectedDate(date.dateString);
+    setCurrentFilter('custom');
   };
 
   if (!visible) return null;
@@ -57,40 +66,90 @@ export function CalendarModal({
         }
       ]}
     >
-      <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>
-            Filter decks based on{'\n'}date added
-          </Text>
-          <TouchableOpacity onPress={handleDone}>
-            <Text style={styles.doneButton}>Done</Text>
-          </TouchableOpacity>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+        <View style={styles.subtitleRow}>
+            <Text style={styles.subtitle}>
+              Press Done or Choose Date to apply your selection.
+            </Text>
+          </View>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>
+              Filter decks based on{'\n'}date added
+            </Text>
+            <TouchableOpacity onPress={handleDone}>
+              <Text style={styles.doneButton}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.buttonRow}>
+            <ModalButton 
+              text="Today"
+              selected={currentFilter === 'today'}
+              onPress={() => handleButtonPress('today')}
+            />
+            <ModalButton 
+              text="This Week"
+              selected={currentFilter === 'week'}
+              onPress={() => handleButtonPress('week')}
+            />
+          </View>
+          <View style={styles.buttonRow}>
+            <ModalButton 
+              text="This Month"
+              selected={currentFilter === 'month'}
+              onPress={() => handleButtonPress('month')}
+            />
+            <ModalButton 
+              text="All Time"
+              selected={currentFilter === 'all'}
+              onPress={() => handleButtonPress('all')}
+            />
+          </View>
+          <View style={styles.calendarContainer}>
+            <Calendar
+              current={selectedDate || undefined}
+              onDayPress={handleDateSelect}
+              markedDates={{
+                [selectedDate]: {
+                  selected: true,
+                  selectedColor: '#4F41D8'
+                }
+              }}
+              theme={{
+                backgroundColor: '#ffffff',
+                calendarBackground: '#ffffff',
+                textSectionTitleColor: '#b6c1cd',
+                selectedDayBackgroundColor: '#4F41D8',
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: '#4F41D8',
+                dayTextColor: '#2d4150',
+                textDisabledColor: '#d9e1e8',
+                dotColor: '#4F41D8',
+                monthTextColor: '#000000',
+                textMonthFontFamily: 'Satoshi-Medium',
+                textDayHeaderFontFamily: 'Satoshi-Regular',
+                textDayFontFamily: 'Satoshi-Regular',
+                textDayHeaderFontSize: 14,
+                textMonthFontSize: 20,
+                arrowColor: '#000000',
+              }}
+            />
+          </View>
+          {selectedDate && (
+            <View style={styles.dateDisplay}>
+              <Text style={styles.dateText}>
+                {selectedDate.split('-').reverse().join(' / ')}
+              </Text>
+              <TouchableOpacity 
+                style={styles.chooseDateButton}
+                onPress={handleDone}
+              >
+                <Text style={styles.chooseDateButtonText}>Choose Date</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-        <View style={styles.buttonRow}>
-          <ModalButton 
-            text="Today"
-            selected={currentFilter === 'today'}
-            onPress={() => handleButtonPress('today')}
-          />
-          <ModalButton 
-            text="This Week"
-            selected={currentFilter === 'week'}
-            onPress={() => handleButtonPress('week')}
-          />
-        </View>
-        <View style={styles.buttonRow}>
-          <ModalButton 
-            text="This Month"
-            selected={currentFilter === 'month'}
-            onPress={() => handleButtonPress('month')}
-          />
-          <ModalButton 
-            text="All Time"
-            selected={currentFilter === 'all'}
-            onPress={() => handleButtonPress('all')}
-          />
-        </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 }
@@ -102,21 +161,32 @@ const styles = StyleSheet.create({
     left: '50%',
     width: 350,
     height: 504,
-    marginLeft: -175, // Half of width
-    marginTop: -252, // Half of height
+    marginLeft: -175,
+    marginTop: -252,
     backgroundColor: '#FFFFFF',
     borderRadius: 30,
-    zIndex: 1001, // Higher than GreyOverlayBackground
+    zIndex: 1001,
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
-    flex: 1,
     padding: 24,
+  },
+  subtitleRow: {
+    marginBottom: 12,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 24,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontFamily: 'Neuton-Regular',
+    flex: 1,
+    lineHeight: 16,
   },
   title: {
     fontSize: 24,
@@ -134,5 +204,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
+  },
+  calendarContainer: {
+    marginTop: 0,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+  },
+  dateDisplay: {
+    marginTop: 16,
+    paddingLeft: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 16,
+    fontFamily: 'Satoshi-Regular',
+    color: '#000000',
+  },
+  chooseDateButton: {
+    backgroundColor: '#4F41D8',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 30,
+  },
+  chooseDateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Satoshi-Medium',
   },
 }); 

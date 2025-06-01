@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { StyleSheet, TouchableWithoutFeedback, View, Text } from 'react-native';
+import { SvgProps } from 'react-native-svg';
 
 interface AddDeckModalButtonProps {
   onPress?: () => void;
-  children?: React.ReactNode;
+  title: string;
+  Icon: React.FC<SvgProps>;
+  marginBottom?: number;
 }
 
 export function AddDeckModalButton({ 
   onPress,
-  children 
+  title,
+  Icon,
+  marginBottom = 8
 }: AddDeckModalButtonProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -24,7 +29,14 @@ export function AddDeckModalButton({
         styles.button,
         isPressed ? styles.buttonPressed : styles.buttonUnpressed
       ]}>
-        {children}
+        <View style={styles.column}>
+          <View style={[styles.titleRow, { marginBottom }]}>
+            <Text style={styles.title}>{title}</Text>
+          </View>
+          <View style={styles.iconRow}>
+            <Icon />
+          </View>
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -55,5 +67,22 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#4F41D8',
     transform: [{ scale: 1.02 }], // slight scale effect when pressed
+  },
+  column: {
+    flex: 1,
+    flexDirection: 'column',
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  titleRow: {
+    alignItems: 'center',
+  },
+  title: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  iconRow: {
+    alignItems: 'center',
   },
 }); 

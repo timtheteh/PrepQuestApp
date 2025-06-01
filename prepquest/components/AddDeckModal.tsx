@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text } from 'react-native';
+import { InterviewStudyToggle } from './InterviewStudyToggle';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -28,8 +29,8 @@ export function AddDeckModal({
           <View style={styles.titleRow}>
             <Text style={styles.title}>Add Deck</Text>
           </View>
-          <View style={styles.row}>
-            {/* Second row content will be added here */}
+          <View style={styles.toggleRow}>
+            <InterviewStudyToggle />
           </View>
           <View style={styles.row}>
             {/* Third row content will be added here */}
@@ -73,6 +74,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Neuton-Regular',
     fontSize: 32,
     textAlign: 'center',
+  },
+  toggleRow: {
+    alignItems: 'center',
+    marginVertical: 8,
   },
   row: {
     marginBottom: 24,

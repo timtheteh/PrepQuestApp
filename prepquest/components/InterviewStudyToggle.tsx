@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated } from 'react-native';
 
 type ToggleOption = 'study' | 'interview';
 
 interface InterviewStudyToggleProps {
   onToggle?: (option: ToggleOption) => void;
+  initialState?: ToggleOption;
 }
 
-export function InterviewStudyToggle({ onToggle }: InterviewStudyToggleProps) {
-  const [selected, setSelected] = useState<ToggleOption>('study');
-  const translateX = useState(new Animated.Value(0))[0];
+export function InterviewStudyToggle({ 
+  onToggle,
+  initialState = 'study'
+}: InterviewStudyToggleProps) {
+  const [selected, setSelected] = useState<ToggleOption>(initialState);
+  const translateX = useState(new Animated.Value(initialState === 'study' ? 0 : 93))[0];
+
+  useEffect(() => {
+    setSelected(initialState);
+    Animated.timing(translateX, {
+      toValue: initialState === 'study' ? 0 : 93,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [initialState]);
 
   const handleToggle = (option: ToggleOption) => {
     setSelected(option);
@@ -66,7 +79,7 @@ const styles = StyleSheet.create({
   container: {
     width: 170,
     height: 35,
-    backgroundColor: '#FFFFFF',
+    
   },
   row: {
     flex: 1,

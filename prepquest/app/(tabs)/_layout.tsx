@@ -27,6 +27,8 @@ export const MenuContext = createContext<{
   isAddDeckOpen: boolean;
   setIsAddDeckOpen: (value: boolean) => void;
   addDeckOpacity: Animated.Value;
+  currentMode: 'study' | 'interview';
+  setCurrentMode: (mode: 'study' | 'interview') => void;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
@@ -44,6 +46,8 @@ export const MenuContext = createContext<{
   isAddDeckOpen: false,
   setIsAddDeckOpen: () => {},
   addDeckOpacity: new Animated.Value(0),
+  currentMode: 'study',
+  setCurrentMode: () => {},
 });
 
 export default function TabLayout() {
@@ -52,6 +56,7 @@ export default function TabLayout() {
   const [isAIPromptOpen, setIsAIPromptOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isAddDeckOpen, setIsAddDeckOpen] = useState(false);
+  const [currentMode, setCurrentMode] = useState<'study' | 'interview'>('study');
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
@@ -153,7 +158,9 @@ export default function TabLayout() {
       calendarOpacity,
       isAddDeckOpen,
       setIsAddDeckOpen,
-      addDeckOpacity
+      addDeckOpacity,
+      currentMode,
+      setCurrentMode
     }}>
       <View style={styles.container}>
         <Tabs
@@ -190,6 +197,7 @@ export default function TabLayout() {
         <AddDeckModal
           visible={isAddDeckOpen}
           opacity={addDeckOpacity}
+          currentMode={currentMode}
         />
       </View>
     </MenuContext.Provider>

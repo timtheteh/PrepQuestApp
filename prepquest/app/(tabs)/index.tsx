@@ -48,7 +48,8 @@ export default function DecksScreen() {
     setIsMenuOpen, 
     menuOverlayOpacity, 
     menuTranslateX,
-    setShowSlidingMenu 
+    setShowSlidingMenu,
+    setCurrentMode 
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -105,6 +106,7 @@ export default function DecksScreen() {
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
+    setCurrentMode(isRightSide ? 'interview' : 'study');
     
     // Clear the selection state for the mode we're leaving
     if (isRightSide) {

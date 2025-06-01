@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text } from 'react-native';
 import { InterviewStudyToggle } from './InterviewStudyToggle';
 import { AddDeckModalButton } from './AddDeckModalButton';
 import Svg, { SvgProps, Path, Defs, Rect, ClipPath, G } from 'react-native-svg';
+import { MenuContext } from '@/app/(tabs)/_layout';
 
 const GenAIFormIcon: React.FC<SvgProps> = (props) => (
     <Svg 
@@ -129,13 +130,21 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 interface AddDeckModalProps {
   visible: boolean;
   opacity?: Animated.Value;
+  currentMode: 'study' | 'interview';
 }
 
 export function AddDeckModal({ 
   visible,
-  opacity = new Animated.Value(0)
+  opacity = new Animated.Value(0),
+  currentMode
 }: AddDeckModalProps) {
+  const { setCurrentMode } = useContext(MenuContext);
+
   if (!visible) return null;
+
+  const handleToggle = (mode: 'study' | 'interview') => {
+    setCurrentMode(mode);
+  };
 
   return (
     <Animated.View 
@@ -152,7 +161,10 @@ export function AddDeckModal({
             <Text style={styles.title}>Add Deck</Text>
           </View>
           <View style={styles.toggleRow}>
-            <InterviewStudyToggle />
+            <InterviewStudyToggle 
+              initialState={currentMode}
+              onToggle={handleToggle}
+            />
           </View>
           <View style={styles.firstButtonRow}>
             <AddDeckModalButton

@@ -7,7 +7,7 @@ import { AIPromptModal } from '@/components/AIPromptModal';
 import { CalendarModal } from '@/components/CalendarModal';
 import { AddDeckModal } from '@/components/AddDeckModal';
 import { GenericModal } from '@/components/GenericModal';
-import { createContext, useState, useRef, useCallback } from 'react';
+import { createContext, useState, useRef, useCallback, RefObject } from 'react';
 import { Animated } from 'react-native';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 
@@ -28,8 +28,7 @@ const DeleteModalIcon: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-// Create context for menu state management
-export const MenuContext = createContext<{
+interface MenuContextType {
   isMenuOpen: boolean;
   menuOverlayOpacity: Animated.Value;
   menuTranslateX: Animated.Value;
@@ -56,7 +55,10 @@ export const MenuContext = createContext<{
   noSelectionModalOpacity: Animated.Value;
   handleDeletion: (() => void) | null;
   setHandleDeletion: (handler: (() => void) | null) => void;
-}>({
+  navbarRef: RefObject<NavBarRef | null>;
+}
+
+export const MenuContext = createContext<MenuContextType>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
   menuTranslateX: new Animated.Value(-171),
@@ -83,6 +85,7 @@ export const MenuContext = createContext<{
   noSelectionModalOpacity: new Animated.Value(0),
   handleDeletion: null,
   setHandleDeletion: () => {},
+  navbarRef: { current: null },
 });
 
 export default function TabLayout() {
@@ -247,7 +250,8 @@ export default function TabLayout() {
       setIsNoSelectionModalOpen,
       noSelectionModalOpacity,
       handleDeletion,
-      setHandleDeletion
+      setHandleDeletion,
+      navbarRef
     }}>
       <View style={styles.container}>
         <Tabs

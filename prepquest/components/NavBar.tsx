@@ -87,6 +87,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export interface NavBarRef {
   resetAnimation: () => void;
+  setDecksTab: () => void;
 }
 
 export const NavBar = forwardRef<NavBarRef>((_, ref) => {
@@ -106,8 +107,20 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     isFirstRender.value = true;
   };
 
+  const setDecksTab = () => {
+    if (Platform.OS === 'ios') {
+      slideAnimation.value = withSpring(1, SPRING_CONFIG);
+    } else {
+      slideAnimation.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
+  };
+
   useImperativeHandle(ref, () => ({
-    resetAnimation
+    resetAnimation,
+    setDecksTab
   }));
 
   useEffect(() => {

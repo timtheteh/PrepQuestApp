@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     height: 44,
   },
   cancelButton: {
-    fontSize: 16,
+    fontSize: 14.5,
     fontFamily: 'Satoshi-Medium',
     color: '#000000',
   },

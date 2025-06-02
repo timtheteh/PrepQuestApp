@@ -25,7 +25,10 @@ export function SlidingMenu({
     if (onFolderPress) {
       onFolderPress();
     }
-    router.push('/folders' as any);
+    // Small delay to allow the navbar animation to start
+    setTimeout(() => {
+      router.push('/folders' as any);
+    }, 50);
   };
 
   return (

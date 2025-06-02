@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { NavBar } from '@/components/NavBar';
+import { NavBar, NavBarRef } from '@/components/NavBar';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { SlidingMenu } from '@/components/SlidingMenu';
 import { AIPromptModal } from '@/components/AIPromptModal';
@@ -86,6 +86,7 @@ export const MenuContext = createContext<{
 });
 
 export default function TabLayout() {
+  const navbarRef = useRef<NavBarRef>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSlidingMenu, setShowSlidingMenu] = useState(false);
   const [isAIPromptOpen, setIsAIPromptOpen] = useState(false);
@@ -214,6 +215,11 @@ export default function TabLayout() {
     }
   }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen]);
 
+  const handleFolderPress = useCallback(() => {
+    handleDismissMenu();
+    navbarRef.current?.resetAnimation();
+  }, [handleDismissMenu]);
+
   return (
     <MenuContext.Provider value={{ 
       isMenuOpen, 
@@ -249,12 +255,13 @@ export default function TabLayout() {
             headerShown: false,
             tabBarStyle: { display: 'none' },
           }}
-          tabBar={() => <NavBar />}
+          tabBar={() => <NavBar ref={navbarRef} />}
         >
           <Tabs.Screen name="index" />
           <Tabs.Screen name="account" />
           <Tabs.Screen name="statistics" />
           <Tabs.Screen name="awards" />
+          <Tabs.Screen name="folders" />
         </Tabs>
         <GreyOverlayBackground 
           visible={isMenuOpen}
@@ -265,7 +272,7 @@ export default function TabLayout() {
           <SlidingMenu
             visible={isMenuOpen}
             translateX={menuTranslateX}
-            onFolderPress={handleDismissMenu}
+            onFolderPress={handleFolderPress}
           />
         )}
         <AIPromptModal

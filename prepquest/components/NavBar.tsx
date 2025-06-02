@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Text, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
@@ -85,10 +85,30 @@ const NAV_ITEMS: NavItem[] = [
   { name: 'Awards', icon: 'trophy', route: '/(tabs)/awards', iconType: 'ionicons' },
 ];
 
-export function NavBar() {
+export interface NavBarRef {
+  resetAnimation: () => void;
+}
+
+export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const pathname = usePathname();
   const slideAnimation = useSharedValue(1);
   const isFirstRender = useSharedValue(true);
+
+  const resetAnimation = () => {
+    if (Platform.OS === 'ios') {
+      slideAnimation.value = withSpring(-2, SPRING_CONFIG);
+    } else {
+      slideAnimation.value = withTiming(-2, {
+        duration: 300,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
+    isFirstRender.value = true;
+  };
+
+  useImperativeHandle(ref, () => ({
+    resetAnimation
+  }));
 
   useEffect(() => {
     // Trigger animation for Decks tab on first render
@@ -324,7 +344,7 @@ export function NavBar() {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

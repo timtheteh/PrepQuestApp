@@ -8,6 +8,7 @@ import { useState, useRef, useContext } from 'react';
 import { MenuContext } from './_layout';
 import { useRouter } from 'expo-router';
 import { NavBarRef } from '@/components/NavBar';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
@@ -241,7 +242,7 @@ export default function FoldersScreen() {
             style={styles.backButton}
             onPress={handleBackPress}
           >
-            <Feather name="arrow-left" size={32} color="black" />
+            <AntDesign name="arrowleft" size={32} color="black" />
           </TouchableOpacity>
         </View>
         
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   backButton: {
-    paddingTop: 8,
+    paddingTop: 10,
     paddingRight: 8,
   },
   mainContentWrapper: {

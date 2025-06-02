@@ -53,7 +53,8 @@ export default function DecksScreen() {
     setIsTrashModalOpenInDecksPage,
     trashModalOpacity,
     setIsNoSelectionModalOpen,
-    noSelectionModalOpacity
+    noSelectionModalOpacity,
+    setHandleDeletion
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -106,6 +107,12 @@ export default function DecksScreen() {
   // Set initial mode animation when component mounts
   useEffect(() => {
     fadeAnim.setValue(isInterviewMode ? 1 : 0);
+  }, []);
+
+  // Set up the deletion handler when the component mounts
+  useEffect(() => {
+    setHandleDeletion(() => handleCancel);
+    return () => setHandleDeletion(null);
   }, []);
 
   const handleToggle = (isRightSide: boolean) => {

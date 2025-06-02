@@ -54,6 +54,8 @@ export const MenuContext = createContext<{
   isNoSelectionModalOpen: boolean;
   setIsNoSelectionModalOpen: (value: boolean) => void;
   noSelectionModalOpacity: Animated.Value;
+  handleDeletion: (() => void) | null;
+  setHandleDeletion: (handler: (() => void) | null) => void;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
@@ -79,6 +81,8 @@ export const MenuContext = createContext<{
   isNoSelectionModalOpen: false,
   setIsNoSelectionModalOpen: () => {},
   noSelectionModalOpacity: new Animated.Value(0),
+  handleDeletion: null,
+  setHandleDeletion: () => {},
 });
 
 export default function TabLayout() {
@@ -90,6 +94,7 @@ export default function TabLayout() {
   const [currentMode, setCurrentMode] = useState<'study' | 'interview'>('study');
   const [isTrashModalOpenInDecksPage, setIsTrashModalOpenInDecksPage] = useState(false);
   const [isNoSelectionModalOpen, setIsNoSelectionModalOpen] = useState(false);
+  const [handleDeletion, setHandleDeletion] = useState<(() => void) | null>(null);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
@@ -234,7 +239,9 @@ export default function TabLayout() {
       trashModalOpacity,
       isNoSelectionModalOpen,
       setIsNoSelectionModalOpen,
-      noSelectionModalOpacity
+      noSelectionModalOpacity,
+      handleDeletion,
+      setHandleDeletion
     }}>
       <View style={styles.container}>
         <Tabs
@@ -285,7 +292,9 @@ export default function TabLayout() {
           buttons="double"
           onCancel={handleDismissMenu}
           onConfirm={() => {
-            // TODO: Implement delete functionality
+            if (handleDeletion) {
+              handleDeletion();
+            }
             handleDismissMenu();
           }}
         />

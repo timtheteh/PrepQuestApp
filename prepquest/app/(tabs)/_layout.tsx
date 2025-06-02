@@ -6,6 +6,7 @@ import { SlidingMenu } from '@/components/SlidingMenu';
 import { AIPromptModal } from '@/components/AIPromptModal';
 import { CalendarModal } from '@/components/CalendarModal';
 import { AddDeckModal } from '@/components/AddDeckModal';
+import { GenericModal } from '@/components/GenericModal';
 import { createContext, useState, useRef, useCallback } from 'react';
 import { Animated } from 'react-native';
 
@@ -29,6 +30,9 @@ export const MenuContext = createContext<{
   addDeckOpacity: Animated.Value;
   currentMode: 'study' | 'interview';
   setCurrentMode: (mode: 'study' | 'interview') => void;
+  isTrashModalOpen: boolean;
+  setIsTrashModalOpen: (value: boolean) => void;
+  trashModalOpacity: Animated.Value;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
@@ -48,6 +52,9 @@ export const MenuContext = createContext<{
   addDeckOpacity: new Animated.Value(0),
   currentMode: 'study',
   setCurrentMode: () => {},
+  isTrashModalOpen: false,
+  setIsTrashModalOpen: () => {},
+  trashModalOpacity: new Animated.Value(0),
 });
 
 export default function TabLayout() {
@@ -57,11 +64,13 @@ export default function TabLayout() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isAddDeckOpen, setIsAddDeckOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<'study' | 'interview'>('study');
+  const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
   const calendarOpacity = useRef(new Animated.Value(0)).current;
   const addDeckOpacity = useRef(new Animated.Value(0)).current;
+  const trashModalOpacity = useRef(new Animated.Value(0)).current;
 
   const slidingMenuDuration = 300;
 
@@ -114,6 +123,22 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsAddDeckOpen(false);
       });
+    } else if (isTrashModalOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(trashModalOpacity, {
+          toValue: 0,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsTrashModalOpen(false);
+      });
     } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -139,7 +164,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpen]);
 
   return (
     <MenuContext.Provider value={{ 
@@ -160,7 +185,10 @@ export default function TabLayout() {
       setIsAddDeckOpen,
       addDeckOpacity,
       currentMode,
-      setCurrentMode
+      setCurrentMode,
+      isTrashModalOpen,
+      setIsTrashModalOpen,
+      trashModalOpacity
     }}>
       <View style={styles.container}>
         <Tabs
@@ -199,6 +227,12 @@ export default function TabLayout() {
           opacity={addDeckOpacity}
           currentMode={currentMode}
         />
+        <GenericModal
+          visible={isTrashModalOpen}
+          opacity={trashModalOpacity}
+        >
+          {/* Content for trash modal will go here */}
+        </GenericModal>
       </View>
     </MenuContext.Provider>
   );

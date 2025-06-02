@@ -49,7 +49,9 @@ export default function DecksScreen() {
     menuOverlayOpacity, 
     menuTranslateX,
     setShowSlidingMenu,
-    setCurrentMode 
+    setCurrentMode,
+    setIsTrashModalOpen,
+    trashModalOpacity
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -267,7 +269,20 @@ export default function DecksScreen() {
         console.log('Folder pressed');
         break;
       case 1: // Trash
-        console.log('Trash pressed');
+        setIsMenuOpen(true);
+        setIsTrashModalOpen(true);
+        Animated.parallel([
+          Animated.timing(menuOverlayOpacity, {
+            toValue: 0.4,
+            duration: slidingMenuDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(trashModalOpacity, {
+            toValue: 1,
+            duration: slidingMenuDuration,
+            useNativeDriver: true,
+          })
+        ]).start();
         break;
     }
   };

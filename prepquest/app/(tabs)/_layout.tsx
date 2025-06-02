@@ -91,18 +91,19 @@ export default function TabLayout() {
   const trashModalOpacity = useRef(new Animated.Value(0)).current;
 
   const slidingMenuDuration = 300;
+  const overlayDuration = 200;
 
   const handleDismissMenu = useCallback(() => {
     if (isAIPromptOpen) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         }),
         Animated.timing(aiPromptOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         })
       ]).start(() => {
@@ -113,12 +114,12 @@ export default function TabLayout() {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         }),
         Animated.timing(calendarOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         })
       ]).start(() => {
@@ -129,12 +130,12 @@ export default function TabLayout() {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         }),
         Animated.timing(addDeckOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         })
       ]).start(() => {
@@ -145,12 +146,12 @@ export default function TabLayout() {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         }),
         Animated.timing(trashModalOpacity, {
           toValue: 0,
-          duration: slidingMenuDuration,
+          duration: overlayDuration,
           useNativeDriver: true,
         })
       ]).start(() => {

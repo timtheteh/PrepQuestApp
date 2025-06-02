@@ -283,6 +283,11 @@ export default function TabLayout() {
             highlightColor: "#D7191C"
           }}
           buttons="double"
+          onCancel={handleDismissMenu}
+          onConfirm={() => {
+            // TODO: Implement delete functionality
+            handleDismissMenu();
+          }}
         />
         <GenericModal
           visible={isNoSelectionModalOpen}

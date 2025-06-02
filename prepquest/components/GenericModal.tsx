@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Animated, View, Text } from 'react-native';
 import type { SvgProps } from 'react-native-svg';
+import { GenericModalButton } from './GenericModalButton';
 
 interface GenericModalProps {
   visible: boolean;
@@ -14,6 +15,8 @@ interface GenericModalProps {
   };
   buttons?: 'none' | 'single' | 'double';
   hasAnimation?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
 
 export function GenericModal({ 
@@ -24,7 +27,9 @@ export function GenericModal({
   subtitle,
   textStyle,
   buttons = 'none',
-  hasAnimation = false
+  hasAnimation = false,
+  onConfirm,
+  onCancel
 }: GenericModalProps) {
   if (!visible) return null;
 
@@ -59,6 +64,28 @@ export function GenericModal({
     );
   };
 
+  const renderButtons = () => {
+    if (buttons === 'double') {
+      return (
+        <View style={styles.buttonRow}>
+          <GenericModalButton
+            text="No"
+            backgroundColor="#F8F8F8"
+            textColor="#000000"
+            onPress={onCancel || (() => {})}
+          />
+          <GenericModalButton
+            text="Yes"
+            backgroundColor="#4F41D8"
+            textColor="#FFFFFF"
+            onPress={onConfirm || (() => {})}
+          />
+        </View>
+      );
+    }
+    return null;
+  };
+
   return (
     <Animated.View 
       style={[
@@ -82,7 +109,7 @@ export function GenericModal({
         </View>
         {((buttons && buttons !== 'none') || hasAnimation) && (
           <View style={styles.actionRow}>
-            {/* Buttons or animation will be added here */}
+            {renderButtons()}
           </View>
         )}
       </View>
@@ -142,5 +169,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingHorizontal: 16,
     color: '#666666',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 30,
+    marginTop: 33,
   },
 }); 

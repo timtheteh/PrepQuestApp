@@ -31,6 +31,16 @@ export function SlidingMenu({
     }, 50);
   };
 
+  const handleFavoritesPress = () => {
+    if (onFolderPress) {
+      onFolderPress();
+    }
+    // Small delay to allow the navbar animation to start
+    setTimeout(() => {
+      router.push('/favorites' as any);
+    }, 50);
+  };
+
   return (
     <Animated.View 
       style={[
@@ -48,10 +58,13 @@ export function SlidingMenu({
           <FontAwesome name="folder" size={30} color="white" />
           <Text style={styles.menuText}>View Folders</Text>
         </TouchableOpacity>
-        <View style={[styles.menuItem, styles.secondItem]}>
+        <TouchableOpacity 
+          style={[styles.menuItem, styles.secondItem]}
+          onPress={handleFavoritesPress}
+        >
           <FontAwesome name="star" size={30} color="white" />
           <Text style={styles.menuText}>View Favorites</Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </Animated.View>
   );

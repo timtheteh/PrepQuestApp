@@ -31,7 +31,9 @@ export default function FoldersScreen() {
     trashModalOpacity,
     setIsNoSelectionModalOpen,
     noSelectionModalOpacity,
-    navbarRef
+    navbarRef,
+    setHandleDeletion,
+    setDeleteModalText
   } = useContext(MenuContext);
 
   // Animation values
@@ -49,6 +51,9 @@ export default function FoldersScreen() {
       // Reset header icons
       headerIconsRef.current?.reset();
 
+      // Set the delete modal text for folders
+      setDeleteModalText('Are you sure you want to delete these folder(s)?');
+
       // Reset selection mode and related states
       setIsSelectMode(false);
       setSelectedFolders(new Set());
@@ -63,6 +68,12 @@ export default function FoldersScreen() {
       circleButtonOpacity.setValue(0);
     }
   }, [isFocused]);
+
+  // Set up the deletion handler when the component mounts
+  useEffect(() => {
+    setHandleDeletion(() => handleCancel);
+    return () => setHandleDeletion(null);
+  }, []);
 
   const handleSelect = () => {
     setIsSelectMode(true);
@@ -170,27 +181,21 @@ export default function FoldersScreen() {
       return;
     }
 
-    switch (index) {
-      case 0: // Share
-        console.log('Share pressed');
-        break;
-      case 1: // Trash
-        setIsMenuOpen(true);
-        setIsTrashModalOpenInDecksPage(true);
-        Animated.parallel([
-          Animated.timing(menuOverlayOpacity, {
-            toValue: 0.4,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(trashModalOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          })
-        ]).start();
-        break;
-    }
+    // Only trash button exists now
+    setIsMenuOpen(true);
+    setIsTrashModalOpenInDecksPage(true);
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.4,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(trashModalOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   const handleMenuPress = () => {
@@ -239,7 +244,9 @@ export default function FoldersScreen() {
   });
 
   const handleSelectAll = () => {
-    // Implement select all functionality
+    // Create a set of indices from 0 to 7 (for 8 folder cards)
+    const allFolderIndices = new Set(Array.from({ length: 8 }, (_, i) => i));
+    setSelectedFolders(allFolderIndices);
   };
 
   const handleBackPress = () => {
@@ -262,7 +269,7 @@ export default function FoldersScreen() {
   };
 
   const renderFolderCards = () => {
-    const cards = Array(1).fill(null).map((_, index) => {
+    const cards = Array(8).fill(null).map((_, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
@@ -327,10 +334,10 @@ export default function FoldersScreen() {
               }
             ]}>
               <ActionButtonsRow
-                iconNames={['folder', 'trash']}
+                iconNames={['trash']}
                 onCancel={handleCancel}
                 onIconPress={handleActionIconPress}
-                iconColors={['black', '#FF3B30']}
+                iconColors={['#FF3B30']}
               />
             </Animated.View>
 

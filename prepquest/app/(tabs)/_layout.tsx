@@ -58,6 +58,8 @@ interface MenuContextType {
   handleDeletion: (() => void) | null;
   setHandleDeletion: (handler: (() => void) | null) => void;
   navbarRef: RefObject<NavBarRef | null>;
+  deleteModalText: string;
+  setDeleteModalText: (text: string) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -90,6 +92,8 @@ export const MenuContext = createContext<MenuContextType>({
   handleDeletion: null,
   setHandleDeletion: () => {},
   navbarRef: { current: null },
+  deleteModalText: 'Are you sure you want to delete these deck(s)?',
+  setDeleteModalText: () => {},
 });
 
 export default function TabLayout() {
@@ -104,6 +108,7 @@ export default function TabLayout() {
   const [isTrashModalOpenInDecksPage, setIsTrashModalOpenInDecksPage] = useState(false);
   const [isNoSelectionModalOpen, setIsNoSelectionModalOpen] = useState(false);
   const [handleDeletion, setHandleDeletion] = useState<(() => void) | null>(null);
+  const [deleteModalText, setDeleteModalText] = useState('Are you sure you want to delete these deck(s)?');
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
@@ -258,7 +263,9 @@ export default function TabLayout() {
       noSelectionModalOpacity,
       handleDeletion,
       setHandleDeletion,
-      navbarRef
+      navbarRef,
+      deleteModalText,
+      setDeleteModalText
     }}>
       <View style={styles.container}>
         <Tabs
@@ -305,7 +312,7 @@ export default function TabLayout() {
           visible={isTrashModalOpenInDecksPage}
           opacity={trashModalOpacity}
           Icon={DeleteModalIcon}
-          text="Are you sure you want to delete these deck(s)?"
+          text={deleteModalText}
           textStyle={{
             highlightWord: "delete",
             highlightColor: "#D7191C"

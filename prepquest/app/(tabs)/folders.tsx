@@ -1,7 +1,7 @@
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/HeaderIconButtons';
 import { Title } from '@/components/Title';
-import { Card } from '@/components/Card';
+import { FolderCard } from '@/components/FolderCard';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { Feather } from '@expo/vector-icons';
 import { useState, useRef, useContext, useEffect } from 'react';
@@ -12,7 +12,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { useIsFocused } from '@react-navigation/native';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
-const BOTTOM_SPACING = 40; // Required spacing from navbar
+const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 48; // Distance to shift content down
 const selectUnselectedDuration = 300;
 
@@ -261,6 +261,33 @@ export default function FoldersScreen() {
     }
   };
 
+  const renderFolderCards = () => {
+    const cards = Array(1).fill(null).map((_, index) => {
+      const style = index === 0 ? styles.firstCard : styles.card;
+      
+      return (
+        <FolderCard
+          key={`folder-${index}`}
+          style={style}
+          containerWidthPercentage={cardWidthPercentage}
+          isSelectMode={isSelectMode}
+          selected={selectedFolders.has(index)}
+          onSelectPress={() => {
+            const newSelectedFolders = new Set(selectedFolders);
+            if (selectedFolders.has(index)) {
+              newSelectedFolders.delete(index);
+            } else {
+              newSelectedFolders.add(index);
+            }
+            setSelectedFolders(newSelectedFolders);
+          }}
+          circleButtonOpacity={circleButtonOpacity}
+        />
+      );
+    });
+    return cards;
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -346,7 +373,7 @@ export default function FoldersScreen() {
                   contentContainerStyle={styles.scrollContent}
                   showsVerticalScrollIndicator={false}
                 >
-                  {/* Folder cards will be added here */}
+                  {renderFolderCards()}
                 </ScrollView>
               </View>
             </Animated.View>
@@ -440,5 +467,11 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     zIndex: 1,
+  },
+  firstCard: {
+    marginTop: 5,
+  },
+  card: {
+    marginTop: 26,
   },
 }); 

@@ -9,6 +9,24 @@ import { AddDeckModal } from '@/components/AddDeckModal';
 import { GenericModal } from '@/components/GenericModal';
 import { createContext, useState, useRef, useCallback } from 'react';
 import { Animated } from 'react-native';
+import Svg, { SvgProps, Path } from 'react-native-svg';
+
+const DeleteModalIcon: React.FC<SvgProps> = (props) => (
+  <Svg 
+    width={props.width || 31} 
+    height={props.height || 31} 
+    viewBox="0 0 31 31" 
+    fill="none" 
+    {...props}
+  >
+    <Path 
+      fillRule="evenodd" 
+      clipRule="evenodd" 
+      d="M15.5 31C24.0604 31 31 24.0604 31 15.5C31 6.93959 24.0604 0 15.5 0C6.93959 0 0 6.93959 0 15.5C0 24.0604 6.93959 31 15.5 31ZM16.8375 9.11342C16.8536 8.36521 16.2515 7.75 15.5031 7.75C14.755 7.75 14.153 8.36467 14.1686 9.11256L14.3421 17.4431C14.3552 18.0734 14.8699 18.5775 15.5004 18.5775C16.1305 18.5775 16.6451 18.0739 16.6587 17.4438L16.8375 9.11342ZM14.4009 22.7708C14.7062 23.0903 15.0726 23.25 15.5 23.25C15.7818 23.25 16.0378 23.1776 16.268 23.0329C16.5028 22.8831 16.6907 22.6834 16.8316 22.4338C16.9772 22.1842 17.05 21.9072 17.05 21.6027C17.05 21.1534 16.895 20.769 16.585 20.4495C16.2797 20.13 15.918 19.9703 15.5 19.9703C15.0726 19.9703 14.7062 20.13 14.4009 20.4495C14.1003 20.769 13.95 21.1534 13.95 21.6027C13.95 22.0619 14.1003 22.4513 14.4009 22.7708Z" 
+      fill="#D7191C"
+    />
+  </Svg>
+);
 
 // Create context for menu state management
 export const MenuContext = createContext<{
@@ -30,8 +48,8 @@ export const MenuContext = createContext<{
   addDeckOpacity: Animated.Value;
   currentMode: 'study' | 'interview';
   setCurrentMode: (mode: 'study' | 'interview') => void;
-  isTrashModalOpen: boolean;
-  setIsTrashModalOpen: (value: boolean) => void;
+  isTrashModalOpenInDecksPage: boolean;
+  setIsTrashModalOpenInDecksPage: (value: boolean) => void;
   trashModalOpacity: Animated.Value;
 }>({
   isMenuOpen: false,
@@ -52,8 +70,8 @@ export const MenuContext = createContext<{
   addDeckOpacity: new Animated.Value(0),
   currentMode: 'study',
   setCurrentMode: () => {},
-  isTrashModalOpen: false,
-  setIsTrashModalOpen: () => {},
+  isTrashModalOpenInDecksPage: false,
+  setIsTrashModalOpenInDecksPage: () => {},
   trashModalOpacity: new Animated.Value(0),
 });
 
@@ -64,7 +82,7 @@ export default function TabLayout() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isAddDeckOpen, setIsAddDeckOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<'study' | 'interview'>('study');
-  const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
+  const [isTrashModalOpenInDecksPage, setIsTrashModalOpenInDecksPage] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
@@ -123,7 +141,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsAddDeckOpen(false);
       });
-    } else if (isTrashModalOpen) {
+    } else if (isTrashModalOpenInDecksPage) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
@@ -137,7 +155,7 @@ export default function TabLayout() {
         })
       ]).start(() => {
         setIsMenuOpen(false);
-        setIsTrashModalOpen(false);
+        setIsTrashModalOpenInDecksPage(false);
       });
     } else if (showSlidingMenu) {
       Animated.parallel([
@@ -164,7 +182,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpen]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage]);
 
   return (
     <MenuContext.Provider value={{ 
@@ -186,8 +204,8 @@ export default function TabLayout() {
       addDeckOpacity,
       currentMode,
       setCurrentMode,
-      isTrashModalOpen,
-      setIsTrashModalOpen,
+      isTrashModalOpenInDecksPage,
+      setIsTrashModalOpenInDecksPage,
       trashModalOpacity
     }}>
       <View style={styles.container}>
@@ -228,11 +246,16 @@ export default function TabLayout() {
           currentMode={currentMode}
         />
         <GenericModal
-          visible={isTrashModalOpen}
+          visible={isTrashModalOpenInDecksPage}
           opacity={trashModalOpacity}
-        >
-          {/* Content for trash modal will go here */}
-        </GenericModal>
+          Icon={DeleteModalIcon}
+          text="Are you sure you want to delete these deck(s)?"
+          textStyle={{
+            highlightWord: "delete",
+            highlightColor: "#D7191C"
+          }}
+          buttons="double"
+        />
       </View>
     </MenuContext.Provider>
   );

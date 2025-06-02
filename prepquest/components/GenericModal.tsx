@@ -1,18 +1,53 @@
 import React from 'react';
-import { StyleSheet, Animated, View } from 'react-native';
+import { StyleSheet, Animated, View, Text } from 'react-native';
+import type { SvgProps } from 'react-native-svg';
 
 interface GenericModalProps {
   visible: boolean;
   opacity?: Animated.Value;
-  children?: React.ReactNode;
+  Icon?: React.FC<SvgProps>;
+  text: string;
+  textStyle?: {
+    highlightWord?: string;
+    highlightColor?: string;
+  };
+  buttons?: 'none' | 'single' | 'double';
+  hasAnimation?: boolean;
 }
 
 export function GenericModal({ 
   visible,
   opacity = new Animated.Value(0),
-  children
+  Icon,
+  text,
+  textStyle,
+  buttons = 'none',
+  hasAnimation = false
 }: GenericModalProps) {
   if (!visible) return null;
+
+  // Split text to highlight specific word if needed
+  const renderText = () => {
+    if (!textStyle?.highlightWord) {
+      return <Text style={styles.text}>{text}</Text>;
+    }
+
+    const parts = text.split(textStyle.highlightWord);
+    return (
+      <Text style={styles.text}>
+        {parts.map((part, index) => (
+          <React.Fragment key={index}>
+            {index > 0 && (
+              <Text style={[styles.text, { color: textStyle.highlightColor }]}>
+                {textStyle.highlightWord}
+              </Text>
+            )}
+            {part}
+          </React.Fragment>
+        ))}
+      </Text>
+    );
+  };
 
   return (
     <Animated.View 
@@ -23,8 +58,18 @@ export function GenericModal({
         }
       ]}
     >
+      {Icon && (
+        <View style={styles.iconContainer}>
+          <Icon width={24} height={24} />
+        </View>
+      )}
       <View style={styles.content}>
-        {children}
+        <View style={styles.textRow}>
+          {renderText()}
+        </View>
+        <View style={styles.actionRow}>
+          {/* Buttons or animation will be added here */}
+        </View>
       </View>
     </Animated.View>
   );
@@ -45,8 +90,31 @@ const styles = StyleSheet.create({
     borderColor: '#4F41D8',
     zIndex: 1001, // Higher than GreyOverlayBackground
   },
+  iconContainer: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    zIndex: 1,
+  },
   content: {
     flex: 1,
-    padding: 24,
+    paddingVertical: 50,
+    paddingHorizontal: 12,
+    flexDirection: 'column',
+  },
+  textRow: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionRow: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    textAlign: 'center',
   },
 }); 

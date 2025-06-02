@@ -50,7 +50,7 @@ export default function DecksScreen() {
     menuTranslateX,
     setShowSlidingMenu,
     setCurrentMode,
-    setIsTrashModalOpen,
+    setIsTrashModalOpenInDecksPage,
     trashModalOpacity
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
@@ -270,7 +270,7 @@ export default function DecksScreen() {
         break;
       case 1: // Trash
         setIsMenuOpen(true);
-        setIsTrashModalOpen(true);
+        setIsTrashModalOpenInDecksPage(true);
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
             toValue: 0.4,

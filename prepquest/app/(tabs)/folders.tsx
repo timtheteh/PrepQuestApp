@@ -43,10 +43,24 @@ export default function FoldersScreen() {
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
 
-  // Reset header icons state when screen comes into focus
+  // Reset header icons state and selection mode when screen comes into focus
   useEffect(() => {
     if (isFocused) {
+      // Reset header icons
       headerIconsRef.current?.reset();
+
+      // Reset selection mode and related states
+      setIsSelectMode(false);
+      setSelectedFolders(new Set());
+
+      // Reset all animations to their default values
+      shiftAnim.setValue(0);
+      marginAnim.setValue(BOTTOM_SPACING);
+      actionRowOpacity.setValue(0);
+      selectTextAnim.setValue(0);
+      fabOpacity.setValue(1);
+      cardWidthPercentage.setValue(100);
+      circleButtonOpacity.setValue(0);
     }
   }, [isFocused]);
 

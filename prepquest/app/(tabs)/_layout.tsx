@@ -51,6 +51,9 @@ export const MenuContext = createContext<{
   isTrashModalOpenInDecksPage: boolean;
   setIsTrashModalOpenInDecksPage: (value: boolean) => void;
   trashModalOpacity: Animated.Value;
+  isNoSelectionModalOpen: boolean;
+  setIsNoSelectionModalOpen: (value: boolean) => void;
+  noSelectionModalOpacity: Animated.Value;
 }>({
   isMenuOpen: false,
   menuOverlayOpacity: new Animated.Value(0),
@@ -73,6 +76,9 @@ export const MenuContext = createContext<{
   isTrashModalOpenInDecksPage: false,
   setIsTrashModalOpenInDecksPage: () => {},
   trashModalOpacity: new Animated.Value(0),
+  isNoSelectionModalOpen: false,
+  setIsNoSelectionModalOpen: () => {},
+  noSelectionModalOpacity: new Animated.Value(0),
 });
 
 export default function TabLayout() {
@@ -83,12 +89,14 @@ export default function TabLayout() {
   const [isAddDeckOpen, setIsAddDeckOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<'study' | 'interview'>('study');
   const [isTrashModalOpenInDecksPage, setIsTrashModalOpenInDecksPage] = useState(false);
+  const [isNoSelectionModalOpen, setIsNoSelectionModalOpen] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
   const calendarOpacity = useRef(new Animated.Value(0)).current;
   const addDeckOpacity = useRef(new Animated.Value(0)).current;
   const trashModalOpacity = useRef(new Animated.Value(0)).current;
+  const noSelectionModalOpacity = useRef(new Animated.Value(0)).current;
 
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
@@ -158,6 +166,22 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsTrashModalOpenInDecksPage(false);
       });
+    } else if (isNoSelectionModalOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(noSelectionModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsNoSelectionModalOpen(false);
+      });
     } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -183,7 +207,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen]);
 
   return (
     <MenuContext.Provider value={{ 
@@ -207,7 +231,10 @@ export default function TabLayout() {
       setCurrentMode,
       isTrashModalOpenInDecksPage,
       setIsTrashModalOpenInDecksPage,
-      trashModalOpacity
+      trashModalOpacity,
+      isNoSelectionModalOpen,
+      setIsNoSelectionModalOpen,
+      noSelectionModalOpacity
     }}>
       <View style={styles.container}>
         <Tabs
@@ -256,6 +283,12 @@ export default function TabLayout() {
             highlightColor: "#D7191C"
           }}
           buttons="double"
+        />
+        <GenericModal
+          visible={isNoSelectionModalOpen}
+          opacity={noSelectionModalOpacity}
+          text="No selection made!"
+          subtitle="Please choose at least one deck if you want to delete or add to folder."
         />
       </View>
     </MenuContext.Provider>

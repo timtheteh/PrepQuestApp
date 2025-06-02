@@ -51,7 +51,9 @@ export default function DecksScreen() {
     setShowSlidingMenu,
     setCurrentMode,
     setIsTrashModalOpenInDecksPage,
-    trashModalOpacity
+    trashModalOpacity,
+    setIsNoSelectionModalOpen,
+    noSelectionModalOpacity
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -264,6 +266,28 @@ export default function DecksScreen() {
   };
 
   const handleActionIconPress = (index: number) => {
+    const hasSelection = isInterviewMode 
+      ? selectedInterviewCards.size > 0 
+      : selectedStudyCards.size > 0;
+
+    if (!hasSelection) {
+      setIsMenuOpen(true);
+      setIsNoSelectionModalOpen(true);
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0.4,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(noSelectionModalOpacity, {
+          toValue: 1,
+          duration: slidingMenuDuration,
+          useNativeDriver: true,
+        })
+      ]).start();
+      return;
+    }
+
     switch (index) {
       case 0: // Share
         console.log('Folder pressed');

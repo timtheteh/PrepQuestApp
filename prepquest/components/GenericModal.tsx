@@ -7,6 +7,7 @@ interface GenericModalProps {
   opacity?: Animated.Value;
   Icon?: React.FC<SvgProps>;
   text: string;
+  subtitle?: string;
   textStyle?: {
     highlightWord?: string;
     highlightColor?: string;
@@ -20,6 +21,7 @@ export function GenericModal({
   opacity = new Animated.Value(0),
   Icon,
   text,
+  subtitle,
   textStyle,
   buttons = 'none',
   hasAnimation = false
@@ -29,23 +31,31 @@ export function GenericModal({
   // Split text to highlight specific word if needed
   const renderText = () => {
     if (!textStyle?.highlightWord) {
-      return <Text style={styles.text}>{text}</Text>;
+      return (
+        <View>
+          <Text style={styles.text}>{text}</Text>
+          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        </View>
+      );
     }
 
     const parts = text.split(textStyle.highlightWord);
     return (
-      <Text style={styles.text}>
-        {parts.map((part, index) => (
-          <React.Fragment key={index}>
-            {index > 0 && (
-              <Text style={[styles.text, { color: textStyle.highlightColor }]}>
-                {textStyle.highlightWord}
-              </Text>
-            )}
-            {part}
-          </React.Fragment>
-        ))}
-      </Text>
+      <View>
+        <Text style={styles.text}>
+          {parts.map((part, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && (
+                <Text style={[styles.text, { color: textStyle.highlightColor }]}>
+                  {textStyle.highlightWord}
+                </Text>
+              )}
+              {part}
+            </React.Fragment>
+          ))}
+        </Text>
+        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      </View>
     );
   };
 
@@ -64,12 +74,17 @@ export function GenericModal({
         </View>
       )}
       <View style={styles.content}>
-        <View style={styles.textRow}>
+        <View style={[
+          styles.textRow,
+          (!buttons || buttons === 'none') && !hasAnimation && styles.textRowOnly
+        ]}>
           {renderText()}
         </View>
-        <View style={styles.actionRow}>
-          {/* Buttons or animation will be added here */}
-        </View>
+        {((buttons && buttons !== 'none') || hasAnimation) && (
+          <View style={styles.actionRow}>
+            {/* Buttons or animation will be added here */}
+          </View>
+        )}
       </View>
     </Animated.View>
   );
@@ -104,8 +119,11 @@ const styles = StyleSheet.create({
   },
   textRow: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+  },
+  textRowOnly: {
+    justifyContent: 'center',
   },
   actionRow: {
     flex: 1,
@@ -116,5 +134,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
     textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16,
+    color: '#666666',
   },
 }); 

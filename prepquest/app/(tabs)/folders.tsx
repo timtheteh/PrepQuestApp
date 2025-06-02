@@ -1,14 +1,15 @@
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
-import { HeaderIconButtons } from '@/components/HeaderIconButtons';
+import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/HeaderIconButtons';
 import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { Feather } from '@expo/vector-icons';
-import { useState, useRef, useContext } from 'react';
+import { useState, useRef, useContext, useEffect } from 'react';
 import { MenuContext } from './_layout';
 import { useRouter } from 'expo-router';
 import { NavBarRef } from '@/components/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { useIsFocused } from '@react-navigation/native';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
@@ -17,8 +18,10 @@ const selectUnselectedDuration = 300;
 
 export default function FoldersScreen() {
   const router = useRouter();
+  const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedFolders, setSelectedFolders] = useState<Set<number>>(new Set());
+  const isFocused = useIsFocused();
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -39,6 +42,13 @@ export default function FoldersScreen() {
   const fabOpacity = useRef(new Animated.Value(1)).current;
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
+
+  // Reset header icons state when screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      headerIconsRef.current?.reset();
+    }
+  }, [isFocused]);
 
   const handleSelect = () => {
     setIsSelectMode(true);
@@ -219,6 +229,9 @@ export default function FoldersScreen() {
   };
 
   const handleBackPress = () => {
+    // Reset header icons state
+    headerIconsRef.current?.reset();
+    
     // First trigger the navbar animation
     if (Platform.OS === 'ios') {
       navbarRef?.current?.setDecksTab();
@@ -248,6 +261,7 @@ export default function FoldersScreen() {
         
         <View style={styles.headerIconsContainer}>
           <HeaderIconButtons 
+            ref={headerIconsRef}
             onAIPress={handleSparklesPress}
             onCalendarPress={handleCalendarPress}
           />

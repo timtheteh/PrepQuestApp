@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, forwardRef, useImperativeHandle } from 'react';
 import { StyleSheet, View, Animated, ViewStyle, Text, TouchableOpacity, Dimensions, TextInput, Platform, TouchableWithoutFeedback } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { useState, useRef } from 'react';
@@ -11,6 +11,10 @@ interface HeaderIconButtonsProps {
   onCalendarPress?: () => void;
   onFilterPress?: () => void;
   onSearchPress?: () => void;
+}
+
+export interface HeaderIconButtonsRef {
+  reset: () => void;
 }
 
 type SortDirection = 'asc' | 'desc';
@@ -26,12 +30,12 @@ const DEFAULT_SORT_FIELD: SortField = 'lastModified';
 const DEFAULT_SORT_DIRECTION: SortDirection = 'desc';
 const DEVICE_WIDTH = Dimensions.get('window').width;
 
-export function HeaderIconButtons({
+export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButtonsProps>(({
   onAIPress,
   onCalendarPress,
   onFilterPress,
   onSearchPress
-}: HeaderIconButtonsProps) {
+}, ref) => {
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity,
@@ -53,6 +57,36 @@ export function HeaderIconButtons({
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const expandAnim = useRef(new Animated.Value(0)).current;
   const searchFadeAnim = useRef(new Animated.Value(0)).current;
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      // Reset all states to default
+      setIsExpanded(false);
+      setIsSearchMode(false);
+      setSelectedField(DEFAULT_SORT_FIELD);
+      setSortDirections({
+        name: 'desc',
+        dateAdded: 'desc',
+        lastModified: DEFAULT_SORT_DIRECTION
+      });
+      setSearchText('');
+      setIsSearchVisible(false);
+      
+      // Reset animations
+      Animated.parallel([
+        Animated.timing(expandAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: false,
+        }),
+        Animated.timing(searchFadeAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }));
 
   const collapseFilter = () => {
     setIsExpanded(false);
@@ -351,7 +385,7 @@ export function HeaderIconButtons({
       />
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

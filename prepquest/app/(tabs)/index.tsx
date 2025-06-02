@@ -2,7 +2,7 @@ import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Anima
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Feather } from '@expo/vector-icons';
-import { HeaderIconButtons } from '@/components/HeaderIconButtons';
+import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/HeaderIconButtons';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
@@ -12,6 +12,7 @@ import { MenuButton } from '@/components/MenuButton';
 import { useState, useRef, useEffect, useContext } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
+import { useRouter } from 'expo-router';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
@@ -66,6 +67,9 @@ export default function DecksScreen() {
   const screenOpacity = useRef(new Animated.Value(0)).current;
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
+  const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
+  const router = useRouter();
+  const navbarRef = useRef<any>(null);
 
   const selectUnselectedDuration = 300;
 
@@ -78,6 +82,9 @@ export default function DecksScreen() {
   // Handle screen transitions
   useEffect(() => {
     if (isFocused) {
+      // Reset header icons state when screen comes into focus
+      headerIconsRef.current?.reset();
+      
       Animated.timing(screenOpacity, {
         toValue: 1,
         duration: SCREEN_TRANSITION_DURATION,
@@ -461,6 +468,24 @@ export default function DecksScreen() {
     }).start();
   };
 
+  const handleFolderPress = () => {
+    // Reset header icons state
+    headerIconsRef.current?.reset();
+    
+    // Navigate to folders
+    if (Platform.OS === 'ios') {
+      navbarRef?.current?.resetAnimation();
+      setTimeout(() => {
+        router.push('/(tabs)/folders');
+      }, 50);
+    } else {
+      router.push('/(tabs)/folders');
+      setTimeout(() => {
+        navbarRef?.current?.resetAnimation();
+      }, 50);
+    }
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -474,6 +499,7 @@ export default function DecksScreen() {
           
           <View style={styles.headerIconsContainer}>
             <HeaderIconButtons 
+              ref={headerIconsRef}
               onAIPress={handleSparklesPress}
               onCalendarPress={handleCalendarPress}
             />

@@ -42,6 +42,8 @@ interface MenuContextType {
   isCalendarOpen: boolean;
   setIsCalendarOpen: (value: boolean) => void;
   calendarOpacity: Animated.Value;
+  calendarTitle: string;
+  setCalendarTitle: (value: string) => void;
   isAddDeckOpen: boolean;
   setIsAddDeckOpen: (value: boolean) => void;
   addDeckOpacity: Animated.Value;
@@ -72,6 +74,8 @@ export const MenuContext = createContext<MenuContextType>({
   isCalendarOpen: false,
   setIsCalendarOpen: () => {},
   calendarOpacity: new Animated.Value(0),
+  calendarTitle: '',
+  setCalendarTitle: () => {},
   isAddDeckOpen: false,
   setIsAddDeckOpen: () => {},
   addDeckOpacity: new Animated.Value(0),
@@ -94,6 +98,7 @@ export default function TabLayout() {
   const [showSlidingMenu, setShowSlidingMenu] = useState(false);
   const [isAIPromptOpen, setIsAIPromptOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarTitle, setCalendarTitle] = useState('');
   const [isAddDeckOpen, setIsAddDeckOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<'study' | 'interview'>('study');
   const [isTrashModalOpenInDecksPage, setIsTrashModalOpenInDecksPage] = useState(false);
@@ -238,6 +243,8 @@ export default function TabLayout() {
       isCalendarOpen,
       setIsCalendarOpen,
       calendarOpacity,
+      calendarTitle,
+      setCalendarTitle,
       isAddDeckOpen,
       setIsAddDeckOpen,
       addDeckOpacity,
@@ -287,6 +294,7 @@ export default function TabLayout() {
         <CalendarModal
           visible={isCalendarOpen}
           opacity={calendarOpacity}
+          title={calendarTitle}
         />
         <AddDeckModal
           visible={isAddDeckOpen}

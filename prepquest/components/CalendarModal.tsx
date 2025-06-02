@@ -12,12 +12,14 @@ interface CalendarModalProps {
   visible: boolean;
   opacity?: Animated.Value;
   onDone?: (selectedFilter: TimeFilter, customDate?: string) => void;
+  title?: string;
 }
 
 export function CalendarModal({ 
   visible,
   opacity = new Animated.Value(0),
-  onDone
+  onDone,
+  title = 'Filter decks based on\ndate added'
 }: CalendarModalProps) {
   const { handleDismissMenu } = useContext(MenuContext);
   const [confirmedFilter, setConfirmedFilter] = useState<TimeFilter>('all');
@@ -75,7 +77,7 @@ export function CalendarModal({
           </View>
           <View style={styles.headerRow}>
             <Text style={styles.title}>
-              Filter decks based on{'\n'}date added
+              {title}
             </Text>
             <TouchableOpacity onPress={handleDone}>
               <Text style={styles.doneButton}>Done</Text>

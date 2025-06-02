@@ -502,6 +502,7 @@ export default function DecksScreen() {
               ref={headerIconsRef}
               onAIPress={handleSparklesPress}
               onCalendarPress={handleCalendarPress}
+              pageType="decks"
             />
           </View>
           

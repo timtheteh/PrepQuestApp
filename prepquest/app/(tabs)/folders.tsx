@@ -278,6 +278,7 @@ export default function FoldersScreen() {
             ref={headerIconsRef}
             onAIPress={handleSparklesPress}
             onCalendarPress={handleCalendarPress}
+            pageType="folders"
           />
         </View>
         

@@ -6,11 +6,14 @@ import Feather from '@expo/vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuContext } from '@/app/(tabs)/_layout';
 
+export type PageType = 'decks' | 'folders' | 'favorites';
+
 interface HeaderIconButtonsProps {
   onAIPress?: () => void;
   onCalendarPress?: () => void;
   onFilterPress?: () => void;
   onSearchPress?: () => void;
+  pageType: PageType;
 }
 
 export interface HeaderIconButtonsRef {
@@ -26,6 +29,18 @@ const FIELD_LABELS: Record<SortField, string> = {
   lastModified: 'Last Modified'
 };
 
+const SEARCH_PLACEHOLDERS: Record<PageType, string> = {
+  decks: 'Search for Decks',
+  folders: 'Search for Folders',
+  favorites: 'Search Favorites'
+};
+
+const CALENDAR_TITLES: Record<PageType, string> = {
+  decks: 'Filter Decks based on\ndate added',
+  folders: 'Filter Folders based on\ndate added',
+  favorites: 'Filter Favorites based on\ndate added'
+};
+
 const DEFAULT_SORT_FIELD: SortField = 'lastModified';
 const DEFAULT_SORT_DIRECTION: SortDirection = 'desc';
 const DEVICE_WIDTH = Dimensions.get('window').width;
@@ -34,7 +49,8 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   onAIPress,
   onCalendarPress,
   onFilterPress,
-  onSearchPress
+  onSearchPress,
+  pageType
 }, ref) => {
   const { 
     setIsMenuOpen, 
@@ -42,7 +58,8 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     setIsAIPromptOpen,
     aiPromptOpacity,
     setIsCalendarOpen,
-    calendarOpacity
+    calendarOpacity,
+    setCalendarTitle
   } = useContext(MenuContext);
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -205,6 +222,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     
     setIsMenuOpen(true);
     setIsCalendarOpen(true);
+    setCalendarTitle(CALENDAR_TITLES[pageType]);
     
     Animated.timing(calendarOpacity, {
       toValue: 1,
@@ -260,7 +278,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search"
+            placeholder={SEARCH_PLACEHOLDERS[pageType]}
             value={searchText}
             onChangeText={setSearchText}
             autoFocus

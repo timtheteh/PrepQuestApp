@@ -99,7 +99,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       slideAnimation.value = withSpring(-2, SPRING_CONFIG);
     } else {
       slideAnimation.value = withTiming(-2, {
-        duration: 300,
+        duration: 0,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
     }

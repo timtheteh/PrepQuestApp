@@ -265,6 +265,7 @@ export default function TabLayout() {
           <SlidingMenu
             visible={isMenuOpen}
             translateX={menuTranslateX}
+            onFolderPress={handleDismissMenu}
           />
         )}
         <AIPromptModal

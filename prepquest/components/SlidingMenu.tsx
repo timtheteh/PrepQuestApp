@@ -1,21 +1,32 @@
 import React from 'react';
-import { StyleSheet, Animated, View, Platform, Dimensions, Text } from 'react-native';
+import { StyleSheet, Animated, View, Platform, Dimensions, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useRouter } from 'expo-router';
 
 interface SlidingMenuProps {
   visible: boolean;
   translateX: Animated.Value;
+  onFolderPress?: () => void;
 }
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export function SlidingMenu({ 
   visible,
-  translateX
+  translateX,
+  onFolderPress
 }: SlidingMenuProps) {
+  const router = useRouter();
   
   if (!visible) return null;
+
+  const handleFolderPress = () => {
+    if (onFolderPress) {
+      onFolderPress();
+    }
+    router.push('/folders' as any);
+  };
 
   return (
     <Animated.View 
@@ -27,10 +38,13 @@ export function SlidingMenu({
       ]}
     >
       <View style={styles.menuContent}>
-        <View style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={handleFolderPress}
+        >
           <FontAwesome name="folder" size={30} color="white" />
           <Text style={styles.menuText}>View Folders</Text>
-        </View>
+        </TouchableOpacity>
         <View style={[styles.menuItem, styles.secondItem]}>
           <FontAwesome name="star" size={30} color="white" />
           <Text style={styles.menuText}>View Favorites</Text>

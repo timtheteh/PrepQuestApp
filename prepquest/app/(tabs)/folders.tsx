@@ -330,14 +330,41 @@ export default function FoldersScreen() {
     // Reset header icons state
     headerIconsRef.current?.reset();
     
-    // First trigger the navbar animation
+    // If in AddToFolders mode, navigate back to decks page in selected state
+    if (isAddToFolders === 'true') {
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.setDecksTab();
+        setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)',
+            params: {
+              mode: previousMode,
+              selected: 'true'
+            }
+          });
+        }, 50);
+      } else {
+        router.push({
+          pathname: '/(tabs)',
+          params: {
+            mode: previousMode,
+            selected: 'true'
+          }
+        });
+        setTimeout(() => {
+          navbarRef?.current?.setDecksTab();
+        }, 50);
+      }
+      return;
+    }
+    
+    // Regular back navigation for non-AddToFolders mode
     if (Platform.OS === 'ios') {
       navbarRef?.current?.setDecksTab();
       setTimeout(() => {
         router.push('/(tabs)');
       }, 50);
     } else {
-      // On Android, we do it in reverse order due to the timing animation
       router.push('/(tabs)');
       setTimeout(() => {
         navbarRef?.current?.setDecksTab();

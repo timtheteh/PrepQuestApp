@@ -6,12 +6,14 @@ import { Animated } from 'react-native';
 interface FloatingActionButtonProps extends ViewProps {
   onPress?: () => void;
   children: ReactNode;
+  disableOverlay?: boolean;
 }
 
 export function FloatingActionButton({ 
   style, 
   onPress,
   children,
+  disableOverlay = false,
   ...props 
 }: FloatingActionButtonProps) {
   const { 
@@ -22,6 +24,13 @@ export function FloatingActionButton({
   } = useContext(MenuContext);
 
   const handlePress = () => {
+    if (disableOverlay) {
+      if (onPress) {
+        onPress();
+      }
+      return;
+    }
+
     if (onPress) {
       onPress();
     }

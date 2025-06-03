@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { NavBarRef } from '@/components/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useIsFocused } from '@react-navigation/native';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -196,6 +197,10 @@ export default function FoldersScreen() {
         useNativeDriver: true,
       })
     ]).start();
+  };
+
+  const handleFabPress = () => {
+    console.log("Folders FAB clicked!");
   };
 
   const handleMenuPress = () => {
@@ -386,6 +391,19 @@ export default function FoldersScreen() {
             </Animated.View>
           </View>
         </Animated.View>
+
+        <Animated.View style={[
+          styles.fabContainer,
+          { opacity: fabOpacity }
+        ]}>
+          <FloatingActionButton
+            style={styles.fab}
+            disableOverlay={true}
+            onPress={handleFabPress}
+          >
+            <Feather name="plus" size={38} color="white" />
+          </FloatingActionButton>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -480,5 +498,18 @@ const styles = StyleSheet.create({
   },
   card: {
     marginTop: 26,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 20 : 15,
+    right: 16,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 1,
   },
 }); 

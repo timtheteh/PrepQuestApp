@@ -425,13 +425,11 @@ export default function TabLayout() {
             
             // Then navigate back based on source page
             if (Platform.OS === 'ios') {
-              // Reset navbar animation if going to favorites, otherwise set decks tab
               if (sourcePageForFolders === 'favorites') {
                 navbarRef?.current?.resetAnimation();
               } else {
                 navbarRef?.current?.setDecksTab();
               }
-              
               setTimeout(() => {
                 router.push({
                   pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',

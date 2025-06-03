@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   backButton: {
-    paddingTop: 10,
+    paddingTop: 8,
   },
   mainContentWrapper: {
     flex: 1,

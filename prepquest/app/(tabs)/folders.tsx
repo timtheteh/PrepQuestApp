@@ -295,13 +295,11 @@ export default function FoldersScreen() {
       
       // Navigate back based on source page
       if (Platform.OS === 'ios') {
-        // Reset navbar animation if going to favorites, otherwise set decks tab
         if (sourcePageForFolders === 'favorites') {
           navbarRef?.current?.resetAnimation();
         } else {
           navbarRef?.current?.setDecksTab();
         }
-        
         setTimeout(() => {
           router.push({
             pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
@@ -352,13 +350,11 @@ export default function FoldersScreen() {
     // If in AddToFolders mode, navigate back to source page in selected state
     if (isAddToFolders === 'true') {
       if (Platform.OS === 'ios') {
-        // Reset navbar animation if going to favorites, otherwise set decks tab
         if (sourcePageForFolders === 'favorites') {
           navbarRef?.current?.resetAnimation();
         } else {
           navbarRef?.current?.setDecksTab();
         }
-        
         setTimeout(() => {
           router.push({
             pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',

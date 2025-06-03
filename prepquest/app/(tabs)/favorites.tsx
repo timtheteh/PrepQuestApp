@@ -92,6 +92,16 @@ export default function FavoritesScreen() {
     outputRange: [0, 1],
   });
 
+  const selectOpacity = selectTextAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  const selectAllOpacity = selectTextAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
   // Handle screen transitions and set previous mode
   useEffect(() => {
     if (isFocused) {
@@ -233,6 +243,176 @@ export default function FavoritesScreen() {
     }
   };
 
+  const handleSelect = () => {
+    setIsSelectMode(true);
+    
+    Animated.parallel([
+      Animated.timing(shiftAnim, {
+        toValue: SHIFT_DISTANCE,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(marginAnim, {
+        toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+        duration: selectUnselectedDuration,
+        useNativeDriver: false,
+      }),
+      Animated.timing(actionRowOpacity, {
+        toValue: 1,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(selectTextAnim, {
+        toValue: 1,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fabOpacity, {
+        toValue: 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardWidthPercentage, {
+        toValue: 85,
+        duration: selectUnselectedDuration,
+        useNativeDriver: false,
+      }),
+      Animated.timing(circleButtonOpacity, {
+        toValue: 1,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const handleCancel = () => {
+    Animated.parallel([
+      Animated.timing(shiftAnim, {
+        toValue: 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(marginAnim, {
+        toValue: BOTTOM_SPACING,
+        duration: selectUnselectedDuration,
+        useNativeDriver: false,
+      }),
+      Animated.timing(actionRowOpacity, {
+        toValue: 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(selectTextAnim, {
+        toValue: 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fabOpacity, {
+        toValue: 1,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardWidthPercentage, {
+        toValue: 100,
+        duration: selectUnselectedDuration,
+        useNativeDriver: false,
+      }),
+      Animated.timing(circleButtonOpacity, {
+        toValue: 0,
+        duration: selectUnselectedDuration,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSelectMode(false);
+      setSelectedFavDeckCards(new Set());
+      setSelectedFavFolderCards(new Set());
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (isFavFoldersMode) {
+      const allFolderIndices = new Set(Array.from({ length: favFolderCardsCount }, (_, i) => i));
+      setSelectedFavFolderCards(allFolderIndices);
+    } else {
+      const allDeckIndices = new Set(Array.from({ length: favDeckCardsCount }, (_, i) => i));
+      setSelectedFavDeckCards(allDeckIndices);
+    }
+  };
+
+  const handleActionIconPress = (index: number) => {
+    const hasSelection = isFavFoldersMode 
+      ? selectedFavFolderCards.size > 0 
+      : selectedFavDeckCards.size > 0;
+
+    if (!hasSelection) {
+      setIsMenuOpen(true);
+      setIsNoSelectionModalOpen(true);
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0.4,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(noSelectionModalOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        })
+      ]).start();
+      return;
+    }
+
+    switch (index) {
+      case 0: // Folder
+        // Reset header icons state
+        headerIconsRef.current?.reset();
+        
+        // Navigate to folders in AddToFolders mode
+        if (Platform.OS === 'ios') {
+          navbarRef?.current?.resetAnimation();
+          setTimeout(() => {
+            router.push({
+              pathname: '/(tabs)/folders',
+              params: { 
+                isAddToFolders: 'true',
+                previousMode: isFavFoldersMode ? 'interview' : 'study',
+                selectedState: 'true'
+              }
+            });
+          }, 50);
+        } else {
+          router.push({
+            pathname: '/(tabs)/folders',
+            params: { 
+              isAddToFolders: 'true',
+              previousMode: isFavFoldersMode ? 'interview' : 'study',
+              selectedState: 'true'
+            }
+          });
+          setTimeout(() => {
+            navbarRef?.current?.resetAnimation();
+          }, 50);
+        }
+        break;
+      case 1: // Trash
+        setIsMenuOpen(true);
+        setIsTrashModalOpenInDecksPage(true);
+        Animated.parallel([
+          Animated.timing(menuOverlayOpacity, {
+            toValue: 0.4,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(trashModalOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        ]).start();
+        break;
+    }
+  };
+
   // Update card counts
   useEffect(() => {
     setFavDeckCardsCount(8); // Current number of favorite deck cards
@@ -350,6 +530,26 @@ export default function FavoritesScreen() {
                 onToggle={handleToggle}
               />
 
+              <Animated.View style={[
+                styles.actionButtonsRow,
+                {
+                  opacity: actionRowOpacity,
+                  transform: [{
+                    translateY: actionRowOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-20, 0]
+                    })
+                  }]
+                }
+              ]}>
+                <ActionButtonsRow
+                  iconNames={['folder', 'trash']}
+                  onCancel={handleCancel}
+                  onIconPress={handleActionIconPress}
+                  iconColors={['black', '#FF3B30']}
+                />
+              </Animated.View>
+
               <Animated.View 
                 style={[
                   styles.shiftableContent,
@@ -365,6 +565,25 @@ export default function FavoritesScreen() {
                       Favorite Folders
                     </Title>
                   </View>
+                  <TouchableOpacity 
+                    onPress={isSelectMode ? handleSelectAll : handleSelect}
+                    style={styles.selectButtonContainer}
+                  >
+                    <Animated.Text style={[
+                      styles.selectButton,
+                      styles.selectButtonAbsolute,
+                      { opacity: selectOpacity }
+                    ]}>
+                      Select
+                    </Animated.Text>
+                    <Animated.Text style={[
+                      styles.selectButton,
+                      styles.selectButtonAbsolute,
+                      { opacity: selectAllOpacity }
+                    ]}>
+                      Select All
+                    </Animated.Text>
+                  </TouchableOpacity>
                 </View>
                 
                 <View style={styles.scrollWrapper}>
@@ -505,6 +724,28 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 100,
+    zIndex: 1,
+  },
+  selectButtonContainer: {
+    position: 'relative',
+    width: 85,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  selectButton: {
+    fontSize: 20,
+    fontFamily: 'Satoshi-Medium',
+    color: '#44B88A',
+  },
+  selectButtonAbsolute: {
+    position: 'absolute',
+  },
+  actionButtonsRow: {
+    position: 'absolute',
+    top: 62,
+    right: 0,
+    left: 0,
     zIndex: 1,
   },
 });

@@ -131,12 +131,14 @@ interface AddDeckModalProps {
   visible: boolean;
   opacity?: Animated.Value;
   currentMode: 'study' | 'interview';
+  isInFavoritesPage?: boolean;
 }
 
 export function AddDeckModal({ 
   visible,
   opacity = new Animated.Value(0),
-  currentMode
+  currentMode,
+  isInFavoritesPage = false
 }: AddDeckModalProps) {
   const { setCurrentMode } = useContext(MenuContext);
 
@@ -158,7 +160,7 @@ export function AddDeckModal({
       <View style={styles.content}>
         <View style={styles.column}>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>Add Deck</Text>
+            <Text style={styles.title}>{isInFavoritesPage ? "Add Deck to Favorites" : "Add Deck"}</Text>
           </View>
           <View style={styles.toggleRow}>
             <InterviewStudyToggle 

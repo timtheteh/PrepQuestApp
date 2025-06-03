@@ -60,7 +60,9 @@ export default function FavoritesScreen() {
     navbarRef,
     setIsAIPromptOpen,
     setIsCalendarOpen,
-    setCalendarTitle
+    setCalendarTitle,
+    setIsAddDeckOpen,
+    addDeckOpacity
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -213,7 +215,20 @@ export default function FavoritesScreen() {
     if (isFavFoldersMode) {
       console.log("Favorite Folders FAB clicked!");
     } else {
-      console.log("Favorite Decks FAB clicked!");
+      setIsMenuOpen(true);
+      setIsAddDeckOpen(true);
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0.4,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(addDeckOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start();
     }
   };
 

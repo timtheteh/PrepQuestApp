@@ -81,6 +81,8 @@ interface MenuContextType {
   isAddToFoldersModalOpen: boolean;
   setIsAddToFoldersModalOpen: (value: boolean) => void;
   addToFoldersModalOpacity: Animated.Value;
+  isInFavoritesPage: boolean;
+  setIsInFavoritesPage: (value: boolean) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -118,6 +120,8 @@ export const MenuContext = createContext<MenuContextType>({
   isAddToFoldersModalOpen: false,
   setIsAddToFoldersModalOpen: () => {},
   addToFoldersModalOpacity: new Animated.Value(0),
+  isInFavoritesPage: false,
+  setIsInFavoritesPage: () => {},
 });
 
 export default function TabLayout() {
@@ -134,6 +138,7 @@ export default function TabLayout() {
   const [handleDeletion, setHandleDeletion] = useState<(() => void) | null>(null);
   const [deleteModalText, setDeleteModalText] = useState('Are you sure you want to delete these deck(s)?');
   const [isAddToFoldersModalOpen, setIsAddToFoldersModalOpen] = useState(false);
+  const [isInFavoritesPage, setIsInFavoritesPage] = useState(false);
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
@@ -311,7 +316,9 @@ export default function TabLayout() {
       setDeleteModalText,
       isAddToFoldersModalOpen,
       setIsAddToFoldersModalOpen,
-      addToFoldersModalOpacity
+      addToFoldersModalOpacity,
+      isInFavoritesPage,
+      setIsInFavoritesPage
     }}>
       <View style={styles.container}>
         <Tabs
@@ -326,7 +333,13 @@ export default function TabLayout() {
           <Tabs.Screen name="statistics" />
           <Tabs.Screen name="awards" />
           <Tabs.Screen name="folders" />
-          <Tabs.Screen name="favorites" />
+          <Tabs.Screen 
+            name="favorites" 
+            listeners={{
+              focus: () => setIsInFavoritesPage(true),
+              blur: () => setIsInFavoritesPage(false)
+            }}
+          />
         </Tabs>
         <GreyOverlayBackground 
           visible={isMenuOpen}
@@ -353,6 +366,7 @@ export default function TabLayout() {
           visible={isAddDeckOpen}
           opacity={addDeckOpacity}
           currentMode={currentMode}
+          isInFavoritesPage={isInFavoritesPage}
         />
         <GenericModal
           visible={isTrashModalOpenInDecksPage}

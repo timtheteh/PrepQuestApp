@@ -572,8 +572,30 @@ export default function FavoritesScreen() {
                   iconColors={isFavFoldersMode ? ['#FF3B30'] : ['black', '#FF3B30']}
                   showUnfavoriteButton={true}
                   onUnfavoritePress={() => {
-                    // TODO: Implement unfavorite functionality
-                    console.log('Unfavorite pressed');
+                    const hasSelection = isFavFoldersMode 
+                      ? selectedFavFolderCards.size > 0 
+                      : selectedFavDeckCards.size > 0;
+
+                    if (!hasSelection) {
+                      setIsMenuOpen(true);
+                      setIsNoSelectionModalOpen(true);
+                      Animated.parallel([
+                        Animated.timing(menuOverlayOpacity, {
+                          toValue: 0.4,
+                          duration: 500,
+                          useNativeDriver: true,
+                        }),
+                        Animated.timing(noSelectionModalOpacity, {
+                          toValue: 1,
+                          duration: 500,
+                          useNativeDriver: true,
+                        })
+                      ]).start();
+                      return;
+                    }
+
+                    // TODO: Implement unfavorite functionality for selected cards
+                    console.log('Unfavorite pressed with selection');
                   }}
                 />
               </Animated.View>

@@ -6,7 +6,7 @@ import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { Feather } from '@expo/vector-icons';
 import { useState, useRef, useContext, useEffect } from 'react';
 import { MenuContext } from './_layout';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { NavBarRef } from '@/components/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useIsFocused } from '@react-navigation/native';
@@ -19,8 +19,10 @@ const selectUnselectedDuration = 300;
 
 export default function FoldersScreen() {
   const router = useRouter();
+  const { isAddToFolders } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
   const [selectedFolders, setSelectedFolders] = useState<Set<number>>(new Set());
   const isFocused = useIsFocused();
   const { 
@@ -55,18 +57,37 @@ export default function FoldersScreen() {
       // Set the delete modal text for folders
       setDeleteModalText('Are you sure you want to delete these folder(s)?');
 
-      // Reset selection mode and related states
-      setIsSelectMode(false);
-      setSelectedFolders(new Set());
+      // Check if we should enter AddToFolders mode
+      if (isAddToFolders === 'true') {
+        setIsSelectMode(true);
+        setIsAddToFoldersMode(true);
+        
+        // Set animation values directly without animation
+        shiftAnim.setValue(SHIFT_DISTANCE);
+        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        actionRowOpacity.setValue(1);
+        selectTextAnim.setValue(1);
+        fabOpacity.setValue(0);
+        cardWidthPercentage.setValue(85);
+        circleButtonOpacity.setValue(1);
 
-      // Reset all animations to their default values
-      shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
-      actionRowOpacity.setValue(0);
-      selectTextAnim.setValue(0);
-      fabOpacity.setValue(1);
-      cardWidthPercentage.setValue(100);
-      circleButtonOpacity.setValue(0);
+        // Reset navbar animation to -2
+        navbarRef?.current?.resetAnimation();
+      } else {
+        // Reset selection mode and related states
+        setIsSelectMode(false);
+        setIsAddToFoldersMode(false);
+        setSelectedFolders(new Set());
+
+        // Reset all animations to their default values
+        shiftAnim.setValue(0);
+        marginAnim.setValue(BOTTOM_SPACING);
+        actionRowOpacity.setValue(0);
+        selectTextAnim.setValue(0);
+        fabOpacity.setValue(1);
+        cardWidthPercentage.setValue(100);
+        circleButtonOpacity.setValue(0);
+      }
     }
   }, [isFocused]);
 
@@ -338,12 +359,20 @@ export default function FoldersScreen() {
                 }]
               }
             ]}>
-              <ActionButtonsRow
-                iconNames={['trash']}
-                onCancel={handleCancel}
-                onIconPress={handleActionIconPress}
-                iconColors={['#FF3B30']}
-              />
+              {isAddToFoldersMode ? (
+                <View style={styles.doneButtonContainer}>
+                  <TouchableOpacity onPress={handleCancel}>
+                    <Text style={styles.doneButton}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <ActionButtonsRow
+                  iconNames={['trash']}
+                  onCancel={handleCancel}
+                  onIconPress={handleActionIconPress}
+                  iconColors={['#FF3B30']}
+                />
+              )}
             </Animated.View>
 
             <Animated.View 
@@ -355,7 +384,7 @@ export default function FoldersScreen() {
               <View style={styles.titleRow}>
                 <View style={styles.titleContainer}>
                   <Title>
-                    Folders
+                    {isAddToFoldersMode ? 'Add to Folder(s)' : 'Folders'}
                   </Title>
                 </View>
                 <TouchableOpacity 
@@ -511,5 +540,17 @@ const styles = StyleSheet.create({
     right: 0,
     height: 100,
     zIndex: 1,
+  },
+  doneButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingRight: 16,
+    height: 44,
+  },
+  doneButton: {
+    fontSize: 20,
+    fontFamily: 'Satoshi-Medium',
+    color: '#44B88A',
   },
 }); 

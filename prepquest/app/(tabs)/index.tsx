@@ -303,8 +303,28 @@ export default function DecksScreen() {
     }
 
     switch (index) {
-      case 0: // Share
-        console.log('Folder pressed');
+      case 0: // Folder
+        // Reset header icons state
+        headerIconsRef.current?.reset();
+        
+        // Navigate to folders in AddToFolders mode
+        if (Platform.OS === 'ios') {
+          navbarRef?.current?.resetAnimation();
+          setTimeout(() => {
+            router.push({
+              pathname: '/(tabs)/folders',
+              params: { isAddToFolders: 'true' }
+            });
+          }, 50);
+        } else {
+          router.push({
+            pathname: '/(tabs)/folders',
+            params: { isAddToFolders: 'true' }
+          });
+          setTimeout(() => {
+            navbarRef?.current?.resetAnimation();
+          }, 50);
+        }
         break;
       case 1: // Trash
         setIsMenuOpen(true);

@@ -36,7 +36,9 @@ export default function FoldersScreen() {
     noSelectionModalOpacity,
     navbarRef,
     setHandleDeletion,
-    setDeleteModalText
+    setDeleteModalText,
+    setIsAddToFoldersModalOpen,
+    addToFoldersModalOpacity
   } = useContext(MenuContext);
 
   // Animation values
@@ -276,33 +278,52 @@ export default function FoldersScreen() {
   };
 
   const handleDone = () => {
-    // Reset header icons state
-    headerIconsRef.current?.reset();
-    
-    // Navigate back to decks page
-    if (Platform.OS === 'ios') {
-      navbarRef?.current?.setDecksTab();
-      setTimeout(() => {
+    const hasSelection = selectedFolders.size > 0;
+
+    if (!hasSelection) {
+      // Reset header icons state
+      headerIconsRef.current?.reset();
+      
+      // Navigate back to decks page without selected state
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.setDecksTab();
+        setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)',
+            params: {
+              mode: previousMode
+            }
+          });
+        }, 50);
+      } else {
         router.push({
           pathname: '/(tabs)',
           params: {
-            mode: previousMode,
-            // selected: selectedState
+            mode: previousMode
           }
         });
-      }, 50);
-    } else {
-      router.push({
-        pathname: '/(tabs)',
-        params: {
-          mode: previousMode,
-        //   selected: selectedState
-        }
-      });
-      setTimeout(() => {
-        navbarRef?.current?.setDecksTab();
-      }, 50);
+        setTimeout(() => {
+          navbarRef?.current?.setDecksTab();
+        }, 50);
+      }
+      return;
     }
+
+    // Show confirmation modal when there is a selection
+    setIsMenuOpen(true);
+    setIsAddToFoldersModalOpen(true);
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.4,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(addToFoldersModalOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   const handleBackPress = () => {

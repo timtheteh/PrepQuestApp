@@ -394,6 +394,7 @@ export default function FavoritesScreen() {
             <FloatingActionButton
               style={styles.fab}
               onPress={handleFabPress}
+              disableOverlay={isFavFoldersMode}
             >
               <Feather name="plus" size={38} color="white" />
             </FloatingActionButton>

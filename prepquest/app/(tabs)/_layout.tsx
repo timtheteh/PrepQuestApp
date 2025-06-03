@@ -86,6 +86,11 @@ interface MenuContextType {
   setNoSelectionModalSubtitle: (text: string) => void;
   sourcePageForFolders: string;
   setSourcePageForFolders: (value: string) => void;
+  isUnfavoriteModalOpen: boolean;
+  setIsUnfavoriteModalOpen: (value: boolean) => void;
+  unfavoriteModalOpacity: Animated.Value;
+  unfavoriteModalText: string;
+  setUnfavoriteModalText: (text: string) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -129,6 +134,11 @@ export const MenuContext = createContext<MenuContextType>({
   setNoSelectionModalSubtitle: () => {},
   sourcePageForFolders: '',
   setSourcePageForFolders: () => {},
+  isUnfavoriteModalOpen: false,
+  setIsUnfavoriteModalOpen: () => {},
+  unfavoriteModalOpacity: new Animated.Value(0),
+  unfavoriteModalText: '',
+  setUnfavoriteModalText: () => {},
 });
 
 export default function TabLayout() {
@@ -159,6 +169,9 @@ export default function TabLayout() {
   const pathname = usePathname();
   const { sourcePage } = useLocalSearchParams();
   const [sourcePageForFolders, setSourcePageForFolders] = useState('');
+  const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false);
+  const [unfavoriteModalText, setUnfavoriteModalText] = useState('');
+  const unfavoriteModalOpacity = useRef(new Animated.Value(0)).current;
 
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
@@ -260,6 +273,22 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsAddToFoldersModalOpen(false);
       });
+    } else if (isUnfavoriteModalOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(unfavoriteModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsUnfavoriteModalOpen(false);
+      });
     } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -285,7 +314,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen, isAddToFoldersModalOpen]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen, isAddToFoldersModalOpen, isUnfavoriteModalOpen]);
 
   const handleFolderPress = useCallback(() => {
     handleDismissMenu();
@@ -333,7 +362,12 @@ export default function TabLayout() {
       noSelectionModalSubtitle,
       setNoSelectionModalSubtitle,
       sourcePageForFolders,
-      setSourcePageForFolders
+      setSourcePageForFolders,
+      isUnfavoriteModalOpen,
+      setIsUnfavoriteModalOpen,
+      unfavoriteModalOpacity,
+      unfavoriteModalText,
+      setUnfavoriteModalText,
     }}>
       <View style={styles.container}>
         <Tabs
@@ -453,6 +487,24 @@ export default function TabLayout() {
                 }
               }, 50);
             }
+          }}
+        />
+        <GenericModal
+          visible={isUnfavoriteModalOpen}
+          opacity={unfavoriteModalOpacity}
+          Icon={DeleteModalIcon}
+          text={unfavoriteModalText}
+          textStyle={{
+            highlightWord: "unfavorite",
+            highlightColor: "#D7191C"
+          }}
+          buttons="double"
+          onCancel={handleDismissMenu}
+          onConfirm={() => {
+            if (handleDeletion) {
+              handleDeletion();
+            }
+            handleDismissMenu();
           }}
         />
       </View>

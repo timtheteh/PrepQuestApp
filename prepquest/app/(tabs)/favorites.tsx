@@ -67,6 +67,9 @@ export default function FavoritesScreen() {
     setNoSelectionModalSubtitle,
     setSourcePageForFolders,
     setDeleteModalText,
+    setIsUnfavoriteModalOpen,
+    unfavoriteModalOpacity,
+    setUnfavoriteModalText,
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -515,8 +518,26 @@ export default function FavoritesScreen() {
       return;
     }
 
-    // TODO: Implement unfavorite functionality for selected cards
-    console.log('Unfavorite pressed with selection');
+    // Show unfavorite modal with appropriate text
+    setIsMenuOpen(true);
+    setIsUnfavoriteModalOpen(true);
+    setUnfavoriteModalText(
+      isFavFoldersMode
+        ? 'Are you sure you want to unfavorite these folder(s)?'
+        : 'Are you sure you want to unfavorite these deck(s)?'
+    );
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.4,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(unfavoriteModalOpacity, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   // Update card counts

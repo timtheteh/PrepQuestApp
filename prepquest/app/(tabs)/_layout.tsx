@@ -83,6 +83,8 @@ interface MenuContextType {
   addToFoldersModalOpacity: Animated.Value;
   isInFavoritesPage: boolean;
   setIsInFavoritesPage: (value: boolean) => void;
+  noSelectionModalSubtitle: string;
+  setNoSelectionModalSubtitle: (text: string) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -122,6 +124,8 @@ export const MenuContext = createContext<MenuContextType>({
   addToFoldersModalOpacity: new Animated.Value(0),
   isInFavoritesPage: false,
   setIsInFavoritesPage: () => {},
+  noSelectionModalSubtitle: '',
+  setNoSelectionModalSubtitle: () => {},
 });
 
 export default function TabLayout() {
@@ -139,6 +143,7 @@ export default function TabLayout() {
   const [deleteModalText, setDeleteModalText] = useState('Are you sure you want to delete these deck(s)?');
   const [isAddToFoldersModalOpen, setIsAddToFoldersModalOpen] = useState(false);
   const [isInFavoritesPage, setIsInFavoritesPage] = useState(false);
+  const [noSelectionModalSubtitle, setNoSelectionModalSubtitle] = useState('Please choose at least one deck if you want to delete or add to folder.');
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
@@ -318,7 +323,9 @@ export default function TabLayout() {
       setIsAddToFoldersModalOpen,
       addToFoldersModalOpacity,
       isInFavoritesPage,
-      setIsInFavoritesPage
+      setIsInFavoritesPage,
+      noSelectionModalSubtitle,
+      setNoSelectionModalSubtitle
     }}>
       <View style={styles.container}>
         <Tabs
@@ -390,7 +397,7 @@ export default function TabLayout() {
           visible={isNoSelectionModalOpen}
           opacity={noSelectionModalOpacity}
           text="No selection made!"
-          subtitle="Please choose at least one deck if you want to delete or add to folder."
+          subtitle={noSelectionModalSubtitle}
         />
         <GenericModal
           visible={isAddToFoldersModalOpen}

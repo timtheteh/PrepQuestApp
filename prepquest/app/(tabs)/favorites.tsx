@@ -63,7 +63,8 @@ export default function FavoritesScreen() {
     setIsCalendarOpen,
     setCalendarTitle,
     setIsAddDeckOpen,
-    addDeckOpacity
+    addDeckOpacity,
+    setNoSelectionModalSubtitle
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -347,6 +348,11 @@ export default function FavoritesScreen() {
     if (!hasSelection) {
       setIsMenuOpen(true);
       setIsNoSelectionModalOpen(true);
+      setNoSelectionModalSubtitle(
+        isFavFoldersMode
+          ? "Please choose at least one folder if you want to delete or unfavorite."
+          : "Please choose at least one deck if you want to delete, add to folder or unfavorite"
+      );
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0.4,
@@ -434,6 +440,38 @@ export default function FavoritesScreen() {
           break;
       }
     }
+  };
+
+  const handleUnfavoritePress = () => {
+    const hasSelection = isFavFoldersMode 
+      ? selectedFavFolderCards.size > 0 
+      : selectedFavDeckCards.size > 0;
+
+    if (!hasSelection) {
+      setIsMenuOpen(true);
+      setIsNoSelectionModalOpen(true);
+      setNoSelectionModalSubtitle(
+        isFavFoldersMode
+          ? "Please choose at least one folder if you want to delete or unfavorite."
+          : "Please choose at least one deck if you want to delete, add to folder or unfavorite."
+      );
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0.4,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(noSelectionModalOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        })
+      ]).start();
+      return;
+    }
+
+    // TODO: Implement unfavorite functionality for selected cards
+    console.log('Unfavorite pressed with selection');
   };
 
   // Update card counts
@@ -571,32 +609,7 @@ export default function FavoritesScreen() {
                   onIconPress={handleActionIconPress}
                   iconColors={isFavFoldersMode ? ['#FF3B30'] : ['black', '#FF3B30']}
                   showUnfavoriteButton={true}
-                  onUnfavoritePress={() => {
-                    const hasSelection = isFavFoldersMode 
-                      ? selectedFavFolderCards.size > 0 
-                      : selectedFavDeckCards.size > 0;
-
-                    if (!hasSelection) {
-                      setIsMenuOpen(true);
-                      setIsNoSelectionModalOpen(true);
-                      Animated.parallel([
-                        Animated.timing(menuOverlayOpacity, {
-                          toValue: 0.4,
-                          duration: 500,
-                          useNativeDriver: true,
-                        }),
-                        Animated.timing(noSelectionModalOpacity, {
-                          toValue: 1,
-                          duration: 500,
-                          useNativeDriver: true,
-                        })
-                      ]).start();
-                      return;
-                    }
-
-                    // TODO: Implement unfavorite functionality for selected cards
-                    console.log('Unfavorite pressed with selection');
-                  }}
+                  onUnfavoritePress={handleUnfavoritePress}
                 />
               </Animated.View>
 

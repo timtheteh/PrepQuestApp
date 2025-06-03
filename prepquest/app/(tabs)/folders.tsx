@@ -38,7 +38,8 @@ export default function FoldersScreen() {
     setHandleDeletion,
     setDeleteModalText,
     setIsAddToFoldersModalOpen,
-    addToFoldersModalOpacity
+    addToFoldersModalOpacity,
+    setNoSelectionModalSubtitle
   } = useContext(MenuContext);
 
   // Animation values
@@ -196,6 +197,7 @@ export default function FoldersScreen() {
     if (!hasSelection) {
       setIsMenuOpen(true);
       setIsNoSelectionModalOpen(true);
+      setNoSelectionModalSubtitle("Please choose at least one folder if you want to delete.");
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0.4,

@@ -64,6 +64,9 @@ export default function FoldersScreen() {
         setIsSelectMode(true);
         setIsAddToFoldersMode(true);
         
+        // Reset any selected folders
+        setSelectedFolders(new Set());
+        
         // Set animation values directly without animation
         shiftAnim.setValue(SHIFT_DISTANCE);
         marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);

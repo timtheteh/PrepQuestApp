@@ -287,7 +287,7 @@ export default function FoldersScreen() {
           pathname: '/(tabs)',
           params: {
             mode: previousMode,
-            selected: selectedState
+            // selected: selectedState
           }
         });
       }, 50);
@@ -296,7 +296,7 @@ export default function FoldersScreen() {
         pathname: '/(tabs)',
         params: {
           mode: previousMode,
-          selected: selectedState
+        //   selected: selectedState
         }
       });
       setTimeout(() => {
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingRight: 16,
-    height: 44,
+    height: 48,
   },
   doneButton: {
     fontSize: 20,

@@ -362,39 +362,11 @@ export default function FavoritesScreen() {
       return;
     }
 
-    switch (index) {
-      case 0: // Folder
-        // Reset header icons state
-        headerIconsRef.current?.reset();
-        
-        // Navigate to folders in AddToFolders mode
-        if (Platform.OS === 'ios') {
-          navbarRef?.current?.resetAnimation();
-          setTimeout(() => {
-            router.push({
-              pathname: '/(tabs)/folders',
-              params: { 
-                isAddToFolders: 'true',
-                previousMode: isFavFoldersMode ? 'interview' : 'study',
-                selectedState: 'true'
-              }
-            });
-          }, 50);
-        } else {
-          router.push({
-            pathname: '/(tabs)/folders',
-            params: { 
-              isAddToFolders: 'true',
-              previousMode: isFavFoldersMode ? 'interview' : 'study',
-              selectedState: 'true'
-            }
-          });
-          setTimeout(() => {
-            navbarRef?.current?.resetAnimation();
-          }, 50);
-        }
-        break;
-      case 1: // Trash
+    // In folders mode, we only have trash button
+    // In decks mode, we have folder and trash buttons
+    if (isFavFoldersMode) {
+      // In folders mode, index 0 is trash
+      if (index === 0) {
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
         Animated.parallel([
@@ -409,7 +381,58 @@ export default function FavoritesScreen() {
             useNativeDriver: true,
           })
         ]).start();
-        break;
+      }
+    } else {
+      // In decks mode
+      switch (index) {
+        case 0: // Folder
+          // Reset header icons state
+          headerIconsRef.current?.reset();
+          
+          // Navigate to folders in AddToFolders mode
+          if (Platform.OS === 'ios') {
+            navbarRef?.current?.resetAnimation();
+            setTimeout(() => {
+              router.push({
+                pathname: '/(tabs)/folders',
+                params: { 
+                  isAddToFolders: 'true',
+                  previousMode: isFavFoldersMode ? 'interview' : 'study',
+                  selectedState: 'true'
+                }
+              });
+            }, 50);
+          } else {
+            router.push({
+              pathname: '/(tabs)/folders',
+              params: { 
+                isAddToFolders: 'true',
+                previousMode: isFavFoldersMode ? 'interview' : 'study',
+                selectedState: 'true'
+              }
+            });
+            setTimeout(() => {
+              navbarRef?.current?.resetAnimation();
+            }, 50);
+          }
+          break;
+        case 1: // Trash
+          setIsMenuOpen(true);
+          setIsTrashModalOpenInDecksPage(true);
+          Animated.parallel([
+            Animated.timing(menuOverlayOpacity, {
+              toValue: 0.4,
+              duration: 500,
+              useNativeDriver: true,
+            }),
+            Animated.timing(trashModalOpacity, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            })
+          ]).start();
+          break;
+      }
     }
   };
 
@@ -543,11 +566,11 @@ export default function FavoritesScreen() {
                 }
               ]}>
                 <ActionButtonsRow
-                  iconNames={['folder', 'trash']}
+                  iconNames={isFavFoldersMode ? ['trash'] : ['folder', 'trash']}
                   onCancel={handleCancel}
                   onIconPress={handleActionIconPress}
-                  iconColors={['black', '#FF3B30']}
-                  showUnfavoriteButton={!isFavFoldersMode}
+                  iconColors={isFavFoldersMode ? ['#FF3B30'] : ['black', '#FF3B30']}
+                  showUnfavoriteButton={true}
                   onUnfavoritePress={() => {
                     // TODO: Implement unfavorite functionality
                     console.log('Unfavorite pressed');

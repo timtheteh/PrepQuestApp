@@ -7,6 +7,7 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
+import { FolderCard } from '@/components/FolderCard';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { useState, useRef, useEffect, useContext } from 'react';
 import { useIsFocused } from '@react-navigation/native';
@@ -272,15 +273,12 @@ export default function FavoritesScreen() {
 
   const renderFavFolderCards = () => {
     const cards = Array(6).fill(null).map((_, index) => {
-      const design = cardDesigns[(index + 2) % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
-        <Card
+        <FolderCard
           key={`favFolder-${index}`}
           style={style}
-          backgroundImage={design.background}
-          pressedBackgroundImage={design.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedFavFolderCards.has(index)}

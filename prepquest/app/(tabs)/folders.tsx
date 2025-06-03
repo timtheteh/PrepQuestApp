@@ -19,7 +19,7 @@ const selectUnselectedDuration = 300;
 
 export default function FoldersScreen() {
   const router = useRouter();
-  const { isAddToFolders } = useLocalSearchParams();
+  const { isAddToFolders, previousMode, selectedState } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
@@ -275,6 +275,36 @@ export default function FoldersScreen() {
     setSelectedFolders(allFolderIndices);
   };
 
+  const handleDone = () => {
+    // Reset header icons state
+    headerIconsRef.current?.reset();
+    
+    // Navigate back to decks page
+    if (Platform.OS === 'ios') {
+      navbarRef?.current?.setDecksTab();
+      setTimeout(() => {
+        router.push({
+          pathname: '/(tabs)',
+          params: {
+            mode: previousMode,
+            selected: selectedState
+          }
+        });
+      }, 50);
+    } else {
+      router.push({
+        pathname: '/(tabs)',
+        params: {
+          mode: previousMode,
+          selected: selectedState
+        }
+      });
+      setTimeout(() => {
+        navbarRef?.current?.setDecksTab();
+      }, 50);
+    }
+  };
+
   const handleBackPress = () => {
     // Reset header icons state
     headerIconsRef.current?.reset();
@@ -361,7 +391,7 @@ export default function FoldersScreen() {
             ]}>
               {isAddToFoldersMode ? (
                 <View style={styles.doneButtonContainer}>
-                  <TouchableOpacity onPress={handleCancel}>
+                  <TouchableOpacity onPress={handleDone}>
                     <Text style={styles.doneButton}>Done</Text>
                   </TouchableOpacity>
                 </View>

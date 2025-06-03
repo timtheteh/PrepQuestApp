@@ -12,7 +12,7 @@ import { MenuButton } from '@/components/MenuButton';
 import { useState, useRef, useEffect, useContext } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
@@ -70,6 +70,7 @@ export default function DecksScreen() {
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const router = useRouter();
   const navbarRef = useRef<any>(null);
+  const { mode, selected } = useLocalSearchParams();
 
   const selectUnselectedDuration = 300;
 
@@ -79,12 +80,61 @@ export default function DecksScreen() {
     setInterviewCardsCount(6); // Current number of interview cards
   }, []); // Empty dependency array as these are constant in the current implementation
 
-  // Handle screen transitions
+  // Handle returning from folders page
   useEffect(() => {
     if (isFocused) {
       // Reset header icons state when screen comes into focus
       headerIconsRef.current?.reset();
       
+      // Check if we're returning from folders page
+      if (mode && selected === 'true') {
+        // Set the correct mode
+        setIsInterviewMode(mode === 'interview');
+        setCurrentMode(mode as 'study' | 'interview');
+        
+        // Enter selection mode
+        setIsSelectMode(true);
+        
+        // Trigger selection mode animations
+        Animated.parallel([
+          Animated.timing(shiftAnim, {
+            toValue: SHIFT_DISTANCE,
+            duration: selectUnselectedDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(marginAnim, {
+            toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+            duration: selectUnselectedDuration,
+            useNativeDriver: false,
+          }),
+          Animated.timing(actionRowOpacity, {
+            toValue: 1,
+            duration: selectUnselectedDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(selectTextAnim, {
+            toValue: 1,
+            duration: selectUnselectedDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fabOpacity, {
+            toValue: 0,
+            duration: selectUnselectedDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(cardWidthPercentage, {
+            toValue: 85,
+            duration: selectUnselectedDuration,
+            useNativeDriver: false,
+          }),
+          Animated.timing(circleButtonOpacity, {
+            toValue: 1,
+            duration: selectUnselectedDuration,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }
+
       Animated.timing(screenOpacity, {
         toValue: 1,
         duration: SCREEN_TRANSITION_DURATION,
@@ -313,13 +363,21 @@ export default function DecksScreen() {
           setTimeout(() => {
             router.push({
               pathname: '/(tabs)/folders',
-              params: { isAddToFolders: 'true' }
+              params: { 
+                isAddToFolders: 'true',
+                previousMode: isInterviewMode ? 'interview' : 'study',
+                selectedState: 'true'
+              }
             });
           }, 50);
         } else {
           router.push({
             pathname: '/(tabs)/folders',
-            params: { isAddToFolders: 'true' }
+            params: { 
+              isAddToFolders: 'true',
+              previousMode: isInterviewMode ? 'interview' : 'study',
+              selectedState: 'true'
+            }
           });
           setTimeout(() => {
             navbarRef?.current?.resetAnimation();

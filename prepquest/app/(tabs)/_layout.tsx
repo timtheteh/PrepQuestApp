@@ -1,5 +1,5 @@
 import { View, StyleSheet, Platform } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter, usePathname, useLocalSearchParams } from 'expo-router';
 import { NavBar, NavBarRef } from '@/components/NavBar';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { SlidingMenu } from '@/components/SlidingMenu';
@@ -10,7 +10,6 @@ import { GenericModal } from '@/components/GenericModal';
 import { createContext, useState, useRef, useCallback, RefObject } from 'react';
 import { Animated } from 'react-native';
 import Svg, { SvgProps, Path } from 'react-native-svg';
-import { useRouter } from 'expo-router';
 
 const DeleteModalIcon: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -85,6 +84,8 @@ interface MenuContextType {
   setIsInFavoritesPage: (value: boolean) => void;
   noSelectionModalSubtitle: string;
   setNoSelectionModalSubtitle: (text: string) => void;
+  sourcePageForFolders: string;
+  setSourcePageForFolders: (value: string) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -126,6 +127,8 @@ export const MenuContext = createContext<MenuContextType>({
   setIsInFavoritesPage: () => {},
   noSelectionModalSubtitle: '',
   setNoSelectionModalSubtitle: () => {},
+  sourcePageForFolders: '',
+  setSourcePageForFolders: () => {},
 });
 
 export default function TabLayout() {
@@ -153,6 +156,9 @@ export default function TabLayout() {
   const noSelectionModalOpacity = useRef(new Animated.Value(0)).current;
   const addToFoldersModalOpacity = useRef(new Animated.Value(0)).current;
   const router = useRouter();
+  const pathname = usePathname();
+  const { sourcePage } = useLocalSearchParams();
+  const [sourcePageForFolders, setSourcePageForFolders] = useState('');
 
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
@@ -325,7 +331,9 @@ export default function TabLayout() {
       isInFavoritesPage,
       setIsInFavoritesPage,
       noSelectionModalSubtitle,
-      setNoSelectionModalSubtitle
+      setNoSelectionModalSubtitle,
+      sourcePageForFolders,
+      setSourcePageForFolders
     }}>
       <View style={styles.container}>
         <Tabs
@@ -343,7 +351,10 @@ export default function TabLayout() {
           <Tabs.Screen 
             name="favorites" 
             listeners={{
-              focus: () => setIsInFavoritesPage(true),
+              focus: () => {
+                setIsInFavoritesPage(true);
+                setSourcePageForFolders('favorites');
+              },
               blur: () => setIsInFavoritesPage(false)
             }}
           />
@@ -412,12 +423,18 @@ export default function TabLayout() {
             // First dismiss the modal
             handleDismissMenu();
             
-            // Then navigate back to decks page in previous mode
+            // Then navigate back based on source page
             if (Platform.OS === 'ios') {
-              navbarRef?.current?.setDecksTab();
+              // Reset navbar animation if going to favorites, otherwise set decks tab
+              if (sourcePageForFolders === 'favorites') {
+                navbarRef?.current?.resetAnimation();
+              } else {
+                navbarRef?.current?.setDecksTab();
+              }
+              
               setTimeout(() => {
                 router.push({
-                  pathname: '/(tabs)',
+                  pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
                   params: {
                     mode: currentMode
                   }
@@ -425,13 +442,17 @@ export default function TabLayout() {
               }, 50);
             } else {
               router.push({
-                pathname: '/(tabs)',
+                pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
                 params: {
                   mode: currentMode
                 }
               });
               setTimeout(() => {
-                navbarRef?.current?.setDecksTab();
+                if (sourcePageForFolders === 'favorites') {
+                  navbarRef?.current?.resetAnimation();
+                } else {
+                  navbarRef?.current?.setDecksTab();
+                }
               }, 50);
             }
           }}

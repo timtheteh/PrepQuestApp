@@ -64,7 +64,8 @@ export default function FavoritesScreen() {
     setCalendarTitle,
     setIsAddDeckOpen,
     addDeckOpacity,
-    setNoSelectionModalSubtitle
+    setNoSelectionModalSubtitle,
+    setSourcePageForFolders
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -365,7 +366,7 @@ export default function FavoritesScreen() {
       setNoSelectionModalSubtitle(
         isFavFoldersMode
           ? "Please choose at least one folder if you want to delete or unfavorite."
-          : "Please choose at least one deck if you want to delete, add to folder or unfavorite"
+          : "Please choose at least one deck if you want to delete, add to folder or unfavorite."
       );
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -408,6 +409,9 @@ export default function FavoritesScreen() {
         case 0: // Folder
           // Reset header icons state
           headerIconsRef.current?.reset();
+          
+          // Set source page to favorites
+          setSourcePageForFolders('favorites');
           
           // Navigate to folders in AddToFolders mode
           if (Platform.OS === 'ios') {
@@ -740,7 +744,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   backButton: {
-    paddingTop: 8,
+    paddingTop: 10,
   },
   mainContentWrapper: {
     flex: 1,

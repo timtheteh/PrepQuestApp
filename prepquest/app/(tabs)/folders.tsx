@@ -19,7 +19,7 @@ const selectUnselectedDuration = 300;
 
 export default function FoldersScreen() {
   const router = useRouter();
-  const { isAddToFolders, previousMode, selectedState } = useLocalSearchParams();
+  const { isAddToFolders, previousMode, selectedState, sourcePage } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
@@ -39,7 +39,8 @@ export default function FoldersScreen() {
     setDeleteModalText,
     setIsAddToFoldersModalOpen,
     addToFoldersModalOpacity,
-    setNoSelectionModalSubtitle
+    setNoSelectionModalSubtitle,
+    sourcePageForFolders
   } = useContext(MenuContext);
 
   // Animation values
@@ -292,12 +293,18 @@ export default function FoldersScreen() {
       // Reset header icons state
       headerIconsRef.current?.reset();
       
-      // Navigate back to decks page without selected state
+      // Navigate back based on source page
       if (Platform.OS === 'ios') {
-        navbarRef?.current?.setDecksTab();
+        // Reset navbar animation if going to favorites, otherwise set decks tab
+        if (sourcePageForFolders === 'favorites') {
+          navbarRef?.current?.resetAnimation();
+        } else {
+          navbarRef?.current?.setDecksTab();
+        }
+        
         setTimeout(() => {
           router.push({
-            pathname: '/(tabs)',
+            pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
             params: {
               mode: previousMode
             }
@@ -305,13 +312,17 @@ export default function FoldersScreen() {
         }, 50);
       } else {
         router.push({
-          pathname: '/(tabs)',
+          pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
           params: {
             mode: previousMode
           }
         });
         setTimeout(() => {
-          navbarRef?.current?.setDecksTab();
+          if (sourcePageForFolders === 'favorites') {
+            navbarRef?.current?.resetAnimation();
+          } else {
+            navbarRef?.current?.setDecksTab();
+          }
         }, 50);
       }
       return;
@@ -338,13 +349,19 @@ export default function FoldersScreen() {
     // Reset header icons state
     headerIconsRef.current?.reset();
     
-    // If in AddToFolders mode, navigate back to decks page in selected state
+    // If in AddToFolders mode, navigate back to source page in selected state
     if (isAddToFolders === 'true') {
       if (Platform.OS === 'ios') {
-        navbarRef?.current?.setDecksTab();
+        // Reset navbar animation if going to favorites, otherwise set decks tab
+        if (sourcePageForFolders === 'favorites') {
+          navbarRef?.current?.resetAnimation();
+        } else {
+          navbarRef?.current?.setDecksTab();
+        }
+        
         setTimeout(() => {
           router.push({
-            pathname: '/(tabs)',
+            pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
             params: {
               mode: previousMode,
               selected: 'true'
@@ -353,14 +370,18 @@ export default function FoldersScreen() {
         }, 50);
       } else {
         router.push({
-          pathname: '/(tabs)',
+          pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
           params: {
             mode: previousMode,
             selected: 'true'
           }
         });
         setTimeout(() => {
-          navbarRef?.current?.setDecksTab();
+          if (sourcePageForFolders === 'favorites') {
+            navbarRef?.current?.resetAnimation();
+          } else {
+            navbarRef?.current?.setDecksTab();
+          }
         }, 50);
       }
       return;

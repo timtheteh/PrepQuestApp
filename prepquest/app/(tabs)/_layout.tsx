@@ -1,4 +1,4 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { NavBar, NavBarRef } from '@/components/NavBar';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
@@ -10,6 +10,7 @@ import { GenericModal } from '@/components/GenericModal';
 import { createContext, useState, useRef, useCallback, RefObject } from 'react';
 import { Animated } from 'react-native';
 import Svg, { SvgProps, Path } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 
 const DeleteModalIcon: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -141,6 +142,7 @@ export default function TabLayout() {
   const trashModalOpacity = useRef(new Animated.Value(0)).current;
   const noSelectionModalOpacity = useRef(new Animated.Value(0)).current;
   const addToFoldersModalOpacity = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
 
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
@@ -384,7 +386,33 @@ export default function TabLayout() {
           buttons="double"
           onCancel={handleDismissMenu}
           onConfirm={() => {
+            // TODO: Implement backend logic here later
+            
+            // First dismiss the modal
             handleDismissMenu();
+            
+            // Then navigate back to decks page in previous mode
+            if (Platform.OS === 'ios') {
+              navbarRef?.current?.setDecksTab();
+              setTimeout(() => {
+                router.push({
+                  pathname: '/(tabs)',
+                  params: {
+                    mode: currentMode
+                  }
+                });
+              }, 50);
+            } else {
+              router.push({
+                pathname: '/(tabs)',
+                params: {
+                  mode: currentMode
+                }
+              });
+              setTimeout(() => {
+                navbarRef?.current?.setDecksTab();
+              }, 50);
+            }
           }}
         />
       </View>

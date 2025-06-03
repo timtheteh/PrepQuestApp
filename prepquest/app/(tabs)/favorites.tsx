@@ -39,12 +39,13 @@ const cardDesigns = [
 ];
 
 export default function FavoritesScreen() {
-  const [isInterviewMode, setIsInterviewMode] = useState(false);
+  const [isFavFoldersMode, setIsFavFoldersMode] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedFavDeckCards, setSelectedFavDeckCards] = useState<Set<number>>(new Set());
   const [selectedFavFolderCards, setSelectedFavFolderCards] = useState<Set<number>>(new Set());
   const [favDeckCardsCount, setFavDeckCardsCount] = useState(0);
   const [favFolderCardsCount, setFavFolderCardsCount] = useState(0);
+  const [previousMode, setPreviousMode] = useState<'study' | 'interview'>('study');
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -73,6 +74,7 @@ export default function FavoritesScreen() {
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const router = useRouter();
+  const { mode } = useLocalSearchParams();
 
   const selectUnselectedDuration = 300;
 
@@ -87,25 +89,16 @@ export default function FavoritesScreen() {
     outputRange: [0, 1],
   });
 
-  const handleFabPress = () => {
-    if (isInterviewMode) {
-      console.log("Favorite Folders FAB clicked!");
-    } else {
-      console.log("Favorite Decks FAB clicked!");
-    }
-  };
-
-  // Update card counts
-  useEffect(() => {
-    setFavDeckCardsCount(8); // Current number of favorite deck cards
-    setFavFolderCardsCount(6); // Current number of favorite folder cards
-  }, []);
-
-  // Handle screen transitions
+  // Handle screen transitions and set previous mode
   useEffect(() => {
     if (isFocused) {
       // Reset header icons state when screen comes into focus
       headerIconsRef.current?.reset();
+      
+      // Set the previous mode from route params
+      if (mode === 'study' || mode === 'interview') {
+        setPreviousMode(mode);
+      }
       
       Animated.timing(screenOpacity, {
         toValue: 1,
@@ -115,20 +108,20 @@ export default function FavoritesScreen() {
     } else {
       screenOpacity.setValue(0);
     }
-  }, [isFocused]);
+  }, [isFocused, mode]);
 
   const handleBackPress = () => {
     // Reset header icons state
     headerIconsRef.current?.reset();
     
-    // Navigate back to decks page
+    // Navigate back to decks page in previous mode
     if (Platform.OS === 'ios') {
       navbarRef?.current?.setDecksTab();
       setTimeout(() => {
         router.push({
           pathname: '/(tabs)',
           params: {
-            mode: isInterviewMode ? 'interview' : 'study'
+            mode: previousMode
           }
         });
       }, 50);
@@ -136,7 +129,7 @@ export default function FavoritesScreen() {
       router.push({
         pathname: '/(tabs)',
         params: {
-          mode: isInterviewMode ? 'interview' : 'study'
+          mode: previousMode
         }
       });
       setTimeout(() => {
@@ -146,7 +139,7 @@ export default function FavoritesScreen() {
   };
 
   const handleToggle = (isRightSide: boolean) => {
-    setIsInterviewMode(isRightSide);
+    setIsFavFoldersMode(isRightSide);
     setCurrentMode(isRightSide ? 'interview' : 'study');
     
     // Clear the selection state for the mode we're leaving
@@ -215,6 +208,20 @@ export default function FavoritesScreen() {
       }).start();
     }
   };
+
+  const handleFabPress = () => {
+    if (isFavFoldersMode) {
+      console.log("Favorite Folders FAB clicked!");
+    } else {
+      console.log("Favorite Decks FAB clicked!");
+    }
+  };
+
+  // Update card counts
+  useEffect(() => {
+    setFavDeckCardsCount(8); // Current number of favorite deck cards
+    setFavFolderCardsCount(6); // Current number of favorite folder cards
+  }, []);
 
   const renderFavDeckCards = () => {
     const cards = Array(8).fill(null).map((_, index) => {
@@ -339,10 +346,10 @@ export default function FavoritesScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                      My Favorite Decks
+                      Favorite Decks
                     </Title>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                      My Favorite Folders
+                      Favorite Folders
                     </Title>
                   </View>
                 </View>
@@ -351,7 +358,7 @@ export default function FavoritesScreen() {
                   {/* Favorite Decks ScrollView */}
                   <Animated.View style={[
                     styles.scrollViewContainer,
-                    { opacity: studyOpacity, display: isInterviewMode ? 'none' : 'flex' }
+                    { opacity: studyOpacity, display: isFavFoldersMode ? 'none' : 'flex' }
                   ]}>
                     <ScrollView 
                       style={styles.scrollContainer}
@@ -365,7 +372,7 @@ export default function FavoritesScreen() {
                   {/* Favorite Folders ScrollView */}
                   <Animated.View style={[
                     styles.scrollViewContainer,
-                    { opacity: interviewOpacity, display: isInterviewMode ? 'flex' : 'none' }
+                    { opacity: interviewOpacity, display: isFavFoldersMode ? 'flex' : 'none' }
                   ]}>
                     <ScrollView 
                       style={styles.scrollContainer}

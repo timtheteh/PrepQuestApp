@@ -61,11 +61,12 @@ export default function FoldersScreen() {
 
       // Check if we should enter AddToFolders mode
       if (isAddToFolders === 'true') {
+        // First reset any selected folders before showing circle buttons
+        setSelectedFolders(new Set());
+        
+        // Then set up the selection mode
         setIsSelectMode(true);
         setIsAddToFoldersMode(true);
-        
-        // Reset any selected folders
-        setSelectedFolders(new Set());
         
         // Set animation values directly without animation
         shiftAnim.setValue(SHIFT_DISTANCE);
@@ -74,6 +75,8 @@ export default function FoldersScreen() {
         selectTextAnim.setValue(1);
         fabOpacity.setValue(0);
         cardWidthPercentage.setValue(85);
+        
+        // Show circle buttons last, after selection state is reset
         circleButtonOpacity.setValue(1);
 
         // Reset navbar animation to -2

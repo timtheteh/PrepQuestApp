@@ -109,6 +109,20 @@ export default function FavoritesScreen() {
       // Reset header icons state when screen comes into focus
       headerIconsRef.current?.reset();
       
+      // Reset to decks state and unselected state
+      setIsSelectMode(false);
+      setSelectedFavDeckCards(new Set());
+      setSelectedFavFolderCards(new Set());
+
+      // Reset all animations to their default values
+      shiftAnim.setValue(0);
+      marginAnim.setValue(BOTTOM_SPACING);
+      actionRowOpacity.setValue(0);
+      selectTextAnim.setValue(0);
+      fabOpacity.setValue(1);
+      cardWidthPercentage.setValue(100);
+      circleButtonOpacity.setValue(0);
+      
       // Set the previous mode from route params
       if (mode === 'study' || mode === 'interview') {
         setPreviousMode(mode);

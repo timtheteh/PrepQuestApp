@@ -29,16 +29,16 @@ const FIELD_LABELS: Record<SortField, string> = {
   lastModified: 'Last Modified'
 };
 
+export const CALENDAR_TITLES: Record<PageType, string> = {
+  decks: 'Filter Decks based on\ndate added',
+  folders: 'Filter Folders based on\ndate added',
+  favorites: 'Filter Favorites based on\ndate added'
+};
+
 const SEARCH_PLACEHOLDERS: Record<PageType, string> = {
   decks: 'Search for Decks',
   folders: 'Search for Folders',
   favorites: 'Search Favorites'
-};
-
-const CALENDAR_TITLES: Record<PageType, string> = {
-  decks: 'Filter Decks based on\ndate added',
-  folders: 'Filter Folders based on\ndate added',
-  favorites: 'Filter Favorites based on\ndate added'
 };
 
 const DEFAULT_SORT_FIELD: SortField = 'lastModified';

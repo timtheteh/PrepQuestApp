@@ -79,7 +79,7 @@ export default function FavoritesScreen() {
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const router = useRouter();
-  const { mode } = useLocalSearchParams();
+  const { mode, selected } = useLocalSearchParams();
 
   const selectUnselectedDuration = 300;
 
@@ -110,19 +110,37 @@ export default function FavoritesScreen() {
       // Reset header icons state when screen comes into focus
       headerIconsRef.current?.reset();
       
-      // Reset to decks state and unselected state
-      setIsSelectMode(false);
-      setSelectedFavDeckCards(new Set());
-      setSelectedFavFolderCards(new Set());
+      if (selected === 'true') {
+        // Enter selection mode with animations
+        setIsSelectMode(true);
+        
+        // Reset selections
+        setSelectedFavDeckCards(new Set());
+        setSelectedFavFolderCards(new Set());
+        
+        // Set animation values directly without animation
+        shiftAnim.setValue(SHIFT_DISTANCE);
+        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        actionRowOpacity.setValue(1);
+        selectTextAnim.setValue(1);
+        fabOpacity.setValue(0);
+        cardWidthPercentage.setValue(85);
+        circleButtonOpacity.setValue(1);
+      } else {
+        // Reset to decks state and unselected state
+        setIsSelectMode(false);
+        setSelectedFavDeckCards(new Set());
+        setSelectedFavFolderCards(new Set());
 
-      // Reset all animations to their default values
-      shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
-      actionRowOpacity.setValue(0);
-      selectTextAnim.setValue(0);
-      fabOpacity.setValue(1);
-      cardWidthPercentage.setValue(100);
-      circleButtonOpacity.setValue(0);
+        // Reset all animations to their default values
+        shiftAnim.setValue(0);
+        marginAnim.setValue(BOTTOM_SPACING);
+        actionRowOpacity.setValue(0);
+        selectTextAnim.setValue(0);
+        fabOpacity.setValue(1);
+        cardWidthPercentage.setValue(100);
+        circleButtonOpacity.setValue(0);
+      }
       
       // Set the previous mode from route params
       if (mode === 'study' || mode === 'interview') {
@@ -137,7 +155,7 @@ export default function FavoritesScreen() {
     } else {
       screenOpacity.setValue(0);
     }
-  }, [isFocused, mode]);
+  }, [isFocused, mode, selected]);
 
   const handleBackPress = () => {
     // Reset header icons state

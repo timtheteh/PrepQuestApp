@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
+import { UnfavoriteButton } from './UnfavoriteButton';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ActionButtonsRowProps {
@@ -9,6 +10,8 @@ interface ActionButtonsRowProps {
   onCancel: () => void;
   onIconPress?: (index: number) => void;
   iconColors?: string[];
+  showUnfavoriteButton?: boolean;
+  onUnfavoritePress?: () => void;
 }
 
 export function ActionButtonsRow({ 
@@ -16,7 +19,9 @@ export function ActionButtonsRow({
   iconNames,
   onCancel,
   onIconPress,
-  iconColors = []
+  iconColors = [],
+  showUnfavoriteButton = false,
+  onUnfavoritePress
 }: ActionButtonsRowProps) {
   return (
     <View style={[styles.container, style]}>
@@ -28,6 +33,9 @@ export function ActionButtonsRow({
           color={iconColors[index] || 'black'}
         />
       ))}
+      {showUnfavoriteButton && (
+        <UnfavoriteButton onPress={onUnfavoritePress} />
+      )}
       <TouchableOpacity onPress={onCancel}>
         <Text style={styles.cancelButton}>Cancel</Text>
       </TouchableOpacity>

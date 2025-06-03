@@ -547,6 +547,11 @@ export default function FavoritesScreen() {
                   onCancel={handleCancel}
                   onIconPress={handleActionIconPress}
                   iconColors={['black', '#FF3B30']}
+                  showUnfavoriteButton={!isFavFoldersMode}
+                  onUnfavoritePress={() => {
+                    // TODO: Implement unfavorite functionality
+                    console.log('Unfavorite pressed');
+                  }}
                 />
               </Animated.View>
 

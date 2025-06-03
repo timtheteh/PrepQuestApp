@@ -65,7 +65,8 @@ export default function FavoritesScreen() {
     setIsAddDeckOpen,
     addDeckOpacity,
     setNoSelectionModalSubtitle,
-    setSourcePageForFolders
+    setSourcePageForFolders,
+    setDeleteModalText,
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -103,6 +104,12 @@ export default function FavoritesScreen() {
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
+
+  // Set up the deletion handler when the component mounts
+  useEffect(() => {
+    setHandleDeletion(() => handleCancel);
+    return () => setHandleDeletion(null);
+  }, []);
 
   // Handle screen transitions and set previous mode
   useEffect(() => {
@@ -408,6 +415,7 @@ export default function FavoritesScreen() {
       if (index === 0) {
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
+        setDeleteModalText('Are you sure you want to delete these folder(s)?');
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
             toValue: 0.4,
@@ -461,6 +469,7 @@ export default function FavoritesScreen() {
         case 1: // Trash
           setIsMenuOpen(true);
           setIsTrashModalOpenInDecksPage(true);
+          setDeleteModalText('Are you sure you want to delete these deck(s)?');
           Animated.parallel([
             Animated.timing(menuOverlayOpacity, {
               toValue: 0.4,

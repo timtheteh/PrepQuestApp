@@ -118,7 +118,7 @@ export const MenuContext = createContext<MenuContextType>({
   handleDeletion: null,
   setHandleDeletion: () => {},
   navbarRef: { current: null },
-  deleteModalText: 'Are you sure you want to delete these deck(s)?',
+  deleteModalText: '',
   setDeleteModalText: () => {},
   isAddToFoldersModalOpen: false,
   setIsAddToFoldersModalOpen: () => {},

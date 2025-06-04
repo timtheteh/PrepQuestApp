@@ -112,7 +112,7 @@ export default function FavoritesScreen() {
   useEffect(() => {
     setHandleDeletion(() => handleCancel);
     return () => setHandleDeletion(null);
-  }, []);
+  }, [isFocused]);
 
   // Handle screen transitions and set previous mode
   useEffect(() => {

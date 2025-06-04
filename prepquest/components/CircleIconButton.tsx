@@ -2,11 +2,12 @@ import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface CircleIconButtonProps {
-  iconName: keyof typeof Ionicons.glyphMap;
+  iconName?: keyof typeof Ionicons.glyphMap;
   size?: number;
   onPress?: () => void;
   color?: string;
   style?: ViewStyle;
+  renderCustomIcon?: (color: string) => React.ReactNode;
 }
 
 export function CircleIconButton({ 
@@ -14,7 +15,8 @@ export function CircleIconButton({
   size = 24,
   onPress,
   color = 'black',
-  style
+  style,
+  renderCustomIcon
 }: CircleIconButtonProps) {
   return (
     <TouchableOpacity 
@@ -25,7 +27,9 @@ export function CircleIconButton({
       onPressOut={(e) => e.currentTarget.setNativeProps({ style: styles.circleButton })}
       onPress={onPress}
     >
-      <Ionicons name={iconName} size={size} color={color} />
+      {renderCustomIcon ? renderCustomIcon(color) : (
+        iconName && <Ionicons name={iconName} size={size} color={color} />
+      )}
     </TouchableOpacity>
   );
 }

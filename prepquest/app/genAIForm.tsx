@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
-import { HeaderIconButtons } from '@/components/HeaderIconButtons';
+import { GenAIFormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
 
 export default function GenAIFormPage() {
   const { mode } = useLocalSearchParams();
@@ -9,6 +9,16 @@ export default function GenAIFormPage() {
 
   const handleBackPress = () => {
     router.back();
+  };
+
+  const handleUseMostRecentFormPress = () => {
+    console.log('Use most recent form');
+    // To be implemented
+  };
+
+  const handleClearAllPress = () => {
+    console.log('Clear all');
+    // To be implemented
   };
 
   return (
@@ -23,10 +33,9 @@ export default function GenAIFormPage() {
       </View>
       
       <View style={styles.headerIconsContainer}>
-        <HeaderIconButtons 
-          pageType="decks"
-          onAIPress={() => {}}
-          onCalendarPress={() => {}}
+        <GenAIFormHeaderIcons 
+          onUseMostRecentFormPress={handleUseMostRecentFormPress}
+          onClearAllPress={handleClearAllPress}
         />
       </View>
 
@@ -45,7 +54,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     paddingTop: Platform.OS === 'android' ? 60 : 20,
     paddingBottom: 8,
   },

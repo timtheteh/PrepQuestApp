@@ -3,15 +3,15 @@ import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { Entypo } from '@expo/vector-icons';
 
-interface GenAIFormHeaderIconsProps {
+interface FormHeaderIconsProps {
   onUseMostRecentFormPress?: () => void;
   onClearAllPress?: () => void;
 }
 
-export function GenAIFormHeaderIcons({ 
+export function FormHeaderIcons({ 
   onUseMostRecentFormPress,
   onClearAllPress
-}: GenAIFormHeaderIconsProps) {
+}: FormHeaderIconsProps) {
   return (
     <View style={styles.container}>
       <CircleIconButton 

@@ -1,11 +1,14 @@
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
-import { GenAIFormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
+import { FormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
+import { RoundedContainer } from '@/components/RoundedContainer';
+import { useState } from 'react';
 
 export default function GenAIFormPage() {
   const { mode } = useLocalSearchParams();
   const router = useRouter();
+  const [isMandatory, setIsMandatory] = useState(true);
 
   const handleBackPress = () => {
     router.back();
@@ -21,6 +24,10 @@ export default function GenAIFormPage() {
     // To be implemented
   };
 
+  const handleToggle = (isRightSide: boolean) => {
+    setIsMandatory(!isRightSide);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
@@ -33,13 +40,20 @@ export default function GenAIFormPage() {
       </View>
       
       <View style={styles.headerIconsContainer}>
-        <GenAIFormHeaderIcons 
+        <FormHeaderIcons 
           onUseMostRecentFormPress={handleUseMostRecentFormPress}
           onClearAllPress={handleClearAllPress}
         />
       </View>
 
       <View style={styles.content}>
+        <View style={styles.toggleContainer}>
+          <RoundedContainer 
+            leftLabel="Mandatory"
+            rightLabel="Optional"
+            onToggle={handleToggle}
+          />
+        </View>
         <Text style={styles.text}>{mode} Mode</Text>
       </View>
     </View>
@@ -71,11 +85,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  toggleContainer: {
+    marginTop: 4,
   },
   text: {
     fontSize: 24,
     fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
+    marginTop: 24,
   },
 }); 

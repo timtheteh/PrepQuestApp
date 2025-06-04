@@ -55,7 +55,8 @@ export default function DecksScreen() {
     trashModalOpacity,
     setIsNoSelectionModalOpen,
     noSelectionModalOpacity,
-    setHandleDeletion
+    setHandleDeletion,
+    setSourcePageForFolders
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -362,6 +363,9 @@ export default function DecksScreen() {
       case 0: // Folder
         // Reset header icons state
         headerIconsRef.current?.reset();
+        
+        // Set source page to index
+        setSourcePageForFolders('index');
         
         // Navigate to folders in AddToFolders mode
         if (Platform.OS === 'ios') {

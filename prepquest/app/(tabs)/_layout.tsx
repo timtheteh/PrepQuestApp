@@ -387,9 +387,10 @@ export default function TabLayout() {
             listeners={{
               focus: () => {
                 setIsInFavoritesPage(true);
-                setSourcePageForFolders('favorites');
               },
-              blur: () => setIsInFavoritesPage(false)
+              blur: () => {
+                setIsInFavoritesPage(false);
+              }
             }}
           />
         </Tabs>

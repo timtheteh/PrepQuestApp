@@ -158,6 +158,9 @@ export default function FavoritesScreen() {
         circleButtonOpacity.setValue(0);
       }
       
+      // Set source page to favorites
+      setSourcePageForFolders('favorites');
+      
       // Set the previous mode from route params
       if (mode === 'study' || mode === 'interview') {
         setPreviousMode(mode);
@@ -171,7 +174,7 @@ export default function FavoritesScreen() {
     } else {
       screenOpacity.setValue(0);
     }
-  }, [isFocused, mode, selected]);
+  }, [isFocused]);
 
   const handleBackPress = () => {
     // Reset header icons state

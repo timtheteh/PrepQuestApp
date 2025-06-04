@@ -119,9 +119,15 @@ export default function FoldersScreen() {
 
   // Set up the deletion handler when the component mounts
   useEffect(() => {
-    setHandleDeletion(() => handleCancel);
-    return () => setHandleDeletion(null);
-  }, []);
+    if (isFocused) {
+      setHandleDeletion(() => handleCancel);
+    }
+    return () => {
+      if (!isFocused) {
+        setHandleDeletion(null);
+      }
+    };
+  }, [isFocused]);
 
   const handleSelect = () => {
     setIsSelectMode(true);

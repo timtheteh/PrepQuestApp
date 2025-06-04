@@ -110,8 +110,14 @@ export default function FavoritesScreen() {
 
   // Set up the deletion handler when the component mounts
   useEffect(() => {
-    setHandleDeletion(() => handleCancel);
-    return () => setHandleDeletion(null);
+    if (isFocused) {
+      setHandleDeletion(() => handleCancel);
+    }
+    return () => {
+      if (!isFocused) {
+        setHandleDeletion(null);
+      }
+    };
   }, [isFocused]);
 
   // Handle screen transitions and set previous mode

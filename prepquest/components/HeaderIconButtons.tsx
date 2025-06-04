@@ -148,11 +148,19 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
 
   const handleCloseSearch = () => {
     setSearchText('');
-    Animated.timing(searchFadeAnim, {
-      toValue: 0,
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => {
+    setIsExpanded(false);
+    Animated.parallel([
+      Animated.timing(searchFadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(expandAnim, {
+        toValue: 0,
+        duration: 0,
+        useNativeDriver: false,
+      })
+    ]).start(() => {
       setIsSearchMode(false);
       setIsSearchVisible(false);
     });

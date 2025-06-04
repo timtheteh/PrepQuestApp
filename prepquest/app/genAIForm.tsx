@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
 import { RoundedContainer } from '@/components/RoundedContainer';
+import { ActionButton } from '@/components/ActionButton';
 import { useState } from 'react';
 
 export default function GenAIFormPage() {
@@ -26,6 +27,11 @@ export default function GenAIFormPage() {
 
   const handleToggle = (isRightSide: boolean) => {
     setIsMandatory(!isRightSide);
+  };
+
+  const handleSubmit = () => {
+    console.log('Submit form');
+    // To be implemented
   };
 
   return (
@@ -55,6 +61,14 @@ export default function GenAIFormPage() {
           />
         </View>
         <Text style={styles.text}>{mode} Mode</Text>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <ActionButton
+          text="Submit"
+          backgroundColor="#44B88A"
+          onPress={handleSubmit}
+        />
       </View>
     </View>
   );
@@ -95,5 +109,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     textAlign: 'center',
     marginTop: 24,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+    paddingBottom: 40
   },
 }); 

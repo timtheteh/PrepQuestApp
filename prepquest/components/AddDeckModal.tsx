@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text } from 'react-native';
 import { InterviewStudyToggle } from './InterviewStudyToggle';
 import { AddDeckModalButton } from './AddDeckModalButton';
+import { useRouter } from 'expo-router';
 import Svg, { SvgProps, Path, Defs, Rect, ClipPath, G } from 'react-native-svg';
 import { MenuContext } from '@/app/(tabs)/_layout';
 
@@ -140,12 +141,21 @@ export function AddDeckModal({
   currentMode,
   isInFavoritesPage = false
 }: AddDeckModalProps) {
-  const { setCurrentMode } = useContext(MenuContext);
+  const { setCurrentMode, handleDismissMenu } = useContext(MenuContext);
+  const router = useRouter();
 
   if (!visible) return null;
 
   const handleToggle = (mode: 'study' | 'interview') => {
     setCurrentMode(mode);
+  };
+
+  const handleGenAIFormPress = () => {
+    handleDismissMenu();
+    router.push({
+      pathname: '/genAIForm',
+      params: { mode: currentMode }
+    });
   };
 
   return (
@@ -172,6 +182,7 @@ export function AddDeckModal({
             <AddDeckModalButton
               title="Gen AI Form"
               Icon={GenAIFormIcon}
+              onPress={handleGenAIFormPress}
             />
             <AddDeckModalButton
               title="File Upload"

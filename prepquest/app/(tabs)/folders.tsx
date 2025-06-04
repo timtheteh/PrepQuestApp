@@ -16,6 +16,7 @@ const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 48; // Distance to shift content down
 const selectUnselectedDuration = 300;
+const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
 export default function FoldersScreen() {
   const router = useRouter();
@@ -51,6 +52,7 @@ export default function FoldersScreen() {
   const fabOpacity = useRef(new Animated.Value(1)).current;
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
+  const screenOpacity = useRef(new Animated.Value(0)).current;
 
   // Reset header icons state and selection mode when screen comes into focus
   useEffect(() => {
@@ -83,6 +85,12 @@ export default function FoldersScreen() {
 
         // Reset navbar animation to -2
         navbarRef?.current?.resetAnimation();
+
+        Animated.timing(screenOpacity, {
+          toValue: 1,
+          duration: SCREEN_TRANSITION_DURATION,
+          useNativeDriver: true,
+        }).start();
       } else {
         // Reset selection mode and related states
         setIsSelectMode(false);
@@ -97,7 +105,15 @@ export default function FoldersScreen() {
         fabOpacity.setValue(1);
         cardWidthPercentage.setValue(100);
         circleButtonOpacity.setValue(0);
+
+        Animated.timing(screenOpacity, {
+          toValue: 1,
+          duration: SCREEN_TRANSITION_DURATION,
+          useNativeDriver: true,
+        }).start();
       }
+    } else {
+      screenOpacity.setValue(0);
     }
   }, [isFocused]);
 
@@ -425,123 +441,129 @@ export default function FoldersScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={handleBackPress}
-          >
-            <AntDesign name="arrowleft" size={32} color="black" />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.headerIconsContainer}>
-          <HeaderIconButtons 
-            ref={headerIconsRef}
-            onAIPress={handleSparklesPress}
-            onCalendarPress={handleCalendarPress}
-            pageType="folders"
-          />
-        </View>
-        
-        <Animated.View style={[
-          styles.mainContentWrapper,
-          { marginBottom: marginAnim }
-        ]}>
-          <View style={styles.content}>
-            <Animated.View style={[
-              styles.actionButtonsRow,
-              {
-                opacity: actionRowOpacity,
-                transform: [{
-                  translateY: actionRowOpacity.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-20, 0]
-                  })
-                }]
-              }
-            ]}>
-              {isAddToFoldersMode ? (
-                <View style={styles.doneButtonContainer}>
-                  <TouchableOpacity onPress={handleDone}>
-                    <Text style={styles.doneButton}>Done</Text>
+    <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.topBar}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={handleBackPress}
+            >
+              <AntDesign name="arrowleft" size={32} color="black" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.headerIconsContainer}>
+            <HeaderIconButtons 
+              ref={headerIconsRef}
+              onAIPress={handleSparklesPress}
+              onCalendarPress={handleCalendarPress}
+              pageType="folders"
+            />
+          </View>
+          
+          <Animated.View style={[
+            styles.mainContentWrapper,
+            { marginBottom: marginAnim }
+          ]}>
+            <View style={styles.content}>
+              <Animated.View style={[
+                styles.actionButtonsRow,
+                {
+                  opacity: actionRowOpacity,
+                  transform: [{
+                    translateY: actionRowOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-20, 0]
+                    })
+                  }]
+                }
+              ]}>
+                {isAddToFoldersMode ? (
+                  <View style={styles.doneButtonContainer}>
+                    <TouchableOpacity onPress={handleDone}>
+                      <Text style={styles.doneButton}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <ActionButtonsRow
+                    iconNames={['trash']}
+                    onCancel={handleCancel}
+                    onIconPress={handleActionIconPress}
+                    iconColors={['#FF3B30']}
+                  />
+                )}
+              </Animated.View>
+
+              <Animated.View 
+                style={[
+                  styles.shiftableContent,
+                  { transform: [{ translateY: shiftAnim }] }
+                ]}
+              >
+                <View style={styles.titleRow}>
+                  <View style={styles.titleContainer}>
+                    <Title>
+                      {isAddToFoldersMode ? 'Add to Folder(s)' : 'Folders'}
+                    </Title>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={isSelectMode ? handleSelectAll : handleSelect}
+                    style={styles.selectButtonContainer}
+                  >
+                    <Animated.Text style={[
+                      styles.selectButton,
+                      styles.selectButtonAbsolute,
+                      { opacity: selectOpacity }
+                    ]}>
+                      Select
+                    </Animated.Text>
+                    <Animated.Text style={[
+                      styles.selectButton,
+                      styles.selectButtonAbsolute,
+                      { opacity: selectAllOpacity }
+                    ]}>
+                      Select All
+                    </Animated.Text>
                   </TouchableOpacity>
                 </View>
-              ) : (
-                <ActionButtonsRow
-                  iconNames={['trash']}
-                  onCancel={handleCancel}
-                  onIconPress={handleActionIconPress}
-                  iconColors={['#FF3B30']}
-                />
-              )}
-            </Animated.View>
-
-            <Animated.View 
-              style={[
-                styles.shiftableContent,
-                { transform: [{ translateY: shiftAnim }] }
-              ]}
-            >
-              <View style={styles.titleRow}>
-                <View style={styles.titleContainer}>
-                  <Title>
-                    {isAddToFoldersMode ? 'Add to Folder(s)' : 'Folders'}
-                  </Title>
+                
+                <View style={styles.scrollWrapper}>
+                  <ScrollView 
+                    style={styles.scrollContainer}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {renderFolderCards()}
+                  </ScrollView>
                 </View>
-                <TouchableOpacity 
-                  onPress={isSelectMode ? handleSelectAll : handleSelect}
-                  style={styles.selectButtonContainer}
-                >
-                  <Animated.Text style={[
-                    styles.selectButton,
-                    styles.selectButtonAbsolute,
-                    { opacity: selectOpacity }
-                  ]}>
-                    Select
-                  </Animated.Text>
-                  <Animated.Text style={[
-                    styles.selectButton,
-                    styles.selectButtonAbsolute,
-                    { opacity: selectAllOpacity }
-                  ]}>
-                    Select All
-                  </Animated.Text>
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.scrollWrapper}>
-                <ScrollView 
-                  style={styles.scrollContainer}
-                  contentContainerStyle={styles.scrollContent}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {renderFolderCards()}
-                </ScrollView>
-              </View>
-            </Animated.View>
-          </View>
-        </Animated.View>
+              </Animated.View>
+            </View>
+          </Animated.View>
 
-        <Animated.View style={[
-          styles.fabContainer,
-          { opacity: fabOpacity }
-        ]}>
-          <FloatingActionButton
-            style={styles.fab}
-            disableOverlay={true}
-            onPress={handleFabPress}
-          >
-            <Feather name="plus" size={38} color="white" />
-          </FloatingActionButton>
-        </Animated.View>
-      </View>
-    </SafeAreaView>
+          <Animated.View style={[
+            styles.fabContainer,
+            { opacity: fabOpacity }
+          ]}>
+            <FloatingActionButton
+              style={styles.fab}
+              disableOverlay={true}
+              onPress={handleFabPress}
+            >
+              <Feather name="plus" size={38} color="white" />
+            </FloatingActionButton>
+          </Animated.View>
+        </View>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  animatedContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',

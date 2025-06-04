@@ -19,6 +19,13 @@ export default function GenAIFormPage() {
   const [question2, setQuestion2] = useState('');
   const [question3, setQuestion3] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Ensure the layout is ready after the first render
+    const timer = setTimeout(() => setIsReady(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -59,6 +66,10 @@ export default function GenAIFormPage() {
     // To be implemented
   };
 
+  const bottomOffset = Platform.OS === 'ios' ? 
+    (isReady ? insets.bottom : 34) : // Use 34 as default bottom inset for iOS
+    20;
+
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
@@ -88,7 +99,7 @@ export default function GenAIFormPage() {
         <ScrollView 
           style={[
             styles.scrollView,
-            { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + insets.bottom }
+            { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
           ]}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -133,7 +144,7 @@ export default function GenAIFormPage() {
 
         <View style={[
           styles.buttonContainer,
-          { paddingBottom: insets.bottom }
+          { bottom: Platform.OS === 'ios' ? bottomOffset : 40 }
         ]}>
           <ActionButton
             text="Submit"
@@ -191,7 +202,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     position: 'absolute',
     paddingTop: 20,
-    bottom: Platform.OS === 'ios' ? 0 : 20,
     left: 0,
     right: 0,
     alignItems: 'center',

@@ -170,7 +170,7 @@ export default function DecksScreen() {
   useEffect(() => {
     setHandleDeletion(() => handleCancel);
     return () => setHandleDeletion(null);
-  }, []);
+  }, [isFocused]);
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);

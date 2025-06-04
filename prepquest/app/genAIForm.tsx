@@ -6,11 +6,13 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { ActionButton } from '@/components/ActionButton';
 import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 
 export default function GenAIFormPage() {
   const { mode } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
   const [deckName, setDeckName] = useState('');
   const [question1, setQuestion1] = useState('');
@@ -116,7 +118,10 @@ export default function GenAIFormPage() {
           )}
         </ScrollView>
 
-        <View style={styles.buttonContainer}>
+        <View style={[
+          styles.buttonContainer,
+          { paddingBottom: insets.bottom }
+        ]}>
           <ActionButton
             text="Submit"
             backgroundColor="#44B88A"
@@ -172,7 +177,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     position: 'absolute',
     paddingTop: 20,
-    bottom: 40,
+    bottom: 0,
     left: 0,
     right: 0,
     alignItems: 'center',

@@ -6,6 +6,7 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { ActionButton } from '@/components/ActionButton';
 import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
+import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import React from 'react';
@@ -19,6 +20,7 @@ export default function GenAIFormPage() {
   const [question1, setQuestion1] = useState('');
   const [question2, setQuestion2] = useState('');
   const [question3, setQuestion3] = useState('');
+  const [numberOfQuestions, setNumberOfQuestions] = useState(1);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
@@ -120,27 +122,25 @@ export default function GenAIFormPage() {
               {mode === 'study' && (
                 <>
                   <QuestionTextBar
-                    label="Question 1"
-                    placeholder="Enter your first question"
+                    label="1. Education Level?"
+                    placeholder="e.g. Freshman, Sophomore, etc"
                     value={question1}
                     onChangeText={setQuestion1}
-                    helperText="This will be the first question in your deck"
+                    helperText="What education level is your preparation for?"
                   />
-                <QuestionTextBar
-                  label="Question 2"
-                  placeholder="Enter your second question"
-                  value={question2}
-                  onChangeText={setQuestion2}
-                  helperText="This will be the second question in your deck"
-                />
+                  <QuestionTextBar
+                    label="2. Subject(s)?"
+                    placeholder="e.g. Computer Science, Math, Physics, etc."
+                    value={question2}
+                    onChangeText={setQuestion2}
+                    helperText="What subject(s) would this deck be for?"
+                  />
                 </>
               )}
-              <QuestionTextBar
-                label="Question 3"
-                placeholder="Enter your third question"
-                value={question3}
-                onChangeText={setQuestion3}
-                helperText="This will be the third question in your deck"
+              <NumberOfQuestions
+                title="3. Number of questions:"
+                value={numberOfQuestions}
+                onValueChange={setNumberOfQuestions}
               />
               <View style={styles.bottomSpacing} />
             </View>

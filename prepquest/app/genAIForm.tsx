@@ -1,10 +1,11 @@
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { ActionButton } from '@/components/ActionButton';
 import { TitleTextBar } from '@/components/TitleTextBar';
+import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { useState } from 'react';
 
 export default function GenAIFormPage() {
@@ -12,6 +13,9 @@ export default function GenAIFormPage() {
   const router = useRouter();
   const [isMandatory, setIsMandatory] = useState(true);
   const [deckName, setDeckName] = useState('');
+  const [question1, setQuestion1] = useState('');
+  const [question2, setQuestion2] = useState('');
+  const [question3, setQuestion3] = useState('');
 
   const handleBackPress = () => {
     router.back();
@@ -55,15 +59,21 @@ export default function GenAIFormPage() {
       </View>
 
       <View style={styles.mainContainer}>
-        <View style={styles.scrollContent}>
-          <View style={styles.toggleContainer}>
-            <RoundedContainer 
-              leftLabel="Mandatory"
-              rightLabel="Optional"
-              onToggle={handleToggle}
-            />
-          </View>
-
+        <View style={styles.toggleContainer}>
+          <RoundedContainer 
+            leftLabel="Mandatory"
+            rightLabel="Optional"
+            onToggle={handleToggle}
+          />
+        </View>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          overScrollMode="always"
+          keyboardShouldPersistTaps="handled"
+        >
           {isMandatory && (
             <View style={styles.formContent}>
               <TitleTextBar
@@ -73,9 +83,38 @@ export default function GenAIFormPage() {
                 value={deckName}
                 onChangeText={setDeckName}
               />
+              <QuestionTextBar
+                label="Question 1"
+                placeholder="Enter your first question"
+                value={question1}
+                onChangeText={setQuestion1}
+                helperText="This will be the first question in your deck"
+              />
+              <QuestionTextBar
+                label="Question 2"
+                placeholder="Enter your second question"
+                value={question2}
+                onChangeText={setQuestion2}
+                helperText="This will be the second question in your deck"
+              />
+              <QuestionTextBar
+                label="Question 3"
+                placeholder="Enter your third question"
+                value={question3}
+                onChangeText={setQuestion3}
+                helperText="This will be the third question in your deck"
+              />
+              <QuestionTextBar
+                label="Question 3"
+                placeholder="Enter your third question"
+                value={question3}
+                onChangeText={setQuestion3}
+                helperText="This will be the third question in your deck"
+              />
+              <View style={styles.bottomSpacing} />
             </View>
           )}
-        </View>
+        </ScrollView>
 
         <View style={styles.buttonContainer}>
           <ActionButton
@@ -98,9 +137,13 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  scrollContent: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 92, // button height (72) + padding top (20)
   },
   topBar: {
     flexDirection: 'row',
@@ -122,17 +165,20 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     marginTop: 4,
+    paddingHorizontal: 16,
   },
   formContent: {
-    marginTop: 16,
-    borderColor: 'red',
-    borderWidth: 1,
   },
   buttonContainer: {
     position: 'absolute',
+    paddingTop: 20,
     bottom: 40,
     left: 0,
     right: 0,
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  bottomSpacing: {
+    height: 20,
   },
 }); 

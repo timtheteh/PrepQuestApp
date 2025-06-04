@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
@@ -7,7 +7,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function GenAIFormPage() {
   const { mode } = useLocalSearchParams();
@@ -18,6 +18,23 @@ export default function GenAIFormPage() {
   const [question1, setQuestion1] = useState('');
   const [question2, setQuestion2] = useState('');
   const [question3, setQuestion3] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => setKeyboardHeight(e.endCoordinates.height)
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardHeight(0)
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   const handleBackPress = () => {
     router.back();
@@ -69,7 +86,10 @@ export default function GenAIFormPage() {
           />
         </View>
         <ScrollView 
-          style={styles.scrollView}
+          style={[
+            styles.scrollView,
+            { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + insets.bottom }
+          ]}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           bounces={true}
@@ -98,13 +118,6 @@ export default function GenAIFormPage() {
                 value={question2}
                 onChangeText={setQuestion2}
                 helperText="This will be the second question in your deck"
-              />
-              <QuestionTextBar
-                label="Question 3"
-                placeholder="Enter your third question"
-                value={question3}
-                onChangeText={setQuestion3}
-                helperText="This will be the third question in your deck"
               />
               <QuestionTextBar
                 label="Question 3"
@@ -148,7 +161,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 92, // button height (72) + padding top (20)
+    paddingBottom: Platform.OS === 'ios' ? 0 : 20, // button height (72) + padding top (20)
   },
   topBar: {
     flexDirection: 'row',
@@ -173,11 +186,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   formContent: {
+    gap: Platform.OS === 'ios' ? 0 : 16,
   },
   buttonContainer: {
     position: 'absolute',
     paddingTop: 20,
-    bottom: 0,
+    bottom: Platform.OS === 'ios' ? 0 : 20,
     left: 0,
     right: 0,
     alignItems: 'center',

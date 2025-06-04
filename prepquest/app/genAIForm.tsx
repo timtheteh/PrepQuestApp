@@ -8,6 +8,7 @@ import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
+import React from 'react';
 
 export default function GenAIFormPage() {
   const { mode } = useLocalSearchParams();
@@ -116,20 +117,24 @@ export default function GenAIFormPage() {
                 value={deckName}
                 onChangeText={setDeckName}
               />
-              <QuestionTextBar
-                label="Question 1"
-                placeholder="Enter your first question"
-                value={question1}
-                onChangeText={setQuestion1}
-                helperText="This will be the first question in your deck"
-              />
-              <QuestionTextBar
-                label="Question 2"
-                placeholder="Enter your second question"
-                value={question2}
-                onChangeText={setQuestion2}
-                helperText="This will be the second question in your deck"
-              />
+              {mode === 'study' && (
+                <>
+                  <QuestionTextBar
+                    label="Question 1"
+                    placeholder="Enter your first question"
+                    value={question1}
+                    onChangeText={setQuestion1}
+                    helperText="This will be the first question in your deck"
+                  />
+                <QuestionTextBar
+                  label="Question 2"
+                  placeholder="Enter your second question"
+                  value={question2}
+                  onChangeText={setQuestion2}
+                  helperText="This will be the second question in your deck"
+                />
+                </>
+              )}
               <QuestionTextBar
                 label="Question 3"
                 placeholder="Enter your third question"

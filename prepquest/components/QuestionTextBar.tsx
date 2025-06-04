@@ -82,10 +82,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   helperText: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: 'Satoshi-MediumItalic',
     fontSize: 16,
-    fontStyle: 'italic',
     color: '#000000',
     marginTop: 8,
+    opacity: 0.5,   
   },
 }); 

@@ -11,6 +11,8 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     'Satoshi-Medium': require('../assets/fonts/Satoshi-Medium.otf'),
+    'Satoshi-Italic': require('../assets/fonts/Satoshi-Italic.otf'),
+    'Satoshi-MediumItalic': require('../assets/fonts/Satoshi-MediumItalic.otf'),
   });
 
   if (!loaded) {

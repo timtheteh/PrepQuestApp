@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   quickSelectButton: {
     width: '17%',
     backgroundColor: '#F8F8F8',
-    borderRadius: 11,
+    borderRadius: 10,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',

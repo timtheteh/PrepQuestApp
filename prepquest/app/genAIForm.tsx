@@ -7,6 +7,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
+import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import React from 'react';
@@ -21,6 +22,7 @@ export default function GenAIFormPage() {
   const [question2, setQuestion2] = useState('');
   const [question3, setQuestion3] = useState('');
   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
+  const [interviewType, setInterviewType] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
@@ -136,6 +138,22 @@ export default function GenAIFormPage() {
                     helperText="What subject(s) would this deck be for?"
                   />
                 </>
+              )}
+              {mode !== 'study' && (
+                <>
+                <QuestionTextBar
+                  label="1. Job/Role?"
+                  placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                  value={question1}
+                  onChangeText={setQuestion1}
+                  helperText="What job or role are you preparing for?"
+                  />
+                <TypeOfInterviewQn
+                  value={interviewType}
+                  onValueChange={setInterviewType}
+                />
+                </>
+                
               )}
               <NumberOfQuestions
                 title="3. Number of questions:"

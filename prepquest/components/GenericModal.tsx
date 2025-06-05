@@ -100,7 +100,10 @@ export function GenericModal({
           <Icon width={24} height={24} />
         </View>
       )}
-      <View style={styles.content}>
+      <View style={[
+        styles.content,
+        { paddingVertical: buttons === 'none' ? 0 : 50 }
+      ]}>
         <View style={[
           styles.textRow,
           (!buttons || buttons === 'none') && !hasAnimation && styles.textRowOnly
@@ -140,7 +143,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingVertical: 50,
     paddingHorizontal: 12,
     flexDirection: 'column',
   },

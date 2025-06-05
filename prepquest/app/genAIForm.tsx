@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
@@ -13,7 +13,6 @@ import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
-import { Animated } from 'react-native';
 import React from 'react';
 
 export default function GenAIFormPage() {
@@ -39,6 +38,7 @@ export default function GenAIFormPage() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -79,6 +79,11 @@ export default function GenAIFormPage() {
     }
   }, [isHelpModalOpen]);
 
+  useEffect(() => {
+    // Set initial mode animation when component mounts
+    fadeAnim.setValue(isMandatory ? 0 : 1);
+  }, []);
+
   const handleBackPress = () => {
     router.back();
   };
@@ -95,6 +100,12 @@ export default function GenAIFormPage() {
 
   const handleToggle = (isRightSide: boolean) => {
     setIsMandatory(!isRightSide);
+    
+    Animated.timing(fadeAnim, {
+      toValue: isRightSide ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleSubmit = () => {
@@ -122,6 +133,16 @@ export default function GenAIFormPage() {
   const bottomOffset = Platform.OS === 'ios' ? 
     (isReady ? insets.bottom : 34) : // Use 34 as default bottom inset for iOS
     20;
+
+  const mandatoryOpacity = fadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  const optionalOpacity = fadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
 
   return (
     <View style={styles.container}>
@@ -160,119 +181,130 @@ export default function GenAIFormPage() {
           overScrollMode="always"
           keyboardShouldPersistTaps="handled"
         >
-          {isMandatory && (
-            <View style={styles.formContent}>
-              <TitleTextBar
-                title=" Deck Name"
-                highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                placeholder="Type here!"
-                value={deckName}
-                onChangeText={setDeckName}
-              />
-              {mode === 'study' && (
-                <>
-                  <QuestionTextBar
-                    label="1. Education Level?"
-                    placeholder="e.g. Freshman, Sophomore, etc"
-                    value={studyMandatoryQuestion1}
-                    onChangeText={setStudyMandatoryQuestion1}
-                    helperText="What education level is your preparation for?"
-                  />
-                  <QuestionTextBar
-                    label="2. Subject(s)?"
-                    placeholder="e.g. Computer Science, Math, Physics, etc."
-                    value={studyMandatoryQuestion2}
-                    onChangeText={setStudyMandatoryQuestion2}
-                    helperText="What subject(s) would this deck be for?"
-                  />
-                </>
-              )}
-              {mode !== 'study' && (
-                <>
-                <QuestionTextBar
-                  label="1. Job/Role?"
-                  placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
-                  value={interviewMandatoryQuestion1}
-                  onChangeText={setInterviewMandatoryQuestion1}
-                  helperText="What job or role are you preparing for?"
-                  />
-                <TypeOfInterviewQn
-                  value={interviewType}
-                  onValueChange={setInterviewType}
+          <Animated.View style={[
+            styles.formContent,
+            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
+          ]}>
+            {isMandatory && (
+              <View style={styles.formContent}>
+                <TitleTextBar
+                  title=" Deck Name"
+                  highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
+                  placeholder="Type here!"
+                  value={deckName}
+                  onChangeText={setDeckName}
                 />
-                </>
-                
-              )}
-              <NumberOfQuestions
-                title="3. Number of questions:"
-                value={numberOfQuestions}
-                onValueChange={setNumberOfQuestions}
-              />
-              <View style={styles.bottomSpacing} />
-            </View>
-          )}
-          {!isMandatory && mode === 'study' && (
-            <View style={styles.formContent}>
-              <QuestionTextBar
-                label="1. Topic(s)?"
-                placeholder="e.g. Microeconomics, Electromagnetism, etc"
-                value={studyOptionalQuestion1}
-                onChangeText={setStudyOptionalQuestion1}
-                helperText="Which topics would you like to study?"
-              />
-              <QuestionTextBar
-                label="2. Subtopic(s)?"
-                placeholder="e.g. Demand and Supply, etc"
-                value={studyOptionalQuestion2}
-                onChangeText={setStudyOptionalQuestion2}
-                helperText="Which subtopics would you like to focus on?"
-              />
-              <QuestionTextBar
-                label="3. Exam/Quiz?"
-                placeholder="e.g. SAT, ACT, GRE, etc"
-                value={studyOptionalQuestion3}
-                onChangeText={setStudyOptionalQuestion3}
-                helperText="Are you studying for an exam or quiz?"
-              />
-              <KindsOfQuestions
-                  value={questionType}
-                  onValueChange={setQuestionType}
-                  onHelpPress={() => setIsHelpModalOpen(true)}
-              />
-              <View style={styles.bottomSpacing} />
-            </View>
-          )}
-          {!isMandatory && mode === 'interview' && (
-            <View style={styles.formContent}>
-              <QuestionTextBar
-                label="1. Company?"
-                placeholder="e.g. Google, Meta, Microsoft, etc"
-                value={interviewOptionalQuestion1}
-                onChangeText={setInterviewOptionalQuestion1}
-                helperText="Which company are you preparing to interview with?"
-              />
-              <QuestionTextBar
-                label="2. Experience Level?"
-                placeholder="e.g. Junior Developer, Senior Developer, etc"
-                value={interviewOptionalQuestion2}
-                onChangeText={setInterviewOptionalQuestion2}
-                helperText="Which experience level is your interview for?"
-              />
-              <QuestionTextBar
-                label="3. Topic(s)?"
-                placeholder="e.g. React, Java, Operating Systems, etc"
-                value={interviewOptionalQuestion3}
-                onChangeText={setInterviewOptionalQuestion3}
-                helperText="Which topics would you like to focus on?"
-              />
-              <KindsOfQuestions
-                  value={questionType}
-                  onValueChange={setQuestionType}
-                  onHelpPress={() => setIsHelpModalOpen(true)}
-              />
-              <View style={styles.bottomSpacing} />
-            </View>
-          )}
+                {mode === 'study' && (
+                  <>
+                    <QuestionTextBar
+                      label="1. Education Level?"
+                      placeholder="e.g. Freshman, Sophomore, etc"
+                      value={studyMandatoryQuestion1}
+                      onChangeText={setStudyMandatoryQuestion1}
+                      helperText="What education level is your preparation for?"
+                    />
+                    <QuestionTextBar
+                      label="2. Subject(s)?"
+                      placeholder="e.g. Computer Science, Math, Physics, etc."
+                      value={studyMandatoryQuestion2}
+                      onChangeText={setStudyMandatoryQuestion2}
+                      helperText="What subject(s) would this deck be for?"
+                    />
+                  </>
+                )}
+                {mode !== 'study' && (
+                  <>
+                  <QuestionTextBar
+                    label="1. Job/Role?"
+                    placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                    value={interviewMandatoryQuestion1}
+                    onChangeText={setInterviewMandatoryQuestion1}
+                    helperText="What job or role are you preparing for?"
+                    />
+                  <TypeOfInterviewQn
+                    value={interviewType}
+                    onValueChange={setInterviewType}
+                  />
+                  </>
+                  
+                )}
+                <NumberOfQuestions
+                  title="3. Number of questions:"
+                  value={numberOfQuestions}
+                  onValueChange={setNumberOfQuestions}
+                />
+                <View style={styles.bottomSpacing} />
+              </View>
+            )}
+          </Animated.View>
+
+          <Animated.View style={[
+            styles.formContent,
+            { opacity: optionalOpacity, display: !isMandatory ? 'flex' : 'none' }
+          ]}>
+            {!isMandatory && mode === 'study' && (
+              <View style={styles.formContent}>
+                <QuestionTextBar
+                  label="1. Topic(s)?"
+                  placeholder="e.g. Microeconomics, Electromagnetism, etc"
+                  value={studyOptionalQuestion1}
+                  onChangeText={setStudyOptionalQuestion1}
+                  helperText="Which topics would you like to study?"
+                />
+                <QuestionTextBar
+                  label="2. Subtopic(s)?"
+                  placeholder="e.g. Demand and Supply, etc"
+                  value={studyOptionalQuestion2}
+                  onChangeText={setStudyOptionalQuestion2}
+                  helperText="Which subtopics would you like to focus on?"
+                />
+                <QuestionTextBar
+                  label="3. Exam/Quiz?"
+                  placeholder="e.g. SAT, ACT, GRE, etc"
+                  value={studyOptionalQuestion3}
+                  onChangeText={setStudyOptionalQuestion3}
+                  helperText="Are you studying for an exam or quiz?"
+                />
+                <KindsOfQuestions
+                    value={questionType}
+                    onValueChange={setQuestionType}
+                    onHelpPress={() => setIsHelpModalOpen(true)}
+                />
+                <View style={styles.bottomSpacing} />
+              </View>
+            )}
+            {!isMandatory && mode === 'interview' && (
+              <View style={styles.formContent}>
+                <QuestionTextBar
+                  label="1. Company?"
+                  placeholder="e.g. Google, Meta, Microsoft, etc"
+                  value={interviewOptionalQuestion1}
+                  onChangeText={setInterviewOptionalQuestion1}
+                  helperText="Which company are you preparing to interview with?"
+                />
+                <QuestionTextBar
+                  label="2. Experience Level?"
+                  placeholder="e.g. Junior Developer, Senior Developer, etc"
+                  value={interviewOptionalQuestion2}
+                  onChangeText={setInterviewOptionalQuestion2}
+                  helperText="Which experience level is your interview for?"
+                />
+                <QuestionTextBar
+                  label="3. Topic(s)?"
+                  placeholder="e.g. React, Java, Operating Systems, etc"
+                  value={interviewOptionalQuestion3}
+                  onChangeText={setInterviewOptionalQuestion3}
+                  helperText="Which topics would you like to focus on?"
+                />
+                <KindsOfQuestions
+                    value={questionType}
+                    onValueChange={setQuestionType}
+                    onHelpPress={() => setIsHelpModalOpen(true)}
+                />
+                <View style={styles.bottomSpacing} />
+              </View>
+            )}
+          </Animated.View>
         </ScrollView>
 
         <View style={[

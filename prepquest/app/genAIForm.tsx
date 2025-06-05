@@ -9,8 +9,11 @@ import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import { KindsOfQuestions } from '@/components/KindsOfQuestions';
+import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
+import { GenericModal } from '@/components/GenericModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
 import React from 'react';
 
 export default function GenAIFormPage() {
@@ -33,6 +36,9 @@ export default function GenAIFormPage() {
   const [questionType, setQuestionType] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const modalOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -56,6 +62,23 @@ export default function GenAIFormPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (isHelpModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isHelpModalOpen]);
+
   const handleBackPress = () => {
     router.back();
   };
@@ -77,6 +100,23 @@ export default function GenAIFormPage() {
   const handleSubmit = () => {
     console.log('Submit form');
     // To be implemented
+  };
+
+  const handleDismissHelp = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsHelpModalOpen(false);
+    });
   };
 
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -197,6 +237,7 @@ export default function GenAIFormPage() {
               <KindsOfQuestions
                   value={questionType}
                   onValueChange={setQuestionType}
+                  onHelpPress={() => setIsHelpModalOpen(true)}
               />
               <View style={styles.bottomSpacing} />
             </View>
@@ -227,6 +268,7 @@ export default function GenAIFormPage() {
               <KindsOfQuestions
                   value={questionType}
                   onValueChange={setQuestionType}
+                  onHelpPress={() => setIsHelpModalOpen(true)}
               />
               <View style={styles.bottomSpacing} />
             </View>
@@ -244,6 +286,17 @@ export default function GenAIFormPage() {
           />
         </View>
       </View>
+
+      <GreyOverlayBackground 
+        visible={isHelpModalOpen}
+        opacity={overlayOpacity}
+        onPress={handleDismissHelp}
+      />
+      <GenericModal
+        visible={isHelpModalOpen}
+        opacity={modalOpacity}
+        text=""
+      />
     </View>
   );
 }

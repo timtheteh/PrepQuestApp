@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
+import { MenuContext } from '@/app/(tabs)/_layout';
 
 interface KindsOfQuestionsProps {
   value: string;
   onValueChange: (value: string) => void;
+  onHelpPress?: () => void;
 }
 
 const QUESTION_TYPES = [
@@ -20,9 +22,22 @@ const QUESTION_TYPES = [
 export function KindsOfQuestions({
   value,
   onValueChange,
+  onHelpPress,
 }: KindsOfQuestionsProps) {
+  const { 
+    setIsMenuOpen,
+    menuOverlayOpacity,
+    setIsNoSelectionModalOpen,
+    noSelectionModalOpacity
+  } = useContext(MenuContext);
+
   const handleSelect = (selectedValue: string) => {
     onValueChange(selectedValue);
+  };
+
+  const handleHelpPress = () => {
+    setIsMenuOpen(true);
+    setIsNoSelectionModalOpen(true);
   };
 
   return (
@@ -45,9 +60,12 @@ export function KindsOfQuestions({
             </TouchableOpacity>
           ))}
         </View>
-        <View style={styles.helpIconContainer}>
+        <TouchableOpacity 
+          style={styles.helpIconContainer}
+          onPress={onHelpPress || handleHelpPress}
+        >
           <HelpIconOutline width={24} height={24} />
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );

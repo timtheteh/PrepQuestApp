@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
 
 interface KindsOfQuestionsProps {
   value: string;
@@ -28,20 +29,25 @@ export function KindsOfQuestions({
     <View style={styles.container}>
       <Text style={styles.title}>4. What kinds of questions do you want to practice more of? (Pick any)</Text>
       <View style={styles.buttonContainer}>
-        {QUESTION_TYPES.map((type) => (
-          <TouchableOpacity
-            key={type}
-            style={[
-              styles.button,
-              value === type && styles.buttonSelected
-            ]}
-            onPress={() => handleSelect(type)}
-          >
-            <Text style={styles.buttonText}>
-              {type}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.buttonsRow}>
+          {QUESTION_TYPES.map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.button,
+                value === type && styles.buttonSelected
+              ]}
+              onPress={() => handleSelect(type)}
+            >
+              <Text style={styles.buttonText}>
+                {type}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.helpIconContainer}>
+          <HelpIconOutline width={24} height={24} />
+        </View>
       </View>
     </View>
   );
@@ -60,8 +66,18 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  buttonsRow: {
+    flex: 1,
+    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 5,
+    marginRight: 8,
+  },
+  helpIconContainer: {
+    paddingTop: 8,
   },
   button: {
     height: 40,

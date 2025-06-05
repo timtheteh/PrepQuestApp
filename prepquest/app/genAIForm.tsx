@@ -1,7 +1,7 @@
 import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
-import { FormHeaderIcons } from '@/components/GenAIFormHeaderIcons';
+import { FormHeaderIcons } from '../components/FormHeaderIcons';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { ActionButton } from '@/components/ActionButton';
 import { TitleTextBar } from '@/components/TitleTextBar';

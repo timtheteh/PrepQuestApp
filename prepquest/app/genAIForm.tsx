@@ -8,6 +8,7 @@ import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
+import { KindsOfQuestions } from '@/components/KindsOfQuestions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import React from 'react';
@@ -18,11 +19,15 @@ export default function GenAIFormPage() {
   const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
   const [deckName, setDeckName] = useState('');
-  const [question1, setQuestion1] = useState('');
-  const [question2, setQuestion2] = useState('');
-  const [question3, setQuestion3] = useState('');
+  const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
+  const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
+  const [studyOptionalQuestion1, setStudyOptionalQuestion1] = useState('');
+  const [studyOptionalQuestion2, setStudyOptionalQuestion2] = useState('');
+  const [studyOptionalQuestion3, setStudyOptionalQuestion3] = useState('');
+  const [interviewMandatoryQuestion1, setInterviewMandatoryQuestion1] = useState('');
   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
   const [interviewType, setInterviewType] = useState('');
+  const [questionType, setQuestionType] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
@@ -126,15 +131,15 @@ export default function GenAIFormPage() {
                   <QuestionTextBar
                     label="1. Education Level?"
                     placeholder="e.g. Freshman, Sophomore, etc"
-                    value={question1}
-                    onChangeText={setQuestion1}
+                    value={studyMandatoryQuestion1}
+                    onChangeText={setStudyMandatoryQuestion1}
                     helperText="What education level is your preparation for?"
                   />
                   <QuestionTextBar
                     label="2. Subject(s)?"
                     placeholder="e.g. Computer Science, Math, Physics, etc."
-                    value={question2}
-                    onChangeText={setQuestion2}
+                    value={studyMandatoryQuestion2}
+                    onChangeText={setStudyMandatoryQuestion2}
                     helperText="What subject(s) would this deck be for?"
                   />
                 </>
@@ -144,8 +149,8 @@ export default function GenAIFormPage() {
                 <QuestionTextBar
                   label="1. Job/Role?"
                   placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
-                  value={question1}
-                  onChangeText={setQuestion1}
+                  value={interviewMandatoryQuestion1}
+                  onChangeText={setInterviewMandatoryQuestion1}
                   helperText="What job or role are you preparing for?"
                   />
                 <TypeOfInterviewQn
@@ -159,6 +164,36 @@ export default function GenAIFormPage() {
                 title="3. Number of questions:"
                 value={numberOfQuestions}
                 onValueChange={setNumberOfQuestions}
+              />
+              <View style={styles.bottomSpacing} />
+            </View>
+          )}
+          {!isMandatory && mode === 'study' && (
+            <View style={styles.formContent}>
+              <QuestionTextBar
+                label="1. Topic(s)?"
+                placeholder="e.g. Microeconomics, Electromagnetism, etc"
+                value={studyOptionalQuestion1}
+                onChangeText={setStudyOptionalQuestion1}
+                helperText="Which topics would you like to study?"
+              />
+              <QuestionTextBar
+                label="2. Subtopic(s)?"
+                placeholder="e.g. Demand and Supply, etc"
+                value={studyOptionalQuestion2}
+                onChangeText={setStudyOptionalQuestion2}
+                helperText="Which subtopics would you like to focus on?"
+              />
+              <QuestionTextBar
+                label="3. Exam/Quiz?"
+                placeholder="e.g. SAT, ACT, GRE, etc"
+                value={studyOptionalQuestion3}
+                onChangeText={setStudyOptionalQuestion3}
+                helperText="Are you studying for an exam or quiz?"
+              />
+              <KindsOfQuestions
+                value={questionType}
+                onValueChange={setQuestionType}
               />
               <View style={styles.bottomSpacing} />
             </View>

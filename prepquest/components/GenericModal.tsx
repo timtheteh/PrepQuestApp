@@ -7,7 +7,7 @@ interface GenericModalProps {
   visible: boolean;
   opacity?: Animated.Value;
   Icon?: React.FC<SvgProps>;
-  text: string;
+  text: string | string[];
   subtitle?: string;
   textStyle?: {
     highlightWord?: string;
@@ -36,15 +36,20 @@ export function GenericModal({
   // Split text to highlight specific word if needed
   const renderText = () => {
     if (!textStyle?.highlightWord) {
+      const textLines = Array.isArray(text) ? text : [text];
       return (
         <View>
-          <Text style={styles.text}>{text}</Text>
+          {textLines.map((line, index) => (
+            <Text key={index} style={[styles.text, index > 0 && styles.textLine]}>
+              {line}
+            </Text>
+          ))}
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
       );
     }
 
-    const parts = text.split(textStyle.highlightWord);
+    const parts = (Array.isArray(text) ? text.join(' ') : text).split(textStyle.highlightWord);
     return (
       <View>
         <Text style={styles.text}>
@@ -163,6 +168,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
     textAlign: 'center',
+  },
+  textLine: {
+    marginTop: 0,
   },
   subtitle: {
     fontFamily: 'Satoshi-Medium',

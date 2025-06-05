@@ -54,8 +54,10 @@ export default function GenAIFormPage() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
+  const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -98,6 +100,23 @@ export default function GenAIFormPage() {
   }, [isHelpModalOpen]);
 
   useEffect(() => {
+    if (isRecentFormModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(recentFormModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isRecentFormModalOpen]);
+
+  useEffect(() => {
     // Set initial mode animation when component mounts
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
@@ -107,8 +126,7 @@ export default function GenAIFormPage() {
   };
 
   const handleUseMostRecentFormPress = () => {
-    console.log('Use most recent form');
-    // To be implemented
+    setIsRecentFormModalOpen(true);
   };
 
   const handleClearAllPress = () => {
@@ -178,6 +196,23 @@ export default function GenAIFormPage() {
       })
     ]).start(() => {
       setIsHelpModalOpen(false);
+    });
+  };
+
+  const handleDismissRecentForm = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(recentFormModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsRecentFormModalOpen(false);
     });
   };
 
@@ -372,9 +407,9 @@ export default function GenAIFormPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen}
+        visible={isHelpModalOpen || isRecentFormModalOpen}
         opacity={overlayOpacity}
-        onPress={handleDismissHelp}
+        onPress={isHelpModalOpen ? handleDismissHelp : handleDismissRecentForm}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -386,6 +421,18 @@ export default function GenAIFormPage() {
           highlightColor: "#44B88A"
         }}
         Icon={HelpIconFilled}
+      />
+      <GenericModal
+        visible={isRecentFormModalOpen}
+        opacity={recentFormModalOpacity}
+        text={['Use most recent', 'form entry?']}
+        buttons='double'
+        onConfirm={() => {
+          handleDismissRecentForm();
+          // TODO: Implement loading most recent form
+          console.log('Load most recent form');
+        }}
+        onCancel={handleDismissRecentForm}
       />
     </View>
   );

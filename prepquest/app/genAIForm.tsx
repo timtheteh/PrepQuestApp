@@ -156,7 +156,7 @@ export default function GenAIFormPage() {
   };
 
   const isSubmitDisabled = () => {
-    if (!isMandatory) return false;
+    // Always check mandatory fields regardless of current view
     return mode === 'study' ? !isStudyMandatoryFieldsFilled() : !isInterviewMandatoryFieldsFilled();
   };
 

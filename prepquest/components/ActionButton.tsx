@@ -6,13 +6,15 @@ interface ActionButtonProps {
   backgroundColor: string;
   onPress?: () => void;
   style?: ViewStyle;
+  disabled?: boolean;
 }
 
 export function ActionButton({ 
   text,
   backgroundColor,
   onPress,
-  style
+  style,
+  disabled = false
 }: ActionButtonProps) {
   return (
     <TouchableOpacity 
@@ -22,7 +24,8 @@ export function ActionButton({
         style
       ]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={disabled ? 1 : 0.8}
+      disabled={disabled}
     >
       <Text style={styles.text}>{text}</Text>
     </TouchableOpacity>

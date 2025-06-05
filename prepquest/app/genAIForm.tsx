@@ -126,9 +126,25 @@ export default function GenAIFormPage() {
     }).start();
   };
 
+  const isStudyMandatoryFieldsFilled = () => {
+    return deckName.trim() !== '' && 
+           studyMandatoryQuestion1.trim() !== '' && 
+           studyMandatoryQuestion2.trim() !== '';
+  };
+
+  const isInterviewMandatoryFieldsFilled = () => {
+    return deckName.trim() !== '' && 
+           interviewMandatoryQuestion1.trim() !== '' && 
+           interviewType !== '';
+  };
+
+  const isSubmitDisabled = () => {
+    if (!isMandatory) return false;
+    return mode === 'study' ? !isStudyMandatoryFieldsFilled() : !isInterviewMandatoryFieldsFilled();
+  };
+
   const handleSubmit = () => {
-    console.log('Submit form');
-    // To be implemented
+    router.back();
   };
 
   const handleDismissHelp = () => {
@@ -331,8 +347,9 @@ export default function GenAIFormPage() {
         ]}>
           <ActionButton
             text="Submit"
-            backgroundColor="#44B88A"
+            backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
             onPress={handleSubmit}
+            disabled={isSubmitDisabled()}
           />
         </View>
       </View>
@@ -345,7 +362,7 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text="Our team has identified 7 main types of cognitive questions based on Bloom’s taxonomy to help with your learning. Visit our website to learn more."
+        text="Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."
         buttons='none'
         textStyle={{
           highlightWord: "our website",

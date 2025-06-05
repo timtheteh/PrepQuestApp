@@ -112,8 +112,25 @@ export default function GenAIFormPage() {
   };
 
   const handleClearAllPress = () => {
-    console.log('Clear all');
-    // To be implemented
+    // Reset all form fields to initial values
+    setDeckName('');
+    // Study mandatory fields
+    setStudyMandatoryQuestion1('');
+    setStudyMandatoryQuestion2('');
+    // Study optional fields
+    setStudyOptionalQuestion1('');
+    setStudyOptionalQuestion2('');
+    setStudyOptionalQuestion3('');
+    // Interview mandatory fields
+    setInterviewMandatoryQuestion1('');
+    setInterviewType('');
+    // Interview optional fields
+    setInterviewOptionalQuestion1('');
+    setInterviewOptionalQuestion2('');
+    setInterviewOptionalQuestion3('');
+    // Common fields
+    setNumberOfQuestions(1);
+    setQuestionType('');
   };
 
   const handleToggle = (isRightSide: boolean) => {

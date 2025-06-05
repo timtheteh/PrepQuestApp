@@ -25,6 +25,9 @@ export default function GenAIFormPage() {
   const [studyOptionalQuestion2, setStudyOptionalQuestion2] = useState('');
   const [studyOptionalQuestion3, setStudyOptionalQuestion3] = useState('');
   const [interviewMandatoryQuestion1, setInterviewMandatoryQuestion1] = useState('');
+  const [interviewOptionalQuestion1, setInterviewOptionalQuestion1] = useState('');
+  const [interviewOptionalQuestion2, setInterviewOptionalQuestion2] = useState('');
+  const [interviewOptionalQuestion3, setInterviewOptionalQuestion3] = useState('');
   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
   const [interviewType, setInterviewType] = useState('');
   const [questionType, setQuestionType] = useState('');
@@ -192,8 +195,38 @@ export default function GenAIFormPage() {
                 helperText="Are you studying for an exam or quiz?"
               />
               <KindsOfQuestions
-                value={questionType}
-                onValueChange={setQuestionType}
+                  value={questionType}
+                  onValueChange={setQuestionType}
+              />
+              <View style={styles.bottomSpacing} />
+            </View>
+          )}
+          {!isMandatory && mode === 'interview' && (
+            <View style={styles.formContent}>
+              <QuestionTextBar
+                label="1. Company?"
+                placeholder="e.g. Google, Meta, Microsoft, etc"
+                value={interviewOptionalQuestion1}
+                onChangeText={setInterviewOptionalQuestion1}
+                helperText="Which company are you preparing to interview with?"
+              />
+              <QuestionTextBar
+                label="2. Experience Level?"
+                placeholder="e.g. Junior Developer, Senior Developer, etc"
+                value={interviewOptionalQuestion2}
+                onChangeText={setInterviewOptionalQuestion2}
+                helperText="Which experience level is your interview for?"
+              />
+              <QuestionTextBar
+                label="3. Topic(s)?"
+                placeholder="e.g. React, Java, Operating Systems, etc"
+                value={interviewOptionalQuestion3}
+                onChangeText={setInterviewOptionalQuestion3}
+                helperText="Which topics would you like to focus on?"
+              />
+              <KindsOfQuestions
+                  value={questionType}
+                  onValueChange={setQuestionType}
               />
               <View style={styles.bottomSpacing} />
             </View>

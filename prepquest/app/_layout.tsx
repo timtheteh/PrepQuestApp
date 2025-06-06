@@ -33,6 +33,14 @@ export default function RootLayout() {
             headerShown: false
           }} 
         />
+        <Stack.Screen 
+          name="fileUploadPage" 
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_right',
+            headerShown: false
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -161,7 +161,7 @@ export function AddDeckModal({
   const handleFormUploadPagePress = () => {
     handleDismissMenu();
     router.push({
-      pathname: '/genAIForm',
+      pathname: '/fileUploadPage',
       params: { mode: currentMode }
     });
   };

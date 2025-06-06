@@ -41,23 +41,14 @@ export default function FileUploadPage() {
   const [deckName, setDeckName] = useState('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
   const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
-  const [studyOptionalQuestion1, setStudyOptionalQuestion1] = useState('');
-  const [studyOptionalQuestion2, setStudyOptionalQuestion2] = useState('');
-  const [studyOptionalQuestion3, setStudyOptionalQuestion3] = useState('');
   const [interviewMandatoryQuestion1, setInterviewMandatoryQuestion1] = useState('');
-  const [interviewOptionalQuestion1, setInterviewOptionalQuestion1] = useState('');
-  const [interviewOptionalQuestion2, setInterviewOptionalQuestion2] = useState('');
-  const [interviewOptionalQuestion3, setInterviewOptionalQuestion3] = useState('');
   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
   const [interviewType, setInterviewType] = useState('');
-  const [questionType, setQuestionType] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
-  const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -100,23 +91,6 @@ export default function FileUploadPage() {
   }, [isHelpModalOpen]);
 
   useEffect(() => {
-    if (isRecentFormModalOpen) {
-      Animated.parallel([
-        Animated.timing(overlayOpacity, {
-          toValue: 0.5,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(recentFormModalOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        })
-      ]).start();
-    }
-  }, [isRecentFormModalOpen]);
-
-  useEffect(() => {
     // Set initial mode animation when component mounts
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
@@ -125,30 +99,14 @@ export default function FileUploadPage() {
     router.back();
   };
 
-  const handleUseMostRecentFormPress = () => {
-    setIsRecentFormModalOpen(true);
-  };
-
   const handleClearAllPress = () => {
-    // Reset all form fields to initial values
+    // Reset mandatory fields only
     setDeckName('');
-    // Study mandatory fields
     setStudyMandatoryQuestion1('');
     setStudyMandatoryQuestion2('');
-    // Study optional fields
-    setStudyOptionalQuestion1('');
-    setStudyOptionalQuestion2('');
-    setStudyOptionalQuestion3('');
-    // Interview mandatory fields
     setInterviewMandatoryQuestion1('');
     setInterviewType('');
-    // Interview optional fields
-    setInterviewOptionalQuestion1('');
-    setInterviewOptionalQuestion2('');
-    setInterviewOptionalQuestion3('');
-    // Common fields
     setNumberOfQuestions(1);
-    setQuestionType('');
   };
 
   const handleToggle = (isRightSide: boolean) => {
@@ -174,7 +132,7 @@ export default function FileUploadPage() {
   };
 
   const isSubmitDisabled = () => {
-    // Always check mandatory fields regardless of current view
+    if (!isMandatory) return false;
     return mode === 'study' ? !isStudyMandatoryFieldsFilled() : !isInterviewMandatoryFieldsFilled();
   };
 
@@ -199,25 +157,8 @@ export default function FileUploadPage() {
     });
   };
 
-  const handleDismissRecentForm = () => {
-    Animated.parallel([
-      Animated.timing(overlayOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(recentFormModalOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start(() => {
-      setIsRecentFormModalOpen(false);
-    });
-  };
-
   const bottomOffset = Platform.OS === 'ios' ? 
-    (isReady ? insets.bottom : 34) : // Use 34 as default bottom inset for iOS
+    (isReady ? insets.bottom : 34) : 
     20;
 
   const mandatoryOpacity = fadeAnim.interpolate({
@@ -225,7 +166,7 @@ export default function FileUploadPage() {
     outputRange: [1, 0],
   });
 
-  const optionalOpacity = fadeAnim.interpolate({
+  const fileUploadOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
@@ -241,18 +182,19 @@ export default function FileUploadPage() {
         </TouchableOpacity>
       </View>
       
-      <View style={styles.headerIconsContainer}>
-        <FormHeaderIcons 
-          onUseMostRecentFormPress={handleUseMostRecentFormPress}
-          onClearAllPress={handleClearAllPress}
-        />
-      </View>
+      {isMandatory && (
+        <View style={styles.headerIconsContainer}>
+          <FormHeaderIcons 
+            onClearAllPress={handleClearAllPress}
+          />
+        </View>
+      )}
 
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
           <RoundedContainer 
             leftLabel="Mandatory"
-            rightLabel="Optional"
+            rightLabel="File Upload"
             onToggle={handleToggle}
           />
         </View>
@@ -300,19 +242,18 @@ export default function FileUploadPage() {
                 )}
                 {mode !== 'study' && (
                   <>
-                  <QuestionTextBar
-                    label="1. Job/Role?"
-                    placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
-                    value={interviewMandatoryQuestion1}
-                    onChangeText={setInterviewMandatoryQuestion1}
-                    helperText="What job or role are you preparing for?"
+                    <QuestionTextBar
+                      label="1. Job/Role?"
+                      placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                      value={interviewMandatoryQuestion1}
+                      onChangeText={setInterviewMandatoryQuestion1}
+                      helperText="What job or role are you preparing for?"
                     />
-                  <TypeOfInterviewQn
-                    value={interviewType}
-                    onValueChange={setInterviewType}
-                  />
+                    <TypeOfInterviewQn
+                      value={interviewType}
+                      onValueChange={setInterviewType}
+                    />
                   </>
-                  
                 )}
                 <NumberOfQuestions
                   title="3. Number of questions:"
@@ -326,70 +267,9 @@ export default function FileUploadPage() {
 
           <Animated.View style={[
             styles.formContent,
-            { opacity: optionalOpacity, display: !isMandatory ? 'flex' : 'none' }
+            { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
           ]}>
-            {!isMandatory && mode === 'study' && (
-              <View style={styles.formContent}>
-                <QuestionTextBar
-                  label="1. Topic(s)?"
-                  placeholder="e.g. Microeconomics, Electromagnetism, etc"
-                  value={studyOptionalQuestion1}
-                  onChangeText={setStudyOptionalQuestion1}
-                  helperText="Which topics would you like to study?"
-                />
-                <QuestionTextBar
-                  label="2. Subtopic(s)?"
-                  placeholder="e.g. Demand and Supply, etc"
-                  value={studyOptionalQuestion2}
-                  onChangeText={setStudyOptionalQuestion2}
-                  helperText="Which subtopics would you like to focus on?"
-                />
-                <QuestionTextBar
-                  label="3. Exam/Quiz?"
-                  placeholder="e.g. SAT, ACT, GRE, etc"
-                  value={studyOptionalQuestion3}
-                  onChangeText={setStudyOptionalQuestion3}
-                  helperText="Are you studying for an exam or quiz?"
-                />
-                <KindsOfQuestions
-                    value={questionType}
-                    onValueChange={setQuestionType}
-                    onHelpPress={() => setIsHelpModalOpen(true)}
-                />
-                <View style={styles.bottomSpacing} />
-              </View>
-            )}
-            {!isMandatory && mode === 'interview' && (
-              <View style={styles.formContent}>
-                <QuestionTextBar
-                  label="1. Company?"
-                  placeholder="e.g. Google, Meta, Microsoft, etc"
-                  value={interviewOptionalQuestion1}
-                  onChangeText={setInterviewOptionalQuestion1}
-                  helperText="Which company are you preparing to interview with?"
-                />
-                <QuestionTextBar
-                  label="2. Experience Level?"
-                  placeholder="e.g. Junior Developer, Senior Developer, etc"
-                  value={interviewOptionalQuestion2}
-                  onChangeText={setInterviewOptionalQuestion2}
-                  helperText="Which experience level is your interview for?"
-                />
-                <QuestionTextBar
-                  label="3. Topic(s)?"
-                  placeholder="e.g. React, Java, Operating Systems, etc"
-                  value={interviewOptionalQuestion3}
-                  onChangeText={setInterviewOptionalQuestion3}
-                  helperText="Which topics would you like to focus on?"
-                />
-                <KindsOfQuestions
-                    value={questionType}
-                    onValueChange={setQuestionType}
-                    onHelpPress={() => setIsHelpModalOpen(true)}
-                />
-                <View style={styles.bottomSpacing} />
-              </View>
-            )}
+            {/* FileUpload content will be added later */}
           </Animated.View>
         </ScrollView>
 
@@ -407,9 +287,9 @@ export default function FileUploadPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isRecentFormModalOpen}
+        visible={isHelpModalOpen}
         opacity={overlayOpacity}
-        onPress={isHelpModalOpen ? handleDismissHelp : handleDismissRecentForm}
+        onPress={handleDismissHelp}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -421,18 +301,6 @@ export default function FileUploadPage() {
           highlightColor: "#44B88A"
         }}
         Icon={HelpIconFilled}
-      />
-      <GenericModal
-        visible={isRecentFormModalOpen}
-        opacity={recentFormModalOpacity}
-        text={['Use most recent', 'form entry?']}
-        buttons='double'
-        onConfirm={() => {
-          handleDismissRecentForm();
-          // TODO: Implement loading most recent form
-          console.log('Load most recent form');
-        }}
-        onCancel={handleDismissRecentForm}
       />
     </View>
   );

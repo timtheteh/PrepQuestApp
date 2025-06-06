@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
@@ -32,6 +32,12 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
     />
   </Svg>
 );
+
+const FileUploadMainSection = () => {
+  return (
+    <View style={styles.fileUploadMainSection} />
+  );
+};
 
 export default function FileUploadPage() {
   const { mode } = useLocalSearchParams();
@@ -269,7 +275,11 @@ export default function FileUploadPage() {
             styles.formContent,
             { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
           ]}>
-            {/* FileUpload content will be added later */}
+            <Text style={styles.fileUploadTitle}>
+              Upload any file document to generate a new deck!
+            </Text>
+            <FileUploadMainSection />
+            <View style={styles.bottomSpacingFilUpload} />
           </Animated.View>
         </ScrollView>
 
@@ -358,5 +368,25 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  bottomSpacingFilUpload: {
+    height: 100,
+  },
+  fileUploadTitle: {
+    fontFamily: 'Satoshi-Bold',
+    fontSize: 24,
+    textAlign: 'left',
+    paddingHorizontal: 10,
+    marginTop: Platform.OS === 'ios' ? 10 : 40,
+  },
+  fileUploadMainSection: {
+    height: 370,
+    width: '95%',
+    alignSelf: 'center',
+    borderWidth: 3,
+    borderStyle: 'dashed',
+    borderColor: '#4F41D8',
+    marginTop: Platform.OS === 'ios' ? 20 : 10,
+    borderRadius: 4,
   },
 }); 

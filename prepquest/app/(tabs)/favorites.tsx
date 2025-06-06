@@ -16,7 +16,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
-const BOTTOM_SPACING = 40; // Required spacing from navbar
+const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 

@@ -158,6 +158,14 @@ export function AddDeckModal({
     });
   };
 
+  const handleFormUploadPagePress = () => {
+    handleDismissMenu();
+    router.push({
+      pathname: '/genAIForm',
+      params: { mode: currentMode }
+    });
+  };
+
   return (
     <Animated.View 
       style={[
@@ -188,6 +196,7 @@ export function AddDeckModal({
               title="File Upload"
               Icon={FileUploadIcon}
               marginBottom={3}
+              onPress={handleFormUploadPagePress}
             />
           </View>
           <View style={styles.buttonRow}>

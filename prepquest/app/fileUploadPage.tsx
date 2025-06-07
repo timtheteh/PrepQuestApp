@@ -59,6 +59,9 @@ export default function FileUploadPage() {
   const modalOpacity = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [isAIGenerate, setIsAIGenerate] = useState(false);
+  const [isAIHelpModalOpen, setIsAIHelpModalOpen] = useState(false);
+  const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -98,6 +101,23 @@ export default function FileUploadPage() {
       ]).start();
     }
   }, [isHelpModalOpen]);
+
+  useEffect(() => {
+    if (isAIHelpModalOpen) {
+      Animated.parallel([
+        Animated.timing(aiHelpOverlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(aiHelpModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isAIHelpModalOpen]);
 
   useEffect(() => {
     // Set initial mode animation when component mounts
@@ -163,6 +183,23 @@ export default function FileUploadPage() {
       })
     ]).start(() => {
       setIsHelpModalOpen(false);
+    });
+  };
+
+  const handleDismissAIHelp = () => {
+    Animated.parallel([
+      Animated.timing(aiHelpOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(aiHelpModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsAIHelpModalOpen(false);
     });
   };
 
@@ -288,7 +325,9 @@ export default function FileUploadPage() {
                 onPress={() => setIsAIGenerate(!isAIGenerate)}
               />
               <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
-              <HelpIconOutline width={24} height={24} />
+              <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
+                <HelpIconOutline width={24} height={24} />
+              </TouchableOpacity>
             </View>
             <View style={styles.bottomSpacingFilUpload} />
           </Animated.View>
@@ -308,9 +347,9 @@ export default function FileUploadPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen}
-        opacity={overlayOpacity}
-        onPress={handleDismissHelp}
+        visible={isHelpModalOpen || isAIHelpModalOpen}
+        opacity={isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity}
+        onPress={isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -321,6 +360,13 @@ export default function FileUploadPage() {
           highlightWord: "our website",
           highlightColor: "#44B88A"
         }}
+        Icon={HelpIconFilled}
+      />
+      <GenericModal
+        visible={isAIHelpModalOpen}
+        opacity={aiHelpModalOpacity}
+        text="Ticking this option will let AI generate new, suggested cards outside the content of your upload."
+        buttons='none'
         Icon={HelpIconFilled}
       />
     </View>

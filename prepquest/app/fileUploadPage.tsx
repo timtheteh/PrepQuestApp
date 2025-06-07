@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
+import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
+import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -56,6 +58,7 @@ export default function FileUploadPage() {
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [isAIGenerate, setIsAIGenerate] = useState(false);
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -279,6 +282,14 @@ export default function FileUploadPage() {
               Upload any file document to generate a new deck!
             </Text>
             <FileUploadMainSection />
+            <View style={styles.aiGenerateRow}>
+              <SmallCircleSelectButton
+                selected={isAIGenerate}
+                onPress={() => setIsAIGenerate(!isAIGenerate)}
+              />
+              <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+              <HelpIconOutline width={24} height={24} />
+            </View>
             <View style={styles.bottomSpacingFilUpload} />
           </Animated.View>
         </ScrollView>
@@ -388,5 +399,18 @@ const styles = StyleSheet.create({
     borderColor: '#4F41D8',
     marginTop: Platform.OS === 'ios' ? 20 : 10,
     borderRadius: 4,
+  },
+  aiGenerateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginTop: Platform.OS === 'ios' ? 20 : 5,
+    gap: 5,
+  },
+  aiGenerateText: {
+    flex: 1,
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    color: '#000000',
   },
 }); 

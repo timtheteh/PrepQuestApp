@@ -17,6 +17,8 @@ import React from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
 import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
+import { PrimaryButton } from '@/components/PrimaryButton';
+import CloudUploadIcon from '@/assets/icons/cloudUploadIcon.svg';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -37,7 +39,18 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
 
 const FileUploadMainSection = () => {
   return (
-    <View style={styles.fileUploadMainSection} />
+    <View style={styles.fileUploadMainSection}>
+      <View style={styles.uploadContent}>
+        <CloudUploadIcon width={110} height={110} />
+        <Text style={styles.supportedFilesText}>
+          Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks
+        </Text>
+        <PrimaryButton 
+          text="Browse"
+          onPress={() => {}}
+        />
+      </View>
+    </View>
   );
 };
 
@@ -445,6 +458,22 @@ const styles = StyleSheet.create({
     borderColor: '#4F41D8',
     marginTop: Platform.OS === 'ios' ? 20 : 10,
     borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadContent: {
+    height: '90%',
+    alignItems: 'center',
+    gap: 30,
+    paddingTop: 10,
+  },
+  supportedFilesText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 16,
+    color: '#000000',
+    textAlign: 'center',
+    maxWidth: '80%',
+    paddingBottom: 10,
   },
   aiGenerateRow: {
     flexDirection: 'row',

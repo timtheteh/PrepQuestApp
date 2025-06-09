@@ -60,6 +60,23 @@ const FileUploadMainSection = () => {
   );
 };
 
+const getFormContentGap = () => {
+  const { width, height } = Dimensions.get('window');
+  
+  
+  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  if (Platform.OS === 'ios' && height >= 920) {
+    return 30;
+  }
+  
+  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  if (Platform.OS === 'android' && height >= 900) {
+    return 40;
+  }
+  
+  return Platform.OS === 'ios' ? 0 : 16;
+};
+
 export default function FileUploadPage() {
   const { mode } = useLocalSearchParams();
   const router = useRouter();
@@ -350,7 +367,7 @@ export default function FileUploadPage() {
           </Animated.View>
 
           <Animated.View style={[
-            styles.formContent,
+            styles.fileUploadContent,
             { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
           ]}>
             <Text style={styles.fileUploadTitle}>
@@ -451,6 +468,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   formContent: {
+    gap: getFormContentGap(),
+  },
+  fileUploadContent: {
+    marginTop: Platform.OS === 'android' && Dimensions.get('window').height > 960 ? 20 : 0,
     gap: Platform.OS === 'ios' ? 0 : 16,
   },
   buttonContainer: {

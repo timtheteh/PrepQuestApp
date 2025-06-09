@@ -70,7 +70,7 @@ const getFormContentGap = () => {
   }
   
   // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
-  if (Platform.OS === 'android' && height >= 900) {
+  if (Platform.OS === 'android' && height >= 930) {
     return 40;
   }
   

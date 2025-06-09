@@ -469,6 +469,7 @@ const styles = StyleSheet.create({
   },
   fileUploadTitle: {
     fontFamily: 'Satoshi-Bold',
+    fontWeight: '700',
     fontSize: 24,
     textAlign: 'left',
     paddingHorizontal: 10,

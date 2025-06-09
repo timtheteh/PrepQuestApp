@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
@@ -32,6 +32,23 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
     />
   </Svg>
 );
+
+const getFormContentGap = () => {
+  const { width, height } = Dimensions.get('window');
+  
+  
+  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  if (Platform.OS === 'ios' && height >= 920) {
+    return 30;
+  }
+  
+  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  if (Platform.OS === 'android' && height >= 900) {
+    return 40;
+  }
+  
+  return Platform.OS === 'ios' ? 0 : 16;
+};
 
 export default function GenAIFormPage() {
   const { mode } = useLocalSearchParams();
@@ -216,8 +233,9 @@ export default function GenAIFormPage() {
     });
   };
 
+  const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
-    (isReady ? insets.bottom : 34) : // Use 34 as default bottom inset for iOS
+    (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
     20;
 
   const mandatoryOpacity = fadeAnim.interpolate({
@@ -478,11 +496,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   formContent: {
-    gap: Platform.OS === 'ios' ? 0 : 16,
+    gap: getFormContentGap(),
   },
   buttonContainer: {
     position: 'absolute',
-    paddingTop: 20,
+    paddingTop: Dimensions.get('window').height < 670 ? 10 : 20,
     left: 0,
     right: 0,
     alignItems: 'center',

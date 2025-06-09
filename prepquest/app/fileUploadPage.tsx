@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
@@ -19,6 +19,8 @@ import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
 import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import CloudUploadIcon from '@/assets/icons/cloudUploadIcon.svg';
+import ImageIconFilled from '@/assets/icons/imageIconFilled.svg';
+import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -50,6 +52,10 @@ const FileUploadMainSection = () => {
           onPress={() => {}}
         />
       </View>
+      <View style={styles.cornerIconsContainer}>
+        <ImageIconFilled width={30} height={30} />
+        <CameraIconFilled width={40} height={40} />
+      </View>
     </View>
   );
 };
@@ -75,6 +81,11 @@ export default function FileUploadPage() {
   const [isAIHelpModalOpen, setIsAIHelpModalOpen] = useState(false);
   const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
   const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
+
+  const screenHeight = Dimensions.get('window').height;
+  const bottomOffset = Platform.OS === 'ios' ? 
+    (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
+    20;
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -216,10 +227,6 @@ export default function FileUploadPage() {
     });
   };
 
-  const bottomOffset = Platform.OS === 'ios' ? 
-    (isReady ? insets.bottom : 34) : 
-    20;
-
   const mandatoryOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 0],
@@ -229,6 +236,21 @@ export default function FileUploadPage() {
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
+
+  const getScrollContentPaddingTop = () => {
+    if (isMandatory) return 16; // default padding for Mandatory state
+
+    const height = Dimensions.get('window').height;
+    if (Platform.OS === 'ios') {
+      if (height > 900) return 55;
+      if (height >= 800) return 23;
+      return 16;
+    } else {
+      if (height > 930) return 35;
+      if (height > 900) return 20;
+      return 10;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -262,7 +284,10 @@ export default function FileUploadPage() {
             styles.scrollView,
             { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
           ]}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: getScrollContentPaddingTop() }
+          ]}
           showsVerticalScrollIndicator={false}
           bounces={true}
           overScrollMode="always"
@@ -400,8 +425,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 0 : 20, // button height (72) + padding top (20)
+    paddingBottom: Platform.OS === 'ios' ? 0 : 20,
+    justifyContent: 'center',
   },
   topBar: {
     flexDirection: 'row',
@@ -430,7 +455,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: 'absolute',
-    paddingTop: 20,
+    paddingTop: Dimensions.get('window').height < 670 ? 10 : 20,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -440,7 +465,7 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomSpacingFilUpload: {
-    height: 100,
+    height: 50,
   },
   fileUploadTitle: {
     fontFamily: 'Satoshi-Bold',
@@ -487,5 +512,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
     color: '#000000',
+  },
+  cornerIconsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 10,
+    right: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 }); 

@@ -397,6 +397,7 @@ export default function FileUploadPage() {
             backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
             onPress={handleSubmit}
             disabled={isSubmitDisabled()}
+            fullWidth
           />
         </View>
       </View>

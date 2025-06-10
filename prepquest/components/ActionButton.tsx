@@ -7,6 +7,7 @@ interface ActionButtonProps {
   onPress?: () => void;
   style?: ViewStyle;
   disabled?: boolean;
+  fullWidth?: boolean;
 }
 
 export function ActionButton({ 
@@ -14,13 +15,15 @@ export function ActionButton({
   backgroundColor,
   onPress,
   style,
-  disabled = false
+  disabled = false,
+  fullWidth = false
 }: ActionButtonProps) {
   return (
     <TouchableOpacity 
       style={[
         styles.button,
         { backgroundColor },
+        fullWidth && styles.fullWidth,
         style
       ]}
       onPress={onPress}
@@ -39,6 +42,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  fullWidth: {
+    width: '90%',
   },
   text: {
     fontSize: 24,

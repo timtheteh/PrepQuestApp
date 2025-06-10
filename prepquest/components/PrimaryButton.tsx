@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: 'Satoshi-Variable',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 24,
     color: '#FFFFFF',
   },

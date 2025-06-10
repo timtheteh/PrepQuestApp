@@ -166,6 +166,14 @@ export function AddDeckModal({
     });
   };
 
+  const handleYoutubeLinkPress = () => {
+    handleDismissMenu();
+    router.push({
+      pathname: '/youtubeLink',
+      params: { mode: currentMode }
+    });
+  };
+
   return (
     <Animated.View 
       style={[
@@ -203,6 +211,7 @@ export function AddDeckModal({
             <AddDeckModalButton
               title="YouTube Link"
               Icon={YoutubeIcon}
+              onPress={handleYoutubeLinkPress}
             />
             <AddDeckModalButton
               title="Manual"

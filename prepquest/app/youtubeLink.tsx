@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
@@ -7,9 +7,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
 import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
 import { PrimaryButton } from '@/components/PrimaryButton';
-import CloudUploadIcon from '@/assets/icons/cloudUploadIcon.svg';
-import ImageIconFilled from '@/assets/icons/imageIconFilled.svg';
-import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
+import YoutubeIconSVG from '@/assets/images/YoutubeIconSVG.svg';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +18,7 @@ import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
+import { Image as RNImage } from 'react-native';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -38,22 +37,23 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-const FileUploadMainSection = () => {
+const YoutubeLinkMainSection = () => {
   return (
-    <View style={styles.fileUploadMainSection}>
-      <View style={styles.uploadContent}>
-        <CloudUploadIcon width={110} height={110} />
-        <Text style={styles.supportedFilesText}>
-          Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks
-        </Text>
-        <PrimaryButton 
-          text="Browse"
-          onPress={() => {}}
+    <View style={styles.youtubeLinkMainSection}>
+      <View style={styles.youtubeImageContainer}>
+        <YoutubeIconSVG 
+          width={200}
+          height={120}
         />
       </View>
-      <View style={styles.cornerIconsContainer}>
-        <ImageIconFilled width={30} height={30} />
-        <CameraIconFilled width={40} height={40} />
+      <View style={styles.textAreaContainer}>
+        <TextInput
+          style={styles.textArea}
+          placeholder="Paste Link Here"
+          placeholderTextColor="#D5D4DD"
+          multiline={true}
+          numberOfLines={4}
+        />
       </View>
     </View>
   );
@@ -247,7 +247,7 @@ export default function YouTubeLinkPage() {
     outputRange: [1, 0],
   });
 
-  const fileUploadOpacity = fadeAnim.interpolate({
+  const youtubeLinkOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
@@ -290,7 +290,7 @@ export default function YouTubeLinkPage() {
         <View style={styles.toggleContainer}>
           <RoundedContainer 
             leftLabel="Mandatory"
-            rightLabel="File Upload"
+            rightLabel="YouTube Link"
             onToggle={handleToggle}
           />
         </View>
@@ -365,13 +365,13 @@ export default function YouTubeLinkPage() {
           </Animated.View>
 
           <Animated.View style={[
-            styles.fileUploadContent,
-            { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
+            styles.youtubeLinkContent,
+            { opacity: youtubeLinkOpacity, display: !isMandatory ? 'flex' : 'none' }
           ]}>
-            <Text style={styles.fileUploadTitle}>
-              Upload any file document to generate a new deck!
+            <Text style={styles.youtubeLinkTitle}>
+            Paste your YouTube Link here!
             </Text>
-            <FileUploadMainSection />
+            <YoutubeLinkMainSection />
             <View style={styles.aiGenerateRow}>
               <SmallCircleSelectButton
                 selected={isAIGenerate}
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   formContent: {
     gap: getFormContentGap(),
   },
-  fileUploadContent: {
+  youtubeLinkContent: {
     marginTop: Platform.OS === 'android' && Dimensions.get('window').height > 960 ? 20 : 0,
     gap: Platform.OS === 'ios' ? 0 : 16,
   },
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
   bottomSpacingFilUpload: {
     height: 50,
   },
-  fileUploadTitle: {
+  youtubeLinkTitle: {
     fontFamily: 'Satoshi-Bold',
     fontWeight: '700',
     fontSize: 24,
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginTop: Platform.OS === 'ios' ? 10 : 40,
   },
-  fileUploadMainSection: {
+  youtubeLinkMainSection: {
     height: 370,
     width: '95%',
     alignSelf: 'center',
@@ -506,20 +506,27 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 20,
   },
-  uploadContent: {
-    height: '90%',
+  youtubeImageContainer: {
     alignItems: 'center',
-    gap: 30,
-    paddingTop: 10,
+    justifyContent: 'center',
   },
-  supportedFilesText: {
-    fontFamily: 'Satoshi-Medium',
+  textAreaContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textArea: {
+    width: '90%',
+    height: 192,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 10,
+    padding: 16,
+    fontFamily: 'Satoshi-Variable',
+    fontWeight: '700',
     fontSize: 16,
-    color: '#000000',
-    textAlign: 'center',
-    maxWidth: '80%',
-    paddingBottom: 10,
+    textAlignVertical: 'top',
   },
   aiGenerateRow: {
     flexDirection: 'row',
@@ -533,13 +540,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
     color: '#000000',
-  },
-  cornerIconsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 10,
-    right: 5,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
 }); 

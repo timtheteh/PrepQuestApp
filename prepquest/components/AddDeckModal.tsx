@@ -133,13 +133,15 @@ interface AddDeckModalProps {
   opacity?: Animated.Value;
   currentMode: 'study' | 'interview';
   isInFavoritesPage?: boolean;
+  mode: string;
 }
 
 export function AddDeckModal({ 
   visible,
   opacity = new Animated.Value(0),
   currentMode,
-  isInFavoritesPage = false
+  isInFavoritesPage = false,
+  mode
 }: AddDeckModalProps) {
   const { setCurrentMode, handleDismissMenu } = useContext(MenuContext);
   const router = useRouter();
@@ -217,6 +219,13 @@ export function AddDeckModal({
               title="Manual"
               Icon={ManualFormIcon}
               marginBottom={6}
+              onPress={() => {
+                router.push({
+                  pathname: '/manualAddDeck',
+                  params: { mode }
+                });
+                handleDismissMenu();
+              }}
             />
           </View>
         </View>

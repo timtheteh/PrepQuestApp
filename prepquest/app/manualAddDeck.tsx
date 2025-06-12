@@ -18,6 +18,7 @@ import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
+import { TopBarManualHeader } from '@/components/TopBarManualHeader';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -269,6 +270,7 @@ export default function ManualAddDeckPage() {
         >
           <AntDesign name="arrowleft" size={32} color="black" />
         </TouchableOpacity>
+        
       </View>
       
       {isMandatory && (
@@ -276,6 +278,12 @@ export default function ManualAddDeckPage() {
           <FormHeaderIcons 
             onClearAllPress={handleClearAllPress}
           />
+        </View>
+      )}
+
+      {!isMandatory && (
+        <View style={styles.headerIconsContainer}>
+          <TopBarManualHeader />
         </View>
       )}
 
@@ -440,6 +448,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 8,
     paddingTop: Platform.OS === 'android' ? 60 : 20,
     paddingBottom: 8,

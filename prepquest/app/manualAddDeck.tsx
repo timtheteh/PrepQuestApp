@@ -19,6 +19,7 @@ import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import { TopBarManualHeader } from '@/components/TopBarManualHeader';
+import { AddViewToggle } from '@/components/AddViewToggle';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -294,6 +295,9 @@ export default function ManualAddDeckPage() {
             rightLabel="Manual"
             onToggle={handleToggle}
           />
+          {!isMandatory && (
+          <AddViewToggle style={styles.addViewToggle}/>
+        )}
         </View>
         <ScrollView 
           style={[
@@ -436,6 +440,9 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     position: 'relative',
+  },
+  addViewToggle:{
+    marginTop: "2%",
   },
   scrollView: {
     flex: 1,

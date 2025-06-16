@@ -20,6 +20,7 @@ import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import { TopBarManualHeader } from '@/components/TopBarManualHeader';
 import { AddViewToggle } from '@/components/AddViewToggle';
+import { FlippableCard } from '../components/FlippableCard';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -103,6 +104,7 @@ export default function ManualAddDeckPage() {
   const [isAIHelpModalOpen, setIsAIHelpModalOpen] = useState(false);
   const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
   const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
+  const [addViewState, setAddViewState] = useState<'add' | 'view'>('add');
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -286,19 +288,29 @@ export default function ManualAddDeckPage() {
         
       </View>
       
-      {isMandatory && (
-        <View style={styles.headerIconsContainer}>
-          <FormHeaderIcons 
-            onClearAllPress={handleClearAllPress}
-          />
-        </View>
-      )}
+      <Animated.View
+        style={[
+          styles.headerIconsContainer,
+          { opacity: mandatoryOpacity, display: isMandatory ? 'flex' : 'none' }
+        ]}
+      >
+        <FormHeaderIcons onClearAllPress={handleClearAllPress} />
+      </Animated.View>
 
-      {!isMandatory && (
+      <Animated.View
+        style={[
+          styles.headerIconsContainer,
+          { opacity: manualAddDeckOpacity, display: !isMandatory ? 'flex' : 'none' }
+        ]}
+      >
+        <TopBarManualHeader />
+      </Animated.View>
+
+      {/* {!isMandatory && (
         <View style={styles.headerIconsContainer}>
           <TopBarManualHeader />
         </View>
-      )}
+      )} */}
 
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
@@ -307,11 +319,21 @@ export default function ManualAddDeckPage() {
             rightLabel="Manual"
             onToggle={handleToggle}
           />
-          {!isMandatory && (
-          <AddViewToggle style={styles.addViewToggle}/>
-        )}
+
+          <Animated.View
+            style={[
+              styles.addViewToggle,
+              { opacity: manualAddDeckOpacity, display: !isMandatory ? 'flex' : 'none' }
+            ]}
+          >
+            <AddViewToggle
+              onToggle={setAddViewState}
+              initialState="add"
+            />
+          </Animated.View>
         </View>
-        <ScrollView 
+        {isMandatory && (
+          <ScrollView 
           style={[
             styles.scrollView,
             { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
@@ -329,7 +351,6 @@ export default function ManualAddDeckPage() {
             styles.formContent,
             { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
           ]}>
-            {isMandatory && (
               <View style={styles.formContent}>
                 <TitleTextBar
                   title=" Deck Name"
@@ -378,21 +399,50 @@ export default function ManualAddDeckPage() {
                 />
                 <View style={styles.bottomSpacing} />
               </View>
-            )}
           </Animated.View>
         </ScrollView>
+        )}
 
+        {/* FlippableCard only in Manual state and Add flashcard(s) state */}
+        {!isMandatory && addViewState === 'add' && (
+          <View 
+            style={[
+              styles.flippableCardContainer,
+              { paddingBottom: bottomOffset * 2 + 72}
+            ]}
+          >
+            <FlippableCard />
+          </View>
+        )}
+        
         <View style={[
           styles.buttonContainer,
-          { bottom: bottomOffset }
+          { bottom: bottomOffset, paddingTop: isMandatory ? Dimensions.get('window').height < 670 ? 10 : 20 : 0,}
         ]}>
-          <ActionButton
-            text="Submit"
-            backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
-            onPress={handleSubmit}
-            disabled={isSubmitDisabled()}
-            fullWidth
-          />
+          {isMandatory ? (
+            <ActionButton
+              text="Submit"
+              backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+              onPress={handleSubmit}
+              disabled={isSubmitDisabled()}
+              fullWidth
+            />
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 8, width: '100%', paddingHorizontal: 16}}>
+              <ActionButton
+                text="Submit"
+                backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+                onPress={handleSubmit}
+                disabled={isSubmitDisabled()}
+                style={{ flex: 1 }}
+              />
+              <ActionButton
+                text="Next Flashcard"
+                backgroundColor="#44B88A"
+                style={{ flex: 1 }}
+              />
+            </View>
+          )}
         </View>
       </View>
 
@@ -475,7 +525,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: 'absolute',
-    paddingTop: Dimensions.get('window').height < 670 ? 10 : 20,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -536,4 +585,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#000000',
   },
+  flippableCardContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: Dimensions.get('window').height < 670 ? 8 : 32,
+  }
 }); 

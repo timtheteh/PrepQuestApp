@@ -322,13 +322,14 @@ export default function YouTubeLinkPage() {
         </TouchableOpacity>
       </View>
       
-      {isMandatory && (
-        <View style={styles.headerIconsContainer}>
-          <FormHeaderIcons 
-            onClearAllPress={handleClearAllPress}
-          />
-        </View>
-      )}
+      <Animated.View
+        style={[
+          styles.headerIconsContainer,
+          { opacity: mandatoryOpacity, display: isMandatory ? 'flex' : 'none' }
+        ]}
+      >
+        <FormHeaderIcons onClearAllPress={handleClearAllPress} />
+      </Animated.View>
 
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>

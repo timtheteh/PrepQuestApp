@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     width: '90%',
   },
   text: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     fontFamily: 'Satoshi-Bold',
     color: '#FFFFFF',

@@ -207,7 +207,7 @@ export default function ManualAddDeckPage() {
 
   const handleToggle = (isRightSide: boolean) => {
     setIsMandatory(!isRightSide);
-    
+    if (isRightSide) setAddViewState('add');
     Animated.timing(fadeAnim, {
       toValue: isRightSide ? 1 : 0,
       duration: 300,
@@ -415,6 +415,7 @@ export default function ManualAddDeckPage() {
             ]}
           >
             <AddViewToggle
+              key={isMandatory ? 'mandatory' : 'manual'}
               onToggle={setAddViewState}
               initialState="add"
             />

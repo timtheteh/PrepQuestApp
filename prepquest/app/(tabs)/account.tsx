@@ -403,12 +403,12 @@ export default function AccountScreen() {
 
     // iphone 16 pro max
   if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.18;
+    return height * 0.11;
   }
   
   // iphone 16 plus
   if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.18;
+    return height * 0.11;
   }
 
   // iphone se

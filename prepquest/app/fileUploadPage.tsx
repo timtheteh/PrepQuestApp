@@ -62,19 +62,60 @@ const FileUploadMainSection = () => {
 
 const getFormContentGap = () => {
   const { width, height } = Dimensions.get('window');
+
+  // iphone 16 pro max
+  if (Platform.OS === 'ios' && height >= 940) {
+    return 25;
+  }
   
-  
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  // iphone 16 plus
   if (Platform.OS === 'ios' && height >= 920) {
-    return 30;
+    return 20;
+  }
+
+   // Pixel 9 Pro, Pixel 9 Pro XL 
+  if (Platform.OS === 'android' && height >= 935) {
+    return 35;
   }
   
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
-  if (Platform.OS === 'android' && height >= 930) {
-    return 40;
+  // Pixel 7, Pixel 8, Pixel 9
+  if (Platform.OS === 'android' && height >= 900) {
+    return 20;
   }
   
+  // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
   return Platform.OS === 'ios' ? 0 : 16;
+};
+
+const getFileUploadContentPaddingTop = () => {
+  const { width, height } = Dimensions.get('window');
+
+  // iphone se
+  if (Platform.OS === 'ios' && height <= 670) {
+    return 8;
+  }
+
+  /// iphone 16 pro max
+  if (Platform.OS === 'ios' && height >= 940) {
+    return 68;
+  }
+  
+  // iphone 16 plus
+  if (Platform.OS === 'ios' && height >= 920) {
+    return 62;
+  }
+   // Pixel 9 Pro, Pixel 9 Pro XL 
+   if (Platform.OS === 'android' && height >= 935) {
+    return 45;
+  }
+  
+  // Pixel 7, Pixel 8, Pixel 9
+  if (Platform.OS === 'android' && height >= 900) {
+    return 20;
+  }
+  
+  // iphone 16, iphone 16 pro, Pixel 7 Pro, 
+  return Platform.OS === 'ios' ? 34 : 16;
 };
 
 export default function FileUploadPage() {
@@ -102,7 +143,7 @@ export default function FileUploadPage() {
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    20;
+    30;
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -296,101 +337,128 @@ export default function FileUploadPage() {
             onToggle={handleToggle}
           />
         </View>
-        <ScrollView 
-          style={[
-            styles.scrollView,
-            { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
-          ]}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingTop: getScrollContentPaddingTop() }
-          ]}
-          showsVerticalScrollIndicator={false}
-          bounces={true}
-          overScrollMode="always"
-          keyboardShouldPersistTaps="handled"
-        >
-          <Animated.View style={[
-            styles.formContent,
-            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
-          ]}>
-            {isMandatory && (
-              <View style={styles.formContent}>
-                <TitleTextBar
-                  title=" Deck Name"
-                  highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                  placeholder="Type here!"
-                  value={deckName}
-                  onChangeText={setDeckName}
-                />
-                {mode === 'study' && (
-                  <>
-                    <QuestionTextBar
-                      label="1. Education Level?"
-                      placeholder="e.g. Freshman, Sophomore, etc"
-                      value={studyMandatoryQuestion1}
-                      onChangeText={setStudyMandatoryQuestion1}
-                      helperText="What education level is your preparation for?"
-                    />
-                    <QuestionTextBar
-                      label="2. Subject(s)?"
-                      placeholder="e.g. Computer Science, Math, Physics, etc."
-                      value={studyMandatoryQuestion2}
-                      onChangeText={setStudyMandatoryQuestion2}
-                      helperText="What subject(s) would this deck be for?"
-                    />
-                  </>
-                )}
-                {mode !== 'study' && (
-                  <>
-                    <QuestionTextBar
-                      label="1. Job/Role?"
-                      placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
-                      value={interviewMandatoryQuestion1}
-                      onChangeText={setInterviewMandatoryQuestion1}
-                      helperText="What job or role are you preparing for?"
-                    />
-                    <TypeOfInterviewQn
-                      value={interviewType}
-                      onValueChange={setInterviewType}
-                    />
-                  </>
-                )}
-                <NumberOfQuestions
-                  title="3. Number of questions:"
-                  value={numberOfQuestions}
-                  onValueChange={setNumberOfQuestions}
-                />
-                <View style={styles.bottomSpacing} />
-              </View>
-            )}
-          </Animated.View>
+        {isMandatory && (
+           <ScrollView 
+           style={[
+             styles.scrollView,
+             { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
+           ]}
+           contentContainerStyle={[
+             styles.scrollContent,
+             { paddingTop: getScrollContentPaddingTop() }
+           ]}
+           showsVerticalScrollIndicator={false}
+           bounces={true}
+           overScrollMode="always"
+           keyboardShouldPersistTaps="handled"
+         >
+           <Animated.View style={[
+             { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
+           ]}>
+               <View style={styles.formContent}>
+                 <TitleTextBar
+                   title=" Deck Name"
+                   highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
+                   placeholder="Type here!"
+                   value={deckName}
+                   onChangeText={setDeckName}
+                 />
+                 {mode === 'study' && (
+                   <>
+                     <QuestionTextBar
+                       label="1. Education Level?"
+                       placeholder="e.g. Freshman, Sophomore, etc"
+                       value={studyMandatoryQuestion1}
+                       onChangeText={setStudyMandatoryQuestion1}
+                       helperText="What education level is your preparation for?"
+                     />
+                     <QuestionTextBar
+                       label="2. Subject(s)?"
+                       placeholder="e.g. Computer Science, Math, Physics, etc."
+                       value={studyMandatoryQuestion2}
+                       onChangeText={setStudyMandatoryQuestion2}
+                       helperText="What subject(s) would this deck be for?"
+                     />
+                   </>
+                 )}
+                 {mode !== 'study' && (
+                   <>
+                     <QuestionTextBar
+                       label="1. Job/Role?"
+                       placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                       value={interviewMandatoryQuestion1}
+                       onChangeText={setInterviewMandatoryQuestion1}
+                       helperText="What job or role are you preparing for?"
+                     />
+                     <TypeOfInterviewQn
+                       value={interviewType}
+                       onValueChange={setInterviewType}
+                     />
+                   </>
+                 )}
+                 <NumberOfQuestions
+                   title="3. Number of questions:"
+                   value={numberOfQuestions}
+                   onValueChange={setNumberOfQuestions}
+                 />
+                 <View style={styles.bottomSpacing} />
+               </View>
+           </Animated.View>
+          </ScrollView>
+        )}
 
-          <Animated.View style={[
-            styles.fileUploadContent,
-            { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
-          ]}>
+        <Animated.View style={[
+          styles.fileUploadContent,
+          { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
+        ]}>
+          {Dimensions.get('window').height <= 670 && (
+            <ScrollView 
+              style={[
+                { marginBottom: 50 + bottomOffset }
+              ]}
+              showsVerticalScrollIndicator={false}
+              bounces={true}
+              overScrollMode="always"
+              keyboardShouldPersistTaps="handled"
+            >
             <Text style={styles.fileUploadTitle}>
-              Upload any file document to generate a new deck!
-            </Text>
-            <FileUploadMainSection />
-            <View style={styles.aiGenerateRow}>
-              <SmallCircleSelectButton
-                selected={isAIGenerate}
-                onPress={() => setIsAIGenerate(!isAIGenerate)}
-              />
-              <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
-              <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-                <HelpIconOutline width={24} height={24} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.bottomSpacingFilUpload} />
-          </Animated.View>
-        </ScrollView>
+            Upload any file document to generate a new deck!
+          </Text>
+          <FileUploadMainSection />
+          <View style={styles.aiGenerateRow}>
+            <SmallCircleSelectButton
+              selected={isAIGenerate}
+              onPress={() => setIsAIGenerate(!isAIGenerate)}
+            />
+            <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+            <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
+              <HelpIconOutline width={24} height={24} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.bottomSpacingFilUpload} />
+            </ScrollView>
+          )}
+          
+          <Text style={styles.fileUploadTitle}>
+            Upload any file document to generate a new deck!
+          </Text>
+          <FileUploadMainSection />
+          <View style={styles.aiGenerateRow}>
+            <SmallCircleSelectButton
+              selected={isAIGenerate}
+              onPress={() => setIsAIGenerate(!isAIGenerate)}
+            />
+            <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+            <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
+              <HelpIconOutline width={24} height={24} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </View>
 
-        <View style={[
+      <View style={[
           styles.buttonContainer,
-          { bottom: Platform.OS === 'ios' ? bottomOffset : 40 }
+          { bottom: bottomOffset }
         ]}>
           <ActionButton
             text="Submit"
@@ -400,7 +468,6 @@ export default function FileUploadPage() {
             fullWidth
           />
         </View>
-      </View>
 
       <GreyOverlayBackground 
         visible={isHelpModalOpen || isAIHelpModalOpen}
@@ -450,7 +517,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'android' ? 60 : 20,
+    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -458,7 +525,7 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 60 : 20,
+    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -472,8 +539,9 @@ const styles = StyleSheet.create({
     gap: getFormContentGap(),
   },
   fileUploadContent: {
-    marginTop: Platform.OS === 'android' && Dimensions.get('window').height > 960 ? 20 : 0,
+    paddingHorizontal: 16,
     gap: Platform.OS === 'ios' ? 0 : 16,
+    marginTop: getFileUploadContentPaddingTop(),
   },
   buttonContainer: {
     position: 'absolute',
@@ -487,13 +555,13 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomSpacingFilUpload: {
-    height: 50,
+    height: 100,
   },
   fileUploadTitle: {
     fontFamily: 'Satoshi-Bold',
     fontWeight: '700',
     fontSize: 24,
-    textAlign: 'left',
+    textAlign: 'center',
     paddingHorizontal: 10,
     marginTop: Platform.OS === 'ios' ? 10 : 40,
   },

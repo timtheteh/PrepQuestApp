@@ -53,6 +53,7 @@ const YoutubeLinkMainSection = () => {
           placeholderTextColor="#D5D4DD"
           multiline={true}
           numberOfLines={4}
+          submitBehavior='blurAndSubmit'
         />
       </View>
     </View>
@@ -60,20 +61,63 @@ const YoutubeLinkMainSection = () => {
 };
 
 const getFormContentGap = () => {
-  const { width, height } = Dimensions.get('window');
+    const { width, height } = Dimensions.get('window');
   
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
-  if (Platform.OS === 'ios' && height >= 920) {
-    return 30;
-  }
+    // iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 940) {
+      return 25;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return 20;
+    }
   
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
-  if (Platform.OS === 'android' && height >= 930) {
-    return 40;
-  }
+     // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return 35;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return 20;
+    }
+    
+    // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
+    return Platform.OS === 'ios' ? 0 : 16;
+  };
+
+  const getYoutubeLinkContentPaddingTop = () => {
+    const { width, height } = Dimensions.get('window');
   
-  return Platform.OS === 'ios' ? 0 : 16;
-};
+    // iphone se
+    if (Platform.OS === 'ios' && height <= 670) {
+      return 8;
+    }
+  
+    /// iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 940) {
+      return 86;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return 78;
+    }
+     // Pixel 9 Pro, Pixel 9 Pro XL 
+     if (Platform.OS === 'android' && height >= 935) {
+      return 54;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return 32;
+    }
+    
+    // iphone 16, iphone 16 pro, Pixel 7 Pro, 
+    return Platform.OS === 'ios' ? 42 : 24;
+  };
+  
 
 export default function YouTubeLinkPage() {
   const { mode } = useLocalSearchParams();
@@ -100,7 +144,7 @@ export default function YouTubeLinkPage() {
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    20;
+    30;
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -294,7 +338,8 @@ export default function YouTubeLinkPage() {
             onToggle={handleToggle}
           />
         </View>
-        <ScrollView 
+        {isMandatory && (
+          <ScrollView 
           style={[
             styles.scrollView,
             { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
@@ -363,32 +408,60 @@ export default function YouTubeLinkPage() {
               </View>
             )}
           </Animated.View>
-
-          <Animated.View style={[
-            styles.youtubeLinkContent,
-            { opacity: youtubeLinkOpacity, display: !isMandatory ? 'flex' : 'none' }
-          ]}>
+        </ScrollView>
+        )}
+        
+       <Animated.View style={[
+        styles.youtubeLinkContent,
+        { opacity: youtubeLinkOpacity, display: !isMandatory ? 'flex' : 'none' }
+        ]}>
+            {Dimensions.get('window').height <= 670 && (
+              <ScrollView 
+                style={[
+                    { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
+                ]}
+                showsVerticalScrollIndicator={false}
+                bounces={true}
+                overScrollMode="always"
+                keyboardShouldPersistTaps="handled"
+              >
+                <Text style={styles.youtubeLinkTitle}>
+                    Paste your YouTube Link here!
+                    </Text>
+                    <YoutubeLinkMainSection />
+                    <View style={styles.aiGenerateRow}>
+                        <SmallCircleSelectButton
+                        selected={isAIGenerate}
+                        onPress={() => setIsAIGenerate(!isAIGenerate)}
+                        />
+                        <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+                        <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
+                        <HelpIconOutline width={24} height={24} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.bottomSpacingFilUpload} />
+              </ScrollView>
+            )}
             <Text style={styles.youtubeLinkTitle}>
             Paste your YouTube Link here!
             </Text>
             <YoutubeLinkMainSection />
             <View style={styles.aiGenerateRow}>
-              <SmallCircleSelectButton
+                <SmallCircleSelectButton
                 selected={isAIGenerate}
                 onPress={() => setIsAIGenerate(!isAIGenerate)}
-              />
-              <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
-              <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
+                />
+                <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+                <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
                 <HelpIconOutline width={24} height={24} />
-              </TouchableOpacity>
+                </TouchableOpacity>
             </View>
             <View style={styles.bottomSpacingFilUpload} />
-          </Animated.View>
-        </ScrollView>
+        </Animated.View>
 
         <View style={[
           styles.buttonContainer,
-          { bottom: Platform.OS === 'ios' ? bottomOffset : 40 }
+          { bottom: bottomOffset }
         ]}>
           <ActionButton
             text="Submit"
@@ -448,7 +521,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'android' ? 60 : 20,
+    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -456,7 +529,7 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 60 : 20,
+    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -470,8 +543,9 @@ const styles = StyleSheet.create({
     gap: getFormContentGap(),
   },
   youtubeLinkContent: {
-    marginTop: Platform.OS === 'android' && Dimensions.get('window').height > 960 ? 20 : 0,
     gap: Platform.OS === 'ios' ? 0 : 16,
+    paddingHorizontal: 16,
+    marginTop: getYoutubeLinkContentPaddingTop(),
   },
   buttonContainer: {
     position: 'absolute',
@@ -485,13 +559,13 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomSpacingFilUpload: {
-    height: 50,
+    height: 100,
   },
   youtubeLinkTitle: {
     fontFamily: 'Satoshi-Bold',
     fontWeight: '700',
     fontSize: 24,
-    textAlign: 'left',
+    textAlign: 'center',
     paddingHorizontal: 10,
     marginTop: Platform.OS === 'ios' ? 10 : 40,
   },

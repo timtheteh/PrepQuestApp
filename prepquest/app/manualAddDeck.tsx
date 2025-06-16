@@ -56,19 +56,31 @@ const ManualAddDeckMainSection = () => {
 
 const getFormContentGap = () => {
   const { width, height } = Dimensions.get('window');
+
+  // iphone 16 pro max
+  if (Platform.OS === 'ios' && height >= 940) {
+    return 25;
+  }
   
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  // iphone 16 plus
   if (Platform.OS === 'ios' && height >= 920) {
-    return 30;
+    return 20;
+  }
+
+   // Pixel 9 Pro, Pixel 9 Pro XL 
+  if (Platform.OS === 'android' && height >= 935) {
+    return 35;
   }
   
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
-  if (Platform.OS === 'android' && height >= 930) {
-    return 40;
+  // Pixel 7, Pixel 8, Pixel 9
+  if (Platform.OS === 'android' && height >= 900) {
+    return 20;
   }
   
+  // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
   return Platform.OS === 'ios' ? 0 : 16;
 };
+
 
 export default function ManualAddDeckPage() {
   const { mode } = useLocalSearchParams();
@@ -95,7 +107,7 @@ export default function ManualAddDeckPage() {
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    20;
+    30;
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -368,32 +380,11 @@ export default function ManualAddDeckPage() {
               </View>
             )}
           </Animated.View>
-
-          <Animated.View style={[
-            styles.manualAddDeckContent,
-            { opacity: manualAddDeckOpacity, display: !isMandatory ? 'flex' : 'none' }
-          ]}>
-            <Text style={styles.manualAddDeckTitle}>
-              Type your content here!
-            </Text>
-            <ManualAddDeckMainSection />
-            <View style={styles.aiGenerateRow}>
-              <SmallCircleSelectButton
-                selected={isAIGenerate}
-                onPress={() => setIsAIGenerate(!isAIGenerate)}
-              />
-              <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
-              <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-                <HelpIconOutline width={24} height={24} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.bottomSpacingManualAddDeck} />
-          </Animated.View>
         </ScrollView>
 
         <View style={[
           styles.buttonContainer,
-          { bottom: Platform.OS === 'ios' ? bottomOffset : 40 }
+          { bottom: bottomOffset }
         ]}>
           <ActionButton
             text="Submit"
@@ -457,7 +448,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'android' ? 60 : 20,
+    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -465,7 +456,7 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 60 : 20,
+    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',

@@ -35,18 +35,28 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
 
 const getFormContentGap = () => {
   const { width, height } = Dimensions.get('window');
+
+  // iphone 16 pro max
+  if (Platform.OS === 'ios' && height >= 940) {
+    return 25;
+  }
   
-  
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  // iphone 16 plus
   if (Platform.OS === 'ios' && height >= 920) {
-    return 30;
+    return 20;
+  }
+
+   // Pixel 9 Pro, Pixel 9 Pro XL 
+  if (Platform.OS === 'android' && height >= 935) {
+    return 35;
   }
   
-  // Pixel 9 Pro and Pixel 9 Pro XKL (large Android devices)
+  // Pixel 7, Pixel 8, Pixel 9
   if (Platform.OS === 'android' && height >= 900) {
-    return 40;
+    return 20;
   }
   
+  // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
   return Platform.OS === 'ios' ? 0 : 16;
 };
 
@@ -236,7 +246,7 @@ export default function GenAIFormPage() {
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    20;
+    30;
 
   const mandatoryOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
@@ -413,7 +423,7 @@ export default function GenAIFormPage() {
 
         <View style={[
           styles.buttonContainer,
-          { bottom: Platform.OS === 'ios' ? bottomOffset : 40 }
+          { bottom: bottomOffset }
         ]}>
           <ActionButton
             text="Submit"
@@ -478,7 +488,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'android' ? 60 : 20,
+    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -486,7 +496,7 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 60 : 20,
+    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',

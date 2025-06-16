@@ -28,7 +28,7 @@ export default function RootLayout() {
         <Stack.Screen 
           name="genAIForm" 
           options={{
-            presentation: 'modal',
+            presentation: 'fullScreenModal',
             animation: 'slide_from_right',
             headerShown: false
           }} 
@@ -36,7 +36,7 @@ export default function RootLayout() {
         <Stack.Screen 
           name="fileUploadPage" 
           options={{
-            presentation: 'modal',
+            presentation: 'fullScreenModal',
             animation: 'slide_from_right',
             headerShown: false
           }} 
@@ -44,7 +44,7 @@ export default function RootLayout() {
         <Stack.Screen 
           name="youtubeLink" 
           options={{
-            presentation: 'modal',
+            presentation: 'fullScreenModal',
             animation: 'slide_from_right',
             headerShown: false
           }} 
@@ -52,7 +52,7 @@ export default function RootLayout() {
         <Stack.Screen 
           name="manualAddDeck" 
           options={{
-            presentation: 'modal',
+            presentation: 'fullScreenModal',
             animation: 'slide_from_right',
             headerShown: false
           }} 

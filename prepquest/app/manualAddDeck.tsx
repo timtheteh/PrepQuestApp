@@ -21,6 +21,10 @@ import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import { TopBarManualHeader } from '@/components/TopBarManualHeader';
 import { AddViewToggle } from '@/components/AddViewToggle';
 import { FlippableCard } from '../components/FlippableCard';
+import { CircleIconButton } from '@/components/CircleIconButton';
+import EyeIcon from '@/assets/icons/eyeIcon.svg';
+import { CircleSelectButtonGreen } from '../components/CircleSelectButtonGreen';
+import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -105,6 +109,13 @@ export default function ManualAddDeckPage() {
   const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
   const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
   const [addViewState, setAddViewState] = useState<'add' | 'view'>('add');
+  const [selectExpanded, setSelectExpanded] = useState(false);
+  const selectFadeAnim = useRef(new Animated.Value(0)).current;
+  const [selectedFlashcards, setSelectedFlashcards] = useState<number[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const deleteModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
+  const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -171,6 +182,14 @@ export default function ManualAddDeckPage() {
     // Set initial mode animation when component mounts
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
+
+  useEffect(() => {
+    Animated.timing(selectFadeAnim, {
+      toValue: selectExpanded ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [selectExpanded]);
 
   const handleBackPress = () => {
     router.back();
@@ -251,6 +270,72 @@ export default function ManualAddDeckPage() {
     });
   };
 
+  const handleDismissDeleteModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDeleteModalOpen(false);
+    });
+  };
+
+  const handleDeletePress = () => {
+    setIsDeleteModalOpen(true);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const handleDismissRecentForm = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(recentFormModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsRecentFormModalOpen(false);
+    });
+  };
+
+  const handleUseMostRecentFormPress = () => {
+    setIsRecentFormModalOpen(true);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(recentFormModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
   const mandatoryOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 0],
@@ -294,7 +379,10 @@ export default function ManualAddDeckPage() {
           { opacity: mandatoryOpacity, display: isMandatory ? 'flex' : 'none' }
         ]}
       >
-        <FormHeaderIcons onClearAllPress={handleClearAllPress} />
+        <FormHeaderIcons 
+          onClearAllPress={handleClearAllPress}
+          onUseMostRecentFormPress={handleUseMostRecentFormPress}
+        />
       </Animated.View>
 
       <Animated.View
@@ -414,6 +502,86 @@ export default function ManualAddDeckPage() {
             <FlippableCard />
           </View>
         )}
+
+        {!isMandatory && addViewState === 'view' && (
+          selectExpanded ? (
+            <Animated.View style={[styles.selectRow, { opacity: selectFadeAnim }]}> 
+              <TouchableOpacity onPress={() => {
+                setSelectedFlashcards([...Array(10)].map((_, i) => i));
+              }}>
+                <Text style={styles.selectAllText}>Select All</Text>
+              </TouchableOpacity>
+              <CircleIconButton
+                iconName="trash"
+                color="#FF3B30"
+                onPress={handleDeletePress}
+              />
+              <TouchableOpacity onPress={() => {
+                setSelectExpanded(false);
+                setSelectedFlashcards([]);
+              }}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ) : (
+            <Animated.View style={{ opacity: selectFadeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
+              <TouchableOpacity style={styles.selectTextButton} onPress={() => setSelectExpanded(true)}>
+                <Text style={styles.selectText}>Select</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )
+        )}
+
+        {!isMandatory && addViewState === 'view' && !selectExpanded && (
+          <ScrollView 
+            style={[styles.flashcardList, {marginBottom: Dimensions.get('window').height < 670 ? bottomOffset * 2 + 70 : bottomOffset * 2 + 48}]} 
+            contentContainerStyle={{ flexGrow: 1}}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+            overScrollMode="always"
+          >
+            {[...Array(10)].map((_, i) => (
+              <View key={i} style={[
+                styles.flashcardRow,
+                i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
+              ]}>
+                <Text style={styles.flashcardNumber}>{i + 1}.</Text>
+                <Text style={styles.flashcardTitle}>Flashcard Title {i + 1}</Text>
+                <EyeIcon width={24} height={24} style={styles.flashcardEyeIcon} />
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        {!isMandatory && addViewState === 'view' && selectExpanded && (
+          <ScrollView 
+            style={[styles.flashcardList, {marginBottom: Dimensions.get('window').height < 670 ? bottomOffset * 2 + 70 : bottomOffset * 2 + 48}]} 
+            contentContainerStyle={{ flexGrow: 1}}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+            overScrollMode="always"
+          >
+            {[...Array(10)].map((_, i) => (
+              <View key={i} style={[
+                styles.flashcardRow,
+                i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
+              ]}>
+                <Text style={styles.flashcardNumber}>{i + 1}.</Text>
+                <Text style={styles.flashcardTitle}>Flashcard Title {i + 1}</Text>
+                <CircleSelectButtonGreen 
+                  selected={selectedFlashcards.includes(i)}
+                  onPress={() => {
+                    setSelectedFlashcards(prev =>
+                      prev.includes(i)
+                        ? prev.filter(idx => idx !== i)
+                        : [...prev, i]
+                    );
+                  }}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        )}
         
         <View style={[
           styles.buttonContainer,
@@ -447,9 +615,9 @@ export default function ManualAddDeckPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen}
-        opacity={isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity}
-        onPress={isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isDeleteModalOpen || isRecentFormModalOpen}
+        opacity={isDeleteModalOpen ? overlayOpacity : (isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity))}
+        onPress={isDeleteModalOpen ? handleDismissDeleteModal : (isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -468,6 +636,35 @@ export default function ManualAddDeckPage() {
         text="Ticking this option will let AI generate new, suggested cards outside the content of your upload."
         buttons='none'
         Icon={HelpIconFilled}
+      />
+      <GenericModal
+        visible={isDeleteModalOpen}
+        opacity={deleteModalOpacity}
+        Icon={DeleteModalIcon}
+        text={`Are you sure you want to delete ${selectedFlashcards.length} flashcard${selectedFlashcards.length === 1 ? '' : 's'}?`}
+        textStyle={{
+          highlightWord: "delete",
+          highlightColor: "#D7191C"
+        }}
+        buttons="double"
+        onCancel={handleDismissDeleteModal}
+        onConfirm={() => {
+          setSelectedFlashcards([]);
+          setSelectExpanded(false);
+          handleDismissDeleteModal();
+        }}
+      />
+      <GenericModal
+        visible={isRecentFormModalOpen}
+        opacity={recentFormModalOpacity}
+        text={['Use most recent', 'form entry?']}
+        buttons='double'
+        onConfirm={() => {
+          handleDismissRecentForm();
+          // TODO: Implement loading most recent form
+          console.log('Load most recent form');
+        }}
+        onCancel={handleDismissRecentForm}
       />
     </View>
   );
@@ -589,5 +786,68 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: Dimensions.get('window').height < 670 ? 8 : 32,
-  }
+  },
+  selectTextButton: {
+    position: 'relative',
+    right: 16,
+    top: 16,
+    alignItems: 'flex-end',
+    marginBottom: 16,
+  },
+  selectText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    color: '#44B88A',
+  },
+  selectAllText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    color: '#44B88A',
+  },
+  selectRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 9,
+    marginTop: 8,
+    marginRight: 16,
+  },
+  cancelText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 14.5,
+    color: '#000000',
+  },
+  flashcardList: {
+    flex: 1,
+    width: '100%',
+    marginTop: 8,
+  },
+  flashcardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 60,
+    width: '100%',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECECEC',
+    backgroundColor: 'transparent',
+  },
+  flashcardNumber: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    color: '#000',
+    width: 32,
+    textAlign: 'left',
+  },
+  flashcardTitle: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    color: '#000',
+    flex: 1,
+    textAlign: 'left',
+    marginLeft: 8,
+  },
+  flashcardEyeIcon: {
+    marginLeft: 8,
+  },
 }); 

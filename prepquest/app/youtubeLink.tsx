@@ -140,6 +140,8 @@ export default function YouTubeLinkPage() {
   const [isAIHelpModalOpen, setIsAIHelpModalOpen] = useState(false);
   const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
   const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
+  const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -286,6 +288,39 @@ export default function YouTubeLinkPage() {
     });
   };
 
+  const handleDismissRecentForm = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(recentFormModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsRecentFormModalOpen(false);
+    });
+  };
+
+  const handleUseMostRecentFormPress = () => {
+    setIsRecentFormModalOpen(true);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(recentFormModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
   const mandatoryOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 0],
@@ -328,7 +363,10 @@ export default function YouTubeLinkPage() {
           { opacity: mandatoryOpacity, display: isMandatory ? 'flex' : 'none' }
         ]}
       >
-        <FormHeaderIcons onClearAllPress={handleClearAllPress} />
+        <FormHeaderIcons 
+          onClearAllPress={handleClearAllPress}
+          onUseMostRecentFormPress={handleUseMostRecentFormPress}
+        />
       </Animated.View>
 
       <View style={styles.mainContainer}>
@@ -475,9 +513,9 @@ export default function YouTubeLinkPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen}
-        opacity={isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity}
-        onPress={isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen}
+        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity)}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp)}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -496,6 +534,18 @@ export default function YouTubeLinkPage() {
         text="Ticking this option will let AI generate new, suggested cards outside the content of your upload."
         buttons='none'
         Icon={HelpIconFilled}
+      />
+      <GenericModal
+        visible={isRecentFormModalOpen}
+        opacity={recentFormModalOpacity}
+        text={['Use most recent', 'form entry?']}
+        buttons='double'
+        onConfirm={() => {
+          handleDismissRecentForm();
+          // TODO: Implement loading most recent form
+          console.log('Load most recent form');
+        }}
+        onCancel={handleDismissRecentForm}
       />
     </View>
   );

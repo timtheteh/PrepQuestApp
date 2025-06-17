@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView } from 'react-native';
-import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect } from 'react-native-svg';
+import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView, Text } from 'react-native';
+import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect, Defs, LinearGradient, Stop, Polygon } from 'react-native-svg';
+import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 
 // Example data
 const data = [
@@ -88,6 +89,18 @@ const data = [
     flashcards: 18,
     decks: 8,
   },
+  {
+    day: 'Sun',
+    date: '1 Apr 2024',
+    flashcards: 10,
+    decks: 0,
+  },
+  {
+    day: 'Sun',
+    date: '2 Apr 2024',
+    flashcards: 0,
+    decks: 0,
+  },
 ];
 
 const GRAPH_HEIGHT = 280;
@@ -124,13 +137,12 @@ export function ReviewLineGraph() {
     }).start();
   }, [selectedIndex]);
 
-  // Scroll to the end on mount to show the 4 most recent data points
-  useEffect(() => {
+  const handleContentSizeChange = () => {
     if (scrollViewRef.current) {
       const scrollToX = totalWidth - GRAPH_WIDTH + PADDING;
       scrollViewRef.current.scrollTo({ x: scrollToX, animated: false });
     }
-  }, []);
+  };
 
   // Points for lines - using all data
   const flashcardPoints = data.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(d.flashcards, GRAPH_HEIGHT)}`).join(' ');
@@ -141,9 +153,45 @@ export function ReviewLineGraph() {
   };
 
   return (
-    <View style={{ width: GRAPH_WIDTH, height: SVG_HEIGHT, alignSelf: 'center', marginTop: 20, marginLeft: 15 }}>
+    <View>
+    <View style={{ marginTop: 15, alignItems: 'center' }}>
+        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
+            Decks / Flashcards Reviewed
+        </Text>
+        <SmallGreenBinaryToggle
+            leftLabel="Day"
+            rightLabel="Month"
+            style={{ marginTop: 15}}
+        />
+        {/* Legend Row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginTop: 15, marginLeft: 30 }}>
+          {/* Decks Legend */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 18 }}>
+            <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: '#4F41D8' }} />
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#4F41D8', marginLeft: -1 }} />
+            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#4F41D8' }}>Decks</Text>
+          </View>
+          {/* Flashcards Legend */}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: '#44B88A' }} />
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#44B88A', marginLeft: -1 }} />
+            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#44B88A' }}>Flashcards</Text>
+          </View>
+        </View>
+    </View>
+    
+    <View
+      style={{
+        width: GRAPH_WIDTH,
+        height: SVG_HEIGHT,
+        alignSelf: 'center',
+        marginLeft: 15,
+        marginTop: -16,
+        zIndex: 1,
+      }}
+    >
       {/* Fixed elements */}
-      <Svg width={GRAPH_WIDTH} height={SVG_HEIGHT+100} style={{ position: 'absolute', borderWidth: 1, borderColor: 'red'}}>
+      <Svg width={GRAPH_WIDTH} height={SVG_HEIGHT} style={{ position: 'absolute',}}>
         {/* Y axis vertical line */}
         <Line
           x1={GRAPH_WIDTH - 32}
@@ -186,13 +234,81 @@ export function ReviewLineGraph() {
         ref={scrollViewRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ width: GRAPH_WIDTH, marginLeft: -PADDING}}
-        contentContainerStyle={{ 
+        style={{ width: GRAPH_WIDTH, marginLeft: -PADDING }}
+        contentContainerStyle={{
           width: totalWidth + PADDING,
-          paddingLeft: PADDING -20,
+          paddingLeft: PADDING - 20,
         }}
+        onContentSizeChange={handleContentSizeChange}
       >
         <Svg width={totalWidth + PADDING} height={SVG_HEIGHT}>
+          {/* Gradient Defs */}
+          <Defs>
+            <LinearGradient id="flashcardGradient" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#5CFFBE" stopOpacity="0.6" />
+              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </LinearGradient>
+            <LinearGradient id="deckGradient" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#5C4BFF" stopOpacity="0.6" />
+              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </LinearGradient>
+          </Defs>
+          {/* Flashcards faded area */}
+          <Polygon
+            points={
+              // Area under the flashcards line
+              [
+                // Top line (flashcards)
+                ...data.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(d.flashcards, GRAPH_HEIGHT)}`),
+                // Down to 20px below the last point
+                `${PADDING + 10 + (data.length - 1) * X_STEP},${GRAPH_HEIGHT-30}`,
+                // Across the bottom to the first point
+                `${PADDING + 10},${GRAPH_HEIGHT-30}`
+              ].join(' ')
+            }
+            fill="url(#flashcardGradient)"
+            stroke="none"
+          />
+          {/* Decks faded area */}
+          <Polygon
+            points={
+              [
+                ...data.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(d.decks, GRAPH_HEIGHT)}`),
+                `${PADDING + 10 + (data.length - 1) * X_STEP},${GRAPH_HEIGHT-30}`,
+                `${PADDING + 10},${GRAPH_HEIGHT-30}`
+              ].join(' ')
+            }
+            fill="url(#deckGradient)"
+            stroke="none"
+          />
+          {/* Flashcards value labels */}
+          {data.map((d, i) => (
+            <SvgText
+              key={`fc-label-${i}`}
+              x={PADDING + 10 + i * X_STEP}
+              y={getY(d.flashcards, GRAPH_HEIGHT) - 12}
+              fontSize={12}
+              fill="#44B88A"
+              fontFamily="Satoshi-Bold"
+              textAnchor="middle"
+            >
+              {d.flashcards}
+            </SvgText>
+          ))}
+          {/* Decks value labels */}
+          {data.map((d, i) => (
+            <SvgText
+              key={`deck-label-${i}`}
+              x={PADDING + 10 + i * X_STEP}
+              y={getY(d.decks, GRAPH_HEIGHT) - 12}
+              fontSize={12}
+              fill="#4F41D8"
+              fontFamily="Satoshi-Bold"
+              textAnchor="middle"
+            >
+              {d.decks}
+            </SvgText>
+          ))}
           {/* Flashcards line and area */}
           <Polyline
             points={flashcardPoints}
@@ -279,38 +395,7 @@ export function ReviewLineGraph() {
           ))}
         </Svg>
       </ScrollView>
-
-      {/* Labels that appear on click
-      {selectedIndex !== null && (
-        <>
-          <Animated.Text
-            style={{
-              position: 'absolute',
-              left: PADDING - 33 + selectedIndex * X_STEP,
-              top: getY(data[selectedIndex].flashcards, GRAPH_HEIGHT) - 24,
-              fontSize: 14,
-              color: '#000',
-              fontFamily: 'Satoshi-Medium',
-              opacity: fadeAnim,
-            }}
-          >
-            {`${data[selectedIndex].flashcards} Flashcards`}
-          </Animated.Text>
-          <Animated.Text
-            style={{
-              position: 'absolute',
-              left: PADDING - 16 + selectedIndex * X_STEP,
-              top: getY(data[selectedIndex].decks, GRAPH_HEIGHT) + 8,
-              fontSize: 14,
-              color: '#000',
-              fontFamily: 'Satoshi-Medium',
-              opacity: fadeAnim,
-            }}
-          >
-            {`${data[selectedIndex].decks} Decks`}
-          </Animated.Text>
-        </>
-      )} */}
+        </View>
     </View>
   );
 } 

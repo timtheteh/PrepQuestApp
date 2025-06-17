@@ -24,17 +24,7 @@ export default function StatisticsScreen() {
       {!isPerformance && (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           {/* ReviewSection */}
-          <View style={{ marginTop: 15, alignItems: 'center' }}>
-            <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
-              Decks / Flashcards Reviewed
-            </Text>
-            <SmallGreenBinaryToggle
-              leftLabel="Day"
-              rightLabel="Month"
-              style={{ marginTop: 15 }}
-            />
             <ReviewLineGraph />
-          </View>
         </ScrollView>
       )}
     </View>

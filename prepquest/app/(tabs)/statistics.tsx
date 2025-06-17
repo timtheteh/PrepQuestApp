@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { useState } from 'react';
 import { SmallGreenBinaryToggle } from '@/components/SmallGreenBinaryToggle';
+import { ReviewLineGraph } from '@/components/ReviewLineGraph';
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -32,6 +33,7 @@ export default function StatisticsScreen() {
               rightLabel="Month"
               style={{ marginTop: 15 }}
             />
+            <ReviewLineGraph />
           </View>
         </ScrollView>
       )}

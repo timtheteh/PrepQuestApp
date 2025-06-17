@@ -1,5 +1,5 @@
 import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle } from 'react-native';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface RoundedContainerProps extends ViewProps {
   leftLabel: string;
@@ -7,6 +7,8 @@ interface RoundedContainerProps extends ViewProps {
   rightLabel: string;
   onToggle?: (isRightSide: boolean) => void;
   initialPosition?: 'left' | 'right';
+  position?: 'left' | 'right';
+  disableAnimation?: boolean;
 }
 
 export function RoundedContainer({ 
@@ -16,8 +18,11 @@ export function RoundedContainer({
   rightLabel,
   onToggle,
   initialPosition = 'left',
+  position,
+  disableAnimation = false,
   ...props 
 }: RoundedContainerProps) {
+  const isControlled = position !== undefined;
   const [isRightSide, setIsRightSide] = useState(initialPosition === 'right');
   const positionAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
   const colorAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
@@ -25,16 +30,47 @@ export function RoundedContainer({
   const containerWidth = width - 32; // Accounting for parent padding
   const slideDistance = containerWidth / 2;
 
+  // Animate when position prop changes (controlled)
+  useEffect(() => {
+    if (isControlled) {
+      const toValue = position === 'right' ? 1 : 0;
+      setIsRightSide(position === 'right');
+      if (disableAnimation) {
+        positionAnim.setValue(toValue);
+        colorAnim.setValue(toValue);
+      } else {
+        const animationConfig = {
+          toValue,
+          duration: 300,
+          easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+        };
+        Animated.parallel([
+          Animated.timing(positionAnim, {
+            ...animationConfig,
+            useNativeDriver: true,
+          }),
+          Animated.timing(colorAnim, {
+            ...animationConfig,
+            useNativeDriver: false,
+          })
+        ]).start();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position, disableAnimation]);
+
   const togglePosition = () => {
+    if (isControlled) {
+      onToggle?.(!(position === 'right'));
+      return;
+    }
     const toValue = isRightSide ? 0 : 1;
     setIsRightSide(!isRightSide);
-
     const animationConfig = {
       toValue,
       duration: 300,
-      easing: Easing.bezier(0.4, 0.0, 0.2, 1), // Material Design standard easing
+      easing: Easing.bezier(0.4, 0.0, 0.2, 1),
     };
-    
     Animated.parallel([
       Animated.timing(positionAnim, {
         ...animationConfig,

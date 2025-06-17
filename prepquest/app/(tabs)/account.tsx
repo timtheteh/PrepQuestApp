@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform } from 'react-native';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { ThemedText } from '@/components/ThemedText';
 import LightSwitchBody from '@/assets/icons/lightSwitchBody.svg';
 import DarkSwitchBody from '@/assets/icons/darkSwitchBody.svg';
@@ -22,12 +23,25 @@ export default function AccountScreen() {
 
   // For button animation
   const buttonAnim = useRef(new Animated.Value(1)).current; // 1 = right (light), 0 = left (dark)
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused) {
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isFocused]);
 
   const handleToggle = () => {
     setIsDarkMode((prev) => !prev);
     Animated.timing(buttonAnim, {
       toValue: isDarkMode ? 1 : 0,
-      duration: 300,
+      duration: 200,
       useNativeDriver: false,
     }).start();
   };
@@ -606,13 +620,13 @@ export default function AccountScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF'}}>
+    <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim }}>
       {screenHeight < 670 ? (
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 135}}>{MainContent}</ScrollView>
       ) : (
         MainContent
       )}
-    </View>
+    </Animated.View>
   );
 }
 

@@ -1,7 +1,7 @@
 import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle } from 'react-native';
 import { useState, useRef } from 'react';
 
-interface RoundedContainerProps extends ViewProps {
+interface SmallGreenBinaryToggleProps extends ViewProps {
   leftLabel: string;
   leftLabelStyle?: StyleProp<TextStyle>;
   rightLabel: string;
@@ -9,7 +9,7 @@ interface RoundedContainerProps extends ViewProps {
   initialPosition?: 'left' | 'right';
 }
 
-export function RoundedContainer({ 
+export function SmallGreenBinaryToggle({ 
   style, 
   leftLabel,
   leftLabelStyle,
@@ -17,12 +17,11 @@ export function RoundedContainer({
   onToggle,
   initialPosition = 'left',
   ...props 
-}: RoundedContainerProps) {
+}: SmallGreenBinaryToggleProps) {
   const [isRightSide, setIsRightSide] = useState(initialPosition === 'right');
   const positionAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
   const colorAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
-  const { width } = useWindowDimensions();
-  const containerWidth = width - 32; // Accounting for parent padding
+  const containerWidth = 180;
   const slideDistance = containerWidth / 2;
 
   const togglePosition = () => {
@@ -31,8 +30,8 @@ export function RoundedContainer({
 
     const animationConfig = {
       toValue,
-      duration: 300,
-      easing: Easing.bezier(0.4, 0.0, 0.2, 1), // Material Design standard easing
+      duration: 200,
+      easing: Easing.bezier(0.4, 0.0, 0.2, 1),
     };
     
     Animated.parallel([
@@ -76,12 +75,12 @@ export function RoundedContainer({
           />
           <View style={styles.labelContainer}>
             <View style={[styles.labelSection, styles.leftSection]}>
-              <Animated.Text style={[leftLabelStyle ? leftLabelStyle : styles.label, { color: leftTextColor }]}>
+              <Animated.Text style={[leftLabelStyle ? leftLabelStyle : styles.label, { color: leftTextColor }]}> 
                 {leftLabel}
               </Animated.Text>
             </View>
             <View style={[styles.labelSection, styles.rightSection]}>
-              <Animated.Text style={[styles.label, { color: rightTextColor }]}>
+              <Animated.Text style={[styles.label, { color: rightTextColor }]}> 
                 {rightLabel}
               </Animated.Text>
             </View>
@@ -94,10 +93,10 @@ export function RoundedContainer({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    height: 46,
+    width: 180,
+    height: 26,
     backgroundColor: '#F8F8F8',
-    borderRadius: 30,
+    borderRadius: 10,
     overflow: 'hidden',
   },
   innerContainer: {
@@ -107,8 +106,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '50%',
     height: '100%',
-    backgroundColor: '#4F41D8',
-    borderRadius: 30,
+    backgroundColor: '#44B88A',
+    borderRadius: 10,
   },
   labelContainer: {
     flex: 1,
@@ -127,7 +126,7 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
   },
   label: {
-    fontSize: 20,
+    fontSize: 14,
     fontFamily: 'Satoshi-Medium',
   },
 }); 

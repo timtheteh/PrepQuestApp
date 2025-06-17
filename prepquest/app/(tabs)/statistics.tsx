@@ -7,6 +7,7 @@ import { ReviewLineGraph } from '@/components/ReviewLineGraph';
 import { BreakdownOfDecksFlashcards } from '@/components/BreakdownOfDecksFlashcards';
 import { useIsFocused } from '@react-navigation/native';
 import { MoreDetailsStats } from '@/components/MoreDetailsStats';
+import { GradeChart } from '@/components/GradeChart'; 
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -122,6 +123,14 @@ export default function StatisticsScreen() {
           </ScrollView>
         )}
         {/* You can add your Performance content here, wrapped in the same Animated.View */}
+        {isPerformance && (
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1}}
+          showsVerticalScrollIndicator={false}
+          >
+          <GradeChart />
+        </ScrollView>
+        )}
       </Animated.View>
       <View style={{ height: 40, backgroundColor: '#FFFFFF'}} />
     </Animated.View>

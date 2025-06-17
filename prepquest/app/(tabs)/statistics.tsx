@@ -10,6 +10,8 @@ import { MoreDetailsStats } from '@/components/MoreDetailsStats';
 import { GradeChart } from '@/components/GradeChart'; 
 import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
+import { SpeedChart } from '@/components/SpeedChart';
+import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -133,6 +135,8 @@ export default function StatisticsScreen() {
           <GradeChart />
           <AverageGradeThermometer />
           <BreakdownByDifficultyPie />
+          <SpeedChart />
+          <AverageSpeedTotal />
         </ScrollView>
         )}
       </Animated.View>

@@ -55,9 +55,8 @@ export function BreakdownByDifficultyPie() {
               <Path key={i} d={slice.path} fill={slice.color} />
             ))}
             {slices.map((slice, i) => (
-              <>
+              <G key={`slice-labels-${i}`}>
                 <SvgText
-                  key={`label-${i}`}
                   x={slice.labelPos.x}
                   y={slice.labelPos.y - 10}
                   fontSize={16}
@@ -69,7 +68,6 @@ export function BreakdownByDifficultyPie() {
                   {LABELS[i]}
                 </SvgText>
                 <SvgText
-                  key={`value-${i}`}
                   x={slice.labelPos.x}
                   y={slice.labelPos.y + 10}
                   fontSize={16}
@@ -80,7 +78,7 @@ export function BreakdownByDifficultyPie() {
                 >
                   {`${VALUES[i]} (${Math.round((VALUES[i]/TOTAL)*100)}%)`}
                 </SvgText>
-              </>
+              </G>
             ))}
           </G>
         </Svg>
@@ -102,6 +100,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     color: '#111',
+    lineHeight: 30,
   },
   container: {
     width: SIZE,

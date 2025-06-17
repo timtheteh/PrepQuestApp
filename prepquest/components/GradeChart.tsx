@@ -146,7 +146,7 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
           />
           {/* Value label above bar */}
           <SvgText
-            x={getX(i)}
+            x={getX(i)-5}
             y={barY - 10}
             fontSize={14}
             fill="#4F41D8"
@@ -176,7 +176,7 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
     <View>
       {/* Fixed header with title and toggle */}
       <View style={{ marginTop: 15, alignItems: 'center', zIndex: 2 }}>
-        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
+        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
           Grade Chart (%)
         </Text>
         <SmallGreenBinaryToggle

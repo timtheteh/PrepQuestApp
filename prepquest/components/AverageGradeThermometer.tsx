@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: 'Neuton-Regular',
     textAlign: 'center',
+    lineHeight: 30,
   },
   scoreText: {
     fontSize: 48,

@@ -85,7 +85,10 @@ export default function StatisticsScreen() {
       <View style={{ height: 10, backgroundColor: '#FFFFFF'}} />
       <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
         {!isPerformance && (
-          <ScrollView contentContainerStyle={{ flexGrow: 1}}>
+          <ScrollView 
+          contentContainerStyle={{ flexGrow: 1}}
+          showsVerticalScrollIndicator={false}
+          >
             {/* ReviewSection */}
             <ReviewLineGraph onContentReady={handleDecksContentReady} />
             <BreakdownOfDecksFlashcards
@@ -106,7 +109,7 @@ export default function StatisticsScreen() {
                 { label: 'Others', value: 4, percent: 4, color: '#AF52DE' },
               ]}
             />
-             <View style={{ height: 40}} />
+
           </ScrollView>
         )}
         {/* You can add your Performance content here, wrapped in the same Animated.View */}

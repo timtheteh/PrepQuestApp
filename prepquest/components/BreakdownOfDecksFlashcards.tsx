@@ -147,7 +147,7 @@ export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: Breakd
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Breakdown of Decks / Flashcards</Text>
+      <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
       <View style={{ alignItems: 'center', marginTop: 15 }}>
         <SmallGreenBinaryToggle
           leftLabel="Decks"

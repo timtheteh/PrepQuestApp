@@ -4,6 +4,7 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { useState, useRef, useEffect } from 'react';
 import { SmallGreenBinaryToggle } from '@/components/SmallGreenBinaryToggle';
 import { ReviewLineGraph } from '@/components/ReviewLineGraph';
+import { BreakdownOfDecksFlashcards } from '@/components/BreakdownOfDecksFlashcards';
 import { useIsFocused } from '@react-navigation/native';
 
 export default function StatisticsScreen() {
@@ -70,7 +71,7 @@ export default function StatisticsScreen() {
   };
 
   return (
-    <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim }}>
+    <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim}}>
       <View style={{ marginTop: topPadding, paddingHorizontal: 16 }}>
         <RoundedContainer
           leftLabel="Decks / Flashcards"
@@ -81,15 +82,36 @@ export default function StatisticsScreen() {
           disableAnimation={disableToggleAnimation}
         />
       </View>
+      <View style={{ height: 10, backgroundColor: '#FFFFFF'}} />
       <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
         {!isPerformance && (
-          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1}}>
             {/* ReviewSection */}
             <ReviewLineGraph onContentReady={handleDecksContentReady} />
+            <BreakdownOfDecksFlashcards
+              decksData={[
+                { label: 'Study', value: 25, percent: 25, color: '#5CC8BE' },
+                { label: 'Technical', value: 10, percent: 10, color: '#D7191C' },
+                { label: 'Case Study', value: 18, percent: 18, color: '#C3EB79' },
+                { label: 'Behavioral', value: 7, percent: 7, color: '#FDAE61' },
+                { label: 'Brainteasers', value: 20, percent: 20, color: '#357AF6' },
+                { label: 'Others', value: 20, percent: 20, color: '#AF52DE' },
+              ]}
+              flashcardsData={[
+                { label: 'Study', value: 24, percent: 20, color: '#5CC8BE' },
+                { label: 'Technical', value: 20, percent: 20, color: '#D7191C' },
+                { label: 'Case Study', value: 12, percent: 12, color: '#C3EB79' },
+                { label: 'Behavioral', value: 16, percent: 16, color: '#FDAE61' },
+                { label: 'Brainteasers', value: 8, percent: 8, color: '#357AF6' },
+                { label: 'Others', value: 4, percent: 4, color: '#AF52DE' },
+              ]}
+            />
+             <View style={{ height: 40}} />
           </ScrollView>
         )}
         {/* You can add your Performance content here, wrapped in the same Animated.View */}
       </Animated.View>
+      <View style={{ height: 40, backgroundColor: '#FFFFFF'}} />
     </Animated.View>
   );
 } 

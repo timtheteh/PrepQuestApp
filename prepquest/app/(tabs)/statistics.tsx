@@ -8,6 +8,7 @@ import { BreakdownOfDecksFlashcards } from '@/components/BreakdownOfDecksFlashca
 import { useIsFocused } from '@react-navigation/native';
 import { MoreDetailsStats } from '@/components/MoreDetailsStats';
 import { GradeChart } from '@/components/GradeChart'; 
+import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -129,6 +130,7 @@ export default function StatisticsScreen() {
           showsVerticalScrollIndicator={false}
           >
           <GradeChart />
+          <AverageGradeThermometer />
         </ScrollView>
         )}
       </Animated.View>

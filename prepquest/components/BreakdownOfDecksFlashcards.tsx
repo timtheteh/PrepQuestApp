@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
 
@@ -20,7 +20,9 @@ const FPS = 60;
 
 export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: BreakdownOfDecksFlashcardsProps) {
   const [isFlashcards, setIsFlashcards] = useState(false);
-  const data = isFlashcards ? flashcardsData : decksData;
+  const [fadeAnim] = useState(new Animated.Value(1));
+  const [renderedIsFlashcards, setRenderedIsFlashcards] = useState(false);
+  const data = renderedIsFlashcards ? flashcardsData : decksData;
   const screenWidth = Dimensions.get('window').width;
   const containerHeight = 440;
   const containerWidth = screenWidth;
@@ -145,6 +147,25 @@ export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: Breakd
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
+  // Fade out, then switch data, then fade in
+  useEffect(() => {
+    if (isFlashcards === renderedIsFlashcards) return;
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
+      setRenderedIsFlashcards(isFlashcards);
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFlashcards]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
@@ -157,32 +178,34 @@ export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: Breakd
         />
       </View>
       <View style={{ height: containerHeight, width: '100%', marginTop: 15 }}>
-        {data.map((d, i) => {
-          const radius = getRadius(d.value);
-          const pos = positions[i] || { x: containerWidth / 2, y: containerHeight / 2 };
-          return (
-            <View
-              key={d.label}
-              style={[
-                styles.bubble,
-                {
-                  backgroundColor: d.color,
-                  width: radius * 2,
-                  height: radius * 2,
-                  borderRadius: radius,
-                  position: 'absolute',
-                  top: pos.y - radius,
-                  left: pos.x - radius,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                },
-              ]}
-            >
-              <Text style={[styles.bubbleLabel, {color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000'}]}>{d.label}</Text>
-              <Text style={[styles.bubbleText, {color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000'}]}>{`${d.value} (${d.percent}%)`}</Text>
-            </View>
-          );
-        })}
+        <Animated.View style={{ flex: 1, width: '100%', height: '100%', opacity: fadeAnim }}>
+          {data.map((d, i) => {
+            const radius = getRadius(d.value);
+            const pos = positions[i] || { x: containerWidth / 2, y: containerHeight / 2 };
+            return (
+              <View
+                key={d.label}
+                style={[
+                  styles.bubble,
+                  {
+                    backgroundColor: d.color,
+                    width: radius * 2,
+                    height: radius * 2,
+                    borderRadius: radius,
+                    position: 'absolute',
+                    top: pos.y - radius,
+                    left: pos.x - radius,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  },
+                ]}
+              >
+                <Text style={[styles.bubbleLabel, {color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000'}]}>{d.label}</Text>
+                <Text style={[styles.bubbleText, {color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000'}]}>{`${d.value} (${d.percent}%)`}</Text>
+              </View>
+            );
+          })}
+        </Animated.View>
       </View>
     </View>
   );

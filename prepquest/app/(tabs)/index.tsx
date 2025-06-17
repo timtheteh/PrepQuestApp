@@ -170,7 +170,7 @@ export default function DecksScreen() {
   // Set up the deletion handler when the component mounts
   useEffect(() => {
     if (isFocused) {
-      setHandleDeletion(() => handleCancel);
+    setHandleDeletion(() => handleCancel);
     }
     return () => {
       if (!isFocused) {

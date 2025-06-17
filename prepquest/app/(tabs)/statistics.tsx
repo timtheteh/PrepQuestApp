@@ -12,6 +12,8 @@ export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
   const [pendingDecksFadeIn, setPendingDecksFadeIn] = useState(false);
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
+  const [breakdownKey, setBreakdownKey] = useState(0);
+  const [moreDetailsState, setMoreDetailsState] = useState(0);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 65;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -49,6 +51,9 @@ export default function StatisticsScreen() {
       setIsPerformance(val);
       if (!val) {
         setPendingDecksFadeIn(true);
+        // Reset both sections to Decks state
+        setBreakdownKey(prev => prev + 1);
+        setMoreDetailsState(0);
       } else {
         Animated.timing(contentFadeAnim, {
           toValue: 1,
@@ -94,6 +99,7 @@ export default function StatisticsScreen() {
             <ReviewLineGraph onContentReady={handleDecksContentReady} />
             {/* breakdown section */}
             <BreakdownOfDecksFlashcards
+              key={breakdownKey}
               decksData={[
                 { label: 'Study', value: 25, percent: 25, color: '#5CC8BE' },
                 { label: 'Technical', value: 10, percent: 10, color: '#D7191C' },
@@ -111,7 +117,7 @@ export default function StatisticsScreen() {
                 { label: 'Others', value: 4, percent: 4, color: '#AF52DE' },
               ]}
             />
-            <MoreDetailsStats />
+            <MoreDetailsStats selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
             {/* More details section */}
           </ScrollView>
         )}

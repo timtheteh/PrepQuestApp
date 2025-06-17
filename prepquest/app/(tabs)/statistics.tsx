@@ -6,6 +6,7 @@ import { SmallGreenBinaryToggle } from '@/components/SmallGreenBinaryToggle';
 import { ReviewLineGraph } from '@/components/ReviewLineGraph';
 import { BreakdownOfDecksFlashcards } from '@/components/BreakdownOfDecksFlashcards';
 import { useIsFocused } from '@react-navigation/native';
+import { MoreDetailsStats } from '@/components/MoreDetailsStats';
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -91,6 +92,7 @@ export default function StatisticsScreen() {
           >
             {/* ReviewSection */}
             <ReviewLineGraph onContentReady={handleDecksContentReady} />
+            {/* breakdown section */}
             <BreakdownOfDecksFlashcards
               decksData={[
                 { label: 'Study', value: 25, percent: 25, color: '#5CC8BE' },
@@ -109,7 +111,8 @@ export default function StatisticsScreen() {
                 { label: 'Others', value: 4, percent: 4, color: '#AF52DE' },
               ]}
             />
-
+            <MoreDetailsStats />
+            {/* More details section */}
           </ScrollView>
         )}
         {/* You can add your Performance content here, wrapped in the same Animated.View */}

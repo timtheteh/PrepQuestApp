@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Animated, View, Text } from 'react-native';
 import type { SvgProps } from 'react-native-svg';
 import { GenericModalButton } from './GenericModalButton';
+import LottieView from 'lottie-react-native';
 
 interface GenericModalProps {
   visible: boolean;
@@ -17,6 +18,10 @@ interface GenericModalProps {
   hasAnimation?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
+  animationSource?: any; // Lottie JSON source
+  animationLoop?: boolean;
+  contentMarginTop?: number; // marginTop for content section
+  lottieMarginTop?: number; // marginTop for lottieContainer
 }
 
 export function GenericModal({ 
@@ -29,7 +34,11 @@ export function GenericModal({
   buttons = 'none',
   hasAnimation = false,
   onConfirm,
-  onCancel
+  onCancel,
+  animationSource,
+  animationLoop = false,
+  contentMarginTop = 0,
+  lottieMarginTop = 0,
 }: GenericModalProps) {
   if (!visible) return null;
 
@@ -107,7 +116,7 @@ export function GenericModal({
       )}
       <View style={[
         styles.content,
-        { paddingVertical: buttons === 'none' ? 0 : 50 }
+        { paddingVertical: buttons === 'none' ? 0 : 50, marginTop: contentMarginTop }
       ]}>
         <View style={[
           styles.textRow,
@@ -115,6 +124,17 @@ export function GenericModal({
         ]}>
           {renderText()}
         </View>
+        {/* Lottie animation below text, above action row */}
+        {animationSource && (
+          <View style={[styles.lottieContainer, { marginTop: lottieMarginTop }] }>
+            <LottieView
+              source={animationSource}
+              autoPlay
+              loop={animationLoop}
+              style={{ width: 120, height: 120 }}
+            />
+          </View>
+        )}
         {((buttons && buttons !== 'none') || hasAnimation) && (
           <View style={styles.actionRow}>
             {renderButtons()}
@@ -186,5 +206,9 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 30,
     marginTop: 33,
+  },
+  lottieContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }); 

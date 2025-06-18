@@ -150,10 +150,10 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     setSearchText('');
     setIsExpanded(false);
     Animated.parallel([
-      Animated.timing(searchFadeAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
+    Animated.timing(searchFadeAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
       }),
       Animated.timing(expandAnim, {
         toValue: 0,

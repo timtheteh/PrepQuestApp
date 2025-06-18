@@ -91,6 +91,11 @@ interface MenuContextType {
   unfavoriteModalOpacity: Animated.Value;
   unfavoriteModalText: string;
   setUnfavoriteModalText: (text: string) => void;
+  isSubmitCustomFormModalOpen: boolean;
+  setIsSubmitCustomFormModalOpen: (value: boolean) => void;
+  submitCustomFormModalOpacity: Animated.Value;
+  onSubmitCustomFormModalClose: (() => void) | null;
+  setOnSubmitCustomFormModalClose: (handler: (() => void) | null) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -139,6 +144,11 @@ export const MenuContext = createContext<MenuContextType>({
   unfavoriteModalOpacity: new Animated.Value(0),
   unfavoriteModalText: '',
   setUnfavoriteModalText: () => {},
+  isSubmitCustomFormModalOpen: false,
+  setIsSubmitCustomFormModalOpen: () => {},
+  submitCustomFormModalOpacity: new Animated.Value(0),
+  onSubmitCustomFormModalClose: null,
+  setOnSubmitCustomFormModalClose: () => {},
 });
 
 export default function TabLayout() {
@@ -172,6 +182,9 @@ export default function TabLayout() {
   const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false);
   const [unfavoriteModalText, setUnfavoriteModalText] = useState('');
   const unfavoriteModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isSubmitCustomFormModalOpen, setIsSubmitCustomFormModalOpen] = useState(false);
+  const submitCustomFormModalOpacity = useRef(new Animated.Value(0)).current;
+  const [onSubmitCustomFormModalClose, setOnSubmitCustomFormModalClose] = useState<(() => void) | null>(null);
 
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
@@ -289,6 +302,26 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsUnfavoriteModalOpen(false);
       });
+    } else if (isSubmitCustomFormModalOpen) {
+      if (onSubmitCustomFormModalClose) {
+        onSubmitCustomFormModalClose();
+        setOnSubmitCustomFormModalClose(null);
+      }
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(submitCustomFormModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsSubmitCustomFormModalOpen(false);
+      });
     } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -314,7 +347,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen, isAddToFoldersModalOpen, isUnfavoriteModalOpen]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen, isAddToFoldersModalOpen, isUnfavoriteModalOpen, isSubmitCustomFormModalOpen, onSubmitCustomFormModalClose]);
 
   const handleFolderPress = useCallback(() => {
     handleDismissMenu();
@@ -368,6 +401,11 @@ export default function TabLayout() {
       unfavoriteModalOpacity,
       unfavoriteModalText,
       setUnfavoriteModalText,
+      isSubmitCustomFormModalOpen,
+      setIsSubmitCustomFormModalOpen,
+      submitCustomFormModalOpacity,
+      onSubmitCustomFormModalClose,
+      setOnSubmitCustomFormModalClose,
     }}>
       <View style={styles.container}>
         <Tabs
@@ -506,6 +544,16 @@ export default function TabLayout() {
             }
             handleDismissMenu();
           }}
+        />
+        <GenericModal
+          visible={isSubmitCustomFormModalOpen}
+          opacity={submitCustomFormModalOpacity}
+          text={["Custom Goal Form", "Submitted!"]}
+          hasAnimation={true}
+          animationSource={require('../../assets/animations/SuccessAnimation1_Tick.json')}
+          animationLoop={true}
+          contentMarginTop={20}
+          lottieMarginTop={40}
         />
       </View>
     </MenuContext.Provider>

@@ -92,7 +92,7 @@ export default function StatisticsScreen() {
           position={isPerformance ? 'right' : 'left'}
           disableAnimation={disableToggleAnimation}
         />
-      </View>
+    </View>
       <View style={{ height: 10, backgroundColor: '#FFFFFF'}} />
       <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
         {!isPerformance && (

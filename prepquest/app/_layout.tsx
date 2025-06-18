@@ -13,6 +13,12 @@ export default function RootLayout() {
     'Satoshi-Medium': require('../assets/fonts/Satoshi-Medium.otf'),
     'Satoshi-Italic': require('../assets/fonts/Satoshi-Italic.otf'),
     'Satoshi-MediumItalic': require('../assets/fonts/Satoshi-MediumItalic.otf'),
+    'CedarvilleCursive-Regular': require('../assets/fonts/CedarvilleCursive-Regular.ttf'),
+    'Neuton-Regular': require('../assets/fonts/Neuton-Regular.ttf'),
+    'Neuton-Bold': require('../assets/fonts/Neuton-Bold.ttf'),
+    'Neuton-ExtraBold': require('../assets/fonts/Neuton-ExtraBold.ttf'),
+    'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
+    'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
   });
 
   if (!loaded) {

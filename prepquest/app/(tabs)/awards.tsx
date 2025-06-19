@@ -7,8 +7,14 @@ import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 import { PanResponder } from 'react-native';
 import { MenuContext } from './_layout';
+import FireIcon from '@/assets/icons/FireIcon.svg';
+import DecksStudiedIcon from '@/assets/icons/DecksStudiedIcon.svg';
+import FlashcardsStudiedIcon from '@/assets/icons/FlashcardsStudiedIcon.svg';
 
 const SatoshiMedium = 'Satoshi-Medium';
+
+const CELL_HEIGHT = 90; // or any value you prefer
+const ICON_SIZE = 70;   // make icons larger to match cell size
 
 const NumberPicker = ({ value, setValue, min, max }: { value: number, setValue: (v: number) => void, min: number, max: number }) => {
   const numbers = Array.from({ length: max - min + 1 }, (_, i) => min + i);
@@ -276,7 +282,7 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
             </View>
             {/* Placeholder text */}
             {!signature && !isSigning && (
-              <Text style={{ fontFamily: 'CedarvilleCursive-Regular', fontSize: 28, color: '#111', marginBottom: -8, position: 'absolute', left: 0, right: 0, textAlign: 'center', width: signatureWidth, zIndex: 1 }}>
+              <Text style={{ fontFamily: 'CedarvilleCursive-Regular', fontSize: 28, color: '#111', marginBottom: -8, position: "absolute",bottom: 0, textAlign: 'center', width: signatureWidth, zIndex: 1 }}>
                 sign here
               </Text>
             )}
@@ -292,6 +298,56 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
   );
 }
 
+const StreakCalendarStats = () => {
+  return (
+    <View style={{ marginHorizontal: 16, marginTop: 20,}}>
+      {/* First row - Title */}
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <Text style={styles.title}>Current Streak</Text>
+      </View>
+
+      {/* 3x3 Grid */}
+      <View>
+        {/* Row 1 */}
+        <View style={{ flexDirection: 'row', height: CELL_HEIGHT, marginBottom: 20 }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+            <FireIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}} />
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center", }}>5</Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>days</Text>
+          </View>
+        </View>
+        {/* Row 2 */}
+        <View style={{ flexDirection: 'row', height: CELL_HEIGHT, marginBottom: 20,}}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <DecksStudiedIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}}/>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000',width:150, textAlign: "center"}}>50</Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>decks{'\n'}studied</Text>
+          </View>
+        </View>
+        {/* Row 3 */}
+        <View style={{ flexDirection: 'row', height: CELL_HEIGHT }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <FlashcardsStudiedIcon width={60} height={60} style={{marginRight: 110}}/>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center"}}>50</Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>flashcards{'\n'}studied</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 export default function AwardsScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -336,18 +392,6 @@ export default function AwardsScreen() {
         duration: 150,
         useNativeDriver: true,
       }).start();
-      // if (!val) {
-      //   setPendingDecksFadeIn(true);
-      //   // Reset both sections to Decks state
-      //   setBreakdownKey(prev => prev + 1);
-      //   setMoreDetailsState(0);
-      // } else {
-      //   Animated.timing(contentFadeAnim, {
-      //     toValue: 1,
-      //     duration: 150,
-      //     useNativeDriver: true,
-      //   }).start();
-      // }
     });
   };
 
@@ -367,11 +411,14 @@ export default function AwardsScreen() {
           contentContainerStyle={{ flexGrow: 1}}
           showsVerticalScrollIndicator={false}
           scrollEnabled={scrollEnabled}
+          style={{ marginBottom: 40, marginTop: 20}}
         >
         <View style={styles.wrapper}>
           <Text style={styles.title}>Fill in your custom goal here!</Text>
-            <CustomGoalForm setScrollEnabled={setScrollEnabled} />
+          <CustomGoalForm setScrollEnabled={setScrollEnabled} />
+          <StreakCalendarStats />
         </View>
+        <View style={{ height: 20,}}></View>
         </ScrollView>
       )}
     </Animated.View>

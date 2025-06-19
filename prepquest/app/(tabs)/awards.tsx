@@ -1,10 +1,10 @@
-import { Animated, Dimensions, View, StyleSheet, Text, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { Animated, Dimensions, View, StyleSheet, Text, ScrollView, TouchableOpacity, Platform, Image as RNImage, ImageSourcePropType } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { useEffect, useRef, useState, useContext } from 'react';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { useIsFocused } from '@react-navigation/native';
 import React from 'react';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Defs, ClipPath, Polygon } from 'react-native-svg';
 import { PanResponder } from 'react-native';
 import { MenuContext } from './_layout';
 import FireIcon from '@/assets/icons/FireIcon.svg';
@@ -12,6 +12,11 @@ import DecksStudiedIcon from '@/assets/icons/DecksStudiedIcon.svg';
 import FlashcardsStudiedIcon from '@/assets/icons/FlashcardsStudiedIcon.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, isSameDay, parseISO, subDays } from 'date-fns';
+import { Image as SvgImage } from 'react-native-svg';
+const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
+const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
+const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
+const LargeMeshBackground4 = require('@/assets/awardsBackgrounds/LargeMeshBackground4.png');
 
 const SatoshiMedium = 'Satoshi-Medium';
 
@@ -490,11 +495,930 @@ const StreakCalendar = () => (
   </View>
 );
 
+interface BadgeData {
+  badgeTitle: string;
+  achieved: boolean;
+  badgeImage?: any;
+  badgeCreatedDate: string; // ISO string
+  badgeExpiryDate?: string;
+}
+
+const Badge = ({ title, image, achieved }: { title: string, image?: ImageSourcePropType, achieved: boolean }) => {
+  const size = 120;
+  const borderWidth = 3; // visually thick border
+  const padding = borderWidth; // padding to prevent clipping
+  const svgSize = size + 2 * padding;
+  // Hexagon math
+  const getHexPoints = (radius: number, cx: number, cy: number) =>
+    Array.from({ length: 6 }, (_, i) => {
+      const angle = Math.PI / 3 * i - Math.PI / 2;
+      return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
+    });
+  // Outer (border) hexagon
+  const outerRadius = size / 2;
+  const outerPoints = getHexPoints(outerRadius, svgSize / 2, svgSize / 2);
+  // Inner (fill) hexagon
+  const innerRadius = outerRadius - borderWidth;
+  const innerPoints = getHexPoints(innerRadius, svgSize / 2, svgSize / 2);
+  const outerPointsStr = outerPoints.map(p => p.join(",")).join(" ");
+  const innerPointsStr = innerPoints.map(p => p.join(",")).join(" ");
+  return (
+    <View style={{ alignItems: 'center', width: svgSize }}>
+      <Svg width={svgSize} height={svgSize} style={{ transform: [{ rotate: '90deg' }] }}>
+        {/* Border hexagon (no stroke, just fill) */}
+        <Polygon
+          points={outerPointsStr}
+          fill={achieved ? '#000' : '#D5D4DD'}
+        />
+        {/* Fill hexagon (image or white) */}
+        {image ? (
+          <>
+            <Defs>
+              <ClipPath id="hexClipSmall">
+                <Polygon points={innerPointsStr} />
+              </ClipPath>
+            </Defs>
+            <SvgImage
+              href={image}
+              width={svgSize}
+              height={svgSize}
+              preserveAspectRatio="xMidYMid slice"
+              clipPath="url(#hexClipSmall)"
+            />
+          </>
+        ) : (
+          <Polygon points={innerPointsStr} fill="#fff" />
+        )}
+        {/* Grey overlay for pending state */}
+        {!achieved && (
+          <Polygon
+            points={innerPointsStr}
+            fill="rgba(213, 212, 221, 0.2)"
+            pointerEvents="none"
+          />
+        )}
+      </Svg>
+      <Text
+        style={{
+          fontFamily: SatoshiMedium,
+          fontSize: 16,
+          color: achieved ? '#000' : 'rgba(0, 0, 0, 0.5)',
+          marginTop: 0,
+          textAlign: 'center',
+        }}
+      >
+        {title}
+      </Text>
+    </View>
+  );
+};
+
+// Update BadgeWall props
+type BadgeWallProps = {
+  badges: BadgeData[],
+  backgroundImage: any,
+  title: string,
+};
+
+const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
+  const [viewAll, setViewAll] = useState(false);
+  // Sort badges: non-achieved first (desc by createdDate), then achieved (desc by createdDate)
+  const sortedBadges = [
+    ...badges.filter(b => !b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+    ...badges.filter(b => b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+  ];
+  // Group into rows of 2
+  const badgeRows = [];
+  for (let i = 0; i < sortedBadges.length; i += 2) {
+    badgeRows.push([
+      sortedBadges[i],
+      sortedBadges[i + 1] || null,
+    ]);
+  }
+  const rowHeight = 120 + 20; // badge size + marginBottom
+  const collapsedHeight = rowHeight * 2 + 40; // 2 rows + extra margin
+  const expandedHeight = rowHeight * badgeRows.length + badgeRows.length * 25;
+  const anim = useRef(new Animated.Value(collapsedHeight)).current;
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: viewAll ? expandedHeight : collapsedHeight,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [viewAll, expandedHeight, collapsedHeight]);
+  return (
+    <View
+      style={{
+        width: '100%',
+        borderRadius: 30,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+    >
+      {/* Background image */}
+      <RNImage
+        source={backgroundImage}
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          resizeMode: 'cover',
+        }}
+      />
+      {/* Content column */}
+      <View style={{ margin: 10, flex: 1 }}>
+        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 36, color: '#000', marginBottom: 10, textAlign: 'center' }}>
+          {title}
+        </Text>
+        {/* Animated badge grid */}
+        <Animated.View style={{ width: '100%', height: anim, overflow: 'hidden' }}>
+          {(viewAll ? badgeRows : badgeRows.slice(0, 2)).map((row, idx) => (
+            <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+              <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingRight: 20 }}>
+                {row[0] && (
+                  <Badge
+                    title={row[0].badgeTitle}
+                    achieved={row[0].achieved}
+                    image={row[0].badgeImage}
+                  />
+                )}
+              </View>
+              <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingLeft: 20 }}>
+                {row[1] && (
+                  <Badge
+                    title={row[1].badgeTitle}
+                    achieved={row[1].achieved}
+                    image={row[1].badgeImage}
+                  />
+                )}
+              </View>
+            </View>
+          ))}
+        </Animated.View>
+      </View>
+      {/* Toggle Button at the bottom */}
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <TouchableOpacity
+          onPress={() => setViewAll(v => !v)}
+          style={{
+            width: 100,
+            height: 48,
+            backgroundColor: '#4F41D8',
+            borderRadius: 10,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{
+            color: '#fff',
+            fontSize: 16,
+            fontFamily: 'Satoshi-Medium',
+            textAlign: 'center',
+          }}>{viewAll ? 'Collapse' : 'View All'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+// Dummy data for the first BadgeWall
+const dummyBadges1 = [
+  // 4 unachieved badges (most recent first)
+  {
+    badgeTitle: 'Unachieved 1',
+    achieved: false,
+    badgeCreatedDate: '2025-06-13T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 2',
+    achieved: false,
+    badgeCreatedDate: '2025-06-12T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 3',
+    achieved: false,
+    badgeCreatedDate: '2025-06-11T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 4',
+    achieved: false,
+    badgeCreatedDate: '2025-06-10T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  // 9 achieved badges (most recent first)
+  {
+    badgeTitle: 'Achieved 1',
+    achieved: true,
+    badgeCreatedDate: '2025-06-09T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 2',
+    achieved: true,
+    badgeCreatedDate: '2025-06-08T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 3',
+    achieved: true,
+    badgeCreatedDate: '2025-06-07T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 4',
+    achieved: true,
+    badgeCreatedDate: '2025-06-06T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 5',
+    achieved: true,
+    badgeCreatedDate: '2025-06-05T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 6',
+    achieved: true,
+    badgeCreatedDate: '2025-06-04T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 7',
+    achieved: true,
+    badgeCreatedDate: '2025-06-03T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 8',
+    achieved: true,
+    badgeCreatedDate: '2025-06-02T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  
+];
+
+const dummyBadges2 = [
+  // 4 unachieved badges (most recent first)
+  {
+    badgeTitle: 'Unachieved 1',
+    achieved: false,
+    badgeCreatedDate: '2025-06-13T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 2',
+    achieved: false,
+    badgeCreatedDate: '2025-06-12T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 3',
+    achieved: false,
+    badgeCreatedDate: '2025-06-11T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 4',
+    achieved: false,
+    badgeCreatedDate: '2025-06-10T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  // 9 achieved badges (most recent first)
+  {
+    badgeTitle: 'Achieved 1',
+    achieved: true,
+    badgeCreatedDate: '2025-06-09T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 2',
+    achieved: true,
+    badgeCreatedDate: '2025-06-08T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 3',
+    achieved: true,
+    badgeCreatedDate: '2025-06-07T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 4',
+    achieved: true,
+    badgeCreatedDate: '2025-06-06T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 5',
+    achieved: true,
+    badgeCreatedDate: '2025-06-05T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 6',
+    achieved: true,
+    badgeCreatedDate: '2025-06-04T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 7',
+    achieved: true,
+    badgeCreatedDate: '2025-06-03T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 8',
+    achieved: true,
+    badgeCreatedDate: '2025-06-02T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  
+];
+
+const dummyBadges3 = [
+  // 4 unachieved badges (most recent first)
+  {
+    badgeTitle: 'Unachieved 1',
+    achieved: false,
+    badgeCreatedDate: '2025-06-13T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 2',
+    achieved: false,
+    badgeCreatedDate: '2025-06-12T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 3',
+    achieved: false,
+    badgeCreatedDate: '2025-06-11T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 4',
+    achieved: false,
+    badgeCreatedDate: '2025-06-10T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  // 9 achieved badges (most recent first)
+  {
+    badgeTitle: 'Achieved 1',
+    achieved: true,
+    badgeCreatedDate: '2025-06-09T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 2',
+    achieved: true,
+    badgeCreatedDate: '2025-06-08T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 3',
+    achieved: true,
+    badgeCreatedDate: '2025-06-07T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 4',
+    achieved: true,
+    badgeCreatedDate: '2025-06-06T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 5',
+    achieved: true,
+    badgeCreatedDate: '2025-06-05T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 6',
+    achieved: true,
+    badgeCreatedDate: '2025-06-04T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 7',
+    achieved: true,
+    badgeCreatedDate: '2025-06-03T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 8',
+    achieved: true,
+    badgeCreatedDate: '2025-06-02T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  
+];
+
+const dummyBadges4 = [
+  // 4 unachieved badges (most recent first)
+  {
+    badgeTitle: 'Unachieved 1',
+    achieved: false,
+    badgeCreatedDate: '2025-06-13T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 2',
+    achieved: false,
+    badgeCreatedDate: '2025-06-12T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 3',
+    achieved: false,
+    badgeCreatedDate: '2025-06-11T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 4',
+    achieved: false,
+    badgeCreatedDate: '2025-06-10T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  // 9 achieved badges (most recent first)
+  {
+    badgeTitle: 'Achieved 1',
+    achieved: true,
+    badgeCreatedDate: '2025-06-09T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 2',
+    achieved: true,
+    badgeCreatedDate: '2025-06-08T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 3',
+    achieved: true,
+    badgeCreatedDate: '2025-06-07T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 4',
+    achieved: true,
+    badgeCreatedDate: '2025-06-06T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 5',
+    achieved: true,
+    badgeCreatedDate: '2025-06-05T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 6',
+    achieved: true,
+    badgeCreatedDate: '2025-06-04T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 7',
+    achieved: true,
+    badgeCreatedDate: '2025-06-03T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 8',
+    achieved: true,
+    badgeCreatedDate: '2025-06-02T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  
+];
+
+const dummyBadges5 = [
+  // 4 unachieved badges (most recent first)
+  {
+    badgeTitle: 'Unachieved 1',
+    achieved: false,
+    badgeCreatedDate: '2025-06-13T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 2',
+    achieved: false,
+    badgeCreatedDate: '2025-06-12T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 3',
+    achieved: false,
+    badgeCreatedDate: '2025-06-11T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Unachieved 4',
+    achieved: false,
+    badgeCreatedDate: '2025-06-10T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  // 9 achieved badges (most recent first)
+  {
+    badgeTitle: 'Achieved 1',
+    achieved: true,
+    badgeCreatedDate: '2025-06-09T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 2',
+    achieved: true,
+    badgeCreatedDate: '2025-06-08T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 3',
+    achieved: true,
+    badgeCreatedDate: '2025-06-07T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 4',
+    achieved: true,
+    badgeCreatedDate: '2025-06-06T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 5',
+    achieved: true,
+    badgeCreatedDate: '2025-06-05T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 6',
+    achieved: true,
+    badgeCreatedDate: '2025-06-04T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 7',
+    achieved: true,
+    badgeCreatedDate: '2025-06-03T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 8',
+    achieved: true,
+    badgeCreatedDate: '2025-06-02T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+    {
+    badgeTitle: 'Achieved 9',
+    achieved: true,
+    badgeCreatedDate: '2025-06-01T10:00:00Z',
+    badgeImage: undefined,
+    badgeExpiryDate: undefined,
+  },
+  
+];
+
 export default function AwardsScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const achievementsContentAnim = useRef(new Animated.Value(0)).current;
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 65;
-  const contentFadeAnim = useRef(new Animated.Value(1)).current;
   const [isAchievements, setIsAchievements] = useState(false);
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
   const isFocused = useIsFocused();
@@ -504,6 +1428,7 @@ export default function AwardsScreen() {
     if (isFocused) {
       setDisableToggleAnimation(true);
       setIsAchievements(false);
+      achievementsContentAnim.setValue(0);
       setTimeout(() => {
         setDisableToggleAnimation(false);
         Animated.timing(fadeAnim, {
@@ -522,22 +1447,57 @@ export default function AwardsScreen() {
   }, [isFocused]);
 
   const handleToggle = (val: boolean) => {
-    Animated.timing(contentFadeAnim, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsAchievements(val);
-      Animated.timing(contentFadeAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-    });
+    if (val) {
+      // Switching to Achievements
+      Animated.sequence([
+        Animated.timing(achievementsContentAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsAchievements(true);
+        Animated.sequence([
+          Animated.delay(100),
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(achievementsContentAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    } 
+    else {
+      // Switching back to Goals
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsAchievements(false);
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
   };
 
   return (
-    <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim}}>
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <View style={{ marginTop: topPadding, paddingHorizontal: 16 }}>
         <RoundedContainer
           leftLabel="Goals"
@@ -548,22 +1508,51 @@ export default function AwardsScreen() {
         />
       </View>
       {!isAchievements && (
-        <ScrollView 
-          contentContainerStyle={{ flexGrow: 1}}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={scrollEnabled}
-          style={{ marginBottom: 40, marginTop: 20}}
-        >
-        <View style={styles.wrapper}>
-          <Text style={styles.title}>Fill in your custom goal here!</Text>
-          <CustomGoalForm setScrollEnabled={setScrollEnabled} />
-          <StreakCalendarStats />
-          <StreakCalendar />
-        </View>
-        <View style={{ height: 20,}}></View>
-        </ScrollView>
+        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={scrollEnabled}
+            style={{ marginBottom: 40, marginTop: 20 }}
+          >
+            <View style={styles.wrapper}>
+              <Text style={styles.title}>Fill in your custom goal here!</Text>
+              <CustomGoalForm setScrollEnabled={setScrollEnabled} />
+              <StreakCalendarStats />
+              <StreakCalendar />
+            </View>
+            <View style={{ height: 20 }}></View>
+          </ScrollView>
+        </Animated.View>
       )}
-    </Animated.View>
+      {isAchievements && (
+        <Animated.View style={{ 
+          flex: 1,
+          opacity: achievementsContentAnim,
+          transform: [{ 
+            translateY: achievementsContentAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [20, 0],
+            })
+          }]
+        }}>
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={scrollEnabled}
+            style={{ marginBottom: 40, marginTop: 20, marginHorizontal: 16 }}
+          >
+            <View style={{ flexDirection: 'column', gap: 30 }}>
+              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title="Custom Badges" />
+              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title="Daily Streak Badges" />
+              <BadgeWall badges={dummyBadges3} backgroundImage={LargeMeshBackground3} title="Weekly Streak Badges" />
+              <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title="Welcome Badges" />
+              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title="Lifetime Badges" />
+            </View>
+          </ScrollView>
+        </Animated.View>
+      )}
+    </View>
   );
 } 
 
@@ -572,7 +1561,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginTop: 10,
+    marginTop: -10
   },
   title: {
     fontFamily: 'Neuton-Regular',

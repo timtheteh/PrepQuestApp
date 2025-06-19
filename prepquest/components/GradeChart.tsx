@@ -175,7 +175,7 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
   return (
     <View>
       {/* Fixed header with title and toggle */}
-      <View style={{ marginTop: 15, alignItems: 'center', zIndex: 2 }}>
+      <View style={{ marginTop: 0, alignItems: 'center', zIndex: 2 }}>
         <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
           Grade Chart (%)
         </Text>

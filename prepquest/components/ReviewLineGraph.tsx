@@ -238,7 +238,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
 
   return (
     <View>
-    <View style={{ marginTop: 15, alignItems: 'center' }}>
+    <View style={{ marginTop: 0, alignItems: 'center' }}>
         <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
             Decks / Flashcards Reviewed
         </Text>

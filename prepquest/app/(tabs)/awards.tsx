@@ -10,6 +10,8 @@ import { MenuContext } from './_layout';
 import FireIcon from '@/assets/icons/FireIcon.svg';
 import DecksStudiedIcon from '@/assets/icons/DecksStudiedIcon.svg';
 import FlashcardsStudiedIcon from '@/assets/icons/FlashcardsStudiedIcon.svg';
+import { Calendar } from 'react-native-calendars';
+import { addDays, format, isSameDay, parseISO, subDays } from 'date-fns';
 
 const SatoshiMedium = 'Satoshi-Medium';
 
@@ -349,6 +351,145 @@ const StreakCalendarStats = () => {
   );
 };
 
+// Example studied dates (should be sorted)
+const studiedDatesArr = [
+  '2025-06-01', '2025-06-02', '2025-06-03', '2025-06-04', '2025-06-05', '2025-06-06', '2025-06-07',
+  '2025-06-10', '2025-06-11',
+  '2025-06-13', '2025-06-15',
+];
+
+// Utility to get streak info for each studied date
+function getStreakInfo(studiedArr: string[]): { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' } {
+  const studiedSet = new Set(studiedArr);
+  const streakInfo: { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' } = {};
+  for (let i = 0; i < studiedArr.length; i++) {
+    const date = studiedArr[i];
+    const prev = format(subDays(parseISO(date), 1), 'yyyy-MM-dd');
+    const next = format(addDays(parseISO(date), 1), 'yyyy-MM-dd');
+    const isPrev = studiedSet.has(prev);
+    const isNext = studiedSet.has(next);
+    if (isPrev && isNext) {
+      streakInfo[date] = 'middle';
+    } else if (!isPrev && isNext) {
+      streakInfo[date] = 'start';
+    } else if (isPrev && !isNext) {
+      streakInfo[date] = 'end';
+    } else {
+      streakInfo[date] = 'single';
+    }
+  }
+  // Only mark as streak if part of 2+ consecutive days
+  for (let i = 0; i < studiedArr.length; i++) {
+    const date = studiedArr[i];
+    if (streakInfo[date] === 'single') {
+      const prev = format(subDays(parseISO(date), 1), 'yyyy-MM-dd');
+      const next = format(addDays(parseISO(date), 1), 'yyyy-MM-dd');
+      if (!(studiedSet.has(prev) || studiedSet.has(next))) {
+        streakInfo[date] = 'studied';
+      }
+    }
+  }
+  return streakInfo;
+}
+
+const streakInfo = getStreakInfo(studiedDatesArr);
+
+const StreakCalendar = () => (
+  <View style={{ marginTop: 30, width: '100%', paddingHorizontal: 16 }}>
+    <Calendar
+      markingType={'custom'}
+      disableAllTouchEventsForDisabledDays={true}
+      dayComponent={({ date, state }) => {
+        if (!date) return null;
+        const dateStr = date.dateString;
+        const info = streakInfo[dateStr];
+        const isStreak = info === 'start' || info === 'middle' || info === 'end';
+        const isStreakStart = info === 'start';
+        const isStreakEnd = info === 'end';
+        const isStreakMiddle = info === 'middle';
+        const isStudiedOnly = info === 'studied';
+        return (
+          <View style={{ alignItems: 'center', justifyContent: 'center', width: 36, height: 36, position: 'relative' }}>
+            {/* {isStreak && (
+              <View
+                style={{
+                  position: 'absolute',
+                  width: 36,
+                  height: 36,
+                  backgroundColor: 'rgba(255, 206, 81, 0.2)',
+                  borderTopLeftRadius: isStreakStart ? 90 : 0,
+                  borderBottomLeftRadius: isStreakStart ? 90 : 0,
+                  borderTopRightRadius: isStreakEnd ? 90 : 0,
+                  borderBottomRightRadius: isStreakEnd ? 90 : 0,
+                  borderRadius: isStreakMiddle ? 0 : 90,
+                  zIndex: 0,
+                }}
+              />
+            )} */}
+            {/* Yellow circle for studied or streak */}
+            {(isStreak || isStudiedOnly) && (
+              <View
+                style={{
+                  position: 'absolute',
+                  width: 28,
+                  height: 28,
+                  backgroundColor: isStreak? '#5bcfff' : '#FFCE51',
+                  borderRadius: 99,
+                  top: 4,
+                  left: 4,
+                  zIndex: 1,
+                }}
+              />
+            )}
+            {/* Fire icon for streak */}
+            {isStreak && (
+              <FireIcon
+                width={16}
+                height={16}
+                style={{
+                  position: 'absolute',
+                  top: -8,
+                  left: 10,
+                  zIndex: 2,
+                }}
+              />
+            )}
+            {/* Date number */}
+            <Text
+              style={{
+                color: state === 'disabled' ? '#d9e1e8' : '#2d4150',
+                fontFamily: 'Satoshi-Medium',
+                fontSize: 16,
+                zIndex: 3,
+              }}
+            >
+              {date.day}
+            </Text>
+          </View>
+        );
+      }}
+      theme={{
+        backgroundColor: '#ffffff',
+        calendarBackground: '#ffffff',
+        textSectionTitleColor: '#b6c1cd',
+        selectedDayBackgroundColor: '#4F41D8',
+        selectedDayTextColor: '#ffffff',
+        todayTextColor: '#4F41D8',
+        dayTextColor: '#2d4150',
+        textDisabledColor: '#d9e1e8',
+        dotColor: '#FFCE51',
+        monthTextColor: '#000000',
+        textMonthFontFamily: 'Satoshi-Medium',
+        textDayHeaderFontFamily: 'Satoshi-Regular',
+        textDayFontFamily: 'Satoshi-Regular',
+        textDayHeaderFontSize: 14,
+        textMonthFontSize: 20,
+        arrowColor: '#000000',
+      }}
+    />
+  </View>
+);
+
 export default function AwardsScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const screenHeight = Dimensions.get('window').height;
@@ -417,6 +558,7 @@ export default function AwardsScreen() {
           <Text style={styles.title}>Fill in your custom goal here!</Text>
           <CustomGoalForm setScrollEnabled={setScrollEnabled} />
           <StreakCalendarStats />
+          <StreakCalendar />
         </View>
         <View style={{ height: 20,}}></View>
         </ScrollView>

@@ -38,6 +38,151 @@ const cardDesigns = [
   },
 ];
 
+const studySubjects = [
+  'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Economics', 'Literature'
+];
+const studyCardData = [
+  {
+    percent: 10,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'Mathematics Prep',
+    date: 'Dec 15, 2024',
+    flashcardCount: 45,
+  },
+  {
+    percent: 25,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'Physics Prep',
+    date: 'Dec 12, 2024',
+    flashcardCount: 32,
+  },
+  {
+    percent: 50,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'Chemistry Prep',
+    date: 'Dec 10, 2024',
+    flashcardCount: 67,
+  },
+  {
+    percent: 75,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'Biology Prep',
+    date: 'Dec 8, 2024',
+    flashcardCount: 89,
+  },
+  {
+    percent: 100,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'History Prep',
+    date: 'Dec 5, 2024',
+    flashcardCount: 123,
+  },
+  {
+    percent: 0,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'Geography Prep',
+    date: 'Dec 3, 2024',
+    flashcardCount: 56,
+  },
+  {
+    percent: 60,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'Economics Prep',
+    date: 'Dec 1, 2024',
+    flashcardCount: 78,
+  },
+  {
+    percent: 90,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    isSelectMode: false,
+    title: 'Literature Prep',
+    date: 'Nov 28, 2024',
+    flashcardCount: 94,
+  },
+];
+
+const interviewRoles = [
+  'Frontend Developer', 'Backend Developer', 'Data Scientist', 'DevOps Engineer', 'Mobile Engineer', 'QA Engineer'
+];
+const interviewTypeLabels = {
+  behavioral: 'Behavioral',
+  technical: 'Technical',
+  'case study': 'Case Study',
+  brainteasers: 'Brainteasers',
+  others: 'Others',
+};
+const interviewCardData = [
+  {
+    percent: 15,
+    image: require('@/assets/companyIcons/GoogleIcon.png'),
+    cardType: 'behavioral',
+    isSelectMode: false,
+    title: 'Frontend Developer Behavioral Prep',
+    date: 'Dec 14, 2024',
+    flashcardCount: 28,
+  },
+  {
+    percent: 40,
+    image: require('@/assets/companyIcons/MetaIcon.png'),
+    cardType: 'technical',
+    isSelectMode: false,
+    title: 'Backend Developer Technical Prep',
+    date: 'Dec 11, 2024',
+    flashcardCount: 52,
+  },
+  {
+    percent: 100,
+    image: require('@/assets/companyIcons/JPMIcon.png'),
+    cardType: 'case study',
+    isSelectMode: false,
+    title: 'Data Scientist Case Study Prep',
+    date: 'Dec 9, 2024',
+    flashcardCount: 41,
+  },
+  {
+    percent: 80,
+    image: require('@/assets/companyIcons/GoogleIcon.png'),
+    cardType: 'brainteasers',
+    isSelectMode: false,
+    title: 'DevOps Engineer Brainteasers Prep',
+    date: 'Dec 7, 2024',
+    flashcardCount: 35,
+  },
+  {
+    percent: 55,
+    image: require('@/assets/companyIcons/MetaIcon.png'),
+    cardType: 'others',
+    isSelectMode: false,
+    title: 'Mobile Engineer Others Prep',
+    date: 'Dec 4, 2024',
+    flashcardCount: 63,
+  },
+  {
+    percent: 0,
+    image: require('@/assets/companyIcons/JPMIcon.png'),
+    cardType: 'technical',
+    isSelectMode: false,
+    title: 'QA Engineer Technical Prep',
+    date: 'Dec 2, 2024',
+    flashcardCount: 47,
+  },
+];
+
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -476,10 +621,9 @@ export default function DecksScreen() {
   };
 
   const renderStudyCards = () => {
-    const cards = Array(8).fill(null).map((_, index) => {
+    const cards = studyCardData.map((data, index) => {
       const design = cardDesigns[index % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
-      
       return (
         <Card
           key={`study-${index}`}
@@ -491,6 +635,13 @@ export default function DecksScreen() {
           selected={selectedStudyCards.has(index)}
           onSelectPress={() => handleStudyCardSelection(index, !selectedStudyCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
+          percent={data.percent}
+          showProgress={!isSelectMode}
+          image={data.image}
+          cardType={data.cardType}
+          title={data.title}
+          date={data.date}
+          flashcardCount={data.flashcardCount}
         />
       );
     });
@@ -498,10 +649,9 @@ export default function DecksScreen() {
   };
 
   const renderInterviewCards = () => {
-    const cards = Array(6).fill(null).map((_, index) => {
+    const cards = interviewCardData.map((data, index) => {
       const design = cardDesigns[(index + 2) % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
-      
       return (
         <Card
           key={`interview-${index}`}
@@ -513,6 +663,13 @@ export default function DecksScreen() {
           selected={selectedInterviewCards.has(index)}
           onSelectPress={() => handleInterviewCardSelection(index, !selectedInterviewCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
+          percent={data.percent}
+          showProgress={!isSelectMode}
+          image={data.image}
+          cardType={data.cardType}
+          title={data.title}
+          date={data.date}
+          flashcardCount={data.flashcardCount}
         />
       );
     });

@@ -1481,17 +1481,17 @@ export default function AwardsScreen() {
       // Switching back to Goals
       Animated.sequence([
         Animated.timing(fadeAnim, {
-          toValue: 0,
+      toValue: 0,
           duration: 200,
-          useNativeDriver: true,
+      useNativeDriver: true,
         }),
       ]).start(() => {
         setIsAchievements(false);
         Animated.timing(fadeAnim, {
-          toValue: 1,
+        toValue: 1,
           duration: 300,
-          useNativeDriver: true,
-        }).start();
+        useNativeDriver: true,
+      }).start();
       });
     }
   };
@@ -1515,12 +1515,12 @@ export default function AwardsScreen() {
             scrollEnabled={scrollEnabled}
             style={{ marginBottom: 40, marginTop: 20 }}
           >
-            <View style={styles.wrapper}>
-              <Text style={styles.title}>Fill in your custom goal here!</Text>
+        <View style={styles.wrapper}>
+          <Text style={styles.title}>Fill in your custom goal here!</Text>
               <CustomGoalForm setScrollEnabled={setScrollEnabled} />
               <StreakCalendarStats />
               <StreakCalendar />
-            </View>
+        </View>
             <View style={{ height: 20 }}></View>
           </ScrollView>
         </Animated.View>
@@ -1550,7 +1550,7 @@ export default function AwardsScreen() {
               <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title="Lifetime Badges" />
             </View>
           </ScrollView>
-        </Animated.View>
+    </Animated.View>
       )}
     </View>
   );

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated } from 'react-native';
+import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated, Dimensions, Text } from 'react-native';
 import { CircleSelectButton } from './CircleSelectButton';
+import { FavoriteButton } from './FavoriteButton';
+import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
+import Svg, { Path } from 'react-native-svg';
 
 interface FolderCardProps {
   style?: ViewStyle;
@@ -11,6 +14,9 @@ interface FolderCardProps {
   selected?: boolean;
   onSelectPress?: () => void;
   circleButtonOpacity?: Animated.Value;
+  title?: string;
+  dateCreated?: string;
+  deckCount?: number;
 }
 
 export function FolderCard({ 
@@ -21,7 +27,10 @@ export function FolderCard({
   isSelectMode = false,
   selected = false,
   onSelectPress,
-  circleButtonOpacity
+  circleButtonOpacity,
+  title,
+  dateCreated,
+  deckCount
 }: FolderCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -61,7 +70,48 @@ export function FolderCard({
             style,
             isPressed && styles.containerPressed
           ]}>
-            {children}
+            <View style={styles.cardContentContainer}>
+              {/* Folder Icon */}
+              <FolderCardIcon width={45} height={40} style={styles.folderIcon} />
+              {/* Favorite button at top right */}
+              <View 
+                style={[
+                  styles.favoriteButtonContainer,
+                  isSelectMode && styles.favoriteButtonContainerSelectMode
+                ]}
+              >
+                <FavoriteButton isSelectMode={isSelectMode} />
+              </View>
+              {/* Title */}
+              {title && (
+                <Text 
+                  style={[
+                    styles.folderTitle,
+                    isSelectMode && styles.folderTitleSelectMode
+                  ]} 
+                  numberOfLines={1}
+                >
+                  {title}
+                </Text>
+              )}
+              {/* Date and Deck Count Row */}
+              {(dateCreated || deckCount !== undefined) && (
+                <View 
+                  style={[
+                    styles.dateDeckRow,
+                    isSelectMode && styles.dateDeckRowSelectMode
+                  ]}
+                >
+                  {dateCreated && (
+                    <Text style={styles.dateText}>{dateCreated}</Text>
+                  )}
+                  {deckCount !== undefined && (
+                    <Text style={styles.deckCountText}>{deckCount} decks</Text>
+                  )}
+                </View>
+              )}
+              {children}
+            </View>
           </Animated.View>
         </Pressable>
       </View>
@@ -138,5 +188,70 @@ const styles = StyleSheet.create({
   },
   firstCardCircleButton: {
     transform: [{ translateY: -15 }],
+  },
+  cardContentContainer: {
+    flex: 1,
+    margin: 10,
+    position: 'relative',
+  },
+  folderIcon: {
+    position: 'absolute',
+    left: 5,
+    top: '50%',
+    transform: [{ translateY: -19 }], // Half of the icon height (35/2) to center it
+  },
+  favoriteButtonContainer: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+  },
+  favoriteButtonContainerSelectMode: {
+    top: Dimensions.get('window').height < 670 ? '60%' : '60%',
+    right: 2,
+  },
+  folderTitle: {
+    position: 'absolute',
+    top: 10,
+    right: 50,
+    left: 65,
+    fontFamily: 'Neuton-Regular',
+    fontSize: 24,
+    color: '#000',
+    zIndex: 2,
+    lineHeight: Platform.OS === 'ios' ? 24 : 28,
+    // borderWidth: 1,
+    // borderColor: 'red',
+  },
+  folderTitleSelectMode: {
+    top: Dimensions.get('window').height < 670 ? 10 : 5,
+    right: 5,
+    textAlign: 'right',
+  },
+  dateText: {
+    fontFamily: 'Satoshi-Italic',
+    fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
+    color: '#222',
+  },
+  deckCountText: {
+    fontFamily: 'Satoshi-Italic',
+    fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
+    color: '#222',
+  },
+  dateDeckRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    position: 'absolute',
+    top: '75%',
+    right: 10,
+    left: 65,
+    zIndex: 2,
+    // borderWidth: 1,
+    // borderColor: 'red',
+  },
+  dateDeckRowSelectMode: {
+    top: Dimensions.get('window').height < 670 ? '70%' : '70%',
+    right: 35,
+    zIndex: 2,
   },
 }); 

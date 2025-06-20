@@ -106,6 +106,15 @@ const favCardData = [
   },
 ];
 
+const favFolderData = [
+  { title: 'Favorite Study Materials', dateCreated: 'Dec 17, 2024', deckCount: 14 },
+  { title: 'Top Interview Prep', dateCreated: 'Dec 15, 2024', deckCount: 10 },
+  { title: 'Best Technical Qs', dateCreated: 'Dec 13, 2024', deckCount: 18 },
+  { title: 'Key Behavioral Prep', dateCreated: 'Dec 11, 2024', deckCount: 7 },
+  { title: 'Important Case Studies', dateCreated: 'Dec 9, 2024', deckCount: 12 },
+  { title: 'Essential Math Problems', dateCreated: 'Dec 7, 2024', deckCount: 16 },
+];
+
 export default function FavoritesScreen() {
   const [isFavFoldersMode, setIsFavFoldersMode] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -662,7 +671,7 @@ export default function FavoritesScreen() {
   };
 
   const renderFavFolderCards = () => {
-    const cards = Array(6).fill(null).map((_, index) => {
+    const cards = favFolderData.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
@@ -684,6 +693,9 @@ export default function FavoritesScreen() {
             });
           }}
           circleButtonOpacity={circleButtonOpacity}
+          title={data.title}
+          dateCreated={data.dateCreated}
+          deckCount={data.deckCount}
         />
       );
     });

@@ -18,6 +18,17 @@ const SHIFT_DISTANCE = 48; // Distance to shift content down
 const selectUnselectedDuration = 300;
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
+const folderData = [
+  { title: 'Study Materials', dateCreated: 'Dec 18, 2024', deckCount: 12 },
+  { title: 'Interview Prep', dateCreated: 'Dec 16, 2024', deckCount: 8 },
+  { title: 'Technical Questions hahahahha', dateCreated: 'Dec 14, 2024', deckCount: 15 },
+  { title: 'Behavioral Prep', dateCreated: 'Dec 12, 2024', deckCount: 6 },
+  { title: 'Case Studies', dateCreated: 'Dec 10, 2024', deckCount: 9 },
+  { title: 'Math Problems', dateCreated: 'Dec 8, 2024', deckCount: 11 },
+  { title: 'Science Notes', dateCreated: 'Dec 6, 2024', deckCount: 7 },
+  { title: 'Language Learning', dateCreated: 'Dec 4, 2024', deckCount: 13 },
+];
+
 export default function FoldersScreen() {
   const router = useRouter();
   const { isAddToFolders, previousMode, selectedState, sourcePage } = useLocalSearchParams();
@@ -420,7 +431,7 @@ export default function FoldersScreen() {
   };
 
   const renderFolderCards = () => {
-    const cards = Array(8).fill(null).map((_, index) => {
+    const cards = folderData.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
@@ -440,6 +451,9 @@ export default function FoldersScreen() {
             setSelectedFolders(newSelectedFolders);
           }}
           circleButtonOpacity={circleButtonOpacity}
+          title={data.title}
+          dateCreated={data.dateCreated}
+          deckCount={data.deckCount}
         />
       );
     });

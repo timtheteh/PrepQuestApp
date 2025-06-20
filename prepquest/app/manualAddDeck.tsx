@@ -20,7 +20,7 @@ import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import { TopBarManualHeader } from '@/components/TopBarManualHeader';
 import { AddViewToggle } from '@/components/AddViewToggle';
-import { FlippableCard } from '../components/FlippableCard';
+import { FlippableCard, FlippableCardRef } from '../components/FlippableCard';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import EyeIcon from '@/assets/icons/eyeIcon.svg';
 import { CircleSelectButtonGreen } from '../components/CircleSelectButtonGreen';
@@ -116,6 +116,10 @@ export default function ManualAddDeckPage() {
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
   const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
+  const [currentQuestionNumber, setCurrentQuestionNumber] = useState(1);
+  const cardFadeAnim = useRef(new Animated.Value(1)).current;
+  const flippableCardRef = useRef<FlippableCardRef>(null);
+  const [selectedButtonType, setSelectedButtonType] = useState<'image' | 'camera' | 'marker' | 'mic' | 'text'>('text');
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -320,6 +324,31 @@ export default function ManualAddDeckPage() {
     });
   };
 
+  const handleNextFlashcard = () => {
+    // Fade out animation
+    Animated.timing(cardFadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      // Increment question number
+      setCurrentQuestionNumber(prev => prev + 1);
+      
+      // Reset card to front view
+      flippableCardRef.current?.resetToFront();
+      
+      // Reset to text state (default)
+      setSelectedButtonType('text');
+      
+      // Fade in animation
+      Animated.timing(cardFadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
   const handleUseMostRecentFormPress = () => {
     setIsRecentFormModalOpen(true);
     Animated.parallel([
@@ -388,10 +417,16 @@ export default function ManualAddDeckPage() {
       <Animated.View
         style={[
           styles.headerIconsContainer,
-          { opacity: manualAddDeckOpacity, display: !isMandatory ? 'flex' : 'none' }
+          { 
+            opacity: manualAddDeckOpacity, 
+            display: !isMandatory && addViewState === 'add' ? 'flex' : 'none' 
+          }
         ]}
       >
-        <TopBarManualHeader />
+        <TopBarManualHeader 
+          selectedButton={selectedButtonType}
+          onButtonChange={(buttonType) => setSelectedButtonType(buttonType || 'text')}
+        />
       </Animated.View>
 
       {/* {!isMandatory && (
@@ -500,7 +535,13 @@ export default function ManualAddDeckPage() {
               { paddingBottom: bottomOffset * 2 + 72}
             ]}
           >
-            <FlippableCard />
+            <FlippableCard 
+              ref={flippableCardRef}
+              frontContentTitle={`Qn ${currentQuestionNumber}`} 
+              backContentTitle={`Ans ${currentQuestionNumber}`}
+              fadeOpacity={cardFadeAnim}
+              cardType={selectedButtonType}
+            />
           </View>
         )}
 
@@ -609,6 +650,7 @@ export default function ManualAddDeckPage() {
                 text="Next Flashcard"
                 backgroundColor="#44B88A"
                 style={{ flex: 1 }}
+                onPress={handleNextFlashcard}
               />
             </View>
           )}

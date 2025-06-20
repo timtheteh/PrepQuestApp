@@ -20,6 +20,8 @@ interface TopBarManualHeaderProps {
   onMarkerPress?: () => void;
   onMicPress?: () => void;
   onTextPress?: () => void;
+  selectedButton?: ButtonType;
+  onButtonChange?: (buttonType: ButtonType | null) => void;
 }
 
 export function TopBarManualHeader({
@@ -27,9 +29,14 @@ export function TopBarManualHeader({
   onCameraPress,
   onMarkerPress,
   onMicPress,
-  onTextPress
+  onTextPress,
+  selectedButton: externalSelectedButton,
+  onButtonChange
 }: TopBarManualHeaderProps) {
-  const [selectedButton, setSelectedButton] = useState<ButtonType | null>(null);
+  const [internalSelectedButton, setInternalSelectedButton] = useState<ButtonType>('text');
+  
+  // Use external state if provided, otherwise use internal state
+  const selectedButton = externalSelectedButton !== undefined ? externalSelectedButton : internalSelectedButton;
 
   const renderIcon = (Icon: any, WhiteIcon: any, type: ButtonType) => {
     const isSelected = selectedButton === type;
@@ -37,7 +44,19 @@ export function TopBarManualHeader({
   };
 
   const handlePress = (type: ButtonType, callback?: () => void) => {
-    setSelectedButton(selectedButton === type ? null : type);
+    // Don't allow deselection - if same button is clicked, do nothing
+    if (selectedButton === type) {
+      return;
+    }
+    
+    if (externalSelectedButton !== undefined) {
+      // If external state is provided, use the callback
+      onButtonChange?.(type);
+    } else {
+      // Otherwise use internal state
+      setInternalSelectedButton(type);
+    }
+    
     if (callback) {
       callback();
     }

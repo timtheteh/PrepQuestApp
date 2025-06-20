@@ -154,17 +154,35 @@ export function Card({
                   <Image source={image} style={styles.cardIconImage} />
                 )}
                 {/* Favorite button at top right */}
-                <View style={styles.favoriteButtonContainer}>
-                  <FavoriteButton />
+                <View 
+                  style={[
+                    styles.favoriteButtonContainer,
+                    isSelectMode && styles.favoriteButtonContainerSelectMode
+                  ]}
+                >
+                  <FavoriteButton isSelectMode={isSelectMode} />
                 </View>
                 {/* Title */}
                 {title && (
-                  <Text style={[styles.cardTitle]} numberOfLines={2}>{title}</Text>
+                  <Text 
+                    style={[
+                      styles.cardTitle,
+                      isSelectMode && styles.cardTitleSelectMode
+                    ]} 
+                    numberOfLines={2}
+                  >
+                    {title}
+                  </Text>
                 )}
                 {/* Date and Flashcard Count Row */}
                 {(date || flashcardCount !== undefined) && (
-                  <View style={styles.dateFlashcardRow}>
-                    {date && (
+                  <View 
+                    style={[
+                      styles.dateFlashcardRow,
+                      isSelectMode && styles.dateFlashcardRowSelectMode
+                    ]}
+                  >
+                    {!isSelectMode && date && (
                       <Text style={styles.dateText}>{date}</Text>
                     )}
                     {flashcardCount !== undefined && (
@@ -271,11 +289,11 @@ const styles = StyleSheet.create({
   circleSelectButton: {
     position: 'absolute',
     right: 8,
-    top: '50%',
+    top: Dimensions.get('window').height < 670 ? '41%' : '50%',
     zIndex: 1,
   },
   firstCardCircleButton: {
-    transform: [{ translateY: -15 }],
+    transform: [{ translateY: Dimensions.get('window').height < 670 ? 0 : -15 }],
   },
   cardContentContainer: {
     flex: 1,
@@ -363,8 +381,8 @@ const styles = StyleSheet.create({
     borderRadius: 21,
   },
   cardTypePillSelected: {
-    bottom: 5,
-    right: 120,
+    bottom: Dimensions.get('window').height < 670 ? '10%' : '5%',
+    right: '45%',
     height: 24,
     borderRadius: 12,
   },
@@ -379,6 +397,11 @@ const styles = StyleSheet.create({
     right: 2,
     zIndex: 3,
   },
+  favoriteButtonContainerSelectMode: {
+    top: Dimensions.get('window').height < 670 ? '62%' : '70%',
+    right: 2,
+    zIndex: 3,
+  },
   cardTitle: {
     position: 'absolute',
     top: 5,
@@ -390,6 +413,12 @@ const styles = StyleSheet.create({
     zIndex: 2,
     lineHeight: 26,
   },
+  cardTitleSelectMode: {
+    top: Dimensions.get('window').height < 670 ? 10 : 5,
+    right: 5,
+    left: 80,
+    textAlign: 'right',
+  },
   dateFlashcardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -398,6 +427,13 @@ const styles = StyleSheet.create({
     top: 65,
     right: 100,
     left: 80,
+    zIndex: 2,
+  },
+  dateFlashcardRowSelectMode: {
+    justifyContent: 'center',
+    top: Dimensions.get('window').height < 670 ? '70%' : '75%',
+    right: 35,
+    left: '57%',
     zIndex: 2,
   },
   dateText: {

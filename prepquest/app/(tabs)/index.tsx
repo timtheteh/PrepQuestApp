@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, Dimensions } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Feather } from '@expo/vector-icons';
@@ -47,7 +47,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'Mathematics Prep',
+    title: 'Mathematics Study Prep',
     date: 'Dec 15, 2024',
     flashcardCount: 45,
   },
@@ -56,7 +56,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'Physics Prep',
+    title: 'Physics Study Prep',
     date: 'Dec 12, 2024',
     flashcardCount: 32,
   },
@@ -65,7 +65,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'Chemistry Prep',
+    title: 'Chemistry A Level Prep',
     date: 'Dec 10, 2024',
     flashcardCount: 67,
   },
@@ -74,7 +74,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'Biology Prep',
+    title: 'Biology SAT Prep',
     date: 'Dec 8, 2024',
     flashcardCount: 89,
   },
@@ -83,7 +83,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'History Prep',
+    title: 'History SAT Prep',
     date: 'Dec 5, 2024',
     flashcardCount: 123,
   },
@@ -92,7 +92,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'Geography Prep',
+    title: 'Geography Study Prep',
     date: 'Dec 3, 2024',
     flashcardCount: 56,
   },
@@ -101,7 +101,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'Economics Prep',
+    title: 'Economics A Level Prep',
     date: 'Dec 1, 2024',
     flashcardCount: 78,
   },
@@ -110,7 +110,7 @@ const studyCardData = [
     image: require('@/assets/companyIcons/StudyCardIcon.png'),
     cardType: 'study',
     isSelectMode: false,
-    title: 'Literature Prep',
+    title: 'Literature Exam Prep',
     date: 'Nov 28, 2024',
     flashcardCount: 94,
   },
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   card: {
-    marginTop: 26,
+    marginTop: Dimensions.get('window').height < 670 ? 0 : 26,
   },
   shiftableContent: {
     flex: 1,

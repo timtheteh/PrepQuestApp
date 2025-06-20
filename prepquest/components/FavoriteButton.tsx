@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
 
-export function FavoriteButton() {
+interface FavoriteButtonProps {
+  isSelectMode?: boolean;
+}
+
+export function FavoriteButton({ isSelectMode = false }: FavoriteButtonProps) {
   const [favorited, setFavorited] = useState(false);
   const size = 30;
   const borderWidth = 2;
@@ -26,9 +30,10 @@ export function FavoriteButton() {
   const starPoints = getStarPoints(cx, cy, outerR, innerR);
   return (
     <TouchableOpacity
-      onPress={() => setFavorited(f => !f)}
-      activeOpacity={0.7}
+      onPress={() => !isSelectMode && setFavorited(f => !f)}
+      activeOpacity={isSelectMode ? 1 : 0.7}
       style={{ width: size, height: size }}
+      disabled={isSelectMode}
     >
       <Svg width={size} height={size}>
         <Polygon

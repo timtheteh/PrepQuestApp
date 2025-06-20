@@ -13,14 +13,26 @@ const AI_DECKS = [
   {
     normal: require('@/assets/images/AIDeckCover1.png'),
     pressed: require('@/assets/images/AIDeckCover1Pressed.png'),
+    image: require('@/assets/companyIcons/GoogleIcon.png'),
+    cardType: 'behavioral',
+    title: 'AI Behavioral Prep',
+    flashcardCount: 25,
   },
   {
     normal: require('@/assets/images/AIDeckCover2.png'),
     pressed: require('@/assets/images/AIDeckCover2Pressed.png'),
+    image: require('@/assets/companyIcons/MetaIcon.png'),
+    cardType: 'technical',
+    title: 'AI Technical Prep',
+    flashcardCount: 32,
   },
   {
     normal: require('@/assets/images/AIDeckCover3.png'),
     pressed: require('@/assets/images/AIDeckCover3Pressed.png'),
+    image: require('@/assets/companyIcons/JPMIcon.png'),
+    cardType: 'case study',
+    title: 'AI Case Study Prep',
+    flashcardCount: 18,
   },
 ];
 
@@ -49,6 +61,10 @@ export function AIPromptModal({
               key={index}
               backgroundImage={deck.normal}
               pressedBackgroundImage={deck.pressed}
+              image={deck.image}
+              cardType={deck.cardType}
+              title={deck.title}
+              flashcardCount={deck.flashcardCount}
               onPress={() => console.log(`AI Deck ${index + 1} pressed`)}
             />
           ))}

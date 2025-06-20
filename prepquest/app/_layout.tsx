@@ -19,6 +19,7 @@ export default function RootLayout() {
     'Neuton-ExtraBold': require('../assets/fonts/Neuton-ExtraBold.ttf'),
     'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
     'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
+    'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
   });
 
   if (!loaded) {
@@ -61,6 +62,14 @@ export default function RootLayout() {
             presentation: 'fullScreenModal',
             animation: 'slide_from_right',
             headerShown: false
+          }} 
+        />
+        <Stack.Screen 
+          name="textInputModal" 
+          options={{
+            presentation: 'transparentModal',
+            animation: 'fade_from_bottom',
+            headerShown: false,
           }} 
         />
       </Stack>

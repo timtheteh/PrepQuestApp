@@ -5,6 +5,7 @@ import FlippableCardBackFlipArrow from '@/assets/icons/flippableCardBackFlipArro
 import MicIcon from '@/assets/icons/micIcon.svg';
 import Svg, { Path } from 'react-native-svg';
 import { DrawableOptionsRow } from './DrawableOptionsRow';
+import { useRouter } from 'expo-router';
 
 interface FlippableCardProps {
   style?: ViewStyle;
@@ -33,6 +34,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   fadeOpacity,
   cardType = 'text',
 }, ref) => {
+  const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const flipAnim = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(1)).current;
@@ -142,54 +144,61 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     }
   };
 
+  const handleOverlayPress = () => {
+    if (cardType === 'text') {
+        router.push('/textInputModal');
+    }
+  };
+
   return (
     <Animated.View style={[styles.container, style, { opacity: fadeOpacity }]}>
-      {/* Red bordered area stacked above the card */}
-      <Animated.View style={[styles.transparentOverlayArea, { opacity: overlayOpacity }]} >
-        <View style={styles.topBar2}>
-          {cardType === 'marker' && <DrawableOptionsRow />}
-        </View>
-        <View style={[styles.overlayTextContainer, { transform: displayedCardType === 'mic' || displayedCardType === 'image' || displayedCardType === 'camera' ? [{ translateY: -30 }] : [{ translateY: 0 }] }]}>
-          <Text style={styles.overlayText}>{getOverlayText()}</Text>
-        </View>
-        
-        {displayedCardType === 'mic' && (
-          <View style={styles.micButtonsContainer}>
-            <Pressable 
-              style={({ pressed }) => [
-                styles.micButton,
-                pressed && styles.buttonPressed
-              ]}
-              android_ripple={{ color: '#E0E0E0', borderless: false }}
-              onPress={() => {
-                console.log('Mic button pressed');
-                // Add your mic functionality here
-              }}
-            >
-              <MicIcon width={36} height={36} />
+        <Animated.View style={[styles.transparentOverlayArea, { opacity: overlayOpacity }]} >
+            <Pressable onPress={handleOverlayPress} style={styles.overlayPressable}>
+                <View style={styles.topBar2}>
+                {cardType === 'marker' && <DrawableOptionsRow />}
+                </View>
+                <View style={[styles.overlayTextContainer, { transform: displayedCardType === 'mic' || displayedCardType === 'image' || displayedCardType === 'camera' ? [{ translateY: -30 }] : [{ translateY: 0 }] }]}>
+                <Text style={styles.overlayText}>{getOverlayText()}</Text>
+                </View>
+                
+                {displayedCardType === 'mic' && (
+                <View style={styles.micButtonsContainer}>
+                    <Pressable 
+                    style={({ pressed }) => [
+                        styles.micButton,
+                        pressed && styles.buttonPressed
+                    ]}
+                    android_ripple={{ color: '#E0E0E0', borderless: false }}
+                    onPress={() => {
+                        console.log('Mic button pressed');
+                        // Add your mic functionality here
+                    }}
+                    >
+                    <MicIcon width={36} height={36} />
+                    </Pressable>
+                    <Pressable 
+                    style={({ pressed }) => [
+                        styles.replayButton,
+                        pressed && styles.buttonPressed
+                    ]}
+                    android_ripple={{ color: '#E0E0E0', borderless: false }}
+                    onPress={() => {
+                        console.log('Replay button pressed');
+                        // Add your replay functionality here
+                    }}
+                    >
+                    <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
+                        <Path 
+                        d="M8 5v14l11-7z" 
+                        fill="black"
+                        transform="rotate(0 12 12)"
+                        />
+                    </Svg>
+                    </Pressable>
+                </View>
+                )}
             </Pressable>
-            <Pressable 
-              style={({ pressed }) => [
-                styles.replayButton,
-                pressed && styles.buttonPressed
-              ]}
-              android_ripple={{ color: '#E0E0E0', borderless: false }}
-              onPress={() => {
-                console.log('Replay button pressed');
-                // Add your replay functionality here
-              }}
-            >
-              <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
-                <Path 
-                  d="M8 5v14l11-7z" 
-                  fill="black"
-                  transform="rotate(0 12 12)"
-                />
-              </Svg>
-            </Pressable>
-          </View>
-        )}
-      </Animated.View>
+        </Animated.View>
       <View style={styles.transparentOverlayArea2} ></View>
       
       <Pressable onPress={handlePress} style={styles.pressableContainer}>
@@ -238,6 +247,9 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  overlayPressable: {
     flex: 1,
   },
   cardContainer: {

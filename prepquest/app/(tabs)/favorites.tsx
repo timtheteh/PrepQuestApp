@@ -39,6 +39,73 @@ const cardDesigns = [
   },
 ];
 
+const favCardData = [
+  {
+    percent: 85,
+    image: require('@/assets/companyIcons/GoogleIcon.png'),
+    cardType: 'behavioral',
+    title: 'Google Frontend Behavioral Prep',
+    date: 'Dec 18, 2024',
+    flashcardCount: 34,
+  },
+  {
+    percent: 60,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    title: 'Advanced Mathematics Prep',
+    date: 'Dec 16, 2024',
+    flashcardCount: 78,
+  },
+  {
+    percent: 100,
+    image: require('@/assets/companyIcons/MetaIcon.png'),
+    cardType: 'technical',
+    title: 'Meta Backend Technical Prep',
+    date: 'Dec 14, 2024',
+    flashcardCount: 45,
+  },
+  {
+    percent: 25,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    title: 'Physics Advanced Prep',
+    date: 'Dec 12, 2024',
+    flashcardCount: 92,
+  },
+  {
+    percent: 75,
+    image: require('@/assets/companyIcons/JPMIcon.png'),
+    cardType: 'case study',
+    title: 'JPMorgan Case Study Prep',
+    date: 'Dec 10, 2024',
+    flashcardCount: 28,
+  },
+  {
+    percent: 40,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    title: 'Chemistry Lab Prep',
+    date: 'Dec 8, 2024',
+    flashcardCount: 56,
+  },
+  {
+    percent: 90,
+    image: require('@/assets/companyIcons/GoogleIcon.png'),
+    cardType: 'brainteasers',
+    title: 'Google Brainteasers Prep',
+    date: 'Dec 6, 2024',
+    flashcardCount: 31,
+  },
+  {
+    percent: 15,
+    image: require('@/assets/companyIcons/StudyCardIcon.png'),
+    cardType: 'study',
+    title: 'Biology Research Prep',
+    date: 'Dec 4, 2024',
+    flashcardCount: 67,
+  },
+];
+
 export default function FavoritesScreen() {
   const [isFavFoldersMode, setIsFavFoldersMode] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -556,7 +623,7 @@ export default function FavoritesScreen() {
   }, []);
 
   const renderFavDeckCards = () => {
-    const cards = Array(8).fill(null).map((_, index) => {
+    const cards = favCardData.map((data, index) => {
       const design = cardDesigns[index % 4];
       const style = index === 0 ? styles.firstCard : styles.card;
       
@@ -581,6 +648,13 @@ export default function FavoritesScreen() {
             });
           }}
           circleButtonOpacity={circleButtonOpacity}
+          percent={data.percent}
+          showProgress={!isSelectMode}
+          image={data.image}
+          cardType={data.cardType}
+          title={data.title}
+          date={data.date}
+          flashcardCount={data.flashcardCount}
         />
       );
     });

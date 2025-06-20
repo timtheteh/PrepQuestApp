@@ -129,7 +129,7 @@ export function Card({
     others: { color: '#FDAE61', label: 'Others' },
     study: { color: '#5CC8BE', label: 'Study' },
   };
-  const typeInfo = cardTypeMap[cardType || 'study'] || cardTypeMap['study'];
+  const typeInfo = cardType && cardTypeMap[cardType] ;
 
   return (
     <View style={styles.outerContainer}>
@@ -191,6 +191,7 @@ export function Card({
                   </View>
                 )}
                 {/* Animated card type pill crossfade */}
+                {typeInfo && (
                 <Animated.View
                   pointerEvents="none"
                   style={[
@@ -201,7 +202,8 @@ export function Card({
                 >
                   <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
                 </Animated.View>
-                {showSelectPill && (
+                )}
+                {showSelectPill && typeInfo && (
                   <Animated.View
                     pointerEvents="none"
                     style={[
@@ -411,7 +413,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#000',
     zIndex: 2,
-    lineHeight: 26,
+    lineHeight: Platform.OS === 'ios' ? 24 : 28,
   },
   cardTitleSelectMode: {
     top: Dimensions.get('window').height < 670 ? 10 : 5,

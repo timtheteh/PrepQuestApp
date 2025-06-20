@@ -377,79 +377,79 @@ export default function FileUploadPage() {
           />
         </View>
         {isMandatory && (
-           <ScrollView 
-           style={[
-             styles.scrollView,
-             { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
-           ]}
+        <ScrollView 
+          style={[
+            styles.scrollView,
+            { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
+          ]}
            contentContainerStyle={[
              styles.scrollContent,
              { paddingTop: getScrollContentPaddingTop() }
            ]}
-           showsVerticalScrollIndicator={false}
-           bounces={true}
-           overScrollMode="always"
-           keyboardShouldPersistTaps="handled"
-         >
-           <Animated.View style={[
-             { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
-           ]}>
-               <View style={styles.formContent}>
-                 <TitleTextBar
-                   title=" Deck Name"
-                   highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                   placeholder="Type here!"
-                   value={deckName}
-                   onChangeText={setDeckName}
-                 />
-                 {mode === 'study' && (
-                   <>
-                     <QuestionTextBar
-                       label="1. Education Level?"
-                       placeholder="e.g. Freshman, Sophomore, etc"
-                       value={studyMandatoryQuestion1}
-                       onChangeText={setStudyMandatoryQuestion1}
-                       helperText="What education level is your preparation for?"
-                     />
-                     <QuestionTextBar
-                       label="2. Subject(s)?"
-                       placeholder="e.g. Computer Science, Math, Physics, etc."
-                       value={studyMandatoryQuestion2}
-                       onChangeText={setStudyMandatoryQuestion2}
-                       helperText="What subject(s) would this deck be for?"
-                     />
-                   </>
-                 )}
-                 {mode !== 'study' && (
-                   <>
-                     <QuestionTextBar
-                       label="1. Job/Role?"
-                       placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
-                       value={interviewMandatoryQuestion1}
-                       onChangeText={setInterviewMandatoryQuestion1}
-                       helperText="What job or role are you preparing for?"
-                     />
-                     <TypeOfInterviewQn
-                       value={interviewType}
-                       onValueChange={setInterviewType}
-                     />
-                   </>
-                 )}
-                 <NumberOfQuestions
-                   title="3. Number of questions:"
-                   value={numberOfQuestions}
-                   onValueChange={setNumberOfQuestions}
-                 />
-                 <View style={styles.bottomSpacing} />
-               </View>
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          overScrollMode="always"
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View style={[
+            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
+          ]}>
+              <View style={styles.formContent}>
+                <TitleTextBar
+                  title=" Deck Name"
+                  highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
+                  placeholder="Type here!"
+                  value={deckName}
+                  onChangeText={setDeckName}
+                />
+                {mode === 'study' && (
+                  <>
+                    <QuestionTextBar
+                      label="1. Education Level?"
+                      placeholder="e.g. Freshman, Sophomore, etc"
+                      value={studyMandatoryQuestion1}
+                      onChangeText={setStudyMandatoryQuestion1}
+                      helperText="What education level is your preparation for?"
+                    />
+                    <QuestionTextBar
+                      label="2. Subject(s)?"
+                      placeholder="e.g. Computer Science, Math, Physics, etc."
+                      value={studyMandatoryQuestion2}
+                      onChangeText={setStudyMandatoryQuestion2}
+                      helperText="What subject(s) would this deck be for?"
+                    />
+                  </>
+                )}
+                {mode !== 'study' && (
+                  <>
+                  <QuestionTextBar
+                    label="1. Job/Role?"
+                    placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                    value={interviewMandatoryQuestion1}
+                    onChangeText={setInterviewMandatoryQuestion1}
+                    helperText="What job or role are you preparing for?"
+                    />
+                  <TypeOfInterviewQn
+                    value={interviewType}
+                    onValueChange={setInterviewType}
+                  />
+                  </>
+                )}
+                <NumberOfQuestions
+                  title="3. Number of questions:"
+                  value={numberOfQuestions}
+                  onValueChange={setNumberOfQuestions}
+                />
+                <View style={styles.bottomSpacing} />
+              </View>
            </Animated.View>
           </ScrollView>
-        )}
+            )}
 
-        <Animated.View style={[
+          <Animated.View style={[
           styles.fileUploadContent,
           { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
-        ]}>
+          ]}>
           {Dimensions.get('window').height <= 670 && (
             <ScrollView 
               style={[
@@ -468,12 +468,12 @@ export default function FileUploadPage() {
             <SmallCircleSelectButton
               selected={isAIGenerate}
               onPress={() => setIsAIGenerate(!isAIGenerate)}
-            />
+                />
             <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
             <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
               <HelpIconOutline width={24} height={24} />
             </TouchableOpacity>
-          </View>
+              </View>
           <View style={styles.bottomSpacingFilUpload} />
             </ScrollView>
           )}
@@ -486,16 +486,16 @@ export default function FileUploadPage() {
             <SmallCircleSelectButton
               selected={isAIGenerate}
               onPress={() => setIsAIGenerate(!isAIGenerate)}
-            />
+                />
             <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
             <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
               <HelpIconOutline width={24} height={24} />
             </TouchableOpacity>
-          </View>
-        </Animated.View>
+              </View>
+          </Animated.View>
       </View>
 
-      <View style={[
+        <View style={[
           styles.buttonContainer,
           { bottom: bottomOffset }
         ]}>
@@ -506,7 +506,7 @@ export default function FileUploadPage() {
             disabled={isSubmitDisabled()}
             fullWidth
           />
-        </View>
+      </View>
 
       <GreyOverlayBackground 
         visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen}

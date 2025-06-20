@@ -291,11 +291,13 @@ const styles = StyleSheet.create({
   circleSelectButton: {
     position: 'absolute',
     right: 8,
-    top: Dimensions.get('window').height < 670 ? '41%' : '50%',
+    // top: Dimensions.get('window').height < 670 ? '41%' : '50%',
+    top: '50%',
     zIndex: 1,
   },
   firstCardCircleButton: {
-    transform: [{ translateY: Dimensions.get('window').height < 670 ? 0 : -15 }],
+    // transform: [{ translateY: Dimensions.get('window').height < 670 ? 0 : -15 }],
+    transform: [{ translateY: -15 }],
   },
   cardContentContainer: {
     flex: 1,

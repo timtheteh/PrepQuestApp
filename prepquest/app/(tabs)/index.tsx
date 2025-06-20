@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   card: {
-    marginTop: Dimensions.get('window').height < 670 ? 0 : 26,
+    marginTop: 26,
   },
   shiftableContent: {
     flex: 1,

@@ -457,7 +457,8 @@ export default function TabLayout() {
           visible={isAddDeckOpen}
           opacity={addDeckOpacity}
           currentMode={currentMode}
-          isInFavoritesPage={isInFavoritesPage} mode={''}        />
+          isInFavoritesPage={isInFavoritesPage}
+        />
         <GenericModal
           visible={isTrashModalOpenInDecksPage}
           opacity={trashModalOpacity}

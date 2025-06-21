@@ -18,7 +18,6 @@ import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
-import { Image as RNImage } from 'react-native';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -37,7 +36,7 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-const YoutubeLinkMainSection = () => {
+const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink }: { youtubeLink: string; setYoutubeLink: (text: string) => void }) => {
   return (
     <View style={styles.youtubeLinkMainSection}>
       <View style={styles.youtubeImageContainer}>
@@ -54,6 +53,8 @@ const YoutubeLinkMainSection = () => {
           multiline={true}
           numberOfLines={4}
           submitBehavior='blurAndSubmit'
+          value={youtubeLink}
+          onChangeText={setYoutubeLink}
         />
       </View>
     </View>
@@ -142,6 +143,7 @@ export default function YouTubeLinkPage() {
   const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
   const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
   const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
+  const [youtubeLink, setYoutubeLink] = useState('');
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -221,6 +223,7 @@ export default function YouTubeLinkPage() {
     setInterviewMandatoryQuestion1('');
     setInterviewType('');
     setNumberOfQuestions(1);
+    setYoutubeLink('');
   };
 
   const handleToggle = (isRightSide: boolean) => {
@@ -246,8 +249,9 @@ export default function YouTubeLinkPage() {
   };
 
   const isSubmitDisabled = () => {
-    if (!isMandatory) return false;
-    return mode === 'study' ? !isStudyMandatoryFieldsFilled() : !isInterviewMandatoryFieldsFilled();
+    const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
+    const youtubeLinkFilled = youtubeLink.trim() !== '';
+    return !mandatoryFieldsFilled || !youtubeLinkFilled;
   };
 
   const handleSubmit = () => {
@@ -467,7 +471,7 @@ export default function YouTubeLinkPage() {
                 <Text style={styles.youtubeLinkTitle}>
                     Paste your YouTube Link here!
                     </Text>
-                    <YoutubeLinkMainSection />
+                    <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} />
                     <View style={styles.aiGenerateRow}>
                         <SmallCircleSelectButton
                         selected={isAIGenerate}
@@ -484,7 +488,7 @@ export default function YouTubeLinkPage() {
             <Text style={styles.youtubeLinkTitle}>
             Paste your YouTube Link here!
             </Text>
-            <YoutubeLinkMainSection />
+            <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} />
             <View style={styles.aiGenerateRow}>
                 <SmallCircleSelectButton
                 selected={isAIGenerate}

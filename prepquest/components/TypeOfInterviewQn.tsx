@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 
 interface TypeOfInterviewQnProps {
   value: string;
   onValueChange: (value: string) => void;
 }
 
-const INTERVIEW_TYPES = ['Technical', 'Behavioral', 'Brainteasers', 'Case Study'];
+const INTERVIEW_TYPES = ['Technical', 'Behavioral', 'Brainteasers', 'Case Study', 'Others'];
 
 export function TypeOfInterviewQn({
   value,
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   button: {
-    width: '23%',
+    width: '19%',
     height: 40,
     backgroundColor: '#44B88A',
     borderRadius: 10,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontFamily: 'Satoshi-Medium',
-    fontSize: 12,
+    fontSize: Dimensions.get('window').height < 670 ? 10 : 12,
     color: '#FFFFFF',
   },
 }); 

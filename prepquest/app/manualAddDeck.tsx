@@ -788,6 +788,53 @@ export default function ManualAddDeckPage() {
     return Math.max(...submittedCards.map(card => card.cardNumber)) + 1;
   };
 
+  const getCardTitle = (card: CachedCard) => {
+    // If the card has text content in the front, show the first 100 characters
+    if (card.frontContent?.type === 'text' && card.frontContent?.content) {
+      const textContent = extractTextFromContent(card.frontContent.content);
+      if (textContent && textContent.length > 100) {
+        return textContent.substring(0, 100) + '...';
+      }
+      return textContent || `Card ${card.cardNumber}`;
+    }
+    
+    // Default to "Card X" for other content types
+    return `Card ${card.cardNumber}`;
+  };
+
+  const extractTextFromContent = (content: React.ReactNode): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    
+    if (typeof content === 'number') {
+      return content.toString();
+    }
+    
+    if (content === null || content === undefined) {
+      return '';
+    }
+    
+    // If it's a React element, try to extract text from props
+    if (typeof content === 'object' && content !== null) {
+      // Check if it has children prop
+      if ('props' in content && content.props) {
+        const props = content.props as { children?: React.ReactNode };
+        if (props.children) {
+          if (typeof props.children === 'string') {
+            return props.children;
+          }
+          if (Array.isArray(props.children)) {
+            return props.children.map(child => extractTextFromContent(child)).join('');
+          }
+          return extractTextFromContent(props.children);
+        }
+      }
+    }
+    
+    return '';
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
@@ -1008,7 +1055,7 @@ export default function ManualAddDeckPage() {
                   i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
                 ]}>
                   <Text style={styles.flashcardNumber}>{card.cardNumber}.</Text>
-                  <Text style={styles.flashcardTitle}>Card {card.cardNumber}</Text>
+                  <Text style={styles.flashcardTitle}>{getCardTitle(card)}</Text>
                   <TouchableOpacity onPress={() => handleViewCard(card.cardNumber)}>
                     <EyeIcon width={24} height={24} style={styles.flashcardEyeIcon} />
                   </TouchableOpacity>
@@ -1032,7 +1079,7 @@ export default function ManualAddDeckPage() {
                 i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
               ]}>
                 <Text style={styles.flashcardNumber}>{card.cardNumber}.</Text>
-                <Text style={styles.flashcardTitle}>Card {card.cardNumber}</Text>
+                <Text style={styles.flashcardTitle}>{getCardTitle(card)}</Text>
                 <CircleSelectButtonGreen 
                   selected={selectedFlashcards.includes(card.cardNumber)}
                   onPress={() => {
@@ -1391,7 +1438,7 @@ const styles = StyleSheet.create({
     color: '#000',
     flex: 1,
     textAlign: 'left',
-    marginLeft: 8,
+    marginLeft: -5,
   },
   flashcardEyeIcon: {
     marginLeft: 8,
@@ -1416,4 +1463,4 @@ const styles = StyleSheet.create({
   selectTextDisabled: {
     color: '#D5D4DD',
   },
-}); 
+});

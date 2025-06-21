@@ -795,11 +795,11 @@ export default function ManualAddDeckPage() {
       if (textContent && textContent.length > 100) {
         return textContent.substring(0, 100) + '...';
       }
-      return textContent || `Card ${card.cardNumber}`;
+      return textContent || 'In Progress...';
     }
     
     // Default to "Card X" for other content types
-    return `Card ${card.cardNumber}`;
+    return 'In Progress...';
   };
 
   const extractTextFromContent = (content: React.ReactNode): string => {

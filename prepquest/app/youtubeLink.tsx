@@ -18,6 +18,7 @@ import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
+import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -144,6 +145,11 @@ export default function YouTubeLinkPage() {
   const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
   const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
   const [youtubeLink, setYoutubeLink] = useState('');
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const errorModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const successModalOpacity = useRef(new Animated.Value(0)).current;
+  const [errorMessage, setErrorMessage] = useState('');
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -207,6 +213,40 @@ export default function YouTubeLinkPage() {
   }, [isAIHelpModalOpen]);
 
   useEffect(() => {
+    if (isErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(errorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isErrorModalOpen]);
+
+  useEffect(() => {
+    if (isSuccessModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isSuccessModalOpen]);
+
+  useEffect(() => {
     // Set initial mode animation when component mounts
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
@@ -249,13 +289,97 @@ export default function YouTubeLinkPage() {
   };
 
   const isSubmitDisabled = () => {
+    return false; // Always enabled now
+  };
+
+  const validateFormSubmission = () => {
     const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
     const youtubeLinkFilled = youtubeLink.trim() !== '';
-    return !mandatoryFieldsFilled || !youtubeLinkFilled;
+
+    // Error 1: mandatory fields not filled up and youtube link not filled up
+    if (!mandatoryFieldsFilled && !youtubeLinkFilled) {
+      setErrorMessage("Fill up all mandatory fields and paste your Youtube Link!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Error 2: mandatory fields filled up but youtube link not filled up
+    if (mandatoryFieldsFilled && !youtubeLinkFilled) {
+      setErrorMessage("Paste your Youtube Link before submitting!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Error 3: mandatory fields not filled up but youtube link is filled up
+    if (!mandatoryFieldsFilled && youtubeLinkFilled) {
+      setErrorMessage("Fill up all mandatory fields!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Success: all validations passed
+    setIsSuccessModalOpen(true);
+    return true;
   };
 
   const handleSubmit = () => {
-    router.back();
+    validateFormSubmission();
+  };
+
+  const handleDismissErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(errorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsErrorModalOpen(false);
+    });
+  };
+
+  const handleDismissSuccessModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+    });
+  };
+
+  const handleSuccessConfirm = () => {
+    // Animate out first, then navigate
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+      // Navigate after animation completes
+      setTimeout(() => {
+        router.back();
+      }, 50);
+    });
   };
 
   const handleDismissHelp = () => {
@@ -517,9 +641,9 @@ export default function YouTubeLinkPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen}
-        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity)}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp)}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen}
+        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : aiHelpOverlayOpacity)))}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : handleDismissAIHelp)))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -550,6 +674,21 @@ export default function YouTubeLinkPage() {
           console.log('Load most recent form');
         }}
         onCancel={handleDismissRecentForm}
+      />
+      <GenericModal
+        visible={isErrorModalOpen}
+        opacity={errorModalOpacity}
+        text={errorMessage}
+        buttons="none"
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isSuccessModalOpen}
+        opacity={successModalOpacity}
+        text="Great! 😊 Do you want to go ahead and submit?"
+        buttons="double"
+        onCancel={handleDismissSuccessModal}
+        onConfirm={handleSuccessConfirm}
       />
     </View>
   );

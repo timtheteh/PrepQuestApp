@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { StyleSheet, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -11,21 +11,25 @@ interface GreyOverlayBackgroundProps {
 
 export function GreyOverlayBackground({ 
   visible,
-  opacity = new Animated.Value(0),
+  opacity,
   onPress
 }: GreyOverlayBackgroundProps) {
-  if (!visible) return null;
+  if (!visible) {
+    return null;
+  }
+
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress();
+    }
+  }, [onPress]);
+
+  const baseStyle = styles.overlay;
+  const animatedStyle = opacity ? { opacity } : { opacity: 0 };
 
   return (
-    <TouchableWithoutFeedback onPress={onPress}>
-      <Animated.View 
-        style={[
-          styles.overlay,
-          {
-            opacity: opacity
-          }
-        ]}
-      />
+    <TouchableWithoutFeedback onPress={handlePress}>
+      <Animated.View style={[baseStyle, animatedStyle]} />
     </TouchableWithoutFeedback>
   );
 }

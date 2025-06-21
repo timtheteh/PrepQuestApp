@@ -1,11 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Text } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+
+// Global variable to store the typed text
+let lastTypedText = '';
 
 export default function TextInputModal() {
     const router = useRouter();
+    const { existingText } = useLocalSearchParams();
+    const [typedText, setTypedText] = useState(
+        typeof existingText === 'string' ? existingText : ''
+    );
 
     const handleDone = () => {
+        // Check if the text is empty or only contains spaces
+        const trimmedText = typedText.trim();
+        if (trimmedText === '') {
+            // If empty, store a special indicator to clear content
+            lastTypedText = '__CLEAR_CONTENT__';
+        } else {
+            // Store the typed text globally
+            lastTypedText = typedText;
+        }
         router.back();
     };
 
@@ -26,11 +42,20 @@ export default function TextInputModal() {
                     placeholderTextColor="#999"
                     autoFocus={true}
                     multiline
+                    value={typedText}
+                    onChangeText={setTypedText}
                 />
             </View>
         </KeyboardAvoidingView>
     );
 }
+
+// Export function to get the last typed text
+export const getLastTypedText = () => {
+    const text = lastTypedText;
+    lastTypedText = ''; // Clear after reading
+    return text;
+};
 
 const styles = StyleSheet.create({
     container: {

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleSVGIconButton } from './CircleSVGIconButton';
-import ImageIconFilled from '@/assets/icons/imageIconFilled.svg';
-import ImageIconFilledWhite from '@/assets/icons/imageIconFilledWhite.svg';
 import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
 import CameraIconFilledWhite from '@/assets/icons/cameraIconFilledWhite.svg';
 import MarkerIcon from '@/assets/icons/markerIcon.svg';
@@ -12,10 +10,9 @@ import MicIconWhite from '@/assets/icons/micIconWhite.svg';
 import TextIcon from '@/assets/icons/textIcon.svg';
 import TextIconWhite from '@/assets/icons/textIconWhite.svg';
 
-type ButtonType = 'image' | 'camera' | 'marker' | 'mic' | 'text';
+type ButtonType = 'camera' | 'marker' | 'mic' | 'text' | 'none';
 
 interface TopBarManualHeaderProps {
-  onImagePress?: () => void;
   onCameraPress?: () => void;
   onMarkerPress?: () => void;
   onMicPress?: () => void;
@@ -25,7 +22,6 @@ interface TopBarManualHeaderProps {
 }
 
 export function TopBarManualHeader({
-  onImagePress,
   onCameraPress,
   onMarkerPress,
   onMicPress,
@@ -33,7 +29,7 @@ export function TopBarManualHeader({
   selectedButton: externalSelectedButton,
   onButtonChange
 }: TopBarManualHeaderProps) {
-  const [internalSelectedButton, setInternalSelectedButton] = useState<ButtonType>('text');
+  const [internalSelectedButton, setInternalSelectedButton] = useState<ButtonType>('none');
   
   // Use external state if provided, otherwise use internal state
   const selectedButton = externalSelectedButton !== undefined ? externalSelectedButton : internalSelectedButton;
@@ -64,12 +60,6 @@ export function TopBarManualHeader({
 
   return (
     <View style={styles.container}>
-      <CircleSVGIconButton
-        Icon={renderIcon(ImageIconFilled, ImageIconFilledWhite, 'image')}
-        size={20}
-        onPress={() => handlePress('image', onImagePress)}
-        style={selectedButton === 'image' ? styles.selectedButton : undefined}
-      />
       <CircleSVGIconButton
         Icon={renderIcon(CameraIconFilled, CameraIconFilledWhite, 'camera')}
         size={30}

@@ -1,5 +1,5 @@
 import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, TextInput } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
 import { RoundedContainer } from '@/components/RoundedContainer';
@@ -25,6 +25,7 @@ import { CircleIconButton } from '@/components/CircleIconButton';
 import EyeIcon from '@/assets/icons/eyeIcon.svg';
 import { CircleSelectButtonGreen } from '../components/CircleSelectButtonGreen';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import LottieView from 'lottie-react-native';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -106,7 +107,6 @@ export default function ManualAddDeckPage() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [isAIGenerate, setIsAIGenerate] = useState(false);
   const [isAIHelpModalOpen, setIsAIHelpModalOpen] = useState(false);
-  const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
   const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
   const [addViewState, setAddViewState] = useState<'add' | 'view'>('add');
   const [selectExpanded, setSelectExpanded] = useState(false);
@@ -119,7 +119,32 @@ export default function ManualAddDeckPage() {
   const [currentQuestionNumber, setCurrentQuestionNumber] = useState(1);
   const cardFadeAnim = useRef(new Animated.Value(1)).current;
   const flippableCardRef = useRef<FlippableCardRef>(null);
-  const [selectedButtonType, setSelectedButtonType] = useState<'image' | 'camera' | 'marker' | 'mic' | 'text'>('text');
+  const [selectedButtonType, setSelectedButtonType] = useState<'camera' | 'marker' | 'mic' | 'text' | 'none'>('none');
+  const [hasCardContent, setHasCardContent] = useState(false);
+  const [isContentTypeChangeModalOpen, setIsContentTypeChangeModalOpen] = useState(false);
+  const contentTypeChangeModalOpacity = useRef(new Animated.Value(0)).current;
+  const [pendingButtonType, setPendingButtonType] = useState<'camera' | 'marker' | 'mic' | 'text' | 'none' | null>(null);
+  const [isBackConfirmationModalOpen, setIsBackConfirmationModalOpen] = useState(false);
+  const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isNoSelectionModalOpen, setIsNoSelectionModalOpen] = useState(false);
+  const noSelectionModalOpacity = useRef(new Animated.Value(0)).current;
+
+  // Cache for storing all created cards
+  interface CachedCard {
+    cardNumber: number;
+    frontContent: {
+      content: React.ReactNode;
+      type: 'camera' | 'marker' | 'mic' | 'text' | 'none';
+    } | null;
+    backContent: {
+      content: React.ReactNode;
+      type: 'camera' | 'marker' | 'mic' | 'text' | 'none';
+    } | null;
+    submitted: boolean; // Track if card was submitted via "Fill up next flashcard"
+  }
+  
+  const [cardCache, setCardCache] = useState<CachedCard[]>([]);
+  const [lastEditedCardNumber, setLastEditedCardNumber] = useState<number>(1);
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -168,7 +193,7 @@ export default function ManualAddDeckPage() {
   useEffect(() => {
     if (isAIHelpModalOpen) {
       Animated.parallel([
-        Animated.timing(aiHelpOverlayOpacity, {
+        Animated.timing(overlayOpacity, {
           toValue: 0.5,
           duration: 200,
           useNativeDriver: true,
@@ -183,6 +208,57 @@ export default function ManualAddDeckPage() {
   }, [isAIHelpModalOpen]);
 
   useEffect(() => {
+    if (isContentTypeChangeModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentTypeChangeModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isContentTypeChangeModalOpen]);
+
+  useEffect(() => {
+    if (isBackConfirmationModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backConfirmationModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isBackConfirmationModalOpen]);
+
+  useEffect(() => {
+    if (isNoSelectionModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(noSelectionModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isNoSelectionModalOpen]);
+
+  useEffect(() => {
     // Set initial mode animation when component mounts
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
@@ -195,8 +271,95 @@ export default function ManualAddDeckPage() {
     }).start();
   }, [selectExpanded]);
 
+  // Check card content when button type changes (indicates content might have been added)
+  useEffect(() => {
+    setTimeout(checkCardContent, 100);
+  }, [selectedButtonType]);
+
+  // Check card content when component regains focus (e.g., after modal closes)
+  useFocusEffect(
+    React.useCallback(() => {
+      setTimeout(checkCardContent, 100);
+    }, [])
+  );
+
+  // Load current card from cache when switching to add state
+  useEffect(() => {
+    if (!isMandatory && addViewState === 'add') {
+      // Check if the current question number exists in cache
+      const cachedCard = cardCache.find(card => card.cardNumber === currentQuestionNumber);
+      if (cachedCard) {
+        // Load the existing card
+        loadCurrentCardFromCache();
+      } else {
+        // If no card exists for current number, it means we need to set the next available card number
+        const nextCardNumber = getNextCardNumber();
+        setCurrentQuestionNumber(nextCardNumber);
+        
+        // Reset card to empty state
+        if (flippableCardRef.current) {
+          flippableCardRef.current.resetToFront();
+          flippableCardRef.current.resetContent();
+        }
+        
+        // Reset to none state
+        setSelectedButtonType('none');
+        
+        // Update content state
+        setHasCardContent(false);
+      }
+    }
+  }, [isMandatory, addViewState, currentQuestionNumber]);
+
+  // Save card to cache when content changes
+  useEffect(() => {
+    if (!isMandatory && addViewState === 'add' && hasCardContent) {
+      // Debounce the save to avoid too frequent updates
+      const timeoutId = setTimeout(() => {
+        saveCurrentCardToCache();
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [hasCardContent, currentQuestionNumber]);
+
+  const handleContentChange = (hasContent: boolean) => {
+    setHasCardContent(hasContent);
+  };
+
+  const handleButtonChange = (buttonType: 'camera' | 'marker' | 'mic' | 'text' | 'none' | null) => {
+    if (!buttonType || buttonType === 'none') {
+      setSelectedButtonType(buttonType || 'none');
+      return;
+    }
+
+    // Check if there's content on the current side with a different type
+    const currentContent = flippableCardRef.current?.getCurrentContent();
+    if (currentContent && currentContent.type !== buttonType) {
+      // Show modal to warn about content type change
+      setIsContentTypeChangeModalOpen(true);
+      setPendingButtonType(buttonType);
+      return;
+    }
+
+    // If no conflict, proceed with the change
+    setSelectedButtonType(buttonType);
+  };
+
   const handleBackPress = () => {
-    router.back();
+    setIsBackConfirmationModalOpen(true);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backConfirmationModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   const handleClearAllPress = () => {
@@ -210,6 +373,11 @@ export default function ManualAddDeckPage() {
   };
 
   const handleToggle = (isRightSide: boolean) => {
+    // Save current card to cache before toggling
+    if (!isMandatory && addViewState === 'add') {
+      saveCurrentCardToCache();
+    }
+    
     setIsMandatory(!isRightSide);
     if (isRightSide) setAddViewState('add');
     Animated.timing(fadeAnim, {
@@ -232,8 +400,9 @@ export default function ManualAddDeckPage() {
   };
 
   const isSubmitDisabled = () => {
-    if (!isMandatory) return false;
-    return mode === 'study' ? !isStudyMandatoryFieldsFilled() : !isInterviewMandatoryFieldsFilled();
+    const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
+    const currentQuestionNumberIsMoreThanOne = currentQuestionNumber > 1 ? true : false;
+    return !mandatoryFieldsFilled || !currentQuestionNumberIsMoreThanOne;
   };
 
   const handleSubmit = () => {
@@ -259,7 +428,7 @@ export default function ManualAddDeckPage() {
 
   const handleDismissAIHelp = () => {
     Animated.parallel([
-      Animated.timing(aiHelpOverlayOpacity, {
+      Animated.timing(overlayOpacity, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
@@ -292,19 +461,37 @@ export default function ManualAddDeckPage() {
   };
 
   const handleDeletePress = () => {
-    setIsDeleteModalOpen(true);
-    Animated.parallel([
-      Animated.timing(overlayOpacity, {
-        toValue: 0.5,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(deleteModalOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start();
+    if (selectedFlashcards.length === 0) {
+      // Show "No selection made" modal if no flashcards are selected
+      setIsNoSelectionModalOpen(true);
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(noSelectionModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    } else {
+      // Show delete confirmation modal if flashcards are selected
+      setIsDeleteModalOpen(true);
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(deleteModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
   };
 
   const handleDismissRecentForm = () => {
@@ -324,7 +511,76 @@ export default function ManualAddDeckPage() {
     });
   };
 
+  const handleDismissContentTypeChange = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentTypeChangeModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsContentTypeChangeModalOpen(false);
+      setPendingButtonType(null);
+    });
+  };
+
+  const handleDismissBackConfirmation = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backConfirmationModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackConfirmationModalOpen(false);
+    });
+  };
+
+  const handleDismissNoSelection = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(noSelectionModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNoSelectionModalOpen(false);
+    });
+  };
+
   const handleNextFlashcard = () => {
+    // Save current card to cache before creating next card
+    saveCurrentCardToCache();
+    
+    // Mark the current card as submitted
+    setCardCache(prev => {
+      const existingIndex = prev.findIndex(card => card.cardNumber === currentQuestionNumber);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          submitted: true
+        };
+        return updated;
+      }
+      return prev;
+    });
+    
     // Fade out animation
     Animated.timing(cardFadeAnim, {
       toValue: 0,
@@ -337,8 +593,11 @@ export default function ManualAddDeckPage() {
       // Reset card to front view
       flippableCardRef.current?.resetToFront();
       
-      // Reset to text state (default)
-      setSelectedButtonType('text');
+      // Reset content to null
+      flippableCardRef.current?.resetContent();
+      
+      // Reset to none state (default)
+      setSelectedButtonType('none');
       
       // Fade in animation
       Animated.timing(cardFadeAnim, {
@@ -347,6 +606,16 @@ export default function ManualAddDeckPage() {
         useNativeDriver: true,
       }).start();
     });
+  };
+
+  const handleCardFlip = () => {
+    // Reset to none state when card is flipped
+    setSelectedButtonType('none');
+  };
+
+  const checkCardContent = () => {
+    const hasContent = flippableCardRef.current?.hasContent() || false;
+    handleContentChange(hasContent);
   };
 
   const handleUseMostRecentFormPress = () => {
@@ -390,6 +659,135 @@ export default function ManualAddDeckPage() {
     }
   };
 
+  // Cache management functions
+  const saveCurrentCardToCache = () => {
+    if (!flippableCardRef.current) return;
+    
+    const frontContent = flippableCardRef.current.getFrontContent();
+    const backContent = flippableCardRef.current.getBackContent();
+    
+    setCardCache(prev => {
+      const existingIndex = prev.findIndex(card => card.cardNumber === currentQuestionNumber);
+      if (existingIndex >= 0) {
+        // Update existing card, preserve submitted status
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          frontContent: frontContent,
+          backContent: backContent
+        };
+        return updated;
+      } else {
+        // Add new card with submitted: false
+        const cachedCard: CachedCard = {
+          cardNumber: currentQuestionNumber,
+          frontContent: frontContent,
+          backContent: backContent,
+          submitted: false
+        };
+        return [...prev, cachedCard];
+      }
+    });
+  };
+
+  const loadCardFromCache = (cardNumber: number) => {
+    const cachedCard = cardCache.find(card => card.cardNumber === cardNumber);
+    if (cachedCard && flippableCardRef.current) {
+      // Reset card to front view
+      flippableCardRef.current.resetToFront();
+      
+      // Load the cached content
+      flippableCardRef.current.loadCachedContent(cachedCard.frontContent, cachedCard.backContent);
+      
+      // Set the current question number
+      setCurrentQuestionNumber(cardNumber);
+      
+      // Update content state
+      const hasContent = !!(cachedCard.frontContent && cachedCard.backContent);
+      setHasCardContent(hasContent);
+      
+      // Set the last edited card number
+      setLastEditedCardNumber(cardNumber);
+    }
+  };
+
+  const loadCurrentCardFromCache = () => {
+    const cachedCard = cardCache.find(card => card.cardNumber === currentQuestionNumber);
+    if (cachedCard && flippableCardRef.current) {
+      // Load the cached content
+      flippableCardRef.current.loadCachedContent(cachedCard.frontContent, cachedCard.backContent);
+      
+      // Update the content state
+      const hasContent = !!(cachedCard.frontContent && cachedCard.backContent);
+      setHasCardContent(hasContent);
+    } else {
+      // If no cached card found, reset to empty state
+      if (flippableCardRef.current) {
+        flippableCardRef.current.resetContent();
+      }
+      setHasCardContent(false);
+    }
+  };
+
+  const getSubmittedCards = () => {
+    return cardCache.filter(card => card.submitted === true);
+  };
+
+  const handleViewCard = (cardNumber: number) => {
+    // Switch to add state and load the specific card
+    setAddViewState('add');
+    setCurrentQuestionNumber(cardNumber);
+    loadCardFromCache(cardNumber);
+  };
+
+  const handleAddViewToggle = (newState: 'add' | 'view') => {
+    // Save current card to cache when switching from add to view
+    if (addViewState === 'add' && newState === 'view') {
+      saveCurrentCardToCache();
+    }
+    
+    setAddViewState(newState);
+    
+    // Load the current card when switching back to add state
+    if (newState === 'add') {
+      // Check if current card exists in cache
+      const cachedCard = cardCache.find(card => card.cardNumber === currentQuestionNumber);
+      if (cachedCard) {
+        // Load the existing card content
+        if (flippableCardRef.current) {
+          flippableCardRef.current.loadCachedContent(cachedCard.frontContent, cachedCard.backContent);
+        }
+        // Update content state
+        const hasContent = !!(cachedCard.frontContent && cachedCard.backContent);
+        setHasCardContent(hasContent);
+      } else {
+        // If no card exists for current number, it means we need to set the next available card number
+        const nextCardNumber = getNextCardNumber();
+        setCurrentQuestionNumber(nextCardNumber);
+        
+        // Reset card to empty state
+        if (flippableCardRef.current) {
+          flippableCardRef.current.resetToFront();
+          flippableCardRef.current.resetContent();
+        }
+        
+        // Reset to none state
+        setSelectedButtonType('none');
+        
+        // Update content state
+        setHasCardContent(false);
+      }
+    }
+  };
+
+  const getNextCardNumber = () => {
+    const submittedCards = getSubmittedCards();
+    if (submittedCards.length === 0) {
+      return 1;
+    }
+    return Math.max(...submittedCards.map(card => card.cardNumber)) + 1;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
@@ -425,7 +823,7 @@ export default function ManualAddDeckPage() {
       >
         <TopBarManualHeader 
           selectedButton={selectedButtonType}
-          onButtonChange={(buttonType) => setSelectedButtonType(buttonType || 'text')}
+          onButtonChange={handleButtonChange}
         />
       </Animated.View>
 
@@ -451,8 +849,9 @@ export default function ManualAddDeckPage() {
           >
             <AddViewToggle
               key={isMandatory ? 'mandatory' : 'manual'}
-              onToggle={setAddViewState}
+              onToggle={handleAddViewToggle}
               initialState="add"
+              selected={addViewState}
             />
           </Animated.View>
         </View>
@@ -541,6 +940,8 @@ export default function ManualAddDeckPage() {
               backContentTitle={`Ans ${currentQuestionNumber}`}
               fadeOpacity={cardFadeAnim}
               cardType={selectedButtonType}
+              onCardFlip={handleCardFlip}
+              onContentChange={handleContentChange}
             />
           </View>
         )}
@@ -549,7 +950,8 @@ export default function ManualAddDeckPage() {
           selectExpanded ? (
             <Animated.View style={[styles.selectRow, { opacity: selectFadeAnim }]}> 
               <TouchableOpacity onPress={() => {
-                setSelectedFlashcards([...Array(10)].map((_, i) => i));
+                const submittedCards = getSubmittedCards();
+                setSelectedFlashcards(submittedCards.map(card => card.cardNumber));
               }}>
                 <Text style={styles.selectAllText}>Select All</Text>
               </TouchableOpacity>
@@ -567,32 +969,53 @@ export default function ManualAddDeckPage() {
             </Animated.View>
           ) : (
             <Animated.View style={{ opacity: selectFadeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
-              <TouchableOpacity style={styles.selectTextButton} onPress={() => setSelectExpanded(true)}>
-                <Text style={styles.selectText}>Select</Text>
+              <TouchableOpacity 
+                style={styles.selectTextButton} 
+                onPress={() => setSelectExpanded(true)}
+                disabled={getSubmittedCards().length === 0}
+              >
+                <Text style={[
+                  styles.selectText,
+                  getSubmittedCards().length === 0 && styles.selectTextDisabled
+                ]}>Select</Text>
               </TouchableOpacity>
             </Animated.View>
           )
         )}
 
         {!isMandatory && addViewState === 'view' && !selectExpanded && (
-          <ScrollView 
-            style={[styles.flashcardList, {marginBottom: Dimensions.get('window').height < 670 ? bottomOffset * 2 + 70 : bottomOffset * 2 + 48}]} 
-            contentContainerStyle={{ flexGrow: 1}}
-            showsVerticalScrollIndicator={false}
-            bounces={true}
-            overScrollMode="always"
-          >
-            {[...Array(10)].map((_, i) => (
-              <View key={i} style={[
-                styles.flashcardRow,
-                i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
-              ]}>
-                <Text style={styles.flashcardNumber}>{i + 1}.</Text>
-                <Text style={styles.flashcardTitle}>Flashcard Title {i + 1}</Text>
-                <EyeIcon width={24} height={24} style={styles.flashcardEyeIcon} />
-              </View>
-            ))}
-          </ScrollView>
+          getSubmittedCards().length === 0 ? (
+            <View style={styles.emptyStateContainer}>
+              <LottieView
+                source={require('../assets/animations/EmptyState1.json')}
+                autoPlay
+                loop
+                style={styles.emptyStateAnimation}
+              />
+              <Text style={styles.emptyStateText}>No flashcards added{'\n'}at the moment!</Text>
+            </View>
+          ) : (
+            <ScrollView 
+              style={[styles.flashcardList, {marginBottom: Dimensions.get('window').height < 670 ? bottomOffset * 2 + 70 : bottomOffset * 2 + 48}]} 
+              contentContainerStyle={{ flexGrow: 1}}
+              showsVerticalScrollIndicator={false}
+              bounces={true}
+              overScrollMode="always"
+            >
+              {getSubmittedCards().map((card, i) => (
+                <View key={card.cardNumber} style={[
+                  styles.flashcardRow,
+                  i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
+                ]}>
+                  <Text style={styles.flashcardNumber}>{card.cardNumber}.</Text>
+                  <Text style={styles.flashcardTitle}>Card {card.cardNumber}</Text>
+                  <TouchableOpacity onPress={() => handleViewCard(card.cardNumber)}>
+                    <EyeIcon width={24} height={24} style={styles.flashcardEyeIcon} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )
         )}
 
         {!isMandatory && addViewState === 'view' && selectExpanded && (
@@ -603,20 +1026,20 @@ export default function ManualAddDeckPage() {
             bounces={true}
             overScrollMode="always"
           >
-            {[...Array(10)].map((_, i) => (
-              <View key={i} style={[
+            {getSubmittedCards().map((card, i) => (
+              <View key={card.cardNumber} style={[
                 styles.flashcardRow,
                 i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
               ]}>
-                <Text style={styles.flashcardNumber}>{i + 1}.</Text>
-                <Text style={styles.flashcardTitle}>Flashcard Title {i + 1}</Text>
+                <Text style={styles.flashcardNumber}>{card.cardNumber}.</Text>
+                <Text style={styles.flashcardTitle}>Card {card.cardNumber}</Text>
                 <CircleSelectButtonGreen 
-                  selected={selectedFlashcards.includes(i)}
+                  selected={selectedFlashcards.includes(card.cardNumber)}
                   onPress={() => {
                     setSelectedFlashcards(prev =>
-                      prev.includes(i)
-                        ? prev.filter(idx => idx !== i)
-                        : [...prev, i]
+                      prev.includes(card.cardNumber)
+                        ? prev.filter(idx => idx !== card.cardNumber)
+                        : [...prev, card.cardNumber]
                     );
                   }}
                 />
@@ -631,7 +1054,7 @@ export default function ManualAddDeckPage() {
         ]}>
           {isMandatory ? (
             <ActionButton
-              text="Submit"
+              text="Submit Form With Cards?"
               backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
@@ -640,17 +1063,20 @@ export default function ManualAddDeckPage() {
           ) : (
             <View style={{ flexDirection: 'row', gap: 8, width: '100%', paddingHorizontal: 16}}>
               <ActionButton
-                text="Submit"
+                text="Submit Form 
+With Cards?"
                 backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled()}
                 style={{ flex: 1 }}
               />
               <ActionButton
-                text="Next Flashcard"
-                backgroundColor="#44B88A"
+                text="Fill Up
+Next Card?"
+                backgroundColor={hasCardContent ? "#44B88A" : "#D5D4DD"}
                 style={{ flex: 1 }}
                 onPress={handleNextFlashcard}
+                disabled={!hasCardContent}
               />
             </View>
           )}
@@ -658,9 +1084,9 @@ export default function ManualAddDeckPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isDeleteModalOpen || isRecentFormModalOpen}
-        opacity={isDeleteModalOpen ? overlayOpacity : (isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity))}
-        onPress={isDeleteModalOpen ? handleDismissDeleteModal : (isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp))}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isDeleteModalOpen || isRecentFormModalOpen || isContentTypeChangeModalOpen || isBackConfirmationModalOpen || isNoSelectionModalOpen}
+        opacity={overlayOpacity}
+        onPress={isDeleteModalOpen ? handleDismissDeleteModal : (isRecentFormModalOpen ? handleDismissRecentForm : (isContentTypeChangeModalOpen ? handleDismissContentTypeChange : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isNoSelectionModalOpen ? handleDismissNoSelection : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp)))))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -692,6 +1118,16 @@ export default function ManualAddDeckPage() {
         buttons="double"
         onCancel={handleDismissDeleteModal}
         onConfirm={() => {
+          // Remove selected cards from cache and reorder immediately
+          setCardCache(prev => {
+            const filtered = prev.filter(card => !selectedFlashcards.includes(card.cardNumber));
+            const sortedCards = filtered.sort((a, b) => a.cardNumber - b.cardNumber);
+            return sortedCards.map((card, index) => ({
+              ...card,
+              cardNumber: index + 1
+            }));
+          });
+          
           setSelectedFlashcards([]);
           setSelectExpanded(false);
           handleDismissDeleteModal();
@@ -708,6 +1144,73 @@ export default function ManualAddDeckPage() {
           console.log('Load most recent form');
         }}
         onCancel={handleDismissRecentForm}
+      />
+      <GenericModal
+        visible={isContentTypeChangeModalOpen}
+        opacity={contentTypeChangeModalOpacity}
+        text="Changing the content type will clear the current content on this side. Are you sure you want to continue?"
+        buttons="double"
+        onCancel={handleDismissContentTypeChange}
+        onConfirm={() => {
+          // Clear the current side content and proceed with the change
+          if (flippableCardRef.current) {
+            const currentContent = flippableCardRef.current.getCurrentContent();
+            const frontContent = flippableCardRef.current.getFrontContent();
+            
+            // Check if we're on the front side by comparing content
+            if (currentContent === frontContent) {
+              flippableCardRef.current.clearFrontContent();
+            } else {
+              flippableCardRef.current.clearBackContent();
+            }
+          }
+          
+          // Set the selected button type to the pending type
+          if (pendingButtonType) {
+            setSelectedButtonType(pendingButtonType);
+          }
+          
+          handleDismissContentTypeChange();
+          setPendingButtonType(null);
+        }}
+      />
+      <GenericModal
+        visible={isBackConfirmationModalOpen}
+        opacity={backConfirmationModalOpacity}
+        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        buttons="double"
+        onCancel={handleDismissBackConfirmation}
+        onConfirm={() => {
+          // Animate out first, then navigate
+          Animated.parallel([
+            Animated.timing(overlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(backConfirmationModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start(() => {
+            setIsBackConfirmationModalOpen(false);
+            // Navigate after animation completes
+            setTimeout(() => {
+              router.back();
+            }, 50);
+          });
+        }}
+        textMarginBottom={40}
+        contentMarginTop={-10}
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isNoSelectionModalOpen}
+        opacity={noSelectionModalOpacity}
+        subtitle="Select at least one flashcard to delete."
+        text="No selection made!"
+        onConfirm={handleDismissNoSelection}
       />
     </View>
   );
@@ -892,5 +1395,25 @@ const styles = StyleSheet.create({
   },
   flashcardEyeIcon: {
     marginLeft: 8,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: '50%'
+  },
+  emptyStateAnimation: {
+    width: 200,
+    height: 200,
+  },
+  emptyStateText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    color: '#000',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  selectTextDisabled: {
+    color: '#D5D4DD',
   },
 }); 

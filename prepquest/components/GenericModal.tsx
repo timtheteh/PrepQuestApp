@@ -22,11 +22,12 @@ interface GenericModalProps {
   animationLoop?: boolean;
   contentMarginTop?: number; // marginTop for content section
   lottieMarginTop?: number; // marginTop for lottieContainer
+  textMarginBottom?: number; // marginBottom for text
 }
 
 export function GenericModal({ 
   visible,
-  opacity = new Animated.Value(0),
+  opacity,
   Icon,
   text,
   subtitle,
@@ -39,6 +40,7 @@ export function GenericModal({
   animationLoop = false,
   contentMarginTop = 0,
   lottieMarginTop = 0,
+  textMarginBottom = 0,
 }: GenericModalProps) {
   if (!visible) return null;
 
@@ -100,15 +102,12 @@ export function GenericModal({
     return null;
   };
 
+  const modalStyle = opacity 
+    ? [styles.container, { opacity }]
+    : [styles.container, { opacity: 0 }];
+
   return (
-    <Animated.View 
-      style={[
-        styles.container,
-        {
-          opacity: opacity
-        }
-      ]}
-    >
+    <Animated.View style={modalStyle}>
       {Icon && (
         <View style={styles.iconContainer}>
           <Icon width={24} height={24} />
@@ -120,7 +119,8 @@ export function GenericModal({
       ]}>
         <View style={[
           styles.textRow,
-          (!buttons || buttons === 'none') && !hasAnimation && styles.textRowOnly
+          (!buttons || buttons === 'none') && !hasAnimation && styles.textRowOnly, 
+          {marginBottom: textMarginBottom}
         ]}>
           {renderText()}
         </View>

@@ -18,6 +18,9 @@ export function ActionButton({
   disabled = false,
   fullWidth = false
 }: ActionButtonProps) {
+  // Split text by newlines to handle line breaks
+  const textLines = text.split('\n');
+
   return (
     <TouchableOpacity 
       style={[
@@ -30,7 +33,11 @@ export function ActionButton({
       activeOpacity={disabled ? 1 : 0.8}
       disabled={disabled}
     >
-      <Text style={styles.text}>{text}</Text>
+      {textLines.map((line, index) => (
+        <Text key={index} style={[styles.text, index > 0 && styles.textLine]}>
+          {line}
+        </Text>
+      ))}
     </TouchableOpacity>
   );
 }
@@ -51,5 +58,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Satoshi-Bold',
     color: '#FFFFFF',
+  },
+  textLine: {
+    marginTop: 0,
   },
 }); 

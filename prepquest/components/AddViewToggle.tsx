@@ -4,17 +4,22 @@ import { StyleSheet, View, Text, TouchableOpacity, Animated, Dimensions, ViewSty
 interface AddViewToggleProps {
   onToggle?: (option: 'add' | 'view') => void;
   initialState?: 'add' | 'view';
+  selected?: 'add' | 'view';
   style?: ViewStyle;
 }
 
 export function AddViewToggle({
   onToggle,
   initialState = 'add',
+  selected: externalSelected,
   style
 }: AddViewToggleProps) {
-  const [selected, setSelected] = useState<'add' | 'view'>(initialState);
+  const [internalSelected, setInternalSelected] = useState<'add' | 'view'>(initialState);
   const translateX = useState(new Animated.Value(initialState === 'add' ? 0 : 1))[0];
   const screenWidth = Dimensions.get('window').width;
+  
+  // Use external selected state if provided, otherwise use internal state
+  const selected = externalSelected !== undefined ? externalSelected : internalSelected;
   
   // Calculate the distance to move
   // Each half is 50% of screen width, so we move from 14% to (50% + 14%) of screen width
@@ -22,18 +27,27 @@ export function AddViewToggle({
   const endPosition = (screenWidth * 0.5) - 45; // Move to center of right half
 
   useEffect(() => {
-    setSelected(initialState);
+    const newSelected = externalSelected !== undefined ? externalSelected : initialState;
+    setInternalSelected(newSelected);
     Animated.timing(translateX, {
-      toValue: initialState === 'add' ? 0 : 1,
+      toValue: newSelected === 'add' ? 0 : 1,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [initialState]);
+  }, [externalSelected, initialState, translateX]);
 
   const handleToggle = (option: 'add' | 'view') => {
-    setSelected(option);
-    if (onToggle) {
-      onToggle(option);
+    if (externalSelected !== undefined) {
+      // If external state is provided, only call the callback
+      if (onToggle) {
+        onToggle(option);
+      }
+    } else {
+      // Otherwise use internal state
+      setInternalSelected(option);
+      if (onToggle) {
+        onToggle(option);
+      }
     }
 
     Animated.timing(translateX, {

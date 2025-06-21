@@ -118,6 +118,7 @@ export default function ManualAddDeckPage() {
   const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
   const [currentQuestionNumber, setCurrentQuestionNumber] = useState(1);
   const cardFadeAnim = useRef(new Animated.Value(1)).current;
+  const cardSlideAnim = useRef(new Animated.Value(0)).current;
   const flippableCardRef = useRef<FlippableCardRef>(null);
   const [selectedButtonType, setSelectedButtonType] = useState<'camera' | 'marker' | 'mic' | 'text' | 'none'>('none');
   const [hasCardContent, setHasCardContent] = useState(false);
@@ -422,7 +423,7 @@ export default function ManualAddDeckPage() {
     if (isRightSide) setAddViewState('add');
     Animated.timing(fadeAnim, {
       toValue: isRightSide ? 1 : 0,
-      duration: 300,
+      duration: 200,
       useNativeDriver: true,
     }).start();
   };
@@ -798,6 +799,9 @@ export default function ManualAddDeckPage() {
       
       // Set the last edited card number
       setLastEditedCardNumber(cardNumber);
+      
+      // Reset to none state when loading existing content
+      setSelectedButtonType('none');
     }
   };
 
@@ -810,12 +814,16 @@ export default function ManualAddDeckPage() {
       // Update the content state
       const hasContent = !!(cachedCard.frontContent && cachedCard.backContent);
       setHasCardContent(hasContent);
+      
+      // Reset to none state when loading existing content
+      setSelectedButtonType('none');
     } else {
       // If no cached card found, reset to empty state
       if (flippableCardRef.current) {
         flippableCardRef.current.resetContent();
       }
       setHasCardContent(false);
+      setSelectedButtonType('none');
     }
   };
 
@@ -883,12 +891,27 @@ export default function ManualAddDeckPage() {
       // Save current card to cache before navigating
       saveCurrentCardToCache();
       
-      // Navigate to previous card
-      const previousCardNumber = currentQuestionNumber - 1;
-      setCurrentQuestionNumber(previousCardNumber);
-      
-      // Load the previous card from cache
-      loadCardFromCache(previousCardNumber);
+      // Push-out animation (slide to right)
+      Animated.timing(cardSlideAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        // Navigate to previous card
+        const previousCardNumber = currentQuestionNumber - 1;
+        setCurrentQuestionNumber(previousCardNumber);
+        
+        // Load the previous card from cache
+        loadCardFromCache(previousCardNumber);
+        
+        // Reset slide position and push-in animation (slide from left)
+        cardSlideAnim.setValue(-1);
+        Animated.timing(cardSlideAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -898,23 +921,38 @@ export default function ManualAddDeckPage() {
       // Save current card to cache before navigating
       saveCurrentCardToCache();
       
-      // Navigate to next card
-      const newCardNumber = currentQuestionNumber + 1;
-      setCurrentQuestionNumber(newCardNumber);
-      
-      // Load the next card from cache if it exists, otherwise create new
-      const cachedCard = cardCache.find(card => card.cardNumber === newCardNumber);
-      if (cachedCard) {
-        loadCardFromCache(newCardNumber);
-      } else {
-        // Create new empty card
-        if (flippableCardRef.current) {
-          flippableCardRef.current.resetToFront();
-          flippableCardRef.current.resetContent();
+      // Push-out animation (slide to left)
+      Animated.timing(cardSlideAnim, {
+        toValue: -1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        // Navigate to next card
+        const newCardNumber = currentQuestionNumber + 1;
+        setCurrentQuestionNumber(newCardNumber);
+        
+        // Load the next card from cache if it exists, otherwise create new
+        const cachedCard = cardCache.find(card => card.cardNumber === newCardNumber);
+        if (cachedCard) {
+          loadCardFromCache(newCardNumber);
+        } else {
+          // Create new empty card
+          if (flippableCardRef.current) {
+            flippableCardRef.current.resetToFront();
+            flippableCardRef.current.resetContent();
+          }
+          setSelectedButtonType('none');
+          setHasCardContent(false);
         }
-        setSelectedButtonType('none');
-        setHasCardContent(false);
-      }
+        
+        // Reset slide position and push-in animation (slide from right)
+        cardSlideAnim.setValue(1);
+        Animated.timing(cardSlideAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -1217,6 +1255,7 @@ export default function ManualAddDeckPage() {
               frontContentTitle={`Qn ${currentQuestionNumber}`} 
               backContentTitle={`Ans ${currentQuestionNumber}`}
               fadeOpacity={cardFadeAnim}
+              slideOpacity={cardSlideAnim}
               cardType={selectedButtonType}
               onCardFlip={handleCardFlip}
               onContentChange={handleContentChange}

@@ -23,6 +23,7 @@ interface FlippableCardProps {
   frontContentTitle?: string;
   backContentTitle?: string;
   fadeOpacity?: Animated.Value;
+  slideOpacity?: Animated.Value;
   cardType?: 'camera' | 'marker' | 'mic' | 'text' | 'none';
   onCardFlip?: () => void;
   onContentChange?: (hasContent: boolean) => void;
@@ -48,6 +49,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   frontContentTitle,
   backContentTitle,
   fadeOpacity,
+  slideOpacity,
   cardType = 'text',
   onCardFlip,
   onContentChange,
@@ -362,7 +364,21 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   }, [frontContent, backContent, onContentChange]);
 
   return (
-    <Animated.View style={[styles.container, style, { opacity: fadeOpacity }]}>
+    <Animated.View style={[
+      styles.container, 
+      style, 
+      { 
+        opacity: fadeOpacity,
+        transform: slideOpacity ? [
+          {
+            translateX: slideOpacity.interpolate({
+              inputRange: [-1, 0, 1],
+              outputRange: [-Dimensions.get('window').width, 0, Dimensions.get('window').width],
+            })
+          }
+        ] : []
+      }
+    ]}>
         <Animated.View style={[styles.transparentOverlayArea, { opacity: overlayOpacity }]} >
             {((!isFlipped && !frontContent) || (isFlipped && !backContent)) && (
             <>
@@ -584,8 +600,6 @@ const styles = StyleSheet.create({
   overlayPressable: {
     flex: 1,
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'red',
   },
   cardContainer: {
     flex: 1,

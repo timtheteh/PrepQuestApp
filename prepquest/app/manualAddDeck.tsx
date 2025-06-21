@@ -128,6 +128,12 @@ export default function ManualAddDeckPage() {
   const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
   const [isNoSelectionModalOpen, setIsNoSelectionModalOpen] = useState(false);
   const noSelectionModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const errorModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const successModalOpacity = useRef(new Animated.Value(0)).current;
+  const [errorMessage, setErrorMessage] = useState('');
+  const [incompleteCardNumber, setIncompleteCardNumber] = useState<number>(0);
 
   // Cache for storing all created cards
   interface CachedCard {
@@ -257,6 +263,40 @@ export default function ManualAddDeckPage() {
       ]).start();
     }
   }, [isNoSelectionModalOpen]);
+
+  useEffect(() => {
+    if (isErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(errorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isErrorModalOpen]);
+
+  useEffect(() => {
+    if (isSuccessModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isSuccessModalOpen]);
 
   useEffect(() => {
     // Set initial mode animation when component mounts
@@ -400,13 +440,63 @@ export default function ManualAddDeckPage() {
   };
 
   const isSubmitDisabled = () => {
+    return false; // Always enabled now
+  };
+
+  const validateFormSubmission = () => {
     const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
-    const currentQuestionNumberIsMoreThanOne = currentQuestionNumber > 1 ? true : false;
-    return !mandatoryFieldsFilled || !currentQuestionNumberIsMoreThanOne;
+    const submittedCards = getSubmittedCards();
+    const hasCards = submittedCards.length >= 1;
+
+    // Check if all submitted cards have both front and back content
+    const allCardsComplete = submittedCards.every(card => 
+      card.frontContent && card.backContent && 
+      card.frontContent.content && card.backContent.content
+    );
+
+    // Error 1: mandatory fields not filled up and no cards
+    if (!mandatoryFieldsFilled && !hasCards) {
+      setErrorMessage("Fill up all mandatory fields\nand add your cards before submitting!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Error 2: mandatory fields filled up but no cards
+    if (mandatoryFieldsFilled && !hasCards) {
+      setErrorMessage("Add your card(s)\nbefore submitting!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Error 3: mandatory fields not filled up but has cards
+    if (!mandatoryFieldsFilled && hasCards) {
+      setErrorMessage("Fill up all\nmandatory fields!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Error 4: mandatory fields filled up and has cards BUT not all cards have content
+    if (mandatoryFieldsFilled && hasCards && !allCardsComplete) {
+      // Find the first incomplete card
+      const incompleteCard = submittedCards.find(card => 
+        !card.frontContent || !card.backContent || 
+        !card.frontContent.content || !card.backContent.content
+      );
+      if (incompleteCard) {
+        setIncompleteCardNumber(incompleteCard.cardNumber);
+        setErrorMessage(`You have missing question/answer\ndata for card ${incompleteCard.cardNumber}`);
+        setIsErrorModalOpen(true);
+        return false;
+      }
+    }
+
+    // Success: all validations passed
+    setIsSuccessModalOpen(true);
+    return true;
   };
 
   const handleSubmit = () => {
-    router.back();
+    validateFormSubmission();
   };
 
   const handleDismissHelp = () => {
@@ -788,6 +878,55 @@ export default function ManualAddDeckPage() {
     return Math.max(...submittedCards.map(card => card.cardNumber)) + 1;
   };
 
+  const navigateToPreviousCard = () => {
+    if (currentQuestionNumber > 1) {
+      // Save current card to cache before navigating
+      saveCurrentCardToCache();
+      
+      // Navigate to previous card
+      const previousCardNumber = currentQuestionNumber - 1;
+      setCurrentQuestionNumber(previousCardNumber);
+      
+      // Load the previous card from cache
+      loadCardFromCache(previousCardNumber);
+    }
+  };
+
+  const navigateToNextCard = () => {
+    const nextCardNumber = getNextCardNumber();
+    if (currentQuestionNumber < nextCardNumber) {
+      // Save current card to cache before navigating
+      saveCurrentCardToCache();
+      
+      // Navigate to next card
+      const newCardNumber = currentQuestionNumber + 1;
+      setCurrentQuestionNumber(newCardNumber);
+      
+      // Load the next card from cache if it exists, otherwise create new
+      const cachedCard = cardCache.find(card => card.cardNumber === newCardNumber);
+      if (cachedCard) {
+        loadCardFromCache(newCardNumber);
+      } else {
+        // Create new empty card
+        if (flippableCardRef.current) {
+          flippableCardRef.current.resetToFront();
+          flippableCardRef.current.resetContent();
+        }
+        setSelectedButtonType('none');
+        setHasCardContent(false);
+      }
+    }
+  };
+
+  const isLeftChevronDisabled = () => {
+    return currentQuestionNumber <= 1;
+  };
+
+  const isRightChevronDisabled = () => {
+    const nextCardNumber = getNextCardNumber();
+    return currentQuestionNumber >= nextCardNumber;
+  };
+
   const getCardTitle = (card: CachedCard) => {
     // If the card has text content in the front, show the first 100 characters
     if (card.frontContent?.type === 'text' && card.frontContent?.content) {
@@ -796,6 +935,16 @@ export default function ManualAddDeckPage() {
         return textContent.substring(0, 100) + '...';
       }
       return textContent || 'In Progress...';
+    }
+
+    if (card.frontContent?.type === 'camera' && card.frontContent?.content) {
+      return '<Image>'
+    }
+    if (card.frontContent?.type === 'mic' && card.frontContent?.content) {
+      return '<Voice Recording>'
+    }
+    if (card.frontContent?.type === 'marker' && card.frontContent?.content) {
+      return '<Drawing>'
     }
     
     // Default to "Card X" for other content types
@@ -833,6 +982,62 @@ export default function ManualAddDeckPage() {
     }
     
     return '';
+  };
+
+  const handleDismissErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(errorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsErrorModalOpen(false);
+    });
+  };
+
+  const handleDismissSuccessModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+    });
+  };
+
+  const handleSuccessConfirm = () => {
+    // Animate out first, then navigate
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+      // Navigate after animation completes
+      setTimeout(() => {
+        router.back();
+      }, 50);
+    });
   };
 
   return (
@@ -981,6 +1186,32 @@ export default function ManualAddDeckPage() {
               { paddingBottom: bottomOffset * 2 + 72}
             ]}
           >
+            {/* Left Chevron Button */}
+            <TouchableOpacity 
+              style={styles.leftChevronButton}
+              onPress={navigateToPreviousCard}
+              disabled={isLeftChevronDisabled()}
+            >
+              <AntDesign 
+                name="left" 
+                size={30} 
+                color={isLeftChevronDisabled() ? "#D5D4DD" : "#000000"} 
+              />
+            </TouchableOpacity>
+
+            {/* Right Chevron Button */}
+            <TouchableOpacity 
+              style={styles.rightChevronButton}
+              onPress={navigateToNextCard}
+              disabled={isRightChevronDisabled()}
+            >
+              <AntDesign 
+                name="right" 
+                size={30} 
+                color={isRightChevronDisabled() ? "#D5D4DD" : "#000000"} 
+              />
+            </TouchableOpacity>
+
             <FlippableCard 
               ref={flippableCardRef}
               frontContentTitle={`Qn ${currentQuestionNumber}`} 
@@ -1118,7 +1349,7 @@ With Cards?"
                 style={{ flex: 1 }}
               />
               <ActionButton
-                text="Fill Up
+                text="Move To
 Next Card?"
                 backgroundColor={hasCardContent ? "#44B88A" : "#D5D4DD"}
                 style={{ flex: 1 }}
@@ -1131,9 +1362,9 @@ Next Card?"
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isDeleteModalOpen || isRecentFormModalOpen || isContentTypeChangeModalOpen || isBackConfirmationModalOpen || isNoSelectionModalOpen}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isDeleteModalOpen || isRecentFormModalOpen || isContentTypeChangeModalOpen || isBackConfirmationModalOpen || isNoSelectionModalOpen || isErrorModalOpen || isSuccessModalOpen}
         opacity={overlayOpacity}
-        onPress={isDeleteModalOpen ? handleDismissDeleteModal : (isRecentFormModalOpen ? handleDismissRecentForm : (isContentTypeChangeModalOpen ? handleDismissContentTypeChange : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isNoSelectionModalOpen ? handleDismissNoSelection : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp)))))}
+        onPress={isDeleteModalOpen ? handleDismissDeleteModal : (isRecentFormModalOpen ? handleDismissRecentForm : (isContentTypeChangeModalOpen ? handleDismissContentTypeChange : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isNoSelectionModalOpen ? handleDismissNoSelection : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp)))))))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -1258,6 +1489,21 @@ Next Card?"
         subtitle="Select at least one flashcard to delete."
         text="No selection made!"
         onConfirm={handleDismissNoSelection}
+      />
+      <GenericModal
+        visible={isErrorModalOpen}
+        opacity={errorModalOpacity}
+        text={errorMessage}
+        buttons="none"
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isSuccessModalOpen}
+        opacity={successModalOpacity}
+        text={"Great! 😊 Do you want to go ahead and submit?"}
+        buttons="double"
+        onCancel={handleDismissSuccessModal}
+        onConfirm={handleSuccessConfirm}
       />
     </View>
   );
@@ -1462,5 +1708,25 @@ const styles = StyleSheet.create({
   },
   selectTextDisabled: {
     color: '#D5D4DD',
+  },
+  leftChevronButton: {
+    position: 'absolute',
+    left: 0,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+    zIndex: 1000,
+    padding: 8,
+    // backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    // borderRadius: 20,
+  },
+  rightChevronButton: {
+    position: 'absolute',
+    right: 0,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+    zIndex: 1000,
+    padding: 8,
+    // backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    // borderRadius: 20,
   },
 });

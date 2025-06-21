@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { View, StyleSheet, ViewStyle, Pressable, Animated, Text, Dimensions, ScrollView } from 'react-native';
+import { View, StyleSheet, ViewStyle, Pressable, Animated, Text, Dimensions, ScrollView, Image } from 'react-native';
 import FlippableCardFrontFlipArrow from '@/assets/icons/flippableCardFrontFlipArrow.svg';
 import FlippableCardBackFlipArrow from '@/assets/icons/flippableCardBackFlipArrow.svg';
 import MicIcon from '@/assets/icons/micIcon.svg';
@@ -9,6 +9,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { getLastTypedText } from '../app/textInputModal';
 import ImageIconFilled from '@/assets/icons/imageIconFilled.svg';
 import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 
 interface CardContent {
   content: React.ReactNode;
@@ -246,6 +248,113 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     }
   };
 
+  const pickImage = async () => {
+    try {
+      // Request permission to access the photo library
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
+      }
+
+      // Launch the image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+        
+        // Create the image content
+        const imageContent = (
+          <Image 
+            source={{ uri: selectedImage.uri }} 
+            style={styles.selectedImage}
+            resizeMode="contain"
+          />
+        );
+
+        // Update the appropriate side based on current flip state
+        if (isFlipped) {
+          setBackContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        } else {
+          setFrontContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      alert('Error selecting image. Please try again.');
+    }
+  };
+
+  const clearImage = () => {
+    // Clear the content based on current flip state
+    if (isFlipped) {
+      setBackContent(null);
+    } else {
+      setFrontContent(null);
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      // Request permission to access the camera
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert('Sorry, we need camera permissions to make this work!');
+        return;
+      }
+
+      // Launch the camera
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const capturedImage = result.assets[0];
+        
+        // Create the image content
+        const imageContent = (
+          <Image 
+            source={{ uri: capturedImage.uri }} 
+            style={styles.selectedImage}
+            resizeMode="contain"
+          />
+        );
+
+        // Update the appropriate side based on current flip state
+        if (isFlipped) {
+          setBackContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        } else {
+          setFrontContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      alert('Error taking photo. Please try again.');
+    }
+  };
+
   useEffect(() => {
     if (onContentChange) {
       onContentChange(frontContent !== null && backContent !== null);
@@ -306,10 +415,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                                 styles.micButton,
                                 pressed && styles.buttonPressed
                             ]}
-                            onPress={() => {
-                                console.log('Image button pressed');
-                                // Add your mic functionality here
-                            }}
+                            onPress={pickImage}
                             >
                             <ImageIconFilled width={30} height={30} />
                             </Pressable>
@@ -318,10 +424,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                                 styles.replayButton,
                                 pressed && styles.buttonPressed
                             ]}
-                            onPress={() => {
-                                console.log('Camera button pressed');
-                                // Add your replay functionality here
-                            }}
+                            onPress={takePhoto}
                             >
                             <CameraIconFilled width={38} height={38} />
                             </Pressable>
@@ -334,7 +437,10 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
             {(!isFlipped && frontContent) && (
                 <View style={styles.mainContent}>
                     <ScrollView 
-                        style={styles.scrollContainer}
+                        style={[
+                            styles.scrollContainer,
+                            frontContent.type === 'camera' && styles.cameraScrollContainer
+                        ]}
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                         bounces={true}
@@ -343,12 +449,48 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                         {frontContent.content || children}
                         </Pressable>
                     </ScrollView>
+                    {frontContent.type === 'camera' && (
+                        <View style={[styles.cameraButtonsContainer, { paddingHorizontal: frontContent.content ? '15%' : '25%' }]}>
+                            <Pressable 
+                            style={({ pressed }) => [
+                                styles.micButton,
+                                pressed && styles.buttonPressed
+                            ]}
+                            onPress={pickImage}
+                            >
+                            <ImageIconFilled width={30} height={30} />
+                            </Pressable>
+                            <Pressable 
+                            style={({ pressed }) => [
+                                styles.replayButton,
+                                pressed && styles.buttonPressed
+                            ]}
+                            onPress={takePhoto}
+                            >
+                            <CameraIconFilled width={38} height={38} />
+                            </Pressable>
+                                {frontContent.content && (
+                                    <Pressable 
+                                    style={({ pressed }) => [
+                                        styles.micButton,
+                                        pressed && styles.buttonPressed
+                                    ]}
+                                    onPress={clearImage}
+                                    >
+                                    <Ionicons name={'trash'} size={30} color={'#FF3B30'} />
+                                    </Pressable>
+                            )}
+                        </View>
+                    )}
                 </View>
             )}
             {(isFlipped && backContent) && (
             <View style={styles.mainContent}>
                 <ScrollView 
-                    style={styles.scrollContainer}
+                    style={[
+                        styles.scrollContainer,
+                        backContent.type === 'camera' && styles.cameraScrollContainer
+                    ]}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     bounces={true}
@@ -357,6 +499,39 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                     {backContent.content || children}
                     </Pressable>
                 </ScrollView>
+                {backContent.type === 'camera' && (
+                    <View style={styles.cameraButtonsContainer}>
+                        <Pressable 
+                        style={({ pressed }) => [
+                            styles.micButton,
+                            pressed && styles.buttonPressed
+                        ]}
+                        onPress={pickImage}
+                        >
+                        <ImageIconFilled width={30} height={30} />
+                        </Pressable>
+                        <Pressable 
+                        style={({ pressed }) => [
+                            styles.replayButton,
+                            pressed && styles.buttonPressed
+                        ]}
+                        onPress={takePhoto}
+                        >
+                        <CameraIconFilled width={38} height={38} />
+                        </Pressable>
+                        {backContent.content && (
+                            <Pressable 
+                            style={({ pressed }) => [
+                                styles.micButton,
+                                pressed && styles.buttonPressed
+                            ]}
+                            onPress={clearImage}
+                            >
+                            <Ionicons name={'trash'} size={30} color={'#FF3B30'} />
+                            </Pressable>
+                        )}
+                    </View>
+                )}
             </View>
             )}             
         </Animated.View>
@@ -560,5 +735,23 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignContent: 'center',
+  },
+  selectedImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cameraScrollContainer: {
+    marginTop: 45,
+    marginBottom: 60,
+  },
+  cameraButtonsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    backgroundColor: 'transparent',
   },
 }); 

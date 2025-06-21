@@ -21,6 +21,10 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import CloudUploadIcon from '@/assets/icons/cloudUploadIcon.svg';
 import ImageIconFilled from '@/assets/icons/imageIconFilled.svg';
 import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
+import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import LottieView from 'lottie-react-native';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -39,22 +43,53 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-const FileUploadMainSection = () => {
+const FileUploadMainSection = ({ 
+  pickImage, 
+  takePhoto, 
+  browseFiles, 
+  isUploadSuccess, 
+  uploadType,
+  uploadedFileName
+}: { 
+  pickImage: () => void; 
+  takePhoto: () => void; 
+  browseFiles: () => void;
+  isUploadSuccess: boolean;
+  uploadType: 'image' | 'file' | null;
+  uploadedFileName: string;
+}) => {
   return (
     <View style={styles.fileUploadMainSection}>
       <View style={styles.uploadContent}>
-        <CloudUploadIcon width={110} height={110} />
-        <Text style={styles.supportedFilesText}>
-          Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks
+        {isUploadSuccess ? (
+          <LottieView
+            source={require('../assets/animations/SuccessAnimation1_Tick.json')}
+            autoPlay
+            loop={true}
+            style={styles.successAnimation}
+          />
+        ) : (
+          <CloudUploadIcon width={110} height={110} />
+        )}
+        <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
+          {isUploadSuccess 
+            ? `${uploadType === 'image' ? 'Image' : 'File'} uploaded successfully!\n${uploadType === 'file' ? `File: ${uploadedFileName}` : ''}`
+            : 'Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks'
+          }
         </Text>
         <PrimaryButton 
-          text="Browse"
-          onPress={() => {}}
+          text="Browse 
+Files"
+          onPress={browseFiles}
         />
       </View>
       <View style={styles.cornerIconsContainer}>
-        <ImageIconFilled width={30} height={30} />
-        <CameraIconFilled width={40} height={40} />
+        <TouchableOpacity onPress={pickImage}>
+          <ImageIconFilled width={30} height={30} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={takePhoto}>
+          <CameraIconFilled width={40} height={40} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -95,7 +130,7 @@ const getFileUploadContentPaddingTop = () => {
     return 8;
   }
 
-  /// iphone 16 pro max
+   /// iphone 16 pro max
   if (Platform.OS === 'ios' && height >= 940) {
     return 68;
   }
@@ -141,6 +176,14 @@ export default function FileUploadPage() {
   const aiHelpModalOpacity = useRef(new Animated.Value(0)).current;
   const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
   const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isUploadSuccess, setIsUploadSuccess] = useState(false);
+  const [uploadType, setUploadType] = useState<'image' | 'file' | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const errorModalOpacity = useRef(new Animated.Value(0)).current;
+  const successModalOpacity = useRef(new Animated.Value(0)).current;
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -208,6 +251,57 @@ export default function FileUploadPage() {
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
 
+  useEffect(() => {
+    if (isRecentFormModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(recentFormModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isRecentFormModalOpen]);
+
+  useEffect(() => {
+    if (isErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(errorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isErrorModalOpen]);
+
+  useEffect(() => {
+    if (isSuccessModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isSuccessModalOpen]);
+
   const handleBackPress = () => {
     router.back();
   };
@@ -245,12 +339,41 @@ export default function FileUploadPage() {
   };
 
   const isSubmitDisabled = () => {
-    if (!isMandatory) return false;
-    return mode === 'study' ? !isStudyMandatoryFieldsFilled() : !isInterviewMandatoryFieldsFilled();
+    return false; // Always enabled now
+  };
+
+  const validateFormSubmission = () => {
+    const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
+    const hasFileUploaded = isUploadSuccess;
+
+    // Error 1: mandatory fields not filled up and no file/image uploaded
+    if (!mandatoryFieldsFilled && !hasFileUploaded) {
+      setErrorMessage("Fill up all mandatory fields\nand upload your file!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Error 2: mandatory fields filled up but file/image not uploaded
+    if (mandatoryFieldsFilled && !hasFileUploaded) {
+      setErrorMessage("Upload your file\nbefore submitting!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Error 3: mandatory fields not filled up but got file/image uploaded
+    if (!mandatoryFieldsFilled && hasFileUploaded) {
+      setErrorMessage("Fill up all\nmandatory fields!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Success: all validations passed
+    setIsSuccessModalOpen(true);
+    return true;
   };
 
   const handleSubmit = () => {
-    router.back();
+    validateFormSubmission();
   };
 
   const handleDismissHelp = () => {
@@ -304,6 +427,62 @@ export default function FileUploadPage() {
     });
   };
 
+  const handleDismissErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(errorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsErrorModalOpen(false);
+    });
+  };
+
+  const handleDismissSuccessModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+    });
+  };
+
+  const handleSuccessConfirm = () => {
+    // Animate out first, then navigate
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+      // Navigate after animation completes
+      setTimeout(() => {
+        router.back();
+      }, 50);
+    });
+  };
+
   const handleUseMostRecentFormPress = () => {
     setIsRecentFormModalOpen(true);
     Animated.parallel([
@@ -318,6 +497,98 @@ export default function FileUploadPage() {
         useNativeDriver: true,
       })
     ]).start();
+  };
+
+  const pickImage = async () => {
+    try {
+      // Request permission to access the photo library
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
+      }
+
+      // Launch the image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+        console.log('Image selected:', selectedImage.uri);
+        // Show success animation and update text permanently
+        setUploadType('image');
+        setIsUploadSuccess(true);
+        setUploadedFileName(selectedImage.uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      alert('Error selecting image. Please try again.');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      // Request permission to access the camera
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert('Sorry, we need camera permissions to make this work!');
+        return;
+      }
+
+      // Launch the camera
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const capturedImage = result.assets[0];
+        console.log('Photo taken:', capturedImage.uri);
+        // Show success animation and update text permanently
+        setUploadType('image');
+        setIsUploadSuccess(true);
+        setUploadedFileName(capturedImage.uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      alert('Error taking photo. Please try again.');
+    }
+  };
+
+  const browseFiles = async () => {
+    try {
+      // Launch the document picker
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*', // Allow all file types
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedFile = result.assets[0];
+        console.log('File selected:', {
+          name: selectedFile.name,
+          size: selectedFile.size,
+          uri: selectedFile.uri,
+          mimeType: selectedFile.mimeType,
+        });
+        // Show success animation and update text permanently
+        setUploadType('file');
+        setIsUploadSuccess(true);
+        setUploadedFileName(selectedFile.name);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      alert('Error selecting file. Please try again.');
+    }
   };
 
   const mandatoryOpacity = fadeAnim.interpolate({
@@ -463,7 +734,7 @@ export default function FileUploadPage() {
             <Text style={styles.fileUploadTitle}>
             Upload any file document to generate a new deck!
           </Text>
-          <FileUploadMainSection />
+          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} />
           <View style={styles.aiGenerateRow}>
             <SmallCircleSelectButton
               selected={isAIGenerate}
@@ -481,7 +752,7 @@ export default function FileUploadPage() {
           <Text style={styles.fileUploadTitle}>
             Upload any file document to generate a new deck!
           </Text>
-          <FileUploadMainSection />
+          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} />
           <View style={styles.aiGenerateRow}>
             <SmallCircleSelectButton
               selected={isAIGenerate}
@@ -509,9 +780,9 @@ export default function FileUploadPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen}
-        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : aiHelpOverlayOpacity)}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : handleDismissAIHelp)}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen}
+        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : aiHelpOverlayOpacity)))}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : handleDismissAIHelp)))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -542,6 +813,21 @@ export default function FileUploadPage() {
           console.log('Load most recent form');
         }}
         onCancel={handleDismissRecentForm}
+      />
+      <GenericModal
+        visible={isErrorModalOpen}
+        opacity={errorModalOpacity}
+        text={errorMessage}
+        buttons="none"
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isSuccessModalOpen}
+        opacity={successModalOpacity}
+        text={"Great! 😊 Do you want to go ahead and submit?"}
+        buttons="double"
+        onCancel={handleDismissSuccessModal}
+        onConfirm={handleSuccessConfirm}
       />
     </View>
   );
@@ -662,5 +948,9 @@ const styles = StyleSheet.create({
     right: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  successAnimation: {
+    width: 100,
+    height: 100,
   },
 }); 

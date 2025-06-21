@@ -33,7 +33,8 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: 'Satoshi-Variable',
     fontWeight: '700',
-    fontSize: 24,
+    fontSize: 16,
     color: '#FFFFFF',
+    textAlign: 'center',
   },
 }); 

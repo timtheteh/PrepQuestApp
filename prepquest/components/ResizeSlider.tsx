@@ -8,10 +8,11 @@ const END_CIRCLE_LARGE_SIZE = 18;
 
 interface ResizeSliderProps {
     onValueChange?: (value: number) => void;
+    initialValue?: number; // Value between 0 and 1
 }
 
-export function ResizeSlider({ onValueChange }: ResizeSliderProps) {
-    const [sliderValue, setSliderValue] = useState(TRACK_WIDTH / 2 - THUMB_SIZE / 2);
+export function ResizeSlider({ onValueChange, initialValue = 0.5 }: ResizeSliderProps) {
+    const [sliderValue, setSliderValue] = useState(initialValue * (TRACK_WIDTH - THUMB_SIZE));
     const pan = useRef(new Animated.Value(sliderValue)).current;
     
     pan.addListener(({ value }) => {

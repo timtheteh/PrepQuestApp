@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Text, TouchableOpacity } from 'react-native';
 import MarkerIcon from '@/assets/icons/markerIcon.svg';
 import MarkerIconWhite from '@/assets/icons/markerIconWhite.svg';
 import EraserIcon from '@/assets/icons/eraserIcon.svg';
@@ -12,27 +12,33 @@ interface DrawableOptionsRowProps {
   onMarkerPress?: () => void;
   onEraserPress?: () => void;
   onResizePress?: () => void;
+  onResizeValueChange?: (value: number) => void;
   onUndoPress?: () => void;
   onForwarddoPress?: () => void;
+  onClearPress?: () => void;
+  currentMarkerSize?: number; // Current marker size (1-10)
+  selectedTool?: 'marker' | 'eraser'; // Control which tool is selected
 }
 
 export function DrawableOptionsRow({
   onMarkerPress,
   onEraserPress,
   onResizePress,
+  onResizeValueChange,
   onUndoPress,
-  onForwarddoPress
+  onForwarddoPress,
+  onClearPress,
+  currentMarkerSize = 3,
+  selectedTool = 'marker'
 }: DrawableOptionsRowProps) {
-  const [selectedTool, setSelectedTool] = useState<'marker' | 'eraser'>('marker');
   const [isResizeSliderVisible, setIsResizeSliderVisible] = useState(false);
 
   const handleMarkerPress = () => {
-    setSelectedTool('marker');
     onMarkerPress?.();
   };
 
   const handleEraserPress = () => {
-    setSelectedTool('eraser');
+    setIsResizeSliderVisible(false);
     onEraserPress?.();
   };
 
@@ -94,10 +100,17 @@ export function DrawableOptionsRow({
         >
           <ForwarddoIcon width={20} height={20} />
         </Pressable>
+        
+        <TouchableOpacity 
+          style={styles.clearButton}
+          onPress={onClearPress}
+        >
+          <Text style={styles.clearButtonText}>Clear</Text>
+        </TouchableOpacity>
       </View>
     </View>
     <View style={styles.resizeSliderContainer}>
-    {isResizeSliderVisible && <ResizeSlider />}
+    {isResizeSliderVisible && <ResizeSlider onValueChange={onResizeValueChange} initialValue={currentMarkerSize} />}
     </View>
     </View>
   );
@@ -150,5 +163,16 @@ const styles = StyleSheet.create({
     right: 0,
     top: 35,
     bottom: 0,
+  },
+  clearButton: {
+    paddingHorizontal: 0,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearButtonText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 12,
+    color: '#000000',
   },
 }); 

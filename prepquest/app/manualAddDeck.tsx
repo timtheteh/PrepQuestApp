@@ -332,25 +332,41 @@ export default function ManualAddDeckPage() {
       if (cachedCard) {
         // Load the existing card
         loadCurrentCardFromCache();
+        // Always set to none for submitted cards (view mode)
+        if (cachedCard.submitted) {
+          setSelectedButtonType('none');
+        }
       } else {
         // If no card exists for current number, it means we need to set the next available card number
         const nextCardNumber = getNextCardNumber();
         setCurrentQuestionNumber(nextCardNumber);
-        
         // Reset card to empty state
         if (flippableCardRef.current) {
           flippableCardRef.current.resetToFront();
           flippableCardRef.current.resetContent();
         }
-        
         // Reset to none state
         setSelectedButtonType('none');
-        
         // Update content state
         setHasCardContent(false);
       }
     }
   }, [isMandatory, addViewState, currentQuestionNumber]);
+
+  // Load drawing content when selectedButtonType changes to 'marker'
+  useEffect(() => {
+    if (selectedButtonType === 'marker' && !isMandatory && addViewState === 'add') {
+      const cachedCard = cardCache.find(card => card.cardNumber === currentQuestionNumber);
+      if (cachedCard) {
+        // Load drawing content from the current side
+        const isFlipped = flippableCardRef.current?.getIsFlipped() || false;
+        const currentContent = isFlipped ? cachedCard.backContent : cachedCard.frontContent;
+        if (currentContent?.type === 'marker') {
+          flippableCardRef.current?.loadDrawingContent(currentContent);
+        }
+      }
+    }
+  }, [selectedButtonType, currentQuestionNumber, isMandatory, addViewState]);
 
   // Save card to cache when content changes
   useEffect(() => {
@@ -376,7 +392,11 @@ export default function ManualAddDeckPage() {
 
     // Check if there's content on the current side with a different type
     const currentContent = flippableCardRef.current?.getCurrentContent();
-    if (currentContent && currentContent.type !== buttonType) {
+    const hasDrawingContent = flippableCardRef.current?.hasDrawingContent();
+    
+    // Check for content type conflict (either regular content or drawing content)
+    if ((currentContent && currentContent.type !== buttonType) || 
+        (hasDrawingContent && buttonType !== 'marker')) {
       // Show modal to warn about content type change
       setIsContentTypeChangeModalOpen(true);
       setPendingButtonType(buttonType);
@@ -413,10 +433,24 @@ export default function ManualAddDeckPage() {
     setNumberOfQuestions(1);
   };
 
-  const handleToggle = (isRightSide: boolean) => {
+  const handleToggle = async (isRightSide: boolean) => {
+    console.log('handleToggle called - isRightSide:', isRightSide);
+    console.log('Current state - isMandatory:', isMandatory, 'addViewState:', addViewState);
+    
     // Save current card to cache before toggling
     if (!isMandatory && addViewState === 'add') {
-      saveCurrentCardToCache();
+      console.log('Toggling from manual to mandatory - saving drawing content');
+      console.log('Current selectedButtonType:', selectedButtonType);
+      console.log('Has drawing content:', flippableCardRef.current?.hasDrawingContent());
+      
+      // Save drawing content if it exists, then save to cache
+      if (flippableCardRef.current?.saveDrawingAsContent) {
+        await flippableCardRef.current.saveDrawingAsContent();
+        console.log('Drawing content saved, now saving to cache');
+        saveCurrentCardToCache();
+      }
+    } else {
+      console.log('Not saving drawing content - condition not met');
     }
     
     setIsMandatory(!isRightSide);
@@ -654,9 +688,13 @@ export default function ManualAddDeckPage() {
     });
   };
 
-  const handleNextFlashcard = () => {
+  const handleNextFlashcard = async () => {
     // Save current card to cache before creating next card
     saveCurrentCardToCache();
+    // Also save drawing content if it exists
+    if (flippableCardRef.current?.saveDrawingAsContent) {
+      await flippableCardRef.current.saveDrawingAsContent();
+    }
     
     // Mark the current card as submitted
     setCardCache(prev => {
@@ -699,7 +737,11 @@ export default function ManualAddDeckPage() {
     });
   };
 
-  const handleCardFlip = () => {
+  const handleCardFlip = async () => {
+    // Save drawing content before flipping
+    if (flippableCardRef.current?.saveDrawingAsContent) {
+      await flippableCardRef.current.saveDrawingAsContent();
+    }
     // Reset to none state when card is flipped
     setSelectedButtonType('none');
   };
@@ -757,6 +799,9 @@ export default function ManualAddDeckPage() {
     const frontContent = flippableCardRef.current.getFrontContent();
     const backContent = flippableCardRef.current.getBackContent();
     
+    console.log('Saving to cache - frontContent:', frontContent);
+    console.log('Saving to cache - backContent:', backContent);
+    
     setCardCache(prev => {
       const existingIndex = prev.findIndex(card => card.cardNumber === currentQuestionNumber);
       if (existingIndex >= 0) {
@@ -767,6 +812,7 @@ export default function ManualAddDeckPage() {
           frontContent: frontContent,
           backContent: backContent
         };
+        console.log('Updated existing card in cache:', updated[existingIndex]);
         return updated;
       } else {
         // Add new card with submitted: false
@@ -776,6 +822,7 @@ export default function ManualAddDeckPage() {
           backContent: backContent,
           submitted: false
         };
+        console.log('Added new card to cache:', cachedCard);
         return [...prev, cachedCard];
       }
     });
@@ -789,6 +836,15 @@ export default function ManualAddDeckPage() {
       
       // Load the cached content
       flippableCardRef.current.loadCachedContent(cachedCard.frontContent, cachedCard.backContent);
+      
+      // Also load drawing content if it exists
+      if (cachedCard.frontContent?.type === 'marker') {
+        console.log('loading drawing content from cache');
+        flippableCardRef.current.loadDrawingContent(cachedCard.frontContent);
+      }
+      if (cachedCard.backContent?.type === 'marker') {
+        flippableCardRef.current.loadDrawingContent(cachedCard.backContent);
+      }
       
       // Set the current question number
       setCurrentQuestionNumber(cardNumber);
@@ -807,9 +863,21 @@ export default function ManualAddDeckPage() {
 
   const loadCurrentCardFromCache = () => {
     const cachedCard = cardCache.find(card => card.cardNumber === currentQuestionNumber);
+    console.log('Loading current card from cache:', cachedCard);
+    
     if (cachedCard && flippableCardRef.current) {
       // Load the cached content
       flippableCardRef.current.loadCachedContent(cachedCard.frontContent, cachedCard.backContent);
+      
+      // Also load drawing content if it exists
+      if (cachedCard.frontContent?.type === 'marker') {
+        console.log('loading current card drawing content from cache');
+        flippableCardRef.current.loadDrawingContent(cachedCard.frontContent);
+      }
+      if (cachedCard.backContent?.type === 'marker') {
+        console.log('loading current card back drawing content from cache');
+        flippableCardRef.current.loadDrawingContent(cachedCard.backContent);
+      }
       
       // Update the content state
       const hasContent = !!(cachedCard.frontContent && cachedCard.backContent);
@@ -818,6 +886,7 @@ export default function ManualAddDeckPage() {
       // Reset to none state when loading existing content
       setSelectedButtonType('none');
     } else {
+      console.log('No cached card found for current question number:', currentQuestionNumber);
       // If no cached card found, reset to empty state
       if (flippableCardRef.current) {
         flippableCardRef.current.resetContent();
@@ -842,6 +911,8 @@ export default function ManualAddDeckPage() {
     // Save current card to cache when switching from add to view
     if (addViewState === 'add' && newState === 'view') {
       saveCurrentCardToCache();
+      // Also save drawing content if it exists
+      flippableCardRef.current?.saveDrawingAsContent();
     }
     
     setAddViewState(newState);
@@ -854,6 +925,13 @@ export default function ManualAddDeckPage() {
         // Load the existing card content
         if (flippableCardRef.current) {
           flippableCardRef.current.loadCachedContent(cachedCard.frontContent, cachedCard.backContent);
+          // Also load drawing content if it exists
+          if (cachedCard.frontContent?.type === 'marker') {
+            flippableCardRef.current.loadDrawingContent(cachedCard.frontContent);
+          }
+          if (cachedCard.backContent?.type === 'marker') {
+            flippableCardRef.current.loadDrawingContent(cachedCard.backContent);
+          }
         }
         // Update content state
         const hasContent = !!(cachedCard.frontContent && cachedCard.backContent);
@@ -886,8 +964,12 @@ export default function ManualAddDeckPage() {
     return Math.max(...submittedCards.map(card => card.cardNumber)) + 1;
   };
 
-  const navigateToPreviousCard = () => {
+  const navigateToPreviousCard = async () => {
     if (currentQuestionNumber > 1) {
+      // Save drawing content before saving card to cache
+      if (flippableCardRef.current?.saveDrawingAsContent) {
+        await flippableCardRef.current.saveDrawingAsContent();
+      }
       // Save current card to cache before navigating
       saveCurrentCardToCache();
       
@@ -915,9 +997,13 @@ export default function ManualAddDeckPage() {
     }
   };
 
-  const navigateToNextCard = () => {
+  const navigateToNextCard = async () => {
     const nextCardNumber = getNextCardNumber();
     if (currentQuestionNumber < nextCardNumber) {
+      // Save drawing content before saving card to cache
+      if (flippableCardRef.current?.saveDrawingAsContent) {
+        await flippableCardRef.current.saveDrawingAsContent();
+      }
       // Save current card to cache before navigating
       saveCurrentCardToCache();
       
@@ -1259,6 +1345,7 @@ export default function ManualAddDeckPage() {
               cardType={selectedButtonType}
               onCardFlip={handleCardFlip}
               onContentChange={handleContentChange}
+              onDrawingChange={saveCurrentCardToCache}
             />
           </View>
         )}
@@ -1473,12 +1560,18 @@ Next Card?"
           if (flippableCardRef.current) {
             const currentContent = flippableCardRef.current.getCurrentContent();
             const frontContent = flippableCardRef.current.getFrontContent();
+            const hasDrawingContent = flippableCardRef.current.hasDrawingContent();
             
             // Check if we're on the front side by comparing content
             if (currentContent === frontContent) {
               flippableCardRef.current.clearFrontContent();
             } else {
               flippableCardRef.current.clearBackContent();
+            }
+            
+            // Also clear drawing content if it exists
+            if (hasDrawingContent) {
+              flippableCardRef.current.clearDrawingContent();
             }
           }
           

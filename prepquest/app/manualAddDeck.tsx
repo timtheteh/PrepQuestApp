@@ -505,7 +505,7 @@ export default function ManualAddDeckPage() {
 
     // Error 3: mandatory fields not filled up but has cards
     if (!mandatoryFieldsFilled && hasCards) {
-      setErrorMessage("Fill up all\nmandatory fields!");
+      setErrorMessage("Fill up all mandatory fields and all QA pairs for all cards!");
       setIsErrorModalOpen(true);
       return false;
     }

@@ -11,6 +11,7 @@ import ImageIconFilled from '@/assets/icons/imageIconFilled.svg';
 import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 
 interface CardContent {
   content: React.ReactNode;
@@ -899,9 +900,29 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                 {cardType !== 'marker' && (
                 <Pressable onPress={handleOverlayPress} style={styles.overlayPressable}>
                     <View style={styles.container}>
+                    {displayedCardType === 'none' && (
+                      <View style={styles.animationContainerTop}>
+                        <LottieView
+                          source={require('../assets/animations/DownArrowAnimation.json')}
+                          autoPlay
+                          loop
+                          style={[styles.downArrowAnimation, { transform: [{ rotate: '180deg' }] }]}
+                        />
+                      </View>
+                    )}
                     <View style={[styles.overlayTextContainer, { transform: displayedCardType === 'mic' || displayedCardType === 'camera' ? [{ translateY: -30 }] : [{ translateY: 0 }] }]}>
                     <Text style={styles.overlayText}>{getOverlayText()}</Text>
                     </View>
+                    {(displayedCardType === 'camera' || displayedCardType === 'mic') && (
+                      <View style={styles.animationContainer}>
+                        <LottieView
+                          source={require('../assets/animations/DownArrowAnimation.json')}
+                          autoPlay
+                          loop
+                          style={styles.downArrowAnimation}
+                        />
+                      </View>
+                    )}
                     {displayedCardType === 'mic' && (
                         <View style={styles.micButtonsContainer}>
                             <Pressable 
@@ -1112,8 +1133,6 @@ const styles = StyleSheet.create({
   overlayPressable: {
     flex: 1,
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'red',
   },
   cardContainer: {
     flex: 1,
@@ -1291,5 +1310,27 @@ const styles = StyleSheet.create({
     borderTopColor: '#D5D4DD',
     borderBottomWidth: 3,
     borderBottomColor: '#D5D4DD',
+  },
+  animationContainer: {
+    position: 'absolute',
+    bottom: '25%',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  animationContainerTop: {
+    position: 'absolute',
+    top: Dimensions.get('window').height < 670 ? '15%' : '25%',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  downArrowAnimation: {
+    width: 50,
+    height: 50,
   },
 }); 

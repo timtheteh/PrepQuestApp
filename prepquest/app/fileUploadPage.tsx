@@ -184,6 +184,8 @@ export default function FileUploadPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const errorModalOpacity = useRef(new Animated.Value(0)).current;
   const successModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isBackConfirmationModalOpen, setIsBackConfirmationModalOpen] = useState(false);
+  const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -302,8 +304,25 @@ export default function FileUploadPage() {
     }
   }, [isSuccessModalOpen]);
 
+  useEffect(() => {
+    if (isBackConfirmationModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backConfirmationModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isBackConfirmationModalOpen]);
+
   const handleBackPress = () => {
-    router.back();
+    setIsBackConfirmationModalOpen(true);
   };
 
   const handleClearAllPress = () => {
@@ -480,6 +499,23 @@ export default function FileUploadPage() {
       setTimeout(() => {
         router.back();
       }, 50);
+    });
+  };
+
+  const handleDismissBackConfirmation = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backConfirmationModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackConfirmationModalOpen(false);
     });
   };
 
@@ -780,9 +816,9 @@ export default function FileUploadPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen}
-        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : aiHelpOverlayOpacity)))}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : handleDismissAIHelp)))}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen || isBackConfirmationModalOpen}
+        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : (isBackConfirmationModalOpen ? overlayOpacity : aiHelpOverlayOpacity))))}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : handleDismissAIHelp))))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -828,6 +864,37 @@ export default function FileUploadPage() {
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
+      />
+      <GenericModal
+        visible={isBackConfirmationModalOpen}
+        opacity={backConfirmationModalOpacity}
+        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        buttons="double"
+        onCancel={handleDismissBackConfirmation}
+        onConfirm={() => {
+          // Animate out first, then navigate
+          Animated.parallel([
+            Animated.timing(overlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(backConfirmationModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start(() => {
+            setIsBackConfirmationModalOpen(false);
+            // Navigate after animation completes
+            setTimeout(() => {
+              router.back();
+            }, 50);
+          });
+        }}
+        textMarginBottom={40}
+        contentMarginTop={-10}
+        Icon={DeleteModalIcon}
       />
     </View>
   );

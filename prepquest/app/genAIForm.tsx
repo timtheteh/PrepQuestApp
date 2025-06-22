@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
+import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -82,9 +83,18 @@ export default function GenAIFormPage() {
   const [isReady, setIsReady] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isRecentFormModalOpen, setIsRecentFormModalOpen] = useState(false);
+  const [isBackConfirmationModalOpen, setIsBackConfirmationModalOpen] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
   const recentFormModalOpacity = useRef(new Animated.Value(0)).current;
+  const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const errorModalOpacity = useRef(new Animated.Value(0)).current;
+  const successModalOpacity = useRef(new Animated.Value(0)).current;
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isOptionalFieldsWarningModalOpen, setIsOptionalFieldsWarningModalOpen] = useState(false);
+  const optionalFieldsWarningModalOpacity = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -144,12 +154,80 @@ export default function GenAIFormPage() {
   }, [isRecentFormModalOpen]);
 
   useEffect(() => {
+    if (isBackConfirmationModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backConfirmationModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isBackConfirmationModalOpen]);
+
+  useEffect(() => {
+    if (isErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(errorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isErrorModalOpen]);
+
+  useEffect(() => {
+    if (isSuccessModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isSuccessModalOpen]);
+
+  useEffect(() => {
+    if (isOptionalFieldsWarningModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(optionalFieldsWarningModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isOptionalFieldsWarningModalOpen]);
+
+  useEffect(() => {
     // Set initial mode animation when component mounts
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
 
   const handleBackPress = () => {
-    router.back();
+    setIsBackConfirmationModalOpen(true);
   };
 
   const handleUseMostRecentFormPress = () => {
@@ -200,13 +278,48 @@ export default function GenAIFormPage() {
            interviewType !== '';
   };
 
+  const isStudyOptionalFieldsFilled = () => {
+    return studyOptionalQuestion1.trim() !== '' && 
+           studyOptionalQuestion2.trim() !== '' && 
+           studyOptionalQuestion3.trim() !== '' && 
+           questionType !== '';
+  };
+
+  const isInterviewOptionalFieldsFilled = () => {
+    return interviewOptionalQuestion1.trim() !== '' && 
+           interviewOptionalQuestion2.trim() !== '' && 
+           interviewOptionalQuestion3.trim() !== '' && 
+           questionType !== '';
+  };
+
   const isSubmitDisabled = () => {
-    // Always check mandatory fields regardless of current view
-    return mode === 'study' ? !isStudyMandatoryFieldsFilled() : !isInterviewMandatoryFieldsFilled();
+    return false; // Always enabled now
+  };
+
+  const validateFormSubmission = () => {
+    const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
+    const optionalFieldsFilled = mode === 'study' ? isStudyOptionalFieldsFilled() : isInterviewOptionalFieldsFilled();
+
+    // Case 1: Mandatory fields and optional fields not filled up
+    if (!mandatoryFieldsFilled) {
+      setErrorMessage("All mandatory fields must be filled up!");
+      setIsErrorModalOpen(true);
+      return false;
+    }
+
+    // Case 2: Mandatory fields filled up but optional fields not filled up
+    if (mandatoryFieldsFilled && !optionalFieldsFilled) {
+      setIsOptionalFieldsWarningModalOpen(true);
+      return false;
+    }
+
+    // Case 3: Mandatory fields and optional fields both filled up
+    setIsSuccessModalOpen(true);
+    return true;
   };
 
   const handleSubmit = () => {
-    router.back();
+    validateFormSubmission();
   };
 
   const handleDismissHelp = () => {
@@ -240,6 +353,118 @@ export default function GenAIFormPage() {
       })
     ]).start(() => {
       setIsRecentFormModalOpen(false);
+    });
+  };
+
+  const handleDismissBackConfirmation = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backConfirmationModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackConfirmationModalOpen(false);
+    });
+  };
+
+  const handleDismissErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(errorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsErrorModalOpen(false);
+    });
+  };
+
+  const handleDismissSuccessModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+    });
+  };
+
+  const handleSuccessConfirm = () => {
+    // Animate out first, then navigate
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+      // Navigate after animation completes
+      setTimeout(() => {
+        router.back();
+      }, 50);
+    });
+  };
+
+  const handleDismissOptionalFieldsWarning = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(optionalFieldsWarningModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsOptionalFieldsWarningModalOpen(false);
+    });
+  };
+
+  const handleOptionalFieldsWarningConfirm = () => {
+    // Animate out first, then navigate
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(optionalFieldsWarningModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsOptionalFieldsWarningModalOpen(false);
+      // Navigate after animation completes
+      setTimeout(() => {
+        router.back();
+      }, 50);
     });
   };
 
@@ -436,9 +661,9 @@ export default function GenAIFormPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isRecentFormModalOpen}
+        visible={isHelpModalOpen || isRecentFormModalOpen || isBackConfirmationModalOpen || isErrorModalOpen || isSuccessModalOpen || isOptionalFieldsWarningModalOpen}
         opacity={overlayOpacity}
-        onPress={isHelpModalOpen ? handleDismissHelp : handleDismissRecentForm}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : handleDismissOptionalFieldsWarning))))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -462,6 +687,61 @@ export default function GenAIFormPage() {
           console.log('Load most recent form');
         }}
         onCancel={handleDismissRecentForm}
+      />
+      <GenericModal
+        visible={isBackConfirmationModalOpen}
+        opacity={backConfirmationModalOpacity}
+        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        buttons="double"
+        onCancel={handleDismissBackConfirmation}
+        onConfirm={() => {
+          // Animate out first, then navigate
+          Animated.parallel([
+            Animated.timing(overlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(backConfirmationModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start(() => {
+            setIsBackConfirmationModalOpen(false);
+            // Navigate after animation completes
+            setTimeout(() => {
+              router.back();
+            }, 50);
+          });
+        }}
+        textMarginBottom={40}
+        contentMarginTop={-10}
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isErrorModalOpen}
+        opacity={errorModalOpacity}
+        text={errorMessage}
+        buttons="none"
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isOptionalFieldsWarningModalOpen}
+        opacity={optionalFieldsWarningModalOpacity}
+        text="Submit form without filling up optional fields?"
+        buttons="double"
+        onCancel={handleDismissOptionalFieldsWarning}
+        onConfirm={handleOptionalFieldsWarningConfirm}
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isSuccessModalOpen}
+        opacity={successModalOpacity}
+        text={"Great! 😊 Do you want to go ahead and submit?"}
+        buttons="double"
+        onCancel={handleDismissSuccessModal}
+        onConfirm={handleSuccessConfirm}
       />
     </View>
   );

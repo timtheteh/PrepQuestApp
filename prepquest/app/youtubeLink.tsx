@@ -150,6 +150,8 @@ export default function YouTubeLinkPage() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const successModalOpacity = useRef(new Animated.Value(0)).current;
   const [errorMessage, setErrorMessage] = useState('');
+  const [isBackConfirmationModalOpen, setIsBackConfirmationModalOpen] = useState(false);
+  const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -247,12 +249,29 @@ export default function YouTubeLinkPage() {
   }, [isSuccessModalOpen]);
 
   useEffect(() => {
+    if (isBackConfirmationModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backConfirmationModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isBackConfirmationModalOpen]);
+
+  useEffect(() => {
     // Set initial mode animation when component mounts
     fadeAnim.setValue(isMandatory ? 0 : 1);
   }, []);
 
   const handleBackPress = () => {
-    router.back();
+    setIsBackConfirmationModalOpen(true);
   };
 
   const handleClearAllPress = () => {
@@ -379,6 +398,23 @@ export default function YouTubeLinkPage() {
       setTimeout(() => {
         router.back();
       }, 50);
+    });
+  };
+
+  const handleDismissBackConfirmation = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backConfirmationModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackConfirmationModalOpen(false);
     });
   };
 
@@ -641,9 +677,9 @@ export default function YouTubeLinkPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen}
-        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : aiHelpOverlayOpacity)))}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : handleDismissAIHelp)))}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen || isBackConfirmationModalOpen}
+        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : (isBackConfirmationModalOpen ? overlayOpacity : aiHelpOverlayOpacity))))}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : handleDismissAIHelp))))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -689,6 +725,37 @@ export default function YouTubeLinkPage() {
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
+      />
+      <GenericModal
+        visible={isBackConfirmationModalOpen}
+        opacity={backConfirmationModalOpacity}
+        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        buttons="double"
+        onCancel={handleDismissBackConfirmation}
+        onConfirm={() => {
+          // Animate out first, then navigate
+          Animated.parallel([
+            Animated.timing(overlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(backConfirmationModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start(() => {
+            setIsBackConfirmationModalOpen(false);
+            // Navigate after animation completes
+            setTimeout(() => {
+              router.back();
+            }, 50);
+          });
+        }}
+        textMarginBottom={40}
+        contentMarginTop={-10}
+        Icon={DeleteModalIcon}
       />
     </View>
   );

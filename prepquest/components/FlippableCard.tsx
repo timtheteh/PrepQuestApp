@@ -76,8 +76,9 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
   onEraserModeChange: (isEraser: boolean) => void;
   strokeWidth: number;
   onDrawingChange?: (paths: Array<{ path: string; strokeWidth: number }>) => void;
-}>(({ style, isEraserMode, onEraserModeChange, strokeWidth, onDrawingChange }, ref) => {
-  const [paths, setPaths] = useState<Array<{ path: string; strokeWidth: number }>>([]);
+  initialData?: Array<{ path: string; strokeWidth: number }>;
+}>(({ style, isEraserMode, onEraserModeChange, strokeWidth, onDrawingChange, initialData }, ref) => {
+  const [paths, setPaths] = useState<Array<{ path: string; strokeWidth: number }>>(initialData || []);
   const [currentPath, setCurrentPath] = useState<string>('');
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
@@ -157,10 +158,12 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
   // Initialize history with empty state
   useEffect(() => {
     if (history.length === 0) {
-      setHistory([[]]);
+      const initialPaths = initialData || [];
+      setHistory([initialPaths]);
       setHistoryIndex(0);
+      setHasDrawn(initialPaths.length > 0);
     }
-  }, []);
+  }, [initialData]);
 
   // Helper function to split a path at intersection points
   const splitPathAtIntersection = (pathData: { path: string; strokeWidth: number }, eraserX: number, eraserY: number, eraserRadius: number = 20) => {
@@ -353,6 +356,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   const [selectedTool, setSelectedTool] = useState<'marker' | 'eraser'>('marker');
   const [isFlipping, setIsFlipping] = useState(false);
   const [drawingCanvasKey, setDrawingCanvasKey] = useState(0);
+  const [initialDrawingData, setInitialDrawingData] = useState<Array<{ path: string; strokeWidth: number }>>([]);
+  const [isDrawingCanvasReady, setIsDrawingCanvasReady] = useState(false);
   const drawingCanvasRef = useRef<{ undo: () => void; redo: () => void; hasContent: () => boolean; clearContent: () => void; getDrawingData: () => Array<{ path: string; strokeWidth: number }>; loadDrawingData: (data: Array<{ path: string; strokeWidth: number }>) => void }>(null);
 
   // Listen for focus events to check if text was typed in modal
@@ -411,19 +416,34 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
         
         // If switching to marker type, check if there's existing marker content to load
         if (cardType === 'marker') {
+          // Hide the drawing canvas during transition
+          setIsDrawingCanvasReady(false);
+          
+          // Force re-render of drawing canvas by incrementing key to ensure clean state
+          setDrawingCanvasKey(prev => prev + 1);
+          
+          // Get the current content to pass as initial data
           const currentContent = isFlipped ? backContent : frontContent;
           if (currentContent && currentContent.type === 'marker' && React.isValidElement(currentContent.content)) {
             // Extract drawing data from the DrawingRenderer component
             const drawingRenderer = currentContent.content as React.ReactElement<{ drawingData: Array<{ path: string; strokeWidth: number }> }>;
             if (drawingRenderer.props.drawingData) {
-              drawingCanvasRef.current?.loadDrawingData(drawingRenderer.props.drawingData);
+              // Store the drawing data to pass as initial data to the new canvas
+              setInitialDrawingData(drawingRenderer.props.drawingData);
+            } else {
+              setInitialDrawingData([]);
             }
           } else {
-            // If no marker content exists, clear the drawing canvas to ensure it's empty
-            drawingCanvasRef.current?.clearContent();
-            // Force re-render of drawing canvas by incrementing key
-            setDrawingCanvasKey(prev => prev + 1);
+            setInitialDrawingData([]);
           }
+          
+          // Show the drawing canvas after a brief delay to ensure it's ready
+          setTimeout(() => {
+            setIsDrawingCanvasReady(true);
+          }, 50);
+        } else {
+          // Hide canvas when not in marker mode
+          setIsDrawingCanvasReady(false);
         }
         
         // Fade in new content
@@ -836,7 +856,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                 />}
                 </View>
                 
-                {cardType === 'marker' && (
+                {cardType === 'marker' && isDrawingCanvasReady && (
                   <DrawingCanvas 
                     key={drawingCanvasKey}
                     style={styles.drawingCanvasOverlay} 
@@ -872,6 +892,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                       // Notify parent of drawing change for cache saving
                       onDrawingChange?.();
                     }}
+                    initialData={initialDrawingData}
                   />
                 )}
                 

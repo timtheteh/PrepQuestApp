@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginVertical: 5,
+    marginVertical: 20,
     marginHorizontal: 15,
     // borderWidth: 2,
     // borderColor: 'blue', // Visible border to see the ScrollView

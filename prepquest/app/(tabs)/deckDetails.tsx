@@ -1,8 +1,8 @@
+import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ImageBackground, ScrollView, Image, Dimensions } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useState, useRef, useEffect, useContext } from 'react';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuContext } from './_layout';
@@ -12,6 +12,7 @@ import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BottomTextInputModal } from '@/components/BottomTextInputModal';
 
 const SCREEN_TRANSITION_DURATION = 300;
 
@@ -47,10 +48,6 @@ const getCardTypeColor = (cardType: string) => {
 
 const getCardTypeLabel = (cardType: string) => {
   return cardTypeMap[cardType]?.label || 'Others';
-};
-
-const handleFabPress = () => {
-  console.log('FAB pressed');
 };
 
 export default function DeckDetailsScreen() {
@@ -94,6 +91,29 @@ export default function DeckDetailsScreen() {
     router.back();
   };
 
+  const handleFabPress = () => {
+    console.log('FAB pressed');
+  };
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editText, setEditText] = useState(deckTitle as string || '');
+
+  const handleEditNamePress = () => {
+    setEditText(deckTitle as string || '');
+    setShowEditModal(true);
+  };
+
+  const handleDoneEdit = () => {
+    setShowEditModal(false);
+    // Optionally update deck title here
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      setShowEditModal(false);
+    }, [])
+  );
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -113,7 +133,7 @@ export default function DeckDetailsScreen() {
               onQuizPress={() => console.log('Quiz pressed')}
               onFolderPress={() => console.log('Folder pressed')}
               onDeletePress={() => console.log('Delete pressed')}
-              onEditNamePress={() => console.log('Edit name pressed')}
+              onEditNamePress={handleEditNamePress}
             />
           </View>
           
@@ -209,6 +229,13 @@ export default function DeckDetailsScreen() {
           </View>
         </ThemedView>
       </SafeAreaView>
+      <BottomTextInputModal
+        visible={showEditModal}
+        value={editText}
+        onChangeText={setEditText}
+        onDone={handleDoneEdit}
+        placeholder="Edit deck name..."
+      />
     </Animated.View>
   );
 }

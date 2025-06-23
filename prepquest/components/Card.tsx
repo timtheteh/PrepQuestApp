@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions, ImageSourcePropType, Animated, Text, Image } from 'react-native';
 import { CircleSelectButton } from './CircleSelectButton';
 import { FavoriteButton } from './FavoriteButton';
+import { useRouter } from 'expo-router';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
@@ -45,6 +46,7 @@ export function Card({
   date,
   flashcardCount,
 }: CardProps) {
+  const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
   const [showSelectPill, setShowSelectPill] = useState(isSelectMode);
@@ -120,6 +122,25 @@ export function Card({
     }
   };
 
+  const handleCardPress = () => {
+    if (!isSelectMode) {
+      // Navigate to deck details page with card information
+      router.push({
+        pathname: '/(tabs)/deckDetails',
+        params: {
+          deckId: title?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+          deckTitle: title || 'Untitled Deck',
+          deckType: cardType || 'study'
+        }
+      });
+    }
+    
+    // Call the original onPress if provided
+    if (onPress) {
+      onPress();
+    }
+  };
+
   // Card type color and label logic
   const cardTypeMap: Record<string, { color: string; label: string }> = {
     behavioral: { color: '#FDAE61', label: 'Behavioral' },
@@ -137,7 +158,7 @@ export function Card({
         <Pressable 
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          onPress={onPress}
+          onPress={handleCardPress}
         >
           <Animated.View style={[styles.container, containerStyle, style]}>
             <ImageBackground 

@@ -431,6 +431,7 @@ export default function TabLayout() {
               }
             }}
           />
+          <Tabs.Screen name="deckDetails" />
         </Tabs>
         <GreyOverlayBackground 
           visible={isMenuOpen}

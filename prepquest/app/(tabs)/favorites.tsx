@@ -747,8 +747,8 @@ export default function FavoritesScreen() {
           ]}>
             <View style={styles.content}>
               <RoundedContainer 
-                leftLabel="Decks"
-                rightLabel="Folders"
+                leftLabel={`Decks (${favDeckCardsCount})`}
+                rightLabel={`Folders (${favFolderCardsCount})`}
                 onToggle={handleToggle}
               />
 
@@ -783,10 +783,10 @@ export default function FavoritesScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                      Favorite Decks
+                      {`Favorite Decks (${favDeckCardsCount})`}
                     </Title>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                      Favorite Folders
+                      {`Favorite Folders (${favFolderCardsCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 

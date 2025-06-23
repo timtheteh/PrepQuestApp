@@ -757,8 +757,8 @@ export default function DecksScreen() {
           ]}>
             <View style={styles.content}>
               <RoundedContainer 
-                leftLabel="Study"
-                rightLabel="Interview"
+                leftLabel={`Study (${studyCardsCount})`}
+                rightLabel={`Interview (${interviewCardsCount})`}
                 onToggle={handleToggle}
               />
 
@@ -791,10 +791,10 @@ export default function DecksScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                      My Study Decks
+                      {`My Study Decks (${studyCardsCount})`}
                     </Title>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                      My Interview Decks
+                      {`My Interview Decks (${interviewCardsCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 

@@ -25,6 +25,8 @@ interface CardProps {
   title?: string;
   date?: string;
   flashcardCount?: number;
+  deckDetailsBackgroundIndex?: number;
+  company?: string;
 }
 
 export function Card({ 
@@ -45,6 +47,8 @@ export function Card({
   title,
   date,
   flashcardCount,
+  deckDetailsBackgroundIndex,
+  company,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -130,7 +134,12 @@ export function Card({
         params: {
           deckId: title?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
           deckTitle: title || 'Untitled Deck',
-          deckType: cardType || 'study'
+          deckType: cardType || 'study',
+          deckDetailsBackgroundIndex: deckDetailsBackgroundIndex ? deckDetailsBackgroundIndex.toString() : '0',
+          date: date || '',
+          flashcardCount: flashcardCount?.toString() || '0',
+          percent: percent.toString() || '0',
+          company: company || 'study'
         }
       });
     }
@@ -384,7 +393,7 @@ const styles = StyleSheet.create({
   cardIconImage: {
     position: 'absolute',
     top: 15,
-    left: 10,
+    left: 7,
     width: 54,
     height: 54,
     resizeMode: 'contain',

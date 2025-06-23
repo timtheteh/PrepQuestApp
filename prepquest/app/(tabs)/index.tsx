@@ -50,6 +50,7 @@ const studyCardData = [
     title: 'Mathematics Study Prep',
     date: 'Dec 15, 2024',
     flashcardCount: 45,
+    company: 'study'
   },
   {
     percent: 25,
@@ -59,6 +60,7 @@ const studyCardData = [
     title: 'Physics Study Prep',
     date: 'Dec 12, 2024',
     flashcardCount: 32,
+    company: 'study'
   },
   {
     percent: 50,
@@ -68,6 +70,7 @@ const studyCardData = [
     title: 'Chemistry A Level Prep',
     date: 'Dec 10, 2024',
     flashcardCount: 67,
+    company: 'study'
   },
   {
     percent: 75,
@@ -77,6 +80,7 @@ const studyCardData = [
     title: 'Biology SAT Prep',
     date: 'Dec 8, 2024',
     flashcardCount: 89,
+    company: 'study'
   },
   {
     percent: 100,
@@ -86,6 +90,7 @@ const studyCardData = [
     title: 'History SAT Prep',
     date: 'Dec 5, 2024',
     flashcardCount: 123,
+    company: 'study'
   },
   {
     percent: 0,
@@ -95,6 +100,7 @@ const studyCardData = [
     title: 'Geography Study Prep',
     date: 'Dec 3, 2024',
     flashcardCount: 56,
+    company: 'study'
   },
   {
     percent: 60,
@@ -104,6 +110,7 @@ const studyCardData = [
     title: 'Economics A Level Prep',
     date: 'Dec 1, 2024',
     flashcardCount: 78,
+    company: 'study'
   },
   {
     percent: 90,
@@ -113,6 +120,7 @@ const studyCardData = [
     title: 'Literature Exam Prep',
     date: 'Nov 28, 2024',
     flashcardCount: 94,
+    company: 'study'
   },
 ];
 
@@ -135,6 +143,7 @@ const interviewCardData = [
     title: 'Frontend Developer Behavioral Prep',
     date: 'Dec 14, 2024',
     flashcardCount: 28,
+    company: 'Google',
   },
   {
     percent: 40,
@@ -144,6 +153,7 @@ const interviewCardData = [
     title: 'Backend Developer Technical Prep',
     date: 'Dec 11, 2024',
     flashcardCount: 52,
+    company: 'Meta'
   },
   {
     percent: 100,
@@ -153,6 +163,7 @@ const interviewCardData = [
     title: 'Data Scientist Case Study Prep',
     date: 'Dec 9, 2024',
     flashcardCount: 41,
+    company: 'JPMorgan'
   },
   {
     percent: 80,
@@ -162,6 +173,7 @@ const interviewCardData = [
     title: 'DevOps Engineer Brainteasers Prep',
     date: 'Dec 7, 2024',
     flashcardCount: 35,
+    company: 'Google'
   },
   {
     percent: 55,
@@ -170,7 +182,8 @@ const interviewCardData = [
     isSelectMode: false,
     title: 'Mobile Engineer Others Prep',
     date: 'Dec 4, 2024',
-    flashcardCount: 63,
+    flashcardCount: 63, 
+    company: 'Meta'
   },
   {
     percent: 0,
@@ -179,7 +192,8 @@ const interviewCardData = [
     isSelectMode: false,
     title: 'QA Engineer Technical Prep',
     date: 'Dec 2, 2024',
-    flashcardCount: 47,
+    flashcardCount: 47, 
+    company: 'JPMorgan'
   },
 ];
 
@@ -642,6 +656,8 @@ export default function DecksScreen() {
           title={data.title}
           date={data.date}
           flashcardCount={data.flashcardCount}
+          deckDetailsBackgroundIndex={index%4}
+          company={data.company}
         />
       );
     });
@@ -670,6 +686,8 @@ export default function DecksScreen() {
           title={data.title}
           date={data.date}
           flashcardCount={data.flashcardCount}
+          deckDetailsBackgroundIndex={(index + 2) % 4}
+          company={data.company}
         />
       );
     });

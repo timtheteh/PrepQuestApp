@@ -11,6 +11,7 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const SCREEN_TRANSITION_DURATION = 300;
 
@@ -46,6 +47,10 @@ const getCardTypeColor = (cardType: string) => {
 
 const getCardTypeLabel = (cardType: string) => {
   return cardTypeMap[cardType]?.label || 'Others';
+};
+
+const handleFabPress = () => {
+  console.log('FAB pressed');
 };
 
 export default function DeckDetailsScreen() {
@@ -189,6 +194,18 @@ export default function DeckDetailsScreen() {
                 
               </ScrollView>
             </ImageBackground>
+          </View>
+
+          <View style={[
+            styles.fabContainer,
+          ]}>
+            <TouchableOpacity
+                style={[styles.fab]}
+                onPress={handleFabPress}
+                activeOpacity={0.8}
+                >
+                <Ionicons name="eye" size={30} color="white" />
+            </TouchableOpacity>
           </View>
         </ThemedView>
       </SafeAreaView>
@@ -410,5 +427,39 @@ const styles = StyleSheet.create({
   cardDetailsContainer: {
     flex: 1,
     marginTop: 120,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 20 : 15,
+    right: 16,
+    width: 67,
+    height: 67,
+    borderRadius: 67 / 2,
+    backgroundColor: '#4F41D8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 8, // for Android shadow
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100, // Make sure this is tall enough to contain the FAB
+    zIndex: 1,
+  },
+  actionButtonsRow: {
+    position: 'absolute',
+    top: 62,
+    right: 0,
+    left: 0,
+    zIndex: 1,
   },
 }); 

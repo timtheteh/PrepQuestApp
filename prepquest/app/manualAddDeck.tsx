@@ -142,10 +142,12 @@ export default function ManualAddDeckPage() {
     frontContent: {
       content: React.ReactNode;
       type: 'camera' | 'marker' | 'mic' | 'text' | 'none';
+      audioUri?: string; // Optional audio URI for mic content
     } | null;
     backContent: {
       content: React.ReactNode;
       type: 'camera' | 'marker' | 'mic' | 'text' | 'none';
+      audioUri?: string; // Optional audio URI for mic content
     } | null;
     submitted: boolean; // Track if card was submitted via "Fill up next flashcard"
   }
@@ -1064,7 +1066,7 @@ export default function ManualAddDeckPage() {
     if (card.frontContent?.type === 'camera' && card.frontContent?.content) {
       return '<Image>'
     }
-    if (card.frontContent?.type === 'mic' && card.frontContent?.content) {
+    if (card.frontContent?.type === 'mic' && card.frontContent?.audioUri) {
       return '<Voice Recording>'
     }
     if (card.frontContent?.type === 'marker' && card.frontContent?.content) {
@@ -1464,7 +1466,7 @@ export default function ManualAddDeckPage() {
               disabled={isSubmitDisabled()}
               fullWidth
             />
-          ) : (
+          ) : addViewState === 'add' ? (
             <View style={{ flexDirection: 'row', gap: 8, width: '100%', paddingHorizontal: 16}}>
               <ActionButton
                 text="Submit Form 
@@ -1483,6 +1485,14 @@ Next Card?"
                 disabled={!hasCardContent}
               />
             </View>
+          ) : (
+            <ActionButton
+              text="Submit Form With Cards?"
+              backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+              onPress={handleSubmit}
+              disabled={isSubmitDisabled()}
+              fullWidth
+            />
           )}
         </View>
       </View>

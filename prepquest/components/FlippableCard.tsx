@@ -12,10 +12,12 @@ import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
+import { Audio } from 'expo-av';
 
 interface CardContent {
   content: React.ReactNode;
   type: 'camera' | 'marker' | 'mic' | 'text' | 'none';
+  audioUri?: string; // Optional audio URI for mic content
 }
 
 interface FlippableCardProps {
@@ -360,6 +362,9 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   const [initialDrawingData, setInitialDrawingData] = useState<Array<{ path: string; strokeWidth: number }>>([]);
   const [isDrawingCanvasReady, setIsDrawingCanvasReady] = useState(false);
   const drawingCanvasRef = useRef<{ undo: () => void; redo: () => void; hasContent: () => boolean; clearContent: () => void; getDrawingData: () => Array<{ path: string; strokeWidth: number }>; loadDrawingData: (data: Array<{ path: string; strokeWidth: number }>) => void }>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recordingUri, setRecordingUri] = useState<string | null>(null);
 
   // Listen for focus events to check if text was typed in modal
   useFocusEffect(
@@ -413,6 +418,16 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
         if (cardType === 'marker') {
           setSelectedTool('marker');
           setIsEraserMode(false);
+        }
+        
+        // If switching to mic type, request microphone permissions
+        if (cardType === 'mic') {
+          (async () => {
+            const { status } = await Audio.requestPermissionsAsync();
+            if (status !== 'granted') {
+              console.log('Microphone permission not granted');
+            }
+          })();
         }
         
         // If switching to marker type, check if there's existing marker content to load
@@ -622,11 +637,17 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   };
 
   const getOverlayText = () => {
-    switch (displayedCardType) {
+    const currentContent = isFlipped ? backContent : frontContent;
+    const hasAudioRecording = currentContent?.type === 'mic' && currentContent?.audioUri;
+    
+    // If there's content, use the content type instead of displayedCardType
+    const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
+    
+    switch (effectiveCardType) {
       case 'text':
         return "Type here!";
       case 'mic':
-        return "Press & hold mic \nbutton to record";
+        return hasAudioRecording ? "Great! Click the replay\nbutton below to play\nthe recorded audio!" : "Press & hold mic \nbutton to record";
       case 'marker':
         return "Draw here!";
       case 'camera':
@@ -813,6 +834,83 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     }
   };
 
+  // Start recording function
+  const startRecording = async () => {
+    try {
+      console.log('Requesting permissions..');
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      console.log('Starting recording..');
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      setIsRecording(true);
+      console.log('Recording started');
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  // Stop recording function
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    console.log('Stopping recording..');
+    setIsRecording(false);
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    setRecordingUri(uri);
+    setRecording(null);
+    console.log('Recording stopped and stored at', uri);
+
+    // Store the audio recording as content
+    if (uri) {
+      const audioContent = {
+        content: null, // We'll use the transparent overlay area for mic content
+        type: 'mic' as const,
+        audioUri: uri // Store the audio URI in the content
+      };
+
+      if (isFlipped) {
+        setBackContent(audioContent);
+      } else {
+        setFrontContent(audioContent);
+      }
+    }
+  };
+
+  // Play recording function
+  const playRecording = async (uri: string) => {
+    try {
+      console.log('Loading Sound');
+      // Set audio mode for maximum volume
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
+      
+      const { sound } = await Audio.Sound.createAsync({ uri });
+      console.log('Playing Sound');
+      await sound.setVolumeAsync(1.0); // Set volume to maximum (1.0)
+      await sound.playAsync();
+      
+      // Set volume again after playing starts to ensure it takes effect
+      setTimeout(async () => {
+        await sound.setVolumeAsync(1.0);
+      }, 100);
+    } catch (error) {
+      console.error('Error playing recording:', error);
+    }
+  };
+
   useEffect(() => {
     if (onContentChange) {
       onContentChange(frontContent !== null && backContent !== null);
@@ -836,7 +934,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       }
     ]}>
         <Animated.View style={[styles.transparentOverlayArea, { opacity: overlayOpacity }]} >
-            {((!isFlipped && !frontContent) || (isFlipped && !backContent) || (cardType === 'marker' && ((!isFlipped && frontContent?.type === 'marker') || (isFlipped && backContent?.type === 'marker')))) && !isFlipping && (
+            {((!isFlipped && !frontContent) || (isFlipped && !backContent) || (cardType === 'marker' && ((!isFlipped && frontContent?.type === 'marker') || (isFlipped && backContent?.type === 'marker'))) || ((!isFlipped && frontContent?.type === 'mic') || (isFlipped && backContent?.type === 'mic'))) && !isFlipping && (
             <>
                 <View style={styles.topBar2}>
                 {cardType === 'marker' && <DrawableOptionsRow 
@@ -900,40 +998,68 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                 {cardType !== 'marker' && (
                 <Pressable onPress={handleOverlayPress} style={styles.overlayPressable}>
                     <View style={styles.container}>
-                    {displayedCardType === 'none' && (
-                      <View style={styles.animationContainerTop}>
-                        <LottieView
-                          source={require('../assets/animations/DownArrowAnimation.json')}
-                          autoPlay
-                          loop
-                          style={[styles.downArrowAnimation, { transform: [{ rotate: '180deg' }] }]}
-                        />
-                      </View>
+                    {(() => {
+                      const currentContent = isFlipped ? backContent : frontContent;
+                      const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
+                      return effectiveCardType === 'none' && (
+                        <View style={styles.animationContainerTop}>
+                          <LottieView
+                            source={require('../assets/animations/DownArrowAnimation.json')}
+                            autoPlay
+                            loop
+                            style={[styles.downArrowAnimation, { transform: [{ rotate: '180deg' }] }]}
+                          />
+                        </View>
+                      );
+                    })()}
+                    <View style={[styles.overlayTextContainer, { transform: (() => {
+                      const currentContent = isFlipped ? backContent : frontContent;
+                      const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
+                      return effectiveCardType === 'mic' || effectiveCardType === 'camera' ? [{ translateY: -30 }] : [{ translateY: 0 }];
+                    })() }]}>
+                    {isRecording && (() => {
+                      const currentContent = isFlipped ? backContent : frontContent;
+                      const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
+                      return effectiveCardType === 'mic';
+                    })() ? (
+                      <LottieView
+                        source={require('../assets/animations/SoundWaveLoadingAnimation.json')}
+                        autoPlay
+                        loop
+                        style={styles.soundWaveAnimation}
+                      />
+                    ) : (
+                      <Text style={styles.overlayText}>{getOverlayText()}</Text>
                     )}
-                    <View style={[styles.overlayTextContainer, { transform: displayedCardType === 'mic' || displayedCardType === 'camera' ? [{ translateY: -30 }] : [{ translateY: 0 }] }]}>
-                    <Text style={styles.overlayText}>{getOverlayText()}</Text>
                     </View>
-                    {(displayedCardType === 'camera' || displayedCardType === 'mic') && (
-                      <View style={styles.animationContainer}>
-                        <LottieView
-                          source={require('../assets/animations/DownArrowAnimation.json')}
-                          autoPlay
-                          loop
-                          style={styles.downArrowAnimation}
-                        />
-                      </View>
-                    )}
-                    {displayedCardType === 'mic' && (
+                    {(() => {
+                      const currentContent = isFlipped ? backContent : frontContent;
+                      const hasAudioRecording = currentContent?.type === 'mic' && currentContent?.audioUri;
+                      const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
+                      return (effectiveCardType === 'camera' || (effectiveCardType === 'mic' && (hasAudioRecording || !isRecording))) && !isRecording && (
+                        <View style={styles.animationContainer}>
+                          <LottieView
+                            source={require('../assets/animations/DownArrowAnimation.json')}
+                            autoPlay
+                            loop
+                            style={styles.downArrowAnimation}
+                          />
+                        </View>
+                      );
+                    })()}
+                    {(() => {
+                      const currentContent = isFlipped ? backContent : frontContent;
+                      const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
+                      return effectiveCardType === 'mic' && (
                         <View style={styles.micButtonsContainer}>
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.micButton,
-                                pressed && styles.buttonPressed
+                                pressed && styles.buttonPressed,
+                                isRecording && styles.recordingButton
                             ]}
-                            onPress={() => {
-                                console.log('Mic button pressed');
-                                // Add your mic functionality here
-                            }}
+                            onPressIn={startRecording}
+                            onPressOut={stopRecording}
                             >
                             <MicIcon width={36} height={36} />
                             </Pressable>
@@ -943,8 +1069,13 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                                 pressed && styles.buttonPressed
                             ]}
                             onPress={() => {
-                                console.log('Replay button pressed');
-                                // Add your replay functionality here
+                                const currentContent = isFlipped ? backContent : frontContent;
+                                const audioUri = currentContent?.type === 'mic' ? currentContent.audioUri : null;
+                                if (audioUri) {
+                                    playRecording(audioUri);
+                                } else {
+                                    console.log('No recording available to replay');
+                                }
                             }}
                             >
                             <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
@@ -956,8 +1087,12 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             </Svg>
                             </Pressable>
                         </View>
-                    )}
-                    {displayedCardType === 'camera' && (
+                      );
+                    })()}
+                    {(() => {
+                      const currentContent = isFlipped ? backContent : frontContent;
+                      const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
+                      return effectiveCardType === 'camera' && (
                         <View style={styles.micButtonsContainer}>
                             <Pressable 
                             style={({ pressed }) => [
@@ -978,12 +1113,13 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <CameraIconFilled width={38} height={38} />
                             </Pressable>
                         </View>
-                    )}
+                      );
+                    })()}
                     </View>
                 </Pressable>)}
             </>
             )}
-            {(!isFlipped && frontContent && !(cardType === 'marker' && frontContent.type === 'marker') && !isFlipping) && (
+            {(!isFlipped && frontContent && !(cardType === 'marker' && frontContent.type === 'marker') && !(frontContent.type === 'mic') && !isFlipping) && (
                 <View style={styles.mainContent}>
                     <ScrollView 
                         style={[
@@ -1033,7 +1169,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                     )}
                 </View>
             )}
-            {(isFlipped && backContent && !(cardType === 'marker' && backContent.type === 'marker') && !isFlipping) && (
+            {(isFlipped && backContent && !(cardType === 'marker' && backContent.type === 'marker') && !(backContent.type === 'mic') && !isFlipping) && (
             <View style={styles.mainContent}>
                 <ScrollView 
                     style={[
@@ -1332,5 +1468,32 @@ const styles = StyleSheet.create({
   downArrowAnimation: {
     width: 50,
     height: 50,
+  },
+  audioContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  audioText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 24,
+    color: '#000',
+    marginRight: 10,
+  },
+  playButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#000',
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recordingButton: {
+    backgroundColor: '#FF3B30',
+  },
+  soundWaveAnimation: {
+    width: 250,
+    height: 250,
+    alignSelf: 'center',
   },
 }); 

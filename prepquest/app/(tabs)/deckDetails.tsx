@@ -23,6 +23,12 @@ const cardDesigns = [
     require('@/assets/images/DeckDetailsBg4.png'),
 ]
 
+const AICardDesigns = [
+    require('@/assets/images/AIDeckDetailsBg1.png'),
+    require('@/assets/images/AIDeckDetailsBg2.png'),
+    require('@/assets/images/AIDeckDetailsBg3.png'),
+]
+
 const companyLogos = {
     'study': require('@/assets/companyIcons/StudyCardIcon.png'),
     'Google': require('@/assets/companyIcons/GoogleIcon.png'),
@@ -54,7 +60,7 @@ export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const screenOpacity = useRef(new Animated.Value(0)).current;
-  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company,} = useLocalSearchParams();
+  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck } = useLocalSearchParams();
   const { 
     navbarRef,
     setIsMenuOpen,
@@ -75,6 +81,10 @@ export default function DeckDetailsScreen() {
   const cardDate = date as string || '';
   const cardFlashcardCount = parseInt(flashcardCount as string) || 0;
   const cardPercent = parseInt(percent as string) || 0;
+  const AIDeck = isAIDeck as string === 'true';
+  
+  // Ensure backgroundIndex is within bounds for AI card designs (which has 3 elements)
+  const safeBackgroundIndex = AIDeck ? Math.min(backgroundIndex, AICardDesigns.length - 1) : backgroundIndex;
 
   // Handle screen transitions
   useEffect(() => {
@@ -186,9 +196,12 @@ export default function DeckDetailsScreen() {
         date: date as string,
         flashcardCount: flashcardCount as string,
         percent: percent as string,
-        company: company as string
+        company: company as string,
+        isAIDeck: isAIDeck as string
       }
     });
+
+    console.log('isAIDeck', isAIDeck);
   };
   const handleDeletePress = () => {
     setShowEditModal(false);
@@ -254,7 +267,7 @@ export default function DeckDetailsScreen() {
           
           <View style={styles.mainContainer}>
             <ImageBackground 
-              source={cardDesigns[backgroundIndex]}
+              source={AIDeck ? AICardDesigns[safeBackgroundIndex] : cardDesigns[safeBackgroundIndex]}
               style={styles.backgroundImage}
               imageStyle={styles.backgroundImageStyle}
             >
@@ -264,50 +277,89 @@ export default function DeckDetailsScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 <View style={styles.cardContentContainer}>
-                  {/* Company logo at top left */}
-                  {cardCompanyLogo && (
-                    <Image source={cardCompanyLogo} style={styles.cardIconImage} />
-                  )}
+                  {AIDeck ? (
+                    // AI Deck Layout - 3 columns
+                    <View style={styles.aiDeckLayout}>
+                      {/* Column 1: Company Logo */}
+                      <View style={styles.aiDeckColumn1}>
+                        {cardCompanyLogo && (
+                          <Image source={cardCompanyLogo} style={styles.aiDeckCompanyLogo} />
+                        )}
+                      </View>
+                      
+                      {/* Column 2: Title */}
+                      <View style={styles.aiDeckColumn2}>
+                        {deckTitle && (
+                          <Text 
+                            style={styles.aiDeckTitle}
+                            numberOfLines={2}
+                          >
+                            {deckTitle}
+                          </Text>
+                        )}
+                      </View>
+                      
+                      {/* Column 3: Card Type Pill and Flashcard Count */}
+                      <View style={styles.aiDeckColumn3}>
+                        {deckType && (
+                          <View style={[styles.aiDeckCardTypePill, { borderColor: getCardTypeColor(deckType as string) }]}>
+                            <Text style={[styles.aiDeckCardTypeText, { color: '#000' }]}>{getCardTypeLabel(deckType as string)}</Text>
+                          </View>
+                        )}
+                        {cardFlashcardCount !== undefined && (
+                          <Text style={styles.aiDeckFlashcardCount}>{cardFlashcardCount} cards</Text>
+                        )}
+                      </View>
+                    </View>
+                  ) : (
+                    // Regular Deck Layout - Original positioning
+                    <>
+                      {/* Company logo at top left */}
+                      {cardCompanyLogo && (
+                        <Image source={cardCompanyLogo} style={styles.cardIconImage} />
+                      )}
 
-                    <View 
-                    style={[
-                        styles.favoriteButtonContainer,
-                    ]}
-                    >
+                      <View 
+                        style={[
+                          styles.favoriteButtonContainer,
+                        ]}
+                      >
                         <FavoriteButton isSelectMode={false} />
-                    </View>
-                  
-                  {/* Title */}
-                  {deckTitle && (
-                    <Text 
-                      style={styles.cardTitle}
-                      numberOfLines={2}
-                    >
-                      {deckTitle}
-                    </Text>
-                  )}
-                  
-                  {/* Date and Flashcard Count Row */}
-                  {(cardDate || cardFlashcardCount !== undefined) && (
-                    <View 
-                    style={[
-                      styles.dateFlashcardRow,
-                    ]}
-                  >
-                    {cardDate && (
-                      <Text style={styles.dateText}>{cardDate}</Text>
-                    )}
-                    {cardFlashcardCount !== undefined && (
-                      <Text style={styles.flashcardCountText}>{cardFlashcardCount} cards</Text>
-                    )}
-                  </View>
-                  )}
-                  
-                  {/* Card type pill */}
-                  {deckType && (
-                    <View style={[styles.cardTypePill, { borderColor: getCardTypeColor(deckType as string) }]}>
-                      <Text style={[styles.cardTypeText, { color: '#000' }]}>{getCardTypeLabel(deckType as string)}</Text>
-                    </View>
+                      </View>
+                      
+                      {/* Title */}
+                      {deckTitle && (
+                        <Text 
+                          style={styles.cardTitle}
+                          numberOfLines={2}
+                        >
+                          {deckTitle}
+                        </Text>
+                      )}
+                      
+                      {/* Date and Flashcard Count Row */}
+                      {(cardDate || cardFlashcardCount !== undefined) && (
+                        <View 
+                          style={[
+                            styles.dateFlashcardRow,
+                          ]}
+                        >
+                          {cardDate && (
+                            <Text style={styles.dateText}>{cardDate}</Text>
+                          )}
+                          {cardFlashcardCount !== undefined && (
+                            <Text style={styles.flashcardCountText}>{cardFlashcardCount} cards</Text>
+                          )}
+                        </View>
+                      )}
+                      
+                      {/* Card type pill */}
+                      {deckType && (
+                        <View style={[styles.cardTypePill, { borderColor: getCardTypeColor(deckType as string) }]}>
+                          <Text style={[styles.cardTypeText, { color: '#000' }]}>{getCardTypeLabel(deckType as string)}</Text>
+                        </View>
+                      )}
+                    </>
                   )}
                   
                   {/* Progress bar */}
@@ -321,7 +373,7 @@ export default function DeckDetailsScreen() {
                   )}
                 </View>
 
-                <View style={styles.cardDetailsContainer}>
+                <View style={[styles.cardDetailsContainer, { marginTop: AIDeck ? 0 : 120 }]}>
                     <AverageGradeThermometer/>
                     <BreakdownByDifficultyPie/>
                     <AverageSpeedTotal/>
@@ -543,8 +595,6 @@ const styles = StyleSheet.create({
     color: '#000',
     zIndex: 2,
     lineHeight: Platform.OS === 'ios' ? 24 : 28,
-    // borderWidth: 1,
-    // borderColor: 'red',
   },
   dateFlashcardRow: {
     flexDirection: 'row',
@@ -603,5 +653,59 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     zIndex: 1,
+  },
+  aiDeckLayout: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginLeft: 10,
+  },
+  aiDeckColumn1: {
+    flex: 0.7,
+    alignItems: 'flex-start',
+  },
+  aiDeckColumn2: {
+    flex: 2,
+    alignItems: 'center',
+    height: '100%',
+    justifyContent: 'center',
+  },
+  aiDeckColumn3: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  aiDeckCompanyLogo: {
+    width: 54,
+    height: 54,
+    resizeMode: 'contain',
+    marginTop: 8,
+  },
+  aiDeckTitle: {
+    fontFamily: 'Neuton-Regular',
+    fontSize: 24,
+    color: '#000',
+    lineHeight: Platform.OS === 'ios' ? 24 : 28,
+    textAlign: 'left',
+  },
+  aiDeckCardTypePill: {
+    width: 84,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 38,
+    borderRadius: 21,
+    marginBottom: 8,
+  },
+  aiDeckCardTypeText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  aiDeckFlashcardCount: {
+    fontFamily: 'Satoshi-Italic',
+    fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
+    color: '#222',
+    textAlign: 'center',
   },
 }); 

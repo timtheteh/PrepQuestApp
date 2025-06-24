@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { View, StyleSheet, ImageBackground, Platform, ImageSourcePropType, Pressable, Text, Image, Dimensions } from 'react-native';
 
@@ -9,6 +10,11 @@ interface AIDeckCardProps {
   cardType?: string;
   title?: string;
   flashcardCount?: number;
+  isAIDeck?: boolean;
+  isSelectMode?: boolean;
+  deckDetailsBackgroundIndex?: number;
+  company?: string;
+  dismissModal?: () => void;
 }
 
 export function AIDeckCard({ 
@@ -19,6 +25,11 @@ export function AIDeckCard({
   cardType,
   title,
   flashcardCount,
+  isAIDeck = true,
+  isSelectMode = false,
+  deckDetailsBackgroundIndex,
+  company,
+  dismissModal,
 }: AIDeckCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -28,6 +39,29 @@ export function AIDeckCard({
 
   const handlePressOut = () => {
     setIsPressed(false);
+  };
+
+  const handleCardPress = () => {
+    if (!isSelectMode) {
+      // Dismiss the AI prompt modal first
+      if (dismissModal) {
+        dismissModal();
+      }
+      
+      // Then navigate to deck details
+      router.push({
+        pathname: '/(tabs)/deckDetails',
+        params: {
+          deckId: title?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+          deckTitle: title || 'Untitled Deck',
+          deckType: cardType || 'study',
+          deckDetailsBackgroundIndex: deckDetailsBackgroundIndex ? deckDetailsBackgroundIndex.toString() : '0',
+          company: company || 'study',
+          isAIDeck: isAIDeck ? 'true' : 'false',
+          flashcardCount: flashcardCount?.toString() || '0',
+        }
+      })
+    }
   };
 
   // Card type color and label logic
@@ -47,7 +81,7 @@ export function AIDeckCard({
         <Pressable 
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          onPress={onPress}
+          onPress={handleCardPress}
         >
           <View style={styles.container}>
             <ImageBackground 

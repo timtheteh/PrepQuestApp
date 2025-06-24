@@ -31,7 +31,7 @@ const folderData = [
 
 export default function FoldersScreen() {
   const router = useRouter();
-  const { isAddToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company } = useLocalSearchParams();
+  const { isAddToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
@@ -453,6 +453,7 @@ export default function FoldersScreen() {
                 flashcardCount: flashcardCount as string,
                 percent: percent as string,
                 company: company as string,
+                isAIDeck: isAIDeck as string,
                 mode: previousMode
               }
             });
@@ -488,6 +489,7 @@ export default function FoldersScreen() {
               flashcardCount: flashcardCount as string,
               percent: percent as string,
               company: company as string,
+              isAIDeck: isAIDeck as string,
               mode: previousMode
             }
           });

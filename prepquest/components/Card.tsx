@@ -27,6 +27,7 @@ interface CardProps {
   flashcardCount?: number;
   deckDetailsBackgroundIndex?: number;
   company?: string;
+  isAIDeck?: boolean;
 }
 
 export function Card({ 
@@ -49,6 +50,7 @@ export function Card({
   flashcardCount,
   deckDetailsBackgroundIndex,
   company,
+  isAIDeck = false,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -139,7 +141,8 @@ export function Card({
           date: date || '',
           flashcardCount: flashcardCount?.toString() || '0',
           percent: percent.toString() || '0',
-          company: company || 'study'
+          company: company || 'study',
+          isAIDeck: isAIDeck ? 'true' : 'false'
         }
       });
     }

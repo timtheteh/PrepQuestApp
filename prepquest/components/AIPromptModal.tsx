@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, Animated, Dimensions, Text, View } from 'react-native';
 import { AIDeckCard } from './AIDeckCard';
+import { MenuContext } from '@/app/(tabs)/_layout';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -17,6 +18,7 @@ const AI_DECKS = [
     cardType: 'behavioral',
     title: 'AI Behavioral Prep',
     flashcardCount: 25,
+    company: 'Google',
   },
   {
     normal: require('@/assets/images/AIDeckCover2.png'),
@@ -25,6 +27,7 @@ const AI_DECKS = [
     cardType: 'technical',
     title: 'AI Technical Prep',
     flashcardCount: 32,
+    company: 'Meta',
   },
   {
     normal: require('@/assets/images/AIDeckCover3.png'),
@@ -33,6 +36,7 @@ const AI_DECKS = [
     cardType: 'case study',
     title: 'AI Case Study Prep',
     flashcardCount: 18,
+    company: 'JPMorgan',
   },
 ];
 
@@ -40,6 +44,31 @@ export function AIPromptModal({
   visible,
   opacity = new Animated.Value(0)
 }: AIPromptModalProps) {
+  const { 
+    setIsMenuOpen, 
+    menuOverlayOpacity,
+    setIsAIPromptOpen,
+    aiPromptOpacity
+  } = useContext(MenuContext);
+
+  const dismissModal = () => {
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(aiPromptOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsMenuOpen(false);
+      setIsAIPromptOpen(false);
+    });
+  };
+
   if (!visible) return null;
 
   return (
@@ -66,6 +95,9 @@ export function AIPromptModal({
               title={deck.title}
               flashcardCount={deck.flashcardCount}
               onPress={() => console.log(`AI Deck ${index + 1} pressed`)}
+              deckDetailsBackgroundIndex={index}
+              company={deck.company}
+              dismissModal={dismissModal}
             />
           ))}
         </View>

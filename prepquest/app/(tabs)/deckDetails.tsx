@@ -13,6 +13,38 @@ import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
+import LottieView from 'lottie-react-native';
+
+const getEmptyStateContainerMarginTop = () => {
+    const { width, height } = Dimensions.get('window');
+  
+    // iphone se
+    if (Platform.OS === 'ios' && height <= 670) {
+      return '0%';
+    }
+  
+     /// iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 940) {
+      return '25%';
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return '24%';
+    }
+     // Pixel 9 Pro, Pixel 9 Pro XL 
+     if (Platform.OS === 'android' && height >= 935) {
+      return '30%';
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return '23%';
+    }
+    
+    // iphone 16, iphone 16 pro, Pixel 7 Pro, 
+    return Platform.OS === 'ios' ? '18%' : '22%';
+  };
 
 const SCREEN_TRANSITION_DURATION = 300;
 
@@ -143,7 +175,22 @@ export default function DeckDetailsScreen() {
   };
 
   const handleFabPress = () => {
-    console.log('FAB pressed');
+    // Navigate to viewFlashcards page
+    router.push({
+      pathname: '/(tabs)/viewFlashcards',
+      params: {
+        deckId: deckId as string,
+        deckTitle: deckTitle as string,
+        deckType: deckType as string,
+        deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
+        date: date as string,
+        flashcardCount: flashcardCount as string,
+        percent: percent as string,
+        company: company as string,
+        isAIDeck: isAIDeck as string,
+        mode: currentMode
+      }
+    });
   };
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -374,9 +421,53 @@ export default function DeckDetailsScreen() {
                 </View>
 
                 <View style={[styles.cardDetailsContainer, { marginTop: AIDeck ? 0 : 120 }]}>
-                    <AverageGradeThermometer/>
-                    <BreakdownByDifficultyPie/>
-                    <AverageSpeedTotal/>
+                  {AIDeck ? (
+                    // AI Deck - Three stacked EmptyState animations
+                    <View style={[styles.emptyStateContainer, { marginTop: getEmptyStateContainerMarginTop() }]}>
+                    <View style={styles.emptyStateAnimationsContainer}>
+                      {/* First animation - normal size, rotated 20° right */}
+                      <View style={styles.aiDeckAnimation1}>
+                        <LottieView
+                          source={require('@/assets/animations/EmptyState1.json')}
+                          autoPlay
+                          loop
+                          style={styles.aiDeckAnimation}
+                        />
+                      </View>
+                      
+                      {/* Second animation - 80% smaller, positioned top-left, rotated 30° left */}
+                      <View style={styles.aiDeckAnimation2}>
+                        <LottieView
+                          source={require('@/assets/animations/EmptyState1.json')}
+                          autoPlay
+                          loop
+                          style={[styles.aiDeckAnimation,]}
+                        />
+                      </View>
+                      
+                      {/* Third animation - 60% smaller, positioned top-right, rotated 10° right */}
+                      <View style={styles.aiDeckAnimation3}>
+                        <LottieView
+                          source={require('@/assets/animations/EmptyState1.json')}
+                          autoPlay
+                          loop
+                          style={[styles.aiDeckAnimation]}
+                        />
+                      </View>
+                    </View>
+                    {/* AI Deck stats message */}
+                    <Text style={styles.aiDeckStatsMessage}>
+                    No stats yet! View, study or quiz yourself on this deck in the meantime!
+                    </Text>
+                    </View>
+                  ) : (
+                    // Regular deck - Original components
+                    <>
+                      <AverageGradeThermometer/>
+                      <BreakdownByDifficultyPie/>
+                      <AverageSpeedTotal/>
+                    </>
+                  )}
                 </View>
                 
               </ScrollView>
@@ -707,5 +798,52 @@ const styles = StyleSheet.create({
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
     color: '#222',
     textAlign: 'center',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateAnimationsContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 300,
+  },
+  aiDeckAnimation1: {
+    position: 'absolute',
+    top: "25%",
+    left: '-5%',
+    width: 280,
+    height: 280,
+    transform: [{ rotate: '2deg' }],
+  },
+  aiDeckAnimation2: {
+    position: 'absolute',
+    top: '2%',
+    left: '7%',
+    width: 180,
+    height: 180,
+    transform: [{ rotate: '-25deg' }],
+  },
+  aiDeckAnimation3: {
+    position: 'absolute',
+    top: '10%',
+    right: "-5%",
+    width: 240,
+    height: 240,
+    transform: [{ rotate: '15deg' }],
+  },
+  aiDeckAnimation: {
+    width: '100%',
+    height: '100%',
+    // borderWidth: 1,
+    // borderColor: 'blue',
+  },
+  aiDeckStatsMessage: {
+    fontFamily: 'Satoshi-Italic',
+    fontSize: 20,
+    color: '#222',
+    textAlign: 'center',
+    marginTop: 10,
   },
 }); 

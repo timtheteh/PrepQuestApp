@@ -477,6 +477,7 @@ export default function TabLayout() {
             }}
           />
           <Tabs.Screen name="deckDetails" />
+          <Tabs.Screen name="viewFlashcards" />
         </Tabs>
         <GreyOverlayBackground 
           visible={isMenuOpen}

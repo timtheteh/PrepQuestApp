@@ -8,6 +8,7 @@ interface CircleIconButtonProps {
   color?: string;
   style?: ViewStyle;
   renderCustomIcon?: (color: string) => React.ReactNode;
+  selected?: boolean;
 }
 
 export function CircleIconButton({ 
@@ -16,15 +17,16 @@ export function CircleIconButton({
   onPress,
   color = 'black',
   style,
-  renderCustomIcon
+  renderCustomIcon,
+  selected = false
 }: CircleIconButtonProps) {
   return (
     <TouchableOpacity 
-      style={[styles.circleButton, style]}
+      style={[styles.circleButton, selected && styles.selected, style]}
       activeOpacity={1}
       pressRetentionOffset={{ top: 0, left: 0, bottom: 0, right: 0 }}
-      onPressIn={(e) => e.currentTarget.setNativeProps({ style: styles.circleButtonPressed })}
-      onPressOut={(e) => e.currentTarget.setNativeProps({ style: styles.circleButton })}
+      onPressIn={selected ? undefined : (e) => e.currentTarget.setNativeProps({ style: styles.circleButtonPressed })}
+      onPressOut={selected ? undefined : (e) => e.currentTarget.setNativeProps({ style: styles.circleButton })}
       onPress={onPress}
     >
       {renderCustomIcon ? renderCustomIcon(color) : (
@@ -50,5 +52,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#D5D4DD',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  selected: {
+    backgroundColor: '#D5D4DD',
   },
 }); 

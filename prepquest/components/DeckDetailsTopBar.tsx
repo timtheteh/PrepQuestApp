@@ -13,6 +13,7 @@ interface DeckDetailsTopBarProps {
   onFolderPress?: () => void;
   onDeletePress?: () => void;
   onEditNamePress?: () => void;
+  editNameSelected?: boolean;
 }
 
 export function DeckDetailsTopBar({
@@ -21,6 +22,7 @@ export function DeckDetailsTopBar({
   onFolderPress,
   onDeletePress,
   onEditNamePress,
+  editNameSelected,
 }: DeckDetailsTopBarProps) {
   return (
     <View style={styles.container}>
@@ -43,6 +45,7 @@ export function DeckDetailsTopBar({
       />
       <CircleIconButton 
         onPress={onEditNamePress}
+        selected={editNameSelected}
         renderCustomIcon={(color) => <FontAwesome5 name="pen" size={16} color={color} />}
       />
     </View>

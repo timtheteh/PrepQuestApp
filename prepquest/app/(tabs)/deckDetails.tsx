@@ -97,20 +97,47 @@ export default function DeckDetailsScreen() {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editText, setEditText] = useState(deckTitle as string || '');
+  const [editNameSelected, setEditNameSelected] = useState(false);
 
   const handleEditNamePress = () => {
+    if (editNameSelected) return;
     setEditText(deckTitle as string || '');
     setShowEditModal(true);
+    setEditNameSelected(true);
   };
 
   const handleDoneEdit = () => {
     setShowEditModal(false);
+    setEditNameSelected(false);
     // Optionally update deck title here
+  };
+
+  const handleOtherButtonPress = () => {
+    setShowEditModal(false);
+    setEditNameSelected(false);
+  };
+
+  const handleStudyPress = () => {
+    setShowEditModal(false);
+    // ...your study logic
+  };
+  const handleQuizPress = () => {
+    setShowEditModal(false);
+    // ...your quiz logic
+  };
+  const handleFolderPress = () => {
+    setShowEditModal(false);
+    // ...your folder logic
+  };
+  const handleDeletePress = () => {
+    setShowEditModal(false);
+    // ...your delete logic
   };
 
   useFocusEffect(
     useCallback(() => {
       setShowEditModal(false);
+      setEditNameSelected(false);
     }, [])
   );
 
@@ -129,11 +156,12 @@ export default function DeckDetailsScreen() {
           
           <View style={styles.headerIconsContainer}>
             <DeckDetailsTopBar 
-              onStudyPress={() => console.log('Study pressed')}
-              onQuizPress={() => console.log('Quiz pressed')}
-              onFolderPress={() => console.log('Folder pressed')}
-              onDeletePress={() => console.log('Delete pressed')}
+              onStudyPress={handleOtherButtonPress}
+              onQuizPress={handleOtherButtonPress}
+              onFolderPress={handleOtherButtonPress}
+              onDeletePress={handleOtherButtonPress}
               onEditNamePress={handleEditNamePress}
+              editNameSelected={editNameSelected}
             />
           </View>
           

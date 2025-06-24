@@ -28,6 +28,7 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = ({
       >
         <View style={styles.modalView}>
           <View style={styles.header}>
+            <Text style={styles.headerTitle}>Edit deck name</Text>
             <TouchableOpacity onPress={onDone}>
               <Text style={styles.doneButton}>Done</Text>
             </TouchableOpacity>
@@ -70,18 +71,24 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   header: {
-    alignItems: 'flex-end',
     marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   doneButton: {
     color: '#44B88A',
     fontSize: 18,
     fontWeight: '600',
+    marginTop: 5,
   },
   input: {
     minHeight: 40,
     maxHeight: 200,
-    fontSize: 18,
+    fontSize: 16,
     textAlignVertical: 'top',
+  },
+  headerTitle: {
+    fontFamily: 'Neuton-Regular',
+    fontSize: 24,
   },
 }); 

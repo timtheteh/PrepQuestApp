@@ -6,8 +6,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuContext } from './_layout';
 import { ViewFlashcardsTopBar } from '@/components/ViewFlashcardsTopBar';
+import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 
 const SCREEN_TRANSITION_DURATION = 300;
+const ACTION_ROW_HEIGHT = 60;
+const ACTION_ROW_ANIMATION_DURATION = 300;
 
 // Local TopicPill component
 const TopicPill = ({ text }: { text: string }) => {
@@ -40,6 +43,10 @@ export default function ViewFlashcardsScreen() {
 
   // View state management - always start in "grid" state
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const actionRowOpacity = useRef(new Animated.Value(0)).current;
+  const actionRowTranslateY = useRef(new Animated.Value(-20)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
 
   // Dummy topic data
   const dummyTopics = [
@@ -91,6 +98,46 @@ export default function ViewFlashcardsScreen() {
     }
   }, [isFocused]);
 
+  useEffect(() => {
+    if (isSelectMode) {
+      Animated.parallel([
+        Animated.timing(actionRowOpacity, {
+          toValue: 1,
+          duration: ACTION_ROW_ANIMATION_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(actionRowTranslateY, {
+          toValue: 0,
+          duration: ACTION_ROW_ANIMATION_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerTranslateY, {
+          toValue: ACTION_ROW_HEIGHT,
+          duration: ACTION_ROW_ANIMATION_DURATION,
+          useNativeDriver: true,
+        })
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(actionRowOpacity, {
+          toValue: 0,
+          duration: ACTION_ROW_ANIMATION_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(actionRowTranslateY, {
+          toValue: -20,
+          duration: ACTION_ROW_ANIMATION_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerTranslateY, {
+          toValue: 0,
+          duration: ACTION_ROW_ANIMATION_DURATION,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isSelectMode]);
+
   // Clean up animation when component unmounts
   useEffect(() => {
     return () => {
@@ -135,6 +182,14 @@ export default function ViewFlashcardsScreen() {
   const handleListPress = () => {
     setViewMode('list');
     console.log('List view activated');
+  };
+
+  // Action row handlers
+  const handleSelect = () => setIsSelectMode(true);
+  const handleSelectAll = () => {/* TODO: select all logic */};
+  const handleCancel = () => setIsSelectMode(false);
+  const handleActionIconPress = (index: number) => {
+    // TODO: handle trash action
   };
 
   return (
@@ -201,22 +256,35 @@ export default function ViewFlashcardsScreen() {
           </View>
           
           <View style={styles.mainContainer}>
+            {/* Animated ActionButtonsRow above the header row, absolutely positioned */}
+            <Animated.View style={[
+              styles.actionButtonsRow,
+              {
+                opacity: actionRowOpacity,
+                transform: [{ translateY: actionRowTranslateY }],
+                zIndex: 1,
+              }
+            ]}>
+              <ActionButtonsRow
+                iconNames={['trash']}
+                onCancel={handleCancel}
+                onIconPress={handleActionIconPress}
+                iconColors={['#FF3B30']}
+                style={{ opacity: isSelectMode ? 1 : 0, pointerEvents: isSelectMode ? 'auto' : 'none', marginRight: -15}}
+              />
+            </Animated.View>
             {/* Flashcards title row */}
-            <View style={styles.flashcardsHeaderRow}>
+            <Animated.View style={[styles.flashcardsHeaderRow, { transform: [{ translateY: headerTranslateY }] }]}> 
               <Text style={styles.flashcardsTitle}>Flashcards</Text>
-                <TouchableOpacity 
-                    // onPress={isSelectMode ? handleSelectAll : handleSelect}
-                    style={styles.selectButtonContainer}
-                    >
-                    <Animated.Text style={[
-                        styles.selectButton,
-                        // styles.selectButtonAbsolute,
-                        // { opacity: selectOpacity }
-                        ]}>
-                        Select
-                    </Animated.Text>
-                </TouchableOpacity>
-            </View>
+              <TouchableOpacity 
+                onPress={isSelectMode ? handleSelectAll : handleSelect}
+                style={styles.selectButtonContainer}
+              >
+                <Animated.Text style={styles.selectButton}>
+                  {isSelectMode ? 'Select All' : 'Select'}
+                </Animated.Text>
+              </TouchableOpacity>
+            </Animated.View>
             {/* Content will go here - will be affected by viewMode state */}
             {/* TODO: Add grid/list view content based on viewMode */}
           </View>
@@ -288,8 +356,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 8,
     // marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'green',
+    // borderWidth: 1,
+    // borderColor: 'green',
   },
   flashcardsHeaderRow: {
     flexDirection: 'row',
@@ -377,7 +445,14 @@ const styles = StyleSheet.create({
   mainScrollViewContent: {
     flexGrow: 1,
     // alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'blue',
+    // borderWidth: 1,
+    // borderColor: 'blue',
+  },
+  actionButtonsRow: {
+    position: 'absolute',
+    top: 18,
+    right: 0,
+    left: 0,
+    zIndex: 1,
   },
 }); 

@@ -14,6 +14,7 @@ interface HeaderIconButtonsProps {
   onFilterPress?: () => void;
   onSearchPress?: () => void;
   pageType: PageType;
+  disabled?: boolean;
 }
 
 export interface HeaderIconButtonsRef {
@@ -50,7 +51,8 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   onCalendarPress,
   onFilterPress,
   onSearchPress,
-  pageType
+  pageType,
+  disabled
 }, ref) => {
   const { 
     setIsMenuOpen, 
@@ -321,6 +323,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
         iconName="sparkles" 
         size={20} 
         onPress={handleAIPress}
+        disabled={disabled}
       />
       <CircleIconButton 
         iconName="calendar" 

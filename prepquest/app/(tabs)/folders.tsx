@@ -576,6 +576,7 @@ export default function FoldersScreen() {
               onAIPress={handleSparklesPress}
               onCalendarPress={handleCalendarPress}
               pageType="folders"
+              disabled={isAddToFoldersMode}
             />
           </View>
           

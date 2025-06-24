@@ -255,44 +255,14 @@ export default function DecksScreen() {
         // Enter selection mode
         setIsSelectMode(true);
         
-        // Trigger selection mode animations
-        Animated.parallel([
-          Animated.timing(shiftAnim, {
-            toValue: SHIFT_DISTANCE,
-            duration: selectUnselectedDuration,
-            useNativeDriver: true,
-          }),
-          Animated.timing(marginAnim, {
-            toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-            duration: selectUnselectedDuration,
-            useNativeDriver: false,
-          }),
-          Animated.timing(actionRowOpacity, {
-            toValue: 1,
-            duration: selectUnselectedDuration,
-            useNativeDriver: true,
-          }),
-          Animated.timing(selectTextAnim, {
-            toValue: 1,
-            duration: selectUnselectedDuration,
-            useNativeDriver: true,
-          }),
-          Animated.timing(fabOpacity, {
-            toValue: 0,
-            duration: selectUnselectedDuration,
-            useNativeDriver: true,
-          }),
-          Animated.timing(cardWidthPercentage, {
-            toValue: 85,
-            duration: selectUnselectedDuration,
-            useNativeDriver: false,
-          }),
-          Animated.timing(circleButtonOpacity, {
-            toValue: 1,
-            duration: selectUnselectedDuration,
-            useNativeDriver: true,
-          })
-        ]).start();
+        // Set animation values directly to their final positions without animation
+        shiftAnim.setValue(SHIFT_DISTANCE);
+        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        actionRowOpacity.setValue(1);
+        selectTextAnim.setValue(1);
+        fabOpacity.setValue(0);
+        cardWidthPercentage.setValue(85);
+        circleButtonOpacity.setValue(1);
       }
 
       Animated.timing(screenOpacity, {

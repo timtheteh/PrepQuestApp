@@ -536,7 +536,8 @@ export default function FavoritesScreen() {
                 params: { 
                   isAddToFolders: 'true',
                   previousMode: isFavFoldersMode ? 'interview' : 'study',
-                  selectedState: 'true'
+                  selectedState: 'true',
+                  sourcePage: 'favorites'
                 }
               });
             }, 50);
@@ -546,7 +547,8 @@ export default function FavoritesScreen() {
               params: { 
                 isAddToFolders: 'true',
                 previousMode: isFavFoldersMode ? 'interview' : 'study',
-                selectedState: 'true'
+                selectedState: 'true',
+                sourcePage: 'favorites'
               }
             });
             setTimeout(() => {

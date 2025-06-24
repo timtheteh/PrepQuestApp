@@ -31,7 +31,7 @@ const folderData = [
 
 export default function FoldersScreen() {
   const router = useRouter();
-  const { isAddToFolders, previousMode, selectedState, sourcePage } = useLocalSearchParams();
+  const { isAddToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
@@ -52,7 +52,8 @@ export default function FoldersScreen() {
     setIsAddToFoldersModalOpen,
     addToFoldersModalOpacity,
     setNoSelectionModalSubtitle,
-    sourcePageForFolders
+    sourcePageForFolders,
+    setSourcePageForFolders
   } = useContext(MenuContext);
 
   // Animation values
@@ -76,6 +77,9 @@ export default function FoldersScreen() {
 
       // Check if we should enter AddToFolders mode
       if (isAddToFolders === 'true') {
+        // Set the source page for folders in context
+        setSourcePageForFolders(sourcePage as string || '');
+        
         // First reset any selected folders before showing circle buttons
         setSelectedFolders(new Set());
         
@@ -328,28 +332,65 @@ export default function FoldersScreen() {
       
       // Navigate back based on source page
       if (Platform.OS === 'ios') {
-        if (sourcePageForFolders === 'favorites') {
+        if (sourcePageForFolders === 'favorites' || sourcePageForFolders === 'deckDetails') {
           navbarRef?.current?.resetAnimation();
         } else {
           navbarRef?.current?.setDecksTab();
         }
         setTimeout(() => {
-          router.push({
-            pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
-            params: {
-              mode: previousMode
-            }
-          });
+          if (sourcePageForFolders === 'favorites') {
+            router.push({
+              pathname: '/(tabs)/favorites',
+              params: {
+                mode: previousMode,
+                selected: 'true'
+              }
+            });
+          } else if (sourcePageForFolders === 'deckDetails') {
+            router.push({
+              pathname: '/(tabs)/deckDetails',
+              params: {
+                mode: previousMode,
+              }
+            }) }
+          else {
+            router.push({
+              pathname: '/(tabs)',
+              params: {
+                mode: previousMode,
+                selected: 'true'
+              }
+            });
+          }
         }, 50);
       } else {
-        router.push({
-          pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
-          params: {
-            mode: previousMode
-          }
-        });
+        if (sourcePageForFolders === 'favorites') {
+          router.push({
+            pathname: '/(tabs)/favorites',
+            params: {
+              mode: previousMode,
+              selected: 'true'
+            }
+          });
+        } else if (sourcePageForFolders === 'deckDetails') {
+          // Navigate back to deckDetails page
+          router.push({
+            pathname: '/(tabs)/deckDetails',
+            params: {
+              mode: previousMode,
+            }
+          });
+        } else {
+          router.push({
+            pathname: '/(tabs)',
+            params: {
+              mode: previousMode,
+              selected: 'true'
+            }
+          });
+        }
         setTimeout(() => {
-          if (sourcePageForFolders === 'favorites') {
+          if (sourcePageForFolders === 'favorites' || sourcePageForFolders === 'deckDetails') {
             navbarRef?.current?.resetAnimation();
           } else {
             navbarRef?.current?.setDecksTab();
@@ -385,28 +426,84 @@ export default function FoldersScreen() {
       if (Platform.OS === 'ios') {
         if (sourcePageForFolders === 'favorites') {
           navbarRef?.current?.resetAnimation();
+        } else if (sourcePageForFolders === 'deckDetails') {
+          navbarRef?.current?.resetAnimation();
         } else {
           navbarRef?.current?.setDecksTab();
         }
         setTimeout(() => {
+          if (sourcePageForFolders === 'favorites') {
+            router.push({
+              pathname: '/(tabs)/favorites',
+              params: {
+                mode: previousMode,
+                selected: 'true'
+              }
+            });
+          } else if (sourcePageForFolders === 'deckDetails') {
+            // Navigate back to deckDetails page with all original parameters
+            router.push({
+              pathname: '/(tabs)/deckDetails',
+              params: {
+                deckId: deckId as string,
+                deckTitle: deckTitle as string,
+                deckType: deckType as string,
+                deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
+                date: date as string,
+                flashcardCount: flashcardCount as string,
+                percent: percent as string,
+                company: company as string,
+                mode: previousMode
+              }
+            });
+          } else {
+            router.push({
+              pathname: '/(tabs)',
+              params: {
+                mode: previousMode,
+                selected: 'true'
+              }
+            });
+          }
+        }, 50);
+      } else {
+        if (sourcePageForFolders === 'favorites') {
           router.push({
-            pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
+            pathname: '/(tabs)/favorites',
             params: {
               mode: previousMode,
               selected: 'true'
             }
           });
-        }, 50);
-      } else {
-        router.push({
-          pathname: sourcePageForFolders === 'favorites' ? '/(tabs)/favorites' : '/(tabs)',
-          params: {
-            mode: previousMode,
-            selected: 'true'
-          }
-        });
+        } else if (sourcePageForFolders === 'deckDetails') {
+          // Navigate back to deckDetails page with all original parameters
+          router.push({
+            pathname: '/(tabs)/deckDetails',
+            params: {
+              deckId: deckId as string,
+              deckTitle: deckTitle as string,
+              deckType: deckType as string,
+              deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
+              date: date as string,
+              flashcardCount: flashcardCount as string,
+              percent: percent as string,
+              company: company as string,
+              mode: previousMode
+            }
+          });
+        } else {
+          router.push({
+            pathname: '/(tabs)',
+            params: {
+              mode: previousMode,
+              selected: 'true'
+            }
+          });
+        }
         setTimeout(() => {
           if (sourcePageForFolders === 'favorites') {
+            navbarRef?.current?.resetAnimation();
+          } else if (sourcePageForFolders === 'deckDetails') {
             navbarRef?.current?.resetAnimation();
           } else {
             navbarRef?.current?.setDecksTab();

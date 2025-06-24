@@ -62,7 +62,8 @@ export default function DeckDetailsScreen() {
     menuOverlayOpacity,
     deckDetailsDeleteModalOpacity,
     setHandleDeckDetailsDeletion,
-    setOnDeckDetailsDeleteModalDismiss
+    setOnDeckDetailsDeleteModalDismiss,
+    currentMode
   } = useContext(MenuContext);
 
   // Convert deckDetailsBackgroundIndex to number and provide fallback
@@ -81,22 +82,54 @@ export default function DeckDetailsScreen() {
       // Reset navbar animation when screen comes into focus
       navbarRef?.current?.resetAnimation();
       
-      Animated.timing(screenOpacity, {
-        toValue: 1,
-        duration: SCREEN_TRANSITION_DURATION,
-        useNativeDriver: true,
-      }).start();
+      // Ensure opacity starts at 0 for a clean fade-in
+      screenOpacity.setValue(0);
+      
+      // Add a small delay for smoother fade-in animation
+      setTimeout(() => {
+        Animated.timing(screenOpacity, {
+          toValue: 1,
+          duration: SCREEN_TRANSITION_DURATION,
+          useNativeDriver: true,
+        }).start();
+      }, 50);
     } else {
       screenOpacity.setValue(0);
     }
   }, [isFocused]);
 
+  // Clean up animation when component unmounts
+  useEffect(() => {
+    return () => {
+      screenOpacity.setValue(0);
+    };
+  }, []);
+
   const handleBackPress = () => {
     // Animate navbar back to decks tab
     navbarRef?.current?.setDecksTab();
     
-    // Navigate back to the previous page
-    router.back();
+    // Navigate back to the index page in the correct state
+    if (Platform.OS === 'ios') {
+      setTimeout(() => {
+        router.push({
+          pathname: '/(tabs)',
+          params: {
+            mode: currentMode
+          }
+        });
+      }, 50);
+    } else {
+      router.push({
+        pathname: '/(tabs)',
+        params: {
+          mode: currentMode
+        }
+      });
+      setTimeout(() => {
+        navbarRef?.current?.setDecksTab();
+      }, 50);
+    }
   };
 
   const handleFabPress = () => {
@@ -135,7 +168,27 @@ export default function DeckDetailsScreen() {
   };
   const handleFolderPress = () => {
     setShowEditModal(false);
-    // ...your folder logic
+    setEditNameSelected(false);
+    
+    // Navigate to folders page in AddToFolders mode
+    router.push({
+      pathname: '/(tabs)/folders',
+      params: {
+        isAddToFolders: 'true',
+        previousMode: currentMode,
+        selectedState: 'false',
+        sourcePage: 'deckDetails',
+        // Pass all deckDetails parameters to preserve them when navigating back
+        deckId: deckId as string,
+        deckTitle: deckTitle as string,
+        deckType: deckType as string,
+        deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
+        date: date as string,
+        flashcardCount: flashcardCount as string,
+        percent: percent as string,
+        company: company as string
+      }
+    });
   };
   const handleDeletePress = () => {
     setShowEditModal(false);
@@ -192,7 +245,7 @@ export default function DeckDetailsScreen() {
             <DeckDetailsTopBar 
               onStudyPress={handleOtherButtonPress}
               onQuizPress={handleOtherButtonPress}
-              onFolderPress={handleOtherButtonPress}
+              onFolderPress={handleFolderPress}
               onDeletePress={handleDeletePress}
               onEditNamePress={handleEditNamePress}
               editNameSelected={editNameSelected}

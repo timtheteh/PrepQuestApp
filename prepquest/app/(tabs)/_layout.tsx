@@ -96,6 +96,13 @@ interface MenuContextType {
   submitCustomFormModalOpacity: Animated.Value;
   onSubmitCustomFormModalClose: (() => void) | null;
   setOnSubmitCustomFormModalClose: (handler: (() => void) | null) => void;
+  isDeckDetailsDeleteModalOpen: boolean;
+  setIsDeckDetailsDeleteModalOpen: (value: boolean) => void;
+  deckDetailsDeleteModalOpacity: Animated.Value;
+  handleDeckDetailsDeletion: (() => void) | null;
+  setHandleDeckDetailsDeletion: (handler: (() => void) | null) => void;
+  onDeckDetailsDeleteModalDismiss: (() => void) | null;
+  setOnDeckDetailsDeleteModalDismiss: (handler: (() => void) | null) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -149,6 +156,13 @@ export const MenuContext = createContext<MenuContextType>({
   submitCustomFormModalOpacity: new Animated.Value(0),
   onSubmitCustomFormModalClose: null,
   setOnSubmitCustomFormModalClose: () => {},
+  isDeckDetailsDeleteModalOpen: false,
+  setIsDeckDetailsDeleteModalOpen: () => {},
+  deckDetailsDeleteModalOpacity: new Animated.Value(0),
+  handleDeckDetailsDeletion: null,
+  setHandleDeckDetailsDeletion: () => {},
+  onDeckDetailsDeleteModalDismiss: null,
+  setOnDeckDetailsDeleteModalDismiss: () => {},
 });
 
 export default function TabLayout() {
@@ -185,6 +199,10 @@ export default function TabLayout() {
   const [isSubmitCustomFormModalOpen, setIsSubmitCustomFormModalOpen] = useState(false);
   const submitCustomFormModalOpacity = useRef(new Animated.Value(0)).current;
   const [onSubmitCustomFormModalClose, setOnSubmitCustomFormModalClose] = useState<(() => void) | null>(null);
+  const [isDeckDetailsDeleteModalOpen, setIsDeckDetailsDeleteModalOpen] = useState(false);
+  const deckDetailsDeleteModalOpacity = useRef(new Animated.Value(0)).current;
+  const [handleDeckDetailsDeletion, setHandleDeckDetailsDeletion] = useState<(() => void) | null>(null);
+  const [onDeckDetailsDeleteModalDismiss, setOnDeckDetailsDeleteModalDismiss] = useState<(() => void) | null>(null);
 
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
@@ -322,6 +340,26 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsSubmitCustomFormModalOpen(false);
       });
+    } else if (isDeckDetailsDeleteModalOpen) {
+      if (onDeckDetailsDeleteModalDismiss) {
+        onDeckDetailsDeleteModalDismiss();
+        setOnDeckDetailsDeleteModalDismiss(null);
+      }
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(deckDetailsDeleteModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsDeckDetailsDeleteModalOpen(false);
+      });
     } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -347,7 +385,7 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen, isAddToFoldersModalOpen, isUnfavoriteModalOpen, isSubmitCustomFormModalOpen, onSubmitCustomFormModalClose]);
+  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen, isAddToFoldersModalOpen, isUnfavoriteModalOpen, isSubmitCustomFormModalOpen, onSubmitCustomFormModalClose, isDeckDetailsDeleteModalOpen, onDeckDetailsDeleteModalDismiss]);
 
   const handleFolderPress = useCallback(() => {
     handleDismissMenu();
@@ -406,6 +444,13 @@ export default function TabLayout() {
       submitCustomFormModalOpacity,
       onSubmitCustomFormModalClose,
       setOnSubmitCustomFormModalClose,
+      isDeckDetailsDeleteModalOpen,
+      setIsDeckDetailsDeleteModalOpen,
+      deckDetailsDeleteModalOpacity,
+      handleDeckDetailsDeletion,
+      setHandleDeckDetailsDeletion,
+      onDeckDetailsDeleteModalDismiss,
+      setOnDeckDetailsDeleteModalDismiss,
     }}>
       <View style={styles.container}>
         <Tabs
@@ -556,6 +601,24 @@ export default function TabLayout() {
           animationLoop={true}
           contentMarginTop={20}
           lottieMarginTop={40}
+        />
+        <GenericModal
+          visible={isDeckDetailsDeleteModalOpen}
+          opacity={deckDetailsDeleteModalOpacity}
+          Icon={DeleteModalIcon}
+          text="Are you sure you want to delete this deck?"
+          textStyle={{
+            highlightWord: "delete",
+            highlightColor: "#D7191C"
+          }}
+          buttons="double"
+          onCancel={handleDismissMenu}
+          onConfirm={() => {
+            if (handleDeckDetailsDeletion) {
+              handleDeckDetailsDeletion();
+            }
+            handleDismissMenu();
+          }}
         />
       </View>
     </MenuContext.Provider>

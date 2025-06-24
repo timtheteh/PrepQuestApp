@@ -55,7 +55,15 @@ export default function DeckDetailsScreen() {
   const isFocused = useIsFocused();
   const screenOpacity = useRef(new Animated.Value(0)).current;
   const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company,} = useLocalSearchParams();
-  const { navbarRef } = useContext(MenuContext);
+  const { 
+    navbarRef,
+    setIsMenuOpen,
+    setIsDeckDetailsDeleteModalOpen,
+    menuOverlayOpacity,
+    deckDetailsDeleteModalOpacity,
+    setHandleDeckDetailsDeletion,
+    setOnDeckDetailsDeleteModalDismiss
+  } = useContext(MenuContext);
 
   // Convert deckDetailsBackgroundIndex to number and provide fallback
   const backgroundIndex = parseInt(deckDetailsBackgroundIndex as string) || 0;
@@ -131,7 +139,33 @@ export default function DeckDetailsScreen() {
   };
   const handleDeletePress = () => {
     setShowEditModal(false);
-    // ...your delete logic
+    // Show delete confirmation modal
+    setIsMenuOpen(true);
+    setIsDeckDetailsDeleteModalOpen(true);
+    setHandleDeckDetailsDeletion(() => () => {
+      // TODO: Implement actual deletion logic here
+      console.log('Deleting deck:', deckId);
+      // Navigate back after deletion
+      router.back();
+    });
+    
+    // Set up dismiss callback to unselect edit name button
+    setOnDeckDetailsDeleteModalDismiss(() => () => {
+      setEditNameSelected(false);
+    });
+    
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deckDetailsDeleteModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   useFocusEffect(
@@ -159,7 +193,7 @@ export default function DeckDetailsScreen() {
               onStudyPress={handleOtherButtonPress}
               onQuizPress={handleOtherButtonPress}
               onFolderPress={handleOtherButtonPress}
-              onDeletePress={handleOtherButtonPress}
+              onDeletePress={handleDeletePress}
               onEditNamePress={handleEditNamePress}
               editNameSelected={editNameSelected}
             />

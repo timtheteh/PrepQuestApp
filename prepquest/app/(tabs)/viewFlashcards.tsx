@@ -7,6 +7,9 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuContext } from './_layout';
 import { ViewFlashcardsTopBar } from '@/components/ViewFlashcardsTopBar';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
+import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
+import { Ionicons } from '@expo/vector-icons';
+import { FavoriteButton } from '@/components/FavoriteButton';
 
 const SCREEN_TRANSITION_DURATION = 300;
 const ACTION_ROW_HEIGHT = 60;
@@ -31,6 +34,91 @@ const QuestionTypeCountRow = ({ title, count }: { title: string; count: number }
   </View>
 );
 
+const difficultyColors: Record<string, string> = {
+  Again: '#F8696B',
+  Hard: '#FA9473',
+  Good: '#FFEB84',
+  Easy: '#98CE7F',
+};
+
+const CardForFlashcard = ({
+  flashcardDifficulty,
+  flashcardQn,
+  selected,
+  isSelectMode,
+  onPress,
+}: {
+  flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
+  flashcardQn: string;
+  selected: boolean;
+  isSelectMode: boolean;
+  onPress: () => void;
+}) => {
+  const Container = isSelectMode ? TouchableOpacity : View;
+  return (
+    <Container
+      style={[
+        styles.cardForFlashcard,
+        selected && styles.cardForFlashcardSelected,
+      ]}
+      onPress={isSelectMode ? onPress : undefined}
+      activeOpacity={0.7}
+      disabled={!isSelectMode}
+    >
+      {/* Top row */}
+      <View style={styles.cardTopRow}>
+        <Ionicons name="eye" size={28} color="#444" />
+        <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
+          <Text style={[styles.difficultyPillText]}>{flashcardDifficulty}</Text>
+        </View>
+        <FavoriteButton />
+      </View>
+      {/* Centered question */}
+      <View style={styles.cardQnContainer}>
+        <Text
+          style={styles.cardQnText}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {flashcardQn}
+        </Text>
+      </View>
+      {/* Green tick if selected */}
+      {selected && (
+        <View style={styles.greenTickContainer}>
+          <GreenTickIcon width={20} height={20} />
+        </View>
+      )}
+    </Container>
+  );
+};
+
+// Dummy flashcard data
+const dummyFlashcards = [
+  { flashcardDifficulty: 'Again', flashcardQn: 'What is a react hook?' },
+  { flashcardDifficulty: 'Hard', flashcardQn: 'Explain useEffect.' },
+  { flashcardDifficulty: 'Good', flashcardQn: 'What is state in React?' },
+  { flashcardDifficulty: 'Easy', flashcardQn: 'What is JSX?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useState?' },
+  { flashcardDifficulty: 'Good', flashcardQn: 'What is a component?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'What is a react hook?' },
+  { flashcardDifficulty: 'Hard', flashcardQn: 'Explain useEffect.' },
+  { flashcardDifficulty: 'Good', flashcardQn: 'What is state in React?' },
+  { flashcardDifficulty: 'Easy', flashcardQn: 'What is JSX?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
+
+];
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const res: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    res.push(arr.slice(i, i + size));
+  }
+  return res;
+}
+
 export default function ViewFlashcardsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -44,6 +132,7 @@ export default function ViewFlashcardsScreen() {
   // View state management - always start in "grid" state
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedCardIndexes, setSelectedCardIndexes] = useState<number[]>([]);
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
   const actionRowTranslateY = useRef(new Animated.Value(-20)).current;
   const headerTranslateY = useRef(new Animated.Value(0)).current;
@@ -192,6 +281,16 @@ export default function ViewFlashcardsScreen() {
     // TODO: handle trash action
   };
 
+  // Handler to toggle card selection
+  const handleCardPress = (cardIdx: number) => {
+    if (!isSelectMode) return;
+    setSelectedCardIndexes((prev) =>
+      prev.includes(cardIdx)
+        ? prev.filter((idx) => idx !== cardIdx)
+        : [...prev, cardIdx]
+    );
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -285,8 +384,28 @@ export default function ViewFlashcardsScreen() {
                 </Animated.Text>
               </TouchableOpacity>
             </Animated.View>
-            {/* Content will go here - will be affected by viewMode state */}
-            {/* TODO: Add grid/list view content based on viewMode */}
+            {/* Flashcards grid */}
+            <Animated.View style={[styles.flashcardsGridContainer, { transform: [{ translateY: headerTranslateY }] }]}> 
+              {chunkArray(dummyFlashcards, 2).map((row, rowIdx) => (
+                <View style={styles.flashcardsGridRow} key={rowIdx}>
+                  {row.map((card, colIdx) => {
+                    const flatIdx = rowIdx * 2 + colIdx;
+                    return (
+                      <View style={styles.flashcardCol} key={colIdx}>
+                        <CardForFlashcard
+                          flashcardDifficulty={card.flashcardDifficulty as any}
+                          flashcardQn={card.flashcardQn}
+                          selected={selectedCardIndexes.includes(flatIdx)}
+                          isSelectMode={isSelectMode}
+                          onPress={() => handleCardPress(flatIdx)}
+                        />
+                      </View>
+                    );
+                  })}
+                  {row.length === 1 && <View style={styles.flashcardCol} />}
+                </View>
+              ))}
+            </Animated.View>
           </View>
           </ScrollView>
           
@@ -454,5 +573,75 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     zIndex: 1,
+  },
+  cardForFlashcard: {
+    borderRadius: 10,
+    height: 105,
+    backgroundColor: '#F8F8F8',
+    width: '100%',
+    marginVertical: 8,
+    padding: 16,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    marginTop: -5
+  },
+  difficultyPill: {
+    width: 41,
+    height: 23,
+    borderRadius: 21,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  difficultyPillText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  cardQnContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardQnText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 14,
+    color: '#111',
+    textAlign: 'center',
+  },
+  flashcardsGridContainer: {
+    marginTop: 0,
+  },
+  flashcardsGridRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  flashcardCol: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  cardForFlashcardSelected: {
+    backgroundColor: '#D5D4DD',
+  },
+  greenTickContainer: {
+    position: 'absolute',
+    right: 5,
+    bottom: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

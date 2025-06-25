@@ -9,6 +9,8 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { GenericModal } from '@/components/GenericModal';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import { Audio } from 'expo-av';
+import Svg, { Path, Rect } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -133,6 +135,34 @@ function renderQuestionWithBlanks(text: string) {
   );
 }
 
+// Helper for audio playback
+async function playAudio(uri: any) {
+  try {
+    // await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+    // const { sound } = await Audio.Sound.createAsync(uri);
+    // await sound.playAsync();
+    await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
+      
+      const { sound } = await Audio.Sound.createAsync({ uri });
+      console.log('Playing Sound');
+      await sound.setVolumeAsync(1.0); // Set volume to maximum (1.0)
+      await sound.playAsync();
+      
+      // Set volume again after playing starts to ensure it takes effect
+      setTimeout(async () => {
+        await sound.setVolumeAsync(1.0);
+      }, 100);
+  } catch (e) {
+    console.log('Audio playback error:', e);
+  }
+}
+
 const FlippableFlashcard = () => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -152,6 +182,11 @@ const FlippableFlashcard = () => {
   const flashcardQn = currentFlashcard?.flashcardQn;
   const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
   const flashcardAnswer = currentFlashcard?.flashcardAnswer;
+
+  // Audio playback state
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [audioPosition, setAudioPosition] = useState(0);
+  const audioSoundRef = useRef<Audio.Sound | null>(null);
 
   // Flipping logic (unchanged)
   const handlePress = () => {
@@ -253,6 +288,54 @@ const FlippableFlashcard = () => {
     outputRange: ['180deg', '360deg'],
   });
 
+  // Play or pause audio logic
+  async function handleAudioButtonPress(uri: any) {
+    try {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      if (!isAudioPlaying) {
+        // Play or resume
+        if (audioSoundRef.current) {
+          await audioSoundRef.current.playAsync();
+        } else {
+          const { sound } = await Audio.Sound.createAsync(uri, { positionMillis: audioPosition });
+          audioSoundRef.current = sound;
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              setIsAudioPlaying(false);
+              setAudioPosition(0);
+              audioSoundRef.current = null;
+            }
+          });
+          await sound.playAsync();
+        }
+        setIsAudioPlaying(true);
+      } else {
+        // Pause
+        if (audioSoundRef.current) {
+          const status = await audioSoundRef.current.getStatusAsync();
+          if (status.isLoaded) {
+            setAudioPosition(status.positionMillis || 0);
+            await audioSoundRef.current.pauseAsync();
+          }
+        }
+        setIsAudioPlaying(false);
+      }
+    } catch (e) {
+      setIsAudioPlaying(false);
+      console.log('Audio playback error:', e);
+    }
+  }
+
+  // Clean up audio on unmount or card change
+  React.useEffect(() => {
+    return () => {
+      if (audioSoundRef.current) {
+        audioSoundRef.current.unloadAsync();
+        audioSoundRef.current = null;
+      }
+    };
+  }, [currentIdx]);
+
   return (
     <View style={{ flex: 1, position: 'relative' }}>
       {/* Left Chevron Button */}
@@ -324,6 +407,30 @@ const FlippableFlashcard = () => {
                   resizeMode="contain"
                 />
               )}
+              {flashcardQnType === 'audio' && !!flashcardQn && (
+                <View style={styles.audioContainer}>
+                  <Text style={styles.audioLabel}>Question:</Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
+                    onPress={() => handleAudioButtonPress(flashcardQn)}
+                  >
+                    {!isAudioPlaying ? (
+                      <Svg width={48} height={48} viewBox="0 0 48 48" fill="none">
+                        <Path
+                          d="M18 12v24l22-12z"
+                          fill="black"
+                          transform="rotate(0 24 24)"
+                        />
+                      </Svg>
+                    ) : (
+                      <Svg width={48} height={48} viewBox="0 0 48 48" fill="none">
+                        <Rect x={16} y={12} width={6} height={24} rx={2} fill="black" />
+                        <Rect x={26} y={12} width={6} height={24} rx={2} fill="black" />
+                      </Svg>
+                    )}
+                  </Pressable>
+                </View>
+              )}
             </Animated.View>
             
             {/* Bottom container */}
@@ -378,6 +485,30 @@ const FlippableFlashcard = () => {
                   style={styles.middleImage}
                   resizeMode="contain"
                 />
+              )}
+              {flashcardAnswerType === 'audio' && !!flashcardAnswer && (
+                <View style={styles.audioContainer}>
+                  <Text style={styles.audioLabel}>Answer:</Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
+                    onPress={() => handleAudioButtonPress(flashcardAnswer)}
+                  >
+                    {!isAudioPlaying ? (
+                      <Svg width={48} height={48} viewBox="0 0 48 48" fill="none">
+                        <Path
+                          d="M18 12v24l22-12z"
+                          fill="black"
+                          transform="rotate(0 24 24)"
+                        />
+                      </Svg>
+                    ) : (
+                      <Svg width={48} height={48} viewBox="0 0 48 48" fill="none">
+                        <Rect x={16} y={12} width={6} height={24} rx={2} fill="black" />
+                        <Rect x={26} y={12} width={6} height={24} rx={2} fill="black" />
+                      </Svg>
+                    )}
+                  </Pressable>
+                </View>
               )}
             </Animated.View>
             
@@ -682,5 +813,31 @@ const styles = StyleSheet.create({
     width: '90%',
     height: '90%',
     alignSelf: 'center',
+  },
+  audioContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  audioLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 36,
+    marginBottom: 16,
+  },
+  replayButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F8F8F8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  buttonPressed: {
+    backgroundColor: '#ECECEC',
   },
 }); 

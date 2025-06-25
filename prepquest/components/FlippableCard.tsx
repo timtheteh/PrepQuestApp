@@ -3,7 +3,7 @@ import { View, StyleSheet, ViewStyle, Pressable, Animated, Text, Dimensions, Scr
 import FlippableCardFrontFlipArrow from '@/assets/icons/flippableCardFrontFlipArrow.svg';
 import FlippableCardBackFlipArrow from '@/assets/icons/flippableCardBackFlipArrow.svg';
 import MicIcon from '@/assets/icons/micIcon.svg';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 import { DrawableOptionsRow } from './DrawableOptionsRow';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getLastTypedText } from '../app/textInputModal';
@@ -365,6 +365,9 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [audioPosition, setAudioPosition] = useState(0);
+  const audioSoundRef = useRef<Audio.Sound | null>(null);
 
   // Listen for focus events to check if text was typed in modal
   useFocusEffect(
@@ -885,11 +888,10 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     }
   };
 
-  // Play recording function
-  const playRecording = async (uri: string) => {
+  // Play or pause audio logic
+  async function handleAudioButtonPress(audioUri: string | null) {
     try {
-      console.log('Loading Sound');
-      // Set audio mode for maximum volume
+      if (!audioUri) return;
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
@@ -897,20 +899,49 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
         shouldDuckAndroid: false,
         playThroughEarpieceAndroid: false,
       });
-      
-      const { sound } = await Audio.Sound.createAsync({ uri });
-      console.log('Playing Sound');
-      await sound.setVolumeAsync(1.0); // Set volume to maximum (1.0)
-      await sound.playAsync();
-      
-      // Set volume again after playing starts to ensure it takes effect
-      setTimeout(async () => {
-        await sound.setVolumeAsync(1.0);
-      }, 100);
-    } catch (error) {
-      console.error('Error playing recording:', error);
+      if (!isAudioPlaying) {
+        // Play or resume
+        if (audioSoundRef.current) {
+          await audioSoundRef.current.playAsync();
+        } else {
+          const { sound } = await Audio.Sound.createAsync({ uri: audioUri }, { positionMillis: audioPosition });
+          audioSoundRef.current = sound;
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              setIsAudioPlaying(false);
+              setAudioPosition(0);
+              audioSoundRef.current = null;
+            }
+          });
+          await sound.playAsync();
+        }
+        setIsAudioPlaying(true);
+      } else {
+        // Pause
+        if (audioSoundRef.current) {
+          const status = await audioSoundRef.current.getStatusAsync();
+          if (status.isLoaded) {
+            setAudioPosition(status.positionMillis || 0);
+            await audioSoundRef.current.pauseAsync();
+          }
+        }
+        setIsAudioPlaying(false);
+      }
+    } catch (e) {
+      setIsAudioPlaying(false);
+      console.log('Audio playback error:', e);
     }
-  };
+  }
+
+  // Clean up audio on unmount or card flip
+  useEffect(() => {
+    return () => {
+      if (audioSoundRef.current) {
+        audioSoundRef.current.unloadAsync();
+        audioSoundRef.current = null;
+      }
+    };
+  }, [isFlipped]);
 
   useEffect(() => {
     if (onContentChange) {
@@ -1071,21 +1102,24 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             ]}
                             onPress={() => {
                                 const currentContent = isFlipped ? backContent : frontContent;
-                                const audioUri = currentContent?.type === 'mic' ? currentContent.audioUri : null;
-                                if (audioUri) {
-                                    playRecording(audioUri);
-                                } else {
-                                    console.log('No recording available to replay');
-                                }
+                                const audioUri = currentContent?.type === 'mic' ? currentContent.audioUri ?? null : null;
+                                handleAudioButtonPress(audioUri);
                             }}
                             >
-                            <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
+                            {!isAudioPlaying ? (
+                              <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
                                 <Path 
-                                d="M8 5v14l11-7z" 
-                                fill="black"
-                                transform="rotate(0 12 12)"
+                                  d="M8 5v14l11-7z" 
+                                  fill="black"
+                                  transform="rotate(0 12 12)"
                                 />
-                            </Svg>
+                              </Svg>
+                            ) : (
+                              <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
+                                <Rect x={7} y={5} width={4} height={14} rx={1.5} fill="black" />
+                                <Rect x={13} y={5} width={4} height={14} rx={1.5} fill="black" />
+                              </Svg>
+                            )}
                             </Pressable>
                         </View>
                       );

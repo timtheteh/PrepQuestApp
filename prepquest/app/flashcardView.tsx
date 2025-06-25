@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { FlashcardViewTopBar } from '@/components/FlashcardViewTopBar';
@@ -317,6 +317,13 @@ const FlippableFlashcard = () => {
                   {renderQuestionWithBlanks(flashcardQn)}
                 </ScrollView>
               )}
+              {flashcardQnType === 'image' && !!flashcardQn && (
+                <Image
+                  source={flashcardQn}
+                  style={styles.middleImage}
+                  resizeMode="contain"
+                />
+              )}
             </Animated.View>
             
             {/* Bottom container */}
@@ -365,6 +372,13 @@ const FlippableFlashcard = () => {
                       {renderQuestionWithBlanks(flashcardAnswer)}
                   </ScrollView>
                   )}
+              {flashcardAnswerType === 'image' && !!flashcardAnswer && (
+                <Image
+                  source={flashcardAnswer}
+                  style={styles.middleImage}
+                  resizeMode="contain"
+                />
+              )}
             </Animated.View>
             
             {/* Bottom container */}
@@ -663,5 +677,10 @@ const styles = StyleSheet.create({
     top: '50%',
     right: -20,
     zIndex: 10,
+  },
+  middleImage: {
+    width: '90%',
+    height: '90%',
+    alignSelf: 'center',
   },
 }); 

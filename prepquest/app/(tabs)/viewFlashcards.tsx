@@ -57,6 +57,7 @@ const CardForFlashcard = ({
   isSelectMode: boolean;
   onPress: () => void;
 }) => {
+  const router = useRouter();
   const Container = isSelectMode ? TouchableOpacity : View;
   return (
     <Container
@@ -70,7 +71,9 @@ const CardForFlashcard = ({
     >
       {/* Top row */}
       <View style={styles.cardTopRow}>
-        <Ionicons name="eye" size={20} color="#444" />
+        <TouchableOpacity onPress={() => router.push('/flashcardView')}>
+          <Ionicons name="eye" size={20} color="#444" />
+        </TouchableOpacity>
         <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
           <Text style={[styles.difficultyPillText]}>{flashcardDifficulty}</Text>
         </View>

@@ -138,7 +138,111 @@ const FlippableFlashcard = () => {
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
   const [isFlipped, setIsFlipped] = useState(false);
-  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
+  const { flashcardIdx: initialFlashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
+  const [currentIdx, setCurrentIdx] = useState(parseInt(initialFlashcardIdx as string) || 0);
+  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
+  const displayNumber = currentIdx + 1;
+
+  // Animation for horizontal slide
+  const cardSlideAnim = useRef(new Animated.Value(0)).current; // 0 = center, -1 = left, 1 = right
+
+  // Get current flashcard data
+  const currentFlashcard = dummyFlashcards[currentIdx];
+  const flashcardQnType = currentFlashcard?.flashcardQnType;
+  const flashcardQn = currentFlashcard?.flashcardQn;
+  const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
+  const flashcardAnswer = currentFlashcard?.flashcardAnswer;
+
+  // Flipping logic (unchanged)
+  const handlePress = () => {
+    const toValue = isFlipped ? 0 : 1;
+    Animated.timing(isFlipped ? backOpacity : frontOpacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      Animated.timing(flipAnim, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsFlipped(!isFlipped);
+        Animated.timing(!isFlipped ? backOpacity : frontOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
+    });
+  };
+
+  // Chevron navigation logic
+  const isLeftChevronDisabled = () => currentIdx <= 0;
+  const isRightChevronDisabled = () => currentIdx >= totalCards - 1;
+
+  const navigateToPreviousCard = () => {
+    if (!isLeftChevronDisabled()) {
+      // Slide out to right
+      Animated.timing(cardSlideAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setCurrentIdx(idx => {
+          // Always reset to front side
+          setIsFlipped(false);
+          flipAnim.setValue(0);
+          frontOpacity.setValue(1);
+          backOpacity.setValue(0);
+          return idx - 1;
+        });
+        cardSlideAnim.setValue(-1); // Start new card from left
+        Animated.timing(cardSlideAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  };
+
+  const navigateToNextCard = () => {
+    if (!isRightChevronDisabled()) {
+      // Slide out to left
+      Animated.timing(cardSlideAnim, {
+        toValue: -1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setCurrentIdx(idx => {
+          // Always reset to front side
+          setIsFlipped(false);
+          flipAnim.setValue(0);
+          frontOpacity.setValue(1);
+          backOpacity.setValue(0);
+          return idx + 1;
+        });
+        cardSlideAnim.setValue(1); // Start new card from right
+        Animated.timing(cardSlideAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  };
+
+  // Slide animation style
+  const slideStyle = {
+    transform: [
+      {
+        translateX: cardSlideAnim.interpolate({
+          inputRange: [-1, 0, 1],
+          outputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+        }),
+      },
+    ],
+  };
 
   const frontInterpolate = flipAnim.interpolate({
     inputRange: [0, 1],
@@ -149,151 +253,138 @@ const FlippableFlashcard = () => {
     outputRange: ['180deg', '360deg'],
   });
 
-  const handlePress = () => {
-    const toValue = isFlipped ? 0 : 1;
-    
-    // Fade out current content
-    Animated.timing(isFlipped ? backOpacity : frontOpacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      // Start flip animation
-      Animated.timing(flipAnim, {
-        toValue,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setIsFlipped(!isFlipped);
-        
-        // Fade in new content
-        Animated.timing(!isFlipped ? backOpacity : frontOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      });
-    });
-  };
-
-  // Calculate display values
-  const currentIdx = parseInt(flashcardIdx as string) || 0;
-  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
-  const displayNumber = currentIdx + 1; // Convert from 0-based to 1-based
-
-  // Get current flashcard data
-  const currentFlashcard = dummyFlashcards[currentIdx];
-  const flashcardQnType = currentFlashcard?.flashcardQnType;
-  const flashcardQn = currentFlashcard?.flashcardQn;
-  const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
-  const flashcardAnswer = currentFlashcard?.flashcardAnswer;   
-
   return (
     <View style={{ flex: 1, position: 'relative' }}>
-      <View style={{ flex: 1 }}>
-        <Animated.View
-          style={[
-            styles.flippableCard,
-            {
-              backgroundColor: '#F8F8F8',
-              transform: [{ rotateY: frontInterpolate }],
-              zIndex: isFlipped ? 0 : 1,
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-            },
-          ]}
-        >
-          {/* Front content here */}
-          
-          {/* Top container */}
-          <Animated.View style={[styles.topContainer, { opacity: frontOpacity }]}>
-            <View style={styles.topContainerContent}>
-              <Text style={styles.flashcardIndexText}>
-                {`Qn ${displayNumber} of ${totalCards}`}
-              </Text>
-              <FavoriteButton size={30} />
-            </View>
-          </Animated.View>
-          
-          {/* Middle container */}
-          <Animated.View style={[styles.middleContainer, { opacity: frontOpacity }]}>
-            {flashcardQnType === 'text' && (
-              <ScrollView 
-                style={styles.questionScrollView}
-                contentContainerStyle={styles.questionScrollViewContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {renderQuestionWithBlanks(flashcardQn)}
-              </ScrollView>
-            )}
-          </Animated.View>
-          
-          {/* Bottom container */}
-          <Animated.View style={[styles.bottomContainer, { opacity: frontOpacity }]}>
-            {/* Bottom content will go here */}
-          </Animated.View>
-          
-          {/* Front flip arrow - positioned at bottom right */}
-          <Animated.View style={[styles.flipArrowContainer, { opacity: frontOpacity }]}>
-            <FlippableCardFrontFlipArrow width={30} height={30} />
-          </Animated.View>
-        </Animated.View>
-        <Animated.View
-          style={[
-            styles.flippableCard,
-            {
-              backgroundColor: '#F8F8F8',
-              transform: [{ rotateY: backInterpolate }],
-              zIndex: isFlipped ? 1 : 0,
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-            },
-          ]}
-        >
-          {/* Back content here */}
-          
-          {/* Top container */}
-          <Animated.View style={[styles.topContainer, { opacity: backOpacity }]}>
-            <View style={styles.topContainerContent}>
-              <Text style={styles.flashcardIndexText}>
-                {`Ans ${displayNumber} of ${totalCards}`}
-              </Text>
-              <FavoriteButton size={30} />
-            </View>
-          </Animated.View>
-          
-          {/* Middle container */}
-          <Animated.View style={[styles.middleContainer, { opacity: backOpacity }]}>
-            {flashcardAnswerType === 'text' && (
+      {/* Left Chevron Button */}
+      <TouchableOpacity
+        style={styles.leftChevronButton}
+        onPress={navigateToPreviousCard}
+        disabled={isLeftChevronDisabled()}
+      >
+        <AntDesign
+          name="left"
+          size={30}
+          color={isLeftChevronDisabled() ? "#D5D4DD" : "#000000"}
+        />
+      </TouchableOpacity>
+      {/* Right Chevron Button */}
+      <TouchableOpacity
+        style={styles.rightChevronButton}
+        onPress={navigateToNextCard}
+        disabled={isRightChevronDisabled()}
+      >
+        <AntDesign
+          name="right"
+          size={30}
+          color={isRightChevronDisabled() ? "#D5D4DD" : "#000000"}
+        />
+      </TouchableOpacity>
+      <Animated.View style={[{ flex: 1 }, slideStyle]}>
+        <View style={{ flex: 1 }}>
+          <Animated.View
+            style={[
+              styles.flippableCard,
+              {
+                backgroundColor: '#F8F8F8',
+                transform: [{ rotateY: frontInterpolate }],
+                zIndex: isFlipped ? 0 : 1,
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+              },
+            ]}
+          >
+            {/* Front content here */}
+            
+            {/* Top container */}
+            <Animated.View style={[styles.topContainer, { opacity: frontOpacity }]}>
+              <View style={styles.topContainerContent}>
+                <Text style={styles.flashcardIndexText}>
+                  {`Qn ${displayNumber} of ${totalCards}`}
+                </Text>
+                <FavoriteButton size={30} />
+              </View>
+            </Animated.View>
+            
+            {/* Middle container */}
+            <Animated.View style={[styles.middleContainer, { opacity: frontOpacity }]}>
+              {flashcardQnType === 'text' && (
                 <ScrollView 
-                    style={styles.questionScrollView}
-                    contentContainerStyle={styles.questionScrollViewContent}
-                    showsVerticalScrollIndicator={false}
+                  style={styles.questionScrollView}
+                  contentContainerStyle={styles.questionScrollViewContent}
+                  showsVerticalScrollIndicator={false}
                 >
-                    {renderQuestionWithBlanks(flashcardAnswer)}
+                  {renderQuestionWithBlanks(flashcardQn)}
                 </ScrollView>
-                )}
+              )}
+            </Animated.View>
+            
+            {/* Bottom container */}
+            <Animated.View style={[styles.bottomContainer, { opacity: frontOpacity }]}>
+              {/* Bottom content will go here */}
+            </Animated.View>
+            
+            {/* Front flip arrow - positioned at bottom right */}
+            <Animated.View style={[styles.flipArrowContainer, { opacity: frontOpacity }]}>
+              <FlippableCardFrontFlipArrow width={30} height={30} />
+            </Animated.View>
           </Animated.View>
-          
-          {/* Bottom container */}
-          <Animated.View style={[styles.bottomContainer, { opacity: backOpacity }]}>
-            {/* Bottom content will go here */}
+          <Animated.View
+            style={[
+              styles.flippableCard,
+              {
+                backgroundColor: '#F8F8F8',
+                transform: [{ rotateY: backInterpolate }],
+                zIndex: isFlipped ? 1 : 0,
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+              },
+            ]}
+          >
+            {/* Back content here */}
+            
+            {/* Top container */}
+            <Animated.View style={[styles.topContainer, { opacity: backOpacity }]}>
+              <View style={styles.topContainerContent}>
+                <Text style={styles.flashcardIndexText}>
+                  {`Ans ${displayNumber} of ${totalCards}`}
+                </Text>
+                <FavoriteButton size={30} />
+              </View>
+            </Animated.View>
+            
+            {/* Middle container */}
+            <Animated.View style={[styles.middleContainer, { opacity: backOpacity }]}>
+              {flashcardAnswerType === 'text' && (
+                  <ScrollView 
+                      style={styles.questionScrollView}
+                      contentContainerStyle={styles.questionScrollViewContent}
+                      showsVerticalScrollIndicator={false}
+                  >
+                      {renderQuestionWithBlanks(flashcardAnswer)}
+                  </ScrollView>
+                  )}
+            </Animated.View>
+            
+            {/* Bottom container */}
+            <Animated.View style={[styles.bottomContainer, { opacity: backOpacity }]}>
+              {/* Bottom content will go here */}
+            </Animated.View>
+            
+            {/* Back flip arrow - positioned at bottom right */}
+            <Animated.View style={[styles.flipArrowContainer, { opacity: backOpacity }]}>
+              <FlippableCardBackFlipArrow width={30} height={30} />
+            </Animated.View>
           </Animated.View>
-          
-          {/* Back flip arrow - positioned at bottom right */}
-          <Animated.View style={[styles.flipArrowContainer, { opacity: backOpacity }]}>
-            <FlippableCardBackFlipArrow width={30} height={30} />
-          </Animated.View>
-        </Animated.View>
-      </View>
-      
-      {/* Separate Pressable for flip arrow area only */}
-      <Pressable 
-        onPress={handlePress} 
-        style={styles.flipArrowPressable}
-      />
+        </View>
+        
+        {/* Separate Pressable for flip arrow area only */}
+        <Pressable 
+          onPress={handlePress} 
+          style={styles.flipArrowPressable}
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -560,5 +651,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
     alignSelf: 'center',
     marginBottom: 2,
+  },
+  leftChevronButton: {
+    position: 'absolute',
+    top: '50%',
+    left: -20,
+    zIndex: 10,
+  },
+  rightChevronButton: {
+    position: 'absolute',
+    top: '50%',
+    right: -20,
+    zIndex: 10,
   },
 }); 

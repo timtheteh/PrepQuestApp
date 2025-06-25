@@ -14,6 +14,7 @@ import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
 import LottieView from 'lottie-react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const getEmptyStateContainerMarginTop = () => {
     const { width, height } = Dimensions.get('window');
@@ -477,12 +478,21 @@ export default function DeckDetailsScreen() {
           <View style={[
             styles.fabContainer,
           ]}>
-            <TouchableOpacity
-                style={[styles.fab]}
-                onPress={handleFabPress}
+            {AIDeck && (
+              <TouchableOpacity
+                style={[styles.fab, { bottom: (Platform.OS === 'ios' ? 100 : 95) }]}
+                onPress={() => { /* TODO: handle save-alt action */ }}
                 activeOpacity={0.8}
-                >
-                <Ionicons name="eye" size={30} color="white" />
+              >
+                <MaterialIcons name="save-alt" size={30} color="white" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[styles.fab]}
+              onPress={handleFabPress}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="eye" size={30} color="white" />
             </TouchableOpacity>
           </View>
         </ThemedView>

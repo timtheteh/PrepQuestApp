@@ -7,6 +7,7 @@ interface FloatingActionButtonProps extends ViewProps {
   onPress?: () => void;
   children: ReactNode;
   disableOverlay?: boolean;
+  backgroundColor?: string;
 }
 
 export function FloatingActionButton({ 
@@ -14,6 +15,7 @@ export function FloatingActionButton({
   onPress,
   children,
   disableOverlay = false,
+  backgroundColor = '#4F41D8',
   ...props 
 }: FloatingActionButtonProps) {
   const { 
@@ -54,7 +56,7 @@ export function FloatingActionButton({
 
   return (
     <TouchableOpacity
-      style={[styles.button, style]}
+      style={[styles.button, { backgroundColor }, style]}
       onPress={handlePress}
       activeOpacity={0.8}
       {...props}

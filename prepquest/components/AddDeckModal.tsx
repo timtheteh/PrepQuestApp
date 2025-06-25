@@ -133,6 +133,7 @@ interface AddDeckModalProps {
   opacity?: Animated.Value;
   currentMode: 'study' | 'interview';
   isInFavoritesPage?: boolean;
+  isInViewFlashcardsPage?: boolean;
 }
 
 export function AddDeckModal({ 
@@ -140,6 +141,7 @@ export function AddDeckModal({
   opacity = new Animated.Value(0),
   currentMode,
   isInFavoritesPage = false,
+  isInViewFlashcardsPage = false
 }: AddDeckModalProps) {
   const { setCurrentMode, handleDismissMenu } = useContext(MenuContext);
   const router = useRouter();
@@ -179,19 +181,25 @@ export function AddDeckModal({
       style={[
         styles.container,
         {
-          opacity: opacity
+          opacity: opacity,
+          borderColor: isInViewFlashcardsPage ? '#44B88A' : '#4F41D8'
         }
       ]}
     >
       <View style={styles.content}>
         <View style={styles.column}>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{isInFavoritesPage ? "Add Deck to Favorites" : "Add Deck"}</Text>
+            {isInViewFlashcardsPage ? (
+              <Text style={[styles.title, { fontSize: 28 }]}>Add Flashcard(s) to Deck</Text>
+            ) : (
+              <Text style={styles.title}>{isInFavoritesPage ? "Add Deck to Favorites" : "Add Deck"}</Text>
+            )}
           </View>
           <View style={styles.toggleRow}>
             <InterviewStudyToggle 
               initialState={currentMode}
               onToggle={handleToggle}
+              isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
           </View>
           <View style={styles.firstButtonRow}>
@@ -199,12 +207,14 @@ export function AddDeckModal({
               title="Gen AI Form"
               Icon={GenAIFormIcon}
               onPress={handleGenAIFormPress}
+              isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
             <AddDeckModalButton
               title="File Upload"
               Icon={FileUploadIcon}
               marginBottom={3}
               onPress={handleFormUploadPagePress}
+              isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
           </View>
           <View style={styles.buttonRow}>
@@ -212,10 +222,12 @@ export function AddDeckModal({
               title="YouTube Link"
               Icon={YoutubeIcon}
               onPress={handleYoutubeLinkPress}
+              isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
             <AddDeckModalButton
               title="Manual"
               Icon={ManualFormIcon}
+              isInViewFlashcardsPage={isInViewFlashcardsPage}
               marginBottom={6}
               onPress={() => {
                 router.push({

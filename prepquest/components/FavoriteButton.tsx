@@ -4,11 +4,11 @@ import Svg, { Polygon } from 'react-native-svg';
 
 interface FavoriteButtonProps {
   isSelectMode?: boolean;
+  size?: number;
 }
 
-export function FavoriteButton({ isSelectMode = false }: FavoriteButtonProps) {
+export function FavoriteButton({ isSelectMode = false, size = 30}: FavoriteButtonProps) {
   const [favorited, setFavorited] = useState(false);
-  const size = 30;
   const borderWidth = 2;
   // Star points (5-pointed star)
   const getStarPoints = (cx: number, cy: number, outerR: number, innerR: number) => {

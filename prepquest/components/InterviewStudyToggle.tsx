@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Animated } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 
 type ToggleOption = 'study' | 'interview';
 
 interface InterviewStudyToggleProps {
   onToggle?: (option: ToggleOption) => void;
   initialState?: ToggleOption;
+  isInViewFlashcardsPage?: boolean;
 }
 
 export function InterviewStudyToggle({ 
   onToggle,
-  initialState = 'study'
+  initialState = 'study',
+  isInViewFlashcardsPage = false
 }: InterviewStudyToggleProps) {
   const [selected, setSelected] = useState<ToggleOption>(initialState);
   const translateX = useState(new Animated.Value(initialState === 'study' ? 0 : 93))[0];
@@ -20,7 +22,8 @@ export function InterviewStudyToggle({
     Animated.timing(translateX, {
       toValue: initialState === 'study' ? 0 : 93,
       duration: 300,
-      useNativeDriver: true,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
     }).start();
   }, [initialState]);
 
@@ -33,7 +36,8 @@ export function InterviewStudyToggle({
     Animated.timing(translateX, {
       toValue: option === 'study' ? 0 : 93,
       duration: 300,
-      useNativeDriver: true,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
     }).start();
   };
 
@@ -67,7 +71,8 @@ export function InterviewStudyToggle({
         style={[
           styles.underline,
           {
-            transform: [{ translateX }]
+            transform: [{ translateX }],
+            backgroundColor: isInViewFlashcardsPage ? '#44B88A' : '#4F41D8'
           }
         ]} 
       />

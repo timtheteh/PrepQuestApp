@@ -10,6 +10,9 @@ import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
 import { Ionicons } from '@expo/vector-icons';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { CircleSelectButtonGreen } from '@/components/CircleSelectButtonGreen';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import Feather from '@expo/vector-icons/Feather';
 
 const SCREEN_TRANSITION_DURATION = 300;
 const ACTION_ROW_HEIGHT = 60;
@@ -67,11 +70,11 @@ const CardForFlashcard = ({
     >
       {/* Top row */}
       <View style={styles.cardTopRow}>
-        <Ionicons name="eye" size={28} color="#444" />
+        <Ionicons name="eye" size={20} color="#444" />
         <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
           <Text style={[styles.difficultyPillText]}>{flashcardDifficulty}</Text>
         </View>
-        <FavoriteButton />
+        <FavoriteButton size={20}/>
       </View>
       {/* Centered question */}
       <View style={styles.cardQnContainer}>
@@ -108,6 +111,10 @@ const dummyFlashcards = [
   { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
   { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
   { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
+  { flashcardDifficulty: 'Easy', flashcardQn: 'What is JSX?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscscsdcdscdscdscdscdscdscdscdscdscdscdsddc?' },
+  { flashcardDifficulty: 'Again', flashcardQn: 'Hi' },
 
 ];
 
@@ -227,6 +234,17 @@ export default function ViewFlashcardsScreen() {
     }
   }, [isSelectMode]);
 
+  useEffect(() => {
+    if (viewMode === 'grid') {
+      setIsSelectMode(false);
+      setSelectedCardIndexes([]);
+    }
+    else if (viewMode === 'list') {
+        setIsSelectMode(false);
+        setSelectedCardIndexes([]);
+      }
+  }, [viewMode]);
+
   // Clean up animation when component unmounts
   useEffect(() => {
     return () => {
@@ -276,7 +294,10 @@ export default function ViewFlashcardsScreen() {
   // Action row handlers
   const handleSelect = () => setIsSelectMode(true);
   const handleSelectAll = () => {/* TODO: select all logic */};
-  const handleCancel = () => setIsSelectMode(false);
+  const handleCancel = () => {
+    setIsSelectMode(false);
+    setSelectedCardIndexes([]);
+  };
   const handleActionIconPress = (index: number) => {
     // TODO: handle trash action
   };
@@ -316,7 +337,10 @@ export default function ViewFlashcardsScreen() {
 
           <ScrollView
             style={styles.mainScrollView}
-            contentContainerStyle={styles.mainScrollViewContent}    
+            contentContainerStyle={[
+              styles.mainScrollViewContent,
+              isSelectMode && { paddingBottom: 60 }
+            ]}
           >
             <View style={styles.headerRow}>
             {/* First Column - Title */}
@@ -327,6 +351,7 @@ export default function ViewFlashcardsScreen() {
                   style={styles.topicsScrollView}
                   contentContainerStyle={styles.topicsScrollViewContent}
                   showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled={true}
                 >
                   <View style={styles.topicsPillsWrap}>
                     {dummyTopics.map((topic, index) => (
@@ -345,6 +370,7 @@ export default function ViewFlashcardsScreen() {
                   style={styles.qnTypesScrollView}
                   contentContainerStyle={styles.qnTypesScrollViewContent}
                   showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled={true}
                 >
                   {dummyQuestionTypes.map((item, idx) => (
                     <QuestionTypeCountRow key={idx} title={item.title} count={item.count} />
@@ -385,31 +411,60 @@ export default function ViewFlashcardsScreen() {
               </TouchableOpacity>
             </Animated.View>
             {/* Flashcards grid */}
-            <Animated.View style={[styles.flashcardsGridContainer, { transform: [{ translateY: headerTranslateY }] }]}> 
-              {chunkArray(dummyFlashcards, 2).map((row, rowIdx) => (
-                <View style={styles.flashcardsGridRow} key={rowIdx}>
-                  {row.map((card, colIdx) => {
-                    const flatIdx = rowIdx * 2 + colIdx;
-                    return (
-                      <View style={styles.flashcardCol} key={colIdx}>
-                        <CardForFlashcard
-                          flashcardDifficulty={card.flashcardDifficulty as any}
-                          flashcardQn={card.flashcardQn}
-                          selected={selectedCardIndexes.includes(flatIdx)}
-                          isSelectMode={isSelectMode}
-                          onPress={() => handleCardPress(flatIdx)}
-                        />
-                      </View>
-                    );
-                  })}
-                  {row.length === 1 && <View style={styles.flashcardCol} />}
-                </View>
-              ))}
-            </Animated.View>
+            {viewMode === 'grid' && (
+              <Animated.View style={[styles.flashcardsGridContainer, { transform: [{ translateY: headerTranslateY }] }]}> 
+                {chunkArray(dummyFlashcards, 2).map((row, rowIdx) => (
+                  <View style={styles.flashcardsGridRow} key={rowIdx}>
+                    {row.map((card, colIdx) => {
+                      const flatIdx = rowIdx * 2 + colIdx;
+                      return (
+                        <View style={styles.flashcardCol} key={colIdx}>
+                          <CardForFlashcard
+                            flashcardDifficulty={card.flashcardDifficulty as any}
+                            flashcardQn={card.flashcardQn}
+                            selected={selectedCardIndexes.includes(flatIdx)}
+                            isSelectMode={isSelectMode}
+                            onPress={() => handleCardPress(flatIdx)}
+                          />
+                        </View>
+                      );
+                    })}
+                    {row.length === 1 && <View style={styles.flashcardCol} />}
+                  </View>
+                ))}
+              </Animated.View>
+            )}
+            {viewMode === 'list' && (
+              <Animated.View style={[styles.flashcardsListContainer, { transform: [{ translateY: headerTranslateY }] }]}>
+                {dummyFlashcards.map((card, i) => (
+                  <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }]}>
+                    <View style={styles.flashcardListRowLeft}>  
+                      <FavoriteButton size={25} />
+                    </View>
+                    <Text style={styles.flashcardListQn} numberOfLines={2} ellipsizeMode="tail">{card.flashcardQn}</Text>
+                    {isSelectMode ? (
+                      <CircleSelectButtonGreen
+                        selected={selectedCardIndexes.includes(i)}
+                        onPress={() => handleCardPress(i)}
+                      />
+                    ) : (
+                      <TouchableOpacity>
+                        <Ionicons name="eye" size={24} color="#444" style={styles.flashcardListEyeIcon} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </Animated.View>
+            )}
           </View>
           </ScrollView>
           
-          
+          <FloatingActionButton
+            style={styles.fab}
+            backgroundColor="#44B88A"
+          >
+            <Feather name="plus" size={38} color="white" />
+          </FloatingActionButton>
         </ThemedView>
       </SafeAreaView>
     </Animated.View>
@@ -609,7 +664,6 @@ const styles = StyleSheet.create({
   difficultyPillText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 13,
-    fontWeight: '700',
   },
   cardQnContainer: {
     flex: 1,
@@ -643,5 +697,37 @@ const styles = StyleSheet.create({
     bottom: 5,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  flashcardsListContainer: {
+    marginTop: 8,
+  },
+  flashcardListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 60,
+    width: '100%',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECECEC',
+    backgroundColor: 'transparent',
+  },
+  flashcardListRowLeft: {
+    width: 25,
+    marginLeft: -15
+  },
+  flashcardListQn: {
+    flex: 1,
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 20,
+    color: '#222',
+    marginHorizontal: 12,
+  },
+  flashcardListEyeIcon: {
+    marginLeft: 8,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 20 : 15,
+    right: 16,
   },
 }); 

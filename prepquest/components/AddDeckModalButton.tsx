@@ -7,13 +7,15 @@ interface AddDeckModalButtonProps {
   title: string;
   Icon: React.FC<SvgProps>;
   marginBottom?: number;
+  isInViewFlashcardsPage?: boolean;
 }
 
 export function AddDeckModalButton({ 
   onPress,
   title,
   Icon,
-  marginBottom = 8
+  marginBottom = 8,
+  isInViewFlashcardsPage = false
 }: AddDeckModalButtonProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -27,7 +29,8 @@ export function AddDeckModalButton({
     >
       <View style={[
         styles.button,
-        isPressed ? styles.buttonPressed : styles.buttonUnpressed
+        isPressed ? styles.buttonPressed : styles.buttonUnpressed,
+        isInViewFlashcardsPage && { borderColor: '#44B88A' }
       ]}>
         <View style={styles.column}>
           <View style={[styles.titleRow, { marginBottom }]}>

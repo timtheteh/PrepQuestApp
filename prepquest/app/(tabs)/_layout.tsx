@@ -103,6 +103,8 @@ interface MenuContextType {
   setHandleDeckDetailsDeletion: (handler: (() => void) | null) => void;
   onDeckDetailsDeleteModalDismiss: (() => void) | null;
   setOnDeckDetailsDeleteModalDismiss: (handler: (() => void) | null) => void;
+  isInViewFlashcardsPage: boolean;
+  setIsInViewFlashcardsPage: (value: boolean) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -163,6 +165,8 @@ export const MenuContext = createContext<MenuContextType>({
   setHandleDeckDetailsDeletion: () => {},
   onDeckDetailsDeleteModalDismiss: null,
   setOnDeckDetailsDeleteModalDismiss: () => {},
+  isInViewFlashcardsPage: false,
+  setIsInViewFlashcardsPage: () => {},
 });
 
 export default function TabLayout() {
@@ -180,6 +184,7 @@ export default function TabLayout() {
   const [deleteModalText, setDeleteModalText] = useState('Are you sure you want to delete these deck(s)?');
   const [isAddToFoldersModalOpen, setIsAddToFoldersModalOpen] = useState(false);
   const [isInFavoritesPage, setIsInFavoritesPage] = useState(false);
+  const [isInViewFlashcardsPage, setIsInViewFlashcardsPage] = useState(false);
   const [noSelectionModalSubtitle, setNoSelectionModalSubtitle] = useState('Please choose at least one deck if you want to delete or add to folder.');
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
@@ -430,6 +435,8 @@ export default function TabLayout() {
       addToFoldersModalOpacity,
       isInFavoritesPage,
       setIsInFavoritesPage,
+      isInViewFlashcardsPage,
+      setIsInViewFlashcardsPage,
       noSelectionModalSubtitle,
       setNoSelectionModalSubtitle,
       sourcePageForFolders,
@@ -477,7 +484,17 @@ export default function TabLayout() {
             }}
           />
           <Tabs.Screen name="deckDetails" />
-          <Tabs.Screen name="viewFlashcards" />
+          <Tabs.Screen 
+            name="viewFlashcards" 
+            listeners={{
+              focus: () => {
+                setIsInViewFlashcardsPage(true);
+              },
+              blur: () => {
+                setIsInViewFlashcardsPage(false);
+              }
+            }}
+          />
         </Tabs>
         <GreyOverlayBackground 
           visible={isMenuOpen}
@@ -505,6 +522,7 @@ export default function TabLayout() {
           opacity={addDeckOpacity}
           currentMode={currentMode}
           isInFavoritesPage={isInFavoritesPage}
+          isInViewFlashcardsPage={isInViewFlashcardsPage}
         />
         <GenericModal
           visible={isTrashModalOpenInDecksPage}

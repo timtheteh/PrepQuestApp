@@ -60,12 +60,9 @@ const dummyFlashcards = [
   { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg') },
 ];
 
-const DifficultyPillRow = () => {
-  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
-  console.log('flashcardIdx', flashcardIdx);
-  
+// Updated DifficultyPillRow to accept currentIdx and totalCards as props
+const DifficultyPillRow = ({ currentIdx, onDifficultyChange }: { currentIdx: number, onDifficultyChange: (difficulty: string) => void }) => {
   // Get the current flashcard's difficulty
-  const currentIdx = parseInt(flashcardIdx as string) || 0;
   const currentFlashcard = dummyFlashcards[currentIdx];
   const currentDifficulty = currentFlashcard?.flashcardDifficulty;
 
@@ -81,8 +78,7 @@ const DifficultyPillRow = () => {
           ]}
           activeOpacity={0.8}
           onPress={() => {
-            // TODO: Handle difficulty selection
-            console.log(`Selected difficulty: ${type}`);
+            onDifficultyChange(type);
           }}
         >
           <Text style={styles.difficultyPillButtonText}>{type}</Text>
@@ -92,18 +88,37 @@ const DifficultyPillRow = () => {
   );
 };
 
-const LoadingBar = () => {
-  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
+// Updated LoadingBar to accept currentIdx and totalCards as props with smooth animations
+const LoadingBar = ({ currentIdx, totalCards }: { currentIdx: number, totalCards: number }) => {
+  // Create animated value for progress
+  const progressAnim = useRef(new Animated.Value(0)).current;
   
-  // Calculate progress percentage
-  const currentIdx = parseInt(flashcardIdx as string) || 0;
-  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
-  const progress = totalCards > 0 ? (currentIdx + 1) / totalCards : 0; // +1 because we want to show progress including current card
+  // Calculate target progress
+  const targetProgress = totalCards > 0 ? (currentIdx + 1) / totalCards : 0; // +1 because we want to show progress including current card
+
+  // Animate progress when currentIdx changes
+  React.useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: targetProgress,
+      duration: 300, // Match the card slide animation duration
+      useNativeDriver: false, // width animation requires useNativeDriver: false
+    }).start();
+  }, [currentIdx, totalCards, targetProgress]);
 
   return (
     <View style={styles.loadingBarContainer}>
       <View style={styles.loadingBarBg}>
-        <View style={[styles.loadingBarFg, { width: `${progress * 100}%` }]} />
+        <Animated.View 
+          style={[
+            styles.loadingBarFg, 
+            { 
+              width: progressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0%', '100%'],
+              })
+            }
+          ]} 
+        />
       </View>
     </View>
   );
@@ -163,14 +178,12 @@ async function playAudio(uri: any) {
   }
 }
 
-const FlippableFlashcard = () => {
+// FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
+const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
   const [isFlipped, setIsFlipped] = useState(false);
-  const { flashcardIdx: initialFlashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
-  const [currentIdx, setCurrentIdx] = useState(parseInt(initialFlashcardIdx as string) || 0);
-  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
   const displayNumber = currentIdx + 1;
 
   // Animation for horizontal slide
@@ -536,9 +549,26 @@ const FlippableFlashcard = () => {
 
 export default function FlashcardViewPage() {
   const router = useRouter();
+  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+
+  // Lift currentIdx state up here
+  const [currentIdx, setCurrentIdx] = useState(parseInt(flashcardIdx as string) || 0);
+  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
+  
+  // Add a separate state to force re-renders when difficulty changes
+  const [difficultyUpdateTrigger, setDifficultyUpdateTrigger] = useState(0);
+
+  // Function to update the difficulty of the current flashcard
+  const handleDifficultyChange = (difficulty: string) => {
+    if (dummyFlashcards[currentIdx]) {
+      dummyFlashcards[currentIdx].flashcardDifficulty = difficulty;
+      // Force a re-render by incrementing the trigger
+      setDifficultyUpdateTrigger(prev => prev + 1);
+    }
+  };
 
   const handleTrashPress = () => {
     setIsDeleteModalOpen(true);
@@ -593,13 +623,13 @@ export default function FlashcardViewPage() {
             <FlashcardViewTopBar onTrashPress={handleTrashPress} />
           </View>
           <View style={styles.middleContentContainer}>
-            <FlippableFlashcard />
+            <FlippableFlashcard currentIdx={currentIdx} setCurrentIdx={setCurrentIdx} totalCards={totalCards} />
           </View>
           <View style={styles.difficultyPillRowContainer}>
-            <DifficultyPillRow />
+            <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} />
           </View>
           <View style={styles.loadingBarBottomContainer}>
-            <LoadingBar />
+            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} />
           </View>
         </View>
       </SafeAreaView>

@@ -870,6 +870,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
 
     // Store the audio recording as content
     if (uri) {
+      console.log('uri', uri);
       const audioContent = {
         content: null, // We'll use the transparent overlay area for mic content
         type: 'mic' as const,

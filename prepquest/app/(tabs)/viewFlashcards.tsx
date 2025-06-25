@@ -47,18 +47,33 @@ const difficultyColors: Record<string, string> = {
 const CardForFlashcard = ({
   flashcardDifficulty,
   flashcardQn,
+  flashcardQnType,
   selected,
   isSelectMode,
   onPress,
 }: {
   flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
   flashcardQn: string;
+  flashcardQnType: string;
   selected: boolean;
   isSelectMode: boolean;
   onPress: () => void;
 }) => {
   const router = useRouter();
   const Container = isSelectMode ? TouchableOpacity : View;
+  
+  // Determine what text to display based on flashcardQnType
+  const getDisplayText = () => {
+    if (flashcardQnType === 'text') {
+      return flashcardQn;
+    } else if (flashcardQnType === 'image') {
+      return '<Image>';
+    } else if (flashcardQnType === 'audio') {
+      return '<Audio>';
+    }
+    return flashcardQn; // fallback
+  };
+
   return (
     <Container
       style={[
@@ -86,7 +101,7 @@ const CardForFlashcard = ({
           numberOfLines={2}
           ellipsizeMode="tail"
         >
-          {flashcardQn}
+          {getDisplayText()}
         </Text>
       </View>
       {/* Green tick if selected */}
@@ -101,24 +116,41 @@ const CardForFlashcard = ({
 
 // Dummy flashcard data
 const dummyFlashcards = [
-  { flashcardDifficulty: 'Again', flashcardQn: 'What is a react hook?' },
-  { flashcardDifficulty: 'Hard', flashcardQn: 'Explain useEffect.' },
-  { flashcardDifficulty: 'Good', flashcardQn: 'What is state in React?' },
-  { flashcardDifficulty: 'Easy', flashcardQn: 'What is JSX?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useState?' },
-  { flashcardDifficulty: 'Good', flashcardQn: 'What is a component?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'What is a react hook?' },
-  { flashcardDifficulty: 'Hard', flashcardQn: 'Explain useEffect.' },
-  { flashcardDifficulty: 'Good', flashcardQn: 'What is state in React?' },
-  { flashcardDifficulty: 'Easy', flashcardQn: 'What is JSX?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
-  { flashcardDifficulty: 'Easy', flashcardQn: 'What is JSX?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscsdc?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'How do you use useStatecsdcsdcdscsdcscscsdcdscdscdscdscdscdscdscdscdscdscdsddc?' },
-  { flashcardDifficulty: 'Again', flashcardQn: 'Hi' },
-
+    // text Qn -> text Ans
+  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
+  // text Qn (Cloze) -> text Ans
+  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
+  // image Qn (jpg) -> text Ans
+  { flashcardDifficulty: 'Hard', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), flashcardAnswerType: 'text', flashcardAnswer: 'UseEffect is a hook that allows you to perform side effects in functional components.' },
+  // image Qn (HEIC) -> text Ans
+//   { flashcardDifficulty: 'Easy', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_HEIC_photo.HEIC'), flashcardAnswerType: 'text', flashcardAnswer: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." },
+  // audio Qn (m4a) -> text Ans
+  { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
+//   // audio Qn (ogg) -> text Ans
+//   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_ogg_audio.ogg'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
+  
+  // text Qn -> MCQ Ans
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
+    [
+    {   "Qn": "Lorem Ipsum is simply dummy text of the printi",
+        "Ans": false
+    }, 
+    {   "Qn": "has been the industry's standard dummy text ever since the 1500s, when an unknown p",
+        "Ans": false
+    }, 
+    {   "Qn": "s, but also the leap into electronic typesetting, remaining essentially unchanged",
+        "Ans": false
+    }, 
+    {   "Qn": "lishing software like Aldus PageMaker including versions of",
+        "Ans": true
+    }] 
+},
+    // text Qn -> voice recorded
+  { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
+  // text Qn -> audio Ans
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
+  // text Qn -> image Ans
+  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg') },
 ];
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
@@ -469,6 +501,7 @@ export default function ViewFlashcardsScreen() {
                           <CardForFlashcard
                             flashcardDifficulty={card.flashcardDifficulty as any}
                             flashcardQn={card.flashcardQn}
+                            flashcardQnType={card.flashcardQnType}
                             selected={selectedCardIndexes.includes(flatIdx)}
                             isSelectMode={isSelectMode}
                             onPress={() => handleCardPress(flatIdx)}
@@ -483,24 +516,38 @@ export default function ViewFlashcardsScreen() {
             )}
             {viewMode === 'list' && (
               <Animated.View style={[styles.flashcardsListContainer, { transform: [{ translateY: headerTranslateY }] }]}>
-                {dummyFlashcards.map((card, i) => (
-                  <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }]}>
-                    <View style={styles.flashcardListRowLeft}>  
-                      <FavoriteButton size={25} />
+                {dummyFlashcards.map((card, i) => {
+                  // Determine what text to display based on flashcardQnType
+                  const getDisplayText = () => {
+                    if (card.flashcardQnType === 'text') {
+                      return card.flashcardQn;
+                    } else if (card.flashcardQnType === 'image') {
+                      return '<Image>';
+                    } else if (card.flashcardQnType === 'audio') {
+                      return '<Audio>';
+                    }
+                    return card.flashcardQn; // fallback
+                  };
+
+                  return (
+                    <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }]}>
+                      <View style={styles.flashcardListRowLeft}>  
+                        <FavoriteButton size={25} />
+                      </View>
+                      <Text style={styles.flashcardListQn} numberOfLines={2} ellipsizeMode="tail">{getDisplayText()}</Text>
+                      {isSelectMode ? (
+                        <CircleSelectButtonGreen
+                          selected={selectedCardIndexes.includes(i)}
+                          onPress={() => handleCardPress(i)}
+                        />
+                      ) : (
+                        <TouchableOpacity>
+                          <Ionicons name="eye" size={24} color="#444" style={styles.flashcardListEyeIcon} />
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    <Text style={styles.flashcardListQn} numberOfLines={2} ellipsizeMode="tail">{card.flashcardQn}</Text>
-                    {isSelectMode ? (
-                      <CircleSelectButtonGreen
-                        selected={selectedCardIndexes.includes(i)}
-                        onPress={() => handleCardPress(i)}
-                      />
-                    ) : (
-                      <TouchableOpacity>
-                        <Ionicons name="eye" size={24} color="#444" style={styles.flashcardListEyeIcon} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))}
+                  );
+                })}
               </Animated.View>
             )}
           </View>

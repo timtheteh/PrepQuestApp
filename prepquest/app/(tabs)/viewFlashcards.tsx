@@ -51,6 +51,7 @@ const CardForFlashcard = ({
   selected,
   isSelectMode,
   onPress,
+  flashcardIdx
 }: {
   flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
   flashcardQn: string;
@@ -58,6 +59,7 @@ const CardForFlashcard = ({
   selected: boolean;
   isSelectMode: boolean;
   onPress: () => void;
+  flashcardIdx: number;
 }) => {
   const router = useRouter();
   const Container = isSelectMode ? TouchableOpacity : View;
@@ -86,7 +88,12 @@ const CardForFlashcard = ({
     >
       {/* Top row */}
       <View style={styles.cardTopRow}>
-        <TouchableOpacity onPress={() => router.push('/flashcardView')}>
+        <TouchableOpacity onPress={() => router.push({
+            pathname: '/flashcardView',
+            params: {
+                flashcardIdx: flashcardIdx.toString(),
+            }
+        })}>
           <Ionicons name="eye" size={20} color="#444" />
         </TouchableOpacity>
         <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
@@ -119,7 +126,7 @@ const dummyFlashcards = [
     // text Qn -> text Ans
   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
   // text Qn (Cloze) -> text Ans
-  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
+  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'A React Hook is a special function that allows functional components to <blank> into React features like state and lifecycle methods without using class components.', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
   // image Qn (jpg) -> text Ans
   { flashcardDifficulty: 'Hard', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), flashcardAnswerType: 'text', flashcardAnswer: 'UseEffect is a hook that allows you to perform side effects in functional components.' },
   // image Qn (HEIC) -> text Ans
@@ -505,6 +512,7 @@ export default function ViewFlashcardsScreen() {
                             selected={selectedCardIndexes.includes(flatIdx)}
                             isSelectMode={isSelectMode}
                             onPress={() => handleCardPress(flatIdx)}
+                            flashcardIdx={flatIdx}
                           />
                         </View>
                       );

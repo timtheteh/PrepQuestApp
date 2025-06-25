@@ -1,8 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { FlashcardViewTopBar } from '@/components/FlashcardViewTopBar';
+import FlippableCardFrontFlipArrow from '@/assets/icons/flippableCardFrontFlipArrow.svg';
+import FlippableCardBackFlipArrow from '@/assets/icons/flippableCardBackFlipArrow.svg';
+import { FavoriteButton } from '@/components/FavoriteButton';
+import { GenericModal } from '@/components/GenericModal';
+import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
+import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -13,8 +19,54 @@ const DIFFICULTY_TYPES = [
   { type: 'Easy', color: '#98CE7F' },
 ];
 
+// Dummy flashcard data
+const dummyFlashcards = [
+    // text Qn -> text Ans
+  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
+  // text Qn (Cloze) -> text Ans
+  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'A React Hook is a special function that allows functional components to <blank> into React features like state and lifecycle methods without using class components.', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
+  // image Qn (jpg) -> text Ans
+  { flashcardDifficulty: 'Hard', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), flashcardAnswerType: 'text', flashcardAnswer: 'UseEffect is a hook that allows you to perform side effects in functional components.' },
+  // image Qn (HEIC) -> text Ans
+//   { flashcardDifficulty: 'Easy', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_HEIC_photo.HEIC'), flashcardAnswerType: 'text', flashcardAnswer: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." },
+  // audio Qn (m4a) -> text Ans
+  { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
+//   // audio Qn (ogg) -> text Ans
+//   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_ogg_audio.ogg'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
+  
+  // text Qn -> MCQ Ans
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
+    [
+    {   "Qn": "Lorem Ipsum is simply dummy text of the printi",
+        "Ans": false
+    }, 
+    {   "Qn": "has been the industry's standard dummy text ever since the 1500s, when an unknown p",
+        "Ans": false
+    }, 
+    {   "Qn": "s, but also the leap into electronic typesetting, remaining essentially unchanged",
+        "Ans": false
+    }, 
+    {   "Qn": "lishing software like Aldus PageMaker including versions of",
+        "Ans": true
+    }] 
+},
+    // text Qn -> voice recorded
+  { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
+  // text Qn -> audio Ans
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
+  // text Qn -> image Ans
+  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg') },
+];
+
 const DifficultyPillRow = () => {
-  const [selected, setSelected] = useState<string | null>(null);
+  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
+  console.log('flashcardIdx', flashcardIdx);
+  
+  // Get the current flashcard's difficulty
+  const currentIdx = parseInt(flashcardIdx as string) || 0;
+  const currentFlashcard = dummyFlashcards[currentIdx];
+  const currentDifficulty = currentFlashcard?.flashcardDifficulty;
+
   return (
     <View style={styles.difficultyPillRow}>
       {DIFFICULTY_TYPES.map(({ type, color }) => (
@@ -23,11 +75,12 @@ const DifficultyPillRow = () => {
           style={[
             styles.difficultyPillButton,
             { backgroundColor: color },
-            selected === type && { borderColor: '#4F41D8', borderWidth: 3 },
+            currentDifficulty === type && { borderColor: '#4F41D8', borderWidth: 3 },
           ]}
           activeOpacity={0.8}
           onPress={() => {
-            if (selected !== type) setSelected(type);
+            // TODO: Handle difficulty selection
+            console.log(`Selected difficulty: ${type}`);
           }}
         >
           <Text style={styles.difficultyPillButtonText}>{type}</Text>
@@ -37,17 +90,55 @@ const DifficultyPillRow = () => {
   );
 };
 
-const LoadingBar = ({ percent }: { percent: number }) => (
-  <View style={styles.loadingBarContainer}>
-    <View style={styles.loadingBarBg}>
-      <View style={[styles.loadingBarFg, { width: `${percent * 100}%` }]} />
+const LoadingBar = () => {
+  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
+  
+  // Calculate progress percentage
+  const currentIdx = parseInt(flashcardIdx as string) || 0;
+  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
+  const progress = totalCards > 0 ? (currentIdx + 1) / totalCards : 0; // +1 because we want to show progress including current card
+
+  return (
+    <View style={styles.loadingBarContainer}>
+      <View style={styles.loadingBarBg}>
+        <View style={[styles.loadingBarFg, { width: `${progress * 100}%` }]} />
+      </View>
     </View>
-  </View>
-);
+  );
+};
+
+// Helper to render text with <blank> replaced by underline
+function renderQuestionWithBlanks(text: string) {
+  const parts = text.split(/<blank>/g);
+  const elements: React.ReactNode[] = [];
+  parts.forEach((part, idx) => {
+    elements.push(
+      <Text key={`text-${idx}`} style={styles.questionText}>
+        {part}
+      </Text>
+    );
+    if (idx < parts.length - 1) {
+      elements.push(
+        <View
+          key={`blank-${idx}`}
+          style={styles.blankUnderlineView}
+        />
+      );
+    }
+  });
+  return (
+    <Text style={styles.questionText}>
+      {elements}
+    </Text>
+  );
+}
 
 const FlippableFlashcard = () => {
   const flipAnim = useRef(new Animated.Value(0)).current;
+  const frontOpacity = useRef(new Animated.Value(1)).current;
+  const backOpacity = useRef(new Animated.Value(0)).current;
   const [isFlipped, setIsFlipped] = useState(false);
+  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
 
   const frontInterpolate = flipAnim.interpolate({
     inputRange: [0, 1],
@@ -59,17 +150,46 @@ const FlippableFlashcard = () => {
   });
 
   const handlePress = () => {
-    Animated.timing(flipAnim, {
-      toValue: isFlipped ? 0 : 1,
-      duration: 300,
+    const toValue = isFlipped ? 0 : 1;
+    
+    // Fade out current content
+    Animated.timing(isFlipped ? backOpacity : frontOpacity, {
+      toValue: 0,
+      duration: 150,
       useNativeDriver: true,
     }).start(() => {
-      setIsFlipped(!isFlipped);
+      // Start flip animation
+      Animated.timing(flipAnim, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsFlipped(!isFlipped);
+        
+        // Fade in new content
+        Animated.timing(!isFlipped ? backOpacity : frontOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
     });
   };
 
+  // Calculate display values
+  const currentIdx = parseInt(flashcardIdx as string) || 0;
+  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
+  const displayNumber = currentIdx + 1; // Convert from 0-based to 1-based
+
+  // Get current flashcard data
+  const currentFlashcard = dummyFlashcards[currentIdx];
+  const flashcardQnType = currentFlashcard?.flashcardQnType;
+  const flashcardQn = currentFlashcard?.flashcardQn;
+  const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
+  const flashcardAnswer = currentFlashcard?.flashcardAnswer;   
+
   return (
-    <TouchableWithoutFeedback onPress={handlePress}>
+    <View style={{ flex: 1, position: 'relative' }}>
       <View style={{ flex: 1 }}>
         <Animated.View
           style={[
@@ -85,12 +205,45 @@ const FlippableFlashcard = () => {
           ]}
         >
           {/* Front content here */}
+          
+          {/* Top container */}
+          <Animated.View style={[styles.topContainer, { opacity: frontOpacity }]}>
+            <View style={styles.topContainerContent}>
+              <Text style={styles.flashcardIndexText}>
+                {`Qn ${displayNumber} of ${totalCards}`}
+              </Text>
+              <FavoriteButton size={30} />
+            </View>
+          </Animated.View>
+          
+          {/* Middle container */}
+          <Animated.View style={[styles.middleContainer, { opacity: frontOpacity }]}>
+            {flashcardQnType === 'text' && (
+              <ScrollView 
+                style={styles.questionScrollView}
+                contentContainerStyle={styles.questionScrollViewContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {renderQuestionWithBlanks(flashcardQn)}
+              </ScrollView>
+            )}
+          </Animated.View>
+          
+          {/* Bottom container */}
+          <Animated.View style={[styles.bottomContainer, { opacity: frontOpacity }]}>
+            {/* Bottom content will go here */}
+          </Animated.View>
+          
+          {/* Front flip arrow - positioned at bottom right */}
+          <Animated.View style={[styles.flipArrowContainer, { opacity: frontOpacity }]}>
+            <FlippableCardFrontFlipArrow width={30} height={30} />
+          </Animated.View>
         </Animated.View>
         <Animated.View
           style={[
             styles.flippableCard,
             {
-              backgroundColor: 'red',
+              backgroundColor: '#F8F8F8',
               transform: [{ rotateY: backInterpolate }],
               zIndex: isFlipped ? 1 : 0,
               position: 'absolute',
@@ -100,37 +253,137 @@ const FlippableFlashcard = () => {
           ]}
         >
           {/* Back content here */}
+          
+          {/* Top container */}
+          <Animated.View style={[styles.topContainer, { opacity: backOpacity }]}>
+            <View style={styles.topContainerContent}>
+              <Text style={styles.flashcardIndexText}>
+                {`Ans ${displayNumber} of ${totalCards}`}
+              </Text>
+              <FavoriteButton size={30} />
+            </View>
+          </Animated.View>
+          
+          {/* Middle container */}
+          <Animated.View style={[styles.middleContainer, { opacity: backOpacity }]}>
+            {flashcardAnswerType === 'text' && (
+                <ScrollView 
+                    style={styles.questionScrollView}
+                    contentContainerStyle={styles.questionScrollViewContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {renderQuestionWithBlanks(flashcardAnswer)}
+                </ScrollView>
+                )}
+          </Animated.View>
+          
+          {/* Bottom container */}
+          <Animated.View style={[styles.bottomContainer, { opacity: backOpacity }]}>
+            {/* Bottom content will go here */}
+          </Animated.View>
+          
+          {/* Back flip arrow - positioned at bottom right */}
+          <Animated.View style={[styles.flipArrowContainer, { opacity: backOpacity }]}>
+            <FlippableCardBackFlipArrow width={30} height={30} />
+          </Animated.View>
         </Animated.View>
       </View>
-    </TouchableWithoutFeedback>
+      
+      {/* Separate Pressable for flip arrow area only */}
+      <Pressable 
+        onPress={handlePress} 
+        style={styles.flipArrowPressable}
+      />
+    </View>
   );
 };
 
 export default function FlashcardViewPage() {
   const router = useRouter();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const deleteModalOpacity = useRef(new Animated.Value(0)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+
+  const handleTrashPress = () => {
+    setIsDeleteModalOpen(true);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handleDismissDeleteModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsDeleteModalOpen(false);
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    handleDismissDeleteModal();
+    // TODO: Implement actual delete functionality
+    console.log('Delete flashcard confirmed');
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <AntDesign name="arrowleft" size={32} color="black" />
-        </TouchableOpacity>
-        <View style={styles.headerIconsContainer}>
-          <FlashcardViewTopBar />
+    <View style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <AntDesign name="arrowleft" size={32} color="black" />
+          </TouchableOpacity>
+          <View style={styles.headerIconsContainer}>
+            <FlashcardViewTopBar onTrashPress={handleTrashPress} />
+          </View>
+          <View style={styles.middleContentContainer}>
+            <FlippableFlashcard />
+          </View>
+          <View style={styles.difficultyPillRowContainer}>
+            <DifficultyPillRow />
+          </View>
+          <View style={styles.loadingBarBottomContainer}>
+            <LoadingBar />
+          </View>
         </View>
-        <View style={styles.middleContentContainer}>
-          <FlippableFlashcard />
-        </View>
-        <View style={styles.difficultyPillRowContainer}>
-          <DifficultyPillRow />
-        </View>
-        <View style={styles.loadingBarBottomContainer}>
-          <LoadingBar percent={0.5} />
-        </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+
+      {/* Delete confirmation modal and overlay - outside SafeAreaView to cover full screen */}
+      <GreyOverlayBackground 
+        visible={isDeleteModalOpen}
+        opacity={overlayOpacity}
+        onPress={handleDismissDeleteModal}
+      />
+      <GenericModal
+        visible={isDeleteModalOpen}
+        opacity={deleteModalOpacity}
+        Icon={DeleteModalIcon}
+        text="Are you sure you want to delete this flashcard?"
+        buttons="double"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleDismissDeleteModal}
+      />
+    </View>
   );
 }
 
@@ -223,5 +476,89 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backfaceVisibility: 'hidden',
     overflow: 'hidden',
+  },
+  topContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    borderWidth: 2,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderColor: 'blue',
+    zIndex: 10,
+  },
+  middleContainer: {
+    position: 'absolute',
+    top: 60,
+    bottom: 60,
+    left: 0,
+    right: 0,
+    borderWidth: 2,
+    borderColor: 'red',
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    width: '85%',
+    borderBottomLeftRadius: 30,
+    borderWidth: 2,
+    borderColor: 'green',
+    zIndex: 10,
+  },
+  flipArrowContainer: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    zIndex: 10,
+  },
+  topContainerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  flashcardIndexText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 24,
+    color: '#222',
+  },
+  flipArrowPressable: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 60,
+    height: 60,
+    zIndex: 20,
+  },
+  questionScrollView: {
+    flex: 1,
+  },
+  questionScrollViewContent: {
+    flexGrow: 1,
+    alignContent: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  questionText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 32,
+    color: '#222',
+    textAlign: 'center',
+  },
+  blankUnderlineView: {
+    borderBottomWidth: 2,
+    borderColor: '#222',
+    width: 100,
+    marginHorizontal: 2,
+    alignSelf: 'center',
+    marginBottom: 2,
   },
 }); 

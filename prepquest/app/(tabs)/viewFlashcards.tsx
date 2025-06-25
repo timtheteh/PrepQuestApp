@@ -133,7 +133,15 @@ export default function ViewFlashcardsScreen() {
   const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, mode } = useLocalSearchParams();
   const { 
     navbarRef,
-    currentMode
+    currentMode,
+    setIsMenuOpen,
+    setIsTrashModalOpenInDecksPage,
+    setIsNoSelectionModalOpen,
+    setDeleteModalText,
+    setHandleDeletion,
+    trashModalOpacity,
+    noSelectionModalOpacity,
+    menuOverlayOpacity,
   } = useContext(MenuContext);
 
   // View state management - always start in "grid" state
@@ -252,6 +260,20 @@ export default function ViewFlashcardsScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (isFocused) {
+      setHandleDeletion(() => () => {
+        setSelectedCardIndexes([]);
+        setIsSelectMode(false);
+      });
+    }
+    return () => {
+      if (!isFocused) {
+        setHandleDeletion(null);
+      }
+    };
+  }, [isFocused]);
+
   const handleBackPress = () => {
     // Navigate back to deck details page with all preserved parameters
     router.push({
@@ -299,7 +321,29 @@ export default function ViewFlashcardsScreen() {
     setSelectedCardIndexes([]);
   };
   const handleActionIconPress = (index: number) => {
-    // TODO: handle trash action
+    Animated.timing(menuOverlayOpacity, {
+      toValue: 0.5,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+    if (selectedCardIndexes.length === 0) {
+      setIsMenuOpen(true);
+      setIsNoSelectionModalOpen(true);
+      Animated.timing(noSelectionModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      setIsMenuOpen(true);
+      setIsTrashModalOpenInDecksPage(true);
+      setDeleteModalText('Are you sure you want to delete these flashcard(s)?');
+      Animated.timing(trashModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
   // Handler to toggle card selection
@@ -459,12 +503,14 @@ export default function ViewFlashcardsScreen() {
           </View>
           </ScrollView>
           
-          <FloatingActionButton
-            style={styles.fab}
-            backgroundColor="#44B88A"
-          >
-            <Feather name="plus" size={38} color="white" />
-          </FloatingActionButton>
+          {!isSelectMode && (
+            <FloatingActionButton
+              style={styles.fab}
+              backgroundColor="#44B88A"
+            >
+              <Feather name="plus" size={38} color="white" />
+            </FloatingActionButton>
+          )}    
         </ThemedView>
       </SafeAreaView>
     </Animated.View>

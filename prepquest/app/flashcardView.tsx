@@ -11,6 +11,7 @@ import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import { Audio } from 'expo-av';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -39,19 +40,22 @@ const dummyFlashcards = [
   // text Qn -> MCQ Ans
   { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
     [
-    {   "Qn": "Lorem Ipsum is simply dummy text of the printi",
-        "Ans": false
+    {   "choice": "This is the first choice",
+        "ans": false
     }, 
-    {   "Qn": "has been the industry's standard dummy text ever since the 1500s, when an unknown p",
-        "Ans": false
+    {   "choice": "This is the second choice",
+        "ans": false
     }, 
-    {   "Qn": "s, but also the leap into electronic typesetting, remaining essentially unchanged",
-        "Ans": false
+    {   "choice": "This is the third choice",
+        "ans": false
     }, 
-    {   "Qn": "lishing software like Aldus PageMaker including versions of",
-        "Ans": true
+    {   "choice": "This is the fourth choice",
+        "ans": true
+    },
+    {   "choice": "This is the fifh choice",
+        "ans": false
     }] 
-},
+    },
     // text Qn -> voice recorded
   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
   // text Qn -> audio Ans
@@ -150,6 +154,45 @@ function renderQuestionWithBlanks(text: string) {
   );
 }
 
+// Helper to render MCQ answers with randomly assigned option letters
+function renderMCQAnswers(mcqData: Array<{ choice: string; ans: boolean }>) {
+  // Create array of option letters (A, B, C, D, etc.)
+  const optionLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  
+  // Create array of indices to shuffle
+  const indices = Array.from({ length: mcqData.length }, (_, i) => i);
+  
+  // Fisher-Yates shuffle algorithm to randomly assign letters
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  
+  // Create array of options with assigned letters
+  const optionsWithLetters = mcqData.map((item, originalIndex) => {
+    const assignedIndex = indices.indexOf(originalIndex);
+    return {
+      ...item,
+      letter: optionLetters[assignedIndex]
+    };
+  });
+  
+  // Sort alphabetically by assigned letter
+  optionsWithLetters.sort((a, b) => a.letter.localeCompare(b.letter));
+  
+  return (
+    <View style={styles.mcqContainer}>
+      {optionsWithLetters.map((option, index) => (
+        <View key={index} style={styles.mcqOptionRow}>
+          <Text style={styles.mcqOptionText}>
+            {option.letter}) {option.choice}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // Helper for audio playback
 async function playAudio(uri: any) {
   try {
@@ -186,6 +229,12 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { current
   const [isFlipped, setIsFlipped] = useState(false);
   const displayNumber = currentIdx + 1;
 
+  // MCQ selection state
+  const [selectedMCQOption, setSelectedMCQOption] = useState<string | null>(null);
+  // Store randomized MCQ options in a ref so they persist across renders
+  const mcqOptionsWithLettersRef = useRef<Array<{ choice: string; ans: boolean; letter: string }>>([]);
+  console.log(mcqOptionsWithLettersRef.current);
+
   // Animation for horizontal slide
   const cardSlideAnim = useRef(new Animated.Value(0)).current; // 0 = center, -1 = left, 1 = right
 
@@ -200,6 +249,31 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { current
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [audioPosition, setAudioPosition] = useState(0);
   const audioSoundRef = useRef<Audio.Sound | null>(null);
+
+  // Generate MCQ options with letters ONCE per card
+  React.useEffect(() => {
+    if (flashcardAnswerType === 'MCQ' && Array.isArray(flashcardAnswer)) {
+      const optionLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      const indices = Array.from({ length: flashcardAnswer.length }, (_, i) => i);
+      // Fisher-Yates shuffle
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      // Shuffle the options
+      const shuffled = indices.map(i => flashcardAnswer[i]);
+      // Assign letters in order
+      const optionsWithLetters = shuffled.map((item, idx) => ({
+        ...item,
+        letter: optionLetters[idx]
+      }));
+      mcqOptionsWithLettersRef.current = optionsWithLetters;
+      setSelectedMCQOption(null); // Reset selection when card changes
+    } else {
+      mcqOptionsWithLettersRef.current = [];
+      setSelectedMCQOption(null);
+    }
+  }, [currentIdx, flashcardAnswerType, flashcardAnswer]);
 
   // Flipping logic (unchanged)
   const handlePress = () => {
@@ -222,6 +296,23 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { current
         }).start();
       });
     });
+  };
+
+  // Handle MCQ option selection
+  const handleMCQOptionSelect = (letter: string) => {
+    setSelectedMCQOption(selectedMCQOption === letter ? null : letter);
+  };
+
+  // Handle MCQ submit
+  const handleMCQSubmit = () => {
+    if (selectedMCQOption) {
+      const selectedOption = mcqOptionsWithLettersRef.current.find(option => option.letter === selectedMCQOption);
+      if (selectedOption) {
+        const isCorrect = selectedOption.ans;
+        console.log(`Selected option ${selectedMCQOption} is ${isCorrect ? 'correct' : 'incorrect'}`);
+        // TODO: Handle correct/incorrect answer feedback
+      }
+    }
   };
 
   // Chevron navigation logic
@@ -492,6 +583,21 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { current
                       {renderQuestionWithBlanks(flashcardAnswer)}
                   </ScrollView>
                   )}
+              {flashcardAnswerType === 'MCQ' && Array.isArray(flashcardAnswer) && (
+                <ScrollView 
+                  style={styles.questionScrollView}
+                  contentContainerStyle={styles.mcqChoicesContainer}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {mcqOptionsWithLettersRef.current.map((option, idx) => (
+                    <View key={idx} style={styles.mcqOptionRow}>
+                        <Text style={styles.mcqOptionText}>
+                            {option.letter}) {option.choice}
+                        </Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
               {flashcardAnswerType === 'image' && !!flashcardAnswer && (
                 <Image
                   source={flashcardAnswer}
@@ -527,7 +633,22 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { current
             
             {/* Bottom container */}
             <Animated.View style={[styles.bottomContainer, { opacity: backOpacity }]}>
-              {/* Bottom content will go here */}
+              {flashcardAnswerType === 'MCQ' && mcqOptionsWithLettersRef.current.length > 0 && (
+                <View style={styles.mcqBottomContainer}>
+                  {mcqOptionsWithLettersRef.current.map((option) => (
+                    <MCQOption
+                      key={option.letter}
+                      text={option.letter}
+                      selected={selectedMCQOption === option.letter}
+                      onPress={() => handleMCQOptionSelect(option.letter)}
+                    />
+                  ))}
+                  <SubmitButton
+                    enabled={selectedMCQOption !== null}
+                    onPress={handleMCQSubmit}
+                  />
+                </View>
+              )}
             </Animated.View>
             
             {/* Back flip arrow - positioned at bottom right */}
@@ -544,6 +665,33 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { current
         />
       </Animated.View>
     </View>
+  );
+};
+
+// Local MCQ Option component
+const MCQOption = ({ text, selected, onPress }: { text: string; selected: boolean; onPress: () => void }) => {
+  return (
+    <View style={styles.mcqOptionContainer}>
+      <SmallCircleSelectButton selected={selected} onPress={onPress} />
+      <Text style={styles.mcqOptionLabelText}>{text}</Text>
+    </View>
+  );
+};
+
+// Local Submit Button component
+const SubmitButton = ({ enabled, onPress }: { enabled: boolean; onPress: () => void }) => {
+  return (
+    <TouchableOpacity
+      style={[
+        styles.submitButton,
+        { backgroundColor: enabled ? '#4F41D8' : '#D5D4DD' }
+      ]}
+      onPress={onPress}
+      disabled={!enabled}
+      activeOpacity={0.8}
+    >
+      <Text style={styles.submitButtonText}>Submit</Text>
+    </TouchableOpacity>
   );
 };
 
@@ -778,6 +926,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'green',
     zIndex: 10,
+    justifyContent: 'center',
   },
   flipArrowContainer: {
     position: 'absolute',
@@ -808,6 +957,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   questionScrollViewContent: {
+    flexGrow: 1,
+    alignContent: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  mcqChoicesContainer: {
     flexGrow: 1,
     alignContent: 'center',
     justifyContent: 'center',
@@ -869,5 +1024,53 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     backgroundColor: '#ECECEC',
+  },
+  mcqContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  mcqOptionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginVertical: 16,
+    width: '100%',
+  },
+  mcqOptionText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 28,
+    color: '#222',
+    textAlign: 'left',
+    lineHeight: 28,
+  },
+  mcqOptionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 0,
+  },
+  mcqOptionLabelText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 14,
+    color: '#222',
+    textAlign: 'left',
+  },
+  submitButton: {
+    height: 30,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  submitButtonText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  mcqBottomContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
   },
 }); 

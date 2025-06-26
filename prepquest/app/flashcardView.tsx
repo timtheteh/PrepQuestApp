@@ -867,22 +867,22 @@ export default function FlashcardViewPage() {
       <GreyOverlayBackground 
         visible={mcqModalVisible}
         opacity={mcqOverlayOpacity}
-        onPress={() => {
-          Animated.parallel([
-            Animated.timing(mcqOverlayOpacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-            Animated.timing(mcqModalOpacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-          ]).start(() => {
-            setMcqModalVisible(false);
-          });
-        }}
+        // onPress={() => {
+        //   Animated.parallel([
+        //     Animated.timing(mcqOverlayOpacity, {
+        //       toValue: 0,
+        //       duration: 200,
+        //       useNativeDriver: true,
+        //     }),
+        //     Animated.timing(mcqModalOpacity, {
+        //       toValue: 0,
+        //       duration: 200,
+        //       useNativeDriver: true,
+        //     }),
+        //   ]).start(() => {
+        //     setMcqModalVisible(false);
+        //   });
+        // }}
       />
       <MCQFeedbackModal
         visible={mcqModalVisible}

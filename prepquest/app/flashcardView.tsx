@@ -14,6 +14,8 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
 import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
 import LottieView from 'lottie-react-native';
+import MicIcon from '@/assets/icons/micIcon.svg';
+import AIChatIcon from '@/assets/icons/AIChatIcon.svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -224,11 +226,10 @@ async function playAudio(uri: any) {
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value }) => {
+const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>> }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
-  const [isFlipped, setIsFlipped] = useState(false);
   const displayNumber = currentIdx + 1;
 
   // MCQ selection state
@@ -251,6 +252,11 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [audioPosition, setAudioPosition] = useState(0);
   const audioSoundRef = useRef<Audio.Sound | null>(null);
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Generate MCQ options with letters ONCE per card
   React.useEffect(() => {
@@ -409,13 +415,21 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
   // Play or pause audio logic
   async function handleAudioButtonPress(uri: any) {
     try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      await Audio.setAudioModeAsync({ 
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
       if (!isAudioPlaying) {
         // Play or resume
         if (audioSoundRef.current) {
           await audioSoundRef.current.playAsync();
         } else {
-          const { sound } = await Audio.Sound.createAsync(uri, { positionMillis: audioPosition });
+          // Handle both string URIs (recorded audio) and object sources (existing audio)
+          const source = typeof uri === 'string' ? { uri } : uri;
+          const { sound } = await Audio.Sound.createAsync(source, { positionMillis: audioPosition });
           audioSoundRef.current = sound;
           sound.setOnPlaybackStatusUpdate((status) => {
             if (status.isLoaded && status.didJustFinish) {
@@ -453,6 +467,42 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
       }
     };
   }, [currentIdx]);
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recordingRef.current = recording;
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recordingRef.current) return;
+
+    try {
+      await recordingRef.current.stopAndUnloadAsync();
+      const uri = recordingRef.current.getURI();
+      recordingRef.current = null;
+      setIsRecording(false);
+      
+      if (uri) {
+        setRecordedAudioUri(uri);
+      }
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+    }
+  };
 
   return (
     <View style={{ flex: 1, position: 'relative' }}>
@@ -612,6 +662,85 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
                   ))}
                 </ScrollView>
               )}
+              {flashcardAnswerType === 'voice' && (
+                <View style={styles.voiceAnswerContainer}>
+                  {!isRecording ? (
+                    <>
+                      <Text style={styles.voiceAnswerText}>
+                        {recordedAudioUri ? "Great answer! Replay your audio or get feedback by AI!" : "Record your answer and get feedback by AI!"}
+                      </Text>
+                      <LottieView
+                        source={require('@/assets/animations/DownArrowAnimation.json')}
+                        autoPlay
+                        loop
+                        style={styles.voiceAnswerAnimation}
+                      />
+                    </>
+                  ) : (
+                    <LottieView
+                      source={require('@/assets/animations/SoundWaveLoadingAnimation.json')}
+                      autoPlay
+                      loop
+                      style={styles.soundWaveAnimation}
+                    />
+                  )}
+                </View>
+              )}
+              {flashcardAnswerType === 'voice' && (
+                <View style={styles.micButtonsContainer}>
+                  <Pressable 
+                    style={({ pressed }) => [
+                      styles.micButton,
+                      pressed && styles.buttonPressed,
+                      isRecording && styles.recordingButton
+                    ]}
+                    onPressIn={startRecording}
+                    onPressOut={stopRecording}
+                  >
+                    <MicIcon width={36} height={36} />
+                  </Pressable>
+                  <Pressable 
+                    style={({ pressed }) => [
+                      styles.replayButton,
+                      pressed && styles.buttonPressed
+                    ]}
+                    onPress={() => {
+                      if (recordedAudioUri) {
+                        handleAudioButtonPress(recordedAudioUri);
+                      }
+                    }}
+                    disabled={!recordedAudioUri}
+                  >
+                    {!isAudioPlaying ? (
+                      <Svg width={45} height={45} viewBox="0 0 24 24" fill="none">
+                        <Path 
+                          d="M8 5v14l11-7z" 
+                          fill={recordedAudioUri ? "black" : "#D5D4DD"}
+                          transform="rotate(0 12 12)"
+                        />
+                      </Svg>
+                    ) : (
+                      <Svg width={45} height={45} viewBox="0 0 24 24" fill="none">
+                        <Rect x={7} y={5} width={4} height={14} rx={1.5} fill="black" />
+                        <Rect x={13} y={5} width={4} height={14} rx={1.5} fill="black" />
+                      </Svg>
+                    )}
+                  </Pressable>
+                  <Pressable 
+                    style={({ pressed }) => [
+                      styles.aiChatButton,
+                      pressed && styles.buttonPressed
+                    ]}
+                    onPress={() => {
+                      // TODO: Implement AI chat functionality
+                      console.log('AI Chat button pressed');
+                    }}
+                    disabled={!recordedAudioUri}
+                  >
+                    <AIChatIcon width={36} height={36} />
+                  </Pressable>
+                </View>
+              )}
               {flashcardAnswerType === 'image' && !!flashcardAnswer && (
                 <Image
                   source={flashcardAnswer}
@@ -756,6 +885,9 @@ export default function FlashcardViewPage() {
   const [currentIdx, setCurrentIdx] = useState(parseInt(flashcardIdx as string) || 0);
   const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
   
+  // Add isFlipped state to track card side
+  const [isFlipped, setIsFlipped] = useState(false);
+  
   // Add a separate state to force re-renders when difficulty changes
   const [difficultyUpdateTrigger, setDifficultyUpdateTrigger] = useState(0);
 
@@ -813,6 +945,34 @@ export default function FlashcardViewPage() {
   const mcqModalOpacity = useRef(new Animated.Value(0)).current;
   const mcqOverlayOpacity = useRef(new Animated.Value(0)).current;
 
+  // Function to determine if copy button should be enabled
+  const isCopyButtonEnabled = (isFlipped: boolean) => {
+    const currentFlashcard = dummyFlashcards[currentIdx];
+    if (isFlipped) {
+      // Back side
+      const answerType = currentFlashcard?.flashcardAnswerType;
+      return answerType === 'text' || answerType === 'MCQ' || answerType === 'image';
+    } else {
+      // Front side
+      const questionType = currentFlashcard?.flashcardQnType;
+      return questionType === 'text' || questionType === 'image';
+    }
+  };
+
+  // Function to determine if audio button should be enabled
+  const isAudioButtonEnabled = (isFlipped: boolean) => {
+    const currentFlashcard = dummyFlashcards[currentIdx];
+    if (isFlipped) {
+      // Back side
+      const answerType = currentFlashcard?.flashcardAnswerType;
+      return answerType === 'text' || answerType === 'MCQ';
+    } else {
+      // Front side
+      const questionType = currentFlashcard?.flashcardQnType;
+      return questionType === 'text';
+    }
+  };
+
   return (
     <View style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
@@ -824,7 +984,11 @@ export default function FlashcardViewPage() {
             <AntDesign name="arrowleft" size={32} color="black" />
           </TouchableOpacity>
           <View style={styles.headerIconsContainer}>
-            <FlashcardViewTopBar onTrashPress={handleTrashPress} />
+            <FlashcardViewTopBar 
+              onTrashPress={handleTrashPress} 
+              isCopyButtonEnabled={isCopyButtonEnabled(isFlipped)} 
+              isAudioButtonEnabled={isAudioButtonEnabled(isFlipped)} 
+            />
           </View>
           <View style={styles.middleContentContainer}>
             <FlippableFlashcard 
@@ -836,6 +1000,8 @@ export default function FlashcardViewPage() {
               setMcqModalCorrect={setMcqModalCorrect}
               mcqModalOpacity={mcqModalOpacity}
               mcqOverlayOpacity={mcqOverlayOpacity}
+              isFlipped={isFlipped}
+              setIsFlipped={setIsFlipped}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>
@@ -1244,5 +1410,68 @@ const styles = StyleSheet.create({
     top: 45,
     zIndex: 1,
     pointerEvents: 'none',
+  },
+  voiceAnswerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  voiceAnswerText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 28,
+    color: '#D5D4DD',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  voiceAnswerAnimation: {
+    width: 50,
+    height: 50,
+  },
+  micButtonsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    borderWidth: 2,
+    borderColor: 'red',
+  },
+  micButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F8F8F8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  recordingButton: {
+    backgroundColor: '#FF3B30',
+  },
+  soundWaveAnimation: {
+    width: 250,
+    height: 250,
+    alignSelf: 'center',
+  },
+  aiChatButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F8F8F8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
 }); 

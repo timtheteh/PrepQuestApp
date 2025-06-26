@@ -8,21 +8,27 @@ interface FlashcardViewTopBarProps {
   onAudioPress?: () => void;
   onCopyPress?: () => void;
   onTrashPress?: () => void;
+  isCopyButtonEnabled?: boolean;
+  isAudioButtonEnabled?: boolean;
 }
 
 export function FlashcardViewTopBar({
   onAudioPress,
   onCopyPress,
   onTrashPress,
+  isCopyButtonEnabled = true,
+  isAudioButtonEnabled = true,
 }: FlashcardViewTopBarProps) {
   return (
     <View style={styles.container}>
       <CircleIconButton
-        onPress={onAudioPress}
+        onPress={isAudioButtonEnabled ? onAudioPress : undefined}
+        disabled={!isAudioButtonEnabled}
         renderCustomIcon={(color) => <MaterialIcons name="volume-up" size={20} color={color} />}
       />
       <CircleIconButton
-        onPress={onCopyPress}
+        onPress={isCopyButtonEnabled ? onCopyPress : undefined}
+        disabled={!isCopyButtonEnabled}
         renderCustomIcon={(color) => <MaterialIcons name="content-copy" size={20} color={color} />}
       />
       <CircleIconButton

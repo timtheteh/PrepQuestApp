@@ -82,7 +82,7 @@ const dummyFlashcards = [
 //   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_ogg_audio.ogg'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
   
   // text Qn -> MCQ Ans
-  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
+  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
     [
     {   "choice": "This is the first choice",
         "ans": false
@@ -266,7 +266,7 @@ async function playAudio(uri: any) {
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused, isStudyMode, hasFlippedCard, setHasFlippedCard, showStudyValidationModal }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, isStudyMode: boolean, hasFlippedCard: boolean, setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, showStudyValidationModal: (message: string) => void }) => {
+const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused, isStudyMode, hasFlippedCard, setHasFlippedCard, hasSubmittedMCQ, setHasSubmittedMCQ, showStudyValidationModal }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, isStudyMode: boolean, hasFlippedCard: boolean, setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, hasSubmittedMCQ: boolean, setHasSubmittedMCQ: React.Dispatch<React.SetStateAction<boolean>>, showStudyValidationModal: (message: string) => void }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
@@ -296,6 +296,8 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
   const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Generate MCQ options with letters ONCE per card
+  const previousCardIndexRef = useRef<number>(currentIdx);
+  
   React.useEffect(() => {
     if (flashcardAnswerType === 'MCQ' && Array.isArray(flashcardAnswer)) {
       const optionLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -313,10 +315,21 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
         letter: optionLetters[idx]
       }));
       mcqOptionsWithLettersRef.current = optionsWithLetters;
-      setSelectedMCQOption(null); // Reset selection when card changes
+      
+      // Only reset selection when moving to a different card, not when flipping
+      if (previousCardIndexRef.current !== currentIdx) {
+        setSelectedMCQOption(null); // Reset selection when card changes
+        setHasSubmittedMCQ(false); // Reset MCQ submission state when card changes
+        previousCardIndexRef.current = currentIdx;
+      }
     } else {
       mcqOptionsWithLettersRef.current = [];
-      setSelectedMCQOption(null);
+      // Only reset selection when moving to a different card, not when flipping
+      if (previousCardIndexRef.current !== currentIdx) {
+        setSelectedMCQOption(null);
+        setHasSubmittedMCQ(false); // Reset MCQ submission state when card changes
+        previousCardIndexRef.current = currentIdx;
+      }
     }
   }, [currentIdx, flashcardAnswerType, flashcardAnswer]);
 
@@ -361,6 +374,8 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
         const isCorrect = selectedOption.ans;
         setMcqModalCorrect(isCorrect);
         setMcqModalVisible(true);
+        // Mark that MCQ has been submitted
+        setHasSubmittedMCQ(true);
         Animated.parallel([
           Animated.timing(mcqOverlayOpacity, {
             toValue: 0.5,
@@ -425,12 +440,46 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
               showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
               return;
             } else {
-              showStudyValidationModal("Please flip the card to view the answer before selecting a difficulty!");
+              showStudyValidationModal("Please flip the card to view the answer before moving on to the next flashcard!");
+              return;
+            }
+          } else {
+            if (!hasDifficultySelected) {
+              showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
               return;
             }
           }
         }
         // For MCQ and voice types, we'll handle validation later
+        // Check if answer type is text, audio, or image
+        if (answerType === 'MCQ') {
+          const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+          
+          if (!hasFlippedCard) {
+            if (!hasDifficultySelected) {
+              showStudyValidationModal("Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!");
+              return;
+            } else {
+              showStudyValidationModal("Please flip the card to view and answer the MCQ before moving onto the next flashcard!");
+              return;
+            }
+          } else {
+            if (!hasDifficultySelected) {
+              if (!hasSubmittedMCQ) {
+                showStudyValidationModal("Cannot move on until you have answered the MCQ and selected a difficulty!");
+                return;
+              } else {
+                showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+                return;
+              }
+            } else {
+              if (!hasSubmittedMCQ) {
+                showStudyValidationModal("Cannot move on until you have answered the MCQ!");
+                return;
+              } 
+            }
+          }
+        }
       }
       
       stopSpeech();
@@ -444,6 +493,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
           // Always reset to front side
           setIsFlipped(false);
           setHasFlippedCard(false); // Reset flipped state for new card
+          setHasSubmittedMCQ(false); // Reset MCQ submission state for new card
           flipAnim.setValue(0);
           frontOpacity.setValue(1);
           backOpacity.setValue(0);
@@ -909,12 +959,13 @@ const SubmitButton = ({ enabled, onPress }: { enabled: boolean; onPress: () => v
 };
 
 // Local MCQ Feedback Modal component
-const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80 }: {
+const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80, isStudyMode }: {
   visible: boolean;
   opacity: Animated.Value;
   isCorrect: boolean;
   onDismiss: () => void;
   lottieMarginTop?: number;
+  isStudyMode: boolean;
 }) => {
   if (!visible) return null;
   return (
@@ -964,6 +1015,7 @@ export default function FlashcardViewPage() {
   // Study mode state management
   const [isStudyMode, setIsStudyMode] = useState(false);
   const [hasFlippedCard, setHasFlippedCard] = useState(false);
+  const [hasSubmittedMCQ, setHasSubmittedMCQ] = useState(false);
   const [studyValidationModalVisible, setStudyValidationModalVisible] = useState(false);
   const [studyValidationMessage, setStudyValidationMessage] = useState("");
   const studyValidationModalOpacity = useRef(new Animated.Value(0)).current;
@@ -1340,6 +1392,8 @@ export default function FlashcardViewPage() {
               isStudyMode={isStudyMode}
               hasFlippedCard={hasFlippedCard}
               setHasFlippedCard={setHasFlippedCard}
+              hasSubmittedMCQ={hasSubmittedMCQ}
+              setHasSubmittedMCQ={setHasSubmittedMCQ}
               showStudyValidationModal={showStudyValidationModal}
             />
           </View>
@@ -1394,6 +1448,7 @@ export default function FlashcardViewPage() {
           });
         }}
         lottieMarginTop={80}
+        isStudyMode={isStudyMode}
       />
 
       {/* Study Validation Modal and Overlay - root level, above all other UI */}
@@ -1773,8 +1828,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 20,
-    borderWidth: 2,
-    borderColor: 'red',
+    // borderWidth: 2,
+    // borderColor: 'red',
   },
   micButton: {
     width: 64,
@@ -1810,4 +1865,4 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-}); 
+});  

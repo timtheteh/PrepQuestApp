@@ -134,7 +134,7 @@ const dummyFlashcards = [
 //   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_ogg_audio.ogg'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
   
   // text Qn -> MCQ Ans
-  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
+  { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
     [
     {   "Qn": "Lorem Ipsum is simply dummy text of the printi",
         "Ans": false

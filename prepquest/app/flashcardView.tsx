@@ -420,16 +420,15 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
         if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           
-          if (!hasDifficultySelected && !hasFlippedCard) {
-            // Case 1: No difficulty selected and haven't flipped to back side
-            showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
-            return;
-          } else if (!hasDifficultySelected && hasFlippedCard) {
-            // Case 2: No difficulty selected but have flipped to back side
-            showStudyValidationModal("Please select a difficulty\nfor this flashcard before\nmoving on");
-            return;
+          if (!hasFlippedCard) {
+            if (!hasDifficultySelected) {
+              showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
+              return;
+            } else {
+              showStudyValidationModal("Please flip the card to view the answer before selecting a difficulty!");
+              return;
+            }
           }
-          // Case 3: Has difficulty selected and has flipped to back side - proceed normally
         }
         // For MCQ and voice types, we'll handle validation later
       }

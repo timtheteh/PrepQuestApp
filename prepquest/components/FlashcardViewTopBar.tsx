@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 interface FlashcardViewTopBarProps {
   onAudioPress?: () => void;
@@ -10,6 +11,8 @@ interface FlashcardViewTopBarProps {
   onTrashPress?: () => void;
   isCopyButtonEnabled?: boolean;
   isAudioButtonEnabled?: boolean;
+  isSpeechPlaying?: boolean;
+  isSpeechPaused?: boolean;
 }
 
 export function FlashcardViewTopBar({
@@ -18,13 +21,21 @@ export function FlashcardViewTopBar({
   onTrashPress,
   isCopyButtonEnabled = true,
   isAudioButtonEnabled = true,
+  isSpeechPlaying = false,
+  isSpeechPaused = false,
 }: FlashcardViewTopBarProps) {
   return (
     <View style={styles.container}>
       <CircleIconButton
-        onPress={isAudioButtonEnabled ? onAudioPress : undefined}
+        onPress={onAudioPress}
         disabled={!isAudioButtonEnabled}
-        renderCustomIcon={(color) => <MaterialIcons name="volume-up" size={20} color={color} />}
+        renderCustomIcon={(color) =>
+          isSpeechPlaying && !isSpeechPaused ? (
+            <FontAwesome6 name="volume-xmark" size={20} color="#FF3B30" />
+          ) : (
+            <MaterialIcons name="volume-up" size={20} color={color} />
+          )
+        }
       />
       <CircleIconButton
         onPress={isCopyButtonEnabled ? onCopyPress : undefined}

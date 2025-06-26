@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image, Alert, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { FlashcardViewTopBar } from '@/components/FlashcardViewTopBar';
@@ -19,6 +19,8 @@ import AIChatIcon from '@/assets/icons/AIChatIcon.svg';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
+import * as Speech from 'expo-speech';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -246,7 +248,7 @@ async function playAudio(uri: any) {
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
         shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false,
+        playThroughEarpieceAndroid: true,
       });
       
       const { sound } = await Audio.Sound.createAsync({ uri });
@@ -264,7 +266,7 @@ async function playAudio(uri: any) {
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>> }) => {
+const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>> }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
@@ -272,9 +274,6 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   // MCQ selection state
   const [selectedMCQOption, setSelectedMCQOption] = useState<string | null>(null);
-  // Store randomized MCQ options in a ref so they persist across renders
-  const mcqOptionsWithLettersRef = useRef<Array<{ choice: string; ans: boolean; letter: string }>>([]);
-  console.log(mcqOptionsWithLettersRef.current);
 
   // Animation for horizontal slide
   const cardSlideAnim = useRef(new Animated.Value(0)).current; // 0 = center, -1 = left, 1 = right
@@ -323,6 +322,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   // Flipping logic (unchanged)
   const handlePress = () => {
+    stopSpeech();
     const toValue = isFlipped ? 0 : 1;
     Animated.timing(isFlipped ? backOpacity : frontOpacity, {
       toValue: 0,
@@ -379,6 +379,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   const navigateToPreviousCard = () => {
     if (!isLeftChevronDisabled()) {
+      stopSpeech();
       // Slide out to right
       Animated.timing(cardSlideAnim, {
         toValue: 1,
@@ -405,6 +406,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   const navigateToNextCard = () => {
     if (!isRightChevronDisabled()) {
+      stopSpeech();
       // Slide out to left
       Animated.timing(cardSlideAnim, {
         toValue: -1,
@@ -458,7 +460,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
         shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false,
+        playThroughEarpieceAndroid: true,
       });
       if (!isAudioPlaying) {
         // Play or resume
@@ -991,15 +993,23 @@ export default function FlashcardViewPage() {
           await Clipboard.setStringAsync(answer);
           Alert.alert('Copied text to clipboard!');
         } else if (answerType === 'MCQ' && Array.isArray(answer)) {
-          // Format MCQ options as specified
-          const mcqText = answer.map((option, index) => {
-            const letter = String.fromCharCode(65 + index); // A, B, C, D, etc.
-            return `${letter}) ${option.choice}`;
-          }).join('\n');
-          await Clipboard.setStringAsync(mcqText);
-          Alert.alert('Copied MCQ text to clipboard!');
+          // Use the displayed MCQ order and labels
+          if (mcqOptionsWithLettersRef.current && mcqOptionsWithLettersRef.current.length > 0) {
+            const mcqText = mcqOptionsWithLettersRef.current.map(option => {
+              return `${option.letter}) ${option.choice}`;
+            }).join('\n');
+            await Clipboard.setStringAsync(mcqText);
+            Alert.alert('Copied MCQ text to clipboard!');
+          } else {
+            // fallback to original order if ref is empty
+            const mcqText = answer.map((option, index) => {
+              const letter = String.fromCharCode(65 + index);
+              return `${letter}) ${option.choice}`;
+            }).join('\n');
+            await Clipboard.setStringAsync(mcqText);
+            Alert.alert('Copied MCQ text to clipboard!');
+          }
         } else if (answerType === 'image' && answer) {
-          // Copy actual image to clipboard
           const success = await copyAssetToClipboard(answer);
           if (success) {
             Alert.alert('Copied image to clipboard!');
@@ -1016,7 +1026,6 @@ export default function FlashcardViewPage() {
           await Clipboard.setStringAsync(question);
           Alert.alert('Copied text to clipboard!');
         } else if (questionType === 'image' && question) {
-          // Copy actual image to clipboard
           const success = await copyAssetToClipboard(question);
           if (success) {
             Alert.alert('Copied image to clipboard!');
@@ -1032,33 +1041,125 @@ export default function FlashcardViewPage() {
   };
 
   // Handle audio button press in top bar
-  const handleAudioPress = () => {
+  const [isSpeechPlaying, setIsSpeechPlaying] = useState(false);
+  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
+
+  const handleAudioToggle = async () => {
+    if (isSpeechPlaying && !isSpeechPaused) {
+      await Speech.pause();
+      setIsSpeechPaused(true);
+      setIsSpeechPlaying(true);
+    } else if (isSpeechPlaying && isSpeechPaused) {
+      await Speech.resume();
+      setIsSpeechPaused(false);
+      setIsSpeechPlaying(true);
+    }
+  };
+
+  const handleAudioPressTopBar = async () => {
     const currentFlashcard = dummyFlashcards[currentIdx];
-    
-    if (isFlipped) {
-      // Back side audio logic
-      const answerType = currentFlashcard?.flashcardAnswerType;
-      const answer = currentFlashcard?.flashcardAnswer;
-      
-      if (answerType === 'text' && typeof answer === 'string') {
-        // For text answers, we could implement text-to-speech here
-        console.log('Text-to-speech for answer:', answer);
-        Alert.alert('Audio', 'Text-to-speech functionality coming soon!');
-      } else if (answerType === 'MCQ' && Array.isArray(answer)) {
-        // For MCQ answers, we could read the options
-        console.log('Text-to-speech for MCQ options');
-        Alert.alert('Audio', 'Text-to-speech functionality coming soon!');
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: true,
+      });
+      await Speech.stop();
+      if (isFlipped) {
+        const answerType = currentFlashcard?.flashcardAnswerType;
+        const answer = currentFlashcard?.flashcardAnswer;
+        if (answerType === 'text' && typeof answer === 'string') {
+          await Speech.speak(answer, {
+            language: 'en-US',
+            pitch: 1.1,
+            rate: 0.6,
+            voice: 'com.apple.ttsbundle.Samantha-compact',
+            onStart: () => {
+              setIsSpeechPlaying(true);
+              setIsSpeechPaused(false);
+            },
+            onDone: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+            onStopped: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+            onError: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+          });
+        } else if (answerType === 'MCQ' && Array.isArray(answer)) {
+          let mcqText = '';
+          if (mcqOptionsWithLettersRef.current && mcqOptionsWithLettersRef.current.length > 0) {
+            mcqText = mcqOptionsWithLettersRef.current.map(option => {
+              return `Option ${option.letter}: ${option.choice}`;
+            }).join('. ');
+          } else {
+            mcqText = answer.map((option, index) => {
+              const letter = String.fromCharCode(65 + index);
+              return `Option ${letter}: ${option.choice}`;
+            }).join('. ');
+          }
+          await Speech.speak(mcqText, {
+            language: 'en-US',
+            pitch: 1.1,
+            rate: 0.6,
+            voice: 'com.apple.ttsbundle.Samantha-compact',
+            onStart: () => {
+              setIsSpeechPlaying(true);
+              setIsSpeechPaused(false);
+            },
+            onDone: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+            onStopped: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+            onError: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+          });
+        }
+      } else {
+        const questionType = currentFlashcard?.flashcardQnType;
+        const question = currentFlashcard?.flashcardQn;
+        if (questionType === 'text' && typeof question === 'string') {
+          await Speech.speak(question, {
+            language: 'en-US',
+            pitch: 1.1,
+            rate: 0.6,
+            voice: 'com.apple.ttsbundle.Samantha-compact',
+            onStart: () => {
+              setIsSpeechPlaying(true);
+              setIsSpeechPaused(false);
+            },
+            onDone: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+            onStopped: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+            onError: () => {
+              setIsSpeechPlaying(false);
+              setIsSpeechPaused(false);
+            },
+          });
+        }
       }
-    } else {
-      // Front side audio logic
-      const questionType = currentFlashcard?.flashcardQnType;
-      const question = currentFlashcard?.flashcardQn;
-      
-      if (questionType === 'text' && typeof question === 'string') {
-        // For text questions, we could implement text-to-speech here
-        console.log('Text-to-speech for question:', question);
-        Alert.alert('Audio', 'Text-to-speech functionality coming soon!');
-      }
+    } catch (error) {
+      setIsSpeechPlaying(false);
+      setIsSpeechPaused(false);
+      console.error('Error in handleAudioPressTopBar:', error);
     }
   };
 
@@ -1096,13 +1197,39 @@ export default function FlashcardViewPage() {
     }
   };
 
+  const mcqOptionsWithLettersRef = useRef<Array<{ choice: string; ans: boolean; letter: string }>>([]);
+
+  const stopSpeech = async () => {
+    await Speech.stop();
+    setIsSpeechPlaying(false);
+    setIsSpeechPaused(false);
+  };
+
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/active|foreground/) && nextAppState === 'background') {
+        await stopSpeech();
+      }
+      appState.current = nextAppState;
+    };
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <View style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={async () => {
+              await stopSpeech();
+              router.back();
+            }}
           >
             <AntDesign name="arrowleft" size={32} color="black" />
           </TouchableOpacity>
@@ -1110,9 +1237,11 @@ export default function FlashcardViewPage() {
             <FlashcardViewTopBar 
               onTrashPress={handleTrashPress} 
               onCopyPress={handleCopyPress}
-              onAudioPress={handleAudioPress}
+              onAudioPress={isSpeechPlaying ? handleAudioToggle : handleAudioPressTopBar}
               isCopyButtonEnabled={isCopyButtonEnabled(isFlipped)} 
               isAudioButtonEnabled={isAudioButtonEnabled(isFlipped)} 
+              isSpeechPlaying={isSpeechPlaying}
+              isSpeechPaused={isSpeechPaused}
             />
           </View>
           <View style={styles.middleContentContainer}>
@@ -1120,13 +1249,16 @@ export default function FlashcardViewPage() {
               currentIdx={currentIdx} 
               setCurrentIdx={setCurrentIdx} 
               totalCards={totalCards}
-              // Pass modal state setters down
               setMcqModalVisible={setMcqModalVisible}
               setMcqModalCorrect={setMcqModalCorrect}
               mcqModalOpacity={mcqModalOpacity}
               mcqOverlayOpacity={mcqOverlayOpacity}
               isFlipped={isFlipped}
               setIsFlipped={setIsFlipped}
+              mcqOptionsWithLettersRef={mcqOptionsWithLettersRef}
+              stopSpeech={stopSpeech}
+              setIsSpeechPlaying={setIsSpeechPlaying}
+              setIsSpeechPaused={setIsSpeechPaused}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>
@@ -1158,22 +1290,6 @@ export default function FlashcardViewPage() {
       <GreyOverlayBackground 
         visible={mcqModalVisible}
         opacity={mcqOverlayOpacity}
-        // onPress={() => {
-        //   Animated.parallel([
-        //     Animated.timing(mcqOverlayOpacity, {
-        //       toValue: 0,
-        //       duration: 200,
-        //       useNativeDriver: true,
-        //     }),
-        //     Animated.timing(mcqModalOpacity, {
-        //       toValue: 0,
-        //       duration: 200,
-        //       useNativeDriver: true,
-        //     }),
-        //   ]).start(() => {
-        //     setMcqModalVisible(false);
-        //   });
-        // }}
       />
       <MCQFeedbackModal
         visible={mcqModalVisible}

@@ -52,7 +52,8 @@
     "react-native-webview": "13.13.5",
     "expo-clipboard": "~7.1.4",
     "expo-file-system": "~18.1.10",
-    "expo-asset": "~11.1.5"
+    "expo-asset": "~11.1.5",
+    "expo-speech": "~13.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

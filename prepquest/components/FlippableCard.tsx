@@ -897,7 +897,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
         shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false,
+        playThroughEarpieceAndroid: true,
       });
       if (!isAudioPlaying) {
         // Play or resume

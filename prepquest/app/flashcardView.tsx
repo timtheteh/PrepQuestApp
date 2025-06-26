@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { FlashcardViewTopBar } from '@/components/FlashcardViewTopBar';
@@ -16,8 +16,46 @@ import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
 import LottieView from 'lottie-react-native';
 import MicIcon from '@/assets/icons/micIcon.svg';
 import AIChatIcon from '@/assets/icons/AIChatIcon.svg';
+import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system';
+import { Asset } from 'expo-asset';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Helper function to copy asset images to clipboard
+const copyAssetToClipboard = async (imageSource: any) => {
+  try {
+    let localUri: string;
+    
+    // Check if it's a require() statement (returns a number)
+    if (typeof imageSource === 'number') {
+      // For require() statements, we need to get the asset module
+      const assetModule = Asset.fromModule(imageSource);
+      await assetModule.downloadAsync();
+      localUri = assetModule.localUri || assetModule.uri;
+    } else if (typeof imageSource === 'string') {
+      // For string URIs, use Asset.fromURI
+      const asset = Asset.fromURI(imageSource);
+      await asset.downloadAsync();
+      localUri = asset.localUri || asset.uri;
+    } else {
+      throw new Error('Unsupported image source type');
+    }
+    
+    // Convert image to base64
+    const base64Image = await FileSystem.readAsStringAsync(localUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    
+    // Copy base64 image to clipboard
+    await Clipboard.setImageAsync(base64Image);
+    console.log('Asset image copied to clipboard!');
+    return true;
+  } catch (error) {
+    console.error('Failed to copy asset:', error);
+    return false;
+  }
+};
 
 const DIFFICULTY_TYPES = [
   { type: 'Again', color: '#F8696B' },
@@ -939,6 +977,91 @@ export default function FlashcardViewPage() {
     console.log('Delete flashcard confirmed');
   };
 
+  // Handle copy functionality
+  const handleCopyPress = async () => {
+    const currentFlashcard = dummyFlashcards[currentIdx];
+    
+    try {
+      if (isFlipped) {
+        // Back side copy logic
+        const answerType = currentFlashcard?.flashcardAnswerType;
+        const answer = currentFlashcard?.flashcardAnswer;
+        
+        if (answerType === 'text' && typeof answer === 'string') {
+          await Clipboard.setStringAsync(answer);
+          Alert.alert('Copied to clipboard!');
+        } else if (answerType === 'MCQ' && Array.isArray(answer)) {
+          // Format MCQ options as specified
+          const mcqText = answer.map((option, index) => {
+            const letter = String.fromCharCode(65 + index); // A, B, C, D, etc.
+            return `${letter}) ${option.choice}`;
+          }).join('\n');
+          await Clipboard.setStringAsync(mcqText);
+          Alert.alert('Copied to clipboard!');
+        } else if (answerType === 'image' && answer) {
+          // Copy actual image to clipboard
+          const success = await copyAssetToClipboard(answer);
+          if (success) {
+            Alert.alert('Copied to clipboard!');
+          } else {
+            Alert.alert('Error', 'Failed to copy image to clipboard');
+          }
+        }
+      } else {
+        // Front side copy logic
+        const questionType = currentFlashcard?.flashcardQnType;
+        const question = currentFlashcard?.flashcardQn;
+        
+        if (questionType === 'text' && typeof question === 'string') {
+          await Clipboard.setStringAsync(question);
+          Alert.alert('Copied to clipboard!');
+        } else if (questionType === 'image' && question) {
+          // Copy actual image to clipboard
+          const success = await copyAssetToClipboard(question);
+          if (success) {
+            Alert.alert('Copied to clipboard!');
+          } else {
+            Alert.alert('Error', 'Failed to copy image to clipboard');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      Alert.alert('Error', 'Failed to copy to clipboard');
+    }
+  };
+
+  // Handle audio button press in top bar
+  const handleAudioPress = () => {
+    const currentFlashcard = dummyFlashcards[currentIdx];
+    
+    if (isFlipped) {
+      // Back side audio logic
+      const answerType = currentFlashcard?.flashcardAnswerType;
+      const answer = currentFlashcard?.flashcardAnswer;
+      
+      if (answerType === 'text' && typeof answer === 'string') {
+        // For text answers, we could implement text-to-speech here
+        console.log('Text-to-speech for answer:', answer);
+        Alert.alert('Audio', 'Text-to-speech functionality coming soon!');
+      } else if (answerType === 'MCQ' && Array.isArray(answer)) {
+        // For MCQ answers, we could read the options
+        console.log('Text-to-speech for MCQ options');
+        Alert.alert('Audio', 'Text-to-speech functionality coming soon!');
+      }
+    } else {
+      // Front side audio logic
+      const questionType = currentFlashcard?.flashcardQnType;
+      const question = currentFlashcard?.flashcardQn;
+      
+      if (questionType === 'text' && typeof question === 'string') {
+        // For text questions, we could implement text-to-speech here
+        console.log('Text-to-speech for question:', question);
+        Alert.alert('Audio', 'Text-to-speech functionality coming soon!');
+      }
+    }
+  };
+
   // MCQ feedback modal state (lifted to page level for overlay)
   const [mcqModalVisible, setMcqModalVisible] = useState(false);
   const [mcqModalCorrect, setMcqModalCorrect] = useState(false);
@@ -986,6 +1109,8 @@ export default function FlashcardViewPage() {
           <View style={styles.headerIconsContainer}>
             <FlashcardViewTopBar 
               onTrashPress={handleTrashPress} 
+              onCopyPress={handleCopyPress}
+              onAudioPress={handleAudioPress}
               isCopyButtonEnabled={isCopyButtonEnabled(isFlipped)} 
               isAudioButtonEnabled={isAudioButtonEnabled(isFlipped)} 
             />

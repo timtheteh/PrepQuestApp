@@ -137,12 +137,28 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange }: { currentIdx: num
 };
 
 // Updated LoadingBar to accept currentIdx and totalCards as props with smooth animations
-const LoadingBar = ({ currentIdx, totalCards }: { currentIdx: number, totalCards: number }) => {
+const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType }: { 
+  currentIdx: number, 
+  totalCards: number, 
+  isStudyMode: boolean,
+  hasFlippedCard: boolean,
+  hasSubmittedMCQ: boolean,
+  flashcardAnswerType: string
+}) => {
   // Create animated value for progress
   const progressAnim = useRef(new Animated.Value(0)).current;
   
   // Calculate target progress
   const targetProgress = totalCards > 0 ? (currentIdx + 1) / totalCards : 0; // +1 because we want to show progress including current card
+
+  // Check if completed (in study mode, at last card, and properly completed based on answer type)
+  const isAtLastCard = currentIdx === totalCards - 1;
+  const isCompleted = isStudyMode && isAtLastCard && (
+    // For text, audio, or image answer types - user must have flipped to answer side
+    (['text', 'audio', 'image'].includes(flashcardAnswerType) && hasFlippedCard) ||
+    // For MCQ answer type - user must have submitted the MCQ
+    (flashcardAnswerType === 'MCQ' && hasSubmittedMCQ)
+  );
 
   // Animate progress when currentIdx changes
   React.useEffect(() => {
@@ -155,7 +171,10 @@ const LoadingBar = ({ currentIdx, totalCards }: { currentIdx: number, totalCards
 
   return (
     <View style={styles.loadingBarContainer}>
-      <View style={styles.loadingBarBg}>
+      <View style={[
+        styles.loadingBarBg,
+        isCompleted && { backgroundColor: '#44B88A' }
+      ]}>
         <Animated.View 
           style={[
             styles.loadingBarFg, 
@@ -163,10 +182,16 @@ const LoadingBar = ({ currentIdx, totalCards }: { currentIdx: number, totalCards
               width: progressAnim.interpolate({
                 inputRange: [0, 1],
                 outputRange: ['0%', '100%'],
-              })
+              }),
+              backgroundColor: isCompleted ? '#44B88A' : '#4F41D8'
             }
           ]} 
         />
+        {isCompleted && (
+          <View style={styles.loadingBarTextContainer}>
+            <Text style={styles.loadingBarCompleteText}>Completed!</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -1401,7 +1426,7 @@ export default function FlashcardViewPage() {
             <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} />
           </View>
           <View style={styles.loadingBarBottomContainer}>
-            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} />
+            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={dummyFlashcards[currentIdx]?.flashcardAnswerType || ''} />
           </View>
         </View>
       </SafeAreaView>
@@ -1522,6 +1547,22 @@ const styles = StyleSheet.create({
     height: 21,
     backgroundColor: '#4F41D8',
     borderRadius: 21,
+  },
+  loadingBarTextContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  loadingBarCompleteText: {
+    fontFamily: 'Satoshi-Italic',
+    fontSize: 14,
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   difficultyPillRowContainer: {
     position: 'absolute',

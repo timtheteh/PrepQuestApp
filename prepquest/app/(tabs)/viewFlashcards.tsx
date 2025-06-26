@@ -344,8 +344,15 @@ export default function ViewFlashcardsScreen() {
   };
 
   const handleStudyPress = () => {
-    // TODO: Implement study functionality
-    console.log('Study pressed');
+    // Navigate to flashcardView with the first flashcard for study mode
+    router.push({
+      pathname: '/flashcardView',
+      params: {
+        flashcardIdx: '0',
+        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        isStudyMode: 'true',
+      }
+    });
   };
 
   const handleQuizPress = () => {

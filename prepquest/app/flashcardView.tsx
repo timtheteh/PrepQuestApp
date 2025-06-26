@@ -266,7 +266,7 @@ async function playAudio(uri: any) {
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>> }) => {
+const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused, isStudyMode, hasFlippedCard, setHasFlippedCard, showStudyValidationModal }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, isStudyMode: boolean, hasFlippedCard: boolean, setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, showStudyValidationModal: (message: string) => void }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
@@ -335,6 +335,10 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
         useNativeDriver: true,
       }).start(() => {
         setIsFlipped(!isFlipped);
+        // Track if card has been flipped in study mode
+        if (!isFlipped && isStudyMode) {
+          setHasFlippedCard(true);
+        }
         Animated.timing(!isFlipped ? backOpacity : frontOpacity, {
           toValue: 1,
           duration: 200,
@@ -406,6 +410,30 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   const navigateToNextCard = () => {
     if (!isRightChevronDisabled()) {
+      // Study mode validation
+      if (isStudyMode) {
+        const currentFlashcard = dummyFlashcards[currentIdx];
+        const answerType = currentFlashcard?.flashcardAnswerType;
+        const currentDifficulty = currentFlashcard?.flashcardDifficulty;
+        
+        // Check if answer type is text, audio, or image
+        if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
+          const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+          
+          if (!hasDifficultySelected && !hasFlippedCard) {
+            // Case 1: No difficulty selected and haven't flipped to back side
+            showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
+            return;
+          } else if (!hasDifficultySelected && hasFlippedCard) {
+            // Case 2: No difficulty selected but have flipped to back side
+            showStudyValidationModal("Please select a difficulty\nfor this flashcard before\nmoving on");
+            return;
+          }
+          // Case 3: Has difficulty selected and has flipped to back side - proceed normally
+        }
+        // For MCQ and voice types, we'll handle validation later
+      }
+      
       stopSpeech();
       // Slide out to left
       Animated.timing(cardSlideAnim, {
@@ -416,6 +444,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
         setCurrentIdx(idx => {
           // Always reset to front side
           setIsFlipped(false);
+          setHasFlippedCard(false); // Reset flipped state for new card
           flipAnim.setValue(0);
           frontOpacity.setValue(1);
           backOpacity.setValue(0);
@@ -546,18 +575,20 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   return (
     <View style={{ flex: 1, position: 'relative' }}>
-      {/* Left Chevron Button */}
-      <TouchableOpacity
-        style={styles.leftChevronButton}
-        onPress={navigateToPreviousCard}
-        disabled={isLeftChevronDisabled()}
-      >
-        <AntDesign
-          name="left"
-          size={30}
-          color={isLeftChevronDisabled() ? "#D5D4DD" : "#000000"}
-        />
-      </TouchableOpacity>
+      {/* Left Chevron Button - hidden in study mode */}
+      {!isStudyMode && (
+        <TouchableOpacity
+          style={styles.leftChevronButton}
+          onPress={navigateToPreviousCard}
+          disabled={isLeftChevronDisabled()}
+        >
+          <AntDesign
+            name="left"
+            size={30}
+            color={isLeftChevronDisabled() ? "#D5D4DD" : "#000000"}
+          />
+        </TouchableOpacity>
+      )}
       {/* Right Chevron Button */}
       <TouchableOpacity
         style={styles.rightChevronButton}
@@ -916,7 +947,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
 
 export default function FlashcardViewPage() {
   const router = useRouter();
-  const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
+  const { flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam } = useLocalSearchParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -931,6 +962,19 @@ export default function FlashcardViewPage() {
   // Add a separate state to force re-renders when difficulty changes
   const [difficultyUpdateTrigger, setDifficultyUpdateTrigger] = useState(0);
 
+  // Study mode state management
+  const [isStudyMode, setIsStudyMode] = useState(false);
+  const [hasFlippedCard, setHasFlippedCard] = useState(false);
+  const [studyValidationModalVisible, setStudyValidationModalVisible] = useState(false);
+  const [studyValidationMessage, setStudyValidationMessage] = useState("");
+  const studyValidationModalOpacity = useRef(new Animated.Value(0)).current;
+  const studyValidationOverlayOpacity = useRef(new Animated.Value(0)).current;
+
+  // Set study mode from URL parameter
+  useEffect(() => {
+    setIsStudyMode(isStudyModeParam === 'true');
+  }, [isStudyModeParam]);
+
   // Function to update the difficulty of the current flashcard
   const handleDifficultyChange = (difficulty: string) => {
     if (dummyFlashcards[currentIdx]) {
@@ -938,6 +982,41 @@ export default function FlashcardViewPage() {
       // Force a re-render by incrementing the trigger
       setDifficultyUpdateTrigger(prev => prev + 1);
     }
+  };
+
+  // Study validation modal handlers
+  const showStudyValidationModal = (message: string) => {
+    setStudyValidationMessage(message);
+    setStudyValidationModalVisible(true);
+    Animated.parallel([
+      Animated.timing(studyValidationOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(studyValidationModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handleDismissStudyValidationModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(studyValidationModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setStudyValidationModalVisible(false);
+    });
   };
 
   const handleTrashPress = () => {
@@ -1259,6 +1338,10 @@ export default function FlashcardViewPage() {
               stopSpeech={stopSpeech}
               setIsSpeechPlaying={setIsSpeechPlaying}
               setIsSpeechPaused={setIsSpeechPaused}
+              isStudyMode={isStudyMode}
+              hasFlippedCard={hasFlippedCard}
+              setHasFlippedCard={setHasFlippedCard}
+              showStudyValidationModal={showStudyValidationModal}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>
@@ -1312,6 +1395,19 @@ export default function FlashcardViewPage() {
           });
         }}
         lottieMarginTop={80}
+      />
+
+      {/* Study Validation Modal and Overlay - root level, above all other UI */}
+      <GreyOverlayBackground 
+        visible={studyValidationModalVisible}
+        opacity={studyValidationOverlayOpacity}
+        onPress={handleDismissStudyValidationModal}
+      />
+      <GenericModal
+        visible={studyValidationModalVisible}
+        opacity={studyValidationModalOpacity}
+        Icon={DeleteModalIcon}
+        text={studyValidationMessage}
       />
     </View>
   );

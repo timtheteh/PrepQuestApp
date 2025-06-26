@@ -291,7 +291,7 @@ async function playAudio(uri: any) {
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused, isStudyMode, hasFlippedCard, setHasFlippedCard, hasSubmittedMCQ, setHasSubmittedMCQ, showStudyValidationModal }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, isStudyMode: boolean, hasFlippedCard: boolean, setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, hasSubmittedMCQ: boolean, setHasSubmittedMCQ: React.Dispatch<React.SetStateAction<boolean>>, showStudyValidationModal: (message: string) => void }) => {
+const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused, isStudyMode, hasFlippedCard, setHasFlippedCard, hasSubmittedMCQ, setHasSubmittedMCQ, showStudyValidationModal, setIsSuccessMode, isSuccessMode }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, isStudyMode: boolean, hasFlippedCard: boolean, setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, hasSubmittedMCQ: boolean, setHasSubmittedMCQ: React.Dispatch<React.SetStateAction<boolean>>, showStudyValidationModal: (message: string) => void, setIsSuccessMode: React.Dispatch<React.SetStateAction<boolean>>, isSuccessMode: boolean }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
@@ -419,7 +419,28 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   // Chevron navigation logic
   const isLeftChevronDisabled = () => currentIdx <= 0;
-  const isRightChevronDisabled = () => currentIdx >= totalCards - 1;
+  const isRightChevronDisabled = () => {
+    if (isSuccessMode) return true; // Hide/disable chevron in success mode
+    const isAtLastCard = currentIdx >= totalCards - 1;
+    if (isStudyMode && isAtLastCard) {
+      // Validation for last card
+      const currentFlashcard = dummyFlashcards[currentIdx];
+      const answerType = currentFlashcard?.flashcardAnswerType;
+      const currentDifficulty = currentFlashcard?.flashcardDifficulty;
+      if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        return !(hasFlippedCard && hasDifficultySelected);
+      }
+      if (answerType === 'MCQ') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        return !(hasFlippedCard && hasSubmittedMCQ && hasDifficultySelected);
+      }
+      // fallback: disable if not validated
+      return true;
+    }
+    // Default: disable if not last card
+    return currentIdx >= totalCards - 1;
+  };
 
   const navigateToPreviousCard = () => {
     if (!isLeftChevronDisabled()) {
@@ -449,17 +470,69 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
   };
 
   const navigateToNextCard = () => {
+    // If in study mode and at last card, and validation is passed, go to success mode
+    if (isStudyMode && currentIdx === totalCards - 1) {
+      // Repeat the validation logic for the last card
+      const currentFlashcard = dummyFlashcards[currentIdx];
+      const answerType = currentFlashcard?.flashcardAnswerType;
+      const currentDifficulty = currentFlashcard?.flashcardDifficulty;
+      if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        if (!hasFlippedCard) {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
+            return;
+          } else {
+            showStudyValidationModal("Please flip the card to view the answer before moving on to the next flashcard!");
+            return;
+          }
+        } else {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+            return;
+          }
+        }
+      }
+      if (answerType === 'MCQ') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        if (!hasFlippedCard) {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal("Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!");
+            return;
+          } else {
+            showStudyValidationModal("Please flip the card to view and answer the MCQ before moving onto the next flashcard!");
+            return;
+          }
+        } else {
+          if (!hasDifficultySelected) {
+            if (!hasSubmittedMCQ) {
+              showStudyValidationModal("Cannot move on until you have answered the MCQ and selected a difficulty!");
+              return;
+            } else {
+              showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+              return;
+            }
+          } else {
+            if (!hasSubmittedMCQ) {
+              showStudyValidationModal("Cannot move on until you have answered the MCQ!");
+              return;
+            }
+          }
+        }
+      }
+      // If all validation is passed, set success mode and return
+      setIsSuccessMode(true);
+      return;
+    }
+
     if (!isRightChevronDisabled()) {
-      // Study mode validation
+      // Study mode validation (for non-last cards)
       if (isStudyMode) {
         const currentFlashcard = dummyFlashcards[currentIdx];
         const answerType = currentFlashcard?.flashcardAnswerType;
         const currentDifficulty = currentFlashcard?.flashcardDifficulty;
-        
-        // Check if answer type is text, audio, or image
         if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-          
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
               showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
@@ -475,11 +548,8 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
             }
           }
         }
-        // For MCQ and voice types, we'll handle validation later
-        // Check if answer type is text, audio, or image
         if (answerType === 'MCQ') {
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-          
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
               showStudyValidationModal("Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!");
@@ -501,12 +571,11 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
               if (!hasSubmittedMCQ) {
                 showStudyValidationModal("Cannot move on until you have answered the MCQ!");
                 return;
-              } 
+              }
             }
           }
         }
       }
-      
       stopSpeech();
       // Slide out to left
       Animated.timing(cardSlideAnim, {
@@ -1375,6 +1444,84 @@ export default function FlashcardViewPage() {
     };
   }, []);
 
+  // 1. Add isSuccessMode state to FlashcardViewPage
+  const [isSuccessMode, setIsSuccessMode] = useState(false);
+
+  // At the top of FlashcardViewPage, after useRouter:
+  const { deckId } = useLocalSearchParams();
+
+  // Add this in FlashcardViewPage:
+  const [successFadeAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    if (isSuccessMode) {
+      Animated.timing(successFadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      successFadeAnim.setValue(0);
+    }
+  }, [isSuccessMode]);
+
+  // 4. In FlashcardViewPage render, show Success UI if isSuccessMode is true
+  if (isSuccessMode) {
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          backgroundColor: '#fff',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 16,
+          opacity: successFadeAnim,
+        }}
+      >
+        <LottieView
+          source={require('@/assets/animations/SuccessAnimation2_Circle.json')}
+          autoPlay
+          loop={true}
+          style={{ width: 220, height: 220, marginBottom: 32 }}
+        />
+        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 40, color: '#222', textAlign: 'center', marginBottom: 48 }}>
+          Nice studying!
+        </Text>
+        <TouchableOpacity
+          style={{
+            width: 318,
+            height: 72,
+            borderRadius: 30,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#4F41D8',
+            marginBottom: 20,
+          }}
+          onPress={() => router.replace('/')}
+        >
+          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+            Back to Home (Decks Page)
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            width: 318,
+            height: 72,
+            borderRadius: 30,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#44B88A',
+          }}
+          onPress={() => router.back()}
+        >
+          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+            Back to Deck
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
   return (
     <View style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
@@ -1420,6 +1567,8 @@ export default function FlashcardViewPage() {
               hasSubmittedMCQ={hasSubmittedMCQ}
               setHasSubmittedMCQ={setHasSubmittedMCQ}
               showStudyValidationModal={showStudyValidationModal}
+              setIsSuccessMode={setIsSuccessMode}
+              isSuccessMode={isSuccessMode}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

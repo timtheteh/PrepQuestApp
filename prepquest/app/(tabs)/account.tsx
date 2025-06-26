@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { ThemedText } from '@/components/ThemedText';
@@ -614,6 +614,11 @@ export default function AccountScreen() {
           style={[styles.grapeCircle, { backgroundColor: upgradePressed ? '#8684FF' : '#685CDD', zIndex: 10, marginTop: Dimensions.get('window').height < 670 ? 80 : 0}]}
         >
           <Text style={styles.grapeMenuText}>Upgrade</Text>
+          <Image 
+            source={require('@/assets/images/Diamond.png')} 
+            style={styles.diamondImage}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
     </>
@@ -723,5 +728,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Variable',
     fontWeight: '700',
     fontSize: 16,
+  },
+  diamondImage: {
+    width: 24,
+    height: 24,
+    marginTop: 8,
   },
 }); 

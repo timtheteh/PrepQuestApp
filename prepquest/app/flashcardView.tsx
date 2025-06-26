@@ -989,7 +989,7 @@ export default function FlashcardViewPage() {
         
         if (answerType === 'text' && typeof answer === 'string') {
           await Clipboard.setStringAsync(answer);
-          Alert.alert('Copied to clipboard!');
+          Alert.alert('Copied text to clipboard!');
         } else if (answerType === 'MCQ' && Array.isArray(answer)) {
           // Format MCQ options as specified
           const mcqText = answer.map((option, index) => {
@@ -997,12 +997,12 @@ export default function FlashcardViewPage() {
             return `${letter}) ${option.choice}`;
           }).join('\n');
           await Clipboard.setStringAsync(mcqText);
-          Alert.alert('Copied to clipboard!');
+          Alert.alert('Copied MCQ text to clipboard!');
         } else if (answerType === 'image' && answer) {
           // Copy actual image to clipboard
           const success = await copyAssetToClipboard(answer);
           if (success) {
-            Alert.alert('Copied to clipboard!');
+            Alert.alert('Copied image to clipboard!');
           } else {
             Alert.alert('Error', 'Failed to copy image to clipboard');
           }
@@ -1014,12 +1014,12 @@ export default function FlashcardViewPage() {
         
         if (questionType === 'text' && typeof question === 'string') {
           await Clipboard.setStringAsync(question);
-          Alert.alert('Copied to clipboard!');
+          Alert.alert('Copied text to clipboard!');
         } else if (questionType === 'image' && question) {
           // Copy actual image to clipboard
           const success = await copyAssetToClipboard(question);
           if (success) {
-            Alert.alert('Copied to clipboard!');
+            Alert.alert('Copied image to clipboard!');
           } else {
             Alert.alert('Error', 'Failed to copy image to clipboard');
           }

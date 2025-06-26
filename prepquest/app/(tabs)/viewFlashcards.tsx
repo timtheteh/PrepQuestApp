@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useContext, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Animated, Text, ScrollView } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuContext } from './_layout';
@@ -51,7 +51,8 @@ const CardForFlashcard = ({
   selected,
   isSelectMode,
   onPress,
-  flashcardIdx
+  flashcardIdx,
+  onNavigate
 }: {
   flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
   flashcardQn: string;
@@ -60,6 +61,7 @@ const CardForFlashcard = ({
   isSelectMode: boolean;
   onPress: () => void;
   flashcardIdx: number;
+  onNavigate: (flashcardIdx: number) => void;
 }) => {
   const router = useRouter();
   const Container = isSelectMode ? TouchableOpacity : View;
@@ -88,12 +90,7 @@ const CardForFlashcard = ({
     >
       {/* Top row */}
       <View style={styles.cardTopRow}>
-        <TouchableOpacity onPress={() => router.push({
-            pathname: '/flashcardView',
-            params: {
-                flashcardIdx: flashcardIdx.toString(),
-            }
-        })}>
+        <TouchableOpacity onPress={() => onNavigate(flashcardIdx)}>
           <Ionicons name="eye" size={20} color="#444" />
         </TouchableOpacity>
         <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
@@ -193,6 +190,10 @@ export default function ViewFlashcardsScreen() {
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
   const actionRowTranslateY = useRef(new Animated.Value(-20)).current;
   const headerTranslateY = useRef(new Animated.Value(0)).current;
+  
+  // Ref to track if we're coming from flashcardView
+  const comingFromFlashcardView = useRef(false);
+  const previousViewMode = useRef<'grid' | 'list'>('grid');
 
   // Dummy topic data
   const dummyTopics = [
@@ -225,8 +226,15 @@ export default function ViewFlashcardsScreen() {
       // Reset navbar animation when screen comes into focus
       navbarRef?.current?.resetAnimation();
       
-      // Reset view mode to grid when screen comes into focus
-      setViewMode('grid');
+      // Only reset view mode to grid if we're not coming from flashcardView
+      if (comingFromFlashcardView.current) {
+        // Restore the previous view mode
+        setViewMode(previousViewMode.current);
+        comingFromFlashcardView.current = false;
+      } else {
+        // Reset to grid when coming from other pages
+        setViewMode('grid');
+      }
       
       // Ensure opacity starts at 0 for a clean fade-in
       screenOpacity.setValue(0);
@@ -388,6 +396,20 @@ export default function ViewFlashcardsScreen() {
     }
   };
 
+  // Handler to navigate to flashcard view
+  const handleNavigateToFlashcardView = (flashcardIdx: number) => {
+    // Save current view mode and mark that we're going to flashcardView
+    previousViewMode.current = viewMode;
+    comingFromFlashcardView.current = true;
+    router.push({
+      pathname: '/flashcardView',
+      params: {
+        flashcardIdx: flashcardIdx.toString(),
+        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+      }
+    });
+  };
+
   // Handler to toggle card selection
   const handleCardPress = (cardIdx: number) => {
     if (!isSelectMode) return;
@@ -513,6 +535,7 @@ export default function ViewFlashcardsScreen() {
                             isSelectMode={isSelectMode}
                             onPress={() => handleCardPress(flatIdx)}
                             flashcardIdx={flatIdx}
+                            onNavigate={handleNavigateToFlashcardView}
                           />
                         </View>
                       );
@@ -549,7 +572,7 @@ export default function ViewFlashcardsScreen() {
                           onPress={() => handleCardPress(i)}
                         />
                       ) : (
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleNavigateToFlashcardView(i)}>
                           <Ionicons name="eye" size={24} color="#444" style={styles.flashcardListEyeIcon} />
                         </TouchableOpacity>
                       )}

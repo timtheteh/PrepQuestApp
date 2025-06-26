@@ -12,6 +12,8 @@ import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import { Audio } from 'expo-av';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
+import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
+import LottieView from 'lottie-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -222,7 +224,7 @@ async function playAudio(uri: any) {
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number }) => {
+const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
@@ -309,8 +311,20 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards }: { current
       const selectedOption = mcqOptionsWithLettersRef.current.find(option => option.letter === selectedMCQOption);
       if (selectedOption) {
         const isCorrect = selectedOption.ans;
-        console.log(`Selected option ${selectedMCQOption} is ${isCorrect ? 'correct' : 'incorrect'}`);
-        // TODO: Handle correct/incorrect answer feedback
+        setMcqModalCorrect(isCorrect);
+        setMcqModalVisible(true);
+        Animated.parallel([
+          Animated.timing(mcqOverlayOpacity, {
+            toValue: 0.5,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(mcqModalOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
       }
     }
   };
@@ -695,6 +709,42 @@ const SubmitButton = ({ enabled, onPress }: { enabled: boolean; onPress: () => v
   );
 };
 
+// Local MCQ Feedback Modal component
+const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80 }: {
+  visible: boolean;
+  opacity: Animated.Value;
+  isCorrect: boolean;
+  onDismiss: () => void;
+  lottieMarginTop?: number;
+}) => {
+  if (!visible) return null;
+  return (
+    <Animated.View style={[styles.mcqModalOverlay, { opacity, zIndex: 9999 }]}> 
+      {/* Icon at top left */}
+      <View style={styles.mcqModalIconAbsolute}>
+        {isCorrect ? <GreenTickIcon width={24} height={24} /> : <DeleteModalIcon width={24} height={24} />}
+      </View>
+      {/* Centered text */}
+      <View style={styles.mcqModalTextCenterWrap}>
+        <Text style={[styles.mcqModalText]}>
+          {isCorrect ? "That's correct! Good job!" : "Oops that's incorrect! Try again next time!"}
+        </Text>
+      </View>
+      {/* Lottie animation absolutely positioned */}
+      <LottieView
+        source={isCorrect ? require('@/assets/animations/CorrectAnswer.json') : require('@/assets/animations/WrongAnswer.json')}
+        autoPlay
+        loop
+        style={[styles.mcqModalLottie, { width: isCorrect ? 375 : 225, height: isCorrect ? 375 : 225, left: isCorrect ? -34 : 30, top: isCorrect ? -40 : 45}]}
+      />
+      {/* Button absolutely at bottom center */}
+      <TouchableOpacity style={styles.mcqModalButtonAbsolute} onPress={onDismiss} activeOpacity={0.8}>
+        <Text style={styles.mcqModalButtonText}>OK</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
 export default function FlashcardViewPage() {
   const router = useRouter();
   const { flashcardIdx, totalNumberOfFlashcards } = useLocalSearchParams();
@@ -757,6 +807,12 @@ export default function FlashcardViewPage() {
     console.log('Delete flashcard confirmed');
   };
 
+  // MCQ feedback modal state (lifted to page level for overlay)
+  const [mcqModalVisible, setMcqModalVisible] = useState(false);
+  const [mcqModalCorrect, setMcqModalCorrect] = useState(false);
+  const mcqModalOpacity = useRef(new Animated.Value(0)).current;
+  const mcqOverlayOpacity = useRef(new Animated.Value(0)).current;
+
   return (
     <View style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
@@ -771,7 +827,16 @@ export default function FlashcardViewPage() {
             <FlashcardViewTopBar onTrashPress={handleTrashPress} />
           </View>
           <View style={styles.middleContentContainer}>
-            <FlippableFlashcard currentIdx={currentIdx} setCurrentIdx={setCurrentIdx} totalCards={totalCards} />
+            <FlippableFlashcard 
+              currentIdx={currentIdx} 
+              setCurrentIdx={setCurrentIdx} 
+              totalCards={totalCards}
+              // Pass modal state setters down
+              setMcqModalVisible={setMcqModalVisible}
+              setMcqModalCorrect={setMcqModalCorrect}
+              mcqModalOpacity={mcqModalOpacity}
+              mcqOverlayOpacity={mcqOverlayOpacity}
+            />
           </View>
           <View style={styles.difficultyPillRowContainer}>
             <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} />
@@ -796,6 +861,50 @@ export default function FlashcardViewPage() {
         buttons="double"
         onConfirm={handleConfirmDelete}
         onCancel={handleDismissDeleteModal}
+      />
+
+      {/* MCQ Feedback Modal and Overlay - root level, above all other UI */}
+      <GreyOverlayBackground 
+        visible={mcqModalVisible}
+        opacity={mcqOverlayOpacity}
+        onPress={() => {
+          Animated.parallel([
+            Animated.timing(mcqOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(mcqModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setMcqModalVisible(false);
+          });
+        }}
+      />
+      <MCQFeedbackModal
+        visible={mcqModalVisible}
+        opacity={mcqModalOpacity}
+        isCorrect={mcqModalCorrect}
+        onDismiss={() => {
+          Animated.parallel([
+            Animated.timing(mcqOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(mcqModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setMcqModalVisible(false);
+          });
+        }}
+        lottieMarginTop={80}
       />
     </View>
   );
@@ -1072,5 +1181,68 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     alignItems: 'center',
+  },
+  mcqModalOverlay: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 305,
+    height: 300,
+    marginLeft: -152.5, // Half of width
+    marginTop: -150, // Half of height
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    borderWidth: 10,
+    borderColor: '#4F41D8',
+    zIndex: 1001,
+    overflow: 'hidden',
+  },
+  mcqModalIconAbsolute: {
+    position: 'absolute',
+    top: 18,
+    left: 18,
+    zIndex: 2,
+  },
+  mcqModalTextCenterWrap: {
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  mcqModalText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#222',
+    marginHorizontal: 16,
+  },
+  mcqModalButtonAbsolute: {
+    position: 'absolute',
+    bottom: 18,
+    left: '50%',
+    width: 100,
+    height: 30,
+    marginLeft: -50, // Half of width to center
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    backgroundColor: '#4F41D8',
+    borderRadius: 16,
+  },
+  mcqModalButtonText: {
+    color: '#fff',
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 16,
+  },
+  mcqModalLottie: {
+    position: 'absolute',
+    width: 225,
+    height: 225,
+    left: 30,
+    top: 45,
+    zIndex: 1,
+    pointerEvents: 'none',
   },
 }); 

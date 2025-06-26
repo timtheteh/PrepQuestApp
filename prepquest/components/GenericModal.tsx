@@ -131,7 +131,7 @@ export function GenericModal({
               source={animationSource}
               autoPlay
               loop={animationLoop}
-              style={{ width: 120, height: 120 }}
+              style={{ width: 200, height: 200 }}
             />
           </View>
         )}

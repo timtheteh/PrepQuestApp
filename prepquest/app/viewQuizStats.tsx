@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
+import DoubleChevron from '@/assets/icons/DoubleChevron.svg';
 
 const ConfettiIcon = require('@/assets/icons/ConfettiIcon.png');
+const FlagIcon = require('@/assets/icons/FlagIcon.png');
 
 export default function ViewQuizStatsModal() {
   const router = useRouter();
+  const { halfwayCheckpoint } = useLocalSearchParams();
+  const isHalfwayCheckpoint = halfwayCheckpoint === 'true';
   // Dummy values for now
   const avgSeconds = 35;
   const totalTime = '3min 10s';
@@ -21,15 +25,27 @@ export default function ViewQuizStatsModal() {
         <AntDesign name="close" size={28} color="#222" />
       </TouchableOpacity>
       <ScrollView
-        style={styles.scrollContainer}
+        style={[styles.scrollContainer, { marginBottom: isHalfwayCheckpoint ? 120 : 0 }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Title row with confetti */}
         <View style={styles.titleRow}>
-          <Image source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
-          <Text style={styles.wellDoneTitle}>Well Done!</Text>
-          <Image source={ConfettiIcon} style={styles.confettiIcon} resizeMode="contain" />
+          {isHalfwayCheckpoint ? (
+            <Image source={FlagIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+          ) : (
+            <Image source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+          )}
+          {isHalfwayCheckpoint ? (
+            <Text style={styles.wellDoneTitle}>{"Halfway\nCheckpoint"}</Text>
+          ) : (
+            <Text style={styles.wellDoneTitle}>Well Done!</Text>
+          )}
+          {isHalfwayCheckpoint ? (
+            <Image source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
+          ) : (
+            <Image source={ConfettiIcon} style={styles.confettiIcon} resizeMode="contain" />
+          )}
         </View>
         {/* AverageGradeThermometer */}
         <View style={{ marginTop: 10 }}>
@@ -49,6 +65,17 @@ export default function ViewQuizStatsModal() {
           <Text style={styles.totalTimeValue}>{totalTime}</Text>
         </View>
       </ScrollView>
+      {/* Halfway checkpoint button fixed at bottom */}
+      {isHalfwayCheckpoint && (
+        <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
+          <TouchableOpacity style={styles.fixedBottomButton} activeOpacity={0.85} onPress={() => router.back()}>
+            <View style={styles.buttonContentRow}>
+              <Text style={styles.buttonText}>Continue with quiz</Text>
+              <DoubleChevron width={36} height={36} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -132,5 +159,40 @@ const styles = StyleSheet.create({
     color: '#111',
     textAlign: 'center',
     marginTop: 0,
+  },
+  fixedBottomButtonWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: Platform.OS === 'ios' ? 30 : 24,
+    alignItems: 'center',
+    zIndex: 20,
+    pointerEvents: 'box-none',
+  },
+  fixedBottomButton: {
+    width: 350,
+    height: 72,
+    backgroundColor: '#4F41D8',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  buttonContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    fontFamily: 'Satoshi-Bold',
+    fontSize: 22,
+    letterSpacing: 0.2,
   },
 }); 

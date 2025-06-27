@@ -22,6 +22,7 @@ import { Asset } from 'expo-asset';
 import * as Speech from 'expo-speech';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Easing } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -318,7 +319,9 @@ const FlippableFlashcard = (
     showStudyValidationModal, 
     setIsSuccessMode, 
     isSuccessMode,
-    isQuizMode
+    isQuizMode,
+    pauseNextTimer,
+    setPauseNextTimer
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -341,7 +344,9 @@ const FlippableFlashcard = (
       showStudyValidationModal: (message: string) => void, 
       setIsSuccessMode: React.Dispatch<React.SetStateAction<boolean>>, 
       isSuccessMode: boolean,
-      isQuizMode: boolean
+      isQuizMode: boolean,
+      pauseNextTimer: boolean,
+      setPauseNextTimer: React.Dispatch<React.SetStateAction<boolean>>,
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -774,6 +779,7 @@ const FlippableFlashcard = (
 
   useEffect(() => {
     if (isQuizMode) {
+      if (pauseNextTimer) return; // PAUSE BORDER ANIMATION IF TIMER IS PAUSED
       borderAnim.setValue(0);
       Animated.timing(borderAnim, {
         toValue: 1,
@@ -783,7 +789,7 @@ const FlippableFlashcard = (
       }).start();
     }
     // eslint-disable-next-line
-  }, [currentIdx, isQuizMode]);
+  }, [currentIdx, isQuizMode, pauseNextTimer]);
 
   // At the top of FlippableFlashcard, after other hooks:
   const [circlePos, setCirclePos] = React.useState({ x: 0, y: 0 });
@@ -898,6 +904,7 @@ const FlippableFlashcard = (
   // Start/reset countdown in quiz mode when card changes
   useEffect(() => {
     if (isQuizMode && currentFlashcard?.timeLimit) {
+      if (pauseNextTimer) return; // DO NOT START TIMER IF PAUSED
       setCountdown(currentFlashcard.timeLimit);
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = setInterval(() => {
@@ -915,7 +922,7 @@ const FlippableFlashcard = (
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     }
     // eslint-disable-next-line
-  }, [isQuizMode, currentIdx]);
+  }, [isQuizMode, currentIdx, pauseNextTimer, currentFlashcard?.timeLimit]);
 
   // Add shiver animation state at the top of FlippableFlashcard
   const shiverAnim = useRef(new Animated.Value(0)).current;
@@ -1890,6 +1897,36 @@ export default function FlashcardViewPage() {
   const endQuizModalOpacity = useRef(new Animated.Value(0)).current;
   const endQuizOverlayOpacity = useRef(new Animated.Value(0)).current;
 
+  // --- Halfway checkpoint logic ---
+  const [hasShownHalfway, setHasShownHalfway] = useState(false);
+  const [pauseNextTimer, setPauseNextTimer] = useState(false);
+  useEffect(() => {
+    if (!isQuizMode) return;
+    const total = totalCards;
+    if (total <= 1) return;
+    const halfway = Math.floor(total / 2);
+    if (
+      currentIdx === halfway &&
+      !hasShownHalfway
+    ) {
+      setHasShownHalfway(true);
+      setPauseNextTimer(true); // PAUSE TIMER
+      router.push({
+        pathname: '/viewQuizStats',
+        params: { halfwayCheckpoint: 'true' },
+      });
+    }
+  }, [isQuizMode, currentIdx, totalCards, hasShownHalfway, router]);
+
+  // Resume timer when returning from halfway checkpoint
+  useFocusEffect(
+    React.useCallback(() => {
+      if (pauseNextTimer) {
+        setPauseNextTimer(false);
+      }
+    }, [pauseNextTimer])
+  );
+
   // 4. In FlashcardViewPage render, show Success UI if isSuccessMode is true
   if (isSuccessMode) {
     return (
@@ -2062,6 +2099,8 @@ export default function FlashcardViewPage() {
               setIsSuccessMode={setIsSuccessMode}
               isSuccessMode={isSuccessMode}
               isQuizMode={isQuizMode}
+              pauseNextTimer={pauseNextTimer}
+              setPauseNextTimer={setPauseNextTimer}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

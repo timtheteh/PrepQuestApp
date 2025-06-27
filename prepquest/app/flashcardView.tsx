@@ -1903,15 +1903,51 @@ export default function FlashcardViewPage() {
           opacity: successFadeAnim,
         }}
       >
-        <LottieView
-          source={require('@/assets/animations/SuccessAnimation2_Circle.json')}
-          autoPlay
-          loop={true}
-          style={{ width: 220, height: 220, marginBottom: 32 }}
-        />
+        {isQuizMode ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
+            <LottieView
+              source={require('@/assets/animations/SuccessAnimation3_Confetti.json')}
+              autoPlay
+              loop
+              style={{ width: 120, height: 120, marginRight: 10, transform: [{ scaleX: -1 }] }}
+            />
+            <View style={{ width: 20 }} />
+            <LottieView
+              source={require('@/assets/animations/SuccessAnimation3_Confetti.json')}
+              autoPlay
+              loop
+              style={{ width: 120, height: 120, marginLeft: 10 }}
+            />
+          </View>
+        ) : (
+          <LottieView
+            source={require('@/assets/animations/SuccessAnimation2_Circle.json')}
+            autoPlay
+            loop={true}
+            style={{ width: 220, height: 220, marginBottom: 32 }}
+          />
+        )}
         <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 40, color: '#222', textAlign: 'center', marginBottom: 48 }}>
-          Nice studying!
+          {isQuizMode ? 'Nicely done!' : 'Nice studying!'}
         </Text>
+        {isQuizMode && (
+          <TouchableOpacity
+          style={{
+            width: 318,
+            height: 72,
+            borderRadius: 30,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#44B88A',
+            marginBottom: 20,
+          }}
+          onPress={() => router.push('/viewQuizStats')}
+        >
+          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+            View Quiz Stats
+          </Text>
+        </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={{
             width: 318,

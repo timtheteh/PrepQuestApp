@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { ThemedText } from '@/components/ThemedText';
@@ -471,6 +471,15 @@ export default function AccountScreen() {
     return width * 0.09;
   }
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: 'Check out PrepQuest! https://prepquest.app',
+      });
+    } catch (error) {
+      // Optionally handle error
+    }
+  };
 
   const MainContent = (
     <>
@@ -553,6 +562,7 @@ export default function AccountScreen() {
           activeOpacity={1}
           onPressIn={() => setSharePressed(true)}
           onPressOut={() => setSharePressed(false)}
+          onPress={handleShare}
           style={[
             styles.grapeCircle,
             {backgroundColor: sharePressed ? '#8684FF' : '#685CDD', position: "absolute", 

@@ -151,9 +151,9 @@ const dummyFlashcards = [
 // },
 //     // text Qn -> voice recorded
 //   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
-//   // text Qn -> audio Ans
-//   { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
-//   // text Qn -> image Ans
+  // text Qn -> audio Ans
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
+  // text Qn -> image Ans
   { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg') },
 ];
 
@@ -357,7 +357,14 @@ export default function ViewFlashcardsScreen() {
 
   const handleQuizPress = () => {
     // TODO: Implement quiz functionality
-    console.log('Quiz pressed');
+    router.push({
+      pathname: '/flashcardView',
+      params: {
+        flashcardIdx: '0',
+        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        isQuizMode: 'true',
+      }
+    });
   };
 
   const handleGridPress = () => {

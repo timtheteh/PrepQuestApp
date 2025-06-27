@@ -10,7 +10,7 @@ import { GenericModal } from '@/components/GenericModal';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import { Audio } from 'expo-av';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { SmallCircleSelectButton } from '@/components/SmallCircleSelectButton';
 import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
 import LottieView from 'lottie-react-native';
@@ -21,8 +21,12 @@ import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import * as Speech from 'expo-speech';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { Easing } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 // Helper function to copy asset images to clipboard
 const copyAssetToClipboard = async (imageSource: any) => {
@@ -102,10 +106,10 @@ const dummyFlashcards = [
 //     },
 //     // text Qn -> voice recorded
 //   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
-//   // text Qn -> audio Ans
-//   { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
-//   // text Qn -> image Ans
-  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg') },
+  // text Qn -> audio Ans
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
+  // text Qn -> image Ans
+  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), timeLimit: 30},
 ];
 
 // Updated DifficultyPillRow to accept currentIdx and totalCards as props
@@ -137,13 +141,14 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange }: { currentIdx: num
 };
 
 // Updated LoadingBar to accept currentIdx and totalCards as props with smooth animations
-const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType }: { 
+const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode }: { 
   currentIdx: number, 
   totalCards: number, 
   isStudyMode: boolean,
   hasFlippedCard: boolean,
   hasSubmittedMCQ: boolean,
-  flashcardAnswerType: string
+  flashcardAnswerType: string,
+  isQuizMode: boolean
 }) => {
   // Create animated value for progress
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -153,7 +158,7 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
 
   // Check if completed (in study mode, at last card, and properly completed based on answer type)
   const isAtLastCard = currentIdx === totalCards - 1;
-  const isCompleted = isStudyMode && isAtLastCard && (
+  const isCompleted = (isQuizMode || isStudyMode) && isAtLastCard && (
     // For text, audio, or image answer types - user must have flipped to answer side
     (['text', 'audio', 'image'].includes(flashcardAnswerType) && hasFlippedCard) ||
     // For MCQ answer type - user must have submitted the MCQ
@@ -291,7 +296,53 @@ async function playAudio(uri: any) {
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModalVisible, setMcqModalCorrect, mcqModalOpacity, mcqOverlayOpacity, isFlipped, setIsFlipped, mcqOptionsWithLettersRef, stopSpeech, setIsSpeechPlaying, setIsSpeechPaused, isStudyMode, hasFlippedCard, setHasFlippedCard, hasSubmittedMCQ, setHasSubmittedMCQ, showStudyValidationModal, setIsSuccessMode, isSuccessMode }: { currentIdx: number, setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, totalCards: number, setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, mcqModalOpacity: Animated.Value, mcqOverlayOpacity: Animated.Value, isFlipped: boolean, setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, stopSpeech: () => Promise<void>, setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, isStudyMode: boolean, hasFlippedCard: boolean, setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, hasSubmittedMCQ: boolean, setHasSubmittedMCQ: React.Dispatch<React.SetStateAction<boolean>>, showStudyValidationModal: (message: string) => void, setIsSuccessMode: React.Dispatch<React.SetStateAction<boolean>>, isSuccessMode: boolean }) => {
+const FlippableFlashcard = (
+  { currentIdx, 
+    setCurrentIdx, 
+    totalCards, 
+    setMcqModalVisible, 
+    setMcqModalCorrect, 
+    mcqModalOpacity, 
+    mcqOverlayOpacity, 
+    isFlipped, 
+    setIsFlipped, 
+    mcqOptionsWithLettersRef, 
+    stopSpeech, 
+    setIsSpeechPlaying, 
+    setIsSpeechPaused, 
+    isStudyMode, 
+    hasFlippedCard, 
+    setHasFlippedCard, 
+    hasSubmittedMCQ, 
+    setHasSubmittedMCQ, 
+    showStudyValidationModal, 
+    setIsSuccessMode, 
+    isSuccessMode,
+    isQuizMode
+  }: { 
+      currentIdx: number, 
+      setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
+      totalCards: number, 
+      setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, 
+      setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, 
+      mcqModalOpacity: Animated.Value, 
+      mcqOverlayOpacity: Animated.Value, 
+      isFlipped: boolean, 
+      setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, 
+      mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, 
+      stopSpeech: () => Promise<void>, 
+      setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, 
+      setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, 
+      isStudyMode: boolean, 
+      hasFlippedCard: boolean, 
+      setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, 
+      hasSubmittedMCQ: boolean, 
+      setHasSubmittedMCQ: React.Dispatch<React.SetStateAction<boolean>>, 
+      showStudyValidationModal: (message: string) => void, 
+      setIsSuccessMode: React.Dispatch<React.SetStateAction<boolean>>, 
+      isSuccessMode: boolean,
+      isQuizMode: boolean
+    }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
@@ -373,8 +424,8 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
         useNativeDriver: true,
       }).start(() => {
         setIsFlipped(!isFlipped);
-        // Track if card has been flipped in study mode
-        if (!isFlipped && isStudyMode) {
+        // Track if card has been flipped in study mode / quiz mode
+        if (!isFlipped && (isStudyMode || isQuizMode)) {
           setHasFlippedCard(true);
         }
         Animated.timing(!isFlipped ? backOpacity : frontOpacity, {
@@ -422,7 +473,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
   const isRightChevronDisabled = () => {
     if (isSuccessMode) return true; // Hide/disable chevron in success mode
     const isAtLastCard = currentIdx >= totalCards - 1;
-    if (isStudyMode && isAtLastCard) {
+    if ((isQuizMode || isStudyMode) && isAtLastCard) {
       // Validation for last card
       const currentFlashcard = dummyFlashcards[currentIdx];
       const answerType = currentFlashcard?.flashcardAnswerType;
@@ -471,7 +522,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
   const navigateToNextCard = () => {
     // If in study mode and at last card, and validation is passed, go to success mode
-    if (isStudyMode && currentIdx === totalCards - 1) {
+    if ((isQuizMode || isStudyMode) && currentIdx === totalCards - 1) {
       // Repeat the validation logic for the last card
       const currentFlashcard = dummyFlashcards[currentIdx];
       const answerType = currentFlashcard?.flashcardAnswerType;
@@ -527,7 +578,7 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
 
     if (!isRightChevronDisabled()) {
       // Study mode validation (for non-last cards)
-      if (isStudyMode) {
+      if (isQuizMode || isStudyMode) {
         const currentFlashcard = dummyFlashcards[currentIdx];
         const answerType = currentFlashcard?.flashcardAnswerType;
         const currentDifficulty = currentFlashcard?.flashcardDifficulty;
@@ -716,10 +767,134 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
     }
   };
 
+  // At the top of the file, add:
+  const borderAnim = useRef(new Animated.Value(0)).current;
+  const cardRef = useRef(null);
+  const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (isQuizMode) {
+      borderAnim.setValue(0);
+      Animated.timing(borderAnim, {
+        toValue: 1,
+        duration: (currentFlashcard?.timeLimit || 30) * 1000,
+        useNativeDriver: false,
+        easing: Easing.linear,
+      }).start();
+    }
+    // eslint-disable-next-line
+  }, [currentIdx, isQuizMode]);
+
+  // At the top of FlippableFlashcard, after other hooks:
+  const [circlePos, setCirclePos] = React.useState({ x: 0, y: 0 });
+  const HEADSTART = 0.005; // 2% headstart for the circle
+
+  // Helper to get (x, y) at a given progress (0-1) along the path
+  function getPointAtLength(progress: number, w: number, h: number, r: number, halfStroke: number) {
+    const straight = 2 * (w + h - 2 * r);
+    const arc = 2 * Math.PI * r;
+    const perimeter = straight + arc;
+    const d = progress * perimeter;
+    // Path segments (in order):
+    const seg1 = w/2 - r; // top edge center to right
+    const seg2 = Math.PI * r / 2; // top-right arc
+    const seg3 = h - 2*r; // right edge
+    const seg4 = Math.PI * r / 2; // bottom-right arc
+    const seg5 = w - 2*r; // bottom edge
+    const seg6 = Math.PI * r / 2; // bottom-left arc
+    const seg7 = h - 2*r; // left edge
+    const seg8 = Math.PI * r / 2; // top-left arc
+    const seg9 = w/2 - r; // top edge left to center
+    let remain = d;
+    // 1. Top edge (center to right)
+    if (remain <= seg1) {
+      return { x: w/2 + remain, y: halfStroke };
+    }
+    remain -= seg1;
+    // 2. Top-right arc (quarter circle, center at (w-r-halfStroke, r+halfStroke), from angle -90deg to 0deg)
+    if (remain <= seg2) {
+      const angle = (-Math.PI/2) + (remain / seg2) * (Math.PI/2); // -90deg to 0deg
+      return {
+        x: w - r - halfStroke + r * Math.cos(angle),
+        y: r + halfStroke + r * Math.sin(angle)
+      };
+    }
+    remain -= seg2;
+    // 3. Right edge (down)
+    if (remain <= seg3) {
+      return { x: w - halfStroke, y: r + halfStroke + remain };
+    }
+    remain -= seg3;
+    // 4. Bottom-right arc (center at (w-r-halfStroke, h-r-halfStroke), from angle 0deg to 90deg)
+    if (remain <= seg4) {
+      const angle = 0 + (remain / seg4) * (Math.PI/2); // 0deg to 90deg
+      return {
+        x: w - r - halfStroke + r * Math.cos(angle),
+        y: h - r - halfStroke + r * Math.sin(angle)
+      };
+    }
+    remain -= seg4;
+    // 5. Bottom edge (right to left)
+    if (remain <= seg5) {
+      return { x: w - r - halfStroke - remain, y: h - halfStroke };
+    }
+    remain -= seg5;
+    // 6. Bottom-left arc (center at (r+halfStroke, h-r-halfStroke), from angle 90deg to 180deg)
+    if (remain <= seg6) {
+      const angle = Math.PI/2 + (remain / seg6) * (Math.PI/2); // 90deg to 180deg
+      return {
+        x: r + halfStroke + r * Math.cos(angle),
+        y: h - r - halfStroke + r * Math.sin(angle)
+      };
+    }
+    remain -= seg6;
+    // 7. Left edge (up)
+    if (remain <= seg7) {
+      return { x: halfStroke, y: h - r - halfStroke - remain };
+    }
+    remain -= seg7;
+    // 8. Top-left arc (center at (r+halfStroke, r+halfStroke), from angle 180deg to 270deg)
+    if (remain <= seg8) {
+      const angle = Math.PI + (remain / seg8) * (Math.PI/2); // 180deg to 270deg
+      return {
+        x: r + halfStroke + r * Math.cos(angle),
+        y: r + halfStroke + r * Math.sin(angle)
+      };
+    }
+    remain -= seg8;
+    // 9. Top edge (left to center)
+    if (remain <= seg9) {
+      return { x: r + halfStroke + remain, y: halfStroke };
+    }
+    return { x: w/2, y: halfStroke };
+  }
+
+  // Update circlePos when borderAnim, cardSize, or isQuizMode changes
+  React.useEffect(() => {
+    if (!isQuizMode || cardSize.width === 0 || cardSize.height === 0) return;
+    const w = cardSize.width;
+    const h = cardSize.height;
+    const r = 30;
+    const halfStroke = 2.5;
+    const update = (value: number) => {
+      const progress = Math.min(value + HEADSTART, 1);
+      setCirclePos(getPointAtLength(progress, w, h, r, halfStroke));
+    };
+    const id = borderAnim.addListener(({ value }) => {
+      update(value);
+    });
+    // Set initial
+    update((borderAnim as any)._value ?? 0);
+    return () => borderAnim.removeListener(id);
+  }, [isQuizMode, cardSize.width, cardSize.height, borderAnim]);
+
+  // Track card's absolute position for correct circle placement
+  const [cardLayout, setCardLayout] = React.useState({ left: 0, top: 0 });
+
   return (
     <View style={{ flex: 1, position: 'relative' }}>
       {/* Left Chevron Button - hidden in study mode */}
-      {!isStudyMode && (
+      {!isStudyMode && !isQuizMode && (
         <TouchableOpacity
           style={styles.leftChevronButton}
           onPress={navigateToPreviousCard}
@@ -747,6 +922,12 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
       <Animated.View style={[{ flex: 1 }, slideStyle]}>
         <View style={{ flex: 1 }}>
           <Animated.View
+            ref={cardRef}
+            onLayout={e => {
+              const { width, height, x, y } = e.nativeEvent.layout;
+              setCardSize({ width, height });
+              setCardLayout({ left: x, top: y });
+            }}
             style={[
               styles.flippableCard,
               {
@@ -759,6 +940,64 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
               },
             ]}
           >
+            {/* Animated border overlay for quiz mode */}
+            {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && (() => {
+              const w = cardSize.width;
+              const h = cardSize.height;
+              const stroke = 5;
+              const r = 30; // border radius, match your card's borderRadius
+              const halfStroke = stroke / 2;
+              const straight = 2 * (w + h - 2 * r);
+              const arc = 2 * Math.PI * r;
+              const perimeter = straight + arc;
+              const path = [
+                `M ${w / 2} ${halfStroke}`,
+                `L ${w - r - halfStroke} ${halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${w - halfStroke} ${r + halfStroke}`,
+                `L ${w - halfStroke} ${h - r - halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${w - r - halfStroke} ${h - halfStroke}`,
+                `L ${r + halfStroke} ${h - halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${halfStroke} ${h - r - halfStroke}`,
+                `L ${halfStroke} ${r + halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${r + halfStroke} ${halfStroke}`,
+                `L ${w / 2} ${halfStroke}`
+              ].join(' ');
+
+              return (
+                <View style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  zIndex: 100,
+                  pointerEvents: 'none',
+                }}>
+                  <Svg width={w} height={h}>
+                    <AnimatedPath
+                      d={path}
+                      stroke="#44B88A"
+                      strokeWidth={stroke}
+                      fill="none"
+                      strokeDasharray={perimeter}
+                      strokeDashoffset={borderAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [perimeter, 0],
+                      })}
+                    />
+                  </Svg>
+                  {/* Animated circle following the path */}
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: '#44B88A',
+                      left: circlePos.x - 16,
+                      top: circlePos.y - 16,
+                    }}
+                  />
+                </View>
+              );
+            })()}
             {/* Front content here */}
             
             {/* Top container */}
@@ -838,6 +1077,51 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
               },
             ]}
           >
+            {/* Animated border overlay for quiz mode (BACK SIDE) */}
+            {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && (() => {
+              const w = cardSize.width;
+              const h = cardSize.height;
+              const stroke = 5;
+              const r = 30; // border radius, match your card's borderRadius
+              const halfStroke = stroke / 2;
+              const straight = 2 * (w + h - 2 * r);
+              const arc = 2 * Math.PI * r;
+              const perimeter = straight + arc;
+              const path = [
+                `M ${w / 2} ${halfStroke}`,
+                `L ${w - r - halfStroke} ${halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${w - halfStroke} ${r + halfStroke}`,
+                `L ${w - halfStroke} ${h - r - halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${w - r - halfStroke} ${h - halfStroke}`,
+                `L ${r + halfStroke} ${h - halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${halfStroke} ${h - r - halfStroke}`,
+                `L ${halfStroke} ${r + halfStroke}`,
+                `A ${r} ${r} 0 0 1 ${r + halfStroke} ${halfStroke}`,
+                `L ${w / 2} ${halfStroke}`
+              ].join(' ');
+              return (
+                <View style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  zIndex: 100,
+                  pointerEvents: 'none',
+                }}>
+                  <Svg width={w} height={h}>
+                    <AnimatedPath
+                      d={path}
+                      stroke="#44B88A"
+                      strokeWidth={stroke}
+                      fill="none"
+                      strokeDasharray={perimeter}
+                      strokeDashoffset={borderAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [perimeter, 0],
+                      })}
+                    />
+                  </Svg>
+                </View>
+              );
+            })()}
             {/* Back content here */}
             
             {/* Top container */}
@@ -1021,6 +1305,22 @@ const FlippableFlashcard = ({ currentIdx, setCurrentIdx, totalCards, setMcqModal
           style={styles.flipArrowPressable}
         />
       </Animated.View>
+      {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: cardLayout.left + circlePos.x - 16,
+            top: cardLayout.top + circlePos.y - 16,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: '#44B88A',
+            zIndex: 200,
+            elevation: 200,
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -1053,13 +1353,14 @@ const SubmitButton = ({ enabled, onPress }: { enabled: boolean; onPress: () => v
 };
 
 // Local MCQ Feedback Modal component
-const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80, isStudyMode }: {
+const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80, isStudyMode, isQuizMode }: {
   visible: boolean;
   opacity: Animated.Value;
   isCorrect: boolean;
   onDismiss: () => void;
   lottieMarginTop?: number;
   isStudyMode: boolean;
+  isQuizMode: boolean;
 }) => {
   if (!visible) return null;
   return (
@@ -1091,7 +1392,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
 
 export default function FlashcardViewPage() {
   const router = useRouter();
-  const { flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam } = useLocalSearchParams();
+  const { flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam } = useLocalSearchParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -1108,6 +1409,7 @@ export default function FlashcardViewPage() {
 
   // Study mode state management
   const [isStudyMode, setIsStudyMode] = useState(false);
+  const [isQuizMode, setIsQuizMode] = useState(false);
   const [hasFlippedCard, setHasFlippedCard] = useState(false);
   const [hasSubmittedMCQ, setHasSubmittedMCQ] = useState(false);
   const [studyValidationModalVisible, setStudyValidationModalVisible] = useState(false);
@@ -1118,7 +1420,8 @@ export default function FlashcardViewPage() {
   // Set study mode from URL parameter
   useEffect(() => {
     setIsStudyMode(isStudyModeParam === 'true');
-  }, [isStudyModeParam]);
+    setIsQuizMode(isQuizModeParam === 'true');
+  }, [isStudyModeParam, isQuizModeParam]);
 
   // Function to update the difficulty of the current flashcard
   const handleDifficultyChange = (difficulty: string) => {
@@ -1569,13 +1872,14 @@ export default function FlashcardViewPage() {
               showStudyValidationModal={showStudyValidationModal}
               setIsSuccessMode={setIsSuccessMode}
               isSuccessMode={isSuccessMode}
+              isQuizMode={isQuizMode}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>
             <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} />
           </View>
           <View style={styles.loadingBarBottomContainer}>
-            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={dummyFlashcards[currentIdx]?.flashcardAnswerType || ''} />
+            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} isQuizMode={isQuizMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={dummyFlashcards[currentIdx]?.flashcardAnswerType || ''} />
           </View>
         </View>
       </SafeAreaView>
@@ -1623,6 +1927,7 @@ export default function FlashcardViewPage() {
         }}
         lottieMarginTop={80}
         isStudyMode={isStudyMode}
+        isQuizMode={isQuizMode}
       />
 
       {/* Study Validation Modal and Overlay - root level, above all other UI */}
@@ -1842,13 +2147,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: -20,
-    zIndex: 10,
+    zIndex: 500,
   },
   rightChevronButton: {
     position: 'absolute',
     top: '50%',
     right: -20,
-    zIndex: 10,
+    zIndex: 500,
   },
   middleImage: {
     width: '90%',

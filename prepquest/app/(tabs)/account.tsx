@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import LightSwitchBody from '@/assets/icons/lightSwitchBody.svg';
 import DarkSwitchBody from '@/assets/icons/darkSwitchBody.svg';
@@ -20,6 +21,7 @@ export default function AccountScreen() {
   const [websitePressed, setWebsitePressed] = useState(false);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 60;
+  const router = useRouter();
 
   // For button animation
   const buttonAnim = useRef(new Animated.Value(1)).current; // 1 = right (light), 0 = left (dark)
@@ -44,6 +46,10 @@ export default function AccountScreen() {
       duration: 200,
       useNativeDriver: false,
     }).start();
+  };
+
+  const handleDeckSettingsPress = () => {
+    router.push('/deckSettings');
   };
 
   // Button position: 0 (left) for dark, 1 (right) for light
@@ -605,6 +611,7 @@ export default function AccountScreen() {
           activeOpacity={1}
           onPressIn={() => setDeckSettingsPressed(true)}
           onPressOut={() => setDeckSettingsPressed(false)}
+          onPress={handleDeckSettingsPress}
           style={[
             styles.grapeCircle,
             {backgroundColor: deckSettingsPressed ? '#8684FF' : '#3B30A7', position: "absolute", 

@@ -65,6 +65,14 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
+          name="deckSettings" 
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'slide_from_right',
+            headerShown: false
+          }} 
+        />
+        <Stack.Screen 
           name="textInputModal" 
           options={{
             presentation: 'transparentModal',

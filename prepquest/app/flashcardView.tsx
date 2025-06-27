@@ -1768,6 +1768,25 @@ export default function FlashcardViewPage() {
     }
   }, [isSuccessMode]);
 
+  // At the top of FlashcardViewPage, add state for the end study modal
+  const [showEndStudyModal, setShowEndStudyModal] = useState(false);
+  const endStudyModalOpacity = useRef(new Animated.Value(0)).current;
+  const endStudyOverlayOpacity = useRef(new Animated.Value(0)).current;
+
+  // Move isCompleted logic to the top of FlashcardViewPage
+  const isAtLastCard = currentIdx === totalCards - 1;
+  const currentFlashcard = dummyFlashcards[currentIdx];
+  const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
+  const isCompleted = (isQuizMode || isStudyMode) && isAtLastCard && (
+    (['text', 'audio', 'image'].includes(flashcardAnswerType) && hasFlippedCard) ||
+    (flashcardAnswerType === 'MCQ' && hasSubmittedMCQ)
+  );
+
+  // At the top of FlashcardViewPage, add state for the end quiz modal
+  const [showEndQuizModal, setShowEndQuizModal] = useState(false);
+  const endQuizModalOpacity = useRef(new Animated.Value(0)).current;
+  const endQuizOverlayOpacity = useRef(new Animated.Value(0)).current;
+
   // 4. In FlashcardViewPage render, show Success UI if isSuccessMode is true
   if (isSuccessMode) {
     return (
@@ -1833,7 +1852,38 @@ export default function FlashcardViewPage() {
             style={styles.backButton}
             onPress={async () => {
               await stopSpeech();
-              router.back();
+              if (isStudyMode && !isCompleted) {
+                // Show confirmation modal
+                setShowEndStudyModal(true);
+                Animated.parallel([
+                  Animated.timing(endStudyOverlayOpacity, {
+                    toValue: 0.5,
+                    duration: 200,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(endStudyModalOpacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                  }),
+                ]).start();
+              } else if (isQuizMode && !isCompleted) {
+                setShowEndQuizModal(true);
+                Animated.parallel([
+                  Animated.timing(endQuizOverlayOpacity, {
+                    toValue: 0.5,
+                    duration: 200,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(endQuizModalOpacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                  }),
+                ]).start();
+              } else {
+                router.back();
+              }
             }}
           >
             <AntDesign name="arrowleft" size={32} color="black" />
@@ -1941,6 +1991,122 @@ export default function FlashcardViewPage() {
         opacity={studyValidationModalOpacity}
         Icon={DeleteModalIcon}
         text={studyValidationMessage}
+      />
+
+      {/* End study confirmation modal and overlay */}
+      <GreyOverlayBackground
+        visible={showEndStudyModal}
+        opacity={endStudyOverlayOpacity}
+        onPress={() => {
+          Animated.parallel([
+            Animated.timing(endStudyOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(endStudyModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => setShowEndStudyModal(false));
+        }}
+      />
+      <GenericModal
+        visible={showEndStudyModal}
+        opacity={endStudyModalOpacity}
+        Icon={DeleteModalIcon}
+        text="End study session?"
+        buttons="double"
+        onConfirm={() => {
+          Animated.parallel([
+            Animated.timing(endStudyOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(endStudyModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setShowEndStudyModal(false);
+            router.back();
+          });
+        }}
+        onCancel={() => {
+          Animated.parallel([
+            Animated.timing(endStudyOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(endStudyModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => setShowEndStudyModal(false));
+        }}
+      />
+
+      {/* Quiz end confirmation modal and overlay */}
+      <GreyOverlayBackground
+        visible={showEndQuizModal}
+        opacity={endQuizOverlayOpacity}
+        onPress={() => {
+          Animated.parallel([
+            Animated.timing(endQuizOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(endQuizModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => setShowEndQuizModal(false));
+        }}
+      />
+      <GenericModal
+        visible={showEndQuizModal}
+        opacity={endQuizModalOpacity}
+        Icon={DeleteModalIcon}
+        text="End quiz session?"
+        buttons="double"
+        onConfirm={() => {
+          Animated.parallel([
+            Animated.timing(endQuizOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(endQuizModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setShowEndQuizModal(false);
+            router.back();
+          });
+        }}
+        onCancel={() => {
+          Animated.parallel([
+            Animated.timing(endQuizOverlayOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(endQuizModalOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => setShowEndQuizModal(false));
+        }}
       />
     </View>
   );

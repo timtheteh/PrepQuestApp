@@ -107,9 +107,9 @@ const dummyFlashcards = [
 //     // text Qn -> voice recorded
 //   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
   // text Qn -> audio Ans
-  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), timeLimit: 10},
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), timeLimit: 10, cognitiveQnType: 'Problem-Solving'},
   // text Qn -> image Ans
-  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), timeLimit: 30},
+  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), timeLimit: 30, cognitiveQnType: 'Comprehension'},
 ];
 
 // Updated DifficultyPillRow to accept currentIdx and totalCards as props
@@ -1129,7 +1129,24 @@ const FlippableFlashcard = (
             
             {/* Bottom container */}
             <Animated.View style={[styles.bottomContainer, { opacity: frontOpacity }]}>
-              {/* Bottom content will go here */}
+              {currentFlashcard?.cognitiveQnType && (
+                <View style={{
+                  width: '50%',
+                  height: '60%',
+                  borderRadius: 30,
+                  backgroundColor: '#fff',
+                  borderColor: '#4F41D8',
+                  borderWidth: 2,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  alignSelf: 'flex-start',
+                  left: 10, 
+                }}>
+                  <Text style={{ fontSize: 14, color: '#222', textAlign: 'center', fontFamily: 'Satoshi-Medium' }}>
+                    {currentFlashcard.cognitiveQnType} Qn
+                  </Text>
+                </View>
+              )}
             </Animated.View>
             
             {/* Front flip arrow - positioned at bottom right */}
@@ -2336,8 +2353,6 @@ const styles = StyleSheet.create({
     height: 60,
     width: '85%',
     borderBottomLeftRadius: 30,
-    // borderWidth: 2,
-    // borderColor: 'green',
     zIndex: 10,
     justifyContent: 'center',
   },

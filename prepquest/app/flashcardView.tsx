@@ -107,7 +107,7 @@ const dummyFlashcards = [
 //     // text Qn -> voice recorded
 //   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
   // text Qn -> audio Ans
-  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
+  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), timeLimit: 10},
   // text Qn -> image Ans
   { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), timeLimit: 30},
 ];
@@ -777,7 +777,7 @@ const FlippableFlashcard = (
       borderAnim.setValue(0);
       Animated.timing(borderAnim, {
         toValue: 1,
-        duration: (currentFlashcard?.timeLimit || 30) * 1000,
+        duration: ((currentFlashcard?.timeLimit)  || 30) * 1000,
         useNativeDriver: false,
         easing: Easing.linear,
       }).start();
@@ -891,6 +891,67 @@ const FlippableFlashcard = (
   // Track card's absolute position for correct circle placement
   const [cardLayout, setCardLayout] = React.useState({ left: 0, top: 0 });
 
+  // At the top of FlippableFlashcard, after other hooks:
+  const [countdown, setCountdown] = React.useState(0);
+  const countdownIntervalRef = useRef<any>(null);
+
+  // Start/reset countdown in quiz mode when card changes
+  useEffect(() => {
+    if (isQuizMode && currentFlashcard?.timeLimit) {
+      setCountdown(currentFlashcard.timeLimit);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev > 0) return prev - 1;
+          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+          return 0;
+        });
+      }, 1000);
+      return () => {
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      };
+    } else {
+      setCountdown(0);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    }
+    // eslint-disable-next-line
+  }, [isQuizMode, currentIdx]);
+
+  // Add shiver animation state at the top of FlippableFlashcard
+  const shiverAnim = useRef(new Animated.Value(0)).current;
+  const shiverIntervalRef = useRef<any>(null);
+
+  // Shiver animation function
+  const triggerShiver = () => {
+    shiverAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shiverAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shiverAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
+      Animated.timing(shiverAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
+      Animated.timing(shiverAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
+
+  // Effect to start/stop shiver when countdown is zero
+  useEffect(() => {
+    if (countdown === 0 && isQuizMode) {
+      triggerShiver();
+      if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
+      shiverIntervalRef.current = setInterval(() => {
+        triggerShiver();
+      }, 2000);
+    } else {
+      if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
+      shiverAnim.setValue(0);
+    }
+    return () => {
+      if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
+    };
+  }, [countdown, isQuizMode]);
+
+  // Define the border/circle color based on countdown
+  const borderColor = countdown === 0 ? '#F8696B' : '#44B88A';
+
   return (
     <View style={{ flex: 1, position: 'relative' }}>
       {/* Left Chevron Button - hidden in study mode */}
@@ -932,7 +993,10 @@ const FlippableFlashcard = (
               styles.flippableCard,
               {
                 backgroundColor: '#F8F8F8',
-                transform: [{ rotateY: frontInterpolate }],
+                transform: [
+                  { rotateY: frontInterpolate },
+                  { translateX: shiverAnim },
+                ],
                 zIndex: isFlipped ? 0 : 1,
                 position: 'absolute',
                 width: '100%',
@@ -973,7 +1037,7 @@ const FlippableFlashcard = (
                   <Svg width={w} height={h}>
                     <AnimatedPath
                       d={path}
-                      stroke="#44B88A"
+                      stroke={borderColor}
                       strokeWidth={stroke}
                       fill="none"
                       strokeDasharray={perimeter}
@@ -990,7 +1054,7 @@ const FlippableFlashcard = (
                       width: 32,
                       height: 32,
                       borderRadius: 16,
-                      backgroundColor: '#44B88A',
+                      backgroundColor: borderColor,
                       left: circlePos.x - 16,
                       top: circlePos.y - 16,
                     }}
@@ -1008,6 +1072,15 @@ const FlippableFlashcard = (
                 </Text>
                 <FavoriteButton size={30} />
               </View>
+              {isQuizMode && (
+                <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  {countdown === 0 ? (
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>Time's Up!</Text>
+                  ) : (
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{countdown}s</Text>
+                  )}
+                </View>
+              )}
             </Animated.View>
             
             {/* Middle container */}
@@ -1069,7 +1142,10 @@ const FlippableFlashcard = (
               styles.flippableCard,
               {
                 backgroundColor: '#F8F8F8',
-                transform: [{ rotateY: backInterpolate }],
+                transform: [
+                  { rotateY: backInterpolate },
+                  { translateX: shiverAnim },
+                ],
                 zIndex: isFlipped ? 1 : 0,
                 position: 'absolute',
                 width: '100%',
@@ -1109,7 +1185,7 @@ const FlippableFlashcard = (
                   <Svg width={w} height={h}>
                     <AnimatedPath
                       d={path}
-                      stroke="#44B88A"
+                      stroke={borderColor}
                       strokeWidth={stroke}
                       fill="none"
                       strokeDasharray={perimeter}
@@ -1132,6 +1208,15 @@ const FlippableFlashcard = (
                 </Text>
                 <FavoriteButton size={30} />
               </View>
+              {isQuizMode && (
+                <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  {countdown === 0 ? (
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>Time's Up!</Text>
+                  ) : (
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{countdown}s</Text>
+                  )}
+                </View>
+              )}
             </Animated.View>
             
             {/* Middle container */}
@@ -1315,9 +1400,10 @@ const FlippableFlashcard = (
             width: 32,
             height: 32,
             borderRadius: 16,
-            backgroundColor: '#44B88A',
+            backgroundColor: borderColor,
             zIndex: 200,
             elevation: 200,
+            transform: [{ translateX: shiverAnim }],
           }}
         />
       )}

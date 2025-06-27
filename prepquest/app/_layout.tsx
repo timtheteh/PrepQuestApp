@@ -84,7 +84,7 @@ export default function RootLayout() {
           name="viewQuizStats" 
           options={{
             presentation: 'modal',
-            animation: 'slide_from_bottom',
+            animation: 'slide_from_right',
             headerShown: false,
           }} 
         />

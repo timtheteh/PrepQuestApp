@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
@@ -65,12 +65,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 30,
+    paddingTop: Platform.OS === 'ios' ? 30 : 60,
     paddingHorizontal: 0,
   },
   closeButton: {
     position: 'absolute',
-    top: 15,
+    top: Platform.OS === 'ios' ? 15 : 40,
     right: 12,
     zIndex: 10,
   },

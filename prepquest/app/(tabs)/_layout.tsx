@@ -115,6 +115,11 @@ interface MenuContextType {
   deckDetailsSaveModalOpacity: Animated.Value;
   setOnDeckDetailsSaveModalDismiss: (handler: (() => void) | null) => void;
   onDeckDetailsSaveModalDismiss: (() => void) | null;
+  isDeleteFolderModalOpen: boolean;
+  setIsDeleteFolderModalOpen: (value: boolean) => void;
+  deleteFolderModalOpacity: Animated.Value;
+  handleDeleteFolder: (() => void) | null;
+  setHandleDeleteFolder: (handler: (() => void) | null) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -187,6 +192,11 @@ export const MenuContext = createContext<MenuContextType>({
   deckDetailsSaveModalOpacity: new Animated.Value(0),
   setOnDeckDetailsSaveModalDismiss: () => {},
   onDeckDetailsSaveModalDismiss: null,
+  isDeleteFolderModalOpen: false,
+  setIsDeleteFolderModalOpen: () => {},
+  deleteFolderModalOpacity: new Animated.Value(0),
+  handleDeleteFolder: null,
+  setHandleDeleteFolder: () => {},
 });
 
 export default function TabLayout() {
@@ -234,6 +244,9 @@ export default function TabLayout() {
   const [isDeckDetailsSaveModalOpen, setIsDeckDetailsSaveModalOpen] = useState(false);
   const deckDetailsSaveModalOpacity = useRef(new Animated.Value(0)).current;
   const [onDeckDetailsSaveModalDismiss, setOnDeckDetailsSaveModalDismiss] = useState<(() => void) | null>(null);
+  const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useState(false);
+  const deleteFolderModalOpacity = useRef(new Animated.Value(0)).current;
+  const [handleDeleteFolder, setHandleDeleteFolder] = useState<(() => void) | null>(null);
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
 
@@ -426,8 +439,23 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsDeckDetailsSaveModalOpen(false);
       });
-    } 
-    else if (showSlidingMenu) {
+    } else if (isDeleteFolderModalOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(deleteFolderModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsDeleteFolderModalOpen(false);
+      });
+    } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
@@ -465,7 +493,8 @@ export default function TabLayout() {
     isDeckDetailsDeleteModalOpen, 
     onDeckDetailsDeleteModalDismiss, 
     isDeckDetailsSaveModalOpen, 
-    onDeckDetailsSaveModalDismiss]);
+    onDeckDetailsSaveModalDismiss,
+    isDeleteFolderModalOpen]);
 
   const handleFolderPress = useCallback(() => {
     handleDismissMenu();
@@ -543,6 +572,11 @@ export default function TabLayout() {
       deckDetailsSaveModalOpacity,
       setOnDeckDetailsSaveModalDismiss,
       onDeckDetailsSaveModalDismiss,
+      isDeleteFolderModalOpen,
+      setIsDeleteFolderModalOpen,
+      deleteFolderModalOpacity,
+      handleDeleteFolder,
+      setHandleDeleteFolder,
     }}>
       <View style={styles.container}>
         <Tabs
@@ -800,6 +834,24 @@ export default function TabLayout() {
           animationLoop={true}
           contentMarginTop={20}
           lottieMarginTop={40}
+        />
+        <GenericModal
+          visible={isDeleteFolderModalOpen}
+          opacity={deleteFolderModalOpacity}
+          Icon={DeleteModalIcon}
+          text="Are you sure you want to delete this folder?"
+          textStyle={{
+            highlightWord: "delete",
+            highlightColor: "#D7191C"
+          }}
+          buttons="double"
+          onCancel={handleDismissMenu}
+          onConfirm={() => {
+            if (handleDeleteFolder) {
+              handleDeleteFolder();
+            }
+            handleDismissMenu();
+          }}
         />
       </View>
     </MenuContext.Provider>

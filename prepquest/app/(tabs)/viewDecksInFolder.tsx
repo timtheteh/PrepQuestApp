@@ -132,6 +132,9 @@ export default function ViewDecksInFolderScreen() {
     trashModalOpacity,
     setDeleteModalText,
     setHandleDeletion,
+    setIsDeleteFolderModalOpen,
+    deleteFolderModalOpacity,
+    setHandleDeleteFolder,
   } = useContext(MenuContext);
 
   // Animation values
@@ -348,6 +351,31 @@ export default function ViewDecksInFolderScreen() {
     setEditNameSelected(false);
   };
 
+  const handleDeleteFolder = () => {
+    // Show delete folder confirmation modal
+    setIsMenuOpen(true);
+    setIsDeleteFolderModalOpen(true);
+    setHandleDeleteFolder(() => () => {
+      // TODO: Implement actual folder deletion logic here
+      console.log('Deleting folder:', folderTitle);
+      // Navigate back to folders page after deletion
+      router.push('/(tabs)/folders');
+    });
+    
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteFolderModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
   const handleDeckSelection = (index: number, selected: boolean) => {
     setSelectedDecks(prev => {
       const newSet = new Set(prev);
@@ -497,6 +525,7 @@ export default function ViewDecksInFolderScreen() {
             <FolderDetailsTopBar 
               onEditNamePress={handleEditNamePress}
               editNameSelected={editNameSelected}
+              onDeletePress={handleDeleteFolder}
             />
           </View>
 

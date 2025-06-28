@@ -48,8 +48,12 @@ export default function AccountScreen() {
     }).start();
   };
 
-  const handleDeckSettingsPress = () => {
-    router.push('/deckSettings');
+    const handleDeckSettingsPress = () => {
+      router.push('/deckSettings');
+    };
+
+  const handleAppSettingsPress = () => {
+    router.push('/appSettings');
   };
 
   // Button position: 0 (left) for dark, 1 (right) for light
@@ -597,6 +601,7 @@ export default function AccountScreen() {
           activeOpacity={1}
           onPressIn={() => setAppSettingsPressed(true)}
           onPressOut={() => setAppSettingsPressed(false)}
+          onPress={handleAppSettingsPress}
           style={[
             styles.grapeCircle,
             {backgroundColor: appSettingsPressed ? '#8684FF' : '#3B30A7', position: "absolute", 

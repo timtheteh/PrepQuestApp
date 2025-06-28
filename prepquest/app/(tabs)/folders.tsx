@@ -31,10 +31,11 @@ const folderData = [
 
 export default function FoldersScreen() {
   const router = useRouter();
-  const { isAddToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck } = useLocalSearchParams();
+  const { isAddToFolders, isMoveToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, folderTitle, folderId } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
+  const [isMoveToFoldersMode, setIsMoveToFoldersMode] = useState(false);
   const [selectedFolders, setSelectedFolders] = useState<Set<number>>(new Set());
   const isFocused = useIsFocused();
   const { 
@@ -51,6 +52,8 @@ export default function FoldersScreen() {
     setDeleteModalText,
     setIsAddToFoldersModalOpen,
     addToFoldersModalOpacity,
+    setIsMoveToFoldersModalOpen,
+    moveToFoldersModalOpacity,
     setNoSelectionModalSubtitle,
     sourcePageForFolders,
     setSourcePageForFolders
@@ -86,6 +89,38 @@ export default function FoldersScreen() {
         // Then set up the selection mode
         setIsSelectMode(true);
         setIsAddToFoldersMode(true);
+        setIsMoveToFoldersMode(false);
+        
+        // Set animation values directly without animation
+        shiftAnim.setValue(SHIFT_DISTANCE);
+        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        actionRowOpacity.setValue(1);
+        selectTextAnim.setValue(1);
+        fabOpacity.setValue(0);
+        cardWidthPercentage.setValue(85);
+        
+        // Show circle buttons last, after selection state is reset
+        circleButtonOpacity.setValue(1);
+
+        // Reset navbar animation to -2
+        navbarRef?.current?.resetAnimation();
+
+        Animated.timing(screenOpacity, {
+          toValue: 1,
+          duration: SCREEN_TRANSITION_DURATION,
+          useNativeDriver: true,
+        }).start();
+      } else if (isMoveToFolders === 'true') {
+        // Set the source page for folders in context
+        setSourcePageForFolders(sourcePage as string || '');
+        
+        // First reset any selected folders before showing circle buttons
+        setSelectedFolders(new Set());
+        
+        // Then set up the selection mode
+        setIsSelectMode(true);
+        setIsMoveToFoldersMode(true);
+        setIsAddToFoldersMode(false);
         
         // Set animation values directly without animation
         shiftAnim.setValue(SHIFT_DISTANCE);
@@ -110,6 +145,7 @@ export default function FoldersScreen() {
         // Reset selection mode and related states
         setIsSelectMode(false);
         setIsAddToFoldersMode(false);
+        setIsMoveToFoldersMode(false);
         setSelectedFolders(new Set());
 
         // Reset all animations to their default values
@@ -330,7 +366,35 @@ export default function FoldersScreen() {
       // Reset header icons state
       headerIconsRef.current?.reset();
       
-      // Navigate back based on source page
+      // If in MoveToFolders mode, navigate back to viewDecksInFolder
+      if (isMoveToFolders === 'true') {
+        if (Platform.OS === 'ios') {
+          navbarRef?.current?.resetAnimation();
+          setTimeout(() => {
+            router.push({
+              pathname: '/(tabs)/viewDecksInFolder',
+              params: {
+                folderTitle: folderTitle as string,
+                folderId: folderId as string
+              }
+            });
+          }, 50);
+        } else {
+          router.push({
+            pathname: '/(tabs)/viewDecksInFolder',
+            params: {
+              folderTitle: folderTitle as string,
+              folderId: folderId as string
+            }
+          });
+          setTimeout(() => {
+            navbarRef?.current?.resetAnimation();
+          }, 50);
+        }
+        return;
+      }
+      
+      // Navigate back based on source page for other modes
       if (Platform.OS === 'ios') {
         if (sourcePageForFolders === 'favorites' || sourcePageForFolders === 'deckDetails') {
           navbarRef?.current?.resetAnimation();
@@ -402,19 +466,46 @@ export default function FoldersScreen() {
 
     // Show confirmation modal when there is a selection
     setIsMenuOpen(true);
-    setIsAddToFoldersModalOpen(true);
-    Animated.parallel([
-      Animated.timing(menuOverlayOpacity, {
-        toValue: 0.4,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(addToFoldersModalOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      })
-    ]).start();
+    if (isAddToFoldersMode) {
+      setIsAddToFoldersModalOpen(true);
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0.4,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(addToFoldersModalOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start();
+    } else if (isMoveToFoldersMode) {
+      // Navigate back to viewDecksInFolder page in unselected state
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.resetAnimation();
+        setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)/viewDecksInFolder',
+            params: {
+              folderTitle: folderTitle as string,
+              folderId: folderId as string
+            }
+          });
+        }, 50);
+      } else {
+        router.push({
+          pathname: '/(tabs)/viewDecksInFolder',
+          params: {
+            folderTitle: folderTitle as string,
+            folderId: folderId as string
+          }
+        });
+        setTimeout(() => {
+          navbarRef?.current?.resetAnimation();
+        }, 50);
+      }
+    }
   };
 
   const handleBackPress = () => {
@@ -513,6 +604,34 @@ export default function FoldersScreen() {
         }, 50);
       }
       return;
+    } else if (isMoveToFolders === 'true') {
+      // Navigate back to viewDecksInFolder page in selected state
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.resetAnimation();
+        setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)/viewDecksInFolder',
+            params: {
+              folderTitle: folderTitle as string,
+              folderId: folderId as string,
+              selectedState: 'true'
+            }
+          });
+        }, 50);
+      } else {
+        router.push({
+          pathname: '/(tabs)/viewDecksInFolder',
+          params: {
+            folderTitle: folderTitle as string,
+            folderId: folderId as string,
+            selectedState: 'true'
+          }
+        });
+        setTimeout(() => {
+          navbarRef?.current?.resetAnimation();
+        }, 50);
+      }
+      return;
     }
     
     // Regular back navigation for non-AddToFolders mode
@@ -590,7 +709,7 @@ export default function FoldersScreen() {
               onAIPress={handleSparklesPress}
               onCalendarPress={handleCalendarPress}
               pageType="folders"
-              disabled={isAddToFoldersMode}
+              disabled={isAddToFoldersMode || isMoveToFoldersMode}
             />
           </View>
           
@@ -611,7 +730,7 @@ export default function FoldersScreen() {
                   }]
                 }
               ]}>
-                {isAddToFoldersMode ? (
+                {(isAddToFoldersMode || isMoveToFoldersMode) ? (
                   <View style={styles.doneButtonContainer}>
                     <TouchableOpacity onPress={handleDone}>
                       <Text style={styles.doneButton}>Done</Text>
@@ -636,7 +755,7 @@ export default function FoldersScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title>
-                      {isAddToFoldersMode ? 'Add to Folder(s)' : 'Folders'}
+                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : 'Folders'}
                     </Title>
                   </View>
                   <TouchableOpacity 

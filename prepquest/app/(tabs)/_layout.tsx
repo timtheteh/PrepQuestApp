@@ -80,6 +80,9 @@ interface MenuContextType {
   isAddToFoldersModalOpen: boolean;
   setIsAddToFoldersModalOpen: (value: boolean) => void;
   addToFoldersModalOpacity: Animated.Value;
+  isMoveToFoldersModalOpen: boolean;
+  setIsMoveToFoldersModalOpen: (value: boolean) => void;
+  moveToFoldersModalOpacity: Animated.Value;
   isInFavoritesPage: boolean;
   setIsInFavoritesPage: (value: boolean) => void;
   noSelectionModalSubtitle: string;
@@ -147,6 +150,9 @@ export const MenuContext = createContext<MenuContextType>({
   isAddToFoldersModalOpen: false,
   setIsAddToFoldersModalOpen: () => {},
   addToFoldersModalOpacity: new Animated.Value(0),
+  isMoveToFoldersModalOpen: false,
+  setIsMoveToFoldersModalOpen: () => {},
+  moveToFoldersModalOpacity: new Animated.Value(0),
   isInFavoritesPage: false,
   setIsInFavoritesPage: () => {},
   noSelectionModalSubtitle: '',
@@ -193,6 +199,7 @@ export default function TabLayout() {
   const [handleDeletion, setHandleDeletion] = useState<(() => void) | null>(null);
   const [deleteModalText, setDeleteModalText] = useState('Are you sure you want to delete these deck(s)?');
   const [isAddToFoldersModalOpen, setIsAddToFoldersModalOpen] = useState(false);
+  const [isMoveToFoldersModalOpen, setIsMoveToFoldersModalOpen] = useState(false);
   const [isInFavoritesPage, setIsInFavoritesPage] = useState(false);
   const [isInViewFlashcardsPage, setIsInViewFlashcardsPage] = useState(false);
   const [noSelectionModalSubtitle, setNoSelectionModalSubtitle] = useState('Please choose at least one deck if you want to delete or add to folder.');
@@ -204,9 +211,10 @@ export default function TabLayout() {
   const trashModalOpacity = useRef(new Animated.Value(0)).current;
   const noSelectionModalOpacity = useRef(new Animated.Value(0)).current;
   const addToFoldersModalOpacity = useRef(new Animated.Value(0)).current;
+  const moveToFoldersModalOpacity = useRef(new Animated.Value(0)).current;
   const router = useRouter();
   const pathname = usePathname();
-  const { sourcePage } = useLocalSearchParams();
+  const { sourcePage, folderTitle, folderId } = useLocalSearchParams();
   const [sourcePageForFolders, setSourcePageForFolders] = useState('');
   const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false);
   const [unfavoriteModalText, setUnfavoriteModalText] = useState('');
@@ -320,6 +328,22 @@ export default function TabLayout() {
       ]).start(() => {
         setIsMenuOpen(false);
         setIsAddToFoldersModalOpen(false);
+      });
+    } else if (isMoveToFoldersModalOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(moveToFoldersModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsMoveToFoldersModalOpen(false);
       });
     } else if (isUnfavoriteModalOpen) {
       Animated.parallel([
@@ -479,6 +503,9 @@ export default function TabLayout() {
       isAddToFoldersModalOpen,
       setIsAddToFoldersModalOpen,
       addToFoldersModalOpacity,
+      isMoveToFoldersModalOpen,
+      setIsMoveToFoldersModalOpen,
+      moveToFoldersModalOpacity,
       isInFavoritesPage,
       setIsInFavoritesPage,
       isInViewFlashcardsPage,
@@ -643,6 +670,61 @@ export default function TabLayout() {
                 }
               }, 50);
             }
+          }}
+        />
+        <GenericModal
+          visible={isMoveToFoldersModalOpen}
+          opacity={moveToFoldersModalOpacity}
+          Icon={ModalExclamationMarkIcon}
+          text={"Confirm moving to\nfolder(s)?"}
+          buttons="double"
+          onCancel={handleDismissMenu}
+          onConfirm={() => {
+            // TODO: Implement backend logic here later
+            
+            // Dismiss the modal with animation and navigate after completion
+            Animated.parallel([
+              Animated.timing(menuOverlayOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(moveToFoldersModalOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              })
+            ]).start(() => {
+              setIsMenuOpen(false);
+              setIsMoveToFoldersModalOpen(false);
+              
+              // Then navigate back to viewDecksInFolder page
+              if (Platform.OS === 'ios') {
+                navbarRef?.current?.resetAnimation();
+                setTimeout(() => {
+                  router.push({
+                    pathname: '/(tabs)/viewDecksInFolder',
+                    params: {
+                      folderTitle: folderTitle as string,
+                      folderId: folderId as string,
+                      selectedState: 'true'
+                    }
+                  });
+                }, 50);
+              } else {
+                router.push({
+                  pathname: '/(tabs)/viewDecksInFolder',
+                  params: {
+                    folderTitle: folderTitle as string,
+                    folderId: folderId as string,
+                    selectedState: 'true'
+                  }
+                });
+                setTimeout(() => {
+                  navbarRef?.current?.resetAnimation();
+                }, 50);
+              }
+            });
           }}
         />
         <GenericModal

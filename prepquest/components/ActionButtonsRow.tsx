@@ -2,11 +2,12 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { UnfavoriteButton } from './UnfavoriteButton';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 interface ActionButtonsRowProps {
   style?: ViewStyle;
-  iconNames: Array<keyof typeof Ionicons.glyphMap>;
+  iconNames: Array<keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap>;
+  iconLibraries?: Array<'ionicons' | 'materialicons'>;
   onCancel: () => void;
   onIconPress?: (index: number) => void;
   iconColors?: string[];
@@ -17,6 +18,7 @@ interface ActionButtonsRowProps {
 export function ActionButtonsRow({ 
   style,
   iconNames,
+  iconLibraries = [],
   onCancel,
   onIconPress,
   iconColors = [],
@@ -29,6 +31,7 @@ export function ActionButtonsRow({
         <CircleIconButton
           key={index}
           iconName={iconName}
+          iconLibrary={iconLibraries[index] || 'ionicons'}
           onPress={() => onIconPress?.(index)}
           color={iconColors[index] || 'black'}
         />

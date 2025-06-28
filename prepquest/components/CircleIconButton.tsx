@@ -1,8 +1,9 @@
 import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 interface CircleIconButtonProps {
-  iconName?: keyof typeof Ionicons.glyphMap;
+  iconName?: keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap;
+  iconLibrary?: 'ionicons' | 'materialicons';
   size?: number;
   onPress?: () => void;
   color?: string;
@@ -14,6 +15,7 @@ interface CircleIconButtonProps {
 
 export function CircleIconButton({ 
   iconName, 
+  iconLibrary = 'ionicons',
   size = 24,
   onPress,
   color = 'black',
@@ -24,6 +26,20 @@ export function CircleIconButton({
 }: CircleIconButtonProps) {
   const disabledColor = '#D5D4DD';
   const finalColor = disabled ? disabledColor : color;
+  
+  const renderIcon = () => {
+    if (renderCustomIcon) {
+      return renderCustomIcon(finalColor);
+    }
+    
+    if (!iconName) return null;
+    
+    if (iconLibrary === 'materialicons') {
+      return <MaterialIcons name={iconName as keyof typeof MaterialIcons.glyphMap} size={size} color={finalColor} />;
+    }
+    
+    return <Ionicons name={iconName as keyof typeof Ionicons.glyphMap} size={size} color={finalColor} />;
+  };
   
   return (
     <TouchableOpacity 
@@ -39,9 +55,7 @@ export function CircleIconButton({
       onPressOut={disabled || selected ? undefined : (e) => e.currentTarget.setNativeProps({ style: styles.circleButton })}
       onPress={disabled ? undefined : onPress}
     >
-      {renderCustomIcon ? renderCustomIcon(finalColor) : (
-        iconName && <Ionicons name={iconName} size={size} color={finalColor} />
-      )}
+      {renderIcon()}
     </TouchableOpacity>
   );
 }

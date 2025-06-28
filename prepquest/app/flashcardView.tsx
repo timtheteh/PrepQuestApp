@@ -1531,6 +1531,17 @@ export default function FlashcardViewPage() {
   const studyValidationModalOpacity = useRef(new Animated.Value(0)).current;
   const studyValidationOverlayOpacity = useRef(new Animated.Value(0)).current;
 
+  // Add favorited state for each flashcard (using index as key for dummy data) - MOVED HERE
+  const [favoritedMap, setFavoritedMap] = useState<{ [idx: number]: boolean }>({});
+
+  // Handler to toggle favorite for current card - MOVED HERE
+  const handleToggleFavorite = () => {
+    setFavoritedMap(prev => ({
+      ...prev,
+      [currentIdx]: !prev[currentIdx],
+    }));
+  };
+
   // Set study mode from URL parameter
   useEffect(() => {
     setIsStudyMode(isStudyModeParam === 'true');
@@ -2023,17 +2034,6 @@ export default function FlashcardViewPage() {
       </Animated.View>
     );
   }
-
-  // Add favorited state for each flashcard (using index as key for dummy data)
-  const [favoritedMap, setFavoritedMap] = useState<{ [idx: number]: boolean }>({});
-
-  // Handler to toggle favorite for current card
-  const handleToggleFavorite = () => {
-    setFavoritedMap(prev => ({
-      ...prev,
-      [currentIdx]: !prev[currentIdx],
-    }));
-  };
 
   return (
     <View style={styles.safeArea}>

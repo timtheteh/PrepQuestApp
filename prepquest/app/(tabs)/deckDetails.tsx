@@ -141,7 +141,10 @@ export default function DeckDetailsScreen() {
     deckDetailsDeleteModalOpacity,
     setHandleDeckDetailsDeletion,
     setOnDeckDetailsDeleteModalDismiss,
-    currentMode
+    currentMode,
+    setIsDeckDetailsSaveModalOpen,
+    setOnDeckDetailsSaveModalDismiss,
+    deckDetailsSaveModalOpacity,
   } = useContext(MenuContext);
 
   // Convert deckDetailsBackgroundIndex to number and provide fallback
@@ -271,6 +274,14 @@ export default function DeckDetailsScreen() {
   const handleQuizPress = () => {
     setShowEditModal(false);
     // ...your quiz logic
+    router.push({
+      pathname: '/flashcardView',
+      params: {
+        flashcardIdx: '0',
+        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        isQuizMode: 'true',
+      }
+    });
   };
   const handleFolderPress = () => {
     setShowEditModal(false);
@@ -330,6 +341,31 @@ export default function DeckDetailsScreen() {
     ]).start();
   };
 
+  const handleSavePress = () => {
+    setShowEditModal(false);
+    // Show save confirmation modal
+    setIsMenuOpen(true);
+    setIsDeckDetailsSaveModalOpen(true);
+    
+    // Set up dismiss callback to unselect edit name button
+    setOnDeckDetailsSaveModalDismiss(() => () => {
+      setEditNameSelected(false);
+    });
+    
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deckDetailsSaveModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
   useFocusEffect(
     useCallback(() => {
       setShowEditModal(false);
@@ -353,7 +389,7 @@ export default function DeckDetailsScreen() {
           <View style={styles.headerIconsContainer}>
             <DeckDetailsTopBar 
               onStudyPress={handleStudyPress}
-              onQuizPress={handleOtherButtonPress}
+              onQuizPress={handleQuizPress}
               onFolderPress={handleFolderPress}
               onDeletePress={handleDeletePress}
               onEditNamePress={handleEditNamePress}
@@ -529,7 +565,7 @@ export default function DeckDetailsScreen() {
             {AIDeck && (
               <TouchableOpacity
                 style={[styles.fab, { bottom: (Platform.OS === 'ios' ? 100 : 95) }]}
-                onPress={() => { /* TODO: handle save-alt action */ }}
+                onPress={handleSavePress}
                 activeOpacity={0.8}
               >
                 <MaterialIcons name="save-alt" size={30} color="white" />

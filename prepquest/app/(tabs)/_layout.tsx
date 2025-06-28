@@ -105,6 +105,11 @@ interface MenuContextType {
   setOnDeckDetailsDeleteModalDismiss: (handler: (() => void) | null) => void;
   isInViewFlashcardsPage: boolean;
   setIsInViewFlashcardsPage: (value: boolean) => void;
+  isDeckDetailsSaveModalOpen: boolean;
+  setIsDeckDetailsSaveModalOpen: (value: boolean) => void;
+  deckDetailsSaveModalOpacity: Animated.Value;
+  setOnDeckDetailsSaveModalDismiss: (handler: (() => void) | null) => void;
+  onDeckDetailsSaveModalDismiss: (() => void) | null;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -167,6 +172,11 @@ export const MenuContext = createContext<MenuContextType>({
   setOnDeckDetailsDeleteModalDismiss: () => {},
   isInViewFlashcardsPage: false,
   setIsInViewFlashcardsPage: () => {},
+  isDeckDetailsSaveModalOpen: false,
+  setIsDeckDetailsSaveModalOpen: () => {},
+  deckDetailsSaveModalOpacity: new Animated.Value(0),
+  setOnDeckDetailsSaveModalDismiss: () => {},
+  onDeckDetailsSaveModalDismiss: null,
 });
 
 export default function TabLayout() {
@@ -208,7 +218,9 @@ export default function TabLayout() {
   const deckDetailsDeleteModalOpacity = useRef(new Animated.Value(0)).current;
   const [handleDeckDetailsDeletion, setHandleDeckDetailsDeletion] = useState<(() => void) | null>(null);
   const [onDeckDetailsDeleteModalDismiss, setOnDeckDetailsDeleteModalDismiss] = useState<(() => void) | null>(null);
-
+  const [isDeckDetailsSaveModalOpen, setIsDeckDetailsSaveModalOpen] = useState(false);
+  const deckDetailsSaveModalOpacity = useRef(new Animated.Value(0)).current;
+  const [onDeckDetailsSaveModalDismiss, setOnDeckDetailsSaveModalDismiss] = useState<(() => void) | null>(null);
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
 
@@ -365,7 +377,28 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsDeckDetailsDeleteModalOpen(false);
       });
-    } else if (showSlidingMenu) {
+    } else if (isDeckDetailsSaveModalOpen) {
+      if (onDeckDetailsSaveModalDismiss) {
+        onDeckDetailsSaveModalDismiss();
+        setOnDeckDetailsSaveModalDismiss(null);
+      }
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(deckDetailsSaveModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsDeckDetailsSaveModalOpen(false);
+      });
+    } 
+    else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0,
@@ -390,7 +423,20 @@ export default function TabLayout() {
         setIsMenuOpen(false);
       });
     }
-  }, [showSlidingMenu, isAIPromptOpen, isCalendarOpen, isAddDeckOpen, isTrashModalOpenInDecksPage, isNoSelectionModalOpen, isAddToFoldersModalOpen, isUnfavoriteModalOpen, isSubmitCustomFormModalOpen, onSubmitCustomFormModalClose, isDeckDetailsDeleteModalOpen, onDeckDetailsDeleteModalDismiss]);
+  }, [showSlidingMenu, 
+    isAIPromptOpen, 
+    isCalendarOpen, 
+    isAddDeckOpen, 
+    isTrashModalOpenInDecksPage, 
+    isNoSelectionModalOpen, 
+    isAddToFoldersModalOpen, 
+    isUnfavoriteModalOpen, 
+    isSubmitCustomFormModalOpen, 
+    onSubmitCustomFormModalClose, 
+    isDeckDetailsDeleteModalOpen, 
+    onDeckDetailsDeleteModalDismiss, 
+    isDeckDetailsSaveModalOpen, 
+    onDeckDetailsSaveModalDismiss]);
 
   const handleFolderPress = useCallback(() => {
     handleDismissMenu();
@@ -458,6 +504,11 @@ export default function TabLayout() {
       setHandleDeckDetailsDeletion,
       onDeckDetailsDeleteModalDismiss,
       setOnDeckDetailsDeleteModalDismiss,
+      isDeckDetailsSaveModalOpen,
+      setIsDeckDetailsSaveModalOpen,
+      deckDetailsSaveModalOpacity,
+      setOnDeckDetailsSaveModalDismiss,
+      onDeckDetailsSaveModalDismiss,
     }}>
       <View style={styles.container}>
         <Tabs
@@ -638,6 +689,16 @@ export default function TabLayout() {
             }
             handleDismissMenu();
           }}
+        />
+         <GenericModal
+          visible={isDeckDetailsSaveModalOpen}
+          opacity={deckDetailsSaveModalOpacity}
+          text="Deck saved!"
+          hasAnimation={true}
+          animationSource={require('../../assets/animations/SuccessAnimation1_Tick.json')}
+          animationLoop={true}
+          contentMarginTop={20}
+          lottieMarginTop={40}
         />
       </View>
     </MenuContext.Provider>

@@ -220,7 +220,52 @@ export default function DeckDetailsScreen() {
       return;
     }
     
-    // Default navigation back to index page
+    // Check if we should navigate back to favorites page
+    if (sourcePage === 'favorites') {
+      // Navigate back to favorites page
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.resetAnimation();
+        setTimeout(() => {
+          router.push('/(tabs)/favorites');
+        }, 50);
+      } else {
+        router.push('/(tabs)/favorites');
+        setTimeout(() => {
+          navbarRef?.current?.resetAnimation();
+        }, 50);
+      }
+      return;
+    }
+    
+    // Check if we should navigate back to index page
+    if (sourcePage === 'index') {
+      // Navigate back to index page
+      navbarRef?.current?.setDecksTab();
+      
+      if (Platform.OS === 'ios') {
+        setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)',
+            params: {
+              mode: currentMode
+            }
+          });
+        }, 50);
+      } else {
+        router.push({
+          pathname: '/(tabs)',
+          params: {
+            mode: currentMode
+          }
+        });
+        setTimeout(() => {
+          navbarRef?.current?.setDecksTab();
+        }, 50);
+      }
+      return;
+    }
+    
+    // Default navigation back to index page (fallback)
     navbarRef?.current?.setDecksTab();
     
     // Navigate back to the index page in the correct state

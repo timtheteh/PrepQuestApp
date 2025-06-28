@@ -667,6 +667,7 @@ export default function FavoritesScreen() {
           date={data.date}
           flashcardCount={data.flashcardCount}
           deckDetailsBackgroundIndex={index%4}
+          sourcePage="favorites"
         />
       );
     });

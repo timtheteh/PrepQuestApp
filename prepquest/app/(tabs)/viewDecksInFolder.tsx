@@ -434,6 +434,7 @@ export default function ViewDecksInFolderScreen() {
           company={data.company}
           folderTitle={folderTitle as string}
           folderId={folderId as string}
+          sourcePage="viewDecksInFolder"
         />
       );
     });

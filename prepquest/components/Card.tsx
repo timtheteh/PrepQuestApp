@@ -30,6 +30,7 @@ interface CardProps {
   isAIDeck?: boolean;
   folderTitle?: string;
   folderId?: string;
+  sourcePage?: string;
 }
 
 export function Card({ 
@@ -55,6 +56,7 @@ export function Card({
   isAIDeck = false,
   folderTitle,
   folderId,
+  sourcePage,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -147,7 +149,7 @@ export function Card({
           percent: percent.toString() || '0',
           company: company || 'study',
           isAIDeck: isAIDeck ? 'true' : 'false',
-          sourcePage: 'viewDecksInFolder',
+          sourcePage: sourcePage || 'index',
           folderTitle: folderTitle,
           folderId: folderId,
         }

@@ -628,6 +628,7 @@ export default function DecksScreen() {
           flashcardCount={data.flashcardCount}
           deckDetailsBackgroundIndex={index%4}
           company={data.company}
+          sourcePage="index"
         />
       );
     });
@@ -658,6 +659,7 @@ export default function DecksScreen() {
           flashcardCount={data.flashcardCount}
           deckDetailsBackgroundIndex={(index + 2) % 4}
           company={data.company}
+          sourcePage="index"
         />
       );
     });

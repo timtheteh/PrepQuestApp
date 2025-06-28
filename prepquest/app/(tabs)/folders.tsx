@@ -540,6 +540,18 @@ export default function FoldersScreen() {
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedFolders.has(index)}
+          onPress={() => {
+            // Only navigate if not in select mode
+            if (!isSelectMode) {
+              router.push({
+                pathname: '/(tabs)/viewDecksInFolder',
+                params: {
+                  folderTitle: data.title,
+                  folderId: index.toString()
+                }
+              });
+            }
+          }}
           onSelectPress={() => {
             const newSelectedFolders = new Set(selectedFolders);
             if (selectedFolders.has(index)) {

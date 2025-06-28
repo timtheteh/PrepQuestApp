@@ -523,6 +523,7 @@ export default function TabLayout() {
           <Tabs.Screen name="statistics" />
           <Tabs.Screen name="awards" />
           <Tabs.Screen name="folders" />
+          <Tabs.Screen name="viewDecksInFolder" />
           <Tabs.Screen 
             name="favorites" 
             listeners={{

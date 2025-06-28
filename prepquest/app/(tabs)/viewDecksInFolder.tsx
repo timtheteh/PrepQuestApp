@@ -12,6 +12,7 @@ import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { Card } from '@/components/Card';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Feather } from '@expo/vector-icons';
+import { BottomTextInputModal } from '@/components/BottomTextInputModal';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -147,6 +148,11 @@ export default function ViewDecksInFolderScreen() {
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
 
+  // Edit name modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editText, setEditText] = useState(folderTitle as string || '');
+  const [editNameSelected, setEditNameSelected] = useState(false);
+
   // Initialize opacity to 0 when component mounts
   useEffect(() => {
     screenOpacity.setValue(0);
@@ -200,6 +206,14 @@ export default function ViewDecksInFolderScreen() {
       }
     };
   }, [isFocused, screenOpacity]);
+
+  // Reset edit modal state when screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      setShowEditModal(false);
+      setEditNameSelected(false);
+    }
+  }, [isFocused]);
 
   const handleBackPress = () => {
     // Reset header icons state
@@ -313,6 +327,25 @@ export default function ViewDecksInFolderScreen() {
 
   const handleFabPress = () => {
     console.log("FAB clicked!");
+  };
+
+  const handleEditNamePress = () => {
+    if (editNameSelected) return;
+    setEditText(folderTitle as string || '');
+    setShowEditModal(true);
+    setEditNameSelected(true);
+  };
+
+  const handleDoneEdit = () => {
+    setShowEditModal(false);
+    setEditNameSelected(false);
+    // TODO: Update folder title here
+    console.log('Updated folder title to:', editText);
+  };
+
+  const handleOtherButtonPress = () => {
+    setShowEditModal(false);
+    setEditNameSelected(false);
   };
 
   const handleDeckSelection = (index: number, selected: boolean) => {
@@ -461,7 +494,10 @@ export default function ViewDecksInFolderScreen() {
           </View>
           
           <View style={styles.headerIconsContainer}>
-            <FolderDetailsTopBar />
+            <FolderDetailsTopBar 
+              onEditNamePress={handleEditNamePress}
+              editNameSelected={editNameSelected}
+            />
           </View>
 
           <Animated.View style={[
@@ -561,6 +597,13 @@ export default function ViewDecksInFolderScreen() {
           </Animated.View>
         </View>
       </SafeAreaView>
+      <BottomTextInputModal
+        visible={showEditModal}
+        value={editText}
+        onChangeText={setEditText}
+        onDone={handleDoneEdit}
+        placeholder="Edit folder name..."
+      />
     </Animated.View>
   );
 }

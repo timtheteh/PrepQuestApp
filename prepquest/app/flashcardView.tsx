@@ -321,7 +321,9 @@ const FlippableFlashcard = (
     isSuccessMode,
     isQuizMode,
     pauseNextTimer,
-    setPauseNextTimer
+    setPauseNextTimer,
+    favorited,
+    onToggleFavorite
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -347,6 +349,8 @@ const FlippableFlashcard = (
       isQuizMode: boolean,
       pauseNextTimer: boolean,
       setPauseNextTimer: React.Dispatch<React.SetStateAction<boolean>>,
+      favorited: boolean,
+      onToggleFavorite: () => void
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -1077,7 +1081,7 @@ const FlippableFlashcard = (
                 <Text style={styles.flashcardIndexText}>
                   {`Qn ${displayNumber} of ${totalCards}`}
                 </Text>
-                <FavoriteButton size={30} />
+                <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
               {isQuizMode && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
@@ -1230,7 +1234,7 @@ const FlippableFlashcard = (
                 <Text style={styles.flashcardIndexText}>
                   {`Ans ${displayNumber} of ${totalCards}`}
                 </Text>
-                <FavoriteButton size={30} />
+                <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
               {isQuizMode && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
@@ -2020,6 +2024,17 @@ export default function FlashcardViewPage() {
     );
   }
 
+  // Add favorited state for each flashcard (using index as key for dummy data)
+  const [favoritedMap, setFavoritedMap] = useState<{ [idx: number]: boolean }>({});
+
+  // Handler to toggle favorite for current card
+  const handleToggleFavorite = () => {
+    setFavoritedMap(prev => ({
+      ...prev,
+      [currentIdx]: !prev[currentIdx],
+    }));
+  };
+
   return (
     <View style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
@@ -2101,6 +2116,8 @@ export default function FlashcardViewPage() {
               isQuizMode={isQuizMode}
               pauseNextTimer={pauseNextTimer}
               setPauseNextTimer={setPauseNextTimer}
+              favorited={favoritedMap[currentIdx] || false}
+              onToggleFavorite={handleToggleFavorite}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

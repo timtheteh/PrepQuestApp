@@ -5,10 +5,22 @@ import Svg, { Polygon } from 'react-native-svg';
 interface FavoriteButtonProps {
   isSelectMode?: boolean;
   size?: number;
+  favorited?: boolean;
+  onPress?: () => void;
 }
 
-export function FavoriteButton({ isSelectMode = false, size = 30}: FavoriteButtonProps) {
-  const [favorited, setFavorited] = useState(false);
+export function FavoriteButton({ 
+  isSelectMode = false, 
+  size = 30, 
+  favorited: externalFavorited,
+  onPress: externalOnPress
+}: FavoriteButtonProps) {
+  const [internalFavorited, setInternalFavorited] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const favorited = externalFavorited !== undefined ? externalFavorited : internalFavorited;
+  const setFavorited = externalOnPress || (() => setInternalFavorited(f => !f));
+  
   const borderWidth = 2;
   // Star points (5-pointed star)
   const getStarPoints = (cx: number, cy: number, outerR: number, innerR: number) => {
@@ -30,7 +42,7 @@ export function FavoriteButton({ isSelectMode = false, size = 30}: FavoriteButto
   const starPoints = getStarPoints(cx, cy, outerR, innerR);
   return (
     <TouchableOpacity
-      onPress={() => !isSelectMode && setFavorited(f => !f)}
+      onPress={() => !isSelectMode && setFavorited()}
       activeOpacity={isSelectMode ? 1 : 0.7}
       style={{ width: size, height: size }}
       disabled={isSelectMode}

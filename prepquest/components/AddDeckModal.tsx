@@ -134,6 +134,7 @@ interface AddDeckModalProps {
   currentMode: 'study' | 'interview';
   isInFavoritesPage?: boolean;
   isInViewFlashcardsPage?: boolean;
+  isInViewDecksInFolderPage?: boolean;
 }
 
 export function AddDeckModal({ 
@@ -141,7 +142,8 @@ export function AddDeckModal({
   opacity = new Animated.Value(0),
   currentMode,
   isInFavoritesPage = false,
-  isInViewFlashcardsPage = false
+  isInViewFlashcardsPage = false,
+  isInViewDecksInFolderPage = false
 }: AddDeckModalProps) {
   const { setCurrentMode, handleDismissMenu } = useContext(MenuContext);
   const router = useRouter();
@@ -192,7 +194,7 @@ export function AddDeckModal({
             {isInViewFlashcardsPage ? (
               <Text style={[styles.title, { fontSize: 28 }]}>Add Flashcard(s) to Deck</Text>
             ) : (
-              <Text style={styles.title}>{isInFavoritesPage ? "Add Deck to Favorites" : "Add Deck"}</Text>
+              <Text style={styles.title}>{isInFavoritesPage ? "Add Deck to Favorites" : isInViewDecksInFolderPage ? "Add Deck to Folder" : "Add Deck"}</Text>
             )}
           </View>
           {!isInViewFlashcardsPage ? (<View style={styles.toggleRow}>

@@ -108,6 +108,8 @@ interface MenuContextType {
   setOnDeckDetailsDeleteModalDismiss: (handler: (() => void) | null) => void;
   isInViewFlashcardsPage: boolean;
   setIsInViewFlashcardsPage: (value: boolean) => void;
+  isInViewDecksInFolderPage: boolean;
+  setIsInViewDecksInFolderPage: (value: boolean) => void;
   isDeckDetailsSaveModalOpen: boolean;
   setIsDeckDetailsSaveModalOpen: (value: boolean) => void;
   deckDetailsSaveModalOpacity: Animated.Value;
@@ -178,6 +180,8 @@ export const MenuContext = createContext<MenuContextType>({
   setOnDeckDetailsDeleteModalDismiss: () => {},
   isInViewFlashcardsPage: false,
   setIsInViewFlashcardsPage: () => {},
+  isInViewDecksInFolderPage: false,
+  setIsInViewDecksInFolderPage: () => {},
   isDeckDetailsSaveModalOpen: false,
   setIsDeckDetailsSaveModalOpen: () => {},
   deckDetailsSaveModalOpacity: new Animated.Value(0),
@@ -202,6 +206,7 @@ export default function TabLayout() {
   const [isMoveToFoldersModalOpen, setIsMoveToFoldersModalOpen] = useState(false);
   const [isInFavoritesPage, setIsInFavoritesPage] = useState(false);
   const [isInViewFlashcardsPage, setIsInViewFlashcardsPage] = useState(false);
+  const [isInViewDecksInFolderPage, setIsInViewDecksInFolderPage] = useState(false);
   const [noSelectionModalSubtitle, setNoSelectionModalSubtitle] = useState('Please choose at least one deck if you want to delete or add to folder.');
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
@@ -510,6 +515,8 @@ export default function TabLayout() {
       setIsInFavoritesPage,
       isInViewFlashcardsPage,
       setIsInViewFlashcardsPage,
+      isInViewDecksInFolderPage,
+      setIsInViewDecksInFolderPage,
       noSelectionModalSubtitle,
       setNoSelectionModalSubtitle,
       sourcePageForFolders,
@@ -550,7 +557,17 @@ export default function TabLayout() {
           <Tabs.Screen name="statistics" />
           <Tabs.Screen name="awards" />
           <Tabs.Screen name="folders" />
-          <Tabs.Screen name="viewDecksInFolder" />
+          <Tabs.Screen 
+            name="viewDecksInFolder"
+            listeners={{
+              focus: () => {
+                setIsInViewDecksInFolderPage(true);
+              },
+              blur: () => {
+                setIsInViewDecksInFolderPage(false);
+              }
+            }}
+          />
           <Tabs.Screen 
             name="favorites" 
             listeners={{
@@ -602,6 +619,7 @@ export default function TabLayout() {
           currentMode={currentMode}
           isInFavoritesPage={isInFavoritesPage}
           isInViewFlashcardsPage={isInViewFlashcardsPage}
+          isInViewDecksInFolderPage={isInViewDecksInFolderPage}
         />
         <GenericModal
           visible={isTrashModalOpenInDecksPage}

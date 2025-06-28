@@ -10,6 +10,8 @@ import { useIsFocused } from '@react-navigation/native';
 import { FolderDetailsTopBar } from '@/components/FolderDetailsTopBar';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { Card } from '@/components/Card';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { Feather } from '@expo/vector-icons';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -309,6 +311,10 @@ export default function ViewDecksInFolderScreen() {
     });
   };
 
+  const handleFabPress = () => {
+    console.log("FAB clicked!");
+  };
+
   const handleDeckSelection = (index: number, selected: boolean) => {
     setSelectedDecks(prev => {
       const newSet = new Set(prev);
@@ -542,6 +548,17 @@ export default function ViewDecksInFolderScreen() {
                 </Animated.View>
                 </View>
             </Animated.View>
+            <Animated.View style={[
+            styles.fabContainer,
+            { opacity: fabOpacity }
+          ]}>
+            <FloatingActionButton
+              style={styles.fab}
+              onPress={handleFabPress}
+            >
+              <Feather name="plus" size={38} color="white" />
+            </FloatingActionButton>
+          </Animated.View>
         </View>
       </SafeAreaView>
     </Animated.View>
@@ -662,5 +679,18 @@ const styles = StyleSheet.create({
   },
   card: {
     marginTop: 26,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 20 : 15,
+    right: 16,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 1,
   },
 });

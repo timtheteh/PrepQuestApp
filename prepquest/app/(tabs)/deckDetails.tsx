@@ -132,7 +132,7 @@ export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const screenOpacity = useRef(new Animated.Value(0)).current;
-  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck } = useLocalSearchParams();
+  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, sourcePage, folderTitle, folderId } = useLocalSearchParams();
   const { 
     navbarRef,
     setIsMenuOpen,
@@ -191,7 +191,36 @@ export default function DeckDetailsScreen() {
   }, []);
 
   const handleBackPress = () => {
-    // Animate navbar back to decks tab
+    // Check if we should navigate back to viewDecksInFolder
+    if (sourcePage === 'viewDecksInFolder') {
+      // Navigate back to viewDecksInFolder with folder information
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.resetAnimation();
+        setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)/viewDecksInFolder',
+            params: {
+              folderTitle: folderTitle as string,
+              folderId: folderId as string
+            }
+          });
+        }, 50);
+      } else {
+        router.push({
+          pathname: '/(tabs)/viewDecksInFolder',
+          params: {
+            folderTitle: folderTitle as string,
+            folderId: folderId as string
+          }
+        });
+        setTimeout(() => {
+          navbarRef?.current?.resetAnimation();
+        }, 50);
+      }
+      return;
+    }
+    
+    // Default navigation back to index page
     navbarRef?.current?.setDecksTab();
     
     // Navigate back to the index page in the correct state

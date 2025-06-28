@@ -28,6 +28,8 @@ interface CardProps {
   deckDetailsBackgroundIndex?: number;
   company?: string;
   isAIDeck?: boolean;
+  folderTitle?: string;
+  folderId?: string;
 }
 
 export function Card({ 
@@ -51,6 +53,8 @@ export function Card({
   deckDetailsBackgroundIndex,
   company,
   isAIDeck = false,
+  folderTitle,
+  folderId,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -142,7 +146,10 @@ export function Card({
           flashcardCount: flashcardCount?.toString() || '0',
           percent: percent.toString() || '0',
           company: company || 'study',
-          isAIDeck: isAIDeck ? 'true' : 'false'
+          isAIDeck: isAIDeck ? 'true' : 'false',
+          sourcePage: 'viewDecksInFolder',
+          folderTitle: folderTitle,
+          folderId: folderId,
         }
       });
     }

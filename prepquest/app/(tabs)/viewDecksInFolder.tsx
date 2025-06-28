@@ -432,6 +432,8 @@ export default function ViewDecksInFolderScreen() {
           flashcardCount={data.flashcardCount}
           deckDetailsBackgroundIndex={index%4}
           company={data.company}
+          folderTitle={folderTitle as string}
+          folderId={folderId as string}
         />
       );
     });

@@ -2211,7 +2211,7 @@ export default function FlashcardViewPage() {
         visible={showEndStudyModal}
         opacity={endStudyModalOpacity}
         Icon={DeleteModalIcon}
-        text="End study session?"
+        text="End study session midway?"
         buttons="double"
         onConfirm={() => {
           Animated.parallel([
@@ -2269,7 +2269,7 @@ export default function FlashcardViewPage() {
         visible={showEndQuizModal}
         opacity={endQuizModalOpacity}
         Icon={DeleteModalIcon}
-        text="End quiz session?"
+        text="End quiz session midway?"
         buttons="double"
         onConfirm={() => {
           Animated.parallel([

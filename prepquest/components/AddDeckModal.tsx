@@ -195,13 +195,13 @@ export function AddDeckModal({
               <Text style={styles.title}>{isInFavoritesPage ? "Add Deck to Favorites" : "Add Deck"}</Text>
             )}
           </View>
-          <View style={styles.toggleRow}>
+          {!isInViewFlashcardsPage ? (<View style={styles.toggleRow}>
             <InterviewStudyToggle 
               initialState={currentMode}
               onToggle={handleToggle}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
-          </View>
+          </View>): <View style={{ height: 35 }} />}
           <View style={styles.firstButtonRow}>
             <AddDeckModalButton
               title="Gen AI Form"

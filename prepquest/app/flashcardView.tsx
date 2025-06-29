@@ -322,7 +322,8 @@ const FlippableFlashcard = (
     pauseNextTimer,
     setPauseNextTimer,
     favorited,
-    onToggleFavorite
+    onToggleFavorite,
+    showQuizCountdown
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -349,7 +350,8 @@ const FlippableFlashcard = (
       pauseNextTimer: boolean,
       setPauseNextTimer: React.Dispatch<React.SetStateAction<boolean>>,
       favorited: boolean,
-      onToggleFavorite: () => void
+      onToggleFavorite: () => void,
+      showQuizCountdown: boolean
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -781,7 +783,7 @@ const FlippableFlashcard = (
   const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    if (isQuizMode) {
+    if (isQuizMode && !showQuizCountdown) {
       if (pauseNextTimer) return; // PAUSE BORDER ANIMATION IF TIMER IS PAUSED
       borderAnim.setValue(0);
       Animated.timing(borderAnim, {
@@ -792,7 +794,7 @@ const FlippableFlashcard = (
       }).start();
     }
     // eslint-disable-next-line
-  }, [currentIdx, isQuizMode, pauseNextTimer]);
+  }, [currentIdx, isQuizMode, pauseNextTimer, showQuizCountdown]);
 
   // At the top of FlippableFlashcard, after other hooks:
   const [circlePos, setCirclePos] = React.useState({ x: 0, y: 0 });
@@ -880,7 +882,7 @@ const FlippableFlashcard = (
 
   // Update circlePos when borderAnim, cardSize, or isQuizMode changes
   React.useEffect(() => {
-    if (!isQuizMode || cardSize.width === 0 || cardSize.height === 0) return;
+    if (!isQuizMode || showQuizCountdown || cardSize.width === 0 || cardSize.height === 0) return;
     const w = cardSize.width;
     const h = cardSize.height;
     const r = 30;
@@ -895,7 +897,7 @@ const FlippableFlashcard = (
     // Set initial
     update((borderAnim as any)._value ?? 0);
     return () => borderAnim.removeListener(id);
-  }, [isQuizMode, cardSize.width, cardSize.height, borderAnim]);
+  }, [isQuizMode, showQuizCountdown, cardSize.width, cardSize.height, borderAnim]);
 
   // Track card's absolute position for correct circle placement
   const [cardLayout, setCardLayout] = React.useState({ left: 0, top: 0 });
@@ -906,7 +908,7 @@ const FlippableFlashcard = (
 
   // Start/reset countdown in quiz mode when card changes
   useEffect(() => {
-    if (isQuizMode && currentFlashcard?.timeLimit) {
+    if (isQuizMode && currentFlashcard?.timeLimit && !showQuizCountdown) {
       if (pauseNextTimer) return; // DO NOT START TIMER IF PAUSED
       setCountdown(currentFlashcard.timeLimit);
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
@@ -925,7 +927,7 @@ const FlippableFlashcard = (
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     }
      
-  }, [isQuizMode, currentIdx, pauseNextTimer, currentFlashcard?.timeLimit]);
+  }, [isQuizMode, currentIdx, pauseNextTimer, currentFlashcard?.timeLimit, showQuizCountdown]);
 
   // Add shiver animation state at the top of FlippableFlashcard
   const shiverAnim = useRef(new Animated.Value(0)).current;
@@ -944,7 +946,7 @@ const FlippableFlashcard = (
 
   // Effect to start/stop shiver when countdown is zero
   useEffect(() => {
-    if (countdown === 0 && isQuizMode) {
+    if (countdown === 0 && isQuizMode && !showQuizCountdown) {
       triggerShiver();
       if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
       shiverIntervalRef.current = setInterval(() => {
@@ -957,7 +959,7 @@ const FlippableFlashcard = (
     return () => {
       if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
     };
-  }, [countdown, isQuizMode]);
+  }, [countdown, isQuizMode, showQuizCountdown]);
 
   // Define the border/circle color based on countdown
   const borderColor = countdown === 0 ? '#F8696B' : '#44B88A';
@@ -1015,7 +1017,7 @@ const FlippableFlashcard = (
             ]}
           >
             {/* Animated border overlay for quiz mode */}
-            {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && (() => {
+            {isQuizMode && !showQuizCountdown && cardSize.width > 0 && cardSize.height > 0 && (() => {
               const w = cardSize.width;
               const h = cardSize.height;
               const stroke = 5;
@@ -1082,7 +1084,7 @@ const FlippableFlashcard = (
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
-              {isQuizMode && (
+              {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
                     <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{"Time's Up!"}</Text>
@@ -1181,7 +1183,7 @@ const FlippableFlashcard = (
             ]}
           >
             {/* Animated border overlay for quiz mode (BACK SIDE) */}
-            {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && (() => {
+            {isQuizMode && !showQuizCountdown && cardSize.width > 0 && cardSize.height > 0 && (() => {
               const w = cardSize.width;
               const h = cardSize.height;
               const stroke = 5;
@@ -1235,7 +1237,7 @@ const FlippableFlashcard = (
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
-              {isQuizMode && (
+              {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
                     <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{"Time's Up!"}</Text>
@@ -1533,6 +1535,9 @@ export default function FlashcardViewPage() {
   // Add favorited state for each flashcard (using index as key for dummy data) - MOVED HERE
   const [favoritedMap, setFavoritedMap] = useState<{ [idx: number]: boolean }>({});
 
+  // Add quiz countdown state
+  const [showQuizCountdown, setShowQuizCountdown] = useState(false);
+
   // Handler to toggle favorite for current card - MOVED HERE
   const handleToggleFavorite = () => {
     setFavoritedMap(prev => ({
@@ -1545,6 +1550,16 @@ export default function FlashcardViewPage() {
   useEffect(() => {
     setIsStudyMode(isStudyModeParam === 'true');
     setIsQuizMode(isQuizModeParam === 'true');
+    
+    // Show countdown screen for quiz mode
+    if (isQuizModeParam === 'true') {
+      setShowQuizCountdown(true);
+      // Hide countdown after 3 seconds
+      const timer = setTimeout(() => {
+        setShowQuizCountdown(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
   }, [isStudyModeParam, isQuizModeParam]);
 
   // Function to update the difficulty of the current flashcard
@@ -1915,7 +1930,7 @@ export default function FlashcardViewPage() {
   const [hasShownHalfway, setHasShownHalfway] = useState(false);
   const [pauseNextTimer, setPauseNextTimer] = useState(false);
   useEffect(() => {
-    if (!isQuizMode) return;
+    if (!isQuizMode || showQuizCountdown) return;
     const total = totalCards;
     if (total <= 1) return;
     const halfway = Math.floor(total / 2);
@@ -1930,7 +1945,7 @@ export default function FlashcardViewPage() {
         params: { halfwayCheckpoint: 'true' },
       });
     }
-  }, [isQuizMode, currentIdx, totalCards, hasShownHalfway, router]);
+  }, [isQuizMode, currentIdx, totalCards, hasShownHalfway, router, showQuizCountdown]);
 
   // Resume timer when returning from halfway checkpoint
   useFocusEffect(
@@ -2034,6 +2049,46 @@ export default function FlashcardViewPage() {
     );
   }
 
+  // Show countdown screen before quiz starts
+  if (showQuizCountdown) {
+    return (
+      <View style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
+      <View style={{
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        {/* Back button at top left */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <AntDesign name="arrowleft" size={32} color="black" />
+        </TouchableOpacity>
+        {/* Quiz starting text */}
+        <Text style={{
+          fontFamily: 'Satoshi-Medium',
+          fontSize: 28,
+          color: '#222',
+          marginBottom: 24,
+          textAlign: 'center',
+        }}>
+          Quiz starting in...
+        </Text>
+        <LottieView
+          source={require('@/assets/animations/CountdownAnimation.json')}
+          autoPlay
+          loop={false}
+          style={{ width: 200, height: 200 }}
+        />
+      </View>
+      </SafeAreaView>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
@@ -2117,6 +2172,7 @@ export default function FlashcardViewPage() {
               setPauseNextTimer={setPauseNextTimer}
               favorited={favoritedMap[currentIdx] || false}
               onToggleFavorite={handleToggleFavorite}
+              showQuizCountdown={showQuizCountdown}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { initializeDatabase } from './schema';
-import { populateDummyData } from './dummyData';
+// import { populateDummyData } from './dummyData';
 
 // Open the database
 export const db = SQLite.openDatabaseSync('prepquest.db');
@@ -16,7 +16,7 @@ export async function setupDatabase() {
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // Populate with dummy data for testing
-    await populateDummyData();
+    // await populateDummyData();
   } catch (error) {
     console.error('Error setting up database:', error);
   }

@@ -1,10 +1,12 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimensions, Switch, Alert, Linking } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimensions, Switch, Alert, Linking, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
     return (
@@ -182,38 +184,66 @@ export default function AppSettingsScreen() {
             <Text style={styles.title}>App Settings</Text>
         </View>
         <View style={styles.mainContainer}>
-            <TitleToggleRow 
-                text="Camera Access"
-                value={cameraAccessEnabled}
-                onValueChange={handleCameraToggle}
-            />
-            <TitleToggleRow 
-                text="Gallery Access"
-                value={galleryAccessEnabled}
-                onValueChange={handleGalleryToggle}
-            />
-            <TitleToggleRow 
-                text="Microphone Access"
-                value={micAccessEnabled}
-                onValueChange={handleMicToggle}
-            />
-            <TitleToggleRow 
-                text="Notifications"
-                value={notificationsAccessEnabled}
-                onValueChange={handleNotificationsToggle}
-            />
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 140 }}
+            >
+                <TitleToggleRow 
+                    text="Camera Access"
+                    value={cameraAccessEnabled}
+                    onValueChange={handleCameraToggle}
+                />
+                <TitleToggleRow 
+                    text="Gallery Access"
+                    value={galleryAccessEnabled}
+                    onValueChange={handleGalleryToggle}
+                />
+                <TitleToggleRow 
+                    text="Microphone Access"
+                    value={micAccessEnabled}
+                    onValueChange={handleMicToggle}
+                />
+                <TitleToggleRow 
+                    text="Notifications"
+                    value={notificationsAccessEnabled}
+                    onValueChange={handleNotificationsToggle}
+                />
 
-            {/* Row of two buttons */}
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={[styles.cloudButton, { marginRight: 8 }]}
-                onPress={() => { /* TODO: Backup logic */ }}>
-                <Text style={styles.cloudButtonText}>{"Backup data\nto cloud"}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#8684FF' }]}
-                onPress={() => { /* TODO: Load logic */ }}>
-                <Text style={styles.cloudButtonText}>{"Load data\nfrom cloud"}</Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity style={[styles.cloudButton,]}
+                  onPress={() => { /* TODO: Backup logic */ }}>
+                  <View style={styles.buttonContent}>
+                    <MaterialIcons name="cloud-upload" size={30} color="#fff" />
+                    <Text style={styles.cloudButtonText}>Backup data to cloud</Text>
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.descriptionText}>
+                  {"Backup your local storage to cloud regularly so that you can access your data on other devices.\n\nEach backup will replace the previous one. For more clarification, please refer to the FAQ in our "}
+                  <Text style={[styles.descriptionText, { color: '#44B88A' }]}>website</Text>
+                  <Text style={styles.descriptionText}>.</Text>
+                </Text>
+                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#8684FF', marginTop: 20 }]}
+                  onPress={() => { /* TODO: Load logic */ }}>
+                  <View style={styles.buttonContent}>
+                    <MaterialIcons name="cloud-download" size={30} color="#fff" />
+                    <Text style={styles.cloudButtonText}>Load data from cloud</Text>
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.descriptionText}>
+                  {"Import your existing data and progress from cloud if you logging in from another phone.\n\nEach import will replace your existing local storage. For more clarification, please refer to the FAQ in our "}
+                  <Text style={[styles.descriptionText, { color: '#44B88A' }]}>website</Text>
+                  <Text style={styles.descriptionText}>.</Text>
+                </Text>
+                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#FF3B30', marginTop: 20 }]}
+                  onPress={() => { /* TODO: Backup logic */ }}>
+                  <View style={styles.buttonContent}>
+                    <Ionicons name="trash" size={30} color="#fff" />
+                    <Text style={styles.cloudButtonText}>Clear local storage data</Text>
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.descriptionText}>
+                  {"This will delete all your local storage data and you will not be able to recover it. Please backup your data to cloud before clearing."}
+                </Text>
+            </ScrollView>
         </View>
     </View>
   );
@@ -258,14 +288,15 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   mainContainer: {
-    flex: 1,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
     // borderWidth: 1,
     // borderColor: 'red',
   },
-  buttonRow: {
-    flexDirection: 'row',
+  buttonColumn: {
+    flexDirection: 'column',
     width: '100%',
     marginTop: 16,
     marginBottom: 8,
@@ -273,15 +304,26 @@ const styles = StyleSheet.create({
   cloudButton: {
     flex: 1,
     backgroundColor: '#4F41D8',
-    borderRadius: 10,
+    borderRadius: 30,
     height: 60,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   cloudButtonText: {
     color: '#fff',
     fontFamily: 'Satoshi-Medium',
-    fontSize: 20,
+    fontSize: 24,
     textAlign: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+  },
+  descriptionText: {
+    color: '#000',
+    fontFamily: 'Satoshi-Italic',
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 8,
   },
 }); 

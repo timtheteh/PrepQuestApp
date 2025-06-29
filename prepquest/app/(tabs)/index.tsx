@@ -13,34 +13,15 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { cardDesigns } from '@/constants/cardDesigns';
+import { getDecksByType, Deck} from '@/db/deckQueries';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
-const cardDesigns = [
-  {
-    background: require('@/assets/images/deckCover1.png'),
-    pressed: require('@/assets/images/deckCover1Pressed.png'),
-  },
-  {
-    background: require('@/assets/images/deckCover2.png'),
-    pressed: require('@/assets/images/deckCover2Pressed.png'),
-  },
-  {
-    background: require('@/assets/images/deckCover3.png'),
-    pressed: require('@/assets/images/deckCover3Pressed.png'),
-  },
-  {
-    background: require('@/assets/images/deckCover4.png'),
-    pressed: require('@/assets/images/deckCover4Pressed.png'),
-  },
-];
 
-const studySubjects = [
-  'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Economics', 'Literature'
-];
 const studyCardData = [
   {
     percent: 10,
@@ -124,16 +105,6 @@ const studyCardData = [
   },
 ];
 
-const interviewRoles = [
-  'Frontend Developer', 'Backend Developer', 'Data Scientist', 'DevOps Engineer', 'Mobile Engineer', 'QA Engineer'
-];
-const interviewTypeLabels = {
-  behavioral: 'Behavioral',
-  technical: 'Technical',
-  'case study': 'Case Study',
-  brainteasers: 'Brainteasers',
-  others: 'Others',
-};
 const interviewCardData = [
   {
     percent: 15,
@@ -629,6 +600,7 @@ export default function DecksScreen() {
           deckDetailsBackgroundIndex={index%4}
           company={data.company}
           sourcePage="index"
+          isStudy={true}
         />
       );
     });

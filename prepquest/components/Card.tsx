@@ -31,6 +31,7 @@ interface CardProps {
   folderTitle?: string;
   folderId?: string;
   sourcePage?: string;
+  isStudy?: boolean;
 }
 
 export function Card({ 
@@ -57,6 +58,7 @@ export function Card({
   folderTitle,
   folderId,
   sourcePage,
+  isStudy = false,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -194,6 +196,12 @@ export function Card({
                 {/* Icon image at top left */}
                 {image && (
                   <Image source={image} style={styles.cardIconImage} />
+                )}
+                {!image && isStudy && (
+                  <Image source={require('@/assets/companyIcons/StudyCardIcon.png')} style={styles.cardIconImage} />
+                )}
+                {!image && !isStudy && (
+                  <Image source={require('@/assets/companyIcons/companyDefaultIcon.png')} style={styles.cardIconImage} />
                 )}
                 {/* Favorite button at top right */}
                 <View 

@@ -3,8 +3,10 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { useEffect } from 'react';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { setupDatabase } from '@/db/index';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,6 +23,19 @@ export default function RootLayout() {
     'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
     'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
   });
+
+  // Initialize database when app starts
+  useEffect(() => {
+    const initDatabase = async () => {
+      try {
+        await setupDatabase();
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+      }
+    };
+    
+    initDatabase();
+  }, []);
 
   if (!loaded) {
     // Async font loading only occurs in development.

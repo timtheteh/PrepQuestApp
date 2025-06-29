@@ -307,7 +307,7 @@ const StreakCalendarStats = () => {
     <View style={{ marginHorizontal: 16, marginTop: 20,}}>
       {/* First row - Title */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={styles.title}>Current Streak</Text>
+        <Text style={styles.title}>Longest Streak</Text>
       </View>
 
       {/* 3x3 Grid */}

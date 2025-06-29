@@ -189,7 +189,7 @@ export default function ViewFlashcardsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const screenOpacity = useRef(new Animated.Value(0)).current;
-  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, mode } = useLocalSearchParams();
+  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, mode, sourcePage, folderTitle, folderId } = useLocalSearchParams();
   const { 
     navbarRef,
     currentMode,
@@ -358,7 +358,10 @@ export default function ViewFlashcardsScreen() {
         percent: percent as string,
         company: company as string,
         isAIDeck: isAIDeck as string,
-        mode: mode as string
+        mode: mode as string,
+        sourcePage: sourcePage as string,
+        folderTitle: folderTitle as string,
+        folderId: folderId as string
       }
     });
   };

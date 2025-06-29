@@ -308,7 +308,10 @@ export default function DeckDetailsScreen() {
         percent: percent as string,
         company: company as string,
         isAIDeck: isAIDeck as string,
-        mode: currentMode
+        mode: currentMode,
+        sourcePage: sourcePage as string,
+        folderTitle: folderTitle as string,
+        folderId: folderId as string
       }
     });
   };

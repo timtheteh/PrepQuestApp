@@ -384,7 +384,11 @@ export default function DeckDetailsScreen() {
         flashcardCount: flashcardCount as string,
         percent: percent as string,
         company: company as string,
-        isAIDeck: isAIDeck as string
+        isAIDeck: isAIDeck as string,
+        // Pass the original navigation context
+        originalSourcePage: sourcePage as string,
+        originalFolderTitle: folderTitle as string,
+        originalFolderId: folderId as string
       }
     });
 

@@ -31,7 +31,7 @@ const folderData = [
 
 export default function FoldersScreen() {
   const router = useRouter();
-  const { isAddToFolders, isMoveToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, folderTitle, folderId } = useLocalSearchParams();
+  const { isAddToFolders, isMoveToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, folderTitle, folderId, originalSourcePage, originalFolderTitle, originalFolderId } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
@@ -416,9 +416,22 @@ export default function FoldersScreen() {
             router.push({
               pathname: '/(tabs)/deckDetails',
               params: {
+                deckId: deckId as string,
+                deckTitle: deckTitle as string,
+                deckType: deckType as string,
+                deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
+                date: date as string,
+                flashcardCount: flashcardCount as string,
+                percent: percent as string,
+                company: company as string,
+                isAIDeck: isAIDeck as string,
                 mode: previousMode,
+                sourcePage: originalSourcePage as string,
+                folderTitle: originalFolderTitle as string,
+                folderId: originalFolderId as string
               }
-            }) }
+            });
+          }
           else {
             router.push({
               pathname: '/(tabs)',
@@ -439,11 +452,22 @@ export default function FoldersScreen() {
             }
           });
         } else if (sourcePageForFolders === 'deckDetails') {
-          // Navigate back to deckDetails page
           router.push({
             pathname: '/(tabs)/deckDetails',
             params: {
+              deckId: deckId as string,
+              deckTitle: deckTitle as string,
+              deckType: deckType as string,
+              deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
+              date: date as string,
+              flashcardCount: flashcardCount as string,
+              percent: percent as string,
+              company: company as string,
+              isAIDeck: isAIDeck as string,
               mode: previousMode,
+              sourcePage: originalSourcePage as string,
+              folderTitle: originalFolderTitle as string,
+              folderId: originalFolderId as string
             }
           });
         } else {
@@ -549,7 +573,10 @@ export default function FoldersScreen() {
                 percent: percent as string,
                 company: company as string,
                 isAIDeck: isAIDeck as string,
-                mode: previousMode
+                mode: previousMode,
+                sourcePage: originalSourcePage as string,
+                folderTitle: originalFolderTitle as string,
+                folderId: originalFolderId as string
               }
             });
           } else {
@@ -585,7 +612,10 @@ export default function FoldersScreen() {
               percent: percent as string,
               company: company as string,
               isAIDeck: isAIDeck as string,
-              mode: previousMode
+              mode: previousMode,
+              sourcePage: originalSourcePage as string,
+              folderTitle: originalFolderTitle as string,
+              folderId: originalFolderId as string
             }
           });
         } else {

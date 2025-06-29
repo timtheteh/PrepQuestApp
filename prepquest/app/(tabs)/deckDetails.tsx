@@ -192,7 +192,8 @@ export default function DeckDetailsScreen() {
 
   const handleBackPress = () => {
     // Check if we should navigate back to viewDecksInFolder
-    if (sourcePage === 'viewDecksInFolder') {
+    // This happens when we have folder information (folderTitle and folderId)
+    if (folderTitle && folderId) {
       // Navigate back to viewDecksInFolder with folder information
       if (Platform.OS === 'ios') {
         navbarRef?.current?.resetAnimation();
@@ -201,7 +202,8 @@ export default function DeckDetailsScreen() {
             pathname: '/(tabs)/viewDecksInFolder',
             params: {
               folderTitle: folderTitle as string,
-              folderId: folderId as string
+              folderId: folderId as string,
+              sourcePage: sourcePage as string
             }
           });
         }, 50);
@@ -210,7 +212,8 @@ export default function DeckDetailsScreen() {
           pathname: '/(tabs)/viewDecksInFolder',
           params: {
             folderTitle: folderTitle as string,
-            folderId: folderId as string
+            folderId: folderId as string,
+            sourcePage: sourcePage as string
           }
         });
         setTimeout(() => {

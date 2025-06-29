@@ -107,12 +107,12 @@ const favCardData = [
 ];
 
 const favFolderData = [
-  { title: 'Favorite Study Materials', dateCreated: 'Dec 17, 2024', deckCount: 14 },
-  { title: 'Top Interview Prep', dateCreated: 'Dec 15, 2024', deckCount: 10 },
-  { title: 'Best Technical Qs', dateCreated: 'Dec 13, 2024', deckCount: 18 },
-  { title: 'Key Behavioral Prep', dateCreated: 'Dec 11, 2024', deckCount: 7 },
-  { title: 'Important Case Studies', dateCreated: 'Dec 9, 2024', deckCount: 12 },
-  { title: 'Essential Math Problems', dateCreated: 'Dec 7, 2024', deckCount: 16 },
+  { title: 'Favorite Study Materials', dateCreated: 'Dec 17, 2024', deckCount: 14, folderId: 'fav-folder-1' },
+  { title: 'Top Interview Prep', dateCreated: 'Dec 15, 2024', deckCount: 10, folderId: 'fav-folder-2' },
+  { title: 'Best Technical Qs', dateCreated: 'Dec 13, 2024', deckCount: 18, folderId: 'fav-folder-3' },
+  { title: 'Key Behavioral Prep', dateCreated: 'Dec 11, 2024', deckCount: 7, folderId: 'fav-folder-4' },
+  { title: 'Important Case Studies', dateCreated: 'Dec 9, 2024', deckCount: 12, folderId: 'fav-folder-5' },
+  { title: 'Essential Math Problems', dateCreated: 'Dec 7, 2024', deckCount: 16, folderId: 'fav-folder-6' },
 ];
 
 export default function FavoritesScreen() {
@@ -701,6 +701,7 @@ export default function FavoritesScreen() {
           dateCreated={data.dateCreated}
           deckCount={data.deckCount}
           sourcePage="favorites"
+          folderId={data.folderId}
         />
       );
     });
@@ -752,8 +753,8 @@ export default function FavoritesScreen() {
           ]}>
             <View style={styles.content}>
               <RoundedContainer 
-                leftLabel={`Decks (${favDeckCardsCount})`}
-                rightLabel={`Folders (${favFolderCardsCount})`}
+                leftLabel={`Fav Decks (${favDeckCardsCount})`}
+                rightLabel={`Fav Folders (${favFolderCardsCount})`}
                 onToggle={handleToggle}
               />
 

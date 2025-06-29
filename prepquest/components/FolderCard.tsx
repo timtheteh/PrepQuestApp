@@ -19,6 +19,7 @@ interface FolderCardProps {
   dateCreated?: string;
   deckCount?: number;
   sourcePage?: string;
+  folderId?: string;
 }
 
 export function FolderCard({ 
@@ -33,7 +34,8 @@ export function FolderCard({
   title,
   dateCreated,
   deckCount,
-  sourcePage
+  sourcePage,
+  folderId
 }: FolderCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -63,6 +65,7 @@ export function FolderCard({
         pathname: '/(tabs)/viewDecksInFolder',
         params: {
           folderTitle: title,
+          folderId: folderId,
           sourcePage: sourcePage
         }
       });

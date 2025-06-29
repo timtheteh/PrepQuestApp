@@ -409,7 +409,7 @@ export default function FoldersScreen() {
               pathname: '/(tabs)/favorites',
               params: {
                 mode: previousMode,
-                selected: 'true'
+                selected: 'false'
               }
             });
           } else if (sourcePageForFolders === 'deckDetails') {
@@ -437,7 +437,7 @@ export default function FoldersScreen() {
               pathname: '/(tabs)',
               params: {
                 mode: previousMode,
-                selected: 'true'
+                selected: 'false'
               }
             });
           }
@@ -448,7 +448,7 @@ export default function FoldersScreen() {
             pathname: '/(tabs)/favorites',
             params: {
               mode: previousMode,
-              selected: 'true'
+              selected: 'false'
             }
           });
         } else if (sourcePageForFolders === 'deckDetails') {
@@ -475,7 +475,7 @@ export default function FoldersScreen() {
             pathname: '/(tabs)',
             params: {
               mode: previousMode,
-              selected: 'true'
+              selected: 'false'
             }
           });
         }
@@ -556,7 +556,7 @@ export default function FoldersScreen() {
               pathname: '/(tabs)/favorites',
               params: {
                 mode: previousMode,
-                selected: 'true'
+                selected: 'false'
               }
             });
           } else if (sourcePageForFolders === 'deckDetails') {
@@ -584,7 +584,7 @@ export default function FoldersScreen() {
               pathname: '/(tabs)',
               params: {
                 mode: previousMode,
-                selected: 'true'
+                selected: 'false'
               }
             });
           }
@@ -623,7 +623,7 @@ export default function FoldersScreen() {
             pathname: '/(tabs)',
             params: {
               mode: previousMode,
-              selected: 'true'
+              selected: 'false'
             }
           });
         }

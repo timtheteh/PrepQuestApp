@@ -14,7 +14,6 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns } from '@/constants/cardDesigns';
-import { getDecksByType, Deck} from '@/db/deckQueries';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar

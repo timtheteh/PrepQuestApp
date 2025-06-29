@@ -3,10 +3,13 @@ import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimen
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
+import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
+import { GenericModal } from '@/components/GenericModal';
+import { Animated } from 'react-native';
 
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
     return (
@@ -29,6 +32,21 @@ export default function AppSettingsScreen() {
   const [galleryAccessEnabled, setGalleryAccessEnabled] = React.useState(false);
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
   const [notificationsAccessEnabled, setNotificationsAccessEnabled] = React.useState(false);
+
+  // Backup modal state
+  const [isBackupModalOpen, setIsBackupModalOpen] = React.useState(false);
+  const overlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const modalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // load data modal state
+  const [isLoadDataModalOpen, setIsLoadDataModalOpen] = React.useState(false);
+  const loadDataOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const loadDataModalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // delete local storage modal state
+  const [isDeleteLocalStorageModalOpen, setIsDeleteLocalStorageModalOpen] = React.useState(false);
+  const deleteLocalStorageOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const deleteLocalStorageModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -172,6 +190,123 @@ export default function AppSettingsScreen() {
     router.back();
   };
 
+  const handleBackupPress = () => {
+    setIsBackupModalOpen(true);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const handleDismissBackup = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackupModalOpen(false);
+    });
+  };
+
+  const handleConfirmBackup = () => {
+    // TODO: Implement actual backup logic here
+    console.log('Backing up data to cloud...');
+    handleDismissBackup();
+  };
+
+  const handleLoadDataPress = () => {
+    setIsLoadDataModalOpen(true);
+    Animated.parallel([
+      Animated.timing(loadDataOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(loadDataModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })    
+    ]).start();
+  };
+  
+  const handleDismissLoadData = () => {
+    Animated.parallel([
+      Animated.timing(loadDataOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(loadDataModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsLoadDataModalOpen(false);
+    });
+  };
+
+  const handleConfirmLoadData = () => {
+    // TODO: Implement actual load data logic here
+    console.log('Loading data from cloud...');
+    handleDismissLoadData();
+  };
+
+  const handleDeleteLocalStoragePress = () => {
+    setIsDeleteLocalStorageModalOpen(true);
+    Animated.parallel([
+      Animated.timing(deleteLocalStorageOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,    
+      }),
+      Animated.timing(deleteLocalStorageModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })  
+    ]).start();
+  };
+  
+  const handleDismissDeleteLocalStorage = () => {
+    Animated.parallel([
+      Animated.timing(deleteLocalStorageOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteLocalStorageModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDeleteLocalStorageModalOpen(false);
+    });
+  };    
+
+  const handleConfirmDeleteLocalStorage = () => {
+    // TODO: Implement actual delete local storage logic here
+    console.log('Deleting local storage data...');
+    handleDismissDeleteLocalStorage();
+  };    
+
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: '#fff' }}>
         <View style={styles.topBar}>
@@ -210,7 +345,7 @@ export default function AppSettingsScreen() {
                 />
 
                 <TouchableOpacity style={[styles.cloudButton,]}
-                  onPress={() => { /* TODO: Backup logic */ }}>
+                  onPress={handleBackupPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-upload" size={30} color="#fff" />
                     <Text style={styles.cloudButtonText}>Backup data to cloud</Text>
@@ -222,7 +357,7 @@ export default function AppSettingsScreen() {
                   <Text style={styles.descriptionText}>.</Text>
                 </Text>
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#8684FF', marginTop: 20 }]}
-                  onPress={() => { /* TODO: Load logic */ }}>
+                  onPress={handleLoadDataPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-download" size={30} color="#fff" />
                     <Text style={styles.cloudButtonText}>Load data from cloud</Text>
@@ -234,7 +369,7 @@ export default function AppSettingsScreen() {
                   <Text style={styles.descriptionText}>.</Text>
                 </Text>
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#FF3B30', marginTop: 20 }]}
-                  onPress={() => { /* TODO: Backup logic */ }}>
+                  onPress={handleDeleteLocalStoragePress}>
                   <View style={styles.buttonContent}>
                     <Ionicons name="trash" size={30} color="#fff" />
                     <Text style={styles.cloudButtonText}>Clear local storage data</Text>
@@ -245,6 +380,45 @@ export default function AppSettingsScreen() {
                 </Text>
             </ScrollView>
         </View>
+        <GreyOverlayBackground 
+          visible={isBackupModalOpen}
+          opacity={overlayOpacity}
+          onPress={handleDismissBackup}
+        />
+        <GenericModal
+          visible={isBackupModalOpen}
+          opacity={modalOpacity}
+          text="Proceed with cloud backup?"
+          buttons="double"
+          onCancel={handleDismissBackup}
+          onConfirm={handleConfirmBackup}
+        />
+        <GreyOverlayBackground 
+          visible={isLoadDataModalOpen}
+          opacity={loadDataOverlayOpacity}
+          onPress={handleDismissLoadData}
+        />
+        <GenericModal
+          visible={isLoadDataModalOpen}
+          opacity={loadDataModalOpacity}
+          text="Proceed with cloud import?"
+          buttons="double"
+          onCancel={handleDismissLoadData}
+          onConfirm={handleConfirmLoadData}
+        />    
+        <GreyOverlayBackground 
+          visible={isDeleteLocalStorageModalOpen}
+          opacity={deleteLocalStorageOverlayOpacity}
+          onPress={handleDismissDeleteLocalStorage}
+        />
+        <GenericModal 
+          visible={isDeleteLocalStorageModalOpen}
+          opacity={deleteLocalStorageModalOpacity}
+          text="Proceed with clearing local storage?"
+          buttons="double"
+          onCancel={handleDismissDeleteLocalStorage}
+          onConfirm={handleConfirmDeleteLocalStorage}
+        />
     </View>
   );
 }

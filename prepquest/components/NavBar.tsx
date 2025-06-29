@@ -1,7 +1,6 @@
-import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef , useCallback } from 'react';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Text, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useCallback } from 'react';
 import { Link, usePathname } from 'expo-router';
 import Animated, { 
   useAnimatedStyle, 

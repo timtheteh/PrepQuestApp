@@ -1,11 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, ScrollView, Switch, Animated, FlatList, NativeSyntheticEvent, NativeScrollEvent, TextStyle, ScrollView as RNScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, ScrollView, Switch, Animated, FlatList, NativeSyntheticEvent, NativeScrollEvent, TextStyle, ScrollView as RNScrollView , StyleSheet as RNStyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import HelpIconFilled from '@/assets/icons/helpIconFilled.svg';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
-import { StyleSheet as RNStyleSheet } from 'react-native';
 import { DifficultyToggleRow } from '@/components/DifficultyToggleRow';
 
 // Local component for title and toggle row

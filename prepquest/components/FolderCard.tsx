@@ -4,6 +4,7 @@ import { CircleSelectButton } from './CircleSelectButton';
 import { FavoriteButton } from './FavoriteButton';
 import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
 import Svg, { Path } from 'react-native-svg';
+import { router } from 'expo-router';
 
 interface FolderCardProps {
   style?: ViewStyle;
@@ -17,6 +18,7 @@ interface FolderCardProps {
   title?: string;
   dateCreated?: string;
   deckCount?: number;
+  sourcePage?: string;
 }
 
 export function FolderCard({ 
@@ -30,7 +32,8 @@ export function FolderCard({
   circleButtonOpacity,
   title,
   dateCreated,
-  deckCount
+  deckCount,
+  sourcePage
 }: FolderCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -53,6 +56,24 @@ export function FolderCard({
     }
   };
 
+  const handleFolderPress = () => {
+    if (!isSelectMode) {
+      // Navigate to deck details page with card information
+      router.push({
+        pathname: '/(tabs)/viewDecksInFolder',
+        params: {
+          folderTitle: title,
+          sourcePage: sourcePage
+        }
+      });
+    }
+    
+    // Call the original onPress if provided
+    if (onPress) {
+      onPress();
+    }
+  };
+
   return (
     <View style={styles.outerContainer}>
       <View style={[
@@ -60,9 +81,9 @@ export function FolderCard({
         isPressed && styles.shadowContainerPressed
       ]}>
         <Pressable 
-          onPress={onPress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
+          onPress={handleFolderPress}
         >
           <Animated.View style={[
             styles.container, 

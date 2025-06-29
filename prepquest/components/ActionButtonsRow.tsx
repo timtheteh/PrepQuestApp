@@ -6,8 +6,8 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 interface ActionButtonsRowProps {
   style?: ViewStyle;
-  iconNames: Array<keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap>;
-  iconLibraries?: Array<'ionicons' | 'materialicons'>;
+  iconNames: (keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap)[];
+  iconLibraries?: ('ionicons' | 'materialicons')[];
   onCancel: () => void;
   onIconPress?: (index: number) => void;
   iconColors?: string[];

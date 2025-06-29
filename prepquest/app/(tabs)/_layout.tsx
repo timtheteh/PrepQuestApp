@@ -1,4 +1,4 @@
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform , Animated } from 'react-native';
 import { Tabs, useRouter, usePathname, useLocalSearchParams } from 'expo-router';
 import { NavBar, NavBarRef } from '@/components/NavBar';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
@@ -8,7 +8,6 @@ import { CalendarModal } from '@/components/CalendarModal';
 import { AddDeckModal } from '@/components/AddDeckModal';
 import { GenericModal } from '@/components/GenericModal';
 import { createContext, useState, useRef, useCallback, RefObject } from 'react';
-import { Animated } from 'react-native';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 
 const DeleteModalIcon: React.FC<SvgProps> = (props) => (
@@ -759,7 +758,8 @@ export default function TabLayout() {
                     params: {
                       folderTitle: folderTitle as string,
                       folderId: folderId as string,
-                      selectedState: 'true'
+                      selectedState: 'true',
+                      sourcePage: sourcePageForFolders
                     }
                   });
                 }, 50);
@@ -769,7 +769,8 @@ export default function TabLayout() {
                   params: {
                     folderTitle: folderTitle as string,
                     folderId: folderId as string,
-                    selectedState: 'true'
+                    selectedState: 'true',
+                    sourcePage: sourcePageForFolders
                   }
                 });
                 setTimeout(() => {

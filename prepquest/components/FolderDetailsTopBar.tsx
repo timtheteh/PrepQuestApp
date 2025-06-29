@@ -1,10 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
-import { Entypo } from '@expo/vector-icons';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { Entypo , MaterialIcons , Ionicons , FontAwesome5 } from '@expo/vector-icons';
 import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
 
 interface FolderDetailsTopBarProps {

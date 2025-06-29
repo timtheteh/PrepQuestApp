@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image, Alert, AppState, AppStateStatus, ImageSourcePropType } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image, Alert, AppState, AppStateStatus, ImageSourcePropType , Easing } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { FlashcardViewTopBar } from '@/components/FlashcardViewTopBar';
@@ -21,7 +21,6 @@ import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import * as Speech from 'expo-speech';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { Easing } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -230,7 +229,7 @@ function renderQuestionWithBlanks(text: string) {
 }
 
 // Helper to render MCQ answers with randomly assigned option letters
-function renderMCQAnswers(mcqData: Array<{ choice: string; ans: boolean }>) {
+function renderMCQAnswers(mcqData: { choice: string; ans: boolean }[]) {
   // Create array of option letters (A, B, C, D, etc.)
   const optionLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   
@@ -334,7 +333,7 @@ const FlippableFlashcard = (
       mcqOverlayOpacity: Animated.Value, 
       isFlipped: boolean, 
       setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, 
-      mcqOptionsWithLettersRef: React.MutableRefObject<Array<{ choice: string; ans: boolean; letter: string }>>, 
+      mcqOptionsWithLettersRef: React.MutableRefObject<{ choice: string; ans: boolean; letter: string }[]>, 
       stopSpeech: () => Promise<void>, 
       setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, 
       setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, 
@@ -925,7 +924,7 @@ const FlippableFlashcard = (
       setCountdown(0);
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     }
-    // eslint-disable-next-line
+     
   }, [isQuizMode, currentIdx, pauseNextTimer, currentFlashcard?.timeLimit]);
 
   // Add shiver animation state at the top of FlippableFlashcard
@@ -1086,7 +1085,7 @@ const FlippableFlashcard = (
               {isQuizMode && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>Time's Up!</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{"Time's Up!"}</Text>
                   ) : (
                     <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{countdown}s</Text>
                   )}
@@ -1239,7 +1238,7 @@ const FlippableFlashcard = (
               {isQuizMode && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>Time's Up!</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{"Time's Up!"}</Text>
                   ) : (
                     <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{countdown}s</Text>
                   )}
@@ -1849,7 +1848,7 @@ export default function FlashcardViewPage() {
     }
   };
 
-  const mcqOptionsWithLettersRef = useRef<Array<{ choice: string; ans: boolean; letter: string }>>([]);
+  const mcqOptionsWithLettersRef = useRef<{ choice: string; ans: boolean; letter: string }[]>([]);
 
   const stopSpeech = async () => {
     await Speech.stop();

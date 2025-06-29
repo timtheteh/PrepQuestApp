@@ -54,7 +54,7 @@ export interface FlippableCardRef {
 const FlippableCardFlipArrowSize = 30;
 
 // Drawing Renderer Component for displaying saved drawings
-const DrawingRenderer = ({ drawingData, style }: { drawingData: Array<{ path: string; strokeWidth: number }>; style?: ViewStyle }) => {
+const DrawingRenderer = ({ drawingData, style }: { drawingData: { path: string; strokeWidth: number }[]; style?: ViewStyle }) => {
   return (
     <View style={[styles.drawingCanvas, style]}>
       <Svg style={StyleSheet.absoluteFill}>
@@ -73,25 +73,25 @@ const DrawingRenderer = ({ drawingData, style }: { drawingData: Array<{ path: st
 };
 
 // Simple Drawing Canvas Component
-const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasContent: () => boolean; clearContent: () => void; getDrawingData: () => Array<{ path: string; strokeWidth: number }>; loadDrawingData: (data: Array<{ path: string; strokeWidth: number }>) => void }, { 
+const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasContent: () => boolean; clearContent: () => void; getDrawingData: () => { path: string; strokeWidth: number }[]; loadDrawingData: (data: { path: string; strokeWidth: number }[]) => void }, { 
   style?: ViewStyle; 
   isEraserMode: boolean;
   onEraserModeChange: (isEraser: boolean) => void;
   strokeWidth: number;
-  onDrawingChange?: (paths: Array<{ path: string; strokeWidth: number }>) => void;
-  initialData?: Array<{ path: string; strokeWidth: number }>;
+  onDrawingChange?: (paths: { path: string; strokeWidth: number }[]) => void;
+  initialData?: { path: string; strokeWidth: number }[];
 }>(({ style, isEraserMode, onEraserModeChange, strokeWidth, onDrawingChange, initialData }, ref) => {
-  const [paths, setPaths] = useState<Array<{ path: string; strokeWidth: number }>>(initialData || []);
+  const [paths, setPaths] = useState<{ path: string; strokeWidth: number }[]>(initialData || []);
   const [currentPath, setCurrentPath] = useState<string>('');
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   
   // History management for undo/redo
-  const [history, setHistory] = useState<Array<Array<{ path: string; strokeWidth: number }>>>([]);
+  const [history, setHistory] = useState<{ path: string; strokeWidth: number }[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   // Helper function to save current state to history
-  const saveToHistory = (newPaths: Array<{ path: string; strokeWidth: number }>) => {
+  const saveToHistory = (newPaths: { path: string; strokeWidth: number }[]) => {
     setHistory(prev => {
       // Remove any future history if we're not at the end
       const trimmedHistory = prev.slice(0, historyIndex + 1);
@@ -145,7 +145,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
       onDrawingChange?.([]);
     },
     getDrawingData: () => paths,
-    loadDrawingData: (data: Array<{ path: string; strokeWidth: number }>) => {
+    loadDrawingData: (data: { path: string; strokeWidth: number }[]) => {
       setPaths(data);
       setHasDrawn(data.length > 0);
       
@@ -214,7 +214,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
     if (isEraserMode) {
       // Eraser mode - split paths at intersection points
       setPaths(prev => {
-        const newPaths: Array<{ path: string; strokeWidth: number }> = [];
+        const newPaths: { path: string; strokeWidth: number }[] = [];
         prev.forEach(pathData => {
           const { segments, hasIntersection } = splitPathAtIntersection(pathData, locationX, locationY);
           if (hasIntersection) {
@@ -242,7 +242,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
     if (isEraserMode) {
       // Eraser mode - continue erasing along the touch path
       setPaths(prev => {
-        const newPaths: Array<{ path: string; strokeWidth: number }> = [];
+        const newPaths: { path: string; strokeWidth: number }[] = [];
         prev.forEach(pathData => {
           const { segments, hasIntersection } = splitPathAtIntersection(pathData, locationX, locationY);
           if (hasIntersection) {
@@ -355,13 +355,13 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   const [isInitialRender, setIsInitialRender] = useState(true);
   const [isEraserMode, setIsEraserMode] = useState(false);
   const [markerSize, setMarkerSize] = useState(3); // Default stroke width
-  const [paths, setPaths] = useState<Array<{ path: string; strokeWidth: number }>>([]);
+  const [paths, setPaths] = useState<{ path: string; strokeWidth: number }[]>([]);
   const [selectedTool, setSelectedTool] = useState<'marker' | 'eraser'>('marker');
   const [isFlipping, setIsFlipping] = useState(false);
   const [drawingCanvasKey, setDrawingCanvasKey] = useState(0);
-  const [initialDrawingData, setInitialDrawingData] = useState<Array<{ path: string; strokeWidth: number }>>([]);
+  const [initialDrawingData, setInitialDrawingData] = useState<{ path: string; strokeWidth: number }[]>([]);
   const [isDrawingCanvasReady, setIsDrawingCanvasReady] = useState(false);
-  const drawingCanvasRef = useRef<{ undo: () => void; redo: () => void; hasContent: () => boolean; clearContent: () => void; getDrawingData: () => Array<{ path: string; strokeWidth: number }>; loadDrawingData: (data: Array<{ path: string; strokeWidth: number }>) => void }>(null);
+  const drawingCanvasRef = useRef<{ undo: () => void; redo: () => void; hasContent: () => boolean; clearContent: () => void; getDrawingData: () => { path: string; strokeWidth: number }[]; loadDrawingData: (data: { path: string; strokeWidth: number }[]) => void }>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
@@ -445,7 +445,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
           const currentContent = isFlipped ? backContent : frontContent;
           if (currentContent && currentContent.type === 'marker' && React.isValidElement(currentContent.content)) {
             // Extract drawing data from the DrawingRenderer component
-            const drawingRenderer = currentContent.content as React.ReactElement<{ drawingData: Array<{ path: string; strokeWidth: number }> }>;
+            const drawingRenderer = currentContent.content as React.ReactElement<{ drawingData: { path: string; strokeWidth: number }[] }>;
             if (drawingRenderer.props.drawingData) {
               // Store the drawing data to pass as initial data to the new canvas
               setInitialDrawingData(drawingRenderer.props.drawingData);
@@ -573,7 +573,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     loadDrawingContent: (content: CardContent | null) => {
       if (content && content.type === 'marker' && React.isValidElement(content.content)) {
         // Extract drawing data from the DrawingRenderer component
-        const drawingRenderer = content.content as React.ReactElement<{ drawingData: Array<{ path: string; strokeWidth: number }> }>;
+        const drawingRenderer = content.content as React.ReactElement<{ drawingData: { path: string; strokeWidth: number }[] }>;
         if (drawingRenderer.props.drawingData) {
           drawingCanvasRef.current?.loadDrawingData(drawingRenderer.props.drawingData);
         }

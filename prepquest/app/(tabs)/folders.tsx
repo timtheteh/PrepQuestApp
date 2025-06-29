@@ -375,7 +375,8 @@ export default function FoldersScreen() {
               pathname: '/(tabs)/viewDecksInFolder',
               params: {
                 folderTitle: folderTitle as string,
-                folderId: folderId as string
+                folderId: folderId as string,
+                sourcePage: sourcePage as string
               }
             });
           }, 50);
@@ -384,7 +385,8 @@ export default function FoldersScreen() {
             pathname: '/(tabs)/viewDecksInFolder',
             params: {
               folderTitle: folderTitle as string,
-              folderId: folderId as string
+              folderId: folderId as string,
+              sourcePage: sourcePage as string
             }
           });
           setTimeout(() => {
@@ -489,7 +491,8 @@ export default function FoldersScreen() {
             pathname: '/(tabs)/viewDecksInFolder',
             params: {
               folderTitle: folderTitle as string,
-              folderId: folderId as string
+              folderId: folderId as string,
+              sourcePage: sourcePage as string
             }
           });
         }, 50);
@@ -498,7 +501,8 @@ export default function FoldersScreen() {
           pathname: '/(tabs)/viewDecksInFolder',
           params: {
             folderTitle: folderTitle as string,
-            folderId: folderId as string
+            folderId: folderId as string,
+            sourcePage: sourcePage as string
           }
         });
         setTimeout(() => {
@@ -614,7 +618,8 @@ export default function FoldersScreen() {
             params: {
               folderTitle: folderTitle as string,
               folderId: folderId as string,
-              selectedState: 'true'
+              selectedState: 'true',
+              sourcePage: sourcePage as string
             }
           });
         }, 50);
@@ -624,7 +629,8 @@ export default function FoldersScreen() {
           params: {
             folderTitle: folderTitle as string,
             folderId: folderId as string,
-            selectedState: 'true'
+            selectedState: 'true',
+            sourcePage: sourcePage as string
           }
         });
         setTimeout(() => {
@@ -659,18 +665,18 @@ export default function FoldersScreen() {
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedFolders.has(index)}
-          onPress={() => {
-            // Only navigate if not in select mode
-            if (!isSelectMode) {
-              router.push({
-                pathname: '/(tabs)/viewDecksInFolder',
-                params: {
-                  folderTitle: data.title,
-                  folderId: index.toString()
-                }
-              });
-            }
-          }}
+          // onPress={() => {
+          //   // Only navigate if not in select mode
+          //   if (!isSelectMode) {
+          //     router.push({
+          //       pathname: '/(tabs)/viewDecksInFolder',
+          //       params: {
+          //         folderTitle: data.title,
+          //         folderId: index.toString()
+          //       }
+          //     });
+          //   }
+          // }}
           onSelectPress={() => {
             const newSelectedFolders = new Set(selectedFolders);
             if (selectedFolders.has(index)) {

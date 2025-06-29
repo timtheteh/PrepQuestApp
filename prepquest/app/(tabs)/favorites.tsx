@@ -700,6 +700,7 @@ export default function FavoritesScreen() {
           title={data.title}
           dateCreated={data.dateCreated}
           deckCount={data.deckCount}
+          sourcePage="favorites"
         />
       );
     });

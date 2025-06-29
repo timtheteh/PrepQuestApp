@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';

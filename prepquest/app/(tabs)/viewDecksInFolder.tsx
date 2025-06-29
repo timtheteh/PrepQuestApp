@@ -116,7 +116,7 @@ const cardDesigns = [
 
 export default function ViewDecksInFolderScreen() {
   const router = useRouter();
-  const { folderTitle, folderId } = useLocalSearchParams();
+  const { folderTitle, folderId, sourcePage } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const isFocused = useIsFocused();
   const { 
@@ -222,17 +222,43 @@ export default function ViewDecksInFolderScreen() {
     // Reset header icons state
     headerIconsRef.current?.reset();
     
-    // Navigate back to folders page
-    if (Platform.OS === 'ios') {
-      navbarRef?.current?.resetAnimation();
-      setTimeout(() => {
-        router.push('/(tabs)/folders');
-      }, 50);
-    } else {
-      router.push('/(tabs)/folders');
-      setTimeout(() => {
+    // Navigate back based on source page
+    if (sourcePage === 'favorites') {
+      // Navigate back to favorites page in folders state
+      if (Platform.OS === 'ios') {
         navbarRef?.current?.resetAnimation();
-      }, 50);
+        setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)/favorites',
+            params: {
+              mode: 'interview'
+            }
+          });
+        }, 50);
+      } else {
+        router.push({
+          pathname: '/(tabs)/favorites',
+          params: {
+            mode: 'interview'
+          }
+        });
+        setTimeout(() => {
+          navbarRef?.current?.resetAnimation();
+        }, 50);
+      }
+    } else {
+      // Navigate back to folders page
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.resetAnimation();
+        setTimeout(() => {
+          router.push('/(tabs)/folders');
+        }, 50);
+      } else {
+        router.push('/(tabs)/folders');
+        setTimeout(() => {
+          navbarRef?.current?.resetAnimation();
+        }, 50);
+      }
     }
   };
 
@@ -358,8 +384,19 @@ export default function ViewDecksInFolderScreen() {
     setHandleDeleteFolder(() => () => {
       // TODO: Implement actual folder deletion logic here
       console.log('Deleting folder:', folderTitle);
-      // Navigate back to folders page after deletion
-      router.push('/(tabs)/folders');
+      // Navigate back based on source page
+      if (sourcePage === 'favorites') {
+        // Navigate back to favorites page in folders state
+        router.push({
+          pathname: '/(tabs)/favorites',
+          params: {
+            mode: 'interview'
+          }
+        });
+      } else {
+        // Navigate back to folders page after deletion
+        router.push('/(tabs)/folders');
+      }
     });
     
     Animated.parallel([
@@ -414,8 +451,8 @@ export default function ViewDecksInFolderScreen() {
         // Reset header icons state
         headerIconsRef.current?.reset();
         
-        // Set source page to index
-        setSourcePageForFolders('index');
+        // Set source page based on current sourcePage
+        setSourcePageForFolders(sourcePage as string || 'index');
         
         // Navigate to folders in MoveToFolders mode
         if (Platform.OS === 'ios') {
@@ -427,7 +464,8 @@ export default function ViewDecksInFolderScreen() {
                 isMoveToFolders: 'true',
                 selectedState: 'true',
                 folderTitle: folderTitle as string,
-                folderId: folderId as string
+                folderId: folderId as string,
+                sourcePage: sourcePage as string
               }
             });
           }, 50);
@@ -438,7 +476,8 @@ export default function ViewDecksInFolderScreen() {
               isMoveToFolders: 'true',
               selectedState: 'true',
               folderTitle: folderTitle as string,
-              folderId: folderId as string
+              folderId: folderId as string,
+              sourcePage: sourcePage as string
             }
           });
           setTimeout(() => {

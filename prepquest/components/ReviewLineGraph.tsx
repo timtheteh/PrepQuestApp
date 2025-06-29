@@ -334,7 +334,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
           {(() => {
             const n = currentData.length;
             const minPoints = 4;
-            var step = 0
+            let step = 0
             if (n=== 2) {
                 step = (GRAPH_WIDTH ) / (n-1) - 110;
             }
@@ -344,7 +344,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
             if (n=== 4) {
                 step = (GRAPH_WIDTH ) / (n-1) - 37;
             }
-            var xs = Array.from({ length: n }, (_, i) => GRAPH_WIDTH - PADDING - 40 - (n - 1 - i) * step);
+            let xs = Array.from({ length: n }, (_, i) => GRAPH_WIDTH - PADDING - 40 - (n - 1 - i) * step);
             if (n === 1){
                 xs =Array.from({ length: n }, (_, i) => GRAPH_WIDTH / 2 - 10)
             }

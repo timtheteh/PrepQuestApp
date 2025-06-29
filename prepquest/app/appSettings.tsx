@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimensions, Switch, Alert, Linking, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimensions, Switch, Alert, Linking, ScrollView , Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -9,7 +9,6 @@ import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
-import { Animated } from 'react-native';
 
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
     return (

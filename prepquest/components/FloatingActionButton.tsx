@@ -1,7 +1,6 @@
-import { StyleSheet, TouchableOpacity, ViewProps } from 'react-native';
+import { StyleSheet, TouchableOpacity, ViewProps , Animated } from 'react-native';
 import { ReactNode, useContext } from 'react';
 import { MenuContext } from '@/app/(tabs)/_layout';
-import { Animated } from 'react-native';
 
 interface FloatingActionButtonProps extends ViewProps {
   onPress?: () => void;

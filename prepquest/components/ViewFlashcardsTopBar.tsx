@@ -1,9 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
-import { Entypo } from '@expo/vector-icons';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
+import { Entypo , MaterialIcons , Ionicons } from '@expo/vector-icons';
 
 interface ViewFlashcardsTopBarProps {
   onStudyPress?: () => void;

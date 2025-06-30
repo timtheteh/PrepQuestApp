@@ -784,3 +784,31 @@ export async function getDeckInfo(deckId: number): Promise<any | null> {
     return null;
   }
 }
+
+export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { progress: number; flashcardCount: number }) | null> {
+  try {
+    // Get deck information with flashcard count
+    const deckResult = await db.getFirstAsync(`
+      SELECT 
+        d.*,
+        COUNT(f.flashcardID) as flashcardCount
+      FROM decks d
+      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      WHERE d.deckID = ?
+      GROUP BY d.deckID
+    `, [deckId]);
+
+    if (!deckResult) {
+      return null;
+    }
+
+    // Get progress for the deck
+    const progress = await getDeckProgress(deckId);
+
+    // Return deck info with progress and flashcard count
+    return { ...deckResult, progress };
+  } catch (error) {
+    console.error('Error getting deck info with progress:', error);
+    return null;
+  }
+}

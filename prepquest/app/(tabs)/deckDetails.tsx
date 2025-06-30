@@ -17,7 +17,7 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
-import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, DeckGrade } from '@/db/decks';
+import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade } from '@/db/decks';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -205,8 +205,8 @@ export default function DeckDetailsScreen() {
   const cardCompany = (company as string || 'study') as CompanyKey;
   const cardCompanyLogo = companyLogos[cardCompany] || companyLogos['study'];
   const cardDate = date as string || '';
-  const cardFlashcardCount = parseInt(flashcardCount as string) || 0;
-  const cardPercent = parseInt(percent as string) || 0;
+  const cardFlashcardCount = deckInfo?.flashcardCount || 0;
+  const cardPercent = deckInfo?.progress || 0;
   const AIDeck = isAIDeck as string === 'true';
   
   // Ensure backgroundIndex is within bounds for AI card designs (which has 3 elements)
@@ -582,7 +582,7 @@ export default function DeckDetailsScreen() {
   const loadDeckInfo = async () => {
     try {
       setIsLoadingDeckInfo(true);
-      const info = await getDeckInfo(parseInt(deckId as string));
+      const info = await getDeckInfoWithProgress(parseInt(deckId as string));
       setDeckInfo(info);
       
       // Test logging to verify the data

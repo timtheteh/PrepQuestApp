@@ -301,26 +301,45 @@ export async function getFavoritedFolders(): Promise<Folder[]> {
   try {
     const result = await db.getAllAsync(`
       SELECT 
-        f.folderID,
-        f.folderName,
-        f.dateAdded,
-        f.lastModifiedDate,
-        f.isFavorited,
+        f.*,
         COUNT(d.deckID) as deckCount
       FROM folders f
-      LEFT JOIN decks d ON f.folderID IN (
-        SELECT CAST(value AS INTEGER) 
-        FROM json_each(d.folderIDs)
-        WHERE d.folderIDs IS NOT NULL
-      )
+      LEFT JOIN decks d ON d.folderIDs IS NOT NULL 
+        AND d.folderIDs != '' 
+        AND f.folderID IN (
+          SELECT CAST(json_extract(value, '$') AS INTEGER)
+          FROM json_each(d.folderIDs)
+        )
       WHERE f.isFavorited = 1
       GROUP BY f.folderID
-      ORDER BY f.lastModifiedDate DESC
+      ORDER BY f.lastModifiedDate DESC, f.dateAdded DESC
     `);
-    
     return result as Folder[];
   } catch (error) {
     console.error('Error fetching favorited folders:', error);
+    return [];
+  }
+}
+
+export async function getAllFolders(): Promise<Folder[]> {
+  try {
+    const result = await db.getAllAsync(`
+      SELECT 
+        f.*,
+        COUNT(d.deckID) as deckCount
+      FROM folders f
+      LEFT JOIN decks d ON d.folderIDs IS NOT NULL 
+        AND d.folderIDs != '' 
+        AND f.folderID IN (
+          SELECT CAST(json_extract(value, '$') AS INTEGER)
+          FROM json_each(d.folderIDs)
+        )
+      GROUP BY f.folderID
+      ORDER BY f.lastModifiedDate DESC, f.dateAdded DESC
+    `);
+    return result as Folder[];
+  } catch (error) {
+    console.error('Error fetching all folders:', error);
     return [];
   }
 }

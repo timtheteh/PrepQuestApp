@@ -11,23 +11,14 @@ import { NavBarRef } from '@/components/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useIsFocused } from '@react-navigation/native';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { getAllFolders, Folder, deleteMultipleFolders } from '@/db/decks';
+import { db } from '@/db/index';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 48; // Distance to shift content down
 const selectUnselectedDuration = 300;
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
-
-const folderData = [
-  { title: 'Study Materials', dateCreated: 'Dec 18, 2024', deckCount: 12 },
-  { title: 'Interview Prep', dateCreated: 'Dec 16, 2024', deckCount: 8 },
-  { title: 'Technical Questions hahahahha', dateCreated: 'Dec 14, 2024', deckCount: 15 },
-  { title: 'Behavioral Prep', dateCreated: 'Dec 12, 2024', deckCount: 6 },
-  { title: 'Case Studies', dateCreated: 'Dec 10, 2024', deckCount: 9 },
-  { title: 'Math Problems', dateCreated: 'Dec 8, 2024', deckCount: 11 },
-  { title: 'Science Notes', dateCreated: 'Dec 6, 2024', deckCount: 7 },
-  { title: 'Language Learning', dateCreated: 'Dec 4, 2024', deckCount: 13 },
-];
 
 export default function FoldersScreen() {
   const router = useRouter();
@@ -37,6 +28,11 @@ export default function FoldersScreen() {
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
   const [isMoveToFoldersMode, setIsMoveToFoldersMode] = useState(false);
   const [selectedFolders, setSelectedFolders] = useState<Set<number>>(new Set());
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [filteredFolders, setFilteredFolders] = useState<Folder[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const isFocused = useIsFocused();
   const { 
     setIsMenuOpen, 
@@ -180,6 +176,72 @@ export default function FoldersScreen() {
     };
   }, [isFocused]);
 
+  // Check if database is ready
+  useEffect(() => {
+    const checkDatabaseReady = async () => {
+      try {
+        console.log('Checking if database is ready...');
+        // Try a simple query to check if database is ready
+        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM folders');
+        console.log('Database is ready, folders count:', (result[0] as any)?.count);
+        setIsDatabaseReady(true);
+      } catch (error) {
+        console.log('Database not ready yet, waiting...', error);
+        // Retry after a short delay
+        setTimeout(checkDatabaseReady, 500);
+      }
+    };
+    
+    checkDatabaseReady();
+  }, []);
+
+  // Load folders data from database
+  useEffect(() => {
+    const loadFoldersData = async () => {
+      if (!isDatabaseReady) {
+        console.log('Database not ready, skipping data load');
+        return;
+      }
+      
+      console.log('Loading folders data from database...');
+      try {
+        const foldersData = await getAllFolders();
+        console.log('Folders loaded:', foldersData.length);
+        setFolders(foldersData);
+        setFilteredFolders(foldersData);
+      } catch (error) {
+        console.error('Error loading folders data:', error);
+      }
+    };
+
+    if (isFocused) {
+      loadFoldersData();
+    }
+  }, [isFocused, isDatabaseReady]);
+
+  // Cleanup effect to reset selections when search state changes
+  useEffect(() => {
+    // Reset selections when search state changes to prevent index mismatches
+    if (isSelectMode) {
+      setSelectedFolders(new Set());
+    }
+  }, [isSearching, isSelectMode]);
+
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${month} ${day}, ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString; // Return original string if parsing fails
+    }
+  };
+
   const handleSelect = () => {
     setIsSelectMode(true);
     
@@ -271,7 +333,7 @@ export default function FoldersScreen() {
     if (!hasSelection) {
       setIsMenuOpen(true);
       setIsNoSelectionModalOpen(true);
-      setNoSelectionModalSubtitle("Please choose at least one folder if you want to delete.");
+      setNoSelectionModalSubtitle('Please choose at least one folder if you want to delete.');
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0.4,
@@ -287,21 +349,25 @@ export default function FoldersScreen() {
       return;
     }
 
-    // Only trash button exists now
-    setIsMenuOpen(true);
-    setIsTrashModalOpenInDecksPage(true);
-    Animated.parallel([
-      Animated.timing(menuOverlayOpacity, {
-        toValue: 0.4,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(trashModalOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      })
-    ]).start();
+    // In folders mode, we only have trash button
+    if (index === 0) {
+      setIsMenuOpen(true);
+      setIsTrashModalOpenInDecksPage(true);
+      setDeleteModalText('Are you sure you want to delete these folder(s)?');
+      setHandleDeletion(() => handleDeleteSelectedFolders);
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0.4,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(trashModalOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
   };
 
   const handleFabPress = () => {
@@ -343,6 +409,42 @@ export default function FoldersScreen() {
     }).start();
   };
 
+  const handleSearchPress = () => {
+    // This will be called when the search button is pressed
+    // The actual search logic will be handled by the HeaderIconButtons component
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setIsSearching(query.length > 0);
+    
+    if (query.length === 0) {
+      // If search is empty, show all folders
+      setFilteredFolders(folders);
+    } else {
+      // Filter folders by name (case-insensitive)
+      const lowerQuery = query.toLowerCase();
+      
+      const filtered = folders.filter(folder => 
+        folder.folderName.toLowerCase().includes(lowerQuery)
+      );
+      
+      setFilteredFolders(filtered);
+    }
+  };
+
+  const handleClearSearch = () => {
+    // Clear selections first to prevent render issues
+    setSelectedFolders(new Set());
+    
+    // Reset search state
+    setSearchQuery('');
+    setIsSearching(false);
+    
+    // Reset filtered data
+    setFilteredFolders(folders);
+  };
+
   const selectOpacity = selectTextAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 0],
@@ -354,185 +456,100 @@ export default function FoldersScreen() {
   });
 
   const handleSelectAll = () => {
-    // Create a set of indices from 0 to 7 (for 8 folder cards)
-    const allFolderIndices = new Set(Array.from({ length: 8 }, (_, i) => i));
+    const foldersToUse = isSearching ? filteredFolders : folders;
+    const allFolderIndices = new Set(Array.from({ length: foldersToUse.length }, (_, i) => i));
     setSelectedFolders(allFolderIndices);
   };
 
   const handleDone = () => {
-    const hasSelection = selectedFolders.size > 0;
+    // Handle the done action for AddToFolders or MoveToFolders mode
+    if (isAddToFoldersMode) {
+      // TODO: Implement add to folders logic
+      console.log('Add to folders logic will be implemented here');
+    } else if (isMoveToFoldersMode) {
+      // TODO: Implement move to folders logic
+      console.log('Move to folders logic will be implemented here');
+    }
+    
+    // Exit selection mode
+    handleCancel();
+  };
 
-    if (!hasSelection) {
-      // Reset header icons state
-      headerIconsRef.current?.reset();
-      
-      // If in MoveToFolders mode, navigate back to viewDecksInFolder
-      if (isMoveToFolders === 'true') {
-        if (Platform.OS === 'ios') {
-          navbarRef?.current?.resetAnimation();
-          setTimeout(() => {
-            router.push({
-              pathname: '/(tabs)/viewDecksInFolder',
-              params: {
-                folderTitle: folderTitle as string,
-                folderId: folderId as string,
-                sourcePage: sourcePage as string
-              }
-            });
-          }, 50);
-        } else {
-          router.push({
-            pathname: '/(tabs)/viewDecksInFolder',
-            params: {
-              folderTitle: folderTitle as string,
-              folderId: folderId as string,
-              sourcePage: sourcePage as string
-            }
-          });
-          setTimeout(() => {
-            navbarRef?.current?.resetAnimation();
-          }, 50);
-        }
+  const handleDeleteSelectedFolders = async () => {
+    try {
+      // Get the selected folder IDs
+      const foldersToUse = isSearching ? filteredFolders : folders;
+      const selectedFolderIds = Array.from(selectedFolders).map(index => foldersToUse[index].folderID);
+
+      if (selectedFolderIds.length === 0) {
+        console.log('No folders selected for deletion');
         return;
       }
-      
-      // Navigate back based on source page for other modes
-      if (Platform.OS === 'ios') {
-        if (sourcePageForFolders === 'favorites' || sourcePageForFolders === 'deckDetails') {
-          navbarRef?.current?.resetAnimation();
-        } else {
-          navbarRef?.current?.setDecksTab();
-        }
-        setTimeout(() => {
-          if (sourcePageForFolders === 'favorites') {
-            router.push({
-              pathname: '/(tabs)/favorites',
-              params: {
-                mode: previousMode,
-                selected: 'false'
-              }
-            });
-          } else if (sourcePageForFolders === 'deckDetails') {
-            router.push({
-              pathname: '/(tabs)/deckDetails',
-              params: {
-                deckId: deckId as string,
-                deckTitle: deckTitle as string,
-                deckType: deckType as string,
-                deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
-                date: date as string,
-                flashcardCount: flashcardCount as string,
-                percent: percent as string,
-                company: company as string,
-                isAIDeck: isAIDeck as string,
-                mode: previousMode,
-                sourcePage: originalSourcePage as string,
-                folderTitle: originalFolderTitle as string,
-                folderId: originalFolderId as string
-              }
-            });
-          }
-          else {
-            router.push({
-              pathname: '/(tabs)',
-              params: {
-                mode: previousMode,
-                selected: 'false'
-              }
-            });
-          }
-        }, 50);
-      } else {
-        if (sourcePageForFolders === 'favorites') {
-          router.push({
-            pathname: '/(tabs)/favorites',
-            params: {
-              mode: previousMode,
-              selected: 'false'
-            }
-          });
-        } else if (sourcePageForFolders === 'deckDetails') {
-          router.push({
-            pathname: '/(tabs)/deckDetails',
-            params: {
-              deckId: deckId as string,
-              deckTitle: deckTitle as string,
-              deckType: deckType as string,
-              deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
-              date: date as string,
-              flashcardCount: flashcardCount as string,
-              percent: percent as string,
-              company: company as string,
-              isAIDeck: isAIDeck as string,
-              mode: previousMode,
-              sourcePage: originalSourcePage as string,
-              folderTitle: originalFolderTitle as string,
-              folderId: originalFolderId as string
-            }
-          });
-        } else {
-          router.push({
-            pathname: '/(tabs)',
-            params: {
-              mode: previousMode,
-              selected: 'false'
-            }
-          });
-        }
-        setTimeout(() => {
-          if (sourcePageForFolders === 'favorites' || sourcePageForFolders === 'deckDetails') {
-            navbarRef?.current?.resetAnimation();
-          } else {
-            navbarRef?.current?.setDecksTab();
-          }
-        }, 50);
-      }
-      return;
-    }
 
-    // Show confirmation modal when there is a selection
-    setIsMenuOpen(true);
-    if (isAddToFoldersMode) {
-      setIsAddToFoldersModalOpen(true);
-      Animated.parallel([
-        Animated.timing(menuOverlayOpacity, {
-          toValue: 0.4,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(addToFoldersModalOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        })
-      ]).start();
-    } else if (isMoveToFoldersMode) {
-      // Navigate back to viewDecksInFolder page in unselected state
-      if (Platform.OS === 'ios') {
-        navbarRef?.current?.resetAnimation();
+      // Delete the folders from database
+      const success = await deleteMultipleFolders(selectedFolderIds);
+      
+      if (success) {
+        // Clear selections first to prevent render issues
+        setSelectedFolders(new Set());
+        
+        // Update local state by removing the deleted folders
+        const remainingFolders = folders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+        setFolders(remainingFolders);
+        
+        // Update filtered folders if searching
+        if (isSearching) {
+          const remainingFilteredFolders = filteredFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+          setFilteredFolders(remainingFilteredFolders);
+        }
+
+        // Exit selection mode after state updates
         setTimeout(() => {
-          router.push({
-            pathname: '/(tabs)/viewDecksInFolder',
-            params: {
-              folderTitle: folderTitle as string,
-              folderId: folderId as string,
-              sourcePage: sourcePage as string
-            }
-          });
-        }, 50);
+          handleCancel();
+        }, 0);
+        
+        console.log(`Successfully deleted ${selectedFolderIds.length} folder(s)`);
       } else {
-        router.push({
-          pathname: '/(tabs)/viewDecksInFolder',
-          params: {
-            folderTitle: folderTitle as string,
-            folderId: folderId as string,
-            sourcePage: sourcePage as string
-          }
-        });
-        setTimeout(() => {
-          navbarRef?.current?.resetAnimation();
-        }, 50);
+        console.error('Failed to delete folders');
       }
+    } catch (error) {
+      console.error('Error deleting folders:', error);
+    }
+  };
+
+  // Function to handle favorite/unfavorite folder
+  const handleFolderFavoriteToggle = async (folderId: number, currentFavorited: boolean) => {
+    try {
+      const newFavoritedValue = currentFavorited ? 0 : 1;
+      
+      // Update database
+      await db.execAsync(`
+        UPDATE folders 
+        SET isFavorited = ${newFavoritedValue}
+        WHERE folderID = ${folderId}
+      `);
+      
+      // Update local state immediately
+      setFolders(prev => 
+        prev.map(folder => 
+          folder.folderID === folderId 
+            ? { ...folder, isFavorited: newFavoritedValue }
+            : folder
+        )
+      );
+      
+      // Update filtered folders if searching
+      if (isSearching) {
+        setFilteredFolders(prev => 
+          prev.map(folder => 
+            folder.folderID === folderId 
+              ? { ...folder, isFavorited: newFavoritedValue }
+              : folder
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating folder favorite status:', error);
     }
   };
 
@@ -685,12 +702,19 @@ export default function FoldersScreen() {
   };
 
   const renderFolderCards = () => {
-    const cards = folderData.map((data, index) => {
+    const foldersToRender = isSearching ? filteredFolders : folders;
+    
+    // Safety check to prevent rendering issues
+    if (!foldersToRender || foldersToRender.length === 0) {
+      return null;
+    }
+    
+    const cards = foldersToRender.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
         <FolderCard
-          key={`folder-${index}`}
+          key={`folder-${data.folderID}`}
           style={style}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
@@ -701,8 +725,8 @@ export default function FoldersScreen() {
               router.push({
                 pathname: '/(tabs)/viewDecksInFolder',
                 params: {
-                  folderTitle: data.title,
-                  folderId: index.toString(),
+                  folderTitle: data.folderName,
+                  folderId: data.folderID.toString(),
                   sourcePage: 'folders'
                 }
               });
@@ -718,9 +742,11 @@ export default function FoldersScreen() {
             setSelectedFolders(newSelectedFolders);
           }}
           circleButtonOpacity={circleButtonOpacity}
-          title={data.title}
-          dateCreated={data.dateCreated}
+          title={data.folderName}
+          dateCreated={formatDate(data.dateAdded)}
           deckCount={data.deckCount}
+          isFavorited={data.isFavorited === 1}
+          onFavoriteToggle={() => handleFolderFavoriteToggle(data.folderID, data.isFavorited === 1)}
         />
       );
     });
@@ -745,6 +771,8 @@ export default function FoldersScreen() {
               ref={headerIconsRef}
               onAIPress={handleSparklesPress}
               onCalendarPress={handleCalendarPress}
+              onSearchPress={handleSearchPress}
+              onSearchTextChange={handleSearch}
               pageType="folders"
               disabled={isAddToFoldersMode || isMoveToFoldersMode}
             />

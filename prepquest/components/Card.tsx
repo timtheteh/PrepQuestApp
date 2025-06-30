@@ -76,31 +76,35 @@ export function Card({
   useEffect(() => {
     if (isSelectMode) {
       setShowSelectPill(true);
-      Animated.parallel([
-        Animated.timing(selectPillAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(unselectPillAnim, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(selectPillAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(unselectPillAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, 50);
     } else {
       Animated.parallel([
         Animated.timing(selectPillAnim, {
           toValue: 0,
-          duration: 250,
+          duration: 300,
           useNativeDriver: true,
         }),
         Animated.timing(unselectPillAnim, {
           toValue: 1,
-          duration: 250,
+          duration: 300,
           useNativeDriver: true,
         }),
-      ]).start(() => setShowSelectPill(false));
+      ]).start(() => {
+        setTimeout(() => setShowSelectPill(false), 50);
+      });
     }
   }, [isSelectMode]);
 
@@ -109,15 +113,17 @@ export function Card({
       setShowProgressRow(true);
       Animated.timing(progressAnim, {
         toValue: 1,
-        duration: 250,
+        duration: 300,
         useNativeDriver: true,
       }).start();
     } else {
       Animated.timing(progressAnim, {
         toValue: 0,
-        duration: 250,
+        duration: 300,
         useNativeDriver: true,
-      }).start(() => setShowProgressRow(false));
+      }).start(() => {
+        setTimeout(() => setShowProgressRow(false), 50);
+      });
     }
   }, [showProgress]);
 
@@ -246,28 +252,34 @@ export function Card({
                 )}
                 {/* Animated card type pill crossfade */}
                 {typeInfo && (
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    styles.cardTypePill,
-                    styles.cardTypePillUnselected,
-                    { borderColor: typeInfo.color, opacity: unselectPillAnim }
-                  ]}
-                >
-                  <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
-                </Animated.View>
-                )}
-                {showSelectPill && typeInfo && (
-                  <Animated.View
-                    pointerEvents="none"
-                    style={[
-                      styles.cardTypePill,
-                      styles.cardTypePillSelected,
-                      { borderColor: typeInfo.color, opacity: selectPillAnim }
-                    ]}
-                  >
-                    <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
-                  </Animated.View>
+                  <>
+                    {/* Unselected pill - always rendered when not in select mode */}
+                    {!isSelectMode && (
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[
+                          styles.cardTypePill,
+                          styles.cardTypePillUnselected,
+                          { borderColor: typeInfo.color, opacity: unselectPillAnim }
+                        ]}
+                      >
+                        <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
+                      </Animated.View>
+                    )}
+                    {/* Selected pill - always rendered when in select mode */}
+                    {isSelectMode && (
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[
+                          styles.cardTypePill,
+                          styles.cardTypePillSelected,
+                          { borderColor: typeInfo.color, opacity: selectPillAnim }
+                        ]}
+                      >
+                        <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
+                      </Animated.View>
+                    )}
+                  </>
                 )}
               {children}
                 {showProgressRow && (

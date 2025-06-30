@@ -36,7 +36,7 @@ export async function getStudyDecks(): Promise<Deck[]> {
       LEFT JOIN flashcards f ON d.deckID = f.deckID
       WHERE d.deckType = 'study'
       GROUP BY d.deckID
-      ORDER BY d.dateAdded DESC
+      ORDER BY d.lastModifiedDate DESC
     `);
     return result as Deck[];
   } catch (error) {
@@ -80,7 +80,7 @@ export async function getInterviewDecks(): Promise<Deck[]> {
       LEFT JOIN flashcards f ON d.deckID = f.deckID
       WHERE d.deckType = 'interview'
       GROUP BY d.deckID
-      ORDER BY d.dateAdded DESC
+      ORDER BY d.lastModifiedDate DESC
     `);
         
     return result as Deck[];

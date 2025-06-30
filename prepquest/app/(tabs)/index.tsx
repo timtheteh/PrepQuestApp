@@ -16,6 +16,13 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns } from '@/constants/cardDesigns';
 import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck } from '@/db/decks';
 import { db } from '@/db/index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+type SortField = 'name' | 'dateAdded' | 'lastModified';
+type SortDirection = 'asc' | 'desc';
+
+const SORT_FIELD_KEY = 'decks_sort_field';
+const SORT_DIRECTION_KEY = 'decks_sort_direction';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
@@ -35,6 +42,8 @@ export default function DecksScreen() {
   const [filteredInterviewDecks, setFilteredInterviewDecks] = useState<(Deck & { progress: number })[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('lastModified');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const { 
     setIsMenuOpen, 
@@ -102,8 +111,22 @@ export default function DecksScreen() {
               : deck
           )
         );
+        setFilteredStudyDecks(prev => 
+          prev.map(deck => 
+            deck.deckID === deckId 
+              ? { ...deck, isFavorited: newFavoritedValue }
+              : deck
+          )
+        );
       } else {
         setInterviewDecks(prev => 
+          prev.map(deck => 
+            deck.deckID === deckId 
+              ? { ...deck, isFavorited: newFavoritedValue }
+              : deck
+          )
+        );
+        setFilteredInterviewDecks(prev => 
           prev.map(deck => 
             deck.deckID === deckId 
               ? { ...deck, isFavorited: newFavoritedValue }
@@ -245,6 +268,21 @@ export default function DecksScreen() {
       }
     };
   }, [isFocused]);
+
+  // Load sort preferences when component mounts
+  useEffect(() => {
+    loadSortPreferences();
+  }, []);
+
+  // Apply sort preferences when decks are loaded and preferences are available
+  useEffect(() => {
+    if (studyDecks.length > 0 || interviewDecks.length > 0) {
+      const sortedStudyDecks = sortDecks(studyDecks);
+      const sortedInterviewDecks = sortDecks(interviewDecks);
+      setFilteredStudyDecks(sortedStudyDecks);
+      setFilteredInterviewDecks(sortedInterviewDecks);
+    }
+  }, [studyDecks, interviewDecks, sortField, sortDirection]);
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
@@ -546,18 +584,20 @@ export default function DecksScreen() {
 
   const renderStudyCards = () => {
     const decksToRender = isSearching ? filteredStudyDecks : studyDecks;
-    const cards = decksToRender.map((data, index) => {
+    const sortedDecks = sortDecks(decksToRender);
+    const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
+      const isSelected = selectedStudyCards.has(index);
       return (
         <Card
-          key={`study-${index}`}
+          key={`study-${data.deckID}`}
           style={style}
           backgroundImage={cardDesigns[data.cardDesignIndex].background}
           pressedBackgroundImage={cardDesigns[data.cardDesignIndex].pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
-          selected={selectedStudyCards.has(index)}
-          onSelectPress={() => handleStudyCardSelection(index, !selectedStudyCards.has(index))}
+          selected={isSelected}
+          onSelectPress={() => handleStudyCardSelection(index, !isSelected)}
           circleButtonOpacity={circleButtonOpacity}
           percent={data.progress}
           showProgress={!isSelectMode}
@@ -578,8 +618,10 @@ export default function DecksScreen() {
 
   const renderInterviewCards = () => {
     const decksToRender = isSearching ? filteredInterviewDecks : interviewDecks;
-    const cards = decksToRender.map((data, index) => {
+    const sortedDecks = sortDecks(decksToRender);
+    const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
+      const isSelected = selectedInterviewCards.has(index);
       
       // Convert interviewCompanyIcon BLOB to ImageSourcePropType if it exists
       let imageSource: any = undefined;
@@ -609,14 +651,14 @@ export default function DecksScreen() {
       
       return (
         <Card
-          key={`interview-${index}`}
+          key={`interview-${data.deckID}`}
           style={style}
           backgroundImage={cardDesigns[data.cardDesignIndex].background}
           pressedBackgroundImage={cardDesigns[data.cardDesignIndex].pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
-          selected={selectedInterviewCards.has(index)}
-          onSelectPress={() => handleInterviewCardSelection(index, !selectedInterviewCards.has(index))}
+          selected={isSelected}
+          onSelectPress={() => handleInterviewCardSelection(index, !isSelected)}
           circleButtonOpacity={circleButtonOpacity}
           percent={data.progress}
           showProgress={!isSelectMode}
@@ -687,11 +729,13 @@ export default function DecksScreen() {
     setIsSearching(query.length > 0);
     
     if (query.length === 0) {
-      // If search is empty, show all decks
-      setFilteredStudyDecks(studyDecks);
-      setFilteredInterviewDecks(interviewDecks);
+      // If search is empty, show all decks sorted according to current preferences
+      const sortedStudyDecks = sortDecks(studyDecks);
+      const sortedInterviewDecks = sortDecks(interviewDecks);
+      setFilteredStudyDecks(sortedStudyDecks);
+      setFilteredInterviewDecks(sortedInterviewDecks);
     } else {
-      // Filter decks by name (case-insensitive)
+      // Filter decks by name (case-insensitive) and then sort them
       const lowerQuery = query.toLowerCase();
       
       const filteredStudy = studyDecks.filter(deck => 
@@ -702,19 +746,95 @@ export default function DecksScreen() {
         deck.deckName.toLowerCase().includes(lowerQuery)
       );
       
-      setFilteredStudyDecks(filteredStudy);
-      setFilteredInterviewDecks(filteredInterview);
+      // Sort the filtered results according to current preferences
+      const sortedFilteredStudy = sortDecks(filteredStudy);
+      const sortedFilteredInterview = sortDecks(filteredInterview);
+      
+      setFilteredStudyDecks(sortedFilteredStudy);
+      setFilteredInterviewDecks(sortedFilteredInterview);
     }
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
     setIsSearching(false);
-    setFilteredStudyDecks(studyDecks);
-    setFilteredInterviewDecks(interviewDecks);
+    // Re-sort the original decks according to current sort preferences
+    const sortedStudyDecks = sortDecks(studyDecks);
+    const sortedInterviewDecks = sortDecks(interviewDecks);
+    setFilteredStudyDecks(sortedStudyDecks);
+    setFilteredInterviewDecks(sortedInterviewDecks);
     // Clear selected cards when clearing search
     setSelectedStudyCards(new Set());
     setSelectedInterviewCards(new Set());
+  };
+
+  const sortDecks = (decks: (Deck & { progress: number })[]) => {
+    return [...decks].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'name':
+          aValue = a.deckName.toLowerCase();
+          bValue = b.deckName.toLowerCase();
+          break;
+        case 'dateAdded':
+          aValue = new Date(a.dateAdded);
+          bValue = new Date(b.dateAdded);
+          break;
+        case 'lastModified':
+          aValue = new Date(a.lastModifiedDate || a.dateAdded);
+          bValue = new Date(b.lastModifiedDate || b.dateAdded);
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const handleSortChange = (field: SortField, direction: SortDirection) => {
+    setSortField(field);
+    setSortDirection(direction);
+    saveSortPreferences(field, direction);
+  };
+
+  // Save sort preferences to AsyncStorage
+  const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
+    try {
+      await AsyncStorage.multiSet([
+        [SORT_FIELD_KEY, field],
+        [SORT_DIRECTION_KEY, direction]
+      ]);
+    } catch (error) {
+      console.error('Error saving sort preferences:', error);
+    }
+  };
+
+  // Load sort preferences from AsyncStorage
+  const loadSortPreferences = async () => {
+    try {
+      const [savedField, savedDirection] = await AsyncStorage.multiGet([
+        SORT_FIELD_KEY,
+        SORT_DIRECTION_KEY
+      ]);
+      
+      if (savedField[1]) {
+        setSortField(savedField[1] as SortField);
+      }
+      if (savedDirection[1]) {
+        setSortDirection(savedDirection[1] as SortDirection);
+      }
+    } catch (error) {
+      console.error('Error loading sort preferences:', error);
+    }
   };
 
   return (
@@ -735,6 +855,9 @@ export default function DecksScreen() {
               onCalendarPress={handleCalendarPress}
               onSearchPress={handleSearchPress}
               onSearchTextChange={handleSearch}
+              onSortChange={handleSortChange}
+              initialSortField={sortField}
+              initialSortDirection={sortDirection}
               pageType="decks"
             />
           </View>

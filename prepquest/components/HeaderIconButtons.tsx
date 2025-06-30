@@ -1,4 +1,4 @@
-import React, { useContext, forwardRef, useImperativeHandle , useState, useRef } from 'react';
+import React, { useContext, forwardRef, useImperativeHandle , useState, useRef, useEffect } from 'react';
 import { StyleSheet, View, Animated, ViewStyle, Text, TouchableOpacity, Dimensions, TextInput, Platform, TouchableWithoutFeedback } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import Feather from '@expo/vector-icons/Feather';
@@ -13,6 +13,9 @@ interface HeaderIconButtonsProps {
   onFilterPress?: () => void;
   onSearchPress?: () => void;
   onSearchTextChange?: (text: string) => void;
+  onSortChange?: (field: SortField, direction: SortDirection) => void;
+  initialSortField?: SortField;
+  initialSortDirection?: SortDirection;
   pageType: PageType;
   disabled?: boolean;
 }
@@ -52,6 +55,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   onFilterPress,
   onSearchPress,
   onSearchTextChange,
+  onSortChange,
+  initialSortField,
+  initialSortDirection,
   pageType,
   disabled
 }, ref) => {
@@ -67,27 +73,41 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [selectedField, setSelectedField] = useState<SortField>(DEFAULT_SORT_FIELD);
+  const [selectedField, setSelectedField] = useState<SortField>(initialSortField || DEFAULT_SORT_FIELD);
   const [sortDirections, setSortDirections] = useState<Record<SortField, SortDirection>>({
-    name: 'desc',
-    dateAdded: 'desc',
-    lastModified: DEFAULT_SORT_DIRECTION
+    name: initialSortDirection || 'desc',
+    dateAdded: initialSortDirection || 'desc',
+    lastModified: initialSortDirection || DEFAULT_SORT_DIRECTION
   });
   const [searchText, setSearchText] = useState('');
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const expandAnim = useRef(new Animated.Value(0)).current;
   const searchFadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Update sort state when initial props change
+  useEffect(() => {
+    if (initialSortField) {
+      setSelectedField(initialSortField);
+    }
+    if (initialSortDirection) {
+      setSortDirections(prev => ({
+        name: initialSortDirection,
+        dateAdded: initialSortDirection,
+        lastModified: initialSortDirection
+      }));
+    }
+  }, [initialSortField, initialSortDirection]);
+
   useImperativeHandle(ref, () => ({
     reset: () => {
       // Reset all states to default
       setIsExpanded(false);
       setIsSearchMode(false);
-      setSelectedField(DEFAULT_SORT_FIELD);
+      setSelectedField(initialSortField || DEFAULT_SORT_FIELD);
       setSortDirections({
-        name: 'desc',
-        dateAdded: 'desc',
-        lastModified: DEFAULT_SORT_DIRECTION
+        name: initialSortDirection || 'desc',
+        dateAdded: initialSortDirection || 'desc',
+        lastModified: initialSortDirection || DEFAULT_SORT_DIRECTION
       });
       setSearchText('');
       setIsSearchVisible(false);
@@ -95,6 +115,11 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       // Clear search in parent component
       if (onSearchTextChange) {
         onSearchTextChange('');
+      }
+      
+      // Set default sort in parent component
+      if (onSortChange) {
+        onSortChange(initialSortField || DEFAULT_SORT_FIELD, initialSortDirection || DEFAULT_SORT_DIRECTION);
       }
       
       // Reset animations
@@ -187,17 +212,26 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   };
 
   const handleSortPress = (field: SortField) => {
+    let newDirection: SortDirection;
+    
     if (selectedField === field) {
+      newDirection = sortDirections[field] === 'desc' ? 'asc' : 'desc';
       setSortDirections(prev => ({
         ...prev,
-        [field]: prev[field] === 'desc' ? 'asc' : 'desc'
+        [field]: newDirection
       }));
     } else {
+      newDirection = 'desc';
       setSelectedField(field);
       setSortDirections(prev => ({
         ...prev,
-        [field]: 'desc'
+        [field]: newDirection
       }));
+    }
+    
+    // Call the callback with the new sort configuration
+    if (onSortChange) {
+      onSortChange(field, newDirection);
     }
     
     collapseFilter();

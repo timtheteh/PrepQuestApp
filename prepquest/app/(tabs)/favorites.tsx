@@ -17,6 +17,13 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders } from '@/db/decks';
 import { db } from '@/db/index';
 import { cardDesigns } from '@/constants/cardDesigns';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+type SortField = 'name' | 'dateAdded' | 'lastModified';
+type SortDirection = 'asc' | 'desc';
+
+const FAVORITES_SORT_FIELD_KEY = 'favorites_sort_field';
+const FAVORITES_SORT_DIRECTION_KEY = 'favorites_sort_direction';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -38,6 +45,8 @@ export default function FavoritesScreen() {
   const [filteredFavoritedFolders, setFilteredFavoritedFolders] = useState<Folder[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('lastModified');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -690,6 +699,109 @@ export default function FavoritesScreen() {
     return value === null ? undefined : value;
   };
 
+  // Sort function for decks
+  const sortDecks = (decks: (Deck & { progress: number })[]) => {
+    return [...decks].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'name':
+          aValue = a.deckName.toLowerCase();
+          bValue = b.deckName.toLowerCase();
+          break;
+        case 'dateAdded':
+          aValue = new Date(a.dateAdded);
+          bValue = new Date(b.dateAdded);
+          break;
+        case 'lastModified':
+          aValue = new Date(a.lastModifiedDate || a.dateAdded);
+          bValue = new Date(b.lastModifiedDate || b.dateAdded);
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  // Sort function for folders
+  const sortFolders = (folders: Folder[]) => {
+    return [...folders].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'name':
+          aValue = a.folderName.toLowerCase();
+          bValue = b.folderName.toLowerCase();
+          break;
+        case 'dateAdded':
+          aValue = new Date(a.dateAdded);
+          bValue = new Date(b.dateAdded);
+          break;
+        case 'lastModified':
+          aValue = new Date(a.lastModifiedDate || a.dateAdded);
+          bValue = new Date(b.lastModifiedDate || b.dateAdded);
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const handleSortChange = (field: SortField, direction: SortDirection) => {
+    setSortField(field);
+    setSortDirection(direction);
+    saveSortPreferences(field, direction);
+  };
+
+  // Save sort preferences to AsyncStorage
+  const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
+    try {
+      await AsyncStorage.multiSet([
+        [FAVORITES_SORT_FIELD_KEY, field],
+        [FAVORITES_SORT_DIRECTION_KEY, direction]
+      ]);
+    } catch (error) {
+      console.error('Error saving favorites sort preferences:', error);
+    }
+  };
+
+  // Load sort preferences from AsyncStorage
+  const loadSortPreferences = async () => {
+    try {
+      const [savedField, savedDirection] = await AsyncStorage.multiGet([
+        FAVORITES_SORT_FIELD_KEY,
+        FAVORITES_SORT_DIRECTION_KEY
+      ]);
+      
+      if (savedField[1]) {
+        setSortField(savedField[1] as SortField);
+      }
+      if (savedDirection[1]) {
+        setSortDirection(savedDirection[1] as SortDirection);
+      }
+    } catch (error) {
+      console.error('Error loading favorites sort preferences:', error);
+    }
+  };
+
   // Function to handle favorite/unfavorite deck
   const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean) => {
     try {
@@ -859,6 +971,21 @@ export default function FavoritesScreen() {
     }
   }, [isFocused, isDatabaseReady]);
 
+  // Load sort preferences when component mounts
+  useEffect(() => {
+    loadSortPreferences();
+  }, []);
+
+  // Apply sort preferences when favorited data is loaded and preferences are available
+  useEffect(() => {
+    if (favoritedDecks.length > 0 || favoritedFolders.length > 0) {
+      const sortedFavoritedDecks = sortDecks(favoritedDecks);
+      const sortedFavoritedFolders = sortFolders(favoritedFolders);
+      setFilteredFavoritedDecks(sortedFavoritedDecks);
+      setFilteredFavoritedFolders(sortedFavoritedFolders);
+    }
+  }, [favoritedDecks, favoritedFolders, sortField, sortDirection]);
+
   // Update card counts based on search state
   useEffect(() => {
     if (isSearching) {
@@ -889,11 +1016,13 @@ export default function FavoritesScreen() {
     setIsSearching(query.length > 0);
     
     if (query.length === 0) {
-      // If search is empty, show all favorited items
-      setFilteredFavoritedDecks(favoritedDecks);
-      setFilteredFavoritedFolders(favoritedFolders);
+      // If search is empty, show all favorited items sorted according to current preferences
+      const sortedFavoritedDecks = sortDecks(favoritedDecks);
+      const sortedFavoritedFolders = sortFolders(favoritedFolders);
+      setFilteredFavoritedDecks(sortedFavoritedDecks);
+      setFilteredFavoritedFolders(sortedFavoritedFolders);
     } else {
-      // Filter items by name (case-insensitive)
+      // Filter items by name (case-insensitive) and then sort them
       const lowerQuery = query.toLowerCase();
       
       const filteredDecks = favoritedDecks.filter(deck => 
@@ -904,8 +1033,12 @@ export default function FavoritesScreen() {
         folder.folderName.toLowerCase().includes(lowerQuery)
       );
       
-      setFilteredFavoritedDecks(filteredDecks);
-      setFilteredFavoritedFolders(filteredFolders);
+      // Sort the filtered results according to current preferences
+      const sortedFilteredDecks = sortDecks(filteredDecks);
+      const sortedFilteredFolders = sortFolders(filteredFolders);
+      
+      setFilteredFavoritedDecks(sortedFilteredDecks);
+      setFilteredFavoritedFolders(sortedFilteredFolders);
     }
   };
 
@@ -918,9 +1051,11 @@ export default function FavoritesScreen() {
     setSearchQuery('');
     setIsSearching(false);
     
-    // Reset filtered data
-    setFilteredFavoritedDecks(favoritedDecks);
-    setFilteredFavoritedFolders(favoritedFolders);
+    // Reset filtered data with sorting applied
+    const sortedFavoritedDecks = sortDecks(favoritedDecks);
+    const sortedFavoritedFolders = sortFolders(favoritedFolders);
+    setFilteredFavoritedDecks(sortedFavoritedDecks);
+    setFilteredFavoritedFolders(sortedFavoritedFolders);
   };
 
   const handleDeleteSelectedFavoritedDecks = async () => {
@@ -1009,13 +1144,14 @@ export default function FavoritesScreen() {
 
   const renderFavDeckCards = () => {
     const decksToRender = isSearching ? filteredFavoritedDecks : favoritedDecks;
+    const sortedDecks = sortDecks(decksToRender);
     
     // Safety check to prevent rendering issues
-    if (!decksToRender || decksToRender.length === 0) {
+    if (!sortedDecks || sortedDecks.length === 0) {
       return null;
     }
     
-    const cards = decksToRender.map((data, index) => {
+    const cards = sortedDecks.map((data, index) => {
       const design = cardDesigns[data.cardDesignIndex];
       const style = index === 0 ? styles.firstCard : styles.card;
       
@@ -1061,13 +1197,14 @@ export default function FavoritesScreen() {
 
   const renderFavFolderCards = () => {
     const foldersToRender = isSearching ? filteredFavoritedFolders : favoritedFolders;
+    const sortedFolders = sortFolders(foldersToRender);
     
     // Safety check to prevent rendering issues
-    if (!foldersToRender || foldersToRender.length === 0) {
+    if (!sortedFolders || sortedFolders.length === 0) {
       return null;
     }
     
-    const cards = foldersToRender.map((data, index) => {
+    const cards = sortedFolders.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
@@ -1140,6 +1277,9 @@ export default function FavoritesScreen() {
               }}
               onSearchPress={handleSearchPress}
               onSearchTextChange={handleSearch}
+              onSortChange={handleSortChange}
+              initialSortField={sortField}
+              initialSortDirection={sortDirection}
             />
           </View>
           

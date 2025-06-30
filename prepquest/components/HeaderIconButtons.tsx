@@ -12,6 +12,7 @@ interface HeaderIconButtonsProps {
   onCalendarPress?: () => void;
   onFilterPress?: () => void;
   onSearchPress?: () => void;
+  onSearchTextChange?: (text: string) => void;
   pageType: PageType;
   disabled?: boolean;
 }
@@ -50,6 +51,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   onCalendarPress,
   onFilterPress,
   onSearchPress,
+  onSearchTextChange,
   pageType,
   disabled
 }, ref) => {
@@ -89,6 +91,11 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       });
       setSearchText('');
       setIsSearchVisible(false);
+      
+      // Clear search in parent component
+      if (onSearchTextChange) {
+        onSearchTextChange('');
+      }
       
       // Reset animations
       Animated.parallel([
@@ -149,6 +156,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
 
   const handleCloseSearch = () => {
     setSearchText('');
+    if (onSearchTextChange) {
+      onSearchTextChange('');
+    }
     setIsExpanded(false);
     Animated.parallel([
     Animated.timing(searchFadeAnim, {
@@ -289,7 +299,18 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             style={styles.searchInput}
             placeholder={SEARCH_PLACEHOLDERS[pageType]}
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={(text) => {
+              setSearchText(text);
+              if (onSearchTextChange) {
+                onSearchTextChange(text);
+              }
+            }}
+            onSubmitEditing={() => {
+              if (onSearchTextChange) {
+                onSearchTextChange(searchText);
+              }
+            }}
+            returnKeyType="search"
             autoFocus
           />
           <TouchableWithoutFeedback onPress={handleCloseSearch}>

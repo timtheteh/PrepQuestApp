@@ -31,6 +31,10 @@ export default function DecksScreen() {
   const [interviewCardsCount, setInterviewCardsCount] = useState(0);
   const [studyDecks, setStudyDecks] = useState<(Deck & { progress: number })[]>([]);
   const [interviewDecks, setInterviewDecks] = useState<(Deck & { progress: number })[]>([]);
+  const [filteredStudyDecks, setFilteredStudyDecks] = useState<(Deck & { progress: number })[]>([]);
+  const [filteredInterviewDecks, setFilteredInterviewDecks] = useState<(Deck & { progress: number })[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const { 
     setIsMenuOpen, 
@@ -149,6 +153,8 @@ export default function DecksScreen() {
         console.log('Interview decks loaded:', interviewData.length);
         setStudyDecks(studyData);
         setInterviewDecks(interviewData);
+        setFilteredStudyDecks(studyData);
+        setFilteredInterviewDecks(interviewData);
         setStudyCardsCount(studyData.length);
         setInterviewCardsCount(interviewData.length);
       } catch (error) {
@@ -163,9 +169,14 @@ export default function DecksScreen() {
 
   // Update card counts
   useEffect(() => {
-    setStudyCardsCount(studyDecks.length);
-    setInterviewCardsCount(interviewDecks.length);
-  }, [studyDecks, interviewDecks]);
+    if (isSearching) {
+      setStudyCardsCount(filteredStudyDecks.length);
+      setInterviewCardsCount(filteredInterviewDecks.length);
+    } else {
+      setStudyCardsCount(studyDecks.length);
+      setInterviewCardsCount(interviewDecks.length);
+    }
+  }, [studyDecks, interviewDecks, filteredStudyDecks, filteredInterviewDecks, isSearching]);
 
   // Handle returning from folders page
   useEffect(() => {
@@ -523,16 +534,19 @@ export default function DecksScreen() {
 
   const handleSelectAll = () => {
     if (isInterviewMode) {
-      const allInterviewIndices = new Set(Array.from({ length: interviewCardsCount }, (_, i) => i));
+      const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
+      const allInterviewIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedInterviewCards(allInterviewIndices);
     } else {
-      const allStudyIndices = new Set(Array.from({ length: studyCardsCount }, (_, i) => i));
+      const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
+      const allStudyIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedStudyCards(allStudyIndices);
     }
   };
 
   const renderStudyCards = () => {
-    const cards = studyDecks.map((data, index) => {
+    const decksToRender = isSearching ? filteredStudyDecks : studyDecks;
+    const cards = decksToRender.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       return (
         <Card
@@ -563,7 +577,8 @@ export default function DecksScreen() {
   };
 
   const renderInterviewCards = () => {
-    const cards = interviewDecks.map((data, index) => {
+    const decksToRender = isSearching ? filteredInterviewDecks : interviewDecks;
+    const cards = decksToRender.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       // Convert interviewCompanyIcon BLOB to ImageSourcePropType if it exists
@@ -659,21 +674,47 @@ export default function DecksScreen() {
   };
 
   const handleFolderPress = () => {
-    // Reset header icons state
-    headerIconsRef.current?.reset();
+    router.push('/folders');
+  };
+
+  const handleSearchPress = () => {
+    // This will be called when the search button is pressed
+    // The actual search logic will be handled by the HeaderIconButtons component
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setIsSearching(query.length > 0);
     
-    // Navigate to folders
-    if (Platform.OS === 'ios') {
-      navbarRef?.current?.resetAnimation();
-      setTimeout(() => {
-        router.push('/(tabs)/folders');
-      }, 50);
+    if (query.length === 0) {
+      // If search is empty, show all decks
+      setFilteredStudyDecks(studyDecks);
+      setFilteredInterviewDecks(interviewDecks);
     } else {
-      router.push('/(tabs)/folders');
-      setTimeout(() => {
-        navbarRef?.current?.resetAnimation();
-      }, 50);
+      // Filter decks by name (case-insensitive)
+      const lowerQuery = query.toLowerCase();
+      
+      const filteredStudy = studyDecks.filter(deck => 
+        deck.deckName.toLowerCase().includes(lowerQuery)
+      );
+      
+      const filteredInterview = interviewDecks.filter(deck => 
+        deck.deckName.toLowerCase().includes(lowerQuery)
+      );
+      
+      setFilteredStudyDecks(filteredStudy);
+      setFilteredInterviewDecks(filteredInterview);
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setIsSearching(false);
+    setFilteredStudyDecks(studyDecks);
+    setFilteredInterviewDecks(interviewDecks);
+    // Clear selected cards when clearing search
+    setSelectedStudyCards(new Set());
+    setSelectedInterviewCards(new Set());
   };
 
   return (
@@ -692,6 +733,8 @@ export default function DecksScreen() {
               ref={headerIconsRef}
               onAIPress={handleSparklesPress}
               onCalendarPress={handleCalendarPress}
+              onSearchPress={handleSearchPress}
+              onSearchTextChange={handleSearch}
               pageType="decks"
             />
           </View>

@@ -20,6 +20,7 @@ interface FolderCardProps {
   deckCount?: number;
   sourcePage?: string;
   folderId?: string;
+  isFavorited?: boolean;
 }
 
 export function FolderCard({ 
@@ -35,7 +36,8 @@ export function FolderCard({
   dateCreated,
   deckCount,
   sourcePage,
-  folderId
+  folderId,
+  isFavorited = false,
 }: FolderCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -104,7 +106,7 @@ export function FolderCard({
                   isSelectMode && styles.favoriteButtonContainerSelectMode
                 ]}
               >
-                <FavoriteButton isSelectMode={isSelectMode} />
+                <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} />
               </View>
               {/* Title */}
               {title && (

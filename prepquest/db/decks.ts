@@ -234,3 +234,93 @@ export async function deleteMultipleDecks(deckIds: number[]): Promise<boolean> {
     return false;
   }
 }
+
+export async function getFavoritedDecks(): Promise<(Deck & { progress: number })[]> {
+  try {
+    const result = await db.getAllAsync(`
+      SELECT 
+        d.deckID,
+        d.deckName,
+        d.dateAdded,
+        d.lastModifiedDate,
+        d.isFavorited,
+        d.deckType,
+        d.creationMethod,
+        d.lastStudiedDate,
+        d.lastQuizzedDate,
+        d.cardDesignIndex,
+        d.isAIDeck,
+        d.folderIDs,
+        d.studyEducationLevel,
+        d.studySubjects,
+        d.studyTopicsSubtopics,
+        d.studyExamQuiz,
+        d.interviewJobRole,
+        d.interviewType,
+        d.interviewCompany,
+        d.interviewExperienceLevel,
+        d.interviewTopics,
+        CASE 
+          WHEN d.interviewCompanyIcon IS NOT NULL 
+          THEN hex(d.interviewCompanyIcon) 
+          ELSE NULL 
+        END as interviewCompanyIcon,
+        COUNT(f.flashcardID) as flashcardCount
+      FROM decks d
+      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      WHERE d.isFavorited = 1
+      GROUP BY d.deckID
+      ORDER BY d.lastModifiedDate DESC
+    `);
+    
+    const decks = result as Deck[];
+    const decksWithProgress = await Promise.all(
+      decks.map(async (deck) => {
+        const progress = await getDeckProgress(deck.deckID);
+        return { ...deck, progress };
+      })
+    );
+    
+    return decksWithProgress;
+  } catch (error) {
+    console.error('Error fetching favorited decks:', error);
+    return [];
+  }
+}
+
+export interface Folder {
+  folderID: number;
+  folderName: string;
+  dateAdded: string;
+  lastModifiedDate: string | null;
+  isFavorited: number;
+  deckCount: number;
+}
+
+export async function getFavoritedFolders(): Promise<Folder[]> {
+  try {
+    const result = await db.getAllAsync(`
+      SELECT 
+        f.folderID,
+        f.folderName,
+        f.dateAdded,
+        f.lastModifiedDate,
+        f.isFavorited,
+        COUNT(d.deckID) as deckCount
+      FROM folders f
+      LEFT JOIN decks d ON f.folderID IN (
+        SELECT CAST(value AS INTEGER) 
+        FROM json_each(d.folderIDs)
+        WHERE d.folderIDs IS NOT NULL
+      )
+      WHERE f.isFavorited = 1
+      GROUP BY f.folderID
+      ORDER BY f.lastModifiedDate DESC
+    `);
+    
+    return result as Folder[];
+  } catch (error) {
+    console.error('Error fetching favorited folders:', error);
+    return [];
+  }
+}

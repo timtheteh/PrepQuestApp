@@ -14,106 +14,14 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks } from '@/db/decks';
+import { db } from '@/db/index';
+import { cardDesigns } from '@/constants/cardDesigns';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
-
-const cardDesigns = [
-  {
-    background: require('@/assets/images/deckCover1.png'),
-    pressed: require('@/assets/images/deckCover1Pressed.png'),
-  },
-  {
-    background: require('@/assets/images/deckCover2.png'),
-    pressed: require('@/assets/images/deckCover2Pressed.png'),
-  },
-  {
-    background: require('@/assets/images/deckCover3.png'),
-    pressed: require('@/assets/images/deckCover3Pressed.png'),
-  },
-  {
-    background: require('@/assets/images/deckCover4.png'),
-    pressed: require('@/assets/images/deckCover4Pressed.png'),
-  },
-];
-
-const favCardData = [
-  {
-    percent: 85,
-    image: require('@/assets/companyIcons/GoogleIcon.png'),
-    cardType: 'behavioral',
-    title: 'Google Frontend Behavioral Prep',
-    date: 'Dec 18, 2024',
-    flashcardCount: 34,
-  },
-  {
-    percent: 60,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    title: 'Advanced Mathematics Prep',
-    date: 'Dec 16, 2024',
-    flashcardCount: 78,
-  },
-  {
-    percent: 100,
-    image: require('@/assets/companyIcons/MetaIcon.png'),
-    cardType: 'technical',
-    title: 'Meta Backend Technical Prep',
-    date: 'Dec 14, 2024',
-    flashcardCount: 45,
-  },
-  {
-    percent: 25,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    title: 'Physics Advanced Prep',
-    date: 'Dec 12, 2024',
-    flashcardCount: 92,
-  },
-  {
-    percent: 75,
-    image: require('@/assets/companyIcons/JPMIcon.png'),
-    cardType: 'case study',
-    title: 'JPMorgan Case Study Prep',
-    date: 'Dec 10, 2024',
-    flashcardCount: 28,
-  },
-  {
-    percent: 40,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    title: 'Chemistry Lab Prep',
-    date: 'Dec 8, 2024',
-    flashcardCount: 56,
-  },
-  {
-    percent: 90,
-    image: require('@/assets/companyIcons/GoogleIcon.png'),
-    cardType: 'brainteasers',
-    title: 'Google Brainteasers Prep',
-    date: 'Dec 6, 2024',
-    flashcardCount: 31,
-  },
-  {
-    percent: 15,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    title: 'Biology Research Prep',
-    date: 'Dec 4, 2024',
-    flashcardCount: 67,
-  },
-];
-
-const favFolderData = [
-  { title: 'Favorite Study Materials', dateCreated: 'Dec 17, 2024', deckCount: 14, folderId: 'fav-folder-1' },
-  { title: 'Top Interview Prep', dateCreated: 'Dec 15, 2024', deckCount: 10, folderId: 'fav-folder-2' },
-  { title: 'Best Technical Qs', dateCreated: 'Dec 13, 2024', deckCount: 18, folderId: 'fav-folder-3' },
-  { title: 'Key Behavioral Prep', dateCreated: 'Dec 11, 2024', deckCount: 7, folderId: 'fav-folder-4' },
-  { title: 'Important Case Studies', dateCreated: 'Dec 9, 2024', deckCount: 12, folderId: 'fav-folder-5' },
-  { title: 'Essential Math Problems', dateCreated: 'Dec 7, 2024', deckCount: 16, folderId: 'fav-folder-6' },
-];
 
 export default function FavoritesScreen() {
   const [isFavFoldersMode, setIsFavFoldersMode] = useState(false);
@@ -123,6 +31,13 @@ export default function FavoritesScreen() {
   const [favDeckCardsCount, setFavDeckCardsCount] = useState(0);
   const [favFolderCardsCount, setFavFolderCardsCount] = useState(0);
   const [previousMode, setPreviousMode] = useState<'study' | 'interview'>('study');
+  const [favoritedDecks, setFavoritedDecks] = useState<(Deck & { progress: number })[]>([]);
+  const [favoritedFolders, setFavoritedFolders] = useState<Folder[]>([]);
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [filteredFavoritedDecks, setFilteredFavoritedDecks] = useState<(Deck & { progress: number })[]>([]);
+  const [filteredFavoritedFolders, setFilteredFavoritedFolders] = useState<Folder[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -460,10 +375,12 @@ export default function FavoritesScreen() {
 
   const handleSelectAll = () => {
     if (isFavFoldersMode) {
-      const allFolderIndices = new Set(Array.from({ length: favFolderCardsCount }, (_, i) => i));
+      const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+      const allFolderIndices = new Set(Array.from({ length: foldersToUse.length }, (_, i) => i));
       setSelectedFavFolderCards(allFolderIndices);
     } else {
-      const allDeckIndices = new Set(Array.from({ length: favDeckCardsCount }, (_, i) => i));
+      const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+      const allDeckIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedFavDeckCards(allDeckIndices);
     }
   };
@@ -504,6 +421,7 @@ export default function FavoritesScreen() {
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
         setDeleteModalText('Are you sure you want to delete these folder(s)?');
+        setHandleDeletion(() => handleDeleteSelectedFavoritedFolders);
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
             toValue: 0.4,
@@ -560,6 +478,7 @@ export default function FavoritesScreen() {
           setIsMenuOpen(true);
           setIsTrashModalOpenInDecksPage(true);
           setDeleteModalText('Are you sure you want to delete these deck(s)?');
+          setHandleDeletion(() => handleDeleteSelectedFavoritedDecks);
           Animated.parallel([
             Animated.timing(menuOverlayOpacity, {
               toValue: 0.4,
@@ -627,20 +546,237 @@ export default function FavoritesScreen() {
     ]).start();
   };
 
-  // Update card counts
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${month} ${day}, ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString; // Return original string if parsing fails
+    }
+  };
+
+  // Helper function to get image source for interview decks
+  const getImageSource = (deck: Deck & { progress: number }) => {
+    if (deck.interviewCompanyIcon) {
+      try {
+        // Handle hex string from SQLite BLOB
+        if (typeof deck.interviewCompanyIcon === 'string') {
+          // Check if it's a hex string (from SQLite hex() function)
+          if (/^[0-9A-Fa-f]+$/.test(deck.interviewCompanyIcon)) {
+            // Convert hex to base64
+            const hexString = deck.interviewCompanyIcon;
+            const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+            const base64String = btoa(String.fromCharCode(...bytes));
+            return { uri: `data:image/png;base64,${base64String}` };
+          } else if (deck.interviewCompanyIcon.startsWith('data:')) {
+            // Already a data URI
+            return { uri: deck.interviewCompanyIcon };
+          } else {
+            // Try as file path or URL
+            return { uri: deck.interviewCompanyIcon };
+          }
+        }
+      } catch (error) {
+        return undefined;
+      }
+    }
+    return undefined;
+  };
+
+  // Helper function to convert null to undefined
+  const nullToUndefined = (value: string | null): string | undefined => {
+    return value === null ? undefined : value;
+  };
+
+  // Check if database is ready
   useEffect(() => {
-    setFavDeckCardsCount(8); // Current number of favorite deck cards
-    setFavFolderCardsCount(6); // Current number of favorite folder cards
+    const checkDatabaseReady = async () => {
+      try {
+        console.log('Checking if database is ready...');
+        // Try a simple query to check if database is ready
+        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks');
+        console.log('Database is ready, decks count:', (result[0] as any)?.count);
+        setIsDatabaseReady(true);
+      } catch (error) {
+        console.log('Database not ready yet, waiting...', error);
+        // Retry after a short delay
+        setTimeout(checkDatabaseReady, 500);
+      }
+    };
+    
+    checkDatabaseReady();
   }, []);
 
+  // Load favorited data from database
+  useEffect(() => {
+    const loadFavoritedData = async () => {
+      if (!isDatabaseReady) {
+        console.log('Database not ready, skipping data load');
+        return;
+      }
+      
+      console.log('Loading favorited data from database...');
+      try {
+        const [decksData, foldersData] = await Promise.all([
+          getFavoritedDecks(),
+          getFavoritedFolders()
+        ]);
+        console.log('Favorited decks loaded:', decksData.length);
+        console.log('Favorited folders loaded:', foldersData.length);
+        setFavoritedDecks(decksData);
+        setFavoritedFolders(foldersData);
+        setFilteredFavoritedDecks(decksData);
+        setFilteredFavoritedFolders(foldersData);
+        setFavDeckCardsCount(decksData.length);
+        setFavFolderCardsCount(foldersData.length);
+      } catch (error) {
+        console.error('Error loading favorited data:', error);
+      }
+    };
+
+    if (isFocused) {
+      loadFavoritedData();
+    }
+  }, [isFocused, isDatabaseReady]);
+
+  // Update card counts based on search state
+  useEffect(() => {
+    if (isSearching) {
+      setFavDeckCardsCount(filteredFavoritedDecks.length);
+      setFavFolderCardsCount(filteredFavoritedFolders.length);
+    } else {
+      setFavDeckCardsCount(favoritedDecks.length);
+      setFavFolderCardsCount(favoritedFolders.length);
+    }
+  }, [favoritedDecks, favoritedFolders, filteredFavoritedDecks, filteredFavoritedFolders, isSearching]);
+
+  const handleSearchPress = () => {
+    // This will be called when the search button is pressed
+    // The actual search logic will be handled by the HeaderIconButtons component
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setIsSearching(query.length > 0);
+    
+    if (query.length === 0) {
+      // If search is empty, show all favorited items
+      setFilteredFavoritedDecks(favoritedDecks);
+      setFilteredFavoritedFolders(favoritedFolders);
+    } else {
+      // Filter items by name (case-insensitive)
+      const lowerQuery = query.toLowerCase();
+      
+      const filteredDecks = favoritedDecks.filter(deck => 
+        deck.deckName.toLowerCase().includes(lowerQuery)
+      );
+      
+      const filteredFolders = favoritedFolders.filter(folder => 
+        folder.folderName.toLowerCase().includes(lowerQuery)
+      );
+      
+      setFilteredFavoritedDecks(filteredDecks);
+      setFilteredFavoritedFolders(filteredFolders);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setIsSearching(false);
+    setFilteredFavoritedDecks(favoritedDecks);
+    setFilteredFavoritedFolders(favoritedFolders);
+    // Clear selected cards when clearing search
+    setSelectedFavDeckCards(new Set());
+    setSelectedFavFolderCards(new Set());
+  };
+
+  const handleDeleteSelectedFavoritedDecks = async () => {
+    try {
+      // Get the selected deck IDs
+      const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+      const selectedDeckIds = Array.from(selectedFavDeckCards).map(index => decksToUse[index].deckID);
+
+      if (selectedDeckIds.length === 0) {
+        console.log('No decks selected for deletion');
+        return;
+      }
+
+      // Delete the decks from database
+      const success = await deleteMultipleDecks(selectedDeckIds);
+      
+      if (success) {
+        // Update local state by removing the deleted decks
+        const remainingDecks = favoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+        setFavoritedDecks(remainingDecks);
+        
+        // Update filtered decks if searching
+        if (isSearching) {
+          const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+          setFilteredFavoritedDecks(remainingFilteredDecks);
+        }
+        
+        setSelectedFavDeckCards(new Set());
+
+        // Exit selection mode
+        handleCancel();
+        
+        console.log(`Successfully deleted ${selectedDeckIds.length} favorited deck(s)`);
+      } else {
+        console.error('Failed to delete favorited decks');
+      }
+    } catch (error) {
+      console.error('Error deleting favorited decks:', error);
+    }
+  };
+
+  const handleDeleteSelectedFavoritedFolders = async () => {
+    try {
+      // Get the selected folder IDs
+      const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+      const selectedFolderIds = Array.from(selectedFavFolderCards).map(index => foldersToUse[index].folderID);
+
+      if (selectedFolderIds.length === 0) {
+        console.log('No folders selected for deletion');
+        return;
+      }
+
+      // TODO: Implement folder deletion from database
+      // For now, just update local state
+      const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+      setFavoritedFolders(remainingFolders);
+      
+      // Update filtered folders if searching
+      if (isSearching) {
+        const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+        setFilteredFavoritedFolders(remainingFilteredFolders);
+      }
+      
+      setSelectedFavFolderCards(new Set());
+
+      // Exit selection mode
+      handleCancel();
+      
+      console.log(`Successfully deleted ${selectedFolderIds.length} favorited folder(s)`);
+    } catch (error) {
+      console.error('Error deleting favorited folders:', error);
+    }
+  };
+
   const renderFavDeckCards = () => {
-    const cards = favCardData.map((data, index) => {
-      const design = cardDesigns[index % 4];
+    const decksToRender = isSearching ? filteredFavoritedDecks : favoritedDecks;
+    const cards = decksToRender.map((data, index) => {
+      const design = cardDesigns[data.cardDesignIndex];
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
         <Card
-          key={`favDeck-${index}`}
+          key={`favDeck-${data.deckID}`}
           style={style}
           backgroundImage={design.background}
           pressedBackgroundImage={design.pressed}
@@ -659,15 +795,18 @@ export default function FavoritesScreen() {
             });
           }}
           circleButtonOpacity={circleButtonOpacity}
-          percent={data.percent}
+          percent={data.progress}
           showProgress={!isSelectMode}
-          image={data.image}
-          cardType={data.cardType}
-          title={data.title}
-          date={data.date}
+          image={data.interviewCompanyIcon ? getImageSource(data) : undefined}
+          cardType={data.deckType === 'interview' && data.interviewType ? data.interviewType : data.deckType}
+          title={data.deckName}
+          date={formatDate(data.dateAdded)}
           flashcardCount={data.flashcardCount}
-          deckDetailsBackgroundIndex={index%4}
+          deckDetailsBackgroundIndex={data.cardDesignIndex}
           sourcePage="favorites"
+          company={data.deckType === 'interview' && data.interviewCompany ? data.interviewCompany : undefined}
+          isFavorited={data.isFavorited === 1}
+          isStudy={data.deckType === 'study'}
         />
       );
     });
@@ -675,12 +814,13 @@ export default function FavoritesScreen() {
   };
 
   const renderFavFolderCards = () => {
-    const cards = favFolderData.map((data, index) => {
+    const foldersToRender = isSearching ? filteredFavoritedFolders : favoritedFolders;
+    const cards = foldersToRender.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
         <FolderCard
-          key={`favFolder-${index}`}
+          key={`favFolder-${data.folderID}`}
           style={style}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
@@ -697,11 +837,12 @@ export default function FavoritesScreen() {
             });
           }}
           circleButtonOpacity={circleButtonOpacity}
-          title={data.title}
-          dateCreated={data.dateCreated}
+          title={data.folderName}
+          dateCreated={formatDate(data.dateAdded)}
           deckCount={data.deckCount}
           sourcePage="favorites"
-          folderId={data.folderId}
+          folderId={data.folderID.toString()}
+          isFavorited={data.isFavorited === 1}
         />
       );
     });
@@ -744,6 +885,8 @@ export default function FavoritesScreen() {
                   useNativeDriver: true,
                 }).start();
               }}
+              onSearchPress={handleSearchPress}
+              onSearchTextChange={handleSearch}
             />
           </View>
           

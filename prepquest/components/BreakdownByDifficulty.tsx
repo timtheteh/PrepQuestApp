@@ -17,6 +17,22 @@ interface BreakdownByDifficultyPieProps {
 }
 
 function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  // Handle the case where the slice covers the full circle
+  if (Math.abs(endAngle - startAngle) >= 360) {
+    // For a full circle, we need to draw it as two semicircles
+    const start = polarToCartesian(cx, cy, r, 0);
+    const end = polarToCartesian(cx, cy, r, 180);
+    const end2 = polarToCartesian(cx, cy, r, 360);
+    
+    return [
+      `M ${cx} ${cy}`,
+      `L ${start.x} ${start.y}`,
+      `A ${r} ${r} 0 1 0 ${end.x} ${end.y}`,
+      `A ${r} ${r} 0 1 0 ${end2.x} ${end2.y}`,
+      'Z',
+    ].join(' ');
+  }
+  
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end = polarToCartesian(cx, cy, r, startAngle);
   const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';

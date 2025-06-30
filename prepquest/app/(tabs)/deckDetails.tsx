@@ -17,7 +17,7 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
-import { deleteDeck, getDeckGrade, getDeckAverageTime, DeckGrade } from '@/db/decks';
+import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, DeckGrade } from '@/db/decks';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -118,6 +118,48 @@ const getCardTypeLabel = (cardType: string) => {
   return cardTypeMap[cardType]?.label || 'Others';
 };
 
+// Local MetadataRow component
+interface MetadataRowProps {
+  label: string;
+  value: string;
+}
+
+function MetadataRow({ label, value }: MetadataRowProps) {
+  return (
+    <View style={metadataRowStyles.container}>
+      <Text style={metadataRowStyles.label}>{label}</Text>
+      <Text style={metadataRowStyles.value} numberOfLines={2}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+const metadataRowStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  label: {
+    fontFamily: 'Satoshi-Variable',
+    fontSize: 16,
+    color: '#111',
+    flex: 0,
+    marginRight: 16,
+  },
+  value: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 16,
+    color: '#111',
+    textAlign: 'right',
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+});
+
 export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -147,6 +189,14 @@ export default function DeckDetailsScreen() {
   // State for average time
   const [averageTime, setAverageTime] = useState<number | null>(null);
   const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
+
+  // State for deck information
+  const [deckInfo, setDeckInfo] = useState<any | null>(null);
+  const [isLoadingDeckInfo, setIsLoadingDeckInfo] = useState(true);
+
+  // State for flashcard attempt status
+  const [hasAttemptedFlashcards, setHasAttemptedFlashcards] = useState<boolean | null>(null);
+  const [isLoadingAttemptStatus, setIsLoadingAttemptStatus] = useState(true);
 
   // Convert deckDetailsBackgroundIndex to number and provide fallback
   const backgroundIndex = parseInt(deckDetailsBackgroundIndex as string) || 0;
@@ -511,11 +561,80 @@ export default function DeckDetailsScreen() {
     }
   };
 
+  // Function to load deck information
+  const loadDeckInfo = async () => {
+    try {
+      setIsLoadingDeckInfo(true);
+      const info = await getDeckInfo(parseInt(deckId as string));
+      setDeckInfo(info);
+      
+      // Test logging to verify the data
+      if (info) {
+        console.log('Deck info loaded:', info);
+      } else {
+        console.log('No deck info available');
+      }
+    } catch (error) {
+      console.error('Error loading deck info:', error);
+      setDeckInfo(null);
+    } finally {
+      setIsLoadingDeckInfo(false);
+    }
+  };
+
+  // Function to check if any flashcards have been attempted
+  const checkFlashcardAttemptStatus = async () => {
+    try {
+      setIsLoadingAttemptStatus(true);
+      
+      // Check if this is an AI deck
+      const deckTypeResult = await db.getFirstAsync(`
+        SELECT isAIDeck FROM decks WHERE deckID = ?
+      `, [parseInt(deckId as string)]);
+
+      if (!deckTypeResult) {
+        setHasAttemptedFlashcards(false);
+        return;
+      }
+
+      const deckType = deckTypeResult as { isAIDeck: number };
+      const isAIDeck = deckType.isAIDeck === 1;
+
+      // Check if any flashcards have been attempted
+      const tableName = isAIDeck ? 'AIFlashcards' : 'flashcards';
+      const idColumn = isAIDeck ? 'AIDeckID' : 'deckID';
+
+      const result = await db.getFirstAsync(`
+        SELECT COUNT(*) as attemptedCount
+        FROM ${tableName}
+        WHERE ${idColumn} = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+      `, [parseInt(deckId as string)]);
+
+      if (!result) {
+        setHasAttemptedFlashcards(false);
+        return;
+      }
+
+      const data = result as { attemptedCount: number };
+      setHasAttemptedFlashcards(data.attemptedCount > 0);
+      
+      console.log('Flashcard attempt status:', data.attemptedCount > 0 ? 'Has attempted flashcards' : 'No attempted flashcards');
+    } catch (error) {
+      console.error('Error checking flashcard attempt status:', error);
+      setHasAttemptedFlashcards(false);
+    } finally {
+      setIsLoadingAttemptStatus(false);
+    }
+  };
+
   // Load deck grade when component mounts or screen comes into focus
   useEffect(() => {
     if (isFocused) {
       loadDeckGrade();
       loadAverageTime();
+      loadDeckInfo();
+      checkFlashcardAttemptStatus();
     }
   }, [isFocused, deckId]);
 
@@ -576,6 +695,84 @@ export default function DeckDetailsScreen() {
       setEditNameSelected(false);
     }, [])
   );
+
+  // Helper function to format date
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return '--';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return '--';
+    }
+  };
+
+  // Helper function to get last reviewed date
+  const getLastReviewedDate = (): string => {
+    if (!deckInfo) return '--';
+    
+    const studyDate = deckInfo.lastStudiedDate ? new Date(deckInfo.lastStudiedDate) : null;
+    const quizDate = deckInfo.lastQuizzedDate ? new Date(deckInfo.lastQuizzedDate) : null;
+    
+    if (!studyDate && !quizDate) return '--';
+    if (!studyDate) return formatDate(deckInfo.lastQuizzedDate);
+    if (!quizDate) return formatDate(deckInfo.lastStudiedDate);
+    
+    return formatDate(studyDate > quizDate ? deckInfo.lastStudiedDate : deckInfo.lastQuizzedDate);
+  };
+
+  // Helper function to format list items
+  const formatList = (jsonString: string | null): string => {
+    if (!jsonString) return '--';
+    try {
+      const items = JSON.parse(jsonString);
+      return Array.isArray(items) ? items.join(', ') : jsonString;
+    } catch (error) {
+      return jsonString || '--';
+    }
+  };
+
+  // Helper function to get safe value
+  const getSafeValue = (value: any): string => {
+    return value && value !== '' ? value : '--';
+  };
+
+  // Function to render metadata rows based on deck type
+  const renderMetadataRows = () => {
+    if (!deckInfo) return null;
+
+    const deckType = deckInfo.deckType;
+    
+    if (deckType === 'study') {
+      return (
+        <>
+          <MetadataRow label="Created via" value={getSafeValue(deckInfo.creationMethod)} />
+          <MetadataRow label="Subject(s)" value={formatList(deckInfo.studySubjects)} />
+          <MetadataRow label="Topics/Subtopics" value={formatList(deckInfo.studyTopicsSubtopics)} />
+          <MetadataRow label="Education Level" value={getSafeValue(deckInfo.studyEducationLevel)} />
+          <MetadataRow label="Exam/Quiz" value={getSafeValue(deckInfo.studyExamQuiz)} />
+          <MetadataRow label="Last Reviewed date" value={getLastReviewedDate()} />
+        </>
+      );
+    } else if (deckType === 'interview') {
+      return (
+        <>
+          <MetadataRow label="Created via" value={getSafeValue(deckInfo.creationMethod)} />
+          <MetadataRow label="Job/Role" value={getSafeValue(deckInfo.interviewJobRole)} />
+          <MetadataRow label="Company" value={getSafeValue(deckInfo.interviewCompany)} />
+          <MetadataRow label="Topics" value={formatList(deckInfo.interviewTopics)} />
+          <MetadataRow label="Experience Level" value={getSafeValue(deckInfo.interviewExperienceLevel)} />
+          <MetadataRow label="Last Reviewed date" value={getLastReviewedDate()} />
+        </>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
@@ -713,48 +910,55 @@ export default function DeckDetailsScreen() {
                   )}
                 </View>
 
-                <View style={[styles.cardDetailsContainer, { marginTop: AIDeck ? 0 : 120 }]}>
-                  {AIDeck ? (
-                    // AI Deck - Three stacked EmptyState animations
+                  {/* Metadata Section */}
+                  {!AIDeck && deckInfo && (
+                  <View style={styles.metadataContainer}>
+                    {renderMetadataRows()}
+                  </View>
+                  )}
+
+                <View style={[styles.cardDetailsContainer]}>
+                  {hasAttemptedFlashcards === false ? (
+                    // Empty state for all deck types when no flashcards have been attempted
                     <View style={[styles.emptyStateContainer, { marginTop: getEmptyStateContainerMarginTop() }]}>
-                    <View style={styles.emptyStateAnimationsContainer}>
-                      {/* First animation - normal size, rotated 20° right */}
-                      <View style={styles.aiDeckAnimation1}>
-                        <LottieView
-                          source={require('@/assets/animations/EmptyState1.json')}
-                          autoPlay
-                          loop
-                          style={styles.aiDeckAnimation}
-                        />
+                      <View style={styles.emptyStateAnimationsContainer}>
+                        {/* First animation - normal size, rotated 20° right */}
+                        <View style={styles.aiDeckAnimation1}>
+                          <LottieView
+                            source={require('@/assets/animations/EmptyState1.json')}
+                            autoPlay
+                            loop
+                            style={styles.aiDeckAnimation}
+                          />
+                        </View>
+                        
+                        {/* Second animation - 80% smaller, positioned top-left, rotated 30° left */}
+                        <View style={styles.aiDeckAnimation2}>
+                          <LottieView
+                            source={require('@/assets/animations/EmptyState1.json')}
+                            autoPlay
+                            loop
+                            style={[styles.aiDeckAnimation,]}
+                          />
+                        </View>
+                        
+                        {/* Third animation - 60% smaller, positioned top-right, rotated 10° right */}
+                        <View style={styles.aiDeckAnimation3}>
+                          <LottieView
+                            source={require('@/assets/animations/EmptyState1.json')}
+                            autoPlay
+                            loop
+                            style={[styles.aiDeckAnimation]}
+                          />
+                        </View>
                       </View>
-                      
-                      {/* Second animation - 80% smaller, positioned top-left, rotated 30° left */}
-                      <View style={styles.aiDeckAnimation2}>
-                        <LottieView
-                          source={require('@/assets/animations/EmptyState1.json')}
-                          autoPlay
-                          loop
-                          style={[styles.aiDeckAnimation,]}
-                        />
-                      </View>
-                      
-                      {/* Third animation - 60% smaller, positioned top-right, rotated 10° right */}
-                      <View style={styles.aiDeckAnimation3}>
-                        <LottieView
-                          source={require('@/assets/animations/EmptyState1.json')}
-                          autoPlay
-                          loop
-                          style={[styles.aiDeckAnimation]}
-                        />
-                      </View>
-                    </View>
-                    {/* AI Deck stats message */}
-                    <Text style={styles.aiDeckStatsMessage}>
-                    No stats yet! View, study or quiz yourself on this deck in the meantime!
-                    </Text>
+                      {/* Stats message for all deck types */}
+                      <Text style={styles.aiDeckStatsMessage}>
+                      No stats yet! View, study or quiz yourself on this deck in the meantime!
+                      </Text>
                     </View>
                   ) : (
-                    // Regular deck - Original components
+                    // Stats for all deck types when flashcards have been attempted
                     <>
                       <AverageGradeThermometer score={deckGrade?.score}/>
                       <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
@@ -762,7 +966,7 @@ export default function DeckDetailsScreen() {
                     </>
                   )}
                 </View>
-                
+
               </ScrollView>
             </ImageBackground>
           </View>
@@ -1011,7 +1215,7 @@ const styles = StyleSheet.create({
   },
   cardDetailsContainer: {
     flex: 1,
-    marginTop: 120,
+    marginTop: -10,
   },
   fab: {
     position: 'absolute',
@@ -1147,5 +1351,16 @@ const styles = StyleSheet.create({
     color: '#222',
     textAlign: 'center',
     marginTop: 10,
+  },
+  metadataContainer: {
+    backgroundColor: 'transparent',
+    marginTop: 130,
+  },
+  metadataTitle: {
+    fontFamily: 'Satoshi-Bold',
+    fontSize: 18,
+    color: '#111',
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
 }); 

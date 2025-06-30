@@ -766,3 +766,21 @@ export async function getDeckAverageTime(deckId: number): Promise<number | null>
     return null;
   }
 }
+
+export async function getDeckInfo(deckId: number): Promise<any | null> {
+  try {
+    // Get deck information
+    const deckResult = await db.getFirstAsync(`
+      SELECT * FROM decks WHERE deckID = ?
+    `, [deckId]);
+
+    if (!deckResult) {
+      return null;
+    }
+
+    return deckResult;
+  } catch (error) {
+    console.error('Error getting deck info:', error);
+    return null;
+  }
+}

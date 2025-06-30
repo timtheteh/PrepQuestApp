@@ -484,3 +484,61 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
     return false;
   }
 }
+
+export async function getDecksInFolder(folderId: number): Promise<(Deck & { progress: number })[]> {
+  try {
+    const result = await db.getAllAsync(`
+      SELECT 
+        d.deckID,
+        d.deckName,
+        d.dateAdded,
+        d.lastModifiedDate,
+        d.isFavorited,
+        d.deckType,
+        d.creationMethod,
+        d.lastStudiedDate,
+        d.lastQuizzedDate,
+        d.cardDesignIndex,
+        d.isAIDeck,
+        d.folderIDs,
+        d.studyEducationLevel,
+        d.studySubjects,
+        d.studyTopicsSubtopics,
+        d.studyExamQuiz,
+        d.interviewJobRole,
+        d.interviewType,
+        d.interviewCompany,
+        d.interviewExperienceLevel,
+        d.interviewTopics,
+        CASE 
+          WHEN d.interviewCompanyIcon IS NOT NULL 
+          THEN hex(d.interviewCompanyIcon) 
+          ELSE NULL 
+        END as interviewCompanyIcon,
+        COUNT(f.flashcardID) as flashcardCount
+      FROM decks d
+      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      WHERE d.folderIDs IS NOT NULL 
+        AND d.folderIDs != '' 
+        AND ${folderId} IN (
+          SELECT CAST(json_extract(value, '$') AS INTEGER)
+          FROM json_each(d.folderIDs)
+        )
+      GROUP BY d.deckID
+      ORDER BY d.lastModifiedDate DESC, d.dateAdded DESC
+    `);
+    
+    const decks = result as Deck[];
+    const decksWithProgress = await Promise.all(
+      decks.map(async (deck) => {
+        const progress = await getDeckProgress(deck.deckID);
+        return { ...deck, progress };
+      })
+    );
+    
+    return decksWithProgress;
+  } catch (error) {
+    console.error('Error fetching decks in folder:', error);
+    return [];
+  }
+}

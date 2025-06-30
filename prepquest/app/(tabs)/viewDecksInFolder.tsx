@@ -13,106 +13,13 @@ import { Card } from '@/components/Card';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Feather } from '@expo/vector-icons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
+import { getDecksInFolder, Deck, deleteMultipleDecks } from '@/db/decks';
+import { db } from '@/db/index';
+import { cardDesigns } from '@/constants/cardDesigns';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
-
-
-// Mock data for decks in a folder
-const decksData = [
-    {
-      percent: 85,
-      image: require('@/assets/companyIcons/GoogleIcon.png'),
-      cardType: 'behavioral',
-      title: 'Google Frontend Behavioral Prep',
-      date: 'Dec 18, 2024',
-      flashcardCount: 34,
-      company: 'Google',
-    },
-    {
-      percent: 60,
-      image: require('@/assets/companyIcons/StudyCardIcon.png'),
-      cardType: 'study',
-      title: 'Advanced Mathematics Prep',
-      date: 'Dec 16, 2024',
-      flashcardCount: 78,
-      company: 'study',
-    },
-    {
-      percent: 100,
-      image: require('@/assets/companyIcons/MetaIcon.png'),
-      cardType: 'technical',
-      title: 'Meta Backend Technical Prep',
-      date: 'Dec 14, 2024',
-      flashcardCount: 45,
-      company: 'Meta',
-    },
-    {
-      percent: 25,
-      image: require('@/assets/companyIcons/StudyCardIcon.png'),
-      cardType: 'study',
-      title: 'Physics Advanced Prep',
-      date: 'Dec 12, 2024',
-      flashcardCount: 92,
-      company: 'study',
-    },
-    {
-      percent: 75,
-      image: require('@/assets/companyIcons/JPMIcon.png'),
-      cardType: 'case study',
-      title: 'JPMorgan Case Study Prep',
-      date: 'Dec 10, 2024',
-      flashcardCount: 28,
-      company: 'JPMorgan',
-    },
-    {
-      percent: 40,
-      image: require('@/assets/companyIcons/StudyCardIcon.png'),
-      cardType: 'study',
-      title: 'Chemistry Lab Prep',
-      date: 'Dec 8, 2024',
-      flashcardCount: 56,
-      company: 'study',
-    },
-    {
-      percent: 90,
-      image: require('@/assets/companyIcons/GoogleIcon.png'),
-      cardType: 'brainteasers',
-      title: 'Google Brainteasers Prep',
-      date: 'Dec 6, 2024',
-      flashcardCount: 31,
-      company: 'Google',
-    },
-    {
-      percent: 15,
-      image: require('@/assets/companyIcons/StudyCardIcon.png'),
-      cardType: 'study',
-      title: 'Biology Research Prep',
-      date: 'Dec 4, 2024',
-      flashcardCount: 67,
-      company: 'study',
-    },
-  ];
-
-const cardDesigns = [
-    {
-      background: require('@/assets/images/deckCover1.png'),
-      pressed: require('@/assets/images/deckCover1Pressed.png'),
-    },
-    {
-      background: require('@/assets/images/deckCover2.png'),
-      pressed: require('@/assets/images/deckCover2Pressed.png'),
-    },
-    {
-      background: require('@/assets/images/deckCover3.png'),
-      pressed: require('@/assets/images/deckCover3Pressed.png'),
-    },
-    {
-      background: require('@/assets/images/deckCover4.png'),
-      pressed: require('@/assets/images/deckCover4Pressed.png'),
-    },
-  ];
 
 export default function ViewDecksInFolderScreen() {
   const router = useRouter();
@@ -145,6 +52,8 @@ export default function ViewDecksInFolderScreen() {
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [decksCount, setDecksCount] = useState(0);
   const [selectedDecks, setSelectedDecks] = useState<Set<number>>(new Set());
+  const [decks, setDecks] = useState<(Deck & { progress: number })[]>([]);
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const selectUnselectedDuration = 300;
   const selectTextAnim = useRef(new Animated.Value(0)).current;
   const fabOpacity = useRef(new Animated.Value(1)).current;
@@ -160,6 +69,49 @@ export default function ViewDecksInFolderScreen() {
   useEffect(() => {
     screenOpacity.setValue(0);
   }, []);
+
+  // Check if database is ready
+  useEffect(() => {
+    const checkDatabaseReady = async () => {
+      try {
+        console.log('Checking if database is ready...');
+        // Try a simple query to check if database is ready
+        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks');
+        console.log('Database is ready, decks count:', (result[0] as any)?.count);
+        setIsDatabaseReady(true);
+      } catch (error) {
+        console.log('Database not ready yet, waiting...', error);
+        // Retry after a short delay
+        setTimeout(checkDatabaseReady, 500);
+      }
+    };
+    
+    checkDatabaseReady();
+  }, []);
+
+  // Load decks data from database
+  useEffect(() => {
+    const loadDecksData = async () => {
+      if (!isDatabaseReady || !folderId) {
+        console.log('Database not ready or no folderId, skipping data load');
+        return;
+      }
+      
+      console.log('Loading decks data for folder:', folderId);
+      try {
+        const decksData = await getDecksInFolder(parseInt(folderId as string));
+        console.log('Decks loaded for folder:', decksData.length);
+        setDecks(decksData);
+        setDecksCount(decksData.length);
+      } catch (error) {
+        console.error('Error loading decks data for folder:', error);
+      }
+    };
+
+    if (isFocused) {
+      loadDecksData();
+    }
+  }, [isFocused, isDatabaseReady, folderId]);
 
   // Reset header icons state when screen comes into focus
   useEffect(() => {
@@ -218,6 +170,49 @@ export default function ViewDecksInFolderScreen() {
     }
   }, [isFocused]);
 
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${month} ${day}, ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString; // Return original string if parsing fails
+    }
+  };
+
+  // Helper function to get image source for interview decks
+  const getImageSource = (deck: Deck & { progress: number }) => {
+    if (deck.interviewCompanyIcon) {
+      try {
+        // Handle hex string from SQLite BLOB
+        if (typeof deck.interviewCompanyIcon === 'string') {
+          // Check if it's a hex string (from SQLite hex() function)
+          if (/^[0-9A-Fa-f]+$/.test(deck.interviewCompanyIcon)) {
+            // Convert hex to base64
+            const hexString = deck.interviewCompanyIcon;
+            const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+            const base64String = btoa(String.fromCharCode(...bytes));
+            return { uri: `data:image/png;base64,${base64String}` };
+          } else if (deck.interviewCompanyIcon.startsWith('data:')) {
+            // Already a data URI
+            return { uri: deck.interviewCompanyIcon };
+          } else {
+            // Try as file path or URL
+            return { uri: deck.interviewCompanyIcon };
+          }
+        }
+      } catch (error) {
+        return undefined;
+      }
+    }
+    return undefined;
+  };
+
   const handleBackPress = () => {
     // Reset header icons state
     headerIconsRef.current?.reset();
@@ -265,7 +260,7 @@ export default function ViewDecksInFolderScreen() {
   const slidingMenuDuration = 300;
 
   const handleSelectAll = () => {
-      const allDeckIndices = new Set(Array.from({ length: decksData.length }, (_, i) => i));
+      const allDeckIndices = new Set(Array.from({ length: decks.length }, (_, i) => i));
       setSelectedDecks(allDeckIndices);
   };
 
@@ -425,6 +420,67 @@ export default function ViewDecksInFolderScreen() {
     });
   };
 
+  // Function to handle favorite/unfavorite deck
+  const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean) => {
+    try {
+      const newFavoritedValue = currentFavorited ? 0 : 1;
+      
+      // Update database
+      await db.execAsync(`
+        UPDATE decks 
+        SET isFavorited = ${newFavoritedValue}
+        WHERE deckID = ${deckId}
+      `);
+      
+      // Update local state immediately
+      setDecks(prev => 
+        prev.map(deck => 
+          deck.deckID === deckId 
+            ? { ...deck, isFavorited: newFavoritedValue }
+            : deck
+        )
+      );
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+    }
+  };
+
+  const handleDeleteSelectedDecks = async () => {
+    try {
+      // Get the selected deck IDs
+      const selectedDeckIds = Array.from(selectedDecks).map(index => decks[index].deckID);
+
+      if (selectedDeckIds.length === 0) {
+        console.log('No decks selected for deletion');
+        return;
+      }
+
+      // Delete the decks from database
+      const success = await deleteMultipleDecks(selectedDeckIds);
+      
+      if (success) {
+        // Clear selections first to prevent render issues
+        setSelectedDecks(new Set());
+        
+        // Update local state by removing the deleted decks
+        const remainingDecks = decks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+        setDecks(remainingDecks);
+        setDecksCount(remainingDecks.length);
+
+        // Exit selection mode after state updates
+        setTimeout(() => {
+          handleCancel();
+        }, 0);
+        
+        console.log(`Successfully deleted ${selectedDeckIds.length} deck(s) from folder`);
+      } else {
+        console.error('Failed to delete decks from folder');
+      }
+    } catch (error) {
+      console.error('Error deleting decks from folder:', error);
+    }
+  };
+
   const handleActionIconPress = (index: number) => {
     const hasSelection = selectedDecks.size > 0;
 
@@ -488,6 +544,8 @@ export default function ViewDecksInFolderScreen() {
       case 1: // Trash
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
+        setDeleteModalText('Are you sure you want to delete from this folder?');
+        setHandleDeletion(() => handleDeleteSelectedDecks);
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
             toValue: 0.4,
@@ -515,12 +573,18 @@ export default function ViewDecksInFolderScreen() {
   });
 
   const renderDecks = () => {
-    const cards = decksData.map((data, index) => {
-      const design = cardDesigns[index % 4];
+    // Safety check to prevent rendering issues
+    if (!decks || decks.length === 0) {
+      return null;
+    }
+    
+    const cards = decks.map((data, index) => {
+      const design = cardDesigns[data.cardDesignIndex];
       const style = index === 0 ? styles.firstCard : styles.card;
+      
       return (
         <Card
-          key={`deck-${index}`}
+          key={`deck-${data.deckID}`}
           style={style}
           backgroundImage={design.background}
           pressedBackgroundImage={design.pressed}
@@ -529,18 +593,21 @@ export default function ViewDecksInFolderScreen() {
           selected={selectedDecks.has(index)}
           onSelectPress={() => handleDeckSelection(index, !selectedDecks.has(index))}
           circleButtonOpacity={circleButtonOpacity}
-          percent={data.percent}
+          percent={data.progress}
           showProgress={!isSelectMode}
-          image={data.image}
-          cardType={data.cardType}
-          title={data.title}
-          date={data.date}
+          image={data.interviewCompanyIcon ? getImageSource(data) : undefined}
+          cardType={data.deckType === 'interview' && data.interviewType ? data.interviewType : data.deckType}
+          title={data.deckName}
+          date={formatDate(data.dateAdded)}
           flashcardCount={data.flashcardCount}
-          deckDetailsBackgroundIndex={index%4}
-          company={data.company}
+          deckDetailsBackgroundIndex={data.cardDesignIndex}
+          company={data.deckType === 'interview' && data.interviewCompany ? data.interviewCompany : undefined}
           folderTitle={folderTitle as string}
           folderId={folderId as string}
           sourcePage={sourcePage as string}
+          isStudy={data.deckType === 'study'}
+          isFavorited={data.isFavorited === 1}
+          onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1)}
         />
       );
     });
@@ -610,7 +677,7 @@ export default function ViewDecksInFolderScreen() {
                   <View style={styles.titleRow}>
                     <View style={styles.titleContainer}>
                       <Title style={[styles.titleAbsolute]}>
-                          {`Decks (${decksData.length})`}
+                          {`Decks (${decksCount})`}
                       </Title>
                     </View>
                         

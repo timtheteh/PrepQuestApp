@@ -324,3 +324,144 @@ export async function getFavoritedFolders(): Promise<Folder[]> {
     return [];
   }
 }
+
+export async function deleteFolder(folderId: number): Promise<boolean> {
+  try {
+    // Start a transaction to ensure data consistency
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    // First, update all decks that reference this folder to remove it from their folderIDs
+    // Get all decks that have this folder in their folderIDs
+    const decksWithFolder = await db.getAllAsync(`
+      SELECT deckID, folderIDs 
+      FROM decks 
+      WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%'
+    `);
+    
+    // Update each deck to remove this folder from their folderIDs
+    for (const deck of decksWithFolder) {
+      const deckData = deck as { deckID: number; folderIDs: string };
+      let folderIdsArray: number[];
+      
+      try {
+        folderIdsArray = JSON.parse(deckData.folderIDs);
+      } catch (error) {
+        console.error('Error parsing folderIDs for deck:', deckData.deckID, error);
+        continue;
+      }
+      
+      // Remove the folder ID from the array
+      const updatedFolderIds = folderIdsArray.filter(id => id !== folderId);
+      
+      // Update the deck with the new folderIDs
+      if (updatedFolderIds.length === 0) {
+        // If no folders left, set to NULL
+        await db.execAsync(`
+          UPDATE decks 
+          SET folderIDs = NULL 
+          WHERE deckID = ${deckData.deckID}
+        `);
+      } else {
+        // Update with the remaining folder IDs
+        const newFolderIdsString = JSON.stringify(updatedFolderIds);
+        await db.execAsync(`
+          UPDATE decks 
+          SET folderIDs = '${newFolderIdsString}'
+          WHERE deckID = ${deckData.deckID}
+        `);
+      }
+    }
+    
+    // Then delete the folder itself
+    const result = await db.execAsync(`
+      DELETE FROM folders 
+      WHERE folderID = ${folderId}
+    `);
+    
+    // Commit the transaction
+    await db.execAsync('COMMIT');
+    
+    console.log(`Successfully deleted folder ${folderId} and updated related decks`);
+    return true;
+  } catch (error) {
+    // Rollback the transaction on error
+    await db.execAsync('ROLLBACK');
+    console.error('Error deleting folder:', error);
+    return false;
+  }
+}
+
+export async function deleteMultipleFolders(folderIds: number[]): Promise<boolean> {
+  try {
+    if (folderIds.length === 0) {
+      return true;
+    }
+    
+    // Start a transaction to ensure data consistency
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    // Process each folder
+    for (const folderId of folderIds) {
+      // Get all decks that have this folder in their folderIDs
+      const decksWithFolder = await db.getAllAsync(`
+        SELECT deckID, folderIDs 
+        FROM decks 
+        WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%'
+      `);
+      
+      // Update each deck to remove this folder from their folderIDs
+      for (const deck of decksWithFolder) {
+        const deckData = deck as { deckID: number; folderIDs: string };
+        let folderIdsArray: number[];
+        
+        try {
+          folderIdsArray = JSON.parse(deckData.folderIDs);
+        } catch (error) {
+          console.error('Error parsing folderIDs for deck:', deckData.deckID, error);
+          continue;
+        }
+        
+        // Remove the folder ID from the array
+        const updatedFolderIds = folderIdsArray.filter(id => id !== folderId);
+        
+        // Update the deck with the new folderIDs
+        if (updatedFolderIds.length === 0) {
+          // If no folders left, set to NULL
+          await db.execAsync(`
+            UPDATE decks 
+            SET folderIDs = NULL 
+            WHERE deckID = ${deckData.deckID}
+          `);
+        } else {
+          // Update with the remaining folder IDs
+          const newFolderIdsString = JSON.stringify(updatedFolderIds);
+          await db.execAsync(`
+            UPDATE decks 
+            SET folderIDs = '${newFolderIdsString}'
+            WHERE deckID = ${deckData.deckID}
+          `);
+        }
+      }
+    }
+    
+    // Create comma-separated list of folder IDs
+    const folderIdsString = folderIds.join(',');
+    
+    // Delete the folders themselves
+    await db.execAsync(`
+      DELETE FROM folders 
+      WHERE folderID IN (${folderIdsString})
+    `);
+    
+    // Commit the transaction
+    await db.execAsync('COMMIT');
+    
+    console.log(`Successfully deleted ${folderIds.length} folders and updated related decks`);
+    return true;
+  } catch (error) {
+    // Rollback the transaction on error
+    await db.execAsync('ROLLBACK');
+    console.error('Error deleting multiple folders:', error);
+    return false;
+  }
+}

@@ -14,7 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks } from '@/db/decks';
+import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders } from '@/db/decks';
 import { db } from '@/db/index';
 import { cardDesigns } from '@/constants/cardDesigns';
 
@@ -656,6 +656,15 @@ export default function FavoritesScreen() {
     }
   }, [favoritedDecks, favoritedFolders, filteredFavoritedDecks, filteredFavoritedFolders, isSearching]);
 
+  // Cleanup effect to reset selections when search state changes
+  useEffect(() => {
+    // Reset selections when search state changes to prevent index mismatches
+    if (isSelectMode) {
+      setSelectedFavDeckCards(new Set());
+      setSelectedFavFolderCards(new Set());
+    }
+  }, [isSearching, isSelectMode]);
+
   const handleSearchPress = () => {
     // This will be called when the search button is pressed
     // The actual search logic will be handled by the HeaderIconButtons component
@@ -687,13 +696,17 @@ export default function FavoritesScreen() {
   };
 
   const handleClearSearch = () => {
-    setSearchQuery('');
-    setIsSearching(false);
-    setFilteredFavoritedDecks(favoritedDecks);
-    setFilteredFavoritedFolders(favoritedFolders);
-    // Clear selected cards when clearing search
+    // Clear selections first to prevent render issues
     setSelectedFavDeckCards(new Set());
     setSelectedFavFolderCards(new Set());
+    
+    // Reset search state
+    setSearchQuery('');
+    setIsSearching(false);
+    
+    // Reset filtered data
+    setFilteredFavoritedDecks(favoritedDecks);
+    setFilteredFavoritedFolders(favoritedFolders);
   };
 
   const handleDeleteSelectedFavoritedDecks = async () => {
@@ -711,6 +724,9 @@ export default function FavoritesScreen() {
       const success = await deleteMultipleDecks(selectedDeckIds);
       
       if (success) {
+        // Clear selections first to prevent render issues
+        setSelectedFavDeckCards(new Set());
+        
         // Update local state by removing the deleted decks
         const remainingDecks = favoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
         setFavoritedDecks(remainingDecks);
@@ -720,11 +736,11 @@ export default function FavoritesScreen() {
           const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
           setFilteredFavoritedDecks(remainingFilteredDecks);
         }
-        
-        setSelectedFavDeckCards(new Set());
 
-        // Exit selection mode
-        handleCancel();
+        // Exit selection mode after state updates
+        setTimeout(() => {
+          handleCancel();
+        }, 0);
         
         console.log(`Successfully deleted ${selectedDeckIds.length} favorited deck(s)`);
       } else {
@@ -746,23 +762,32 @@ export default function FavoritesScreen() {
         return;
       }
 
-      // TODO: Implement folder deletion from database
-      // For now, just update local state
-      const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
-      setFavoritedFolders(remainingFolders);
+      // Delete the folders from database
+      const success = await deleteMultipleFolders(selectedFolderIds);
       
-      // Update filtered folders if searching
-      if (isSearching) {
-        const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
-        setFilteredFavoritedFolders(remainingFilteredFolders);
-      }
-      
-      setSelectedFavFolderCards(new Set());
+      if (success) {
+        // Clear selections first to prevent render issues
+        setSelectedFavFolderCards(new Set());
+        
+        // Update local state by removing the deleted folders
+        const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+        setFavoritedFolders(remainingFolders);
+        
+        // Update filtered folders if searching
+        if (isSearching) {
+          const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+          setFilteredFavoritedFolders(remainingFilteredFolders);
+        }
 
-      // Exit selection mode
-      handleCancel();
-      
-      console.log(`Successfully deleted ${selectedFolderIds.length} favorited folder(s)`);
+        // Exit selection mode after state updates
+        setTimeout(() => {
+          handleCancel();
+        }, 0);
+        
+        console.log(`Successfully deleted ${selectedFolderIds.length} favorited folder(s)`);
+      } else {
+        console.error('Failed to delete favorited folders');
+      }
     } catch (error) {
       console.error('Error deleting favorited folders:', error);
     }
@@ -770,6 +795,12 @@ export default function FavoritesScreen() {
 
   const renderFavDeckCards = () => {
     const decksToRender = isSearching ? filteredFavoritedDecks : favoritedDecks;
+    
+    // Safety check to prevent rendering issues
+    if (!decksToRender || decksToRender.length === 0) {
+      return null;
+    }
+    
     const cards = decksToRender.map((data, index) => {
       const design = cardDesigns[data.cardDesignIndex];
       const style = index === 0 ? styles.firstCard : styles.card;
@@ -815,6 +846,12 @@ export default function FavoritesScreen() {
 
   const renderFavFolderCards = () => {
     const foldersToRender = isSearching ? filteredFavoritedFolders : favoritedFolders;
+    
+    // Safety check to prevent rendering issues
+    if (!foldersToRender || foldersToRender.length === 0) {
+      return null;
+    }
+    
     const cards = foldersToRender.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       

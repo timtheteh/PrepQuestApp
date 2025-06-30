@@ -621,6 +621,7 @@ export default function ViewDecksInFolderScreen() {
           isStudy={data.deckType === 'study'}
           isFavorited={data.isFavorited === 1}
           onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1)}
+          deckID={data.deckID}
         />
       );
     });

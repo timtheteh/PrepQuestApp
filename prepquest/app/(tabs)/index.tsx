@@ -668,6 +668,7 @@ export default function DecksScreen() {
           isStudy={true}
           isFavorited={data.isFavorited === 1}
           onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1, true)}
+          deckID={data.deckID}
         />
       );
     });

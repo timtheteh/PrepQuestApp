@@ -16,6 +16,7 @@ import { BottomTextInputModal } from '@/components/BottomTextInputModal';
 import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
+import { db } from '@/db/index';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -120,7 +121,7 @@ export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const screenOpacity = useRef(new Animated.Value(0)).current;
-  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, sourcePage, folderTitle, folderId } = useLocalSearchParams();
+  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, sourcePage, folderTitle, folderId, isFavorited} = useLocalSearchParams();
   const { 
     navbarRef,
     setIsMenuOpen,
@@ -135,6 +136,9 @@ export default function DeckDetailsScreen() {
     deckDetailsSaveModalOpacity,
   } = useContext(MenuContext);
 
+  // State for favorite status
+  const [favoriteStatus, setFavoriteStatus] = useState(isFavorited === '1');
+
   // Convert deckDetailsBackgroundIndex to number and provide fallback
   const backgroundIndex = parseInt(deckDetailsBackgroundIndex as string) || 0;
   
@@ -148,6 +152,25 @@ export default function DeckDetailsScreen() {
   
   // Ensure backgroundIndex is within bounds for AI card designs (which has 3 elements)
   const safeBackgroundIndex = AIDeck ? Math.min(backgroundIndex, deckDetailsAICardDesigns.length - 1) : backgroundIndex;
+
+  // Function to handle favorite/unfavorite deck
+  const handleFavoriteToggle = async () => {
+    try {
+      const newFavoritedValue = favoriteStatus ? 0 : 1;
+      
+      // Update database
+      await db.execAsync(`
+        UPDATE decks 
+        SET isFavorited = ${newFavoritedValue}
+        WHERE deckID = ${deckId}
+      `);
+      
+      // Update local state immediately
+      setFavoriteStatus(!favoriteStatus);
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+    }
+  };
 
   // Handle screen transitions
   useEffect(() => {
@@ -177,6 +200,11 @@ export default function DeckDetailsScreen() {
       screenOpacity.setValue(0);
     };
   }, []);
+
+  // Update favorite status when isFavorited prop changes
+  useEffect(() => {
+    setFavoriteStatus(isFavorited === 'true');
+  }, [isFavorited]);
 
   const handleBackPress = () => {
     // Check if we should navigate back to viewDecksInFolder
@@ -528,7 +556,11 @@ export default function DeckDetailsScreen() {
                           styles.favoriteButtonContainer,
                         ]}
                       >
-                        <FavoriteButton isSelectMode={false} />
+                        <FavoriteButton 
+                          isSelectMode={false} 
+                          favorited={favoriteStatus}
+                          onPress={handleFavoriteToggle}
+                        />
                       </View>
                       
                       {/* Title */}

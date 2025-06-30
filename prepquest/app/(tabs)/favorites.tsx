@@ -1189,6 +1189,7 @@ export default function FavoritesScreen() {
           isFavorited={data.isFavorited === 1}
           isStudy={data.deckType === 'study'}
           onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1)}
+          deckID={data.deckID}
         />
       );
     });

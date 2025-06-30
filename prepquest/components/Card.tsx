@@ -34,6 +34,7 @@ interface CardProps {
   isStudy?: boolean;
   isFavorited?: boolean;
   onFavoriteToggle?: () => void;
+  deckID?: number;
 }
 
 export function Card({ 
@@ -63,6 +64,7 @@ export function Card({
   isStudy = false,
   isFavorited = false,
   onFavoriteToggle,
+  deckID,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -152,7 +154,7 @@ export function Card({
       router.push({
         pathname: '/(tabs)/deckDetails',
         params: {
-          deckId: title?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+          deckId: deckID?.toString() || 'unknown',
           deckTitle: title || 'Untitled Deck',
           deckType: cardType || 'study',
           deckDetailsBackgroundIndex: deckDetailsBackgroundIndex ? deckDetailsBackgroundIndex.toString() : '0',
@@ -164,6 +166,7 @@ export function Card({
           sourcePage: sourcePage || 'index',
           folderTitle: folderTitle,
           folderId: folderId,
+          isFavorited: isFavorited ? 'true' : 'false',
         }
       });
     }

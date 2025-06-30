@@ -29,7 +29,7 @@ const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
 export default function FoldersScreen() {
   const router = useRouter();
-  const { isAddToFolders, isMoveToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, folderTitle, folderId, originalSourcePage, originalFolderTitle, originalFolderId } = useLocalSearchParams();
+  const { isAddToFolders, isMoveToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, folderTitle, folderId, originalSourcePage, originalFolderTitle, originalFolderId, selectedDeckIds } = useLocalSearchParams();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isAddToFoldersMode, setIsAddToFoldersMode] = useState(false);
@@ -62,7 +62,9 @@ export default function FoldersScreen() {
     moveToFoldersModalOpacity,
     setNoSelectionModalSubtitle,
     sourcePageForFolders,
-    setSourcePageForFolders
+    setSourcePageForFolders,
+    setIsDeckDetailsSaveModalOpen,
+    deckDetailsSaveModalOpacity
   } = useContext(MenuContext);
 
   // Animation values
@@ -560,11 +562,100 @@ export default function FoldersScreen() {
     setSelectedFolders(allFolderIndices);
   };
 
-  const handleDone = () => {
+  const handleDone = async () => {
     // Handle the done action for AddToFolders or MoveToFolders mode
     if (isAddToFoldersMode) {
-      // TODO: Implement add to folders logic
-      console.log('Add to folders logic will be implemented here');
+      try {
+        // Get the selected folder IDs
+        const foldersToUse = isSearching ? filteredFolders : folders;
+        const selectedFolderIds = Array.from(selectedFolders).map(index => foldersToUse[index].folderID);
+
+        if (selectedFolderIds.length === 0) {
+          console.log('No folders selected for adding deck');
+          return;
+        }
+
+        // Get the deck IDs from the route params
+        let targetDeckIds: number[] = [];
+        
+        // Check if we have selectedDeckIds (from index page) or deckId (from deckDetails page)
+        if (selectedDeckIds) {
+          try {
+            targetDeckIds = JSON.parse(selectedDeckIds as string);
+          } catch (error) {
+            console.error('Error parsing selectedDeckIds:', error);
+            return;
+          }
+        } else if (deckId) {
+          targetDeckIds = [parseInt(deckId as string)];
+        } else {
+          console.error('No deck IDs provided for adding to folders');
+          return;
+        }
+
+        if (targetDeckIds.length === 0) {
+          console.error('No valid deck IDs found');
+          return;
+        }
+
+        // Process each deck
+        for (const targetDeckId of targetDeckIds) {
+          // Get the current folderIDs for the deck
+          const currentDeck = await db.getFirstAsync(`
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
+          `);
+
+          if (!currentDeck) {
+            console.error(`Deck ${targetDeckId} not found`);
+            continue;
+          }
+
+          const deckData = currentDeck as { folderIDs: string | null };
+          let currentFolderIds: number[] = [];
+
+          // Parse existing folderIDs if they exist
+          if (deckData.folderIDs) {
+            try {
+              currentFolderIds = JSON.parse(deckData.folderIDs);
+            } catch (error) {
+              console.error('Error parsing existing folderIDs:', error);
+              currentFolderIds = [];
+            }
+          }
+
+          // Add new folder IDs (avoid duplicates)
+          const newFolderIds = [...new Set([...currentFolderIds, ...selectedFolderIds])];
+
+          // Update the deck's folderIDs in the database
+          const newFolderIdsString = JSON.stringify(newFolderIds);
+          await db.execAsync(`
+            UPDATE decks 
+            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = datetime('now')
+            WHERE deckID = ${targetDeckId}
+          `);
+
+          console.log(`Successfully added deck ${targetDeckId} to folders: ${selectedFolderIds.join(', ')}`);
+        }
+        
+        // Show success modal
+        setIsMenuOpen(true);
+        setIsDeckDetailsSaveModalOpen(true);
+        
+        Animated.parallel([
+          Animated.timing(menuOverlayOpacity, {
+            toValue: 0.5,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(deckDetailsSaveModalOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          })
+        ]).start();
+      } catch (error) {
+        console.error('Error adding deck to folders:', error);
+      }
     } else if (isMoveToFoldersMode) {
       // TODO: Implement move to folders logic
       console.log('Move to folders logic will be implemented here');

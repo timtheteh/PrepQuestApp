@@ -457,6 +457,10 @@ export default function FavoritesScreen() {
           // Set source page to favorites
           setSourcePageForFolders('favorites');
           
+          // Get the selected deck IDs
+          const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+          const selectedDeckIds = Array.from(selectedFavDeckCards).map(index => decksToUse[index].deckID);
+          
           // Navigate to folders in AddToFolders mode
           if (Platform.OS === 'ios') {
             navbarRef?.current?.resetAnimation();
@@ -467,7 +471,8 @@ export default function FavoritesScreen() {
                   isAddToFolders: 'true',
                   previousMode: isFavFoldersMode ? 'interview' : 'study',
                   selectedState: 'true',
-                  sourcePage: 'favorites'
+                  sourcePage: 'favorites',
+                  selectedDeckIds: JSON.stringify(selectedDeckIds)
                 }
               });
             }, 50);
@@ -478,7 +483,8 @@ export default function FavoritesScreen() {
                 isAddToFolders: 'true',
                 previousMode: isFavFoldersMode ? 'interview' : 'study',
                 selectedState: 'true',
-                sourcePage: 'favorites'
+                sourcePage: 'favorites',
+                selectedDeckIds: JSON.stringify(selectedDeckIds)
               }
             });
             setTimeout(() => {

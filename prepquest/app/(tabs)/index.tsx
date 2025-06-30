@@ -472,6 +472,16 @@ export default function DecksScreen() {
         // Set source page to index
         setSourcePageForFolders('index');
         
+        // Get the selected deck IDs
+        let selectedDeckIds: number[] = [];
+        if (isInterviewMode) {
+          const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
+          selectedDeckIds = Array.from(selectedInterviewCards).map(index => decksToUse[index].deckID);
+        } else {
+          const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
+          selectedDeckIds = Array.from(selectedStudyCards).map(index => decksToUse[index].deckID);
+        }
+        
         // Navigate to folders in AddToFolders mode
         if (Platform.OS === 'ios') {
           navbarRef?.current?.resetAnimation();
@@ -481,7 +491,8 @@ export default function DecksScreen() {
               params: { 
                 isAddToFolders: 'true',
                 previousMode: isInterviewMode ? 'interview' : 'study',
-                selectedState: 'true'
+                selectedState: 'true',
+                selectedDeckIds: JSON.stringify(selectedDeckIds)
               }
             });
           }, 50);
@@ -491,7 +502,8 @@ export default function DecksScreen() {
             params: { 
               isAddToFolders: 'true',
               previousMode: isInterviewMode ? 'interview' : 'study',
-              selectedState: 'true'
+              selectedState: 'true',
+              selectedDeckIds: JSON.stringify(selectedDeckIds)
             }
           });
           setTimeout(() => {

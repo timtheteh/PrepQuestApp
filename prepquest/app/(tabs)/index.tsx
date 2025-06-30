@@ -14,158 +14,13 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns } from '@/constants/cardDesigns';
+import { getStudyDecks, getInterviewDecks, Deck } from '@/db/decks';
+import { db } from '@/db/index';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
-
-
-const studyCardData = [
-  {
-    percent: 10,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'Mathematics Study Prep',
-    date: 'Dec 15, 2024',
-    flashcardCount: 45,
-    company: 'study'
-  },
-  {
-    percent: 25,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'Physics Study Prep',
-    date: 'Dec 12, 2024',
-    flashcardCount: 32,
-    company: 'study'
-  },
-  {
-    percent: 50,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'Chemistry A Level Prep',
-    date: 'Dec 10, 2024',
-    flashcardCount: 67,
-    company: 'study'
-  },
-  {
-    percent: 75,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'Biology SAT Prep',
-    date: 'Dec 8, 2024',
-    flashcardCount: 89,
-    company: 'study'
-  },
-  {
-    percent: 100,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'History SAT Prep',
-    date: 'Dec 5, 2024',
-    flashcardCount: 123,
-    company: 'study'
-  },
-  {
-    percent: 0,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'Geography Study Prep',
-    date: 'Dec 3, 2024',
-    flashcardCount: 56,
-    company: 'study'
-  },
-  {
-    percent: 60,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'Economics A Level Prep',
-    date: 'Dec 1, 2024',
-    flashcardCount: 78,
-    company: 'study'
-  },
-  {
-    percent: 90,
-    image: require('@/assets/companyIcons/StudyCardIcon.png'),
-    cardType: 'study',
-    isSelectMode: false,
-    title: 'Literature Exam Prep',
-    date: 'Nov 28, 2024',
-    flashcardCount: 94,
-    company: 'study'
-  },
-];
-
-const interviewCardData = [
-  {
-    percent: 15,
-    image: require('@/assets/companyIcons/GoogleIcon.png'),
-    cardType: 'behavioral',
-    isSelectMode: false,
-    title: 'Frontend Developer Behavioral Prep',
-    date: 'Dec 14, 2024',
-    flashcardCount: 28,
-    company: 'Google',
-  },
-  {
-    percent: 40,
-    image: require('@/assets/companyIcons/MetaIcon.png'),
-    cardType: 'technical',
-    isSelectMode: false,
-    title: 'Backend Developer Technical Prep',
-    date: 'Dec 11, 2024',
-    flashcardCount: 52,
-    company: 'Meta'
-  },
-  {
-    percent: 100,
-    image: require('@/assets/companyIcons/JPMIcon.png'),
-    cardType: 'case study',
-    isSelectMode: false,
-    title: 'Data Scientist Case Study Prep',
-    date: 'Dec 9, 2024',
-    flashcardCount: 41,
-    company: 'JPMorgan'
-  },
-  {
-    percent: 80,
-    image: require('@/assets/companyIcons/GoogleIcon.png'),
-    cardType: 'brainteasers',
-    isSelectMode: false,
-    title: 'DevOps Engineer Brainteasers Prep',
-    date: 'Dec 7, 2024',
-    flashcardCount: 35,
-    company: 'Google'
-  },
-  {
-    percent: 55,
-    image: require('@/assets/companyIcons/MetaIcon.png'),
-    cardType: 'others',
-    isSelectMode: false,
-    title: 'Mobile Engineer Others Prep',
-    date: 'Dec 4, 2024',
-    flashcardCount: 63, 
-    company: 'Meta'
-  },
-  {
-    percent: 0,
-    image: require('@/assets/companyIcons/JPMIcon.png'),
-    cardType: 'technical',
-    isSelectMode: false,
-    title: 'QA Engineer Technical Prep',
-    date: 'Dec 2, 2024',
-    flashcardCount: 47, 
-    company: 'JPMorgan'
-  },
-];
 
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
@@ -174,6 +29,9 @@ export default function DecksScreen() {
   const [selectedInterviewCards, setSelectedInterviewCards] = useState<Set<number>>(new Set());
   const [studyCardsCount, setStudyCardsCount] = useState(0);
   const [interviewCardsCount, setInterviewCardsCount] = useState(0);
+  const [studyDecks, setStudyDecks] = useState<Deck[]>([]);
+  const [interviewDecks, setInterviewDecks] = useState<Deck[]>([]);
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -204,11 +62,75 @@ export default function DecksScreen() {
 
   const selectUnselectedDuration = 300;
 
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${month} ${day}, ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString; // Return original string if parsing fails
+    }
+  };
+
+  // Check if database is ready
+  useEffect(() => {
+    const checkDatabaseReady = async () => {
+      try {
+        console.log('Checking if database is ready...');
+        // Try a simple query to check if database is ready
+        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks');
+        console.log('Database is ready, decks count:', (result[0] as any)?.count);
+        setIsDatabaseReady(true);
+      } catch (error) {
+        console.log('Database not ready yet, waiting...', error);
+        // Retry after a short delay
+        setTimeout(checkDatabaseReady, 500);
+      }
+    };
+    
+    checkDatabaseReady();
+  }, []);
+
+  // Load deck data from database
+  useEffect(() => {
+    const loadDeckData = async () => {
+      if (!isDatabaseReady) {
+        console.log('Database not ready, skipping data load');
+        return;
+      }
+      
+      console.log('Loading deck data from database...');
+      try {
+        const [studyData, interviewData] = await Promise.all([
+          getStudyDecks(),
+          getInterviewDecks()
+        ]);
+        console.log('Study decks loaded:', studyData.length);
+        console.log('Interview decks loaded:', interviewData.length);
+        setStudyDecks(studyData);
+        setInterviewDecks(interviewData);
+        setStudyCardsCount(studyData.length);
+        setInterviewCardsCount(interviewData.length);
+      } catch (error) {
+        console.error('Error loading deck data:', error);
+      }
+    };
+
+    if (isFocused) {
+      loadDeckData();
+    }
+  }, [isFocused, isDatabaseReady]);
+
   // Update card counts
   useEffect(() => {
-    setStudyCardsCount(8); // Current number of study cards
-    setInterviewCardsCount(6); // Current number of interview cards
-  }, []); // Empty dependency array as these are constant in the current implementation
+    setStudyCardsCount(studyDecks.length);
+    setInterviewCardsCount(interviewDecks.length);
+  }, [studyDecks, interviewDecks]);
 
   // Handle returning from folders page
   useEffect(() => {
@@ -575,31 +497,29 @@ export default function DecksScreen() {
   };
 
   const renderStudyCards = () => {
-    const cards = studyCardData.map((data, index) => {
-      const design = cardDesigns[index % 4];
+    const cards = studyDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       return (
         <Card
           key={`study-${index}`}
           style={style}
-          backgroundImage={design.background}
-          pressedBackgroundImage={design.pressed}
+          backgroundImage={cardDesigns[data.cardDesignIndex].background}
+          pressedBackgroundImage={cardDesigns[data.cardDesignIndex].pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedStudyCards.has(index)}
           onSelectPress={() => handleStudyCardSelection(index, !selectedStudyCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
-          percent={data.percent}
+          percent={0}
           showProgress={!isSelectMode}
-          image={data.image}
-          cardType={data.cardType}
-          title={data.title}
-          date={data.date}
+          cardType={data.deckType}
+          title={data.deckName}
+          date={formatDate(data.dateAdded)}
           flashcardCount={data.flashcardCount}
-          deckDetailsBackgroundIndex={index%4}
-          company={data.company}
+          deckDetailsBackgroundIndex={data.cardDesignIndex}
           sourcePage="index"
           isStudy={true}
+          isFavorited={data.isFavorited === 1}
         />
       );
     });
@@ -607,30 +527,57 @@ export default function DecksScreen() {
   };
 
   const renderInterviewCards = () => {
-    const cards = interviewCardData.map((data, index) => {
-      const design = cardDesigns[(index + 2) % 4];
+    const cards = interviewDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
+      
+      // Convert interviewCompanyIcon BLOB to ImageSourcePropType if it exists
+      let imageSource: any = undefined;
+      if (data.interviewCompanyIcon) {
+        try {
+          // Handle hex string from SQLite BLOB
+          if (typeof data.interviewCompanyIcon === 'string') {
+            // Check if it's a hex string (from SQLite hex() function)
+            if (/^[0-9A-Fa-f]+$/.test(data.interviewCompanyIcon)) {
+              // Convert hex to base64
+              const hexString = data.interviewCompanyIcon;
+              const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+              const base64String = btoa(String.fromCharCode(...bytes));
+              imageSource = { uri: `data:image/png;base64,${base64String}` };
+            } else if (data.interviewCompanyIcon.startsWith('data:')) {
+              // Already a data URI
+              imageSource = { uri: data.interviewCompanyIcon };
+            } else {
+              // Try as file path or URL
+              imageSource = { uri: data.interviewCompanyIcon };
+            }
+          }        
+        } catch (error) {
+          imageSource = undefined;
+        }
+      } 
+      
       return (
         <Card
           key={`interview-${index}`}
           style={style}
-          backgroundImage={design.background}
-          pressedBackgroundImage={design.pressed}
+          backgroundImage={cardDesigns[data.cardDesignIndex].background}
+          pressedBackgroundImage={cardDesigns[data.cardDesignIndex].pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedInterviewCards.has(index)}
           onSelectPress={() => handleInterviewCardSelection(index, !selectedInterviewCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
-          percent={data.percent}
+          percent={0}
           showProgress={!isSelectMode}
-          image={data.image}
-          cardType={data.cardType}
-          title={data.title}
-          date={data.date}
+          image={imageSource}
+          cardType={data.interviewType || undefined}
+          title={data.deckName}
+          date={formatDate(data.dateAdded)}
           flashcardCount={data.flashcardCount}
-          deckDetailsBackgroundIndex={(index + 2) % 4}
-          company={data.company}
+          deckDetailsBackgroundIndex={data.cardDesignIndex}
+          company={data.interviewCompany || undefined}
           sourcePage="index"
+          isFavorited={data.isFavorited === 1}
         />
       );
     });

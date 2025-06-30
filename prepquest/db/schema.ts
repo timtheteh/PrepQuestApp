@@ -44,7 +44,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         studyTopicsSubtopics TEXT,
         studyExamQuiz TEXT,
         interviewJobRole TEXT,
-        interviewType TEXT,
+        interviewType TEXT CHECK (interviewType IN ('technical', 'behavioral', 'brainteasers', 'case study', 'others')),
         interviewCompany TEXT,
         interviewExperienceLevel TEXT,
         interviewTopics TEXT,

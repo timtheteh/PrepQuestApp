@@ -32,6 +32,7 @@ interface CardProps {
   folderId?: string;
   sourcePage?: string;
   isStudy?: boolean;
+  isFavorited?: boolean;
 }
 
 export function Card({ 
@@ -59,6 +60,7 @@ export function Card({
   folderId,
   sourcePage,
   isStudy = false,
+  isFavorited = false,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -210,7 +212,7 @@ export function Card({
                     isSelectMode && styles.favoriteButtonContainerSelectMode
                   ]}
                 >
-                  <FavoriteButton isSelectMode={isSelectMode} />
+                  <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} />
                 </View>
                 {/* Title */}
                 {title && (

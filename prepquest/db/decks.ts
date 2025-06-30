@@ -82,10 +82,7 @@ export async function getInterviewDecks(): Promise<Deck[]> {
       GROUP BY d.deckID
       ORDER BY d.dateAdded DESC
     `);
-    
-    console.log('Raw interview decks result:', result);
-    console.log('First interview deck:', result[0]);
-    
+        
     return result as Deck[];
   } catch (error) {
     console.error('Error fetching interview decks:', error);

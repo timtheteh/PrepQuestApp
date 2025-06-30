@@ -3,13 +3,20 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Animated } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { setupDatabase } from '@/db/index';
+import SplashScreen from './splash';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const fadeAnim = useState(new Animated.Value(1))[0];
+  
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     'Satoshi-Medium': require('../assets/fonts/Satoshi-Medium.otf'),
@@ -28,18 +35,54 @@ export default function RootLayout() {
   useEffect(() => {
     const initDatabase = async () => {
       try {
+        console.log('🚀 Starting database initialization...');
+        setIsInitializing(true);
+        
+        const startTime = Date.now();
         await setupDatabase();
+        const endTime = Date.now();
+        
+        console.log(`✅ Database initialization completed successfully in ${endTime - startTime}ms`);
+        setIsDatabaseReady(true);
+        
+        // Start fade out animation
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 800, // 800ms fade out
+          useNativeDriver: true,
+        }).start(() => {
+          setShowSplash(false);
+        });
+        
       } catch (error) {
-        console.error('Failed to initialize database:', error);
+        console.error('❌ Failed to initialize database:', error);
+        // Even if there's an error, we should still show the app
+        // The user can retry or the app can handle the error gracefully
+        setIsDatabaseReady(true);
+        
+        // Still fade out even on error
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowSplash(false);
+        });
+      } finally {
+        setIsInitializing(false);
       }
     };
     
     initDatabase();
-  }, []);
+  }, [fadeAnim]);
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+  // Show splash screen while fonts are loading or database is initializing
+  if (!loaded || showSplash) {
+    return (
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <SplashScreen />
+      </Animated.View>
+    );
   }
 
   return (

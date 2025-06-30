@@ -7,19 +7,21 @@ interface FavoriteButtonProps {
   size?: number;
   favorited?: boolean;
   onPress?: () => void;
+  onFavoriteToggle?: () => void;
 }
 
 export function FavoriteButton({ 
   isSelectMode = false, 
   size = 30, 
   favorited: externalFavorited,
-  onPress: externalOnPress
+  onPress: externalOnPress,
+  onFavoriteToggle
 }: FavoriteButtonProps) {
   const [internalFavorited, setInternalFavorited] = useState(false);
   
   // Use external state if provided, otherwise use internal state
   const favorited = externalFavorited !== undefined ? externalFavorited : internalFavorited;
-  const setFavorited = externalOnPress || (() => setInternalFavorited(f => !f));
+  const setFavorited = onFavoriteToggle || externalOnPress || (() => setInternalFavorited(f => !f));
   
   const borderWidth = 2;
   // Star points (5-pointed star)

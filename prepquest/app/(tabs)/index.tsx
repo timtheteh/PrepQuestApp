@@ -77,6 +77,41 @@ export default function DecksScreen() {
     }
   };
 
+  // Function to handle favorite/unfavorite deck
+  const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean, isStudyDeck: boolean) => {
+    try {
+      const newFavoritedValue = currentFavorited ? 0 : 1;
+      
+      // Update database
+      await db.execAsync(`
+        UPDATE decks 
+        SET isFavorited = ${newFavoritedValue}
+        WHERE deckID = ${deckId}
+      `);
+      
+      // Update local state immediately
+      if (isStudyDeck) {
+        setStudyDecks(prev => 
+          prev.map(deck => 
+            deck.deckID === deckId 
+              ? { ...deck, isFavorited: newFavoritedValue }
+              : deck
+          )
+        );
+      } else {
+        setInterviewDecks(prev => 
+          prev.map(deck => 
+            deck.deckID === deckId 
+              ? { ...deck, isFavorited: newFavoritedValue }
+              : deck
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+    }
+  };
+
   // Check if database is ready
   useEffect(() => {
     const checkDatabaseReady = async () => {
@@ -520,6 +555,7 @@ export default function DecksScreen() {
           sourcePage="index"
           isStudy={true}
           isFavorited={data.isFavorited === 1}
+          onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1, true)}
         />
       );
     });
@@ -550,11 +586,11 @@ export default function DecksScreen() {
               // Try as file path or URL
               imageSource = { uri: data.interviewCompanyIcon };
             }
-          }        
+          }
         } catch (error) {
           imageSource = undefined;
         }
-      } 
+      }
       
       return (
         <Card
@@ -578,6 +614,7 @@ export default function DecksScreen() {
           company={data.interviewCompany || undefined}
           sourcePage="index"
           isFavorited={data.isFavorited === 1}
+          onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1, false)}
         />
       );
     });

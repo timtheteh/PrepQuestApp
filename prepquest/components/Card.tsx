@@ -33,6 +33,7 @@ interface CardProps {
   sourcePage?: string;
   isStudy?: boolean;
   isFavorited?: boolean;
+  onFavoriteToggle?: () => void;
 }
 
 export function Card({ 
@@ -61,6 +62,7 @@ export function Card({
   sourcePage,
   isStudy = false,
   isFavorited = false,
+  onFavoriteToggle,
 }: CardProps) {
   const router = useRouter();
   const [isPressed, setIsPressed] = useState(false);
@@ -212,7 +214,7 @@ export function Card({
                     isSelectMode && styles.favoriteButtonContainerSelectMode
                   ]}
                 >
-                  <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} />
+                  <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
                 </View>
                 {/* Title */}
                 {title && (

@@ -93,6 +93,8 @@ interface MenuContextType {
   unfavoriteModalOpacity: Animated.Value;
   unfavoriteModalText: string;
   setUnfavoriteModalText: (text: string) => void;
+  handleUnfavorite: (() => void) | null;
+  setHandleUnfavorite: (handler: (() => void) | null) => void;
   isSubmitCustomFormModalOpen: boolean;
   setIsSubmitCustomFormModalOpen: (value: boolean) => void;
   submitCustomFormModalOpacity: Animated.Value;
@@ -170,6 +172,8 @@ export const MenuContext = createContext<MenuContextType>({
   unfavoriteModalOpacity: new Animated.Value(0),
   unfavoriteModalText: '',
   setUnfavoriteModalText: () => {},
+  handleUnfavorite: null,
+  setHandleUnfavorite: () => {},
   isSubmitCustomFormModalOpen: false,
   setIsSubmitCustomFormModalOpen: () => {},
   submitCustomFormModalOpacity: new Animated.Value(0),
@@ -246,6 +250,7 @@ export default function TabLayout() {
   const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useState(false);
   const deleteFolderModalOpacity = useRef(new Animated.Value(0)).current;
   const [handleDeleteFolder, setHandleDeleteFolder] = useState<(() => void) | null>(null);
+  const [handleUnfavorite, setHandleUnfavorite] = useState<(() => void) | null>(null);
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
 
@@ -554,6 +559,8 @@ export default function TabLayout() {
       unfavoriteModalOpacity,
       unfavoriteModalText,
       setUnfavoriteModalText,
+      handleUnfavorite,
+      setHandleUnfavorite,
       isSubmitCustomFormModalOpen,
       setIsSubmitCustomFormModalOpen,
       submitCustomFormModalOpacity,
@@ -792,8 +799,8 @@ export default function TabLayout() {
           buttons="double"
           onCancel={handleDismissMenu}
           onConfirm={() => {
-            if (handleDeletion) {
-              handleDeletion();
+            if (handleUnfavorite) {
+              handleUnfavorite();
             }
             handleDismissMenu();
           }}

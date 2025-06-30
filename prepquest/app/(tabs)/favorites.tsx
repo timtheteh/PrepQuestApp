@@ -49,6 +49,7 @@ export default function FavoritesScreen() {
     setIsNoSelectionModalOpen,
     noSelectionModalOpacity,
     setHandleDeletion,
+    setHandleUnfavorite,
     navbarRef,
     setIsAIPromptOpen,
     setIsCalendarOpen,
@@ -103,10 +104,12 @@ export default function FavoritesScreen() {
   useEffect(() => {
     if (isFocused) {
       setHandleDeletion(() => handleCancel);
+      setHandleUnfavorite(null);
     }
     return () => {
       if (!isFocused) {
         setHandleDeletion(null);
+        setHandleUnfavorite(null);
       }
     };
   }, [isFocused]);
@@ -524,6 +527,13 @@ export default function FavoritesScreen() {
       return;
     }
 
+    // Set the appropriate unfavorite handler based on current mode
+    if (isFavFoldersMode) {
+      setHandleUnfavorite(() => handleUnfavoriteSelectedFolders);
+    } else {
+      setHandleUnfavorite(() => handleUnfavoriteSelectedDecks);
+    }
+
     // Show unfavorite modal with appropriate text
     setIsMenuOpen(true);
     setIsUnfavoriteModalOpen(true);
@@ -544,6 +554,92 @@ export default function FavoritesScreen() {
         useNativeDriver: true,
       })
     ]).start();
+  };
+
+  const handleUnfavoriteSelectedDecks = async () => {
+    try {
+      // Get the selected deck IDs
+      const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+      const selectedDeckIds = Array.from(selectedFavDeckCards).map(index => decksToUse[index].deckID);
+
+      if (selectedDeckIds.length === 0) {
+        console.log('No decks selected for unfavoriting');
+        return;
+      }
+
+      // Update database to unfavorite the selected decks
+      const deckIdsString = selectedDeckIds.join(',');
+      await db.execAsync(`
+        UPDATE decks 
+        SET isFavorited = 0
+        WHERE deckID IN (${deckIdsString})
+      `);
+
+      // Remove from local state
+      const remainingDecks = favoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+      setFavoritedDecks(remainingDecks);
+      
+      // Update filtered decks if searching
+      if (isSearching) {
+        const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+        setFilteredFavoritedDecks(remainingFilteredDecks);
+      }
+      
+      // Clear selections
+      setSelectedFavDeckCards(new Set());
+
+      // Exit selection mode
+      setTimeout(() => {
+        handleCancel();
+      }, 0);
+      
+      console.log(`Successfully unfavorited ${selectedDeckIds.length} deck(s)`);
+    } catch (error) {
+      console.error('Error unfavoriting decks:', error);
+    }
+  };
+
+  const handleUnfavoriteSelectedFolders = async () => {
+    try {
+      // Get the selected folder IDs
+      const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+      const selectedFolderIds = Array.from(selectedFavFolderCards).map(index => foldersToUse[index].folderID);
+
+      if (selectedFolderIds.length === 0) {
+        console.log('No folders selected for unfavoriting');
+        return;
+      }
+
+      // Update database to unfavorite the selected folders
+      const folderIdsString = selectedFolderIds.join(',');
+      await db.execAsync(`
+        UPDATE folders 
+        SET isFavorited = 0
+        WHERE folderID IN (${folderIdsString})
+      `);
+
+      // Remove from local state
+      const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+      setFavoritedFolders(remainingFolders);
+      
+      // Update filtered folders if searching
+      if (isSearching) {
+        const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+        setFilteredFavoritedFolders(remainingFilteredFolders);
+      }
+      
+      // Clear selections
+      setSelectedFavFolderCards(new Set());
+
+      // Exit selection mode
+      setTimeout(() => {
+        handleCancel();
+      }, 0);
+      
+      console.log(`Successfully unfavorited ${selectedFolderIds.length} folder(s)`);
+    } catch (error) {
+      console.error('Error unfavoriting folders:', error);
+    }
   };
 
   // Helper function to format date
@@ -592,6 +688,124 @@ export default function FavoritesScreen() {
   // Helper function to convert null to undefined
   const nullToUndefined = (value: string | null): string | undefined => {
     return value === null ? undefined : value;
+  };
+
+  // Function to handle favorite/unfavorite deck
+  const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean) => {
+    try {
+      const newFavoritedValue = currentFavorited ? 0 : 1;
+      
+      // Update database
+      await db.execAsync(`
+        UPDATE decks 
+        SET isFavorited = ${newFavoritedValue}
+        WHERE deckID = ${deckId}
+      `);
+      
+      // If unfavoriting, remove from local state
+      if (newFavoritedValue === 0) {
+        // Remove from favorited decks
+        const remainingDecks = favoritedDecks.filter(deck => deck.deckID !== deckId);
+        setFavoritedDecks(remainingDecks);
+        
+        // Remove from filtered decks if searching
+        if (isSearching) {
+          const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => deck.deckID !== deckId);
+          setFilteredFavoritedDecks(remainingFilteredDecks);
+        }
+        
+        // Clear selection if this deck was selected
+        setSelectedFavDeckCards(prev => {
+          const newSet = new Set(prev);
+          // Find the index of the deck being unfavorited
+          const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+          const deckIndex = decksToUse.findIndex(deck => deck.deckID === deckId);
+          if (deckIndex !== -1) {
+            newSet.delete(deckIndex);
+          }
+          return newSet;
+        });
+      } else {
+        // If favoriting, update the isFavorited value in local state
+        setFavoritedDecks(prev => 
+          prev.map(deck => 
+            deck.deckID === deckId 
+              ? { ...deck, isFavorited: newFavoritedValue }
+              : deck
+          )
+        );
+        if (isSearching) {
+          setFilteredFavoritedDecks(prev => 
+            prev.map(deck => 
+              deck.deckID === deckId 
+                ? { ...deck, isFavorited: newFavoritedValue }
+                : deck
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+    }
+  };
+
+  // Function to handle favorite/unfavorite folder
+  const handleFolderFavoriteToggle = async (folderId: number, currentFavorited: boolean) => {
+    try {
+      const newFavoritedValue = currentFavorited ? 0 : 1;
+      
+      // Update database
+      await db.execAsync(`
+        UPDATE folders 
+        SET isFavorited = ${newFavoritedValue}
+        WHERE folderID = ${folderId}
+      `);
+      
+      // If unfavoriting, remove from local state
+      if (newFavoritedValue === 0) {
+        // Remove from favorited folders
+        const remainingFolders = favoritedFolders.filter(folder => folder.folderID !== folderId);
+        setFavoritedFolders(remainingFolders);
+        
+        // Remove from filtered folders if searching
+        if (isSearching) {
+          const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => folder.folderID !== folderId);
+          setFilteredFavoritedFolders(remainingFilteredFolders);
+        }
+        
+        // Clear selection if this folder was selected
+        setSelectedFavFolderCards(prev => {
+          const newSet = new Set(prev);
+          // Find the index of the folder being unfavorited
+          const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+          const folderIndex = foldersToUse.findIndex(folder => folder.folderID === folderId);
+          if (folderIndex !== -1) {
+            newSet.delete(folderIndex);
+          }
+          return newSet;
+        });
+      } else {
+        // If favoriting, update the isFavorited value in local state
+        setFavoritedFolders(prev => 
+          prev.map(folder => 
+            folder.folderID === folderId 
+              ? { ...folder, isFavorited: newFavoritedValue }
+              : folder
+          )
+        );
+        if (isSearching) {
+          setFilteredFavoritedFolders(prev => 
+            prev.map(folder => 
+              folder.folderID === folderId 
+                ? { ...folder, isFavorited: newFavoritedValue }
+                : folder
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error updating folder favorite status:', error);
+    }
   };
 
   // Check if database is ready
@@ -838,6 +1052,7 @@ export default function FavoritesScreen() {
           company={data.deckType === 'interview' && data.interviewCompany ? data.interviewCompany : undefined}
           isFavorited={data.isFavorited === 1}
           isStudy={data.deckType === 'study'}
+          onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1)}
         />
       );
     });
@@ -880,6 +1095,7 @@ export default function FavoritesScreen() {
           sourcePage="favorites"
           folderId={data.folderID.toString()}
           isFavorited={data.isFavorited === 1}
+          onFavoriteToggle={() => handleFolderFavoriteToggle(data.folderID, data.isFavorited === 1)}
         />
       );
     });

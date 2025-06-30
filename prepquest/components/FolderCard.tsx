@@ -21,6 +21,7 @@ interface FolderCardProps {
   sourcePage?: string;
   folderId?: string;
   isFavorited?: boolean;
+  onFavoriteToggle?: () => void;
 }
 
 export function FolderCard({ 
@@ -38,6 +39,7 @@ export function FolderCard({
   sourcePage,
   folderId,
   isFavorited = false,
+  onFavoriteToggle,
 }: FolderCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -106,7 +108,7 @@ export function FolderCard({
                   isSelectMode && styles.favoriteButtonContainerSelectMode
                 ]}
               >
-                <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} />
+                <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
               </View>
               {/* Title */}
               {title && (

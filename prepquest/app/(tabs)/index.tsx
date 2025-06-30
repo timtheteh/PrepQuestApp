@@ -14,7 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns } from '@/constants/cardDesigns';
-import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck } from '@/db/decks';
+import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -502,6 +502,7 @@ export default function DecksScreen() {
       case 1: // Trash
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
+        setHandleDeletion(() => handleDeleteSelectedDecks);
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
             toValue: 0.4,
@@ -579,6 +580,63 @@ export default function DecksScreen() {
       const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
       const allStudyIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedStudyCards(allStudyIndices);
+    }
+  };
+
+  const handleDeleteSelectedDecks = async () => {
+    try {
+      // Get the selected deck IDs based on current mode
+      let selectedDeckIds: number[] = [];
+      
+      if (isInterviewMode) {
+        const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
+        selectedDeckIds = Array.from(selectedInterviewCards).map(index => decksToUse[index].deckID);
+      } else {
+        const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
+        selectedDeckIds = Array.from(selectedStudyCards).map(index => decksToUse[index].deckID);
+      }
+
+      if (selectedDeckIds.length === 0) {
+        console.log('No decks selected for deletion');
+        return;
+      }
+
+      // Delete the decks from database
+      const success = await deleteMultipleDecks(selectedDeckIds);
+      
+      if (success) {
+        // Update local state by removing the deleted decks
+        if (isInterviewMode) {
+          const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
+          const remainingDecks = decksToUse.filter((_, index) => !selectedInterviewCards.has(index));
+          
+          if (isSearching) {
+            setFilteredInterviewDecks(remainingDecks);
+          } else {
+            setInterviewDecks(remainingDecks);
+          }
+          setSelectedInterviewCards(new Set());
+        } else {
+          const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
+          const remainingDecks = decksToUse.filter((_, index) => !selectedStudyCards.has(index));
+          
+          if (isSearching) {
+            setFilteredStudyDecks(remainingDecks);
+          } else {
+            setStudyDecks(remainingDecks);
+          }
+          setSelectedStudyCards(new Set());
+        }
+
+        // Exit selection mode
+        handleCancel();
+        
+        console.log(`Successfully deleted ${selectedDeckIds.length} deck(s)`);
+      } else {
+        console.error('Failed to delete decks');
+      }
+    } catch (error) {
+      console.error('Error deleting decks:', error);
     }
   };
 

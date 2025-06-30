@@ -167,3 +167,70 @@ export async function getInterviewDecksWithProgress(): Promise<(Deck & { progres
     return [];
   }
 }
+
+export async function deleteDeck(deckId: number): Promise<boolean> {
+  try {
+    // Start a transaction to ensure data consistency
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    // First, delete all flashcards associated with this deck
+    await db.execAsync(`
+      DELETE FROM flashcards 
+      WHERE deckID = ${deckId}
+    `);
+    
+    // Then delete the deck itself
+    const result = await db.execAsync(`
+      DELETE FROM decks 
+      WHERE deckID = ${deckId}
+    `);
+    
+    // Commit the transaction
+    await db.execAsync('COMMIT');
+    
+    console.log(`Successfully deleted deck ${deckId} and its flashcards`);
+    return true;
+  } catch (error) {
+    // Rollback the transaction on error
+    await db.execAsync('ROLLBACK');
+    console.error('Error deleting deck:', error);
+    return false;
+  }
+}
+
+export async function deleteMultipleDecks(deckIds: number[]): Promise<boolean> {
+  try {
+    if (deckIds.length === 0) {
+      return true;
+    }
+    
+    // Start a transaction to ensure data consistency
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    // Create comma-separated list of deck IDs
+    const deckIdsString = deckIds.join(',');
+    
+    // First, delete all flashcards associated with these decks
+    await db.execAsync(`
+      DELETE FROM flashcards 
+      WHERE deckID IN (${deckIdsString})
+    `);
+    
+    // Then delete the decks themselves
+    await db.execAsync(`
+      DELETE FROM decks 
+      WHERE deckID IN (${deckIdsString})
+    `);
+    
+    // Commit the transaction
+    await db.execAsync('COMMIT');
+    
+    console.log(`Successfully deleted ${deckIds.length} decks and their flashcards`);
+    return true;
+  } catch (error) {
+    // Rollback the transaction on error
+    await db.execAsync('ROLLBACK');
+    console.error('Error deleting multiple decks:', error);
+    return false;
+  }
+}

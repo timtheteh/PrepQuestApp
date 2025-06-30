@@ -13,6 +13,13 @@ import { useIsFocused } from '@react-navigation/native';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { getAllFolders, Folder, deleteMultipleFolders } from '@/db/decks';
 import { db } from '@/db/index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+type SortField = 'name' | 'dateAdded' | 'lastModified';
+type SortDirection = 'asc' | 'desc';
+
+const FOLDERS_SORT_FIELD_KEY = 'folders_sort_field';
+const FOLDERS_SORT_DIRECTION_KEY = 'folders_sort_direction';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -32,6 +39,8 @@ export default function FoldersScreen() {
   const [filteredFolders, setFilteredFolders] = useState<Folder[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('lastModified');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const isFocused = useIsFocused();
   const { 
@@ -219,6 +228,19 @@ export default function FoldersScreen() {
     }
   }, [isFocused, isDatabaseReady]);
 
+  // Load sort preferences when component mounts
+  useEffect(() => {
+    loadSortPreferences();
+  }, []);
+
+  // Apply sort preferences when folders are loaded and preferences are available
+  useEffect(() => {
+    if (folders.length > 0) {
+      const sortedFolders = sortFolders(folders);
+      setFilteredFolders(sortedFolders);
+    }
+  }, [folders, sortField, sortDirection]);
+
   // Cleanup effect to reset selections when search state changes
   useEffect(() => {
     // Reset selections when search state changes to prevent index mismatches
@@ -239,6 +261,76 @@ export default function FoldersScreen() {
     } catch (error) {
       console.error('Error formatting date:', error);
       return dateString; // Return original string if parsing fails
+    }
+  };
+
+  // Sort function for folders
+  const sortFolders = (folders: Folder[]) => {
+    return [...folders].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'name':
+          aValue = a.folderName.toLowerCase();
+          bValue = b.folderName.toLowerCase();
+          break;
+        case 'dateAdded':
+          aValue = new Date(a.dateAdded);
+          bValue = new Date(b.dateAdded);
+          break;
+        case 'lastModified':
+          aValue = new Date(a.lastModifiedDate || a.dateAdded);
+          bValue = new Date(b.lastModifiedDate || b.dateAdded);
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const handleSortChange = (field: SortField, direction: SortDirection) => {
+    setSortField(field);
+    setSortDirection(direction);
+    saveSortPreferences(field, direction);
+  };
+
+  // Save sort preferences to AsyncStorage
+  const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
+    try {
+      await AsyncStorage.multiSet([
+        [FOLDERS_SORT_FIELD_KEY, field],
+        [FOLDERS_SORT_DIRECTION_KEY, direction]
+      ]);
+    } catch (error) {
+      console.error('Error saving folders sort preferences:', error);
+    }
+  };
+
+  // Load sort preferences from AsyncStorage
+  const loadSortPreferences = async () => {
+    try {
+      const [savedField, savedDirection] = await AsyncStorage.multiGet([
+        FOLDERS_SORT_FIELD_KEY,
+        FOLDERS_SORT_DIRECTION_KEY
+      ]);
+      
+      if (savedField[1]) {
+        setSortField(savedField[1] as SortField);
+      }
+      if (savedDirection[1]) {
+        setSortDirection(savedDirection[1] as SortDirection);
+      }
+    } catch (error) {
+      console.error('Error loading folders sort preferences:', error);
     }
   };
 
@@ -419,17 +511,20 @@ export default function FoldersScreen() {
     setIsSearching(query.length > 0);
     
     if (query.length === 0) {
-      // If search is empty, show all folders
-      setFilteredFolders(folders);
+      // If search is empty, show all folders sorted according to current preferences
+      const sortedFolders = sortFolders(folders);
+      setFilteredFolders(sortedFolders);
     } else {
-      // Filter folders by name (case-insensitive)
+      // Filter folders by name (case-insensitive) and then sort them
       const lowerQuery = query.toLowerCase();
       
       const filtered = folders.filter(folder => 
         folder.folderName.toLowerCase().includes(lowerQuery)
       );
       
-      setFilteredFolders(filtered);
+      // Sort the filtered results according to current preferences
+      const sortedFilteredFolders = sortFolders(filtered);
+      setFilteredFolders(sortedFilteredFolders);
     }
   };
 
@@ -441,8 +536,9 @@ export default function FoldersScreen() {
     setSearchQuery('');
     setIsSearching(false);
     
-    // Reset filtered data
-    setFilteredFolders(folders);
+    // Reset filtered data with sorting applied
+    const sortedFolders = sortFolders(folders);
+    setFilteredFolders(sortedFolders);
   };
 
   const selectOpacity = selectTextAnim.interpolate({
@@ -703,13 +799,14 @@ export default function FoldersScreen() {
 
   const renderFolderCards = () => {
     const foldersToRender = isSearching ? filteredFolders : folders;
+    const sortedFolders = sortFolders(foldersToRender);
     
     // Safety check to prevent rendering issues
-    if (!foldersToRender || foldersToRender.length === 0) {
+    if (!sortedFolders || sortedFolders.length === 0) {
       return null;
     }
     
-    const cards = foldersToRender.map((data, index) => {
+    const cards = sortedFolders.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
@@ -773,6 +870,9 @@ export default function FoldersScreen() {
               onCalendarPress={handleCalendarPress}
               onSearchPress={handleSearchPress}
               onSearchTextChange={handleSearch}
+              onSortChange={handleSortChange}
+              initialSortField={sortField}
+              initialSortDirection={sortDirection}
               pageType="folders"
               disabled={isAddToFoldersMode || isMoveToFoldersMode}
             />

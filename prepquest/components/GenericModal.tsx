@@ -98,6 +98,17 @@ export function GenericModal({
           />
         </View>
       );
+    } else if (buttons === 'single') {
+      return (
+        <View style={styles.singleButtonRow}>
+          <GenericModalButton
+            text="OK"
+            backgroundColor="#4F41D8"
+            textColor="#FFFFFF"
+            onPress={onConfirm || (() => {})}
+          />
+        </View>
+      );
     }
     return null;
   };
@@ -206,6 +217,13 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 30,
     marginTop: 33,
+  },
+  singleButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+    paddingHorizontal: 30,
+    marginTop: 55,
   },
   lottieContainer: {
     alignItems: 'center',

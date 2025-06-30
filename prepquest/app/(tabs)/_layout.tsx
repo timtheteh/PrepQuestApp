@@ -123,6 +123,9 @@ interface MenuContextType {
   deleteFolderModalOpacity: Animated.Value;
   handleDeleteFolder: (() => void) | null;
   setHandleDeleteFolder: (handler: (() => void) | null) => void;
+  isDecksAlreadyInFoldersModalOpen: boolean;
+  setIsDecksAlreadyInFoldersModalOpen: (value: boolean) => void;
+  decksAlreadyInFoldersModalOpacity: Animated.Value;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -204,6 +207,9 @@ export const MenuContext = createContext<MenuContextType>({
   deleteFolderModalOpacity: new Animated.Value(0),
   handleDeleteFolder: null,
   setHandleDeleteFolder: () => {},
+  isDecksAlreadyInFoldersModalOpen: false,
+  setIsDecksAlreadyInFoldersModalOpen: () => {},
+  decksAlreadyInFoldersModalOpacity: new Animated.Value(0),
 });
 
 export default function TabLayout() {
@@ -256,6 +262,8 @@ export default function TabLayout() {
   const deleteFolderModalOpacity = useRef(new Animated.Value(0)).current;
   const [handleDeleteFolder, setHandleDeleteFolder] = useState<(() => void) | null>(null);
   const [handleUnfavorite, setHandleUnfavorite] = useState<(() => void) | null>(null);
+  const [isDecksAlreadyInFoldersModalOpen, setIsDecksAlreadyInFoldersModalOpen] = useState(false);
+  const decksAlreadyInFoldersModalOpacity = useRef(new Animated.Value(0)).current;
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
 
@@ -464,6 +472,22 @@ export default function TabLayout() {
         setIsMenuOpen(false);
         setIsDeleteFolderModalOpen(false);
       });
+    } else if (isDecksAlreadyInFoldersModalOpen) {
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(decksAlreadyInFoldersModalOpacity, {
+          toValue: 0,
+          duration: overlayDuration,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsMenuOpen(false);
+        setIsDecksAlreadyInFoldersModalOpen(false);
+      });
     } else if (showSlidingMenu) {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -503,7 +527,8 @@ export default function TabLayout() {
     onDeckDetailsDeleteModalDismiss, 
     isDeckDetailsSaveModalOpen, 
     onDeckDetailsSaveModalDismiss,
-    isDeleteFolderModalOpen]);
+    isDeleteFolderModalOpen,
+    isDecksAlreadyInFoldersModalOpen]);
 
   const handleFolderPress = useCallback(() => {
     handleDismissMenu();
@@ -590,6 +615,9 @@ export default function TabLayout() {
       deleteFolderModalOpacity,
       handleDeleteFolder,
       setHandleDeleteFolder,
+      isDecksAlreadyInFoldersModalOpen,
+      setIsDecksAlreadyInFoldersModalOpen,
+      decksAlreadyInFoldersModalOpacity,
     }}>
       <View style={styles.container}>
         <Tabs
@@ -859,7 +887,7 @@ export default function TabLayout() {
          <GenericModal
           visible={isDeckDetailsSaveModalOpen}
           opacity={deckDetailsSaveModalOpacity}
-          text="Deck saved!"
+          text={["Deck(s) saved", "into folder(s)!"]}
           hasAnimation={true}
           animationSource={require('../../assets/animations/SuccessAnimation1_Tick.json')}
           animationLoop={true}
@@ -883,6 +911,14 @@ export default function TabLayout() {
             }
             handleDismissMenu();
           }}
+        />
+        <GenericModal
+          visible={isDecksAlreadyInFoldersModalOpen}
+          opacity={decksAlreadyInFoldersModalOpacity}
+          Icon={DeleteModalIcon}
+          text={["One or more decks you", "have selected are already", "in the selected folder(s)!"]}
+          buttons="single"
+          onConfirm={handleDismissMenu}
         />
       </View>
     </MenuContext.Provider>

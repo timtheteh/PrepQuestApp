@@ -64,7 +64,9 @@ export default function FoldersScreen() {
     sourcePageForFolders,
     setSourcePageForFolders,
     setIsDeckDetailsSaveModalOpen,
-    deckDetailsSaveModalOpacity
+    deckDetailsSaveModalOpacity,
+    setIsDecksAlreadyInFoldersModalOpen,
+    decksAlreadyInFoldersModalOpacity
   } = useContext(MenuContext);
 
   // Animation values
@@ -598,7 +600,63 @@ export default function FoldersScreen() {
           return;
         }
 
-        // Process each deck
+        // Check if any decks are already in the selected folders
+        let hasExistingDecks = false;
+        
+        for (const targetDeckId of targetDeckIds) {
+          // Get the current folderIDs for the deck
+          const currentDeck = await db.getFirstAsync(`
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
+          `);
+
+          if (!currentDeck) {
+            console.error(`Deck ${targetDeckId} not found`);
+            continue;
+          }
+
+          const deckData = currentDeck as { folderIDs: string | null };
+          let currentFolderIds: number[] = [];
+
+          // Parse existing folderIDs if they exist
+          if (deckData.folderIDs) {
+            try {
+              currentFolderIds = JSON.parse(deckData.folderIDs);
+            } catch (error) {
+              console.error('Error parsing existing folderIDs:', error);
+              currentFolderIds = [];
+            }
+          }
+
+          // Check if any of the selected folders are already in the deck's folders
+          const hasOverlap = selectedFolderIds.some(folderId => currentFolderIds.includes(folderId));
+          
+          if (hasOverlap) {
+            hasExistingDecks = true;
+            break;
+          }
+        }
+
+        // If any decks are already in the selected folders, show warning modal
+        if (hasExistingDecks) {
+          setIsMenuOpen(true);
+          setIsDecksAlreadyInFoldersModalOpen(true);
+          
+          Animated.parallel([
+            Animated.timing(menuOverlayOpacity, {
+              toValue: 0.5,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(decksAlreadyInFoldersModalOpacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start();
+          return;
+        }
+
+        // Process each deck (only if no existing decks found)
         for (const targetDeckId of targetDeckIds) {
           // Get the current folderIDs for the deck
           const currentDeck = await db.getFirstAsync(`
@@ -636,6 +694,11 @@ export default function FoldersScreen() {
 
           console.log(`Successfully added deck ${targetDeckId} to folders: ${selectedFolderIds.join(', ')}`);
         }
+        
+        // Reload folder data to update deck counts
+        const updatedFoldersData = await getAllFolders();
+        setFolders(updatedFoldersData);
+        setFilteredFolders(updatedFoldersData);
         
         // Show success modal
         setIsMenuOpen(true);

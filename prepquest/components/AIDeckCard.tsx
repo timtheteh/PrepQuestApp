@@ -15,6 +15,7 @@ interface AIDeckCardProps {
   deckDetailsBackgroundIndex?: number;
   company?: string;
   dismissModal?: () => void;
+  sourcePage?: string;
 }
 
 export function AIDeckCard({ 
@@ -30,6 +31,7 @@ export function AIDeckCard({
   deckDetailsBackgroundIndex,
   company,
   dismissModal,
+  sourcePage,
 }: AIDeckCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -59,6 +61,7 @@ export function AIDeckCard({
           company: company || 'study',
           isAIDeck: isAIDeck ? 'true' : 'false',
           flashcardCount: flashcardCount?.toString() || '0',
+          sourcePage: sourcePage || 'unknown',
         }
       })
     }

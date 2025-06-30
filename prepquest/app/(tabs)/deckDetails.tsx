@@ -298,6 +298,23 @@ export default function DeckDetailsScreen() {
       return;
     }
     
+    // Check if we should navigate back to folders page
+    if (sourcePage === 'folders') {
+      // Navigate back to folders page
+      if (Platform.OS === 'ios') {
+        navbarRef?.current?.resetAnimation();
+        setTimeout(() => {
+          router.push('/(tabs)/folders');
+        }, 50);
+      } else {
+        router.push('/(tabs)/folders');
+        setTimeout(() => {
+          navbarRef?.current?.resetAnimation();
+        }, 50);
+      }
+      return;
+    }
+    
     // Check if we should navigate back to favorites page
     if (sourcePage === 'favorites') {
       // Navigate back to favorites page

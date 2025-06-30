@@ -596,6 +596,9 @@ export default function FoldersScreen() {
         const remainingFolders = folders.filter(folder => !selectedFolderIds.includes(folder.folderID));
         setFolders(remainingFolders);
         
+        // Update folders count immediately
+        setFoldersCount(remainingFolders.length);
+        
         // Update filtered folders if searching
         if (isSearching) {
           const remainingFilteredFolders = filteredFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));

@@ -84,6 +84,8 @@ interface MenuContextType {
   moveToFoldersModalOpacity: Animated.Value;
   isInFavoritesPage: boolean;
   setIsInFavoritesPage: (value: boolean) => void;
+  isInFoldersPage: boolean;
+  setIsInFoldersPage: (value: boolean) => void;
   noSelectionModalSubtitle: string;
   setNoSelectionModalSubtitle: (text: string) => void;
   sourcePageForFolders: string;
@@ -163,6 +165,8 @@ export const MenuContext = createContext<MenuContextType>({
   moveToFoldersModalOpacity: new Animated.Value(0),
   isInFavoritesPage: false,
   setIsInFavoritesPage: () => {},
+  isInFoldersPage: false,
+  setIsInFoldersPage: () => {},
   noSelectionModalSubtitle: '',
   setNoSelectionModalSubtitle: () => {},
   sourcePageForFolders: '',
@@ -218,6 +222,7 @@ export default function TabLayout() {
   const [isAddToFoldersModalOpen, setIsAddToFoldersModalOpen] = useState(false);
   const [isMoveToFoldersModalOpen, setIsMoveToFoldersModalOpen] = useState(false);
   const [isInFavoritesPage, setIsInFavoritesPage] = useState(false);
+  const [isInFoldersPage, setIsInFoldersPage] = useState(false);
   const [isInViewFlashcardsPage, setIsInViewFlashcardsPage] = useState(false);
   const [isInViewDecksInFolderPage, setIsInViewDecksInFolderPage] = useState(false);
   const [noSelectionModalSubtitle, setNoSelectionModalSubtitle] = useState('Please choose at least one deck if you want to delete or add to folder.');
@@ -546,6 +551,8 @@ export default function TabLayout() {
       moveToFoldersModalOpacity,
       isInFavoritesPage,
       setIsInFavoritesPage,
+      isInFoldersPage,
+      setIsInFoldersPage,
       isInViewFlashcardsPage,
       setIsInViewFlashcardsPage,
       isInViewDecksInFolderPage,
@@ -596,7 +603,17 @@ export default function TabLayout() {
           <Tabs.Screen name="account" />
           <Tabs.Screen name="statistics" />
           <Tabs.Screen name="awards" />
-          <Tabs.Screen name="folders" />
+          <Tabs.Screen 
+            name="folders"
+            listeners={{
+              focus: () => {
+                setIsInFoldersPage(true);
+              },
+              blur: () => {
+                setIsInFoldersPage(false);
+              }
+            }}
+          />
           <Tabs.Screen 
             name="viewDecksInFolder"
             listeners={{
@@ -647,6 +664,12 @@ export default function TabLayout() {
         <AIPromptModal
           visible={isAIPromptOpen}
           opacity={aiPromptOpacity}
+          sourcePage={
+            isInFavoritesPage ? 'favorites' :
+            isInFoldersPage ? 'folders' :
+            isInViewDecksInFolderPage ? 'viewDecksInFolder' :
+            'index'
+          }
         />
         <CalendarModal
           visible={isCalendarOpen}

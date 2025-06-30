@@ -8,6 +8,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface AIPromptModalProps {
   visible: boolean;
   opacity?: Animated.Value;
+  sourcePage?: string;
 }
 
 const AI_DECKS = [
@@ -42,7 +43,8 @@ const AI_DECKS = [
 
 export function AIPromptModal({ 
   visible,
-  opacity = new Animated.Value(0)
+  opacity = new Animated.Value(0),
+  sourcePage
 }: AIPromptModalProps) {
   const { 
     setIsMenuOpen, 
@@ -98,6 +100,7 @@ export function AIPromptModal({
               deckDetailsBackgroundIndex={index}
               company={deck.company}
               dismissModal={dismissModal}
+              sourcePage={sourcePage}
             />
           ))}
         </View>

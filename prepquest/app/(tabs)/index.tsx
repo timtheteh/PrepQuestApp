@@ -14,7 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns } from '@/constants/cardDesigns';
-import { getStudyDecks, getInterviewDecks, Deck } from '@/db/decks';
+import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck } from '@/db/decks';
 import { db } from '@/db/index';
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
@@ -29,8 +29,8 @@ export default function DecksScreen() {
   const [selectedInterviewCards, setSelectedInterviewCards] = useState<Set<number>>(new Set());
   const [studyCardsCount, setStudyCardsCount] = useState(0);
   const [interviewCardsCount, setInterviewCardsCount] = useState(0);
-  const [studyDecks, setStudyDecks] = useState<Deck[]>([]);
-  const [interviewDecks, setInterviewDecks] = useState<Deck[]>([]);
+  const [studyDecks, setStudyDecks] = useState<(Deck & { progress: number })[]>([]);
+  const [interviewDecks, setInterviewDecks] = useState<(Deck & { progress: number })[]>([]);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const { 
     setIsMenuOpen, 
@@ -142,8 +142,8 @@ export default function DecksScreen() {
       console.log('Loading deck data from database...');
       try {
         const [studyData, interviewData] = await Promise.all([
-          getStudyDecks(),
-          getInterviewDecks()
+          getStudyDecksWithProgress(),
+          getInterviewDecksWithProgress()
         ]);
         console.log('Study decks loaded:', studyData.length);
         console.log('Interview decks loaded:', interviewData.length);
@@ -545,7 +545,7 @@ export default function DecksScreen() {
           selected={selectedStudyCards.has(index)}
           onSelectPress={() => handleStudyCardSelection(index, !selectedStudyCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
-          percent={0}
+          percent={data.progress}
           showProgress={!isSelectMode}
           cardType={data.deckType}
           title={data.deckName}
@@ -603,7 +603,7 @@ export default function DecksScreen() {
           selected={selectedInterviewCards.has(index)}
           onSelectPress={() => handleInterviewCardSelection(index, !selectedInterviewCards.has(index))}
           circleButtonOpacity={circleButtonOpacity}
-          percent={0}
+          percent={data.progress}
           showProgress={!isSelectMode}
           image={imageSource}
           cardType={data.interviewType || undefined}

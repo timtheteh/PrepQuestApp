@@ -93,39 +93,80 @@ export async function getInterviewDecks(): Promise<Deck[]> {
   }
 }
 
-// Alternative queries without flashcards table (if you don't need flashcard counts):
-/*
-export async function getStudyDecks(): Promise<Deck[]> {
+export async function getDeckProgress(deckId: number): Promise<number> {
   try {
-    const result = await db.getAllAsync(`
+    // First, check if the deck itself has lastStudiedDate or lastQuizzedDate
+    const deckResult = await db.getFirstAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM decks
+      WHERE deckID = ?
+    `, [deckId]);
+
+    if (!deckResult) {
+      return 0;
+    }
+
+    const deck = deckResult as { lastStudiedDate: string | null; lastQuizzedDate: string | null };
+    
+    // If either lastStudiedDate or lastQuizzedDate is not null, return 100%
+    if (deck.lastStudiedDate !== null || deck.lastQuizzedDate !== null) {
+      return 100;
+    }
+
+    // If both are null, calculate percentage based on flashcards
+    const progressResult = await db.getFirstAsync(`
       SELECT 
-        d.*,
-        0 as flashcardCount
-      FROM decks d
-      WHERE d.deckType = 'study'
-      ORDER BY d.dateAdded DESC
-    `);
-    return result as Deck[];
+        COUNT(*) as totalFlashcards,
+        COUNT(CASE WHEN lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL THEN 1 END) as completedFlashcards
+      FROM flashcards
+      WHERE deckID = ?
+    `, [deckId]);
+
+    if (!progressResult) {
+      return 0;
+    }
+
+    const progress = progressResult as { totalFlashcards: number; completedFlashcards: number };
+    
+    if (progress.totalFlashcards === 0) {
+      return 0;
+    }
+
+    return Math.round((progress.completedFlashcards / progress.totalFlashcards) * 100);
   } catch (error) {
-    console.error('Error fetching study decks:', error);
+    console.error('Error calculating deck progress:', error);
+    return 0;
+  }
+}
+
+export async function getStudyDecksWithProgress(): Promise<(Deck & { progress: number })[]> {
+  try {
+    const decks = await getStudyDecks();
+    const decksWithProgress = await Promise.all(
+      decks.map(async (deck) => {
+        const progress = await getDeckProgress(deck.deckID);
+        return { ...deck, progress };
+      })
+    );
+    return decksWithProgress;
+  } catch (error) {
+    console.error('Error fetching study decks with progress:', error);
     return [];
   }
 }
 
-export async function getInterviewDecks(): Promise<Deck[]> {
+export async function getInterviewDecksWithProgress(): Promise<(Deck & { progress: number })[]> {
   try {
-    const result = await db.getAllAsync(`
-      SELECT 
-        d.*,
-        0 as flashcardCount
-      FROM decks d
-      WHERE d.deckType = 'interview'
-      ORDER BY d.dateAdded DESC
-    `);
-    return result as Deck[];
+    const decks = await getInterviewDecks();
+    const decksWithProgress = await Promise.all(
+      decks.map(async (deck) => {
+        const progress = await getDeckProgress(deck.deckID);
+        return { ...deck, progress };
+      })
+    );
+    return decksWithProgress;
   } catch (error) {
-    console.error('Error fetching interview decks:', error);
+    console.error('Error fetching interview decks with progress:', error);
     return [];
   }
 }
-*/ 

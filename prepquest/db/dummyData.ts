@@ -136,8 +136,8 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'study',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-10T10:00:00.000Z',
-        lastQuizzedDate: '2025-06-09T14:00:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 0,
         isAIDeck: 0,
         folderIDs: '[1]',
@@ -170,8 +170,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-12T13:45:00.000Z',
-        lastQuizzedDate: '2025-06-11T16:30:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 2,
         isAIDeck: 0,
         folderIDs: '[1]',
@@ -206,7 +206,7 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'study',
         creationMethod: 'youtubeLink',
-        lastStudiedDate: '2025-06-14T15:45:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 0,
         isAIDeck: 0,
@@ -223,8 +223,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-15T12:30:00.000Z',
-        lastQuizzedDate: '2025-06-14T18:15:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
         folderIDs: '[2]',
@@ -242,7 +242,7 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-16T16:00:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: '2025-06-15T19:45:00.000Z',
         cardDesignIndex: 2,
         isAIDeck: 0,
@@ -259,7 +259,7 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-17T13:15:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
@@ -315,7 +315,7 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-09T13:30:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
@@ -334,8 +334,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-10T10:15:00.000Z',
-        lastQuizzedDate: '2025-06-09T18:30:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 2,
         isAIDeck: 0,
         folderIDs: '[4]',
@@ -355,8 +355,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-11T14:00:00.000Z',
-        lastQuizzedDate: '2025-06-10T16:30:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
         folderIDs: '[5]',
@@ -393,8 +393,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-13T09:20:00.000Z',
-        lastQuizzedDate: '2025-06-12T19:15:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
         folderIDs: '[5]',
@@ -414,8 +414,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-14T16:30:00.000Z',
-        lastQuizzedDate: '2025-06-13T12:45:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 2,
         isAIDeck: 0,
         folderIDs: '[6]',
@@ -433,7 +433,7 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-15T11:15:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
@@ -473,8 +473,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-17T14:20:00.000Z',
-        lastQuizzedDate: '2025-06-16T11:00:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
         folderIDs: '[7]',
@@ -492,8 +492,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-18T16:15:00.000Z',
-        lastQuizzedDate: null,
+        lastStudiedDate: null,
+        lastQuizzedDate: '2025-06-18T18:20:00.000Z',
         cardDesignIndex: 2,
         isAIDeck: 0,
         folderIDs: '[7]',
@@ -511,8 +511,8 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'interview',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-19T10:45:00.000Z',
-        lastQuizzedDate: '2025-06-18T18:20:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
         folderIDs: '[7]',
@@ -551,7 +551,7 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'youtubeLink',
-        lastStudiedDate: '2025-06-21T12:00:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
@@ -570,8 +570,8 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'interview',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-22T15:30:00.000Z',
-        lastQuizzedDate: '2025-06-21T19:15:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 2,
         isAIDeck: 0,
         folderIDs: '[8]',
@@ -591,8 +591,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-09T14:20:00.000Z',
-        lastQuizzedDate: '2025-06-08T11:30:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
         folderIDs: '[9]',
@@ -608,7 +608,7 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'study',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-10T10:45:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 0,
         isAIDeck: 0,
@@ -625,8 +625,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-11T16:15:00.000Z',
-        lastQuizzedDate: '2025-06-10T12:45:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
         folderIDs: '[9]',
@@ -644,7 +644,7 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-12T13:30:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 2,
         isAIDeck: 0,
@@ -665,8 +665,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'youtubeLink',
-        lastStudiedDate: '2025-06-13T17:20:00.000Z',
-        lastQuizzedDate: '2025-06-12T14:10:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
         folderIDs: '[10]',
@@ -682,7 +682,7 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'study',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-14T11:45:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 0,
         isAIDeck: 0,
@@ -699,8 +699,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-15T15:30:00.000Z',
-        lastQuizzedDate: '2025-06-14T13:15:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
         folderIDs: '[10]',
@@ -718,7 +718,7 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-16T10:20:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 2,
         isAIDeck: 0,
@@ -739,8 +739,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-19T12:45:00.000Z',
-        lastQuizzedDate: '2025-06-18T18:20:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
         folderIDs: null,
@@ -756,7 +756,7 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'study',
         creationMethod: 'youtubeLink',
-        lastStudiedDate: '2025-06-20T14:30:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 0,
         isAIDeck: 0,
@@ -773,8 +773,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'study',
         creationMethod: 'genAIForm',
-        lastStudiedDate: '2025-06-21T16:15:00.000Z',
-        lastQuizzedDate: '2025-06-20T19:30:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 1,
         isAIDeck: 0,
         folderIDs: null,
@@ -792,8 +792,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'manual',
-        lastStudiedDate: '2025-06-22T11:45:00.000Z',
-        lastQuizzedDate: '2025-06-21T15:20:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 2,
         isAIDeck: 0,
         folderIDs: null,
@@ -811,7 +811,7 @@ export async function populateDummyData() {
         isFavorited: 1,
         deckType: 'interview',
         creationMethod: 'fileUpload',
-        lastStudiedDate: '2025-06-23T14:10:00.000Z',
+        lastStudiedDate: null,
         lastQuizzedDate: null,
         cardDesignIndex: 3,
         isAIDeck: 0,
@@ -830,8 +830,8 @@ export async function populateDummyData() {
         isFavorited: 0,
         deckType: 'interview',
         creationMethod: 'youtubeLink',
-        lastStudiedDate: '2025-06-24T13:25:00.000Z',
-        lastQuizzedDate: '2025-06-23T18:40:00.000Z',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
         cardDesignIndex: 0,
         isAIDeck: 0,
         folderIDs: null,
@@ -879,6 +879,84 @@ export async function populateDummyData() {
 
     // Create flashcards for each deck
     for (const deckId of deckIds) {
+      const deck = deckData[deckId - 1]; // Get the deck data for this deck
+      const deckLastStudiedDate = deck.lastStudiedDate;
+      const deckLastQuizzedDate = deck.lastQuizzedDate;
+      
+      // Determine how many flashcards should be studied/quizzed based on deck status
+      const totalFlashcards = 7; // We create 7 flashcards per deck
+      
+      // For study dates: if deck has lastStudiedDate, all flashcards are studied; otherwise realistic portion
+      const studiedFlashcardsCount = deckLastStudiedDate 
+        ? totalFlashcards 
+        : Math.max(1, Math.floor(Math.random() * (Math.floor(totalFlashcards * 0.6) + 1))); // 1 to 60% of flashcards (ensures at least 1)
+        
+      // For quiz dates: if deck has lastQuizzedDate, all flashcards are quizzed; otherwise realistic portion
+      const quizzedFlashcardsCount = deckLastQuizzedDate 
+        ? totalFlashcards 
+        : Math.max(1, Math.floor(Math.random() * (Math.floor(totalFlashcards * 0.6) + 1))); // 1 to 60% of flashcards (ensures at least 1)
+      
+      // Create array of flashcard indices that are studied/quizzed
+      const studiedIndices = new Set<number>();
+      const quizzedIndices = new Set<number>();
+      
+      // Randomly select flashcards for studying
+      while (studiedIndices.size < studiedFlashcardsCount) {
+        studiedIndices.add(Math.floor(Math.random() * totalFlashcards));
+      }
+      
+      // Randomly select flashcards for quizzing
+      while (quizzedIndices.size < quizzedFlashcardsCount) {
+        quizzedIndices.add(Math.floor(Math.random() * totalFlashcards));
+      }
+      
+      // Helper function to get appropriate date for flashcards
+      const getFlashcardStudyDate = (flashcardIndex: number): string | null => {
+        if (!studiedIndices.has(flashcardIndex)) {
+          return null; // This flashcard was not studied
+        }
+        
+        if (deckLastStudiedDate) {
+          // If deck has a study date, all studied flashcards have dates on or before deck date
+          const deckDate = new Date(deckLastStudiedDate);
+          // Generate a date within 7 days before the deck's study date
+          const daysOffset = Math.floor(Math.random() * 8); // 0-7 days before
+          const flashcardDate = new Date(deckDate);
+          flashcardDate.setDate(deckDate.getDate() - daysOffset);
+          return flashcardDate.toISOString();
+        } else {
+          // If deck has no study date, assign random dates to studied flashcards
+          const baseDate = new Date('2025-06-15T10:00:00.000Z');
+          const daysOffset = Math.floor(Math.random() * 30); // Random date within 30 days
+          const flashcardDate = new Date(baseDate);
+          flashcardDate.setDate(baseDate.getDate() - daysOffset);
+          return flashcardDate.toISOString();
+        }
+      };
+      
+      const getFlashcardQuizDate = (flashcardIndex: number): string | null => {
+        if (!quizzedIndices.has(flashcardIndex)) {
+          return null; // This flashcard was not quizzed
+        }
+        
+        if (deckLastQuizzedDate) {
+          // If deck has a quiz date, all quizzed flashcards have dates on or before deck date
+          const deckDate = new Date(deckLastQuizzedDate);
+          // Generate a date within 7 days before the deck's quiz date
+          const daysOffset = Math.floor(Math.random() * 8); // 0-7 days before
+          const flashcardDate = new Date(deckDate);
+          flashcardDate.setDate(deckDate.getDate() - daysOffset);
+          return flashcardDate.toISOString();
+        } else {
+          // If deck has no quiz date, assign random dates to quizzed flashcards
+          const baseDate = new Date('2025-06-14T10:00:00.000Z');
+          const daysOffset = Math.floor(Math.random() * 30); // Random date within 30 days
+          const flashcardDate = new Date(baseDate);
+          flashcardDate.setDate(baseDate.getDate() - daysOffset);
+          return flashcardDate.toISOString();
+        }
+      };
+      
       const flashcardData = [
         // 1. qn type text, answer type text
         {
@@ -895,8 +973,8 @@ export async function populateDummyData() {
           answerBlob: null,
           timeTaken: 45,
           isMcqAnswerRight: null,
-          lastStudiedDate: '2025-06-15T10:30:00.000Z',
-          lastQuizzedDate: '2025-06-14T14:20:00.000Z'
+          lastStudiedDate: getFlashcardStudyDate(0),
+          lastQuizzedDate: getFlashcardQuizDate(0)
         },
         // 2. qn type image, answer type text
         {
@@ -913,8 +991,8 @@ export async function populateDummyData() {
           answerBlob: null,
           timeTaken: 30,
           isMcqAnswerRight: null,
-          lastStudiedDate: '2025-06-16T11:15:00.000Z',
-          lastQuizzedDate: '2025-06-15T16:45:00.000Z'
+          lastStudiedDate: getFlashcardStudyDate(1),
+          lastQuizzedDate: getFlashcardQuizDate(1)
         },
         // 3. qn type audio, answer type text
         {
@@ -931,8 +1009,8 @@ export async function populateDummyData() {
           answerBlob: null,
           timeTaken: 60,
           isMcqAnswerRight: null,
-          lastStudiedDate: '2025-06-17T09:45:00.000Z',
-          lastQuizzedDate: '2025-06-16T13:30:00.000Z'
+          lastStudiedDate: getFlashcardStudyDate(2),
+          lastQuizzedDate: getFlashcardQuizDate(2)
         },
         // 4. qn type text, answer type mcq
         {
@@ -954,8 +1032,8 @@ export async function populateDummyData() {
           answerBlob: null,
           timeTaken: 25,
           isMcqAnswerRight: 1,
-          lastStudiedDate: '2025-06-18T14:20:00.000Z',
-          lastQuizzedDate: '2025-06-17T17:10:00.000Z'
+          lastStudiedDate: getFlashcardStudyDate(3),
+          lastQuizzedDate: getFlashcardQuizDate(3)
         },
         // 5. qn type text, answer type image
         {
@@ -972,8 +1050,8 @@ export async function populateDummyData() {
           answerBlob: dummyPhotoBlob,
           timeTaken: 35,
           isMcqAnswerRight: null,
-          lastStudiedDate: '2025-06-19T12:30:00.000Z',
-          lastQuizzedDate: '2025-06-18T15:45:00.000Z'
+          lastStudiedDate: getFlashcardStudyDate(4),
+          lastQuizzedDate: getFlashcardQuizDate(4)
         },
         // 6. qn type text, answer type audio
         {
@@ -990,8 +1068,8 @@ export async function populateDummyData() {
           answerBlob: dummyAudioBlob,
           timeTaken: 90,
           isMcqAnswerRight: null,
-          lastStudiedDate: '2025-06-20T16:15:00.000Z',
-          lastQuizzedDate: '2025-06-19T11:20:00.000Z'
+          lastStudiedDate: getFlashcardStudyDate(5),
+          lastQuizzedDate: getFlashcardQuizDate(5)
         },
         // 7. qn type text, answer type voice
         {
@@ -1008,8 +1086,8 @@ export async function populateDummyData() {
           answerBlob: null,
           timeTaken: 120,
           isMcqAnswerRight: null,
-          lastStudiedDate: '2025-06-21T13:40:00.000Z',
-          lastQuizzedDate: '2025-06-20T18:55:00.000Z'
+          lastStudiedDate: getFlashcardStudyDate(6),
+          lastQuizzedDate: getFlashcardQuizDate(6)
         }
       ];
 

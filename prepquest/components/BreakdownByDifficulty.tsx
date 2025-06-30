@@ -4,10 +4,17 @@ import Svg, { G, Path, Text as SvgText } from 'react-native-svg';
 
 const SIZE = 300;
 const RADIUS = SIZE / 2;
-const COLORS = ['#F8696B', '#FA9473', '#98CE7F', '#FFEB84'];
-const LABELS = ['Again', 'Hard', 'Easy', 'Good'];
-const VALUES = [5, 40, 10, 45];
-const TOTAL = VALUES.reduce((a, b) => a + b, 0);
+const COLORS = ['#F8696B', '#FA9473', '#FFEB84', '#98CE7F']; // Again, Hard, Good, Easy
+const LABELS = ['Again', 'Hard', 'Good', 'Easy'];
+
+interface BreakdownByDifficultyPieProps {
+  breakdown?: {
+    Again: number;
+    Hard: number;
+    Good: number;
+    Easy: number;
+  };
+}
 
 function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
   const start = polarToCartesian(cx, cy, r, endAngle);
@@ -29,20 +36,43 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
   };
 }
 
-export function BreakdownByDifficultyPie() {
+export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPieProps) {
+  // Use breakdown data if provided, otherwise use default values
+  const values = breakdown ? [
+    breakdown.Again,
+    breakdown.Hard,
+    breakdown.Good,
+    breakdown.Easy
+  ] : [0, 0, 0, 0];
+  
+  const total = values.reduce((a, b) => a + b, 0);
+  
+  // If no data, show empty state
+  if (total === 0) {
+    return (
+      <View style={styles.wrapper}>
+        <Text style={styles.title}>Breakdown of Flashcards by Difficulty</Text>
+        <View style={styles.container}>
+          <Text style={styles.emptyText}>No difficulty data available</Text>
+          <Text style={styles.emptySubtext}>Complete some flashcards to see your breakdown</Text>
+        </View>
+      </View>
+    );
+  }
+
   let cumulative = 0;
-  const slices = VALUES.map((value, i) => {
-    const startAngle = (cumulative / TOTAL) * 360;
-    const endAngle = ((cumulative + value) / TOTAL) * 360;
+  const slices = values.map((value, i) => {
+    const startAngle = (cumulative / total) * 360;
+    const endAngle = ((cumulative + value) / total) * 360;
     const path = describeArc(RADIUS, RADIUS, RADIUS, startAngle, endAngle);
     // For label position, use the angle in the middle of the slice
     const midAngle = (startAngle + endAngle) / 2;
     const labelRadius = RADIUS * 0.65;
     const labelPos = polarToCartesian(RADIUS, RADIUS, labelRadius, midAngle);
-    const percent = Math.round((value / TOTAL) * 100);
+    const percent = Math.round((value / total) * 100);
     const label = `${LABELS[i]}\n${value} (${percent}%)`;
     cumulative += value;
-    return { path, color: COLORS[i], label, labelPos };
+    return { path, color: COLORS[i], label, labelPos, value, percent };
   });
 
   return (
@@ -55,30 +85,33 @@ export function BreakdownByDifficultyPie() {
               <Path key={i} d={slice.path} fill={slice.color} />
             ))}
             {slices.map((slice, i) => (
-              <G key={`slice-labels-${i}`}>
-                <SvgText
-                  x={slice.labelPos.x}
-                  y={slice.labelPos.y - 10}
-                  fontSize={16}
-                  fontFamily="Satoshi-Medium"
-                  fill="#111"
-                  textAnchor="middle"
-                  alignmentBaseline="middle"
-                >
-                  {LABELS[i]}
-                </SvgText>
-                <SvgText
-                  x={slice.labelPos.x}
-                  y={slice.labelPos.y + 10}
-                  fontSize={16}
-                  fontFamily="Satoshi-Medium"
-                  fill="#111"
-                  textAnchor="middle"
-                  alignmentBaseline="middle"
-                >
-                  {`${VALUES[i]} (${Math.round((VALUES[i]/TOTAL)*100)}%)`}
-                </SvgText>
-              </G>
+              // Only show labels if the value is greater than 0
+              slice.value > 0 && (
+                <G key={`slice-labels-${i}`}>
+                  <SvgText
+                    x={slice.labelPos.x}
+                    y={slice.labelPos.y - 10}
+                    fontSize={16}
+                    fontFamily="Satoshi-Medium"
+                    fill="#111"
+                    textAnchor="middle"
+                    alignmentBaseline="middle"
+                  >
+                    {LABELS[i]}
+                  </SvgText>
+                  <SvgText
+                    x={slice.labelPos.x}
+                    y={slice.labelPos.y + 10}
+                    fontSize={16}
+                    fontFamily="Satoshi-Medium"
+                    fill="#111"
+                    textAnchor="middle"
+                    alignmentBaseline="middle"
+                  >
+                    {`${slice.value} (${slice.percent}%)`}
+                  </SvgText>
+                </G>
+              )
             ))}
           </G>
         </Svg>
@@ -107,6 +140,18 @@ const styles = StyleSheet.create({
     height: SIZE,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyText: {
+    fontFamily: 'Satoshi-Regular',
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#111',
+  },
+  emptySubtext: {
+    fontFamily: 'Satoshi-Regular',
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#111',
   },
 });
 

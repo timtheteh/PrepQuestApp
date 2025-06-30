@@ -971,7 +971,11 @@ export async function populateDummyData() {
           answerText: deckId % 2 === 0 ? 'Encapsulation, inheritance, and polymorphism' : 'Pure functions and immutability',
           answerMCQ: null,
           answerBlob: null,
-          timeTaken: 45,
+          timeTaken: (() => {
+            const studyDate = getFlashcardStudyDate(0);
+            const quizDate = getFlashcardQuizDate(0);
+            return (studyDate === null && quizDate === null) ? null : 45;
+          })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getFlashcardStudyDate(0),
           lastQuizzedDate: getFlashcardQuizDate(0)
@@ -989,7 +993,11 @@ export async function populateDummyData() {
           answerText: 'This diagram shows the relationship between different components in a system architecture.',
           answerMCQ: null,
           answerBlob: null,
-          timeTaken: 30,
+          timeTaken: (() => {
+            const studyDate = getFlashcardStudyDate(1);
+            const quizDate = getFlashcardQuizDate(1);
+            return (studyDate === null && quizDate === null) ? null : 30;
+          })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getFlashcardStudyDate(1),
           lastQuizzedDate: getFlashcardQuizDate(1)
@@ -1007,7 +1015,11 @@ export async function populateDummyData() {
           answerText: 'The audio describes a problem-solving approach using divide and conquer strategy.',
           answerMCQ: null,
           answerBlob: null,
-          timeTaken: 60,
+          timeTaken: (() => {
+            const studyDate = getFlashcardStudyDate(2);
+            const quizDate = getFlashcardQuizDate(2);
+            return (studyDate === null && quizDate === null) ? null : 60;
+          })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getFlashcardStudyDate(2),
           lastQuizzedDate: getFlashcardQuizDate(2)
@@ -1030,7 +1042,11 @@ export async function populateDummyData() {
             {"option": "O(n²)", "ans": false}
           ]),
           answerBlob: null,
-          timeTaken: 25,
+          timeTaken: (() => {
+            const studyDate = getFlashcardStudyDate(3);
+            const quizDate = getFlashcardQuizDate(3);
+            return (studyDate === null && quizDate === null) ? null : 25;
+          })(),
           isMcqAnswerRight: 1,
           lastStudiedDate: getFlashcardStudyDate(3),
           lastQuizzedDate: getFlashcardQuizDate(3)
@@ -1048,7 +1064,11 @@ export async function populateDummyData() {
           answerText: null,
           answerMCQ: null,
           answerBlob: dummyPhotoBlob,
-          timeTaken: 35,
+          timeTaken: (() => {
+            const studyDate = getFlashcardStudyDate(4);
+            const quizDate = getFlashcardQuizDate(4);
+            return (studyDate === null && quizDate === null) ? null : 35;
+          })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getFlashcardStudyDate(4),
           lastQuizzedDate: getFlashcardQuizDate(4)
@@ -1066,7 +1086,11 @@ export async function populateDummyData() {
           answerText: null,
           answerMCQ: null,
           answerBlob: dummyAudioBlob,
-          timeTaken: 90,
+          timeTaken: (() => {
+            const studyDate = getFlashcardStudyDate(5);
+            const quizDate = getFlashcardQuizDate(5);
+            return (studyDate === null && quizDate === null) ? null : 90;
+          })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getFlashcardStudyDate(5),
           lastQuizzedDate: getFlashcardQuizDate(5)
@@ -1084,7 +1108,11 @@ export async function populateDummyData() {
           answerText: null,
           answerMCQ: null,
           answerBlob: null,
-          timeTaken: 120,
+          timeTaken: (() => {
+            const studyDate = getFlashcardStudyDate(6);
+            const quizDate = getFlashcardQuizDate(6);
+            return (studyDate === null && quizDate === null) ? null : 120;
+          })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getFlashcardStudyDate(6),
           lastQuizzedDate: getFlashcardQuizDate(6)

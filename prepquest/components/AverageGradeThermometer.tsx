@@ -20,7 +20,7 @@ const RECT_WIDTH = 300;
 const RECT_HEIGHT = 24;
 const RADIUS = 12;
 
-export function AverageGradeThermometer({ score = 15 }: AverageGradeThermometerProps) {
+export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerProps) {
   // Calculate segment widths
   const segmentWidths = SEGMENTS.slice(1).map((val, i) => (val - SEGMENTS[i]) / 100 * RECT_WIDTH);
   // Calculate arrow position

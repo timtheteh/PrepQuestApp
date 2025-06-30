@@ -9,13 +9,18 @@ const CX = WIDTH / 2;
 const CY = HEIGHT - 20;
 const R = 110;
 const STROKE_WIDTH = 20;
-const VALUE = 60; // dummy value
 const LABELS = [0, 10, 35, 60];
 const COLORS = ['#CBC7ED', '#8E85E3', '#685CDD'];
 
+interface AverageSpeedTotalProps {
+  averageTime?: number | null;
+}
+
 // Helper to get angle for a value (0-60s maps to 180deg, -90deg to +90deg)
 function valueToAngle(value: number) {
-  return (value / 60) * 180 - 90;
+  // Cap the value at 60 seconds maximum
+  const cappedValue = Math.min(value, 60);
+  return (cappedValue / 60) * 180 - 90;
 }
 
 // Helper to describe arc path (for thick arc, use two radii and connect ends)
@@ -42,7 +47,13 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
   };
 }
 
-export default function AverageSpeedTotal() {
+export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProps) {
+  // Use provided averageTime or default to 0 if no data
+  const value = averageTime ?? 0;
+  
+  // Cap the value at 60 seconds for gauge angle calculation
+  const cappedValue = Math.min(value, 60);
+  
   // Arc segments: [start, end, color]
   const segments = [
     { start: 0, end: 10, color: COLORS[0] },
@@ -55,8 +66,8 @@ export default function AverageSpeedTotal() {
     endAngle: valueToAngle(seg.end),
     color: seg.color,
   }));
-  // Gauge rotation
-  const gaugeAngle = valueToAngle(VALUE);
+  // Gauge rotation - use capped value for angle calculation
+  const gaugeAngle = valueToAngle(cappedValue);
   // Label positions (slightly outside arc)
   const labelPositions = LABELS.map(v => polarToCartesian(CX-7, CY -8, R+8, valueToAngle(v)));
 
@@ -122,8 +133,8 @@ export default function AverageSpeedTotal() {
             <GaugeIcon width={40} height={100} />
           </View>
         </View>
-        {/* Value at bottom center */}
-        <Text style={styles.valueText}>{VALUE}s</Text>
+        {/* Value at bottom center - show actual value, not capped */}
+        <Text style={styles.valueText}>{value}s</Text>
       </View>
     </View>
   );

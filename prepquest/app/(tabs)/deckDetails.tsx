@@ -17,7 +17,7 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
-import { deleteDeck } from '@/db/decks';
+import { deleteDeck, getDeckGrade, getDeckAverageTime, DeckGrade } from '@/db/decks';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -139,6 +139,14 @@ export default function DeckDetailsScreen() {
 
   // State for favorite status
   const [favoriteStatus, setFavoriteStatus] = useState(isFavorited === '1');
+
+  // State for deck grade
+  const [deckGrade, setDeckGrade] = useState<DeckGrade | null>(null);
+  const [isLoadingGrade, setIsLoadingGrade] = useState(true);
+
+  // State for average time
+  const [averageTime, setAverageTime] = useState<number | null>(null);
+  const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
 
   // Convert deckDetailsBackgroundIndex to number and provide fallback
   const backgroundIndex = parseInt(deckDetailsBackgroundIndex as string) || 0;
@@ -455,6 +463,62 @@ export default function DeckDetailsScreen() {
     }
   };
 
+  // Function to load deck grade
+  const loadDeckGrade = async () => {
+    try {
+      setIsLoadingGrade(true);
+      const grade = await getDeckGrade(parseInt(deckId as string));
+      setDeckGrade(grade);
+      
+      // Test logging to verify the data
+      if (grade) {
+        console.log('Deck Grade loaded:', {
+          score: grade.score,
+          masteryLevel: grade.masteryLevel,
+          breakdown: grade.breakdown,
+          totalAttempted: grade.totalAttempted,
+          totalFlashcards: grade.totalFlashcards
+        });
+      } else {
+        console.log('No deck grade available - no attempted flashcards found');
+      }
+    } catch (error) {
+      console.error('Error loading deck grade:', error);
+      setDeckGrade(null);
+    } finally {
+      setIsLoadingGrade(false);
+    }
+  };
+
+  // Function to load average time
+  const loadAverageTime = async () => {
+    try {
+      setIsLoadingAverageTime(true);
+      const time = await getDeckAverageTime(parseInt(deckId as string));
+      setAverageTime(time);
+      
+      // Test logging to verify the data
+      if (time !== null) {
+        console.log('Average time loaded:', time, 'seconds');
+      } else {
+        console.log('No average time available - no attempted flashcards with time data found');
+      }
+    } catch (error) {
+      console.error('Error loading average time:', error);
+      setAverageTime(null);
+    } finally {
+      setIsLoadingAverageTime(false);
+    }
+  };
+
+  // Load deck grade when component mounts or screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      loadDeckGrade();
+      loadAverageTime();
+    }
+  }, [isFocused, deckId]);
+
   const handleDeletePress = () => {
     setShowEditModal(false);
     // Show delete confirmation modal
@@ -692,9 +756,9 @@ export default function DeckDetailsScreen() {
                   ) : (
                     // Regular deck - Original components
                     <>
-                      <AverageGradeThermometer/>
-                      <BreakdownByDifficultyPie/>
-                      <AverageSpeedTotal/>
+                      <AverageGradeThermometer score={deckGrade?.score}/>
+                      <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
+                      <AverageSpeedTotal averageTime={averageTime}/>
                     </>
                   )}
                 </View>

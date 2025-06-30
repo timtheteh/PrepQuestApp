@@ -542,3 +542,227 @@ export async function getDecksInFolder(folderId: number): Promise<(Deck & { prog
     return [];
   }
 }
+
+export interface DeckGrade {
+  score: number;
+  masteryLevel: string;
+  breakdown: {
+    Again: number;
+    Hard: number;
+    Good: number;
+    Easy: number;
+  };
+  totalAttempted: number;
+  totalFlashcards: number;
+}
+
+const calculateWeightedScore = (ratings: string[]): DeckGrade => {
+  const weights = {
+    'Again': 0,     // 0% - needs to learn
+    'Hard': 0.4,    // 40% - partially learned
+    'Good': 0.8,    // 80% - well learned
+    'Easy': 1.0     // 100% - mastered
+  };
+  
+  const totalWeight = ratings.reduce((sum, rating) => {
+    return sum + (weights[rating as keyof typeof weights] || 0);
+  }, 0);
+  
+  const score = (totalWeight / ratings.length) * 100;
+  
+  return {
+    score: Math.round(score),
+    masteryLevel: getMasteryLevel(score),
+    breakdown: getBreakdown(ratings),
+    totalAttempted: ratings.length,
+    totalFlashcards: ratings.length
+  };
+};
+
+const getMasteryLevel = (score: number): string => {
+  if (score >= 90) return 'Expert';
+  if (score >= 75) return 'Proficient';
+  if (score >= 60) return 'Developing';
+  if (score >= 40) return 'Beginner';
+  return 'Needs Practice';
+};
+
+const getBreakdown = (ratings: string[]) => {
+  const counts = {
+    'Again': 0, 'Hard': 0, 'Good': 0, 'Easy': 0
+  };
+  
+  ratings.forEach(rating => {
+    if (rating in counts) {
+      counts[rating as keyof typeof counts]++;
+    }
+  });
+  
+  return counts;
+};
+
+export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
+  try {
+    // First check if this is an AI deck
+    const deckTypeResult = await db.getFirstAsync(`
+      SELECT isAIDeck FROM decks WHERE deckID = ?
+    `, [deckId]);
+
+    if (!deckTypeResult) {
+      return null;
+    }
+
+    const deckType = deckTypeResult as { isAIDeck: number };
+    const isAIDeck = deckType.isAIDeck === 1;
+
+    // Get attempted flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+    // and their difficulty ratings
+    const tableName = isAIDeck ? 'AIFlashcards' : 'flashcards';
+    const idColumn = isAIDeck ? 'AIDeckID' : 'deckID';
+
+    const result = await db.getAllAsync(`
+      SELECT 
+        difficultyRating,
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM ${tableName}
+      WHERE ${idColumn} = ?
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND difficultyRating != 'None'
+    `, [deckId]);
+
+    if (!result || result.length === 0) {
+      // No attempted flashcards, return null
+      return null;
+    }
+
+    const flashcards = result as Array<{
+      difficultyRating: string;
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+    }>;
+
+    // Extract difficulty ratings from attempted flashcards
+    const ratings = flashcards.map(flashcard => flashcard.difficultyRating);
+
+    // Get total number of flashcards for this deck
+    const totalResult = await db.getFirstAsync(`
+      SELECT COUNT(*) as total
+      FROM ${tableName}
+      WHERE ${idColumn} = ?
+    `, [deckId]);
+
+    const totalFlashcards = (totalResult as { total: number }).total;
+
+    // Calculate weighted score
+    const grade = calculateWeightedScore(ratings);
+    
+    // Update totalFlashcards in the result
+    grade.totalFlashcards = totalFlashcards;
+
+    return grade;
+  } catch (error) {
+    console.error('Error calculating deck grade:', error);
+    return null;
+  }
+}
+
+export async function getDeckGrades(deckIds: number[]): Promise<Map<number, DeckGrade | null>> {
+  try {
+    if (deckIds.length === 0) {
+      return new Map();
+    }
+
+    const grades = new Map<number, DeckGrade | null>();
+
+    // Get grades for each deck
+    await Promise.all(
+      deckIds.map(async (deckId) => {
+        const grade = await getDeckGrade(deckId);
+        grades.set(deckId, grade);
+      })
+    );
+
+    return grades;
+  } catch (error) {
+    console.error('Error calculating deck grades:', error);
+    return new Map();
+  }
+}
+
+// Test function to verify grade calculation logic
+export function testGradeCalculation() {
+  console.log('Testing grade calculation...');
+  
+  // Test case 1: All Easy cards
+  const allEasy = ['Easy', 'Easy', 'Easy', 'Easy', 'Easy'];
+  const grade1 = calculateWeightedScore(allEasy);
+  console.log('All Easy cards:', grade1);
+  // Expected: score: 100, masteryLevel: 'Expert'
+  
+  // Test case 2: Mixed ratings
+  const mixed = ['Easy', 'Good', 'Hard', 'Again', 'Easy'];
+  const grade2 = calculateWeightedScore(mixed);
+  console.log('Mixed ratings:', grade2);
+  // Expected: (1.0 + 0.8 + 0.4 + 0.0 + 1.0) / 5 * 100 = 64, masteryLevel: 'Developing'
+  
+  // Test case 3: All Again cards
+  const allAgain = ['Again', 'Again', 'Again'];
+  const grade3 = calculateWeightedScore(allAgain);
+  console.log('All Again cards:', grade3);
+  // Expected: score: 0, masteryLevel: 'Needs Practice'
+  
+  // Test case 4: Good and Easy mix
+  const goodEasy = ['Good', 'Easy', 'Good', 'Easy'];
+  const grade4 = calculateWeightedScore(goodEasy);
+  console.log('Good and Easy mix:', grade4);
+  // Expected: (0.8 + 1.0 + 0.8 + 1.0) / 4 * 100 = 90, masteryLevel: 'Expert'
+}
+
+export async function getDeckAverageTime(deckId: number): Promise<number | null> {
+  try {
+    // First check if this is an AI deck
+    const deckTypeResult = await db.getFirstAsync(`
+      SELECT isAIDeck FROM decks WHERE deckID = ?
+    `, [deckId]);
+
+    if (!deckTypeResult) {
+      return null;
+    }
+
+    const deckType = deckTypeResult as { isAIDeck: number };
+    const isAIDeck = deckType.isAIDeck === 1;
+
+    // Get attempted flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+    // and their timeTaken values
+    const tableName = isAIDeck ? 'AIFlashcards' : 'flashcards';
+    const idColumn = isAIDeck ? 'AIDeckID' : 'deckID';
+
+    const result = await db.getFirstAsync(`
+      SELECT 
+        AVG(timeTaken) as averageTime,
+        COUNT(*) as attemptedCount
+      FROM ${tableName}
+      WHERE ${idColumn} = ?
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND timeTaken IS NOT NULL
+    `, [deckId]);
+
+    if (!result) {
+      return null;
+    }
+
+    const data = result as { averageTime: number | null; attemptedCount: number };
+    
+    // Return null if no attempted flashcards or no time data
+    if (data.attemptedCount === 0 || data.averageTime === null) {
+      return null;
+    }
+
+    // Return the average time rounded to the nearest integer
+    return Math.round(data.averageTime);
+  } catch (error) {
+    console.error('Error calculating deck average time:', error);
+    return null;
+  }
+}

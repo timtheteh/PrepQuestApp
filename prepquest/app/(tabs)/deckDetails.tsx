@@ -15,6 +15,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
 import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -88,19 +89,6 @@ const getEmptyStateContainerMarginTop = () => {
 
 const SCREEN_TRANSITION_DURATION = 300;
 
-const cardDesigns = [
-    require('@/assets/images/DeckDetailsBg1.png'),
-    require('@/assets/images/DeckDetailsBg2.png'),
-    require('@/assets/images/DeckDetailsBg3.png'),
-    require('@/assets/images/DeckDetailsBg4.png'),
-]
-
-const AICardDesigns = [
-    require('@/assets/images/AIDeckDetailsBg1.png'),
-    require('@/assets/images/AIDeckDetailsBg2.png'),
-    require('@/assets/images/AIDeckDetailsBg3.png'),
-]
-
 const companyLogos = {
     'study': require('@/assets/companyIcons/StudyCardIcon.png'),
     'Google': require('@/assets/companyIcons/GoogleIcon.png'),
@@ -159,7 +147,7 @@ export default function DeckDetailsScreen() {
   const AIDeck = isAIDeck as string === 'true';
   
   // Ensure backgroundIndex is within bounds for AI card designs (which has 3 elements)
-  const safeBackgroundIndex = AIDeck ? Math.min(backgroundIndex, AICardDesigns.length - 1) : backgroundIndex;
+  const safeBackgroundIndex = AIDeck ? Math.min(backgroundIndex, deckDetailsAICardDesigns.length - 1) : backgroundIndex;
 
   // Handle screen transitions
   useEffect(() => {
@@ -483,7 +471,7 @@ export default function DeckDetailsScreen() {
           
           <View style={styles.mainContainer}>
             <ImageBackground 
-              source={AIDeck ? AICardDesigns[safeBackgroundIndex] : cardDesigns[safeBackgroundIndex]}
+              source={AIDeck ? deckDetailsAICardDesigns[safeBackgroundIndex] : deckDetailsCardDesigns[safeBackgroundIndex]}
               style={styles.backgroundImage}
               imageStyle={styles.backgroundImageStyle}
             >

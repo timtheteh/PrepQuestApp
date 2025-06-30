@@ -17,6 +17,19 @@ export const cardDesigns = [
   },
 ];
 
+export const deckDetailsCardDesigns = [
+  require('@/assets/images/DeckDetailsBg1.png'),
+  require('@/assets/images/DeckDetailsBg2.png'),
+  require('@/assets/images/DeckDetailsBg3.png'),
+  require('@/assets/images/DeckDetailsBg4.png'),
+];
+
+export const deckDetailsAICardDesigns = [
+  require('@/assets/images/AIDeckDetailsBg1.png'),
+  require('@/assets/images/AIDeckDetailsBg2.png'),
+  require('@/assets/images/AIDeckDetailsBg3.png'),
+]
+
 // Helper function to get a specific card design by index
 export const getCardDesign = (index: number) => {
   return cardDesigns[index] || cardDesigns[0]; // Default to first design if index is out of bounds

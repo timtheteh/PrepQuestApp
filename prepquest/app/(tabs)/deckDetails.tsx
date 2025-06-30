@@ -17,6 +17,7 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
+import { deleteDeck } from '@/db/decks';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -410,17 +411,56 @@ export default function DeckDetailsScreen() {
 
     console.log('isAIDeck', isAIDeck);
   };
+
+  // Function to handle deck deletion
+  const handleDeckDeletion = async () => {
+    try {
+      // Delete the deck from database
+      const success = await deleteDeck(parseInt(deckId as string));
+      
+      if (success) {
+        console.log('Successfully deleted deck:', deckId);
+        
+        // Navigate back based on source page
+        if (folderTitle && folderId) {
+          // Navigate back to viewDecksInFolder
+          router.push({
+            pathname: '/(tabs)/viewDecksInFolder',
+            params: {
+              folderTitle: folderTitle as string,
+              folderId: folderId as string,
+              sourcePage: sourcePage as string
+            }
+          });
+        } else if (sourcePage === 'favorites') {
+          // Navigate back to favorites page
+          router.push('/(tabs)/favorites');
+        } else {
+          // Navigate back to index page
+          navbarRef?.current?.setDecksTab();
+          router.push({
+            pathname: '/(tabs)',
+            params: {
+              mode: currentMode
+            }
+          });
+        }
+      } else {
+        console.error('Failed to delete deck');
+        // You could show an error message to the user here
+      }
+    } catch (error) {
+      console.error('Error deleting deck:', error);
+      // You could show an error message to the user here
+    }
+  };
+
   const handleDeletePress = () => {
     setShowEditModal(false);
     // Show delete confirmation modal
     setIsMenuOpen(true);
     setIsDeckDetailsDeleteModalOpen(true);
-    setHandleDeckDetailsDeletion(() => () => {
-      // TODO: Implement actual deletion logic here
-      console.log('Deleting deck:', deckId);
-      // Navigate back after deletion
-      router.back();
-    });
+    setHandleDeckDetailsDeletion(() => handleDeckDeletion);
     
     // Set up dismiss callback to unselect edit name button
     setOnDeckDetailsDeleteModalDismiss(() => () => {

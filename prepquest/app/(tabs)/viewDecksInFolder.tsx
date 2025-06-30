@@ -13,7 +13,7 @@ import { Card } from '@/components/Card';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Feather } from '@expo/vector-icons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
-import { getDecksInFolder, Deck, deleteMultipleDecks } from '@/db/decks';
+import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder } from '@/db/decks';
 import { db } from '@/db/index';
 import { cardDesigns } from '@/constants/cardDesigns';
 
@@ -376,21 +376,34 @@ export default function ViewDecksInFolderScreen() {
     // Show delete folder confirmation modal
     setIsMenuOpen(true);
     setIsDeleteFolderModalOpen(true);
-    setHandleDeleteFolder(() => () => {
-      // TODO: Implement actual folder deletion logic here
-      console.log('Deleting folder:', folderTitle);
-      // Navigate back based on source page
-      if (sourcePage === 'favorites') {
-        // Navigate back to favorites page in folders state
-        router.push({
-          pathname: '/(tabs)/favorites',
-          params: {
-            mode: 'interview'
+    setHandleDeleteFolder(() => async () => {
+      try {
+        // Delete the folder from database
+        const success = await deleteFolder(parseInt(folderId as string));
+        
+        if (success) {
+          console.log('Successfully deleted folder:', folderTitle);
+          
+          // Navigate back based on source page
+          if (sourcePage === 'favorites') {
+            // Navigate back to favorites page in folders state
+            router.push({
+              pathname: '/(tabs)/favorites',
+              params: {
+                mode: 'interview'
+              }
+            });
+          } else {
+            // Navigate back to folders page after deletion
+            router.push('/(tabs)/folders');
           }
-        });
-      } else {
-        // Navigate back to folders page after deletion
-        router.push('/(tabs)/folders');
+        } else {
+          console.error('Failed to delete folder');
+          // You could show an error message to the user here
+        }
+      } catch (error) {
+        console.error('Error deleting folder:', error);
+        // You could show an error message to the user here
       }
     });
     

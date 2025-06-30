@@ -42,6 +42,7 @@ export default function FoldersScreen() {
   const [sortField, setSortField] = useState<SortField>('lastModified');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [foldersCount, setFoldersCount] = useState(0);
   const isFocused = useIsFocused();
   const { 
     setIsMenuOpen, 
@@ -194,6 +195,7 @@ export default function FoldersScreen() {
         const result = await db.getAllAsync('SELECT COUNT(*) as count FROM folders');
         console.log('Database is ready, folders count:', (result[0] as any)?.count);
         setIsDatabaseReady(true);
+        setFoldersCount((result[0] as any)?.count);
       } catch (error) {
         console.log('Database not ready yet, waiting...', error);
         // Retry after a short delay
@@ -218,6 +220,7 @@ export default function FoldersScreen() {
         console.log('Folders loaded:', foldersData.length);
         setFolders(foldersData);
         setFilteredFolders(foldersData);
+        setFoldersCount(foldersData.length);
       } catch (error) {
         console.error('Error loading folders data:', error);
       }
@@ -920,7 +923,7 @@ export default function FoldersScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title>
-                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : 'Folders'}
+                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : `Folders (${foldersCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 

@@ -523,6 +523,9 @@ export default function ViewDecksInFolderScreen() {
         // Set source page based on current sourcePage
         setSourcePageForFolders(sourcePage as string || 'index');
         
+        // Get the selected deck IDs
+        const selectedDeckIds = Array.from(selectedDecks).map(index => decks[index].deckID);
+        
         // Navigate to folders in MoveToFolders mode
         if (Platform.OS === 'ios') {
           navbarRef?.current?.resetAnimation();
@@ -534,7 +537,8 @@ export default function ViewDecksInFolderScreen() {
                 selectedState: 'true',
                 folderTitle: folderTitle as string,
                 folderId: folderId as string,
-                sourcePage: sourcePage as string
+                sourcePage: sourcePage as string,
+                selectedDeckIds: JSON.stringify(selectedDeckIds)
               }
             });
           }, 50);
@@ -546,7 +550,8 @@ export default function ViewDecksInFolderScreen() {
               selectedState: 'true',
               folderTitle: folderTitle as string,
               folderId: folderId as string,
-              sourcePage: sourcePage as string
+              sourcePage: sourcePage as string,
+              selectedDeckIds: JSON.stringify(selectedDeckIds)
             }
           });
           setTimeout(() => {

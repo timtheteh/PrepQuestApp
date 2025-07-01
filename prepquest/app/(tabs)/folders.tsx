@@ -67,7 +67,8 @@ export default function FoldersScreen() {
     setIsDeckDetailsSaveModalOpen,
     deckDetailsSaveModalOpacity,
     setIsDecksAlreadyInFoldersModalOpen,
-    decksAlreadyInFoldersModalOpacity
+    decksAlreadyInFoldersModalOpacity,
+    setDeckDetailsSaveModalType
   } = useContext(MenuContext);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
@@ -708,6 +709,7 @@ export default function FoldersScreen() {
         // Show success modal
         setIsMenuOpen(true);
         setIsDeckDetailsSaveModalOpen(true);
+        setDeckDetailsSaveModalType('add');
         
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
@@ -725,8 +727,168 @@ export default function FoldersScreen() {
         console.error('Error adding deck to folders:', error);
       }
     } else if (isMoveToFoldersMode) {
-      // TODO: Implement move to folders logic
-      console.log('Move to folders logic will be implemented here');
+      try {
+        // Get the selected folder IDs
+        const foldersToUse = isSearching ? filteredFolders : folders;
+        const selectedFolderIds = Array.from(selectedFolders).map(index => foldersToUse[index].folderID);
+
+        if (selectedFolderIds.length === 0) {
+          console.log('No folders selected for moving deck');
+          // Navigate back to source page when no folders are selected
+          handleBackPress();
+          return;
+        }
+
+        // Get the deck IDs from the route params
+        let targetDeckIds: number[] = [];
+        
+        if (selectedDeckIds) {
+          try {
+            targetDeckIds = JSON.parse(selectedDeckIds as string);
+          } catch (error) {
+            console.error('Error parsing selectedDeckIds:', error);
+            return;
+          }
+        } else {
+          console.error('No deck IDs provided for moving to folders');
+          return;
+        }
+
+        if (targetDeckIds.length === 0) {
+          console.error('No valid deck IDs found');
+          return;
+        }
+
+        // Get the current folder ID (the folder we're moving from)
+        const currentFolderId = parseInt(folderId as string);
+        if (!currentFolderId) {
+          console.error('No current folder ID provided');
+          return;
+        }
+
+        // Check if any decks are already in the selected folders
+        let hasExistingDecks = false;
+        
+        for (const targetDeckId of targetDeckIds) {
+          // Get the current folderIDs for the deck
+          const currentDeck = await db.getFirstAsync(`
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
+          `);
+
+          if (!currentDeck) {
+            console.error(`Deck ${targetDeckId} not found`);
+            continue;
+          }
+
+          const deckData = currentDeck as { folderIDs: string | null };
+          let currentFolderIds: number[] = [];
+
+          // Parse existing folderIDs if they exist
+          if (deckData.folderIDs) {
+            try {
+              currentFolderIds = JSON.parse(deckData.folderIDs);
+            } catch (error) {
+              console.error('Error parsing existing folderIDs:', error);
+              currentFolderIds = [];
+            }
+          }
+
+          // Check if any of the selected folders are already in the deck's folders
+          const hasOverlap = selectedFolderIds.some(folderId => currentFolderIds.includes(folderId));
+          
+          if (hasOverlap) {
+            hasExistingDecks = true;
+            break;
+          }
+        }
+
+        // If any decks are already in the selected folders, show warning modal
+        if (hasExistingDecks) {
+          setIsMenuOpen(true);
+          setIsDecksAlreadyInFoldersModalOpen(true);
+          
+          Animated.parallel([
+            Animated.timing(menuOverlayOpacity, {
+              toValue: 0.5,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(decksAlreadyInFoldersModalOpacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          ]).start();
+          return;
+        }
+
+        // Process each deck (only if no existing decks found)
+        for (const targetDeckId of targetDeckIds) {
+          // Get the current folderIDs for the deck
+          const currentDeck = await db.getFirstAsync(`
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
+          `);
+
+          if (!currentDeck) {
+            console.error(`Deck ${targetDeckId} not found`);
+            continue;
+          }
+
+          const deckData = currentDeck as { folderIDs: string | null };
+          let currentFolderIds: number[] = [];
+
+          // Parse existing folderIDs if they exist
+          if (deckData.folderIDs) {
+            try {
+              currentFolderIds = JSON.parse(deckData.folderIDs);
+            } catch (error) {
+              console.error('Error parsing existing folderIDs:', error);
+              currentFolderIds = [];
+            }
+          }
+
+          // Remove the current folder ID from the deck's folders
+          const filteredFolderIds = currentFolderIds.filter(id => id !== currentFolderId);
+          
+          // Add the selected folder IDs (avoid duplicates)
+          const newFolderIds = [...new Set([...filteredFolderIds, ...selectedFolderIds])];
+
+          // Update the deck's folderIDs in the database
+          const newFolderIdsString = JSON.stringify(newFolderIds);
+          await db.execAsync(`
+            UPDATE decks 
+            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = datetime('now')
+            WHERE deckID = ${targetDeckId}
+          `);
+
+          console.log(`Successfully moved deck ${targetDeckId} from folder ${currentFolderId} to folders: ${selectedFolderIds.join(', ')}`);
+        }
+        
+        // Reload folder data to update deck counts
+        const updatedFoldersData = await getAllFolders();
+        setFolders(updatedFoldersData);
+        setFilteredFolders(updatedFoldersData);
+        
+        // Show success modal
+        setIsMenuOpen(true);
+        setIsDeckDetailsSaveModalOpen(true);
+        setDeckDetailsSaveModalType('move');
+        
+        Animated.parallel([
+          Animated.timing(menuOverlayOpacity, {
+            toValue: 0.5,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(deckDetailsSaveModalOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          })
+        ]).start();
+      } catch (error) {
+        console.error('Error moving deck to folders:', error);
+      }
     }
     
     // Exit selection mode

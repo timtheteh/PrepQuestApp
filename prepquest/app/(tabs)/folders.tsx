@@ -701,6 +701,16 @@ export default function FoldersScreen() {
           console.log(`Successfully added deck ${targetDeckId} to folders: ${selectedFolderIds.join(', ')}`);
         }
         
+        // Update lastModifiedDate for folders that received new decks
+        for (const folderId of selectedFolderIds) {
+          await db.execAsync(`
+            UPDATE folders 
+            SET lastModifiedDate = datetime('now')
+            WHERE folderID = ${folderId}
+          `);
+          console.log(`Updated lastModifiedDate for folder ${folderId}`);
+        }
+        
         // Reload folder data to update deck counts
         const updatedFoldersData = await getAllFolders();
         setFolders(updatedFoldersData);
@@ -723,6 +733,11 @@ export default function FoldersScreen() {
             useNativeDriver: true,
           })
         ]).start();
+        
+        // Navigate back to source page immediately while success modal is visible
+        setTimeout(() => {
+          handleBackPress();
+        }, 100); // Short delay to ensure modal is visible before navigation
       } catch (error) {
         console.error('Error adding deck to folders:', error);
       }
@@ -864,6 +879,24 @@ export default function FoldersScreen() {
           console.log(`Successfully moved deck ${targetDeckId} from folder ${currentFolderId} to folders: ${selectedFolderIds.join(', ')}`);
         }
         
+        // Update lastModifiedDate for folders that received moved decks
+        for (const folderId of selectedFolderIds) {
+          await db.execAsync(`
+            UPDATE folders 
+            SET lastModifiedDate = datetime('now')
+            WHERE folderID = ${folderId}
+          `);
+          console.log(`Updated lastModifiedDate for destination folder ${folderId}`);
+        }
+        
+        // Update lastModifiedDate for the source folder (folder the decks were moved from)
+        await db.execAsync(`
+          UPDATE folders 
+          SET lastModifiedDate = datetime('now')
+          WHERE folderID = ${currentFolderId}
+        `);
+        console.log(`Updated lastModifiedDate for source folder ${currentFolderId}`);
+        
         // Reload folder data to update deck counts
         const updatedFoldersData = await getAllFolders();
         setFolders(updatedFoldersData);
@@ -886,6 +919,11 @@ export default function FoldersScreen() {
             useNativeDriver: true,
           })
         ]).start();
+        
+        // Navigate back to source page immediately while success modal is visible
+        setTimeout(() => {
+          handleBackPress();
+        }, 0); // Short delay to ensure modal is visible before navigation
       } catch (error) {
         console.error('Error moving deck to folders:', error);
       }

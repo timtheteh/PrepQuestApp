@@ -4,8 +4,8 @@ import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
 import { MenuContext } from '@/app/(tabs)/_layout';
 
 interface KindsOfQuestionsProps {
-  value: string;
-  onValueChange: (value: string) => void;
+  value: string[];
+  onValueChange: (value: string[]) => void;
   onHelpPress?: () => void;
 }
 
@@ -32,7 +32,18 @@ export function KindsOfQuestions({
   } = useContext(MenuContext);
 
   const handleSelect = (selectedValue: string) => {
-    onValueChange(selectedValue);
+    const newValue = [...value]; // Create a copy of the current array
+    
+    if (newValue.includes(selectedValue)) {
+      // If already selected, remove it
+      const index = newValue.indexOf(selectedValue);
+      newValue.splice(index, 1);
+    } else {
+      // If not selected, add it
+      newValue.push(selectedValue);
+    }
+    
+    onValueChange(newValue);
   };
 
   const handleHelpPress = () => {
@@ -50,7 +61,7 @@ export function KindsOfQuestions({
               key={type}
               style={[
                 styles.button,
-                value === type && styles.buttonSelected
+                value.includes(type) && styles.buttonSelected
               ]}
               onPress={() => handleSelect(type)}
             >

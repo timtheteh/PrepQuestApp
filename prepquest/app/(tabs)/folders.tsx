@@ -574,6 +574,8 @@ export default function FoldersScreen() {
 
         if (selectedFolderIds.length === 0) {
           console.log('No folders selected for adding deck');
+          // Navigate back to source page when no folders are selected
+          handleBackPress();
           return;
         }
 

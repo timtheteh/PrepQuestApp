@@ -1149,7 +1149,7 @@ export async function populateDummyData() {
     const aiDeckData = [
       // 1. Study deck - AI suggested
       {
-        AIDeckName: 'AI-Generated Machine Learning Fundamentals',
+        deckName: 'AI-Generated Machine Learning Fundamentals',
         dateAdded: '2025-06-01T10:00:00.000Z',
         lastModifiedDate: '2025-06-01T10:00:00.000Z',
         isFavorited: 0,
@@ -1163,11 +1163,17 @@ export async function populateDummyData() {
         studyEducationLevel: 'Graduate',
         studySubjects: '["Computer Science", "Machine Learning", "Artificial Intelligence"]',
         studyTopicsSubtopics: '["Supervised Learning", "Unsupervised Learning", "Neural Networks", "Deep Learning", "Model Evaluation"]',
-        studyExamQuiz: 'ML Fundamentals Assessment'
+        studyExamQuiz: 'ML Fundamentals Assessment',
+        interviewJobRole: null,
+        interviewType: null,
+        interviewCompany: null,
+        interviewExperienceLevel: null,
+        interviewTopics: null,
+        interviewCompanyIcon: null
       },
       // 2. Study deck - AI suggested
       {
-        AIDeckName: 'AI-Curated Data Science Essentials',
+        deckName: 'AI-Curated Data Science Essentials',
         dateAdded: '2025-06-02T14:30:00.000Z',
         lastModifiedDate: '2025-06-02T14:30:00.000Z',
         isFavorited: 0,
@@ -1181,11 +1187,17 @@ export async function populateDummyData() {
         studyEducationLevel: 'Undergraduate',
         studySubjects: '["Statistics", "Data Analysis", "Programming"]',
         studyTopicsSubtopics: '["Data Visualization", "Statistical Testing", "Python Programming", "SQL", "Data Cleaning"]',
-        studyExamQuiz: null
+        studyExamQuiz: null,
+        interviewJobRole: null,
+        interviewType: null,
+        interviewCompany: null,
+        interviewExperienceLevel: null,
+        interviewTopics: null,
+        interviewCompanyIcon: null
       },
       // 3. Interview deck - AI suggested
       {
-        AIDeckName: 'AI-Prepared Google Technical Interview',
+        deckName: 'AI-Prepared Google Technical Interview',
         dateAdded: '2025-06-03T09:15:00.000Z',
         lastModifiedDate: '2025-06-03T09:15:00.000Z',
         isFavorited: 0,
@@ -1196,6 +1208,10 @@ export async function populateDummyData() {
         cardDesignIndex: 2,
         isAIDeck: 1,
         folderIDs: null,
+        studyEducationLevel: null,
+        studySubjects: null,
+        studyTopicsSubtopics: null,
+        studyExamQuiz: null,
         interviewJobRole: 'Software Engineer',
         interviewType: 'technical',
         interviewCompany: 'Google',
@@ -1211,12 +1227,12 @@ export async function populateDummyData() {
       
       await db.execAsync(`
         INSERT INTO AIDecks (
-          AIDeckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
           lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          ${escapeSqlString(aiDeck.AIDeckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
+          ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
           ${escapeSqlString(aiDeck.lastStudiedDate)}, ${escapeSqlString(aiDeck.lastQuizzedDate)}, ${aiDeck.cardDesignIndex}, ${aiDeck.isAIDeck}, ${escapeSqlString(aiDeck.folderIDs)},
           ${escapeSqlString(aiDeck.studyEducationLevel)}, ${escapeSqlString(aiDeck.studySubjects)}, ${escapeSqlString(aiDeck.studyTopicsSubtopics)}, ${escapeSqlString(aiDeck.studyExamQuiz)},
           ${escapeSqlString(aiDeck.interviewJobRole)}, ${escapeSqlString(aiDeck.interviewType)}, ${escapeSqlString(aiDeck.interviewCompany)}, ${escapeSqlString(aiDeck.interviewExperienceLevel)}, ${escapeSqlString(aiDeck.interviewTopics)}, ${companyIconBlob}
@@ -1238,7 +1254,7 @@ export async function populateDummyData() {
       
       // Determine study/quiz status based on AI deck ID
       // AI Deck 1: No attempts (all null dates)
-      // AI Deck 2 & 3: Some attempts
+      // AI Deck 2 & 3: Some attempts (10-50% not attempted, rest attempted)
       const isFirstDeck = aiDeckId === 1;
       
       // For AI decks 2 and 3, determine how many flashcards should be studied/quizzed
@@ -1248,9 +1264,17 @@ export async function populateDummyData() {
       let quizzedFlashcardsCount = 0;
       
       if (!isFirstDeck) {
-        // For AI decks 2 and 3, some flashcards are studied/quizzed
-        studiedFlashcardsCount = Math.max(2, Math.floor(Math.random() * (Math.floor(totalFlashcards * 0.7) + 1))); // 2 to 70% of flashcards
-        quizzedFlashcardsCount = Math.max(1, Math.floor(Math.random() * (Math.floor(totalFlashcards * 0.6) + 1))); // 1 to 60% of flashcards
+        // For AI decks 2 and 3, 10-50% of flashcards are NOT attempted (remain null)
+        // So 50-90% of flashcards ARE attempted
+        const notAttemptedPercentage = Math.random() * 0.4 + 0.1; // 10% to 50%
+        const attemptedPercentage = 1 - notAttemptedPercentage; // 50% to 90%
+        
+        studiedFlashcardsCount = Math.floor(totalFlashcards * attemptedPercentage);
+        quizzedFlashcardsCount = Math.floor(totalFlashcards * attemptedPercentage);
+        
+        // Ensure at least 1 flashcard is attempted for decks 2 and 3
+        studiedFlashcardsCount = Math.max(1, studiedFlashcardsCount);
+        quizzedFlashcardsCount = Math.max(1, quizzedFlashcardsCount);
       }
       
       // Create array of flashcard indices that are studied/quizzed
@@ -1297,7 +1321,7 @@ export async function populateDummyData() {
       const aiFlashcardData = [
         // 1. text qn to text ans
         {
-          AIDeckID: aiDeckId,
+          deckID: aiDeckId,
           difficultyRating: 'Good',
           cognitiveQnType: 'Recall',
           isFavorited: 0,
@@ -1319,7 +1343,7 @@ export async function populateDummyData() {
         },
         // 2. image qn to text ans
         {
-          AIDeckID: aiDeckId,
+          deckID: aiDeckId,
           difficultyRating: 'Easy',
           cognitiveQnType: 'Comprehension',
           isFavorited: 1,
@@ -1341,7 +1365,7 @@ export async function populateDummyData() {
         },
         // 3. audio qn to text ans
         {
-          AIDeckID: aiDeckId,
+          deckID: aiDeckId,
           difficultyRating: 'Hard',
           cognitiveQnType: 'Application',
           isFavorited: 0,
@@ -1363,7 +1387,7 @@ export async function populateDummyData() {
         },
         // 4. text qn to mcq ans
         {
-          AIDeckID: aiDeckId,
+          deckID: aiDeckId,
           difficultyRating: 'Good',
           cognitiveQnType: 'Analysis',
           isFavorited: 0,
@@ -1390,7 +1414,7 @@ export async function populateDummyData() {
         },
         // 5. text qn to image ans
         {
-          AIDeckID: aiDeckId,
+          deckID: aiDeckId,
           difficultyRating: 'Easy',
           cognitiveQnType: 'Synthesis',
           isFavorited: 0,
@@ -1412,7 +1436,7 @@ export async function populateDummyData() {
         },
         // 6. text qn to audio ans
         {
-          AIDeckID: aiDeckId,
+          deckID: aiDeckId,
           difficultyRating: 'Hard',
           cognitiveQnType: 'Evaluation',
           isFavorited: 1,
@@ -1434,7 +1458,7 @@ export async function populateDummyData() {
         },
         // 7. text qn to voice ans
         {
-          AIDeckID: aiDeckId,
+          deckID: aiDeckId,
           difficultyRating: 'Good',
           cognitiveQnType: 'Problem-Solving',
           isFavorited: 0,
@@ -1463,10 +1487,10 @@ export async function populateDummyData() {
         
         await db.execAsync(`
           INSERT INTO AIFlashcards (
-            AIDeckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            ${aiFlashcard.AIDeckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
+            ${aiFlashcard.deckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
             ${escapeSqlString(aiFlashcard.questionText)}, ${questionBlobHex},
             ${escapeSqlString(aiFlashcard.answerType)}, ${escapeSqlString(aiFlashcard.answerText)}, 
             ${escapeSqlString(aiFlashcard.answerMCQ)}, ${answerBlobHex},
@@ -1534,7 +1558,7 @@ export async function verifyDataLoad() {
     console.log('🗂️ Sample flashcards:', sampleFlashcards);
     
     // Sample AIDecks
-    const sampleAIDecks = await db.getAllAsync('SELECT AIDeckName, deckType, creationMethod FROM AIDecks LIMIT 3');
+    const sampleAIDecks = await db.getAllAsync('SELECT deckName, deckType, creationMethod FROM AIDecks LIMIT 3');
     console.log('🤖 Sample AI decks:', sampleAIDecks);
     
     // Sample AIFlashcards

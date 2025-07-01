@@ -99,8 +99,8 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
 
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS AIDecks (
-        AIDeckID INTEGER PRIMARY KEY AUTOINCREMENT,
-        AIDeckName TEXT NOT NULL,
+        deckID INTEGER PRIMARY KEY AUTOINCREMENT,
+        deckName TEXT NOT NULL,
         dateAdded TEXT,
         lastModifiedDate TEXT,
         isFavorited INTEGER DEFAULT 0,
@@ -126,8 +126,8 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
 
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS AIFlashcards (
-        AIflashcardID INTEGER PRIMARY KEY AUTOINCREMENT,
-        AIDeckID INTEGER NOT NULL,
+        flashcardID INTEGER PRIMARY KEY AUTOINCREMENT,
+        deckID INTEGER NOT NULL,
         difficultyRating TEXT NOT NULL DEFAULT 'None' CHECK (difficultyRating IN ('Easy', 'Good', 'Hard', 'Again', 'None')),
         cognitiveQnType TEXT NOT NULL DEFAULT 'Recall' CHECK (cognitiveQnType IN ('Recall', 'Comprehension', 'Application', 'Analysis', 'Synthesis', 'Evaluation', 'Problem-Solving')),
         isFavorited INTEGER DEFAULT 0,
@@ -142,7 +142,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         isMcqAnswerRight INTEGER DEFAULT 0,
         lastStudiedDate TEXT,
         lastQuizzedDate TEXT,
-        FOREIGN KEY (AIDeckID) REFERENCES AIDecks (AIDeckID)
+        FOREIGN KEY (deckID) REFERENCES AIDecks (deckID)
       )
     `);
 

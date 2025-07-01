@@ -9,7 +9,7 @@ import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
 import { FolderCard } from '@/components/FolderCard';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
-import { useState, useRef, useEffect, useContext } from 'react';
+import { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,6 +19,7 @@ import { db } from '@/db/index';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/CalendarModal';
+import LottieView from 'lottie-react-native';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -50,6 +51,8 @@ export default function FavoritesScreen() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
   const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
+  const [shouldShowDeckAnimation, setShouldShowDeckAnimation] = useState(true);
+  const [shouldShowFolderAnimation, setShouldShowFolderAnimation] = useState(true);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -210,74 +213,24 @@ export default function FavoritesScreen() {
   };
 
   const handleToggle = (isRightSide: boolean) => {
+    // If in select mode, cancel it before switching
+    if (isSelectMode) {
+      handleCancel();
+    }
     setIsFavFoldersMode(isRightSide);
     setCurrentMode(isRightSide ? 'interview' : 'study');
-    
     // Clear the selection state for the mode we're leaving
     if (isRightSide) {
       setSelectedFavDeckCards(new Set());
     } else {
       setSelectedFavFolderCards(new Set());
     }
-    
-    // If in select mode, reset it first
-    if (isSelectMode) {
-      setIsSelectMode(false);
-      
-      Animated.parallel([
-        // Mode toggle animation
-        Animated.timing(fadeAnim, {
-          toValue: isRightSide ? 1 : 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        // Cancel animations
-        Animated.timing(shiftAnim, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING,
-          duration: selectUnselectedDuration,
-          useNativeDriver: false,
-        }),
-        Animated.timing(actionRowOpacity, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(selectTextAnim, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fabOpacity, {
-          toValue: 1,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardWidthPercentage, {
-          toValue: 100,
-          duration: selectUnselectedDuration,
-          useNativeDriver: false,
-        }),
-      ]).start();
-      
-      // Separate animation for circle button
-      Animated.timing(circleButtonOpacity, {
-        toValue: 0,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      // Just toggle mode
-      Animated.timing(fadeAnim, {
-        toValue: isRightSide ? 1 : 0,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }).start();
-    }
+    // Animate mode toggle
+    Animated.timing(fadeAnim, {
+      toValue: isRightSide ? 1 : 0,
+      duration: selectUnselectedDuration,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleFabPress = () => {
@@ -381,9 +334,12 @@ export default function FavoritesScreen() {
         useNativeDriver: true,
       })
     ]).start(() => {
-      setIsSelectMode(false);
-      setSelectedFavDeckCards(new Set());
-      setSelectedFavFolderCards(new Set());
+      // Use requestAnimationFrame to prevent state updates during render
+      requestAnimationFrame(() => {
+        setIsSelectMode(false);
+        setSelectedFavDeckCards(new Set());
+        setSelectedFavFolderCards(new Set());
+      });
     });
   };
 
@@ -708,7 +664,7 @@ export default function FavoritesScreen() {
   };
 
   // Sort function for decks
-  const sortDecks = (decks: (Deck & { progress: number })[]) => {
+  const sortDecks = useCallback((decks: (Deck & { progress: number })[]) => {
     return [...decks].sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -738,10 +694,10 @@ export default function FavoritesScreen() {
       }
       return 0;
     });
-  };
+  }, [sortField, sortDirection]);
 
   // Sort function for folders
-  const sortFolders = (folders: Folder[]) => {
+  const sortFolders = useCallback((folders: Folder[]) => {
     return [...folders].sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -771,7 +727,7 @@ export default function FavoritesScreen() {
       }
       return 0;
     });
-  };
+  }, [sortField, sortDirection]);
 
   const handleSortChange = (field: SortField, direction: SortDirection) => {
     setSortField(field);
@@ -991,8 +947,100 @@ export default function FavoritesScreen() {
       const sortedFavoritedFolders = sortFolders(favoritedFolders);
       setFilteredFavoritedDecks(sortedFavoritedDecks);
       setFilteredFavoritedFolders(sortedFavoritedFolders);
+    } else {
+      // When all items are deleted, clear the filtered arrays
+      setFilteredFavoritedDecks([]);
+      setFilteredFavoritedFolders([]);
     }
-  }, [favoritedDecks, favoritedFolders, sortField, sortDirection]);
+  }, [favoritedDecks, favoritedFolders, sortDecks, sortFolders]);
+
+  // Filter by dateAdded according to calendarFilter
+  const filterByDate = useCallback(<T extends { dateAdded: string }>(items: T[]): T[] => {
+    if (calendarFilter === 'all' || !calendarFilter) return items;
+    const now = new Date();
+    return items.filter(item => {
+      const itemDate = new Date(item.dateAdded);
+      if (calendarFilter === 'today') {
+        return (
+          itemDate.getFullYear() === now.getFullYear() &&
+          itemDate.getMonth() === now.getMonth() &&
+          itemDate.getDate() === now.getDate()
+        );
+      }
+      if (calendarFilter === 'week') {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return itemDate >= startOfWeek && itemDate <= endOfWeek;
+      }
+      if (calendarFilter === 'month') {
+        return (
+          itemDate.getFullYear() === now.getFullYear() &&
+          itemDate.getMonth() === now.getMonth()
+        );
+      }
+      if (calendarFilter === 'custom' && calendarCustomDate) {
+        const [year, month, day] = calendarCustomDate.split('-').map(Number);
+        return (
+          itemDate.getFullYear() === year &&
+          itemDate.getMonth() + 1 === month &&
+          itemDate.getDate() === day
+        );
+      }
+      return true;
+    });
+  }, [calendarFilter, calendarCustomDate]);
+
+  // Filtered arrays for calendar filter
+  const filteredFavoritedDecksByDate = useMemo(() => filterByDate(favoritedDecks), [filterByDate, favoritedDecks]);
+  const filteredFavoritedFoldersByDate = useMemo(() => filterByDate(favoritedFolders), [filterByDate, favoritedFolders]);
+
+  // Search results (search always searches all, not just filtered)
+  const searchedFavoritedDecks = useMemo(() => 
+    favoritedDecks.filter(deck =>
+      deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [favoritedDecks, searchQuery]
+  );
+  const searchedFavoritedFolders = useMemo(() => 
+    favoritedFolders.filter(folder =>
+      folder.folderName.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [favoritedFolders, searchQuery]
+  );
+
+  // For counts in UI:
+  const favDeckCount = useMemo(() => 
+    isSearching ? searchedFavoritedDecks.length : filteredFavoritedDecksByDate.length, 
+    [isSearching, searchedFavoritedDecks.length, filteredFavoritedDecksByDate.length]
+  );
+  const favFolderCount = useMemo(() => 
+    isSearching ? searchedFavoritedFolders.length : filteredFavoritedFoldersByDate.length, 
+    [isSearching, searchedFavoritedFolders.length, filteredFavoritedFoldersByDate.length]
+  );
+
+  // Manage animation states and ensure FAB button visibility
+  useEffect(() => {
+    // Determine which items to check based on whether we're searching or not
+    const decksToCheck = isSearching ? searchedFavoritedDecks : filteredFavoritedDecksByDate;
+    const foldersToCheck = isSearching ? searchedFavoritedFolders : filteredFavoritedFoldersByDate;
+    
+    const decksEmpty = decksToCheck.length === 0;
+    const foldersEmpty = foldersToCheck.length === 0;
+    
+    // Only show animations when the current mode has no items
+    setShouldShowDeckAnimation(!isFavFoldersMode && decksEmpty);
+    setShouldShowFolderAnimation(isFavFoldersMode && foldersEmpty);
+    
+    // Ensure FAB button is always visible when not in select mode
+    // Use requestAnimationFrame to avoid setting values during render
+    if (!isSelectMode) {
+      requestAnimationFrame(() => {
+        fabOpacity.setValue(1);
+      });
+    }
+  }, [isFavFoldersMode, filteredFavoritedDecksByDate.length, filteredFavoritedFoldersByDate.length, searchedFavoritedDecks.length, searchedFavoritedFolders.length, isSearching, isSelectMode]);
 
   // Update card counts based on search state
   useEffect(() => {
@@ -1081,23 +1129,30 @@ export default function FavoritesScreen() {
       const success = await deleteMultipleDecks(selectedDeckIds);
       
       if (success) {
-        // Clear selections first to prevent render issues
-        setSelectedFavDeckCards(new Set());
-        
-        // Update local state by removing the deleted decks
-        const remainingDecks = favoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
-        setFavoritedDecks(remainingDecks);
-        
-        // Update filtered decks if searching
-        if (isSearching) {
-          const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
-          setFilteredFavoritedDecks(remainingFilteredDecks);
-        }
+        // Batch state updates to prevent rapid re-renders
+        const updateState = () => {
+          // Clear selections first to prevent render issues
+          setSelectedFavDeckCards(new Set());
+          
+          // Update local state by removing the deleted decks
+          const remainingDecks = favoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+          setFavoritedDecks(remainingDecks);
+          
+          // Update filtered decks if searching
+          if (isSearching) {
+            const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+            setFilteredFavoritedDecks(remainingFilteredDecks);
+          }
+        };
 
-        // Exit selection mode after state updates
-        setTimeout(() => {
-          handleCancel();
-        }, 0);
+        // Use requestAnimationFrame to batch state updates
+        requestAnimationFrame(() => {
+          updateState();
+          // Exit selection mode after state updates
+          setTimeout(() => {
+            handleCancel();
+          }, 0);
+        });
         
         console.log(`Successfully deleted ${selectedDeckIds.length} favorited deck(s)`);
       } else {
@@ -1123,23 +1178,30 @@ export default function FavoritesScreen() {
       const success = await deleteMultipleFolders(selectedFolderIds);
       
       if (success) {
-        // Clear selections first to prevent render issues
-        setSelectedFavFolderCards(new Set());
-        
-        // Update local state by removing the deleted folders
-        const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
-        setFavoritedFolders(remainingFolders);
-        
-        // Update filtered folders if searching
-        if (isSearching) {
-          const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
-          setFilteredFavoritedFolders(remainingFilteredFolders);
-        }
+        // Batch state updates to prevent rapid re-renders
+        const updateState = () => {
+          // Clear selections first to prevent render issues
+          setSelectedFavFolderCards(new Set());
+          
+          // Update local state by removing the deleted folders
+          const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+          setFavoritedFolders(remainingFolders);
+          
+          // Update filtered folders if searching
+          if (isSearching) {
+            const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+            setFilteredFavoritedFolders(remainingFilteredFolders);
+          }
+        };
 
-        // Exit selection mode after state updates
-        setTimeout(() => {
-          handleCancel();
-        }, 0);
+        // Use requestAnimationFrame to batch state updates
+        requestAnimationFrame(() => {
+          updateState();
+          // Exit selection mode after state updates
+          setTimeout(() => {
+            handleCancel();
+          }, 0);
+        });
         
         console.log(`Successfully deleted ${selectedFolderIds.length} favorited folder(s)`);
       } else {
@@ -1150,62 +1212,6 @@ export default function FavoritesScreen() {
     }
   };
 
-  // Filter by dateAdded according to calendarFilter
-  function filterByDate<T extends { dateAdded: string }>(items: T[]): T[] {
-    if (calendarFilter === 'all' || !calendarFilter) return items;
-    const now = new Date();
-    return items.filter(item => {
-      const itemDate = new Date(item.dateAdded);
-      if (calendarFilter === 'today') {
-        return (
-          itemDate.getFullYear() === now.getFullYear() &&
-          itemDate.getMonth() === now.getMonth() &&
-          itemDate.getDate() === now.getDate()
-        );
-      }
-      if (calendarFilter === 'week') {
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-        return itemDate >= startOfWeek && itemDate <= endOfWeek;
-      }
-      if (calendarFilter === 'month') {
-        return (
-          itemDate.getFullYear() === now.getFullYear() &&
-          itemDate.getMonth() === now.getMonth()
-        );
-      }
-      if (calendarFilter === 'custom' && calendarCustomDate) {
-        const [year, month, day] = calendarCustomDate.split('-').map(Number);
-        return (
-          itemDate.getFullYear() === year &&
-          itemDate.getMonth() + 1 === month &&
-          itemDate.getDate() === day
-        );
-      }
-      return true;
-    });
-  }
-
-  // Filtered arrays for calendar filter
-  const filteredFavoritedDecksByDate = filterByDate(favoritedDecks);
-  const filteredFavoritedFoldersByDate = filterByDate(favoritedFolders);
-
-  // Search results (search always searches all, not just filtered)
-  const searchedFavoritedDecks = favoritedDecks.filter(deck =>
-    deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const searchedFavoritedFolders = favoritedFolders.filter(folder =>
-    folder.folderName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // For counts in UI:
-  const favDeckCount = isSearching ? searchedFavoritedDecks.length : filteredFavoritedDecksByDate.length;
-  const favFolderCount = isSearching ? searchedFavoritedFolders.length : filteredFavoritedFoldersByDate.length;
-
   // Update render functions to use filtered arrays
   const renderFavDeckCards = () => {
     let decksToRender;
@@ -1214,8 +1220,28 @@ export default function FavoritesScreen() {
     } else {
       decksToRender = filteredFavoritedDecksByDate;
     }
+    
+    // If no decks to render, show empty state
+    if (!decksToRender || decksToRender.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          {shouldShowDeckAnimation && (
+            <LottieView
+              key="fav-deck-empty-state"
+              source={require('@/assets/animations/EmptyState3.json')}
+              autoPlay
+              loop
+              style={styles.emptyStateAnimation}
+            />
+          )}
+          <Text style={styles.emptyStateText}>
+            Whoops! No more{'\n'}favorite decks
+          </Text>
+        </View>
+      );
+    }
+    
     const sortedDecks = sortDecks(decksToRender);
-    if (!sortedDecks || sortedDecks.length === 0) return null;
     return sortedDecks.map((data, index) => {
       const cardDesign = getDeckCardDesign(data.cardDesignIndex, data.isAIDeck === 1, data.AICardDesignIndex);
       const style = index === 0 ? styles.firstCard : styles.card;
@@ -1266,8 +1292,28 @@ export default function FavoritesScreen() {
     } else {
       foldersToRender = filteredFavoritedFoldersByDate;
     }
+    
+    // If no folders to render, show empty state
+    if (!foldersToRender || foldersToRender.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          {shouldShowFolderAnimation && (
+            <LottieView
+              key="fav-folder-empty-state"
+              source={require('@/assets/animations/EmptyState3.json')}
+              autoPlay
+              loop
+              style={styles.emptyStateAnimation}
+            />
+          )}
+          <Text style={styles.emptyStateText}>
+            Whoops! No more{'\n'}favorite folders
+          </Text>
+        </View>
+      );
+    }
+    
     const sortedFolders = sortFolders(foldersToRender);
-    if (!sortedFolders || sortedFolders.length === 0) return null;
     return sortedFolders.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       return (
@@ -1395,9 +1441,10 @@ export default function FavoritesScreen() {
                   <TouchableOpacity 
                     onPress={isSelectMode ? handleSelectAll : handleSelect}
                     style={styles.selectButtonContainer}
+                    disabled={isSelectMode ? false : (isFavFoldersMode ? favFolderCount === 0 : favDeckCount === 0)}
                   >
                     <Animated.Text style={[
-                      styles.selectButton,
+                      isSelectMode ? styles.selectButton : (isFavFoldersMode ? (favFolderCount === 0 ? styles.selectButtonDisabled : styles.selectButton) : (favDeckCount === 0 ? styles.selectButtonDisabled : styles.selectButton)),
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
@@ -1584,5 +1631,26 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     zIndex: 1,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateAnimation: {
+    width: 200,
+    height: 200,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: 'Satoshi-Medium',
+    color: '#333333',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  selectButtonDisabled: {
+    fontSize: 20,
+    fontFamily: 'Satoshi-Medium',
+    color: '#CCCCCC',
   },
 });

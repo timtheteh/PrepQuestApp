@@ -380,74 +380,24 @@ export default function DecksScreen() {
   }, [isInterviewMode, filteredStudyDecksByDate.length, filteredInterviewDecksByDate.length, searchedStudyDecks.length, searchedInterviewDecks.length, isSearching, isSelectMode]);
 
   const handleToggle = (isRightSide: boolean) => {
+    // If in select mode, cancel it before switching
+    if (isSelectMode) {
+      handleCancel();
+    }
     setIsInterviewMode(isRightSide);
     setCurrentMode(isRightSide ? 'interview' : 'study');
-    
     // Clear the selection state for the mode we're leaving
     if (isRightSide) {
       setSelectedStudyCards(new Set());
     } else {
       setSelectedInterviewCards(new Set());
     }
-    
-    // If in select mode, reset it first
-    if (isSelectMode) {
-      setIsSelectMode(false);
-      
-      Animated.parallel([
-        // Mode toggle animation
-        Animated.timing(fadeAnim, {
-          toValue: isRightSide ? 1 : 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        // Cancel animations
-        Animated.timing(shiftAnim, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING,
-          duration: selectUnselectedDuration,
-          useNativeDriver: false,
-        }),
-        Animated.timing(actionRowOpacity, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(selectTextAnim, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fabOpacity, {
-          toValue: 1,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardWidthPercentage, {
-          toValue: 100,
-          duration: selectUnselectedDuration,
-          useNativeDriver: false,
-        }),
-      ]).start();
-      
-      // Separate animation for circle button
-        Animated.timing(circleButtonOpacity, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-      }).start();
-    } else {
-      // Just toggle mode
-      Animated.timing(fadeAnim, {
-        toValue: isRightSide ? 1 : 0,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }).start();
-    }
+    // Animate mode toggle
+    Animated.timing(fadeAnim, {
+      toValue: isRightSide ? 1 : 0,
+      duration: selectUnselectedDuration,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleSelect = () => {
@@ -743,8 +693,10 @@ export default function DecksScreen() {
         // Use requestAnimationFrame to batch state updates
         requestAnimationFrame(() => {
           updateState();
-          // Exit selection mode after state updates
-          handleCancel();
+          // Exit selection mode after state updates with a small delay to ensure state is updated
+          setTimeout(() => {
+            handleCancel();
+          }, 0);
         });
         
         console.log(`Successfully deleted ${selectedDeckIds.length} deck(s)`);
@@ -1349,11 +1301,11 @@ const styles = StyleSheet.create({
     height: 200,
   },
   emptyStateText: {
-    fontSize: 24,
-    fontFamily: 'Satoshi-Variable',
-    color: '#000000',
+    fontSize: 18,
+    fontFamily: 'Satoshi-Medium',
+    color: '#333333',
     textAlign: 'center',
     marginTop: 0,
-    lineHeight: 32,
+    lineHeight: 20,
   },
 });

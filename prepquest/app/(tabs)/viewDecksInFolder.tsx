@@ -17,6 +17,7 @@ import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder, checkFolderN
 import { db } from '@/db/index';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/Toast';
+import LottieView from 'lottie-react-native';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -645,9 +646,22 @@ export default function ViewDecksInFolderScreen() {
   });
 
   const renderDecks = () => {
-    // Safety check to prevent rendering issues
+    // Show empty state if no decks
     if (!decks || decks.length === 0) {
-      return null;
+      return (
+        <View style={styles.emptyStateContainer}>
+          <LottieView
+            key="folder-empty-state"
+            source={require('@/assets/animations/EmptyState3.json')}
+            autoPlay
+            loop
+            style={styles.emptyStateAnimation}
+          />
+          <Text style={styles.emptyStateText}>
+            Whoops! No more{'\n'}decks in this folder
+          </Text>
+        </View>
+      );
     }
     
     const cards = decks.map((data, index) => {
@@ -757,19 +771,20 @@ export default function ViewDecksInFolderScreen() {
                     <TouchableOpacity 
                         onPress={isSelectMode ? handleSelectAll : handleSelect}
                         style={styles.selectButtonContainer}
+                        disabled={isSelectMode ? false : decks.length === 0}
                     >
+                        <Animated.Text style={[
+                            isSelectMode ? styles.selectButton : (decks.length === 0 ? styles.selectButtonDisabled : styles.selectButton),
+                            styles.selectButtonAbsolute,
+                            { opacity: selectOpacity }
+                        ]}>
+                            Select
+                        </Animated.Text>
                         <Animated.Text style={[
                             styles.selectButton,
                             styles.selectButtonAbsolute,
-                            { opacity: selectOpacity }
-                            ]}>
-                            Select
-                            </Animated.Text>
-                            <Animated.Text style={[
-                            styles.selectButton,
-                            styles.selectButtonAbsolute,
                             { opacity: selectAllOpacity }
-                            ]}>
+                        ]}>
                             Select All
                         </Animated.Text>
                     </TouchableOpacity>
@@ -949,5 +964,26 @@ const styles = StyleSheet.create({
     right: 0,
     height: 100,
     zIndex: 1,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateAnimation: {
+    width: 200,
+    height: 200,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: 'Satoshi-Medium',
+    color: '#333333',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  selectButtonDisabled: {
+    fontSize: 20,
+    fontFamily: 'Satoshi-Medium',
+    color: '#CCCCCC',
   },
 });

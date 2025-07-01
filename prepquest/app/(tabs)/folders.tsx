@@ -15,6 +15,7 @@ import { getAllFolders, Folder, deleteMultipleFolders } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/CalendarModal';
+import LottieView from 'lottie-react-native';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -44,6 +45,7 @@ export default function FoldersScreen() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [foldersCount, setFoldersCount] = useState(0);
+  const [shouldShowAnimation, setShouldShowAnimation] = useState(true);
   const isFocused = useIsFocused();
   const { 
     setIsMenuOpen, 
@@ -1292,8 +1294,48 @@ export default function FoldersScreen() {
   // For counts in UI:
   const foldersCountToShow = isSearching ? searchedFolders.length : filteredFoldersByDate.length;
 
+  // Manage animation states and ensure FAB button visibility
+  useEffect(() => {
+    // Determine which folders to check based on whether we're searching or not
+    const foldersToCheck = isSearching ? searchedFolders : filteredFoldersByDate;
+    
+    const foldersEmpty = foldersToCheck.length === 0;
+    
+    // Only show animations when there are no folders
+    setShouldShowAnimation(foldersEmpty);
+    
+    // Ensure FAB button is always visible when not in select mode
+    // Use requestAnimationFrame to avoid setting values during render
+    if (!isSelectMode) {
+      requestAnimationFrame(() => {
+        fabOpacity.setValue(1);
+      });
+    }
+  }, [filteredFoldersByDate.length, searchedFolders.length, isSearching, isSelectMode]);
+
   const renderFolderCards = () => {
     const foldersToRender = isSearching ? searchedFolders : filteredFoldersByDate;
+    
+    // If no folders to render, show empty state
+    if (!foldersToRender || foldersToRender.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          {shouldShowAnimation && (
+            <LottieView
+              key="folders-empty-state"
+              source={require('@/assets/animations/EmptyState3.json')}
+              autoPlay
+              loop
+              style={styles.emptyStateAnimation}
+            />
+          )}
+          <Text style={styles.emptyStateText}>
+            Where have all the{'\n'}folders gone
+          </Text>
+        </View>
+      );
+    }
+    
     const sortedFolders = sortFolders(foldersToRender);
     
     // Safety check to prevent rendering issues
@@ -1421,9 +1463,10 @@ export default function FoldersScreen() {
                   <TouchableOpacity 
                     onPress={isSelectMode ? handleSelectAll : handleSelect}
                     style={styles.selectButtonContainer}
+                    disabled={isSelectMode ? false : foldersCountToShow === 0}
                   >
                     <Animated.Text style={[
-                      styles.selectButton,
+                      isSelectMode ? styles.selectButton : (foldersCountToShow === 0 ? styles.selectButtonDisabled : styles.selectButton),
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
@@ -1598,5 +1641,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Satoshi-Medium',
     color: '#44B88A',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40, // Add some top padding to center it better in the scrollview
+  },
+  emptyStateAnimation: {
+    width: 200,
+    height: 200,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: 'Satoshi-Medium',
+    color: '#333333',
+    textAlign: 'center',
+    marginTop: 0,
+    lineHeight: 20,
+  },
+  selectButtonDisabled: {
+    fontSize: 20,
+    fontFamily: 'Satoshi-Medium',
+    color: '#CCCCCC',
   },
 }); 

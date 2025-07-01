@@ -48,6 +48,8 @@ export default function DecksScreen() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
+  const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -657,8 +659,68 @@ export default function DecksScreen() {
     }
   };
 
+  // Filter decks by dateAdded according to calendarFilter
+  function filterDecksByDate(decks: (Deck & { progress: number })[]): (Deck & { progress: number })[] {
+    if (calendarFilter === 'all' || !calendarFilter) return decks;
+    const now = new Date();
+    return decks.filter((deck: Deck & { progress: number }) => {
+      const deckDate = new Date(deck.dateAdded);
+      if (calendarFilter === 'today') {
+        return (
+          deckDate.getFullYear() === now.getFullYear() &&
+          deckDate.getMonth() === now.getMonth() &&
+          deckDate.getDate() === now.getDate()
+        );
+      }
+      if (calendarFilter === 'week') {
+        // Start of week (Sunday)
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        // End of week (Saturday)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return deckDate >= startOfWeek && deckDate <= endOfWeek;
+      }
+      if (calendarFilter === 'month') {
+        return (
+          deckDate.getFullYear() === now.getFullYear() &&
+          deckDate.getMonth() === now.getMonth()
+        );
+      }
+      if (calendarFilter === 'custom' && calendarCustomDate) {
+        // calendarCustomDate is in 'YYYY-MM-DD' format
+        const [year, month, day] = calendarCustomDate.split('-').map(Number);
+        return (
+          deckDate.getFullYear() === year &&
+          deckDate.getMonth() + 1 === month && // JS months are 0-based
+          deckDate.getDate() === day
+        );
+      }
+      return true;
+    });
+  }
+
+  // Calculate filtered decks for counts and rendering
+  const filteredStudyDecksByDate = filterDecksByDate(studyDecks);
+  const filteredInterviewDecksByDate = filterDecksByDate(interviewDecks);
+
+  // Calculate search results (search always searches all decks, ignoring calendar filter)
+  const searchedStudyDecks = studyDecks.filter(deck =>
+    deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const searchedInterviewDecks = interviewDecks.filter(deck =>
+    deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const renderStudyCards = () => {
-    const decksToRender = isSearching ? filteredStudyDecks : studyDecks;
+    let decksToRender;
+    if (isSearching) {
+      decksToRender = searchedStudyDecks;
+    } else {
+      decksToRender = filteredStudyDecksByDate;
+    }
     const sortedDecks = sortDecks(decksToRender);
     const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
@@ -693,30 +755,28 @@ export default function DecksScreen() {
   };
 
   const renderInterviewCards = () => {
-    const decksToRender = isSearching ? filteredInterviewDecks : interviewDecks;
+    let decksToRender;
+    if (isSearching) {
+      decksToRender = searchedInterviewDecks;
+    } else {
+      decksToRender = filteredInterviewDecksByDate;
+    }
     const sortedDecks = sortDecks(decksToRender);
     const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       const isSelected = selectedInterviewCards.has(index);
-      
-      // Convert interviewCompanyIcon BLOB to ImageSourcePropType if it exists
       let imageSource: any = undefined;
       if (data.interviewCompanyIcon) {
         try {
-          // Handle hex string from SQLite BLOB
           if (typeof data.interviewCompanyIcon === 'string') {
-            // Check if it's a hex string (from SQLite hex() function)
             if (/^[0-9A-Fa-f]+$/.test(data.interviewCompanyIcon)) {
-              // Convert hex to base64
               const hexString = data.interviewCompanyIcon;
               const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
               const base64String = btoa(String.fromCharCode(...bytes));
               imageSource = { uri: `data:image/png;base64,${base64String}` };
             } else if (data.interviewCompanyIcon.startsWith('data:')) {
-              // Already a data URI
               imageSource = { uri: data.interviewCompanyIcon };
             } else {
-              // Try as file path or URL
               imageSource = { uri: data.interviewCompanyIcon };
             }
           }
@@ -724,7 +784,6 @@ export default function DecksScreen() {
           imageSource = undefined;
         }
       }
-      
       return (
         <Card
           key={`interview-${data.deckID}`}
@@ -754,6 +813,10 @@ export default function DecksScreen() {
     });
     return cards;
   };
+
+  // For counts in UI:
+  const studyDeckCount = isSearching ? searchedStudyDecks.length : filteredStudyDecksByDate.length;
+  const interviewDeckCount = isSearching ? searchedInterviewDecks.length : filteredInterviewDecksByDate.length;
 
   const slidingMenuDuration = 300;
 
@@ -944,8 +1007,8 @@ export default function DecksScreen() {
           ]}>
             <View style={styles.content}>
               <RoundedContainer 
-                leftLabel={`Study (${studyCardsCount})`}
-                rightLabel={`Interview (${interviewCardsCount})`}
+                leftLabel={`Study (${studyDeckCount})`}
+                rightLabel={`Interview (${interviewDeckCount})`}
                 onToggle={handleToggle}
               />
 
@@ -978,10 +1041,10 @@ export default function DecksScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                      {`My Study Decks (${studyCardsCount})`}
+                      {`My Study Decks (${studyDeckCount})`}
                     </Title>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                      {`My Interview Decks (${interviewCardsCount})`}
+                      {`My Interview Decks (${interviewDeckCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1056,8 +1119,8 @@ export default function DecksScreen() {
         visible={isCalendarOpen}
         title={"Filter decks based on\ndate added"}
         onDone={(selectedFilter, customDate) => {
-          // Handle the calendar filter selection here
-          console.log('Calendar filter selected:', selectedFilter, customDate);
+          setCalendarFilter(selectedFilter);
+          setCalendarCustomDate(customDate || null);
           handleCalendarDismiss();
         }}
         onDismiss={handleCalendarDismiss}

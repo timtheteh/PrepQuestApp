@@ -9,6 +9,8 @@ import { Title } from '@/components/Title';
 import { Card } from '@/components/Card';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { MenuButton } from '@/components/MenuButton';
+import { CalendarModal } from '@/components/CalendarModal';
+import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { useState, useRef, useEffect, useContext } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
@@ -45,6 +47,7 @@ export default function DecksScreen() {
   const [sortField, setSortField] = useState<SortField>('lastModified');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -72,6 +75,8 @@ export default function DecksScreen() {
   const router = useRouter();
   const navbarRef = useRef<any>(null);
   const { mode, selected } = useLocalSearchParams();
+  const calendarOpacity = useRef(new Animated.Value(0)).current;
+  const calendarMenuOverlayOpacity = useRef(new Animated.Value(0)).current;
 
   const selectUnselectedDuration = 300;
 
@@ -780,11 +785,25 @@ export default function DecksScreen() {
 
   const handleCalendarPress = () => {
     setIsMenuOpen(true);
-    Animated.timing(menuOverlayOpacity, {
-      toValue: 0.4,
-      duration: slidingMenuDuration,
-      useNativeDriver: true,
-    }).start();
+    setIsCalendarOpen(true);
+      Animated.timing(calendarOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    .start();
+  };
+
+  const handleCalendarDismiss = () => {
+      Animated.timing(calendarOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    .start(() => {
+      setIsMenuOpen(false);
+      setIsCalendarOpen(false);
+    });
   };
 
   const handleFolderPress = () => {
@@ -1047,6 +1066,23 @@ export default function DecksScreen() {
           </Animated.View>
         </ThemedView>
       </SafeAreaView>
+
+      {/* <GreyOverlayBackground 
+        visible={isCalendarOpen}
+        opacity={calendarMenuOverlayOpacity}
+        onPress={handleCalendarDismiss}
+      /> */}
+
+      <CalendarModal
+        visible={isCalendarOpen}
+        title={"Filter decks based on\ndate added"}
+        onDone={(selectedFilter, customDate) => {
+          // Handle the calendar filter selection here
+          console.log('Calendar filter selected:', selectedFilter, customDate);
+          handleCalendarDismiss();
+        }}
+        onDismiss={handleCalendarDismiss}
+      />
     </Animated.View>
   );
 }

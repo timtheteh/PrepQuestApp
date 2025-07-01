@@ -61,8 +61,6 @@ export default function FavoritesScreen() {
     setHandleUnfavorite,
     navbarRef,
     setIsAIPromptOpen,
-    setIsCalendarOpen,
-    setCalendarTitle,
     setIsAddDeckOpen,
     addDeckOpacity,
     setNoSelectionModalSubtitle,
@@ -1274,8 +1272,6 @@ export default function FavoritesScreen() {
               }}
               onCalendarPress={() => {
                 setIsMenuOpen(true);
-                setIsCalendarOpen(true);
-                setCalendarTitle(CALENDAR_TITLES['favorites']);
                 Animated.timing(menuOverlayOpacity, {
                   toValue: 0.4,
                   duration: 500,

@@ -65,10 +65,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     setIsMenuOpen, 
     menuOverlayOpacity,
     setIsAIPromptOpen,
-    aiPromptOpacity,
-    setIsCalendarOpen,
-    calendarOpacity,
-    setCalendarTitle
+    aiPromptOpacity
   } = useContext(MenuContext);
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -273,22 +270,6 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       handleCloseSearch();
     }
     
-    setIsMenuOpen(true);
-    setIsCalendarOpen(true);
-    setCalendarTitle(CALENDAR_TITLES[pageType]);
-    
-    Animated.timing(calendarOpacity, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-
-    Animated.timing(menuOverlayOpacity, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-
     if (onCalendarPress) {
       onCalendarPress();
     }

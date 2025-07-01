@@ -787,8 +787,7 @@ export async function getDeckInfo(deckId: number): Promise<any | null> {
 
 export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { progress: number; flashcardCount: number }) | null> {
   try {
-    // Get deck information with flashcard count
-    const deckResult = await db.getFirstAsync(`
+    const result = await db.getFirstAsync(`
       SELECT 
         d.*,
         COUNT(f.flashcardID) as flashcardCount
@@ -798,17 +797,89 @@ export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { 
       GROUP BY d.deckID
     `, [deckId]);
 
-    if (!deckResult) {
+    if (!result) {
       return null;
     }
 
-    // Get progress for the deck
     const progress = await getDeckProgress(deckId);
-
-    // Return deck info with progress and flashcard count
-    return { ...deckResult, progress };
+    return { ...result, progress, flashcardCount: (result as any).flashcardCount };
   } catch (error) {
-    console.error('Error getting deck info with progress:', error);
+    console.error('Error fetching deck info with progress:', error);
     return null;
+  }
+}
+
+export interface AIDeck {
+  deckID: number;
+  deckName: string;
+  dateAdded: string;
+  lastModifiedDate: string;
+  isFavorited: number;
+  deckType: 'study' | 'interview';
+  creationMethod: string;
+  lastStudiedDate: string | null;
+  lastQuizzedDate: string | null;
+  cardDesignIndex: number;
+  isAIDeck: number;
+  folderIDs: string | null;
+  studyEducationLevel: string | null;
+  studySubjects: string | null;
+  studyTopicsSubtopics: string | null;
+  studyExamQuiz: string | null;
+  interviewJobRole: string | null;
+  interviewType: string | null;
+  interviewCompany: string | null;
+  interviewExperienceLevel: string | null;
+  interviewTopics: string | null;
+  interviewCompanyIcon: string | null;
+  flashcardCount?: number;
+}
+
+export async function getAIDecks(): Promise<AIDeck[]> {
+  try {
+    const result = await db.getAllAsync(`
+      SELECT 
+        d.*,
+        CASE 
+          WHEN d.interviewCompanyIcon IS NOT NULL 
+          THEN hex(d.interviewCompanyIcon) 
+          ELSE NULL 
+        END as interviewCompanyIcon,
+        COUNT(f.flashcardID) as flashcardCount
+      FROM AIDecks d
+      LEFT JOIN AIFlashcards f ON d.deckID = f.deckID
+      GROUP BY d.deckID
+      ORDER BY d.dateAdded DESC
+      LIMIT 3
+    `);
+    
+    return result as AIDeck[];
+  } catch (error) {
+    console.error('Error fetching AI decks:', error);
+    return [];
+  }
+}
+
+// Helper function to convert hex string to image source
+export function convertHexToImageSource(hexString: string | null): { uri: string } | undefined {
+  if (!hexString) return undefined;
+  
+  try {
+    // Check if it's a hex string
+    if (/^[0-9A-Fa-f]+$/.test(hexString)) {
+      // Convert hex to base64
+      const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+      const base64String = btoa(String.fromCharCode(...bytes));
+      return { uri: `data:image/png;base64,${base64String}` };
+    } else if (hexString.startsWith('data:')) {
+      // Already a data URI
+      return { uri: hexString };
+    } else {
+      // Try as file path or URL
+      return { uri: hexString };
+    }
+  } catch (error) {
+    console.error('Error converting hex to image source:', error);
+    return undefined;
   }
 }

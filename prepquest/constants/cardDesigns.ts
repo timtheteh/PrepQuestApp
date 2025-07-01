@@ -17,6 +17,21 @@ export const cardDesigns = [
   },
 ];
 
+export const AICardDesigns = [
+  {
+    background: require('@/assets/images/AIDeckCover1.png'),
+    pressed: require('@/assets/images/AIDeckCover1Pressed.png'),
+  },
+  {
+    background: require('@/assets/images/AIDeckCover2.png'),
+    pressed: require('@/assets/images/AIDeckCover2Pressed.png'),
+  },
+  {
+    background: require('@/assets/images/AIDeckCover3.png'),
+    pressed: require('@/assets/images/AIDeckCover3Pressed.png'),
+  },
+];
+
 export const deckDetailsCardDesigns = [
   require('@/assets/images/DeckDetailsBg1.png'),
   require('@/assets/images/DeckDetailsBg2.png'),

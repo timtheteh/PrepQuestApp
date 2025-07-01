@@ -1,7 +1,9 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { StyleSheet, Animated, Dimensions, Text, View } from 'react-native';
 import { AIDeckCard } from './AIDeckCard';
 import { MenuContext } from '@/app/(tabs)/_layout';
+import { AICardDesigns } from '@/constants/cardDesigns';
+import { getAIDecks, convertHexToImageSource, AIDeck } from '@/db/decks';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -10,36 +12,6 @@ interface AIPromptModalProps {
   opacity?: Animated.Value;
   sourcePage?: string;
 }
-
-const AI_DECKS = [
-  {
-    normal: require('@/assets/images/AIDeckCover1.png'),
-    pressed: require('@/assets/images/AIDeckCover1Pressed.png'),
-    image: require('@/assets/companyIcons/GoogleIcon.png'),
-    cardType: 'behavioral',
-    title: 'AI Behavioral Prep',
-    flashcardCount: 25,
-    company: 'Google',
-  },
-  {
-    normal: require('@/assets/images/AIDeckCover2.png'),
-    pressed: require('@/assets/images/AIDeckCover2Pressed.png'),
-    image: require('@/assets/companyIcons/MetaIcon.png'),
-    cardType: 'technical',
-    title: 'AI Technical Prep',
-    flashcardCount: 32,
-    company: 'Meta',
-  },
-  {
-    normal: require('@/assets/images/AIDeckCover3.png'),
-    pressed: require('@/assets/images/AIDeckCover3Pressed.png'),
-    image: require('@/assets/companyIcons/JPMIcon.png'),
-    cardType: 'case study',
-    title: 'AI Case Study Prep',
-    flashcardCount: 18,
-    company: 'JPMorgan',
-  },
-];
 
 export function AIPromptModal({ 
   visible,
@@ -52,6 +24,29 @@ export function AIPromptModal({
     setIsAIPromptOpen,
     aiPromptOpacity
   } = useContext(MenuContext);
+
+  const [aiDecks, setAiDecks] = useState<AIDeck[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load AI decks from database
+  useEffect(() => {
+    const loadAIDecks = async () => {
+      try {
+        setLoading(true);
+        const decks = await getAIDecks();
+        setAiDecks(decks);
+      } catch (error) {
+        console.error('Error loading AI decks:', error);
+        setAiDecks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (visible) {
+      loadAIDecks();
+    }
+  }, [visible]);
 
   const dismissModal = () => {
     Animated.parallel([
@@ -87,22 +82,32 @@ export function AIPromptModal({
           Try these AI Decks created just for you!
         </Text>
         <View style={styles.imageContainer}>
-          {AI_DECKS.map((deck, index) => (
-            <AIDeckCard
-              key={index}
-              backgroundImage={deck.normal}
-              pressedBackgroundImage={deck.pressed}
-              image={deck.image}
-              cardType={deck.cardType}
-              title={deck.title}
-              flashcardCount={deck.flashcardCount}
-              onPress={() => console.log(`AI Deck ${index + 1} pressed`)}
-              deckDetailsBackgroundIndex={index}
-              company={deck.company}
-              dismissModal={dismissModal}
-              sourcePage={sourcePage}
-            />
-          ))}
+          {loading ? (
+            <Text style={styles.loadingText}>Loading AI decks...</Text>
+          ) : aiDecks.length > 0 ? (
+            aiDecks.map((deck, index) => {
+              const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
+              const imageSource = convertHexToImageSource(deck.interviewCompanyIcon);
+              
+              return (
+                <AIDeckCard
+                  key={deck.deckID}
+                  backgroundImage={cardDesign.background}
+                  pressedBackgroundImage={cardDesign.pressed}
+                  image={imageSource}
+                  cardType={deck.interviewType || 'study'}
+                  title={deck.deckName}
+                  flashcardCount={deck.flashcardCount || 0}
+                  deckDetailsBackgroundIndex={deck.cardDesignIndex}
+                  dismissModal={dismissModal}
+                  sourcePage={sourcePage}
+                  isStudy={deck.deckType === 'study'}
+                />
+              );
+            })
+          ) : (
+            <Text style={styles.noDecksText}>No AI decks available</Text>
+          )}
         </View>
       </View>
     </Animated.View>
@@ -137,5 +142,19 @@ const styles = StyleSheet.create({
   imageContainer: {
     flex: 1,
     gap: 8,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '500',
+    fontFamily: 'Satoshi-Variable',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  noDecksText: {
+    fontSize: 18,
+    fontWeight: '500',
+    fontFamily: 'Satoshi-Variable',
+    textAlign: 'center',
+    marginTop: 20,
   },
 }); 

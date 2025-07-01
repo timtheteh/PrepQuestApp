@@ -16,6 +16,7 @@ interface AIDeckCardProps {
   company?: string;
   dismissModal?: () => void;
   sourcePage?: string;
+  isStudy?: boolean;
 }
 
 export function AIDeckCard({ 
@@ -32,6 +33,7 @@ export function AIDeckCard({
   company,
   dismissModal,
   sourcePage,
+  isStudy = false,
 }: AIDeckCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -55,12 +57,7 @@ export function AIDeckCard({
         pathname: '/(tabs)/deckDetails',
         params: {
           deckId: title?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-          deckTitle: title || 'Untitled Deck',
-          deckType: cardType || 'study',
-          deckDetailsBackgroundIndex: deckDetailsBackgroundIndex ? deckDetailsBackgroundIndex.toString() : '0',
-          company: company || 'study',
           isAIDeck: isAIDeck ? 'true' : 'false',
-          flashcardCount: flashcardCount?.toString() || '0',
           sourcePage: sourcePage || 'unknown',
         }
       })
@@ -97,6 +94,12 @@ export function AIDeckCard({
                 {/* Icon image at top left */}
                 {image && (
                   <Image source={image} style={styles.cardIconImage} />
+                )}
+                {!image && isStudy && (
+                  <Image source={require('@/assets/companyIcons/StudyCardIcon.png')} style={styles.cardIconImage} />
+                )}
+                {!image && !isStudy && (
+                  <Image source={require('@/assets/companyIcons/companyDefaultIcon.png')} style={styles.cardIconImage} />
                 )}
                 {/* Title */}
                 {title && (

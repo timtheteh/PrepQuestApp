@@ -4,6 +4,7 @@ import { AIDeckCard } from './AIDeckCard';
 import { MenuContext } from '@/app/(tabs)/_layout';
 import { AICardDesigns } from '@/constants/cardDesigns';
 import { getAIDecks, convertHexToImageSource, AIDeck } from '@/db/decks';
+import LottieView from 'lottie-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -78,38 +79,66 @@ export function AIPromptModal({
       ]}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>
-          Try these AI Decks created just for you!
-        </Text>
-        <View style={styles.imageContainer}>
-          {loading ? (
-            <Text style={styles.loadingText}>Loading AI decks...</Text>
-          ) : aiDecks.length > 0 ? (
-            aiDecks.map((deck, index) => {
-              const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
-              const imageSource = convertHexToImageSource(deck.interviewCompanyIcon);
-              
-              return (
-                <AIDeckCard
-                  key={deck.deckID}
-                  backgroundImage={cardDesign.background}
-                  pressedBackgroundImage={cardDesign.pressed}
-                  image={imageSource}
-                  cardType={deck.interviewType || 'study'}
-                  title={deck.deckName}
-                  flashcardCount={deck.flashcardCount || 0}
-                  deckDetailsBackgroundIndex={deck.cardDesignIndex}
-                  dismissModal={dismissModal}
-                  sourcePage={sourcePage}
-                  isStudy={deck.deckType === 'study'}
-                  deckID={deck.deckID}
-                />
-              );
-            })
-          ) : (
-            <Text style={styles.noDecksText}>No AI decks available</Text>
-          )}
-        </View>
+        {loading ? (
+          <>
+            <Text style={styles.title}>
+              Try these AI Decks created just for you!
+            </Text>
+            <View style={styles.imageContainer}>
+              <Text style={styles.loadingText}>Loading AI decks...</Text>
+            </View>
+          </>
+        ) : aiDecks.length > 0 ? (
+          <>
+            <Text style={styles.title}>
+              Try these AI Decks created just for you!
+            </Text>
+            <View style={styles.imageContainer}>
+              {aiDecks.map((deck, index) => {
+                const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
+                const imageSource = convertHexToImageSource(deck.interviewCompanyIcon);
+                
+                return (
+                  <AIDeckCard
+                    key={deck.deckID}
+                    backgroundImage={cardDesign.background}
+                    pressedBackgroundImage={cardDesign.pressed}
+                    image={imageSource}
+                    cardType={deck.interviewType || 'study'}
+                    title={deck.deckName}
+                    flashcardCount={deck.flashcardCount || 0}
+                    deckDetailsBackgroundIndex={deck.cardDesignIndex}
+                    dismissModal={dismissModal}
+                    sourcePage={sourcePage}
+                    isStudy={deck.deckType === 'study'}
+                    deckID={deck.deckID}
+                  />
+                );
+              })}
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.emptyStateHeader}>
+              <Text style={styles.emptyStateTitle}>Oops! No deck</Text>
+              <Text style={styles.emptyStateTitle}>suggestions for now</Text>
+            </View>
+            
+            <View style={styles.emptyStateAnimationContainer}>
+              <LottieView
+                source={require('@/assets/animations/EmptyState2.json')}
+                autoPlay
+                loop
+                style={styles.emptyStateAnimation}
+              />
+            </View>
+            
+            <View style={styles.emptyStateFooter}>
+              <Text style={styles.emptyStateFooterText}>We'll generate more</Text>
+              <Text style={styles.emptyStateFooterText}>as you practice more!</Text>
+            </View>
+          </>
+        )}
       </View>
     </Animated.View>
   );
@@ -157,5 +186,38 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Variable',
     textAlign: 'center',
     marginTop: 20,
+  },
+  emptyStateHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: '500',
+    fontFamily: 'Satoshi-Variable',
+    color: '#000',
+    lineHeight: 32,
+  },
+  emptyStateAnimationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateAnimation: {
+    width: 280,
+    height: 280,
+    marginTop: -50
+  },
+  emptyStateFooter: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  emptyStateFooterText: {
+    fontSize: 20,
+    fontWeight: '500',
+    fontFamily: 'Satoshi-Variable',
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 }); 

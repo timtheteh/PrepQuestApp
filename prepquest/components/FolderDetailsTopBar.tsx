@@ -20,12 +20,12 @@ export function FolderDetailsTopBar({
       <CircleIconButton 
         color="#FF3B30"
         onPress={onDeletePress}
-        renderCustomIcon={(color) => <Ionicons name="trash" size={20} color={color} />}
+        renderCustomIcon={(color) => <Ionicons name="trash" size={24} color={color} />}
       />
       <CircleIconButton 
         onPress={onEditNamePress}
         selected={editNameSelected}
-        renderCustomIcon={(color) => <FontAwesome5 name="pen" size={16} color={color} />}
+        renderCustomIcon={(color) => <FontAwesome5 name="pen" size={18} color={color} />}
       />
     </View>
   );

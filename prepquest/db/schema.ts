@@ -48,7 +48,8 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         interviewCompany TEXT,
         interviewExperienceLevel TEXT,
         interviewTopics TEXT,
-        interviewCompanyIcon BLOB
+        interviewCompanyIcon BLOB,
+        AICardDesignIndex INTEGER DEFAULT NULL
       )
     `);
 

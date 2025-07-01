@@ -50,6 +50,19 @@ export const getCardDesign = (index: number) => {
   return cardDesigns[index] || cardDesigns[0]; // Default to first design if index is out of bounds
 };
 
+// Helper function to get the appropriate card design for a deck
+export const getDeckCardDesign = (cardDesignIndex: number, isAIDeck: boolean, aiCardDesignIndex: number | null) => {
+  // If it's an AI deck (saved to regular decks table) and has an AICardDesignIndex, use AI designs
+  if (isAIDeck && aiCardDesignIndex !== null) {
+    const safeIndex = Math.min(aiCardDesignIndex, AICardDesigns.length - 1);
+    return AICardDesigns[safeIndex];
+  }
+  
+  // Otherwise, use regular card designs
+  const safeIndex = Math.min(cardDesignIndex, cardDesigns.length - 1);
+  return cardDesigns[safeIndex];
+};
+
 // Type definition for card design
 export interface CardDesign {
   background: any;

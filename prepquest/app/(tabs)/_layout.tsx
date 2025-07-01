@@ -120,8 +120,8 @@ interface MenuContextType {
   isDecksAlreadyInFoldersModalOpen: boolean;
   setIsDecksAlreadyInFoldersModalOpen: (value: boolean) => void;
   decksAlreadyInFoldersModalOpacity: Animated.Value;
-  deckDetailsSaveModalType: 'add' | 'move';
-  setDeckDetailsSaveModalType: (type: 'add' | 'move') => void;
+  deckDetailsSaveModalType: 'add' | 'move' | 'ai';
+  setDeckDetailsSaveModalType: (type: 'add' | 'move' | 'ai') => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -248,7 +248,7 @@ export default function TabLayout() {
   const [isDeckDetailsSaveModalOpen, setIsDeckDetailsSaveModalOpen] = useState(false);
   const deckDetailsSaveModalOpacity = useRef(new Animated.Value(0)).current;
   const [onDeckDetailsSaveModalDismiss, setOnDeckDetailsSaveModalDismiss] = useState<(() => void) | null>(null);
-  const [deckDetailsSaveModalType, setDeckDetailsSaveModalType] = useState<'add' | 'move'>('add');
+  const [deckDetailsSaveModalType, setDeckDetailsSaveModalType] = useState<'add' | 'move' | 'ai'>('add');
   const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useState(false);
   const deleteFolderModalOpacity = useRef(new Animated.Value(0)).current;
   const [handleDeleteFolder, setHandleDeleteFolder] = useState<(() => void) | null>(null);
@@ -853,7 +853,7 @@ export default function TabLayout() {
          <GenericModal
           visible={isDeckDetailsSaveModalOpen}
           opacity={deckDetailsSaveModalOpacity}
-          text={deckDetailsSaveModalType === 'move' ? ["Deck(s) moved", "into folder(s)!"] : ["Deck(s) saved", "into folder(s)!"]}
+          text={deckDetailsSaveModalType === 'move' ? ["Deck(s) moved", "into folder(s)!"] : deckDetailsSaveModalType === 'ai' ? ["AI Deck", "saved successfully!"] : ["Deck(s) saved", "into folder(s)!"]}
           hasAnimation={true}
           animationSource={require('../../assets/animations/SuccessAnimation1_Tick.json')}
           animationLoop={true}

@@ -15,7 +15,7 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { cardDesigns } from '@/constants/cardDesigns';
+import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -725,12 +725,13 @@ export default function DecksScreen() {
     const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       const isSelected = selectedStudyCards.has(index);
+      const cardDesign = getDeckCardDesign(data.cardDesignIndex, data.isAIDeck === 1, data.AICardDesignIndex);
       return (
         <Card
           key={`study-${data.deckID}`}
           style={style}
-          backgroundImage={cardDesigns[data.cardDesignIndex].background}
-          pressedBackgroundImage={cardDesigns[data.cardDesignIndex].pressed}
+          backgroundImage={cardDesign.background}
+          pressedBackgroundImage={cardDesign.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={isSelected}
@@ -765,6 +766,7 @@ export default function DecksScreen() {
     const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
       const isSelected = selectedInterviewCards.has(index);
+      const cardDesign = getDeckCardDesign(data.cardDesignIndex, data.isAIDeck === 1, data.AICardDesignIndex);
       let imageSource: any = undefined;
       if (data.interviewCompanyIcon) {
         try {
@@ -788,8 +790,8 @@ export default function DecksScreen() {
         <Card
           key={`interview-${data.deckID}`}
           style={style}
-          backgroundImage={cardDesigns[data.cardDesignIndex].background}
-          pressedBackgroundImage={cardDesigns[data.cardDesignIndex].pressed}
+          backgroundImage={cardDesign.background}
+          pressedBackgroundImage={cardDesign.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={isSelected}

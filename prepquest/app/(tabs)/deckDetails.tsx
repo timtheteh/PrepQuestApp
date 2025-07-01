@@ -17,7 +17,7 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
-import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade } from '@/db/decks';
+import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck } from '@/db/decks';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -170,6 +170,7 @@ export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const screenOpacity = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
   const { deckId, isAIDeck, sourcePage, folderTitle, folderId, isFavorited} = useLocalSearchParams();
   const { 
     navbarRef,
@@ -183,6 +184,7 @@ export default function DeckDetailsScreen() {
     setIsDeckDetailsSaveModalOpen,
     setOnDeckDetailsSaveModalDismiss,
     deckDetailsSaveModalOpacity,
+    setDeckDetailsSaveModalType,
   } = useContext(MenuContext);
 
   // State for favorite status
@@ -211,11 +213,12 @@ export default function DeckDetailsScreen() {
   // Get deck information from database
   const deckTitle = deckInfo?.deckName || '';
   const deckType = deckInfo?.deckType || '';
-  const backgroundIndex = deckInfo?.cardDesignIndex || 0;
+  const cardType = deckInfo?.deckType === 'interview' ? deckInfo?.interviewType : deckInfo?.deckType;
+  const backgroundIndex = deckInfo?.AICardDesignIndex || deckInfo?.cardDesignIndex || 0;
   const cardDate = deckInfo?.dateAdded ? formatDate(deckInfo.dateAdded) : '';
   const cardFlashcardCount = deckInfo?.flashcardCount || 0;
   const cardPercent = deckInfo?.progress || 0;
-  const AIDeck = isAIDeck as string === 'true' || deckInfo?.isAIDeck === 1;
+  const AIDeck = isAIDeck as string === 'true'
   
   // Helper function to get company logo based on deck info
   const getCompanyLogo = () => {
@@ -892,35 +895,92 @@ export default function DeckDetailsScreen() {
     ]).start();
   };
 
-  const handleSavePress = () => {
+  const handleSavePress = async () => {
     setShowEditModal(false);
-    // Show save confirmation modal
-    setIsMenuOpen(true);
-    setIsDeckDetailsSaveModalOpen(true);
     
-    // Set up dismiss callback to unselect edit name button
-    setOnDeckDetailsSaveModalDismiss(() => () => {
-      setEditNameSelected(false);
-    });
-    
-    Animated.parallel([
-      Animated.timing(menuOverlayOpacity, {
-        toValue: 0.5,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(deckDetailsSaveModalOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start();
+    try {
+      // Call the saveAIDeck function
+      const result = await saveAIDeck(parseInt(deckId as string));
+      
+      if (result.success && result.newDeckId) {
+        console.log('Successfully saved AI deck to regular deck:', result.newDeckId);
+        
+        // Show save confirmation modal first
+        setIsMenuOpen(true);
+        setIsDeckDetailsSaveModalOpen(true);
+        setDeckDetailsSaveModalType('ai');
+        
+        // Set up dismiss callback to navigate to the new deck details page
+        setOnDeckDetailsSaveModalDismiss(() => () => {
+          setEditNameSelected(false);
+          
+          // Navigate to the new regular deck details page after modal is dismissed
+          if (Platform.OS === 'ios') {
+            navbarRef?.current?.resetAnimation();
+            setTimeout(() => {
+              router.push({
+                pathname: '/(tabs)/deckDetails',
+                params: {
+                  deckId: result.newDeckId!.toString(),
+                  isAIDeck: 'false', // Treat as regular deck
+                  sourcePage: sourcePage as string,
+                  folderTitle: folderTitle as string,
+                  folderId: folderId as string,
+                  isFavorited: favoriteStatus ? '1' : '0'
+                }
+              });
+            }, 50);
+          } else {
+            router.push({
+              pathname: '/(tabs)/deckDetails',
+              params: {
+                deckId: result.newDeckId!.toString(),
+                isAIDeck: 'false', // Treat as regular deck
+                sourcePage: sourcePage as string,
+                folderTitle: folderTitle as string,
+                folderId: folderId as string,
+                isFavorited: favoriteStatus ? '1' : '0'
+              }
+            });
+            setTimeout(() => {
+              navbarRef?.current?.resetAnimation();
+            }, 50);
+          }
+        });
+        
+        // Show the modal
+        Animated.parallel([
+          Animated.timing(menuOverlayOpacity, {
+            toValue: 0.4,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(deckDetailsSaveModalOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        ]).start();
+        
+      } else {
+        console.error('Failed to save AI deck');
+        // You could show an error message to the user here
+      }
+    } catch (error) {
+      console.error('Error saving AI deck:', error);
+      // You could show an error message to the user here
+    }
   };
 
   useFocusEffect(
     useCallback(() => {
       setShowEditModal(false);
       setEditNameSelected(false);
+      
+      // Scroll to top when screen comes into focus
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({ y: 0, animated: false });
+      }
     }, [])
   );
 
@@ -1130,7 +1190,7 @@ export default function DeckDetailsScreen() {
           
           <View style={styles.mainContainer}>
             <ImageBackground 
-              source={AIDeck ? deckDetailsAICardDesigns[safeBackgroundIndex] : deckDetailsCardDesigns[safeBackgroundIndex]}
+              source={AIDeck || deckInfo?.isAIDeck === 1 ? deckDetailsAICardDesigns[safeBackgroundIndex] : deckDetailsCardDesigns[safeBackgroundIndex]}
               style={styles.backgroundImage}
               imageStyle={styles.backgroundImageStyle}
             >
@@ -1138,6 +1198,7 @@ export default function DeckDetailsScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollViewContent}
                 showsVerticalScrollIndicator={false}
+                ref={scrollViewRef}
               >
                 <View style={styles.cardContentContainer}>
                   {AIDeck && !isAIDeckSaved ? (
@@ -1165,8 +1226,8 @@ export default function DeckDetailsScreen() {
                       {/* Column 3: Card Type Pill and Flashcard Count */}
                       <View style={styles.aiDeckColumn3}>
                         {deckType && (
-                          <View style={[styles.aiDeckCardTypePill, { borderColor: getCardTypeColor(deckType as string) }]}>
-                            <Text style={[styles.aiDeckCardTypeText, { color: '#000' }]}>{getCardTypeLabel(deckType as string)}</Text>
+                          <View style={[styles.aiDeckCardTypePill, { borderColor: getCardTypeColor(cardType as string) }]}>
+                            <Text style={[styles.aiDeckCardTypeText, { color: '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
                           </View>
                         )}
                         {cardFlashcardCount !== undefined && (
@@ -1222,15 +1283,15 @@ export default function DeckDetailsScreen() {
                       
                       {/* Card type pill */}
                       {deckType && (
-                        <View style={[styles.cardTypePill, { borderColor: getCardTypeColor(deckType as string) }]}>
-                          <Text style={[styles.cardTypeText, { color: '#000' }]}>{getCardTypeLabel(deckType as string)}</Text>
+                        <View style={[styles.cardTypePill, { borderColor: getCardTypeColor(cardType as string) }]}>
+                          <Text style={[styles.cardTypeText, { color: '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
                         </View>
                       )}
                     </>
                   )}
                   
                   {/* Progress bar */}
-                  {cardPercent > 0 && (!AIDeck || isAIDeckSaved) && (
+                  {cardPercent >= 0 && (!AIDeck || isAIDeckSaved) && (
                     <View style={styles.progressRow}> 
                       <View style={styles.loadingBarFlexWrapper}>
                         <LoadingBar percent={cardPercent} />

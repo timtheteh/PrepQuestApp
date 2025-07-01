@@ -16,7 +16,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders } from '@/db/decks';
 import { db } from '@/db/index';
-import { cardDesigns } from '@/constants/cardDesigns';
+import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/CalendarModal';
 
@@ -1217,14 +1217,14 @@ export default function FavoritesScreen() {
     const sortedDecks = sortDecks(decksToRender);
     if (!sortedDecks || sortedDecks.length === 0) return null;
     return sortedDecks.map((data, index) => {
-      const design = cardDesigns[data.cardDesignIndex];
+      const cardDesign = getDeckCardDesign(data.cardDesignIndex, data.isAIDeck === 1, data.AICardDesignIndex);
       const style = index === 0 ? styles.firstCard : styles.card;
       return (
         <Card
           key={`favDeck-${data.deckID}`}
           style={style}
-          backgroundImage={design.background}
-          pressedBackgroundImage={design.pressed}
+          backgroundImage={cardDesign.background}
+          pressedBackgroundImage={cardDesign.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedFavDeckCards.has(index)}

@@ -15,7 +15,7 @@ import { Feather } from '@expo/vector-icons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
 import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder } from '@/db/decks';
 import { db } from '@/db/index';
-import { cardDesigns } from '@/constants/cardDesigns';
+import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -597,15 +597,15 @@ export default function ViewDecksInFolderScreen() {
     }
     
     const cards = decks.map((data, index) => {
-      const design = cardDesigns[data.cardDesignIndex];
+      const cardDesign = getDeckCardDesign(data.cardDesignIndex, data.isAIDeck === 1, data.AICardDesignIndex);
       const style = index === 0 ? styles.firstCard : styles.card;
       
       return (
         <Card
           key={`deck-${data.deckID}`}
           style={style}
-          backgroundImage={design.background}
-          pressedBackgroundImage={design.pressed}
+          backgroundImage={cardDesign.background}
+          pressedBackgroundImage={cardDesign.pressed}
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedDecks.has(index)}

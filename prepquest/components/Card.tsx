@@ -162,7 +162,7 @@ export function Card({
           flashcardCount: flashcardCount?.toString() || '0',
           percent: percent.toString() || '0',
           company: company || 'study',
-          isAIDeck: isAIDeck ? 'true' : 'false',
+          isAIDeck: 'false',
           sourcePage: sourcePage || 'index',
           folderTitle: folderTitle,
           folderId: folderId,

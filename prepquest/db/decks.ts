@@ -23,6 +23,7 @@ export interface Deck {
   interviewExperienceLevel: string | null;
   interviewTopics: string | null;
   interviewCompanyIcon: string | null;
+  AICardDesignIndex: number | null;
   flashcardCount: number;
 }
 
@@ -70,6 +71,7 @@ export async function getInterviewDecks(): Promise<Deck[]> {
         d.interviewCompany,
         d.interviewExperienceLevel,
         d.interviewTopics,
+        d.AICardDesignIndex,
         CASE 
           WHEN d.interviewCompanyIcon IS NOT NULL 
           THEN hex(d.interviewCompanyIcon) 
@@ -260,6 +262,7 @@ export async function getFavoritedDecks(): Promise<(Deck & { progress: number })
         d.interviewCompany,
         d.interviewExperienceLevel,
         d.interviewTopics,
+        d.AICardDesignIndex,
         CASE 
           WHEN d.interviewCompanyIcon IS NOT NULL 
           THEN hex(d.interviewCompanyIcon) 
@@ -510,6 +513,7 @@ export async function getDecksInFolder(folderId: number): Promise<(Deck & { prog
         d.interviewCompany,
         d.interviewExperienceLevel,
         d.interviewTopics,
+        d.AICardDesignIndex,
         CASE 
           WHEN d.interviewCompanyIcon IS NOT NULL 
           THEN hex(d.interviewCompanyIcon) 
@@ -603,33 +607,26 @@ const getBreakdown = (ratings: string[]) => {
 
 export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
   try {
-    // First check if this is an AI deck
-    const deckTypeResult = await db.getFirstAsync(`
-      SELECT isAIDeck FROM decks WHERE deckID = ?
-    `, [deckId]);
-
-    if (!deckTypeResult) {
-      return null;
-    }
-
-    const deckType = deckTypeResult as { isAIDeck: number };
-    const isAIDeck = deckType.isAIDeck === 1;
-
-    // Get attempted flashcards (those with lastStudiedDate or lastQuizzedDate not null)
-    // and their difficulty ratings
-    const tableName = isAIDeck ? 'AIFlashcards' : 'flashcards';
-    const idColumn = isAIDeck ? 'AIDeckID' : 'deckID';
-
+    // Get attempted flashcards from both regular and AI flashcards tables
     const result = await db.getAllAsync(`
       SELECT 
         difficultyRating,
         lastStudiedDate,
         lastQuizzedDate
-      FROM ${tableName}
-      WHERE ${idColumn} = ?
-        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-        AND difficultyRating != 'None'
-    `, [deckId]);
+      FROM (
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate
+        FROM flashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+        UNION ALL
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+      )
+    `, [deckId, deckId]);
 
     if (!result || result.length === 0) {
       // No attempted flashcards, return null
@@ -645,12 +642,12 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
     // Extract difficulty ratings from attempted flashcards
     const ratings = flashcards.map(flashcard => flashcard.difficultyRating);
 
-    // Get total number of flashcards for this deck
+    // Get total number of flashcards for this deck from both tables
     const totalResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as total
-      FROM ${tableName}
-      WHERE ${idColumn} = ?
-    `, [deckId]);
+      SELECT 
+        (SELECT COUNT(*) FROM flashcards WHERE deckID = ?) +
+        (SELECT COUNT(*) FROM AIFlashcards WHERE deckID = ?) as total
+    `, [deckId, deckId]);
 
     const totalFlashcards = (totalResult as { total: number }).total;
 
@@ -721,32 +718,25 @@ export function testGradeCalculation() {
 
 export async function getDeckAverageTime(deckId: number): Promise<number | null> {
   try {
-    // First check if this is an AI deck
-    const deckTypeResult = await db.getFirstAsync(`
-      SELECT isAIDeck FROM decks WHERE deckID = ?
-    `, [deckId]);
-
-    if (!deckTypeResult) {
-      return null;
-    }
-
-    const deckType = deckTypeResult as { isAIDeck: number };
-    const isAIDeck = deckType.isAIDeck === 1;
-
-    // Get attempted flashcards (those with lastStudiedDate or lastQuizzedDate not null)
-    // and their timeTaken values
-    const tableName = isAIDeck ? 'AIFlashcards' : 'flashcards';
-    const idColumn = isAIDeck ? 'AIDeckID' : 'deckID';
-
+    // Get attempted flashcards from both regular and AI flashcards tables
     const result = await db.getFirstAsync(`
       SELECT 
         AVG(timeTaken) as averageTime,
         COUNT(*) as attemptedCount
-      FROM ${tableName}
-      WHERE ${idColumn} = ?
-        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-        AND timeTaken IS NOT NULL
-    `, [deckId]);
+      FROM (
+        SELECT timeTaken
+        FROM flashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+        UNION ALL
+        SELECT timeTaken
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+      )
+    `, [deckId, deckId]);
 
     if (!result) {
       return null;
@@ -810,6 +800,7 @@ export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { 
         d.interviewCompany,
         d.interviewExperienceLevel,
         d.interviewTopics,
+        d.AICardDesignIndex,
         CASE 
           WHEN d.interviewCompanyIcon IS NOT NULL 
           THEN hex(d.interviewCompanyIcon) 
@@ -906,5 +897,110 @@ export function convertHexToImageSource(hexString: string | null): { uri: string
   } catch (error) {
     console.error('Error converting hex to image source:', error);
     return undefined;
+  }
+}
+
+export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; newDeckId?: number }> {
+  try {
+    // Start a transaction to ensure data consistency
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    try {
+      // 1. Get the AI deck data
+      const aiDeckResult = await db.getFirstAsync(`
+        SELECT *
+        FROM AIDecks
+        WHERE deckID = ${aiDeckId}
+      `);
+      
+      if (!aiDeckResult) {
+        throw new Error('AI deck not found');
+      }
+      
+      const aiDeck = aiDeckResult as any;
+      
+      // 2. Insert the AI deck into the regular decks table
+      // Convert the cardDesignIndex to AICardDesignIndex and set cardDesignIndex to 0
+      // Update lastModifiedDate to current date
+      const companyIconBlob = aiDeck.interviewCompanyIcon ? `X'${Array.from(aiDeck.interviewCompanyIcon as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+      const currentDate = new Date().toISOString();
+      
+      await db.execAsync(`
+        INSERT INTO decks (
+          deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
+          studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
+          interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon,
+          AICardDesignIndex
+        ) VALUES (
+          '${aiDeck.deckName}', '${aiDeck.dateAdded}', '${currentDate}', ${aiDeck.isFavorited}, '${aiDeck.deckType}', '${aiDeck.creationMethod}',
+          ${aiDeck.lastStudiedDate ? `'${aiDeck.lastStudiedDate}'` : 'NULL'}, ${aiDeck.lastQuizzedDate ? `'${aiDeck.lastQuizzedDate}'` : 'NULL'}, 0, 1, ${aiDeck.folderIDs ? `'${aiDeck.folderIDs}'` : 'NULL'},
+          ${aiDeck.studyEducationLevel ? `'${aiDeck.studyEducationLevel}'` : 'NULL'}, ${aiDeck.studySubjects ? `'${aiDeck.studySubjects}'` : 'NULL'}, ${aiDeck.studyTopicsSubtopics ? `'${aiDeck.studyTopicsSubtopics}'` : 'NULL'}, ${aiDeck.studyExamQuiz ? `'${aiDeck.studyExamQuiz}'` : 'NULL'},
+          ${aiDeck.interviewJobRole ? `'${aiDeck.interviewJobRole}'` : 'NULL'}, ${aiDeck.interviewType ? `'${aiDeck.interviewType}'` : 'NULL'}, ${aiDeck.interviewCompany ? `'${aiDeck.interviewCompany}'` : 'NULL'}, ${aiDeck.interviewExperienceLevel ? `'${aiDeck.interviewExperienceLevel}'` : 'NULL'}, ${aiDeck.interviewTopics ? `'${aiDeck.interviewTopics}'` : 'NULL'}, ${companyIconBlob},
+          ${aiDeck.cardDesignIndex}
+        )
+      `);
+      
+      // 3. Get the new deck ID
+      const newDeckIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as newDeckId');
+      const newDeckId = (newDeckIdResult as any).newDeckId;
+      
+      // 4. Get all AI flashcards for this deck
+      const aiFlashcardsResult = await db.getAllAsync(`
+        SELECT *
+        FROM AIFlashcards
+        WHERE deckID = ${aiDeckId}
+      `);
+      
+      const aiFlashcards = aiFlashcardsResult as any[];
+      
+      // 5. Insert all AI flashcards into the regular flashcards table
+      for (const aiFlashcard of aiFlashcards) {
+        const questionBlobHex = aiFlashcard.questionBlob ? `X'${Array.from(aiFlashcard.questionBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+        const answerBlobHex = aiFlashcard.answerBlob ? `X'${Array.from(aiFlashcard.answerBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+        
+        await db.execAsync(`
+          INSERT INTO flashcards (
+            deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
+          ) VALUES (
+            ${newDeckId}, '${aiFlashcard.difficultyRating}', '${aiFlashcard.cognitiveQnType}', ${aiFlashcard.isFavorited}, '${aiFlashcard.questionType}', 
+            ${aiFlashcard.questionText ? `'${aiFlashcard.questionText}'` : 'NULL'}, ${questionBlobHex},
+            '${aiFlashcard.answerType}', ${aiFlashcard.answerText ? `'${aiFlashcard.answerText}'` : 'NULL'}, 
+            ${aiFlashcard.answerMCQ ? `'${aiFlashcard.answerMCQ}'` : 'NULL'}, ${answerBlobHex},
+            ${aiFlashcard.timeTaken || 'NULL'}, ${aiFlashcard.isMcqAnswerRight !== null ? aiFlashcard.isMcqAnswerRight : 'NULL'}, 
+            ${aiFlashcard.lastStudiedDate ? `'${aiFlashcard.lastStudiedDate}'` : 'NULL'}, 
+            ${aiFlashcard.lastQuizzedDate ? `'${aiFlashcard.lastQuizzedDate}'` : 'NULL'}
+          )
+        `);
+      }
+      
+      // 6. Delete all AI flashcards from AIFlashcards table
+      await db.execAsync(`
+        DELETE FROM AIFlashcards
+        WHERE deckID = ${aiDeckId}
+      `);
+      
+      // 7. Delete the AI deck from AIDecks table
+      await db.execAsync(`
+        DELETE FROM AIDecks
+        WHERE deckID = ${aiDeckId}
+      `);
+      
+      // Commit the transaction
+      await db.execAsync('COMMIT');
+      
+      console.log(`Successfully saved AI deck ${aiDeckId} to regular deck ${newDeckId}`);
+      return { success: true, newDeckId };
+      
+    } catch (error) {
+      // Rollback the transaction on error
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+    
+  } catch (error) {
+    console.error('Error saving AI deck:', error);
+    return { success: false };
   }
 }

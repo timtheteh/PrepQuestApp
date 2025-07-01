@@ -1143,8 +1143,345 @@ export async function populateDummyData() {
 
     console.log('Flashcards table populated successfully');
     
-    // TODO: Continue with other tables (userFormEntries, AIDecks, AIFlashcards, etc.)
-    console.log('Dummy data population completed for flashcards table');
+    // Populate AIDecks table
+    console.log('Populating AIDecks table...');
+
+    const aiDeckData = [
+      // 1. Study deck - AI suggested
+      {
+        AIDeckName: 'AI-Generated Machine Learning Fundamentals',
+        dateAdded: '2025-06-01T10:00:00.000Z',
+        lastModifiedDate: '2025-06-01T10:00:00.000Z',
+        isFavorited: 0,
+        deckType: 'study',
+        creationMethod: 'AISuggested',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
+        cardDesignIndex: 0,
+        isAIDeck: 1,
+        folderIDs: null,
+        studyEducationLevel: 'Graduate',
+        studySubjects: '["Computer Science", "Machine Learning", "Artificial Intelligence"]',
+        studyTopicsSubtopics: '["Supervised Learning", "Unsupervised Learning", "Neural Networks", "Deep Learning", "Model Evaluation"]',
+        studyExamQuiz: 'ML Fundamentals Assessment'
+      },
+      // 2. Study deck - AI suggested
+      {
+        AIDeckName: 'AI-Curated Data Science Essentials',
+        dateAdded: '2025-06-02T14:30:00.000Z',
+        lastModifiedDate: '2025-06-02T14:30:00.000Z',
+        isFavorited: 0,
+        deckType: 'study',
+        creationMethod: 'AISuggested',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
+        cardDesignIndex: 1,
+        isAIDeck: 1,
+        folderIDs: null,
+        studyEducationLevel: 'Undergraduate',
+        studySubjects: '["Statistics", "Data Analysis", "Programming"]',
+        studyTopicsSubtopics: '["Data Visualization", "Statistical Testing", "Python Programming", "SQL", "Data Cleaning"]',
+        studyExamQuiz: null
+      },
+      // 3. Interview deck - AI suggested
+      {
+        AIDeckName: 'AI-Prepared Google Technical Interview',
+        dateAdded: '2025-06-03T09:15:00.000Z',
+        lastModifiedDate: '2025-06-03T09:15:00.000Z',
+        isFavorited: 0,
+        deckType: 'interview',
+        creationMethod: 'AISuggested',
+        lastStudiedDate: null,
+        lastQuizzedDate: null,
+        cardDesignIndex: 2,
+        isAIDeck: 1,
+        folderIDs: null,
+        interviewJobRole: 'Software Engineer',
+        interviewType: 'technical',
+        interviewCompany: 'Google',
+        interviewExperienceLevel: 'Mid-level',
+        interviewTopics: '["Algorithms", "System Design", "Data Structures", "Problem Solving"]',
+        interviewCompanyIcon: googleIconBlob
+      }
+    ];
+
+    // Insert AIDecks
+    for (const aiDeck of aiDeckData) {
+      const companyIconBlob = aiDeck.interviewCompanyIcon ? `X'${Array.from(aiDeck.interviewCompanyIcon).map(b => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+      
+      await db.execAsync(`
+        INSERT INTO AIDecks (
+          AIDeckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
+          studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
+          interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
+        ) VALUES (
+          ${escapeSqlString(aiDeck.AIDeckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
+          ${escapeSqlString(aiDeck.lastStudiedDate)}, ${escapeSqlString(aiDeck.lastQuizzedDate)}, ${aiDeck.cardDesignIndex}, ${aiDeck.isAIDeck}, ${escapeSqlString(aiDeck.folderIDs)},
+          ${escapeSqlString(aiDeck.studyEducationLevel)}, ${escapeSqlString(aiDeck.studySubjects)}, ${escapeSqlString(aiDeck.studyTopicsSubtopics)}, ${escapeSqlString(aiDeck.studyExamQuiz)},
+          ${escapeSqlString(aiDeck.interviewJobRole)}, ${escapeSqlString(aiDeck.interviewType)}, ${escapeSqlString(aiDeck.interviewCompany)}, ${escapeSqlString(aiDeck.interviewExperienceLevel)}, ${escapeSqlString(aiDeck.interviewTopics)}, ${companyIconBlob}
+        )
+      `);
+    }
+
+    console.log('AIDecks table populated successfully');
+    
+    // Populate AIFlashcards table
+    console.log('Populating AIFlashcards table...');
+
+    // Get AI deck IDs from the aiDeckData array (assuming they are inserted in order)
+    const aiDeckIds = Array.from({ length: aiDeckData.length }, (_, i) => i + 1);
+
+    // Create AI flashcards for each AI deck
+    for (const aiDeckId of aiDeckIds) {
+      const aiDeck = aiDeckData[aiDeckId - 1]; // Get the AI deck data for this deck
+      
+      // Determine study/quiz status based on AI deck ID
+      // AI Deck 1: No attempts (all null dates)
+      // AI Deck 2 & 3: Some attempts
+      const isFirstDeck = aiDeckId === 1;
+      
+      // For AI decks 2 and 3, determine how many flashcards should be studied/quizzed
+      const totalFlashcards = 7;
+      
+      let studiedFlashcardsCount = 0;
+      let quizzedFlashcardsCount = 0;
+      
+      if (!isFirstDeck) {
+        // For AI decks 2 and 3, some flashcards are studied/quizzed
+        studiedFlashcardsCount = Math.max(2, Math.floor(Math.random() * (Math.floor(totalFlashcards * 0.7) + 1))); // 2 to 70% of flashcards
+        quizzedFlashcardsCount = Math.max(1, Math.floor(Math.random() * (Math.floor(totalFlashcards * 0.6) + 1))); // 1 to 60% of flashcards
+      }
+      
+      // Create array of flashcard indices that are studied/quizzed
+      const studiedIndices = new Set<number>();
+      const quizzedIndices = new Set<number>();
+      
+      // Randomly select flashcards for studying (for AI decks 2 and 3)
+      while (studiedIndices.size < studiedFlashcardsCount) {
+        studiedIndices.add(Math.floor(Math.random() * totalFlashcards));
+      }
+      
+      // Randomly select flashcards for quizzing (for AI decks 2 and 3)
+      while (quizzedIndices.size < quizzedFlashcardsCount) {
+        quizzedIndices.add(Math.floor(Math.random() * totalFlashcards));
+      }
+      
+      // Helper function to get appropriate date for AI flashcards
+      const getAIFlashcardStudyDate = (flashcardIndex: number): string | null => {
+        if (isFirstDeck || !studiedIndices.has(flashcardIndex)) {
+          return null; // This flashcard was not studied
+        }
+        
+        // Assign random dates to studied flashcards for AI decks 2 and 3
+        const baseDate = new Date('2025-06-20T10:00:00.000Z');
+        const daysOffset = Math.floor(Math.random() * 15); // Random date within 15 days
+        const flashcardDate = new Date(baseDate);
+        flashcardDate.setDate(baseDate.getDate() - daysOffset);
+        return flashcardDate.toISOString();
+      };
+      
+      const getAIFlashcardQuizDate = (flashcardIndex: number): string | null => {
+        if (isFirstDeck || !quizzedIndices.has(flashcardIndex)) {
+          return null; // This flashcard was not quizzed
+        }
+        
+        // Assign random dates to quizzed flashcards for AI decks 2 and 3
+        const baseDate = new Date('2025-06-18T10:00:00.000Z');
+        const daysOffset = Math.floor(Math.random() * 15); // Random date within 15 days
+        const flashcardDate = new Date(baseDate);
+        flashcardDate.setDate(baseDate.getDate() - daysOffset);
+        return flashcardDate.toISOString();
+      };
+      
+      const aiFlashcardData = [
+        // 1. text qn to text ans
+        {
+          AIDeckID: aiDeckId,
+          difficultyRating: 'Good',
+          cognitiveQnType: 'Recall',
+          isFavorited: 0,
+          questionType: 'text',
+          questionText: `What is the primary difference between ${aiDeckId === 1 ? 'supervised and unsupervised learning' : aiDeckId === 2 ? 'descriptive and inferential statistics' : 'arrays and linked lists'}?`,
+          questionBlob: null,
+          answerType: 'text',
+          answerText: aiDeckId === 1 ? 'Supervised learning uses labeled data for training, while unsupervised learning finds patterns in unlabeled data' : aiDeckId === 2 ? 'Descriptive statistics summarize data, while inferential statistics make predictions about populations' : 'Arrays have contiguous memory allocation, while linked lists have non-contiguous memory with pointers',
+          answerMCQ: null,
+          answerBlob: null,
+          timeTaken: (() => {
+            const studyDate = getAIFlashcardStudyDate(0);
+            const quizDate = getAIFlashcardQuizDate(0);
+            return (studyDate === null && quizDate === null) ? null : 45;
+          })(),
+          isMcqAnswerRight: null,
+          lastStudiedDate: getAIFlashcardStudyDate(0),
+          lastQuizzedDate: getAIFlashcardQuizDate(0)
+        },
+        // 2. image qn to text ans
+        {
+          AIDeckID: aiDeckId,
+          difficultyRating: 'Easy',
+          cognitiveQnType: 'Comprehension',
+          isFavorited: 1,
+          questionType: 'image',
+          questionText: null,
+          questionBlob: dummyPhotoBlob,
+          answerType: 'text',
+          answerText: `This ${aiDeckId === 1 ? 'neural network architecture diagram' : aiDeckId === 2 ? 'data visualization chart' : 'system design diagram'} demonstrates the relationship between different components and their interactions.`,
+          answerMCQ: null,
+          answerBlob: null,
+          timeTaken: (() => {
+            const studyDate = getAIFlashcardStudyDate(1);
+            const quizDate = getAIFlashcardQuizDate(1);
+            return (studyDate === null && quizDate === null) ? null : 30;
+          })(),
+          isMcqAnswerRight: null,
+          lastStudiedDate: getAIFlashcardStudyDate(1),
+          lastQuizzedDate: getAIFlashcardQuizDate(1)
+        },
+        // 3. audio qn to text ans
+        {
+          AIDeckID: aiDeckId,
+          difficultyRating: 'Hard',
+          cognitiveQnType: 'Application',
+          isFavorited: 0,
+          questionType: 'audio',
+          questionText: null,
+          questionBlob: dummyAudioBlob,
+          answerType: 'text',
+          answerText: `The audio describes a ${aiDeckId === 1 ? 'machine learning algorithm implementation' : aiDeckId === 2 ? 'statistical analysis process' : 'coding interview problem'} and its step-by-step solution approach.`,
+          answerMCQ: null,
+          answerBlob: null,
+          timeTaken: (() => {
+            const studyDate = getAIFlashcardStudyDate(2);
+            const quizDate = getAIFlashcardQuizDate(2);
+            return (studyDate === null && quizDate === null) ? null : 60;
+          })(),
+          isMcqAnswerRight: null,
+          lastStudiedDate: getAIFlashcardStudyDate(2),
+          lastQuizzedDate: getAIFlashcardQuizDate(2)
+        },
+        // 4. text qn to mcq ans
+        {
+          AIDeckID: aiDeckId,
+          difficultyRating: 'Good',
+          cognitiveQnType: 'Analysis',
+          isFavorited: 0,
+          questionType: 'text',
+          questionText: `Which of the following best describes the time complexity of ${aiDeckId === 1 ? 'gradient descent optimization' : aiDeckId === 2 ? 'linear regression' : 'binary search'}?`,
+          questionBlob: null,
+          answerType: 'mcq',
+          answerText: null,
+          answerMCQ: JSON.stringify([
+            {"option": "O(1)", "ans": false},
+            {"option": aiDeckId === 1 ? "O(n)" : aiDeckId === 2 ? "O(n²)" : "O(log n)", "ans": true},
+            {"option": "O(n)", "ans": false},
+            {"option": "O(n²)", "ans": false}
+          ]),
+          answerBlob: null,
+          timeTaken: (() => {
+            const studyDate = getAIFlashcardStudyDate(3);
+            const quizDate = getAIFlashcardQuizDate(3);
+            return (studyDate === null && quizDate === null) ? null : 25;
+          })(),
+          isMcqAnswerRight: 1,
+          lastStudiedDate: getAIFlashcardStudyDate(3),
+          lastQuizzedDate: getAIFlashcardQuizDate(3)
+        },
+        // 5. text qn to image ans
+        {
+          AIDeckID: aiDeckId,
+          difficultyRating: 'Easy',
+          cognitiveQnType: 'Synthesis',
+          isFavorited: 0,
+          questionType: 'text',
+          questionText: `What does this ${aiDeckId === 1 ? 'machine learning model architecture' : aiDeckId === 2 ? 'statistical analysis workflow' : 'algorithm implementation'} demonstrate?`,
+          questionBlob: null,
+          answerType: 'image',
+          answerText: null,
+          answerMCQ: null,
+          answerBlob: dummyPhotoBlob,
+          timeTaken: (() => {
+            const studyDate = getAIFlashcardStudyDate(4);
+            const quizDate = getAIFlashcardQuizDate(4);
+            return (studyDate === null && quizDate === null) ? null : 35;
+          })(),
+          isMcqAnswerRight: null,
+          lastStudiedDate: getAIFlashcardStudyDate(4),
+          lastQuizzedDate: getAIFlashcardQuizDate(4)
+        },
+        // 6. text qn to audio ans
+        {
+          AIDeckID: aiDeckId,
+          difficultyRating: 'Hard',
+          cognitiveQnType: 'Evaluation',
+          isFavorited: 1,
+          questionType: 'text',
+          questionText: `Explain the concept of ${aiDeckId === 1 ? 'overfitting in machine learning' : aiDeckId === 2 ? 'correlation vs causation' : 'time complexity analysis'} with examples.`,
+          questionBlob: null,
+          answerType: 'audio',
+          answerText: null,
+          answerMCQ: null,
+          answerBlob: dummyAudioBlob,
+          timeTaken: (() => {
+            const studyDate = getAIFlashcardStudyDate(5);
+            const quizDate = getAIFlashcardQuizDate(5);
+            return (studyDate === null && quizDate === null) ? null : 90;
+          })(),
+          isMcqAnswerRight: null,
+          lastStudiedDate: getAIFlashcardStudyDate(5),
+          lastQuizzedDate: getAIFlashcardQuizDate(5)
+        },
+        // 7. text qn to voice ans
+        {
+          AIDeckID: aiDeckId,
+          difficultyRating: 'Good',
+          cognitiveQnType: 'Problem-Solving',
+          isFavorited: 0,
+          questionType: 'text',
+          questionText: `How would you approach ${aiDeckId === 1 ? 'optimizing a neural network for better performance' : aiDeckId === 2 ? 'designing an A/B testing experiment' : 'solving a system design interview question'}?`,
+          questionBlob: null,
+          answerType: 'voice',
+          answerText: null,
+          answerMCQ: null,
+          answerBlob: null,
+          timeTaken: (() => {
+            const studyDate = getAIFlashcardStudyDate(6);
+            const quizDate = getAIFlashcardQuizDate(6);
+            return (studyDate === null && quizDate === null) ? null : 120;
+          })(),
+          isMcqAnswerRight: null,
+          lastStudiedDate: getAIFlashcardStudyDate(6),
+          lastQuizzedDate: getAIFlashcardQuizDate(6)
+        }
+      ];
+
+      // Insert AI flashcards for this AI deck
+      for (const aiFlashcard of aiFlashcardData) {
+        const questionBlobHex = aiFlashcard.questionBlob ? `X'${Array.from(aiFlashcard.questionBlob).map(b => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+        const answerBlobHex = aiFlashcard.answerBlob ? `X'${Array.from(aiFlashcard.answerBlob).map(b => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+        
+        await db.execAsync(`
+          INSERT INTO AIFlashcards (
+            AIDeckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
+          ) VALUES (
+            ${aiFlashcard.AIDeckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
+            ${escapeSqlString(aiFlashcard.questionText)}, ${questionBlobHex},
+            ${escapeSqlString(aiFlashcard.answerType)}, ${escapeSqlString(aiFlashcard.answerText)}, 
+            ${escapeSqlString(aiFlashcard.answerMCQ)}, ${answerBlobHex},
+            ${aiFlashcard.timeTaken}, ${aiFlashcard.isMcqAnswerRight !== null ? aiFlashcard.isMcqAnswerRight : 'NULL'}, 
+            ${escapeSqlString(aiFlashcard.lastStudiedDate)}, 
+            ${escapeSqlString(aiFlashcard.lastQuizzedDate)}
+          )
+        `);
+      }
+    }
+
+    console.log('AIFlashcards table populated successfully');
+    
+    // TODO: Continue with other tables (userFormEntries, etc.)
+    console.log('Dummy data population completed for AIFlashcards table');
     
     // Verify that data was loaded correctly
     console.log('\n=== VERIFYING DATA LOAD ===');
@@ -1173,6 +1510,14 @@ export async function verifyDataLoad() {
     const flashcardsResult = await db.getAllAsync('SELECT COUNT(*) as count FROM flashcards');
     console.log(`✅ Flashcards loaded: ${(flashcardsResult[0] as any).count} flashcards`);
     
+    // Check AIDecks
+    const aiDecksResult = await db.getAllAsync('SELECT COUNT(*) as count FROM AIDecks');
+    console.log(`✅ AIDecks loaded: ${(aiDecksResult[0] as any).count} AI decks`);
+    
+    // Check AIFlashcards
+    const aiFlashcardsResult = await db.getAllAsync('SELECT COUNT(*) as count FROM AIFlashcards');
+    console.log(`✅ AIFlashcards loaded: ${(aiFlashcardsResult[0] as any).count} AI flashcards`);
+    
     // Show sample data
     console.log('\n=== SAMPLE DATA ===');
     
@@ -1188,13 +1533,29 @@ export async function verifyDataLoad() {
     const sampleFlashcards = await db.getAllAsync('SELECT questionType, answerType, difficultyRating FROM flashcards LIMIT 3');
     console.log('🗂️ Sample flashcards:', sampleFlashcards);
     
+    // Sample AIDecks
+    const sampleAIDecks = await db.getAllAsync('SELECT AIDeckName, deckType, creationMethod FROM AIDecks LIMIT 3');
+    console.log('🤖 Sample AI decks:', sampleAIDecks);
+    
+    // Sample AIFlashcards
+    const sampleAIFlashcards = await db.getAllAsync('SELECT questionType, answerType, difficultyRating FROM AIFlashcards LIMIT 3');
+    console.log('🤖 Sample AI flashcards:', sampleAIFlashcards);
+    
     // Check deck types distribution
     const deckTypes = await db.getAllAsync('SELECT deckType, COUNT(*) as count FROM decks GROUP BY deckType');
     console.log('📊 Deck types distribution:', deckTypes);
     
+    // Check AI deck types distribution
+    const aiDeckTypes = await db.getAllAsync('SELECT deckType, COUNT(*) as count FROM AIDecks GROUP BY deckType');
+    console.log('📊 AI Deck types distribution:', aiDeckTypes);
+    
     // Check flashcard types distribution
     const flashcardTypes = await db.getAllAsync('SELECT questionType, answerType, COUNT(*) as count FROM flashcards GROUP BY questionType, answerType');
     console.log('📊 Flashcard types distribution:', flashcardTypes);
+    
+    // Check AI flashcard types distribution
+    const aiFlashcardTypes = await db.getAllAsync('SELECT questionType, answerType, COUNT(*) as count FROM AIFlashcards GROUP BY questionType, answerType');
+    console.log('📊 AI Flashcard types distribution:', aiFlashcardTypes);
     
     console.log('\n✅ Data verification completed successfully!');
     
@@ -1202,11 +1563,17 @@ export async function verifyDataLoad() {
       folders: (foldersResult[0] as any).count,
       decks: (decksResult[0] as any).count,
       flashcards: (flashcardsResult[0] as any).count,
+      aiDecks: (aiDecksResult[0] as any).count,
+      aiFlashcards: (aiFlashcardsResult[0] as any).count,
       sampleFolders,
       sampleDecks,
       sampleFlashcards,
+      sampleAIDecks,
+      sampleAIFlashcards,
       deckTypes,
-      flashcardTypes
+      aiDeckTypes,
+      flashcardTypes,
+      aiFlashcardTypes
     };
     
   } catch (error) {

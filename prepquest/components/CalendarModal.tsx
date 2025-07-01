@@ -62,12 +62,16 @@ export function CalendarModal({
       onRequestClose={onDismiss}
       statusBarTranslucent
     >
-      <Pressable
-        style={styles.overlay}
-        onPress={onDismiss}
-      >
+      <View style={{ flex: 1 }} pointerEvents="box-none">
+        {/* Grey background, only pressable outside modal */}
+        <Pressable
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]}
+          onPress={onDismiss}
+          pointerEvents="auto"
+        />
+        {/* Modal content */}
         <View style={styles.centeredContent} pointerEvents="box-none">
-          <View style={styles.container} onStartShouldSetResponder={() => true}>
+          <View style={styles.container} pointerEvents="auto">
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
               <View style={styles.content}>
                 <View style={styles.subtitleRow}>
@@ -154,7 +158,7 @@ export function CalendarModal({
             </ScrollView>
           </View>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }

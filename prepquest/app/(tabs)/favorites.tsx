@@ -18,6 +18,7 @@ import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDec
 import { db } from '@/db/index';
 import { cardDesigns } from '@/constants/cardDesigns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CalendarModal } from '@/components/CalendarModal';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -83,6 +84,7 @@ export default function FavoritesScreen() {
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const router = useRouter();
   const { mode, selected } = useLocalSearchParams();
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const selectUnselectedDuration = 300;
 
@@ -1244,6 +1246,14 @@ export default function FavoritesScreen() {
     return cards;
   };
 
+  const handleCalendarPress = () => {
+    setIsCalendarOpen(true);
+  };
+
+  const handleCalendarDismiss = () => {
+    setIsCalendarOpen(false);
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -1270,14 +1280,7 @@ export default function FavoritesScreen() {
                   useNativeDriver: true,
                 }).start();
               }}
-              onCalendarPress={() => {
-                setIsMenuOpen(true);
-                Animated.timing(menuOverlayOpacity, {
-                  toValue: 0.4,
-                  duration: 500,
-                  useNativeDriver: true,
-                }).start();
-              }}
+              onCalendarPress={handleCalendarPress}
               onSearchPress={handleSearchPress}
               onSearchTextChange={handleSearch}
               onSortChange={handleSortChange}
@@ -1402,6 +1405,15 @@ export default function FavoritesScreen() {
           </Animated.View>
         </ThemedView>
       </SafeAreaView>
+      <CalendarModal
+        visible={isCalendarOpen}
+        onDismiss={handleCalendarDismiss}
+        title={"Filter favorites based on\ndate added"}
+        onDone={(selectedFilter, customDate) => {
+          // Handle filter logic here
+          handleCalendarDismiss();
+        }}
+      />
     </Animated.View>
   );
 }

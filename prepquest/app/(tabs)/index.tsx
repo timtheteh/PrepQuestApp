@@ -784,26 +784,11 @@ export default function DecksScreen() {
   };
 
   const handleCalendarPress = () => {
-    setIsMenuOpen(true);
     setIsCalendarOpen(true);
-      Animated.timing(calendarOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      })
-    .start();
   };
 
   const handleCalendarDismiss = () => {
-      Animated.timing(calendarOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    .start(() => {
-      setIsMenuOpen(false);
       setIsCalendarOpen(false);
-    });
   };
 
   const handleFolderPress = () => {
@@ -1066,12 +1051,6 @@ export default function DecksScreen() {
           </Animated.View>
         </ThemedView>
       </SafeAreaView>
-
-      {/* <GreyOverlayBackground 
-        visible={isCalendarOpen}
-        opacity={calendarMenuOverlayOpacity}
-        onPress={handleCalendarDismiss}
-      /> */}
 
       <CalendarModal
         visible={isCalendarOpen}

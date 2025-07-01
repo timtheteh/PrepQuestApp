@@ -14,6 +14,7 @@ import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { getAllFolders, Folder, deleteMultipleFolders } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CalendarModal } from '@/components/CalendarModal';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -68,6 +69,7 @@ export default function FoldersScreen() {
     setIsDecksAlreadyInFoldersModalOpen,
     decksAlreadyInFoldersModalOpacity
   } = useContext(MenuContext);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Animation values
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -500,12 +502,11 @@ export default function FoldersScreen() {
   };
 
   const handleCalendarPress = () => {
-    setIsMenuOpen(true);
-    Animated.timing(menuOverlayOpacity, {
-      toValue: 0.4,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+    setIsCalendarOpen(true);
+  };
+
+  const handleCalendarDismiss = () => {
+    setIsCalendarOpen(false);
   };
 
   const handleSearchPress = () => {
@@ -1082,7 +1083,7 @@ export default function FoldersScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title>
-                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : `Folders (${foldersCount})`}
+                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : `Folders (${isSearching ? filteredFolders.length : folders.length})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1133,6 +1134,15 @@ export default function FoldersScreen() {
           </Animated.View>
         </View>
       </SafeAreaView>
+      <CalendarModal
+        visible={isCalendarOpen}
+        onDismiss={handleCalendarDismiss}
+        title={"Filter folders based on\ndate added"}
+        onDone={(selectedFilter, customDate) => {
+          // Handle filter logic here
+          handleCalendarDismiss();
+        }}
+      />
     </Animated.View>
   );
 }

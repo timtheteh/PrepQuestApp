@@ -11,7 +11,7 @@ import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { MenuButton } from '@/components/MenuButton';
 import { CalendarModal } from '@/components/CalendarModal';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
-import { useState, useRef, useEffect, useContext } from 'react';
+import { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from './_layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,6 +19,7 @@ import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LottieView from 'lottie-react-native';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -50,6 +51,8 @@ export default function DecksScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
   const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
+  const [shouldShowStudyAnimation, setShouldShowStudyAnimation] = useState(true);
+  const [shouldShowInterviewAnimation, setShouldShowInterviewAnimation] = useState(true);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -288,8 +291,93 @@ export default function DecksScreen() {
       const sortedInterviewDecks = sortDecks(interviewDecks);
       setFilteredStudyDecks(sortedStudyDecks);
       setFilteredInterviewDecks(sortedInterviewDecks);
+    } else {
+      // When all decks are deleted, clear the filtered arrays
+      setFilteredStudyDecks([]);
+      setFilteredInterviewDecks([]);
     }
   }, [studyDecks, interviewDecks, sortField, sortDirection]);
+
+  // Filter decks by dateAdded according to calendarFilter
+  const filterDecksByDate = useCallback((decks: (Deck & { progress: number })[]): (Deck & { progress: number })[] => {
+    if (calendarFilter === 'all' || !calendarFilter) return decks;
+    const now = new Date();
+    return decks.filter((deck: Deck & { progress: number }) => {
+      const deckDate = new Date(deck.dateAdded);
+      if (calendarFilter === 'today') {
+        return (
+          deckDate.getFullYear() === now.getFullYear() &&
+          deckDate.getMonth() === now.getMonth() &&
+          deckDate.getDate() === now.getDate()
+        );
+      }
+      if (calendarFilter === 'week') {
+        // Start of week (Sunday)
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        // End of week (Saturday)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return deckDate >= startOfWeek && deckDate <= endOfWeek;
+      }
+      if (calendarFilter === 'month') {
+        return (
+          deckDate.getFullYear() === now.getFullYear() &&
+          deckDate.getMonth() === now.getMonth()
+        );
+      }
+      if (calendarFilter === 'custom' && calendarCustomDate) {
+        // calendarCustomDate is in 'YYYY-MM-DD' format
+        const [year, month, day] = calendarCustomDate.split('-').map(Number);
+        return (
+          deckDate.getFullYear() === year &&
+          deckDate.getMonth() + 1 === month && // JS months are 0-based
+          deckDate.getDate() === day
+        );
+      }
+      return true;
+    });
+  }, [calendarFilter, calendarCustomDate]);
+
+  // Calculate filtered decks for counts and rendering
+  const filteredStudyDecksByDate = useMemo(() => filterDecksByDate(studyDecks), [filterDecksByDate, studyDecks]);
+  const filteredInterviewDecksByDate = useMemo(() => filterDecksByDate(interviewDecks), [filterDecksByDate, interviewDecks]);
+
+  // Calculate search results (search always searches all decks, ignoring calendar filter)
+  const searchedStudyDecks = useMemo(() => 
+    studyDecks.filter(deck =>
+      deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [studyDecks, searchQuery]
+  );
+  const searchedInterviewDecks = useMemo(() => 
+    interviewDecks.filter(deck =>
+      deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [interviewDecks, searchQuery]
+  );
+
+  // Manage animation states and ensure FAB button visibility
+  useEffect(() => {
+    // Determine which decks to check based on whether we're searching or not
+    const studyDecksToCheck = isSearching ? searchedStudyDecks : filteredStudyDecksByDate;
+    const interviewDecksToCheck = isSearching ? searchedInterviewDecks : filteredInterviewDecksByDate;
+    
+    const studyDecksEmpty = studyDecksToCheck.length === 0;
+    const interviewDecksEmpty = interviewDecksToCheck.length === 0;
+    
+    // Only show animations when the current mode has no decks
+    setShouldShowStudyAnimation(!isInterviewMode && studyDecksEmpty);
+    setShouldShowInterviewAnimation(isInterviewMode && interviewDecksEmpty);
+    
+    // Ensure FAB button is always visible when not in select mode
+    // Use requestAnimationFrame to avoid setting values during render
+    if (!isSelectMode) {
+      requestAnimationFrame(() => {
+        fabOpacity.setValue(1);
+      });
+    }
+  }, [isInterviewMode, filteredStudyDecksByDate.length, filteredInterviewDecksByDate.length, searchedStudyDecks.length, searchedInterviewDecks.length, isSearching, isSelectMode]);
 
   const handleToggle = (isRightSide: boolean) => {
     setIsInterviewMode(isRightSide);
@@ -442,9 +530,12 @@ export default function DecksScreen() {
         useNativeDriver: true,
       })
     ]).start(() => {
-      setIsSelectMode(false);
-      setSelectedStudyCards(new Set());
-      setSelectedInterviewCards(new Set());
+      // Use requestAnimationFrame to prevent state updates during render
+      requestAnimationFrame(() => {
+        setIsSelectMode(false);
+        setSelectedStudyCards(new Set());
+        setSelectedInterviewCards(new Set());
+      });
     });
   };
 
@@ -624,31 +715,37 @@ export default function DecksScreen() {
       const success = await deleteMultipleDecks(selectedDeckIds);
       
       if (success) {
-        // Update local state by removing the deleted decks
-        if (isInterviewMode) {
-          const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
-          const remainingDecks = decksToUse.filter((_, index) => !selectedInterviewCards.has(index));
-          
-          if (isSearching) {
-            setFilteredInterviewDecks(remainingDecks);
+        // Batch state updates to prevent rapid re-renders
+        const updateState = () => {
+          if (isInterviewMode) {
+            const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
+            const remainingDecks = decksToUse.filter((_, index) => !selectedInterviewCards.has(index));
+            
+            if (isSearching) {
+              setFilteredInterviewDecks(remainingDecks);
+            } else {
+              setInterviewDecks(remainingDecks);
+            }
+            setSelectedInterviewCards(new Set());
           } else {
-            setInterviewDecks(remainingDecks);
+            const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
+            const remainingDecks = decksToUse.filter((_, index) => !selectedStudyCards.has(index));
+            
+            if (isSearching) {
+              setFilteredStudyDecks(remainingDecks);
+            } else {
+              setStudyDecks(remainingDecks);
+            }
+            setSelectedStudyCards(new Set());
           }
-          setSelectedInterviewCards(new Set());
-        } else {
-          const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
-          const remainingDecks = decksToUse.filter((_, index) => !selectedStudyCards.has(index));
-          
-          if (isSearching) {
-            setFilteredStudyDecks(remainingDecks);
-          } else {
-            setStudyDecks(remainingDecks);
-          }
-          setSelectedStudyCards(new Set());
-        }
+        };
 
-        // Exit selection mode
-        handleCancel();
+        // Use requestAnimationFrame to batch state updates
+        requestAnimationFrame(() => {
+          updateState();
+          // Exit selection mode after state updates
+          handleCancel();
+        });
         
         console.log(`Successfully deleted ${selectedDeckIds.length} deck(s)`);
       } else {
@@ -659,61 +756,6 @@ export default function DecksScreen() {
     }
   };
 
-  // Filter decks by dateAdded according to calendarFilter
-  function filterDecksByDate(decks: (Deck & { progress: number })[]): (Deck & { progress: number })[] {
-    if (calendarFilter === 'all' || !calendarFilter) return decks;
-    const now = new Date();
-    return decks.filter((deck: Deck & { progress: number }) => {
-      const deckDate = new Date(deck.dateAdded);
-      if (calendarFilter === 'today') {
-        return (
-          deckDate.getFullYear() === now.getFullYear() &&
-          deckDate.getMonth() === now.getMonth() &&
-          deckDate.getDate() === now.getDate()
-        );
-      }
-      if (calendarFilter === 'week') {
-        // Start of week (Sunday)
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-        // End of week (Saturday)
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-        return deckDate >= startOfWeek && deckDate <= endOfWeek;
-      }
-      if (calendarFilter === 'month') {
-        return (
-          deckDate.getFullYear() === now.getFullYear() &&
-          deckDate.getMonth() === now.getMonth()
-        );
-      }
-      if (calendarFilter === 'custom' && calendarCustomDate) {
-        // calendarCustomDate is in 'YYYY-MM-DD' format
-        const [year, month, day] = calendarCustomDate.split('-').map(Number);
-        return (
-          deckDate.getFullYear() === year &&
-          deckDate.getMonth() + 1 === month && // JS months are 0-based
-          deckDate.getDate() === day
-        );
-      }
-      return true;
-    });
-  }
-
-  // Calculate filtered decks for counts and rendering
-  const filteredStudyDecksByDate = filterDecksByDate(studyDecks);
-  const filteredInterviewDecksByDate = filterDecksByDate(interviewDecks);
-
-  // Calculate search results (search always searches all decks, ignoring calendar filter)
-  const searchedStudyDecks = studyDecks.filter(deck =>
-    deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const searchedInterviewDecks = interviewDecks.filter(deck =>
-    deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const renderStudyCards = () => {
     let decksToRender;
     if (isSearching) {
@@ -721,6 +763,27 @@ export default function DecksScreen() {
     } else {
       decksToRender = filteredStudyDecksByDate;
     }
+    
+    // If no decks to render, show empty state
+    if (decksToRender.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          {shouldShowStudyAnimation && (
+          <LottieView
+            key="study-empty-state"
+            source={require('@/assets/animations/EmptyState3.json')}
+            autoPlay
+            loop
+            style={styles.emptyStateAnimation}
+          />
+          )}
+          <Text style={styles.emptyStateText}>
+            Where have all the{'\n'}decks gone
+          </Text>
+        </View>
+      );
+    }
+    
     const sortedDecks = sortDecks(decksToRender);
     const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
@@ -762,6 +825,27 @@ export default function DecksScreen() {
     } else {
       decksToRender = filteredInterviewDecksByDate;
     }
+
+    // If no decks to render, show empty state
+    if (decksToRender.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          {shouldShowInterviewAnimation && (
+          <LottieView
+            key="interview-empty-state"
+            source={require('@/assets/animations/EmptyState3.json')}
+            autoPlay
+            loop
+            style={styles.emptyStateAnimation}
+          />
+          )}
+          <Text style={styles.emptyStateText}>
+            Where have all the{'\n'}decks gone
+          </Text>
+        </View>
+      );
+    }
+    
     const sortedDecks = sortDecks(decksToRender);
     const cards = sortedDecks.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
@@ -817,8 +901,14 @@ export default function DecksScreen() {
   };
 
   // For counts in UI:
-  const studyDeckCount = isSearching ? searchedStudyDecks.length : filteredStudyDecksByDate.length;
-  const interviewDeckCount = isSearching ? searchedInterviewDecks.length : filteredInterviewDecksByDate.length;
+  const studyDeckCount = useMemo(() => 
+    isSearching ? searchedStudyDecks.length : filteredStudyDecksByDate.length, 
+    [isSearching, searchedStudyDecks.length, filteredStudyDecksByDate.length]
+  );
+  const interviewDeckCount = useMemo(() => 
+    isSearching ? searchedInterviewDecks.length : filteredInterviewDecksByDate.length, 
+    [isSearching, searchedInterviewDecks.length, filteredInterviewDecksByDate.length]
+  );
 
   const slidingMenuDuration = 300;
 
@@ -909,7 +999,7 @@ export default function DecksScreen() {
     setSelectedInterviewCards(new Set());
   };
 
-  const sortDecks = (decks: (Deck & { progress: number })[]) => {
+  const sortDecks = useCallback((decks: (Deck & { progress: number })[]) => {
     return [...decks].sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -939,7 +1029,7 @@ export default function DecksScreen() {
       }
       return 0;
     });
-  };
+  }, [sortField, sortDirection]);
 
   const handleSortChange = (field: SortField, direction: SortDirection) => {
     setSortField(field);
@@ -1052,9 +1142,10 @@ export default function DecksScreen() {
                   <TouchableOpacity 
                     onPress={isSelectMode ? handleSelectAll : handleSelect}
                     style={styles.selectButtonContainer}
+                    disabled={isSelectMode ? false : (isInterviewMode ? interviewDeckCount === 0 : studyDeckCount === 0)}
                   >
                     <Animated.Text style={[
-                      styles.selectButton,
+                      isSelectMode ? styles.selectButton : (isInterviewMode ? (interviewDeckCount === 0 ? styles.selectButtonDisabled : styles.selectButton) : (studyDeckCount === 0 ? styles.selectButtonDisabled : styles.selectButton)),
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
@@ -1194,6 +1285,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Medium',
     color: '#44B88A',
   },
+  selectButtonDisabled: {
+    fontSize: 20,
+    fontFamily: 'Satoshi-Medium',
+    color: '#CCCCCC',
+  },
   selectButtonAbsolute: {
     position: 'absolute',
   },
@@ -1241,5 +1337,23 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     zIndex: 1,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40, // Add some top padding to center it better in the scrollview
+  },
+  emptyStateAnimation: {
+    width: 200,
+    height: 200,
+  },
+  emptyStateText: {
+    fontSize: 24,
+    fontFamily: 'Satoshi-Variable',
+    color: '#000000',
+    textAlign: 'center',
+    marginTop: 0,
+    lineHeight: 32,
   },
 });

@@ -70,6 +70,8 @@ export default function FoldersScreen() {
     decksAlreadyInFoldersModalOpacity
   } = useContext(MenuContext);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
+  const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
 
   // Animation values
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -960,8 +962,60 @@ export default function FoldersScreen() {
     }
   };
 
+  // Filter folders by dateAdded according to calendarFilter
+  function filterFoldersByDate(folders: Folder[]): Folder[] {
+    if (calendarFilter === 'all' || !calendarFilter) return folders;
+    const now = new Date();
+    return folders.filter((folder: Folder) => {
+      const folderDate = new Date(folder.dateAdded);
+      if (calendarFilter === 'today') {
+        return (
+          folderDate.getFullYear() === now.getFullYear() &&
+          folderDate.getMonth() === now.getMonth() &&
+          folderDate.getDate() === now.getDate()
+        );
+      }
+      if (calendarFilter === 'week') {
+        // Start of week (Sunday)
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        // End of week (Saturday)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return folderDate >= startOfWeek && folderDate <= endOfWeek;
+      }
+      if (calendarFilter === 'month') {
+        return (
+          folderDate.getFullYear() === now.getFullYear() &&
+          folderDate.getMonth() === now.getMonth()
+        );
+      }
+      if (calendarFilter === 'custom' && calendarCustomDate) {
+        // calendarCustomDate is in 'YYYY-MM-DD' format
+        const [year, month, day] = calendarCustomDate.split('-').map(Number);
+        return (
+          folderDate.getFullYear() === year &&
+          folderDate.getMonth() + 1 === month && // JS months are 0-based
+          folderDate.getDate() === day
+        );
+      }
+      return true;
+    });
+  }
+
+  // Calculate filtered folders for counts and rendering
+  const filteredFoldersByDate = filterFoldersByDate(folders);
+  // Calculate search results (search always searches all folders, ignoring calendar filter)
+  const searchedFolders = folders.filter(folder =>
+    folder.folderName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  // For counts in UI:
+  const foldersCountToShow = isSearching ? searchedFolders.length : filteredFoldersByDate.length;
+
   const renderFolderCards = () => {
-    const foldersToRender = isSearching ? filteredFolders : folders;
+    const foldersToRender = isSearching ? searchedFolders : filteredFoldersByDate;
     const sortedFolders = sortFolders(foldersToRender);
     
     // Safety check to prevent rendering issues
@@ -1083,7 +1137,7 @@ export default function FoldersScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title>
-                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : `Folders (${isSearching ? filteredFolders.length : folders.length})`}
+                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : `Folders (${foldersCountToShow})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1139,7 +1193,8 @@ export default function FoldersScreen() {
         onDismiss={handleCalendarDismiss}
         title={"Filter folders based on\ndate added"}
         onDone={(selectedFilter, customDate) => {
-          // Handle filter logic here
+          setCalendarFilter(selectedFilter);
+          setCalendarCustomDate(customDate || null);
           handleCalendarDismiss();
         }}
       />

@@ -48,6 +48,8 @@ export default function FavoritesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('lastModified');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
+  const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -1148,19 +1150,75 @@ export default function FavoritesScreen() {
     }
   };
 
+  // Filter by dateAdded according to calendarFilter
+  function filterByDate<T extends { dateAdded: string }>(items: T[]): T[] {
+    if (calendarFilter === 'all' || !calendarFilter) return items;
+    const now = new Date();
+    return items.filter(item => {
+      const itemDate = new Date(item.dateAdded);
+      if (calendarFilter === 'today') {
+        return (
+          itemDate.getFullYear() === now.getFullYear() &&
+          itemDate.getMonth() === now.getMonth() &&
+          itemDate.getDate() === now.getDate()
+        );
+      }
+      if (calendarFilter === 'week') {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return itemDate >= startOfWeek && itemDate <= endOfWeek;
+      }
+      if (calendarFilter === 'month') {
+        return (
+          itemDate.getFullYear() === now.getFullYear() &&
+          itemDate.getMonth() === now.getMonth()
+        );
+      }
+      if (calendarFilter === 'custom' && calendarCustomDate) {
+        const [year, month, day] = calendarCustomDate.split('-').map(Number);
+        return (
+          itemDate.getFullYear() === year &&
+          itemDate.getMonth() + 1 === month &&
+          itemDate.getDate() === day
+        );
+      }
+      return true;
+    });
+  }
+
+  // Filtered arrays for calendar filter
+  const filteredFavoritedDecksByDate = filterByDate(favoritedDecks);
+  const filteredFavoritedFoldersByDate = filterByDate(favoritedFolders);
+
+  // Search results (search always searches all, not just filtered)
+  const searchedFavoritedDecks = favoritedDecks.filter(deck =>
+    deck.deckName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const searchedFavoritedFolders = favoritedFolders.filter(folder =>
+    folder.folderName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // For counts in UI:
+  const favDeckCount = isSearching ? searchedFavoritedDecks.length : filteredFavoritedDecksByDate.length;
+  const favFolderCount = isSearching ? searchedFavoritedFolders.length : filteredFavoritedFoldersByDate.length;
+
+  // Update render functions to use filtered arrays
   const renderFavDeckCards = () => {
-    const decksToRender = isSearching ? filteredFavoritedDecks : favoritedDecks;
-    const sortedDecks = sortDecks(decksToRender);
-    
-    // Safety check to prevent rendering issues
-    if (!sortedDecks || sortedDecks.length === 0) {
-      return null;
+    let decksToRender;
+    if (isSearching) {
+      decksToRender = searchedFavoritedDecks;
+    } else {
+      decksToRender = filteredFavoritedDecksByDate;
     }
-    
-    const cards = sortedDecks.map((data, index) => {
+    const sortedDecks = sortDecks(decksToRender);
+    if (!sortedDecks || sortedDecks.length === 0) return null;
+    return sortedDecks.map((data, index) => {
       const design = cardDesigns[data.cardDesignIndex];
       const style = index === 0 ? styles.firstCard : styles.card;
-      
       return (
         <Card
           key={`favDeck-${data.deckID}`}
@@ -1199,21 +1257,19 @@ export default function FavoritesScreen() {
         />
       );
     });
-    return cards;
   };
 
   const renderFavFolderCards = () => {
-    const foldersToRender = isSearching ? filteredFavoritedFolders : favoritedFolders;
-    const sortedFolders = sortFolders(foldersToRender);
-    
-    // Safety check to prevent rendering issues
-    if (!sortedFolders || sortedFolders.length === 0) {
-      return null;
+    let foldersToRender;
+    if (isSearching) {
+      foldersToRender = searchedFavoritedFolders;
+    } else {
+      foldersToRender = filteredFavoritedFoldersByDate;
     }
-    
-    const cards = sortedFolders.map((data, index) => {
+    const sortedFolders = sortFolders(foldersToRender);
+    if (!sortedFolders || sortedFolders.length === 0) return null;
+    return sortedFolders.map((data, index) => {
       const style = index === 0 ? styles.firstCard : styles.card;
-      
       return (
         <FolderCard
           key={`favFolder-${data.folderID}`}
@@ -1243,7 +1299,6 @@ export default function FavoritesScreen() {
         />
       );
     });
-    return cards;
   };
 
   const handleCalendarPress = () => {
@@ -1295,8 +1350,8 @@ export default function FavoritesScreen() {
           ]}>
             <View style={styles.content}>
               <RoundedContainer 
-                leftLabel={`Fav Decks (${favDeckCardsCount})`}
-                rightLabel={`Fav Folders (${favFolderCardsCount})`}
+                leftLabel={`Fav Decks (${favDeckCount})`}
+                rightLabel={`Fav Folders (${favFolderCount})`}
                 onToggle={handleToggle}
               />
 
@@ -1331,10 +1386,10 @@ export default function FavoritesScreen() {
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                      {`Favorite Decks (${favDeckCardsCount})`}
+                      {`Favorite Decks (${favDeckCount})`}
                     </Title>
                     <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                      {`Favorite Folders (${favFolderCardsCount})`}
+                      {`Favorite Folders (${favFolderCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1410,7 +1465,8 @@ export default function FavoritesScreen() {
         onDismiss={handleCalendarDismiss}
         title={"Filter favorites based on\ndate added"}
         onDone={(selectedFilter, customDate) => {
-          // Handle filter logic here
+          setCalendarFilter(selectedFilter);
+          setCalendarCustomDate(customDate || null);
           handleCalendarDismiss();
         }}
       />

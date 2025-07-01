@@ -13,9 +13,10 @@ import { Card } from '@/components/Card';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Feather } from '@expo/vector-icons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
-import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder } from '@/db/decks';
+import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder, checkFolderNameExists } from '@/db/decks';
 import { db } from '@/db/index';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
+import { Toast } from '@/components/Toast';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -64,6 +65,10 @@ export default function ViewDecksInFolderScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editText, setEditText] = useState(folderTitle as string || '');
   const [editNameSelected, setEditNameSelected] = useState(false);
+
+  // Toast state
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Initialize opacity to 0 when component mounts
   useEffect(() => {
@@ -360,11 +365,60 @@ export default function ViewDecksInFolderScreen() {
     setEditNameSelected(true);
   };
 
-  const handleDoneEdit = () => {
-    setShowEditModal(false);
-    setEditNameSelected(false);
-    // TODO: Update folder title here
-    console.log('Updated folder title to:', editText);
+  const handleDoneEdit = async () => {
+    const trimmedText = editText.trim();
+    
+    // Check if the text is empty
+    if (!trimmedText) {
+      setToastMessage('Folder name cannot be empty!');
+      setShowToast(true);
+      return;
+    }
+    
+    // Check if the folder name has actually changed (ignoring whitespace)
+    const currentFolderName = (folderTitle as string || '').trim();
+    if (trimmedText === currentFolderName) {
+      // No change, just close the modal
+      setShowEditModal(false);
+      setEditNameSelected(false);
+      return;
+    }
+    
+    // Check if the folder name already exists (excluding current folder)
+    const folderExists = await checkFolderNameExists(trimmedText, parseInt(folderId as string));
+    
+    if (folderExists) {
+      setToastMessage('Folder name already exists!');
+      setShowToast(true);
+      return;
+    }
+    
+    // If validation passes, update the folder name
+    try {
+      await db.execAsync(`
+        UPDATE folders 
+        SET folderName = '${trimmedText}', lastModifiedDate = datetime('now')
+        WHERE folderID = ${parseInt(folderId as string)}
+      `);
+      
+      console.log('Updated folder title to:', trimmedText);
+      
+      // Update local state to reflect the change immediately
+      setEditText(trimmedText);
+      
+      // Close the modal
+      setShowEditModal(false);
+      setEditNameSelected(false);
+      
+      // Force a re-render by updating the folder title in the route params
+      // This will make the new name appear in the UI immediately
+      router.setParams({ folderTitle: trimmedText });
+      
+    } catch (error) {
+      console.error('Error updating folder name:', error);
+      setToastMessage('Error updating folder name!');
+      setShowToast(true);
+    }
   };
 
   const handleOtherButtonPress = () => {
@@ -757,6 +811,12 @@ export default function ViewDecksInFolderScreen() {
         onChangeText={setEditText}
         onDone={handleDoneEdit}
         placeholder="Edit folder name..."
+      />
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+        duration={3000}
       />
     </Animated.View>
   );

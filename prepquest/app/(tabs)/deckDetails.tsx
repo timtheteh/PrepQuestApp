@@ -17,7 +17,8 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
-import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck } from '@/db/decks';
+import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists } from '@/db/decks';
+import { Toast } from '@/components/Toast';
 
 // Dummy flashcard data
 const dummyFlashcards = [
@@ -464,6 +465,10 @@ export default function DeckDetailsScreen() {
   const [editText, setEditText] = useState(deckTitle as string || '');
   const [editNameSelected, setEditNameSelected] = useState(false);
 
+  // Toast state
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
   const handleEditNamePress = () => {
     if (editNameSelected) return;
     setEditText(deckTitle as string || '');
@@ -471,10 +476,61 @@ export default function DeckDetailsScreen() {
     setEditNameSelected(true);
   };
 
-  const handleDoneEdit = () => {
-    setShowEditModal(false);
-    setEditNameSelected(false);
-    // Optionally update deck title here
+  const handleDoneEdit = async () => {
+    const trimmedText = editText.trim();
+    
+    // Check if the text is empty
+    if (!trimmedText) {
+      setToastMessage('Deck name cannot be empty!');
+      setShowToast(true);
+      return;
+    }
+    
+    // Check if the deck name has actually changed (ignoring whitespace)
+    const currentDeckName = (deckTitle as string || '').trim();
+    if (trimmedText === currentDeckName) {
+      // No change, just close the modal
+      setShowEditModal(false);
+      setEditNameSelected(false);
+      return;
+    }
+    
+    // Check if the deck name already exists (excluding current deck)
+    const deckExists = await checkDeckNameExists(trimmedText, parseInt(deckId as string));
+    
+    if (deckExists) {
+      setToastMessage('Deck name already exists!');
+      setShowToast(true);
+      return;
+    }
+    
+    // If validation passes, update the deck name
+    try {
+      await db.execAsync(`
+        UPDATE decks 
+        SET deckName = '${trimmedText}', lastModifiedDate = datetime('now')
+        WHERE deckID = ${parseInt(deckId as string)}
+      `);
+      
+      console.log('Updated deck title to:', trimmedText);
+      
+      // Update local state to reflect the change immediately
+      setEditText(trimmedText);
+      setDeckInfo((prev: any) => prev ? { ...prev, deckName: trimmedText, lastModifiedDate: new Date().toISOString() } : prev);
+      
+      // Close the modal
+      setShowEditModal(false);
+      setEditNameSelected(false);
+      
+      // Force a re-render by updating the deck title in the route params
+      // This will make the new name appear in the UI immediately
+      router.setParams({ deckTitle: trimmedText });
+      
+    } catch (error) {
+      console.error('Error updating deck name:', error);
+      setToastMessage('Error updating deck name!');
+      setShowToast(true);
+    }
   };
 
   const handleOtherButtonPress = () => {
@@ -924,7 +980,7 @@ export default function DeckDetailsScreen() {
                   deckId: result.newDeckId!.toString(),
                   isAIDeck: 'false', // Treat as regular deck
                   sourcePage: sourcePage as string,
-                  folderTitle: folderTitle as string,
+                  folderTitle: deckTitle as string,
                   folderId: folderId as string,
                   isFavorited: favoriteStatus ? '1' : '0'
                 }
@@ -937,7 +993,7 @@ export default function DeckDetailsScreen() {
                 deckId: result.newDeckId!.toString(),
                 isAIDeck: 'false', // Treat as regular deck
                 sourcePage: sourcePage as string,
-                folderTitle: folderTitle as string,
+                folderTitle: deckTitle as string,
                 folderId: folderId as string,
                 isFavorited: favoriteStatus ? '1' : '0'
               }
@@ -1396,6 +1452,12 @@ export default function DeckDetailsScreen() {
         onChangeText={setEditText}
         onDone={handleDoneEdit}
         placeholder="Edit deck name..."
+      />
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+        duration={3000}
       />
     </Animated.View>
   );

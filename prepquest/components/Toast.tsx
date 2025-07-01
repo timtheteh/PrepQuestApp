@@ -1,0 +1,103 @@
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Text, Animated, View } from 'react-native';
+
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
+  duration?: number;
+}
+
+export function Toast({ visible, message, onHide, duration = 3000 }: ToastProps) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(-100)).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Show toast
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Hide toast after duration
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateY, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          onHide();
+        });
+      }, duration);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible, duration, onHide]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.container,
+        {
+          opacity,
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      <View style={styles.toast}>
+        <Text style={styles.message}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    alignItems: 'center',
+    paddingTop: 50, // Account for status bar
+  },
+  toast: {
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  message: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Satoshi-Medium',
+    textAlign: 'center',
+  },
+}); 

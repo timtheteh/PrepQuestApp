@@ -488,6 +488,72 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
   }
 }
 
+export async function checkFolderNameExists(folderName: string, excludeFolderId?: number): Promise<boolean> {
+  try {
+    let query: string;
+    let params: any[];
+    
+    if (excludeFolderId) {
+      // Check if folder name exists, excluding the current folder being edited
+      query = `
+        SELECT COUNT(*) as count 
+        FROM folders 
+        WHERE folderName = ? AND folderID != ?
+      `;
+      params = [folderName, excludeFolderId];
+    } else {
+      // Check if folder name exists (for new folders)
+      query = `
+        SELECT COUNT(*) as count 
+        FROM folders 
+        WHERE folderName = ?
+      `;
+      params = [folderName];
+    }
+    
+    const result = await db.getFirstAsync(query, params);
+    const count = (result as { count: number }).count;
+    
+    return count > 0;
+  } catch (error) {
+    console.error('Error checking if folder name exists:', error);
+    return false;
+  }
+}
+
+export async function checkDeckNameExists(deckName: string, excludeDeckId?: number): Promise<boolean> {
+  try {
+    let query: string;
+    let params: any[];
+    
+    if (excludeDeckId) {
+      // Check if deck name exists, excluding the current deck being edited
+      query = `
+        SELECT COUNT(*) as count 
+        FROM decks 
+        WHERE deckName = ? AND deckID != ?
+      `;
+      params = [deckName, excludeDeckId];
+    } else {
+      // Check if deck name exists (for new decks)
+      query = `
+        SELECT COUNT(*) as count 
+        FROM decks 
+        WHERE deckName = ?
+      `;
+      params = [deckName];
+    }
+    
+    const result = await db.getFirstAsync(query, params);
+    const count = (result as { count: number }).count;
+    
+    return count > 0;
+  } catch (error) {
+    console.error('Error checking if deck name exists:', error);
+    return false;
+  }
+}
+
 export async function getDecksInFolder(folderId: number): Promise<(Deck & { progress: number })[]> {
   try {
     const result = await db.getAllAsync(`

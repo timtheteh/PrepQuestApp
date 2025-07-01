@@ -11,6 +11,9 @@ interface DeckDetailsTopBarProps {
   onDeletePress?: () => void;
   onEditNamePress?: () => void;
   editNameSelected?: boolean;
+  isFolderDisabled?: boolean;
+  isDeleteDisabled?: boolean;
+  isEditNameDisabled?: boolean;
 }
 
 export function DeckDetailsTopBar({
@@ -20,6 +23,9 @@ export function DeckDetailsTopBar({
   onDeletePress,
   onEditNamePress,
   editNameSelected,
+  isFolderDisabled,
+  isDeleteDisabled,
+  isEditNameDisabled,
 }: DeckDetailsTopBarProps) {
   return (
     <View style={styles.container}>
@@ -33,16 +39,19 @@ export function DeckDetailsTopBar({
       />
       <CircleIconButton 
         onPress={onFolderPress}
-        renderCustomIcon={(color) => <FolderCardIcon width={20} height={20} />}
+        disabled={isFolderDisabled}
+        renderCustomIcon={(color) => <Ionicons name="folder" size={20} color={color} />}
       />
       <CircleIconButton 
         color="#FF3B30"
         onPress={onDeletePress}
+        disabled={isDeleteDisabled}
         renderCustomIcon={(color) => <Ionicons name="trash" size={20} color={color} />}
       />
       <CircleIconButton 
         onPress={onEditNamePress}
         selected={editNameSelected}
+        disabled={isEditNameDisabled}
         renderCustomIcon={(color) => <FontAwesome5 name="pen" size={16} color={color} />}
       />
     </View>

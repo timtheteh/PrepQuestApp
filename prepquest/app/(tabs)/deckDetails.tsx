@@ -91,14 +91,20 @@ const getEmptyStateContainerMarginTop = () => {
 
 const SCREEN_TRANSITION_DURATION = 300;
 
-const companyLogos = {
-    'study': require('@/assets/companyIcons/StudyCardIcon.png'),
-    'Google': require('@/assets/companyIcons/GoogleIcon.png'),
-    'Meta': require('@/assets/companyIcons/MetaIcon.png'),
-    'JPMorgan': require('@/assets/companyIcons/JPMIcon.png'),
-} as const;
-
-type CompanyKey = keyof typeof companyLogos;
+// Helper function to format date
+const formatDate = (dateString: string | null): string => {
+  if (!dateString) return '--';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  } catch (error) {
+    return '--';
+  }
+};
 
 // Card type color and label logic
 const cardTypeMap: Record<string, { color: string; label: string }> = {
@@ -164,7 +170,7 @@ export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const screenOpacity = useRef(new Animated.Value(0)).current;
-  const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, sourcePage, folderTitle, folderId, isFavorited} = useLocalSearchParams();
+  const { deckId, isAIDeck, sourcePage, folderTitle, folderId, isFavorited} = useLocalSearchParams();
   const { 
     navbarRef,
     setIsMenuOpen,
@@ -198,17 +204,60 @@ export default function DeckDetailsScreen() {
   const [hasAttemptedFlashcards, setHasAttemptedFlashcards] = useState<boolean | null>(null);
   const [isLoadingAttemptStatus, setIsLoadingAttemptStatus] = useState(true);
 
-  // Convert deckDetailsBackgroundIndex to number and provide fallback
-  const backgroundIndex = parseInt(deckDetailsBackgroundIndex as string) || 0;
-  
-  // Convert other parameters to appropriate types
-  const cardCompany = (company as string || 'study') as CompanyKey;
-  const cardCompanyLogo = companyLogos[cardCompany] || companyLogos['study'];
-  const cardDate = date as string || '';
+  // State to track if AI deck has been saved to regular decks table
+  const [isAIDeckSaved, setIsAIDeckSaved] = useState<boolean | null>(null);
+  const [isLoadingSavedStatus, setIsLoadingSavedStatus] = useState(true);
+
+  // Get deck information from database
+  const deckTitle = deckInfo?.deckName || '';
+  const deckType = deckInfo?.deckType || '';
+  const backgroundIndex = deckInfo?.cardDesignIndex || 0;
+  const cardDate = deckInfo?.dateAdded ? formatDate(deckInfo.dateAdded) : '';
   const cardFlashcardCount = deckInfo?.flashcardCount || 0;
   const cardPercent = deckInfo?.progress || 0;
-  const AIDeck = isAIDeck as string === 'true';
+  const AIDeck = isAIDeck as string === 'true' || deckInfo?.isAIDeck === 1;
   
+  // Helper function to get company logo based on deck info
+  const getCompanyLogo = () => {
+    if (!deckInfo) {
+      return require('@/assets/companyIcons/StudyCardIcon.png');
+    }
+    
+    if (deckInfo.deckType === 'study') {
+      return require('@/assets/companyIcons/StudyCardIcon.png');
+    } else if (deckInfo.deckType === 'interview') {
+      if (deckInfo.interviewCompanyIcon && typeof deckInfo.interviewCompanyIcon === 'string') {
+        // Convert hex blob to image source
+        try {
+          if (/^[0-9A-Fa-f]+$/.test(deckInfo.interviewCompanyIcon)) {
+            // Convert hex to base64
+            const hexString = deckInfo.interviewCompanyIcon;
+            const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map((byte: string) => parseInt(byte, 16)) || []);
+            const base64String = btoa(String.fromCharCode(...bytes));
+            return { uri: `data:image/png;base64,${base64String}` };
+          } else if (deckInfo.interviewCompanyIcon.startsWith('data:')) {
+            // Already a data URI
+            return { uri: deckInfo.interviewCompanyIcon };
+          } else {
+            // Try as file path or URL
+            return { uri: deckInfo.interviewCompanyIcon };
+          }
+        } catch (error) {
+          console.error('Error converting company icon:', error);
+          return require('@/assets/companyIcons/companyDefaultIcon.png');
+        }
+      } else {
+        // No company icon or invalid type, use default
+        return require('@/assets/companyIcons/companyDefaultIcon.png');
+      }
+    }
+    
+    // Fallback to study icon
+    return require('@/assets/companyIcons/StudyCardIcon.png');
+  };
+  
+  const cardCompanyLogo = getCompanyLogo();
+
   // Ensure backgroundIndex is within bounds for AI card designs (which has 3 elements)
   const safeBackgroundIndex = AIDeck ? Math.min(backgroundIndex, deckDetailsAICardDesigns.length - 1) : backgroundIndex;
 
@@ -392,13 +441,13 @@ export default function DeckDetailsScreen() {
       pathname: '/(tabs)/viewFlashcards',
       params: {
         deckId: deckId as string,
-        deckTitle: deckTitle as string,
-        deckType: deckType as string,
-        deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
-        date: date as string,
-        flashcardCount: flashcardCount as string,
-        percent: percent as string,
-        company: company as string,
+        deckTitle: deckTitle,
+        deckType: deckType,
+        deckDetailsBackgroundIndex: backgroundIndex.toString(),
+        date: cardDate,
+        flashcardCount: cardFlashcardCount.toString(),
+        percent: cardPercent.toString(),
+        company: deckInfo?.interviewCompany || '',
         isAIDeck: isAIDeck as string,
         mode: currentMode,
         sourcePage: sourcePage as string,
@@ -469,13 +518,13 @@ export default function DeckDetailsScreen() {
         sourcePage: 'deckDetails',
         // Pass all deckDetails parameters to preserve them when navigating back
         deckId: deckId as string,
-        deckTitle: deckTitle as string,
-        deckType: deckType as string,
-        deckDetailsBackgroundIndex: deckDetailsBackgroundIndex as string,
-        date: date as string,
-        flashcardCount: flashcardCount as string,
-        percent: percent as string,
-        company: company as string,
+        deckTitle: deckTitle,
+        deckType: deckType,
+        deckDetailsBackgroundIndex: backgroundIndex.toString(),
+        date: cardDate,
+        flashcardCount: cardFlashcardCount.toString(),
+        percent: cardPercent.toString(),
+        company: deckInfo?.interviewCompany || '',
         isAIDeck: isAIDeck as string,
         // Pass the original navigation context
         originalSourcePage: sourcePage as string,
@@ -534,17 +583,28 @@ export default function DeckDetailsScreen() {
   const loadDeckGrade = async () => {
     try {
       setIsLoadingGrade(true);
-      const grade = await getDeckGrade(parseInt(deckId as string));
-      setDeckGrade(grade);
+      
+      // Use the isAIDeck parameter instead of querying the database
+      const isAIDeckFromParams = isAIDeck as string === 'true';
+      
+      if (isAIDeckFromParams) {
+        // Get AI deck grade
+        const grade = await getAIDeckGrade(parseInt(deckId as string));
+        setDeckGrade(grade);
+      } else {
+        // Get regular deck grade
+        const grade = await getDeckGrade(parseInt(deckId as string));
+        setDeckGrade(grade);
+      }
       
       // Test logging to verify the data
-      if (grade) {
+      if (deckGrade) {
         console.log('Deck Grade loaded:', {
-          score: grade.score,
-          masteryLevel: grade.masteryLevel,
-          breakdown: grade.breakdown,
-          totalAttempted: grade.totalAttempted,
-          totalFlashcards: grade.totalFlashcards
+          score: deckGrade.score,
+          masteryLevel: deckGrade.masteryLevel,
+          breakdown: deckGrade.breakdown,
+          totalAttempted: deckGrade.totalAttempted,
+          totalFlashcards: deckGrade.totalFlashcards
         });
       } else {
         console.log('No deck grade available - no attempted flashcards found');
@@ -561,12 +621,23 @@ export default function DeckDetailsScreen() {
   const loadAverageTime = async () => {
     try {
       setIsLoadingAverageTime(true);
-      const time = await getDeckAverageTime(parseInt(deckId as string));
-      setAverageTime(time);
+      
+      // Use the isAIDeck parameter instead of querying the database
+      const isAIDeckFromParams = isAIDeck as string === 'true';
+      
+      if (isAIDeckFromParams) {
+        // Get AI deck average time
+        const time = await getAIDeckAverageTime(parseInt(deckId as string));
+        setAverageTime(time);
+      } else {
+        // Get regular deck average time
+        const time = await getDeckAverageTime(parseInt(deckId as string));
+        setAverageTime(time);
+      }
       
       // Test logging to verify the data
-      if (time !== null) {
-        console.log('Average time loaded:', time, 'seconds');
+      if (averageTime !== null) {
+        console.log('Average time loaded:', averageTime, 'seconds');
       } else {
         console.log('No average time available - no attempted flashcards with time data found');
       }
@@ -578,24 +649,127 @@ export default function DeckDetailsScreen() {
     }
   };
 
-  // Function to load deck information
-  const loadDeckInfo = async () => {
+  // Function to get AI deck grade
+  const getAIDeckGrade = async (deckId: number): Promise<DeckGrade | null> => {
     try {
-      setIsLoadingDeckInfo(true);
-      const info = await getDeckInfoWithProgress(parseInt(deckId as string));
-      setDeckInfo(info);
-      
-      // Test logging to verify the data
-      if (info) {
-        console.log('Deck info loaded:', info);
-      } else {
-        console.log('No deck info available');
+      // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+      // and their difficulty ratings
+      const result = await db.getAllAsync(`
+        SELECT 
+          difficultyRating,
+          lastStudiedDate,
+          lastQuizzedDate
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+      `, [deckId]);
+
+      if (!result || result.length === 0) {
+        // No attempted flashcards, return null
+        return null;
       }
+
+      const flashcards = result as Array<{
+        difficultyRating: string;
+        lastStudiedDate: string | null;
+        lastQuizzedDate: string | null;
+      }>;
+
+      // Extract difficulty ratings from attempted flashcards
+      const ratings = flashcards.map(flashcard => flashcard.difficultyRating);
+
+      // Get total number of AI flashcards for this deck
+      const totalResult = await db.getFirstAsync(`
+        SELECT COUNT(*) as total
+        FROM AIFlashcards
+        WHERE deckID = ?
+      `, [deckId]);
+
+      const totalFlashcards = (totalResult as { total: number }).total;
+
+      // Calculate weighted score using the same logic as regular decks
+      const weights = {
+        'Again': 0,     // 0% - needs to learn
+        'Hard': 0.4,    // 40% - partially learned
+        'Good': 0.8,    // 80% - well learned
+        'Easy': 1.0     // 100% - mastered
+      };
+      
+      const totalWeight = ratings.reduce((sum, rating) => {
+        return sum + (weights[rating as keyof typeof weights] || 0);
+      }, 0);
+      
+      const score = (totalWeight / ratings.length) * 100;
+      
+      const getMasteryLevel = (score: number): string => {
+        if (score >= 90) return 'Expert';
+        if (score >= 75) return 'Proficient';
+        if (score >= 60) return 'Developing';
+        if (score >= 40) return 'Beginner';
+        return 'Needs Practice';
+      };
+
+      const getBreakdown = (ratings: string[]) => {
+        const counts = {
+          'Again': 0, 'Hard': 0, 'Good': 0, 'Easy': 0
+        };
+        
+        ratings.forEach(rating => {
+          if (rating in counts) {
+            counts[rating as keyof typeof counts]++;
+          }
+        });
+        
+        return counts;
+      };
+
+      const grade = {
+        score: Math.round(score),
+        masteryLevel: getMasteryLevel(score),
+        breakdown: getBreakdown(ratings),
+        totalAttempted: ratings.length,
+        totalFlashcards: totalFlashcards
+      };
+
+      return grade;
     } catch (error) {
-      console.error('Error loading deck info:', error);
-      setDeckInfo(null);
-    } finally {
-      setIsLoadingDeckInfo(false);
+      console.error('Error calculating AI deck grade:', error);
+      return null;
+    }
+  };
+
+  // Function to get AI deck average time
+  const getAIDeckAverageTime = async (deckId: number): Promise<number | null> => {
+    try {
+      // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+      // and their timeTaken values
+      const result = await db.getFirstAsync(`
+        SELECT 
+          AVG(timeTaken) as averageTime,
+          COUNT(*) as attemptedCount
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+      `, [deckId]);
+
+      if (!result) {
+        return null;
+      }
+
+      const data = result as { averageTime: number | null; attemptedCount: number };
+      
+      // Return null if no attempted flashcards or no time data
+      if (data.attemptedCount === 0 || data.averageTime === null) {
+        return null;
+      }
+
+      // Return the average time rounded to the nearest integer
+      return Math.round(data.averageTime);
+    } catch (error) {
+      console.error('Error calculating AI deck average time:', error);
+      return null;
     }
   };
 
@@ -604,22 +778,12 @@ export default function DeckDetailsScreen() {
     try {
       setIsLoadingAttemptStatus(true);
       
-      // Check if this is an AI deck
-      const deckTypeResult = await db.getFirstAsync(`
-        SELECT isAIDeck FROM decks WHERE deckID = ?
-      `, [parseInt(deckId as string)]);
-
-      if (!deckTypeResult) {
-        setHasAttemptedFlashcards(false);
-        return;
-      }
-
-      const deckType = deckTypeResult as { isAIDeck: number };
-      const isAIDeck = deckType.isAIDeck === 1;
+      // Use the isAIDeck parameter instead of querying the database
+      const isAIDeckFromParams = isAIDeck as string === 'true';
 
       // Check if any flashcards have been attempted
-      const tableName = isAIDeck ? 'AIFlashcards' : 'flashcards';
-      const idColumn = isAIDeck ? 'AIDeckID' : 'deckID';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const idColumn = isAIDeckFromParams ? 'deckID' : 'deckID';
 
       const result = await db.getFirstAsync(`
         SELECT COUNT(*) as attemptedCount
@@ -645,6 +809,52 @@ export default function DeckDetailsScreen() {
     }
   };
 
+  // Function to check if AI deck has been saved to regular decks table
+  const checkAIDeckSavedStatus = async () => {
+    try {
+      setIsLoadingSavedStatus(true);
+      
+      // Only check if this is an AI deck
+      const isAIDeckFromParams = isAIDeck as string === 'true';
+      
+      if (!isAIDeckFromParams) {
+        setIsAIDeckSaved(false);
+        return;
+      }
+
+      // Get the AI deck name
+      const aiDeckResult = await db.getFirstAsync(`
+        SELECT deckName
+        FROM AIDecks
+        WHERE deckID = ?
+      `, [parseInt(deckId as string)]);
+
+      if (!aiDeckResult) {
+        setIsAIDeckSaved(false);
+        return;
+      }
+
+      const aiDeck = aiDeckResult as { deckName: string };
+
+      // Check if there's a matching deck in the regular decks table
+      const savedDeckResult = await db.getFirstAsync(`
+        SELECT deckID
+        FROM decks
+        WHERE deckName = ?
+          AND isAIDeck = 1
+      `, [aiDeck.deckName]);
+
+      setIsAIDeckSaved(!!savedDeckResult);
+      
+      console.log('AI deck saved status:', savedDeckResult ? 'Saved to regular decks table' : 'Not saved yet');
+    } catch (error) {
+      console.error('Error checking AI deck saved status:', error);
+      setIsAIDeckSaved(false);
+    } finally {
+      setIsLoadingSavedStatus(false);
+    }
+  };
+
   // Load deck grade when component mounts or screen comes into focus
   useEffect(() => {
     if (isFocused) {
@@ -652,6 +862,7 @@ export default function DeckDetailsScreen() {
       loadAverageTime();
       loadDeckInfo();
       checkFlashcardAttemptStatus();
+      checkAIDeckSavedStatus();
     }
   }, [isFocused, deckId]);
 
@@ -712,21 +923,6 @@ export default function DeckDetailsScreen() {
       setEditNameSelected(false);
     }, [])
   );
-
-  // Helper function to format date
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return '--';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-    } catch (error) {
-      return '--';
-    }
-  };
 
   // Helper function to get last reviewed date
   const getLastReviewedDate = (): string => {
@@ -791,6 +987,120 @@ export default function DeckDetailsScreen() {
     return null;
   };
 
+  // Function to load deck information
+  const loadDeckInfo = async () => {
+    try {
+      setIsLoadingDeckInfo(true);
+      
+      // Check if this is an AI deck
+      const isAIDeckFromParams = isAIDeck as string === 'true';
+      
+      if (isAIDeckFromParams) {
+        // Query AIDecks table for AI deck info
+        const result = await db.getFirstAsync(`
+          SELECT 
+            d.deckID,
+            d.deckName,
+            d.dateAdded,
+            d.lastModifiedDate,
+            d.isFavorited,
+            d.deckType,
+            d.creationMethod,
+            d.lastStudiedDate,
+            d.lastQuizzedDate,
+            d.cardDesignIndex,
+            d.isAIDeck,
+            d.folderIDs,
+            d.studyEducationLevel,
+            d.studySubjects,
+            d.studyTopicsSubtopics,
+            d.studyExamQuiz,
+            d.interviewJobRole,
+            d.interviewType,
+            d.interviewCompany,
+            d.interviewExperienceLevel,
+            d.interviewTopics,
+            CASE 
+              WHEN d.interviewCompanyIcon IS NOT NULL 
+              THEN hex(d.interviewCompanyIcon) 
+              ELSE NULL 
+            END as interviewCompanyIcon,
+            COUNT(f.flashcardID) as flashcardCount
+          FROM AIDecks d
+          LEFT JOIN AIFlashcards f ON d.deckID = f.deckID
+          WHERE d.deckID = ?
+          GROUP BY d.deckID
+        `, [parseInt(deckId as string)]);
+
+        if (!result) {
+          setDeckInfo(null);
+          return;
+        }
+
+        // Calculate progress for AI deck
+        const progress = await getAIDeckProgress(parseInt(deckId as string));
+        setDeckInfo({ ...result, progress, flashcardCount: (result as any).flashcardCount });
+      } else {
+        // Query regular decks table
+        const info = await getDeckInfoWithProgress(parseInt(deckId as string));
+        setDeckInfo(info);
+      }
+      
+    } catch (error) {
+      console.error('Error loading deck info:', error);
+      setDeckInfo(null);
+    } finally {
+      setIsLoadingDeckInfo(false);
+    }
+  };
+
+  // Function to get AI deck progress
+  const getAIDeckProgress = async (deckId: number): Promise<number> => {
+    try {
+      // First, check if the AI deck itself has lastStudiedDate or lastQuizzedDate
+      const deckResult = await db.getFirstAsync(`
+        SELECT lastStudiedDate, lastQuizzedDate
+        FROM AIDecks
+        WHERE deckID = ?
+      `, [deckId]);
+
+      if (!deckResult) {
+        return 0;
+      }
+
+      const deck = deckResult as { lastStudiedDate: string | null; lastQuizzedDate: string | null };
+      
+      // If either lastStudiedDate or lastQuizzedDate is not null, return 100%
+      if (deck.lastStudiedDate !== null || deck.lastQuizzedDate !== null) {
+        return 100;
+      }
+
+      // If both are null, calculate percentage based on AI flashcards
+      const progressResult = await db.getFirstAsync(`
+        SELECT 
+          COUNT(*) as totalFlashcards,
+          COUNT(CASE WHEN lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL THEN 1 END) as completedFlashcards
+        FROM AIFlashcards
+        WHERE deckID = ?
+      `, [deckId]);
+
+      if (!progressResult) {
+        return 0;
+      }
+
+      const progress = progressResult as { totalFlashcards: number; completedFlashcards: number };
+      
+      if (progress.totalFlashcards === 0) {
+        return 0;
+      }
+
+      return Math.round((progress.completedFlashcards / progress.totalFlashcards) * 100);
+    } catch (error) {
+      console.error('Error calculating AI deck progress:', error);
+      return 0;
+    }
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -812,6 +1122,9 @@ export default function DeckDetailsScreen() {
               onDeletePress={handleDeletePress}
               onEditNamePress={handleEditNamePress}
               editNameSelected={editNameSelected}
+              isFolderDisabled={AIDeck && !isAIDeckSaved}
+              isDeleteDisabled={AIDeck && !isAIDeckSaved}
+              isEditNameDisabled={AIDeck && !isAIDeckSaved}
             />
           </View>
           
@@ -827,8 +1140,8 @@ export default function DeckDetailsScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 <View style={styles.cardContentContainer}>
-                  {AIDeck ? (
-                    // AI Deck Layout - 3 columns
+                  {AIDeck && !isAIDeckSaved ? (
+                    // AI Deck Layout - 3 columns (only for unsaved AI decks)
                     <View style={styles.aiDeckLayout}>
                       {/* Column 1: Company Logo */}
                       <View style={styles.aiDeckColumn1}>
@@ -862,7 +1175,7 @@ export default function DeckDetailsScreen() {
                       </View>
                     </View>
                   ) : (
-                    // Regular Deck Layout - Original positioning
+                    // Regular Deck Layout - Original positioning (for regular decks and saved AI decks)
                     <>
                       {/* Company logo at top left */}
                       {cardCompanyLogo && (
@@ -917,7 +1230,7 @@ export default function DeckDetailsScreen() {
                   )}
                   
                   {/* Progress bar */}
-                  {cardPercent > 0 && (
+                  {cardPercent > 0 && (!AIDeck || isAIDeckSaved) && (
                     <View style={styles.progressRow}> 
                       <View style={styles.loadingBarFlexWrapper}>
                         <LoadingBar percent={cardPercent} />
@@ -928,13 +1241,19 @@ export default function DeckDetailsScreen() {
                 </View>
 
                   {/* Metadata Section */}
-                  {!AIDeck && deckInfo && (
-                  <View style={styles.metadataContainer}>
+                  {deckInfo && (
+                  <View style={[
+                    styles.metadataContainer,
+                    { marginTop: AIDeck && !isAIDeckSaved ? 20 : 130 }
+                  ]}>
                     {renderMetadataRows()}
                   </View>
                   )}
 
-                <View style={[styles.cardDetailsContainer]}>
+                <View style={[
+                  styles.cardDetailsContainer,
+                  { marginTop: hasAttemptedFlashcards === false ? -70 : -10 }
+                ]}>
                   {hasAttemptedFlashcards === false ? (
                     // Empty state for all deck types when no flashcards have been attempted
                     <View style={[styles.emptyStateContainer, { marginTop: getEmptyStateContainerMarginTop() }]}>
@@ -991,7 +1310,7 @@ export default function DeckDetailsScreen() {
           <View style={[
             styles.fabContainer,
           ]}>
-            {AIDeck && (
+            {AIDeck && !isAIDeckSaved && (
               <TouchableOpacity
                 style={[styles.fab, { bottom: (Platform.OS === 'ios' ? 100 : 95) }]}
                 onPress={handleSavePress}
@@ -1232,7 +1551,6 @@ const styles = StyleSheet.create({
   },
   cardDetailsContainer: {
     flex: 1,
-    marginTop: -10,
   },
   fab: {
     position: 'absolute',
@@ -1283,6 +1601,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: '100%',
     justifyContent: 'center',
+    marginLeft: 10
   },
   aiDeckColumn3: {
     flex: 1,
@@ -1371,7 +1690,6 @@ const styles = StyleSheet.create({
   },
   metadataContainer: {
     backgroundColor: 'transparent',
-    marginTop: 130,
   },
   metadataTitle: {
     fontFamily: 'Satoshi-Bold',

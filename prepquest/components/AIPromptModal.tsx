@@ -102,6 +102,7 @@ export function AIPromptModal({
                   dismissModal={dismissModal}
                   sourcePage={sourcePage}
                   isStudy={deck.deckType === 'study'}
+                  deckID={deck.deckID}
                 />
               );
             })

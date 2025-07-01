@@ -789,7 +789,32 @@ export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { 
   try {
     const result = await db.getFirstAsync(`
       SELECT 
-        d.*,
+        d.deckID,
+        d.deckName,
+        d.dateAdded,
+        d.lastModifiedDate,
+        d.isFavorited,
+        d.deckType,
+        d.creationMethod,
+        d.lastStudiedDate,
+        d.lastQuizzedDate,
+        d.cardDesignIndex,
+        d.isAIDeck,
+        d.folderIDs,
+        d.studyEducationLevel,
+        d.studySubjects,
+        d.studyTopicsSubtopics,
+        d.studyExamQuiz,
+        d.interviewJobRole,
+        d.interviewType,
+        d.interviewCompany,
+        d.interviewExperienceLevel,
+        d.interviewTopics,
+        CASE 
+          WHEN d.interviewCompanyIcon IS NOT NULL 
+          THEN hex(d.interviewCompanyIcon) 
+          ELSE NULL 
+        END as interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID

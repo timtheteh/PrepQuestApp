@@ -1322,7 +1322,10 @@ export async function populateDummyData() {
         // 1. text qn to text ans
         {
           deckID: aiDeckId,
-          difficultyRating: 'Good',
+          difficultyRating: (() => {
+            const ratings = ['Easy', 'Good', 'Hard', 'Again'];
+            return ratings[Math.floor(Math.random() * ratings.length)];
+          })(),
           cognitiveQnType: 'Recall',
           isFavorited: 0,
           questionType: 'text',
@@ -1335,7 +1338,7 @@ export async function populateDummyData() {
           timeTaken: (() => {
             const studyDate = getAIFlashcardStudyDate(0);
             const quizDate = getAIFlashcardQuizDate(0);
-            return (studyDate === null && quizDate === null) ? null : 45;
+            return (studyDate === null && quizDate === null) ? null : Math.floor(Math.random() * 60) + 20; // 20-80 seconds
           })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getAIFlashcardStudyDate(0),
@@ -1344,7 +1347,10 @@ export async function populateDummyData() {
         // 2. image qn to text ans
         {
           deckID: aiDeckId,
-          difficultyRating: 'Easy',
+          difficultyRating: (() => {
+            const ratings = ['Easy', 'Good', 'Hard', 'Again'];
+            return ratings[Math.floor(Math.random() * ratings.length)];
+          })(),
           cognitiveQnType: 'Comprehension',
           isFavorited: 1,
           questionType: 'image',
@@ -1357,7 +1363,7 @@ export async function populateDummyData() {
           timeTaken: (() => {
             const studyDate = getAIFlashcardStudyDate(1);
             const quizDate = getAIFlashcardQuizDate(1);
-            return (studyDate === null && quizDate === null) ? null : 30;
+            return (studyDate === null && quizDate === null) ? null : Math.floor(Math.random() * 45) + 15; // 15-60 seconds
           })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getAIFlashcardStudyDate(1),
@@ -1366,7 +1372,10 @@ export async function populateDummyData() {
         // 3. audio qn to text ans
         {
           deckID: aiDeckId,
-          difficultyRating: 'Hard',
+          difficultyRating: (() => {
+            const ratings = ['Easy', 'Good', 'Hard', 'Again'];
+            return ratings[Math.floor(Math.random() * ratings.length)];
+          })(),
           cognitiveQnType: 'Application',
           isFavorited: 0,
           questionType: 'audio',
@@ -1379,7 +1388,7 @@ export async function populateDummyData() {
           timeTaken: (() => {
             const studyDate = getAIFlashcardStudyDate(2);
             const quizDate = getAIFlashcardQuizDate(2);
-            return (studyDate === null && quizDate === null) ? null : 60;
+            return (studyDate === null && quizDate === null) ? null : Math.floor(Math.random() * 90) + 30; // 30-120 seconds
           })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getAIFlashcardStudyDate(2),
@@ -1388,7 +1397,10 @@ export async function populateDummyData() {
         // 4. text qn to mcq ans
         {
           deckID: aiDeckId,
-          difficultyRating: 'Good',
+          difficultyRating: (() => {
+            const ratings = ['Easy', 'Good', 'Hard', 'Again'];
+            return ratings[Math.floor(Math.random() * ratings.length)];
+          })(),
           cognitiveQnType: 'Analysis',
           isFavorited: 0,
           questionType: 'text',
@@ -1406,7 +1418,7 @@ export async function populateDummyData() {
           timeTaken: (() => {
             const studyDate = getAIFlashcardStudyDate(3);
             const quizDate = getAIFlashcardQuizDate(3);
-            return (studyDate === null && quizDate === null) ? null : 25;
+            return (studyDate === null && quizDate === null) ? null : Math.floor(Math.random() * 40) + 10; // 10-50 seconds
           })(),
           isMcqAnswerRight: 1,
           lastStudiedDate: getAIFlashcardStudyDate(3),
@@ -1415,7 +1427,10 @@ export async function populateDummyData() {
         // 5. text qn to image ans
         {
           deckID: aiDeckId,
-          difficultyRating: 'Easy',
+          difficultyRating: (() => {
+            const ratings = ['Easy', 'Good', 'Hard', 'Again'];
+            return ratings[Math.floor(Math.random() * ratings.length)];
+          })(),
           cognitiveQnType: 'Synthesis',
           isFavorited: 0,
           questionType: 'text',
@@ -1428,7 +1443,7 @@ export async function populateDummyData() {
           timeTaken: (() => {
             const studyDate = getAIFlashcardStudyDate(4);
             const quizDate = getAIFlashcardQuizDate(4);
-            return (studyDate === null && quizDate === null) ? null : 35;
+            return (studyDate === null && quizDate === null) ? null : Math.floor(Math.random() * 50) + 20; // 20-70 seconds
           })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getAIFlashcardStudyDate(4),
@@ -1437,7 +1452,10 @@ export async function populateDummyData() {
         // 6. text qn to audio ans
         {
           deckID: aiDeckId,
-          difficultyRating: 'Hard',
+          difficultyRating: (() => {
+            const ratings = ['Easy', 'Good', 'Hard', 'Again'];
+            return ratings[Math.floor(Math.random() * ratings.length)];
+          })(),
           cognitiveQnType: 'Evaluation',
           isFavorited: 1,
           questionType: 'text',
@@ -1450,7 +1468,7 @@ export async function populateDummyData() {
           timeTaken: (() => {
             const studyDate = getAIFlashcardStudyDate(5);
             const quizDate = getAIFlashcardQuizDate(5);
-            return (studyDate === null && quizDate === null) ? null : 90;
+            return (studyDate === null && quizDate === null) ? null : Math.floor(Math.random() * 120) + 60; // 60-180 seconds
           })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getAIFlashcardStudyDate(5),
@@ -1459,7 +1477,10 @@ export async function populateDummyData() {
         // 7. text qn to voice ans
         {
           deckID: aiDeckId,
-          difficultyRating: 'Good',
+          difficultyRating: (() => {
+            const ratings = ['Easy', 'Good', 'Hard', 'Again'];
+            return ratings[Math.floor(Math.random() * ratings.length)];
+          })(),
           cognitiveQnType: 'Problem-Solving',
           isFavorited: 0,
           questionType: 'text',
@@ -1472,7 +1493,7 @@ export async function populateDummyData() {
           timeTaken: (() => {
             const studyDate = getAIFlashcardStudyDate(6);
             const quizDate = getAIFlashcardQuizDate(6);
-            return (studyDate === null && quizDate === null) ? null : 120;
+            return (studyDate === null && quizDate === null) ? null : Math.floor(Math.random() * 150) + 90; // 90-240 seconds
           })(),
           isMcqAnswerRight: null,
           lastStudiedDate: getAIFlashcardStudyDate(6),

@@ -17,6 +17,7 @@ interface AIDeckCardProps {
   dismissModal?: () => void;
   sourcePage?: string;
   isStudy?: boolean;
+  deckID?: number;
 }
 
 export function AIDeckCard({ 
@@ -34,6 +35,7 @@ export function AIDeckCard({
   dismissModal,
   sourcePage,
   isStudy = false,
+  deckID
 }: AIDeckCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -56,7 +58,7 @@ export function AIDeckCard({
       router.push({
         pathname: '/(tabs)/deckDetails',
         params: {
-          deckId: title?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+          deckId: deckID?.toString() || 'unknown',          
           isAIDeck: isAIDeck ? 'true' : 'false',
           sourcePage: sourcePage || 'unknown',
         }

@@ -244,9 +244,9 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       }
       
       const body = Bodies.circle(x, y, radius, {
-        restitution: 1,
-        friction: 0,
-        frictionAir: 0,
+        restitution: 0.8, // Reduced restitution to prevent excessive bouncing
+        friction: 0.1, // Added slight friction
+        frictionAir: 0.01, // Added slight air resistance
         label: d.label,
         render: { fillStyle: d.color },
         sleepingAllowed: false,
@@ -263,26 +263,63 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     bodiesRef.current = bubbles;
     World.add(world, bubbles);
 
-    // Add walls
-    const wallThickness = 10;
+    // Add walls with thicker boundaries and better collision detection
+    const wallThickness = 20; // Increased wall thickness
     const walls = [
       // top
-      Bodies.rectangle(containerWidth / 2, -wallThickness / 2, containerWidth, wallThickness, { isStatic: true }),
+      Bodies.rectangle(containerWidth / 2, -wallThickness / 2, containerWidth, wallThickness, { 
+        isStatic: true,
+        label: 'wall-top',
+        restitution: 0.8
+      }),
       // bottom
-      Bodies.rectangle(containerWidth / 2, containerHeight + wallThickness / 2, containerWidth, wallThickness, { isStatic: true }),
+      Bodies.rectangle(containerWidth / 2, containerHeight + wallThickness / 2, containerWidth, wallThickness, { 
+        isStatic: true,
+        label: 'wall-bottom',
+        restitution: 0.8
+      }),
       // left
-      Bodies.rectangle(-wallThickness / 2, containerHeight / 2, wallThickness, containerHeight, { isStatic: true }),
+      Bodies.rectangle(-wallThickness / 2, containerHeight / 2, wallThickness, containerHeight, { 
+        isStatic: true,
+        label: 'wall-left',
+        restitution: 0.8
+      }),
       // right
-      Bodies.rectangle(containerWidth + wallThickness / 2, containerHeight / 2, wallThickness, containerHeight, { isStatic: true }),
+      Bodies.rectangle(containerWidth + wallThickness / 2, containerHeight / 2, wallThickness, containerHeight, { 
+        isStatic: true,
+        label: 'wall-right',
+        restitution: 0.8
+      }),
     ];
     World.add(world, walls);
 
-    // Update positions on each tick with optimized velocity enforcement
+    // Update positions on each tick with improved boundary enforcement
     intervalRef.current = setInterval(() => {
       Engine.update(engine, 1000 / FPS);
       
-      // Optimized velocity enforcement - only update if needed
+      // Improved boundary enforcement and velocity control
       bodiesRef.current.forEach(b => {
+        const radius = b.circleRadius;
+        
+        // Enforce boundaries - if bubble escapes, bring it back
+        if (b.position.x - radius < 0) {
+          Body.setPosition(b, { x: radius, y: b.position.y });
+          Body.setVelocity(b, { x: Math.abs(b.velocity.x), y: b.velocity.y });
+        }
+        if (b.position.x + radius > containerWidth) {
+          Body.setPosition(b, { x: containerWidth - radius, y: b.position.y });
+          Body.setVelocity(b, { x: -Math.abs(b.velocity.x), y: b.velocity.y });
+        }
+        if (b.position.y - radius < 0) {
+          Body.setPosition(b, { x: b.position.x, y: radius });
+          Body.setVelocity(b, { x: b.velocity.x, y: Math.abs(b.velocity.y) });
+        }
+        if (b.position.y + radius > containerHeight) {
+          Body.setPosition(b, { x: b.position.x, y: containerHeight - radius });
+          Body.setVelocity(b, { x: b.velocity.x, y: -Math.abs(b.velocity.y) });
+        }
+        
+        // Maintain constant speed
         const vx = b.velocity.x;
         const vy = b.velocity.y;
         const speed = Math.sqrt(vx * vx + vy * vy);

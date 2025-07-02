@@ -25,25 +25,6 @@ export default function StatisticsScreen() {
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
 
-  // Memoize the data arrays to prevent unnecessary re-renders
-  const decksData = useMemo(() => [
-    { label: 'Study', value: 25, percent: 25, color: '#5CC8BE' },
-    { label: 'Technical', value: 10, percent: 10, color: '#D7191C' },
-    { label: 'Case Study', value: 18, percent: 18, color: '#C3EB79' },
-    { label: 'Behavioral', value: 7, percent: 7, color: '#FDAE61' },
-    { label: 'Brainteasers', value: 20, percent: 20, color: '#357AF6' },
-    { label: 'Others', value: 20, percent: 20, color: '#AF52DE' },
-  ], []);
-
-  const flashcardsData = useMemo(() => [
-    { label: 'Study', value: 24, percent: 20, color: '#5CC8BE' },
-    { label: 'Technical', value: 20, percent: 20, color: '#D7191C' },
-    { label: 'Case Study', value: 12, percent: 12, color: '#C3EB79' },
-    { label: 'Behavioral', value: 16, percent: 16, color: '#FDAE61' },
-    { label: 'Brainteasers', value: 8, percent: 8, color: '#357AF6' },
-    { label: 'Others', value: 4, percent: 4, color: '#AF52DE' },
-  ], []);
-
   useEffect(() => {
     if (isFocused) {
       setDisableToggleAnimation(true);

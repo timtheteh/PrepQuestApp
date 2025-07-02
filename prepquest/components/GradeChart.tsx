@@ -2,33 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView, Text, Platform } from 'react-native';
 import Svg, { Line, Rect as SvgRect, Text as SvgText, G, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
-
-// Example data for bar chart
-const data = [
-  { day: 'Mon', date: '18 Mar 2024', score: 85 },
-  { day: 'Tue', date: '19 Mar 2024', score: 72 },
-  { day: 'Wed', date: '20 Mar 2024', score: 90 },
-  { day: 'Thu', date: '21 Mar 2024', score: 60 },
-  { day: 'Fri', date: '22 Mar 2024', score: 95 },
-  { day: 'Sat', date: '23 Mar 2024', score: 78 },
-  { day: 'Sun', date: '24 Mar 2024', score: 88 },
-  { day: 'Mon', date: '25 Mar 2024', score: 92 },
-  { day: 'Tue', date: '26 Mar 2024', score: 70 },
-  { day: 'Wed', date: '27 Mar 2024', score: 80 },
-  { day: 'Thu', date: '28 Mar 2024', score: 65 },
-  { day: 'Fri', date: '29 Mar 2024', score: 77 },
-  { day: 'Sat', date: '30 Mar 2024', score: 99 },
-  { day: 'Sun', date: '31 Mar 2024', score: 85 },
-  { day: 'Mon', date: '1 Apr 2024', score: 55 },
-  { day: 'Tue', date: '2 Apr 2024', score: 68 },
-];
-
-const month_data = [
-  { month: 'Mar 2024', score: 82 },
-  { month: 'Apr 2024', score: 75 },
-  { month: 'May 2024', score: 90 },
-  { month: 'Jun 2024', score: 60 },
-];
+import { getCompleteDailyGrades, getMonthlyGrades, DayGrade, MonthGrade } from '../db/grades';
+import { useIsFocused } from '@react-navigation/native';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -54,9 +29,67 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
   const fadeAnim = new Animated.Value(0);
   const graphFadeAnim = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
+  const isFocused = useIsFocused();
 
-  // Use correct data
-  const currentData = isMonth ? month_data : data;
+  // State for real data
+  const [dayData, setDayData] = useState<DayGrade[]>([]);
+  const [monthData, setMonthData] = useState<MonthGrade[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Function to fetch data
+  const fetchData = async () => {
+    try {
+      console.log('🔄 GradeChart: Fetching fresh data...');
+      setIsLoading(true);
+      const [dailyGrades, monthlyGrades] = await Promise.all([
+        getCompleteDailyGrades(),
+        getMonthlyGrades()
+      ]);
+      
+      console.log('📊 GradeChart: Daily grades received:', dailyGrades.length);
+      console.log('📊 GradeChart: Monthly grades received:', monthlyGrades.length);
+      
+      setDayData(dailyGrades);
+      setMonthData(monthlyGrades);
+    } catch (error) {
+      console.error('❌ GradeChart: Error fetching grade data:', error);
+      // Fallback to empty arrays if there's an error
+      setDayData([]);
+      setMonthData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data on mount and when screen comes into focus
+  useEffect(() => {
+    fetchData();
+  }, [isFocused]); // Refresh data when screen comes into focus
+
+  // Fade animation for graph when toggling day/month
+  const handleToggle = (val: boolean) => {
+    Animated.timing(graphFadeAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsMonth(val);
+      if (!val) {
+        // If switching to day view, delay fade-in until content is rendered
+        setPendingFadeIn(true);
+      } else {
+        // If switching to month view, fade in immediately
+        Animated.timing(graphFadeAnim, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: true,
+        }).start();
+      }
+    });
+  };
+
+  // Use correct data based on current state
+  const currentData = isMonth ? monthData : dayData;
 
   // Calculate total width needed for all data points
   const totalWidth = Math.max(
@@ -81,28 +114,6 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
       useNativeDriver: true,
     }).start();
   }, [selectedIndex]);
-
-  // Fade animation for graph when toggling day/month
-  const handleToggle = (val: boolean) => {
-    Animated.timing(graphFadeAnim, {
-      toValue: 0,
-      duration: 180,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsMonth(val);
-      if (!val) {
-        // If switching to day view, delay fade-in until content is rendered
-        setPendingFadeIn(true);
-      } else {
-        // If switching to month view, fade in immediately
-        Animated.timing(graphFadeAnim, {
-          toValue: 1,
-          duration: 180,
-          useNativeDriver: true,
-        }).start();
-      }
-    });
-  };
 
   // Only fade in after ScrollView content is rendered when switching to day view
   const handleContentSizeChange = () => {
@@ -171,6 +182,71 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentData.length <= 4]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View>
+        <View style={{ marginTop: 0, alignItems: 'center', zIndex: 2 }}>
+          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
+            Grade Chart (%)
+          </Text>
+          <SmallGreenBinaryToggle
+            leftLabel="Day"
+            rightLabel="Month"
+            style={{ marginTop: 15 }}
+            onToggle={handleToggle}
+          />
+        </View>
+        <View style={{ 
+          width: GRAPH_WIDTH, 
+          height: SVG_HEIGHT, 
+          alignSelf: 'center', 
+          marginTop: 10,
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
+            Loading grade data...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Show empty state if no data
+  if (currentData.length === 0) {
+    return (
+      <View>
+        <View style={{ marginTop: 0, alignItems: 'center', zIndex: 2 }}>
+          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
+            Grade Chart (%)
+          </Text>
+          <SmallGreenBinaryToggle
+            leftLabel="Day"
+            rightLabel="Month"
+            style={{ marginTop: 15 }}
+            onToggle={handleToggle}
+          />
+        </View>
+        <View style={{ 
+          width: GRAPH_WIDTH, 
+          height: SVG_HEIGHT, 
+          alignSelf: 'center', 
+          marginTop: 10,
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
+            No grade data available
+          </Text>
+          <Text style={{ fontFamily: 'Satoshi-Regular', fontSize: 14, color: '#D5D4DD', marginTop: 8 }}>
+            Study or quiz flashcards to see your progress
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View>

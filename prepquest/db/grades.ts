@@ -326,4 +326,84 @@ function getMonthNumber(monthName: string): string {
     'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
   };
   return monthMap[monthName] || '01';
+}
+
+// Calculate average grade for all time
+export async function getAverageGradeAllTime(): Promise<number> {
+  try {
+    console.log('🔍 Calculating average grade for all time...');
+    
+    // Get all flashcards with study or quiz dates from both tables
+    const result = await db.getAllAsync(`
+      SELECT 
+        difficultyRating,
+        lastStudiedDate,
+        lastQuizzedDate,
+        answerType,
+        isMcqAnswerRight
+      FROM (
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
+        FROM flashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+        UNION ALL
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
+        FROM AIFlashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+      )
+    `);
+
+    console.log('📊 Total flashcards for average calculation:', result?.length || 0);
+
+    if (!result || result.length === 0) {
+      console.log('❌ No flashcard data found for average calculation');
+      return 0;
+    }
+
+    const flashcards = result as Array<{
+      difficultyRating: string;
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+      answerType: string;
+      isMcqAnswerRight: number | null;
+    }>;
+
+    // Calculate weighted score using the same formula as daily grades
+    const weights = {
+      'Again': 0,     // 0% - needs to learn
+      'Hard': 0.4,    // 40% - partially learned
+      'Good': 0.8,    // 80% - well learned
+      'Easy': 1.0     // 100% - mastered
+    };
+
+    let totalWeight = 0;
+
+    flashcards.forEach((flashcard) => {
+      const difficulty = flashcard.difficultyRating;
+      const answerType = flashcard.answerType;
+      const isMcqAnswerRight = flashcard.isMcqAnswerRight;
+
+      let weight = 0;
+
+      if (answerType === 'mcq') {
+        // For MCQ flashcards, use isMcqAnswerRight: 0 if wrong, 1 if correct
+        weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
+      } else {
+        // For non-MCQ flashcards, use difficulty-based weights
+        weight = weights[difficulty as keyof typeof weights] || 0;
+      }
+
+      totalWeight += weight;
+    });
+
+    const averageScore = Math.round((totalWeight / flashcards.length) * 100);
+    
+    console.log(`✅ Average grade for all time: ${averageScore}% (${flashcards.length} flashcards)`);
+    
+    return averageScore;
+  } catch (error) {
+    console.error('❌ Error calculating average grade for all time:', error);
+    return 0;
+  }
 } 

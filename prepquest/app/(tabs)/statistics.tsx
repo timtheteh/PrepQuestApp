@@ -12,6 +12,7 @@ import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import { SpeedChart } from '@/components/SpeedChart';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
+import { getAverageGradeAllTime } from '@/db/grades';
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -19,16 +20,34 @@ export default function StatisticsScreen() {
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
   const [breakdownKey, setBreakdownKey] = useState(0);
   const [moreDetailsState, setMoreDetailsState] = useState(0);
+  const [averageGrade, setAverageGrade] = useState(0);
+  const [isLoadingAverageGrade, setIsLoadingAverageGrade] = useState(true);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 65;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
 
+  // Function to fetch average grade
+  const fetchAverageGrade = async () => {
+    try {
+      setIsLoadingAverageGrade(true);
+      const grade = await getAverageGradeAllTime();
+      setAverageGrade(grade);
+    } catch (error) {
+      console.error('Error fetching average grade:', error);
+      setAverageGrade(0);
+    } finally {
+      setIsLoadingAverageGrade(false);
+    }
+  };
+
   useEffect(() => {
     if (isFocused) {
       setDisableToggleAnimation(true);
       setIsPerformance(false);
+      // Fetch average grade when screen comes into focus
+      fetchAverageGrade();
       setTimeout(() => {
         setDisableToggleAnimation(false);
         Animated.timing(fadeAnim, {
@@ -117,7 +136,7 @@ export default function StatisticsScreen() {
           showsVerticalScrollIndicator={false}
           >
           <GradeChart />
-          <AverageGradeThermometer />
+          <AverageGradeThermometer score={averageGrade} />
           <BreakdownByDifficultyPie />
           <SpeedChart />
           <AverageSpeedTotal />

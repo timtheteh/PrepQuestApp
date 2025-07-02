@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -6,17 +6,185 @@ import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 import DoubleChevron from '@/assets/icons/DoubleChevron.svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '@/db/index';
 
 const ConfettiIcon = require('@/assets/icons/ConfettiIcon.png');
 const FlagIcon = require('@/assets/icons/FlagIcon.png');
 
+interface QuizStats {
+  currentGrade: number;
+  difficultyBreakdown: {
+    Again: number;
+    Hard: number;
+    Good: number;
+    Easy: number;
+  };
+  averageTimeSeconds: number;
+  totalTimeSeconds: number;
+  attemptedCount: number;
+  totalCount: number;
+}
+
 export default function ViewQuizStatsModal() {
   const router = useRouter();
-  const { halfwayCheckpoint } = useLocalSearchParams();
+  const { halfwayCheckpoint, deckID, isAIDeck, attemptedFlashcardIds } = useLocalSearchParams();
   const isHalfwayCheckpoint = halfwayCheckpoint === 'true';
-  // Dummy values for now
-  const avgSeconds = 35;
-  const totalTime = '3min 10s';
+  
+  const [quizStats, setQuizStats] = useState<QuizStats>({
+    currentGrade: 0,
+    difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
+    averageTimeSeconds: 0,
+    totalTimeSeconds: 0,
+    attemptedCount: 0,
+    totalCount: 0
+  });
+
+  // Load quiz statistics from database
+  const loadQuizStats = async () => {
+    try {
+      if (!deckID || !attemptedFlashcardIds) return;
+
+      const isAIDeckFromParams = isAIDeck === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const deckId = parseInt(deckID as string);
+      
+      // Parse the attempted flashcard IDs
+      const attemptedIds = JSON.parse(attemptedFlashcardIds as string) as number[];
+      
+      if (attemptedIds.length === 0) {
+        setQuizStats({
+          currentGrade: 0,
+          difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
+          averageTimeSeconds: 0,
+          totalTimeSeconds: 0,
+          attemptedCount: 0,
+          totalCount: 0
+        });
+        return;
+      }
+
+      // Get attempted flashcards with their difficulty ratings and time taken
+      const placeholders = attemptedIds.map(() => '?').join(',');
+      const attemptedFlashcards = await db.getAllAsync(`
+        SELECT 
+          flashcardID,
+          difficultyRating,
+          timeTaken,
+          lastStudiedDate,
+          lastQuizzedDate,
+          answerType,
+          isMcqAnswerRight
+        FROM ${tableName}
+        WHERE flashcardID IN (${placeholders})
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+      `, attemptedIds);
+
+      // Get total flashcard count for the deck
+      const totalResult = await db.getFirstAsync(`
+        SELECT COUNT(*) as total
+        FROM ${tableName}
+        WHERE deckID = ?
+      `, [deckId]);
+
+      const totalCount = (totalResult as any)?.total || 0;
+      const attemptedCount = attemptedFlashcards?.length || 0;
+
+      if (attemptedCount === 0) {
+        setQuizStats({
+          currentGrade: 0,
+          difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
+          averageTimeSeconds: 0,
+          totalTimeSeconds: 0,
+          attemptedCount: 0,
+          totalCount
+        });
+        return;
+      }
+
+      // Calculate difficulty breakdown
+      const breakdown = { Again: 0, Hard: 0, Good: 0, Easy: 0 };
+      let totalTimeSeconds = 0;
+      let validTimeCount = 0;
+
+      attemptedFlashcards.forEach((flashcard: any) => {
+        const difficulty = flashcard.difficultyRating;
+        if (difficulty in breakdown) {
+          breakdown[difficulty as keyof typeof breakdown]++;
+        }
+
+        if (flashcard.timeTaken) {
+          totalTimeSeconds += flashcard.timeTaken;
+          validTimeCount++;
+        }
+      });
+
+      // Calculate current grade using weighted scoring
+      const weights = {
+        'Again': 0,     // 0% - needs to learn
+        'Hard': 0.4,    // 40% - partially learned
+        'Good': 0.8,    // 80% - well learned
+        'Easy': 1.0     // 100% - mastered
+      };
+
+      let totalWeight = 0;
+      let validFlashcardCount = 0;
+
+      attemptedFlashcards.forEach((flashcard: any) => {
+        const difficulty = flashcard.difficultyRating;
+        const answerType = flashcard.answerType;
+        const isMcqAnswerRight = flashcard.isMcqAnswerRight;
+
+        let weight = 0;
+
+        if (answerType === 'mcq') {
+          // For MCQ flashcards, use isMcqAnswerRight: 0 if wrong, 1 if correct
+          weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
+        } else {
+          // For non-MCQ flashcards, use difficulty-based weights
+          weight = weights[difficulty as keyof typeof weights] || 0;
+        }
+
+        totalWeight += weight;
+        validFlashcardCount++;
+      });
+
+      const currentGrade = Math.round((totalWeight / validFlashcardCount) * 100);
+
+      // Calculate average time
+      const averageTimeSeconds = validTimeCount > 0 ? Math.round(totalTimeSeconds / validTimeCount) : 0;
+
+      setQuizStats({
+        currentGrade,
+        difficultyBreakdown: breakdown,
+        averageTimeSeconds,
+        totalTimeSeconds,
+        attemptedCount,
+        totalCount
+      });
+
+    } catch (error) {
+      console.error('Error loading quiz stats:', error);
+    }
+  };
+
+  // Load stats when component mounts
+  useEffect(() => {
+    loadQuizStats();
+  }, [deckID, isAIDeck, attemptedFlashcardIds]);
+
+  // Format time from seconds to "Xmin Ys" format
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    
+    if (minutes > 0) {
+      return `${minutes}min ${remainingSeconds}s`;
+    } else {
+      return `${remainingSeconds}s`;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -47,24 +215,38 @@ export default function ViewQuizStatsModal() {
             <Image source={ConfettiIcon} style={styles.confettiIcon} resizeMode="contain" />
           )}
         </View>
+        
+        {/* Progress indicator for halfway checkpoint */}
+        {isHalfwayCheckpoint && (
+          <View style={styles.progressIndicator}>
+            <Text style={styles.progressText}>
+              {quizStats.attemptedCount} of {quizStats.totalCount} flashcards completed
+            </Text>
+          </View>
+        )}
+
         {/* AverageGradeThermometer */}
         <View style={{ marginTop: 10 }}>
-          <AverageGradeThermometer score={15} />
+          <AverageGradeThermometer score={quizStats.currentGrade} />
         </View>
+        
         {/* BreakdownByDifficultyPie */}
         <View style={{ marginTop: 10 }}>
-          <BreakdownByDifficultyPie />
+          <BreakdownByDifficultyPie breakdown={quizStats.difficultyBreakdown} />
         </View>
+        
         {/* AverageSpeedTotal */}
         <View style={{ marginTop: 10 }}>
-          <AverageSpeedTotal />
+          <AverageSpeedTotal averageTime={quizStats.averageTimeSeconds} />
         </View>
+        
         {/* Total time spent */}
         <View style={styles.totalTimeWrap}>
           <Text style={styles.totalTimeLabel}>Total time spent:</Text>
-          <Text style={styles.totalTimeValue}>{totalTime}</Text>
+          <Text style={styles.totalTimeValue}>{formatTime(quizStats.totalTimeSeconds)}</Text>
         </View>
       </ScrollView>
+      
       {/* Halfway checkpoint button fixed at bottom */}
       {isHalfwayCheckpoint && (
         <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
@@ -194,5 +376,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Bold',
     fontSize: 22,
     letterSpacing: 0.2,
+  },
+  progressIndicator: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+  },
+  progressText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 18,
+    color: '#111',
   },
 }); 

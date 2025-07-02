@@ -649,6 +649,53 @@ const calculateWeightedScore = (ratings: string[]): DeckGrade => {
   };
 };
 
+const calculateWeightedScoreWithMCQ = (flashcards: Array<{
+  difficultyRating: string;
+  answerType: string;
+  isMcqAnswerRight: number | null;
+}>): DeckGrade => {
+  const weights = {
+    'Again': 0,     // 0% - needs to learn
+    'Hard': 0.4,    // 40% - partially learned
+    'Good': 0.8,    // 80% - well learned
+    'Easy': 1.0     // 100% - mastered
+  };
+
+  let totalWeight = 0;
+  const ratings: string[] = [];
+
+  flashcards.forEach((flashcard) => {
+    const difficulty = flashcard.difficultyRating;
+    const answerType = flashcard.answerType;
+    const isMcqAnswerRight = flashcard.isMcqAnswerRight;
+
+    let weight = 0;
+
+    if (answerType === 'mcq') {
+      // For MCQ flashcards, use isMcqAnswerRight: 0 if wrong, 1 if correct
+      weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
+      // For breakdown, treat correct MCQs as 'Easy' and incorrect as 'Again'
+      ratings.push(isMcqAnswerRight === 1 ? 'Easy' : 'Again');
+    } else {
+      // For non-MCQ flashcards, use difficulty-based weights
+      weight = weights[difficulty as keyof typeof weights] || 0;
+      ratings.push(difficulty);
+    }
+
+    totalWeight += weight;
+  });
+
+  const score = (totalWeight / flashcards.length) * 100;
+
+  return {
+    score: Math.round(score),
+    masteryLevel: getMasteryLevel(score),
+    breakdown: getBreakdown(ratings),
+    totalAttempted: flashcards.length,
+    totalFlashcards: flashcards.length
+  };
+};
+
 const getMasteryLevel = (score: number): string => {
   if (score >= 90) return 'Expert';
   if (score >= 75) return 'Proficient';
@@ -678,15 +725,17 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
       SELECT 
         difficultyRating,
         lastStudiedDate,
-        lastQuizzedDate
+        lastQuizzedDate,
+        answerType,
+        isMcqAnswerRight
       FROM (
-        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
         FROM flashcards
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
         UNION ALL
-        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
         FROM AIFlashcards
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
@@ -703,10 +752,12 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
       difficultyRating: string;
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
+      answerType: string;
+      isMcqAnswerRight: number | null;
     }>;
 
-    // Extract difficulty ratings from attempted flashcards
-    const ratings = flashcards.map(flashcard => flashcard.difficultyRating);
+    // Calculate weighted score with MCQ handling
+    const grade = calculateWeightedScoreWithMCQ(flashcards);
 
     // Get total number of flashcards for this deck from both tables
     const totalResult = await db.getFirstAsync(`
@@ -717,9 +768,6 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
 
     const totalFlashcards = (totalResult as { total: number }).total;
 
-    // Calculate weighted score
-    const grade = calculateWeightedScore(ratings);
-    
     // Update totalFlashcards in the result
     grade.totalFlashcards = totalFlashcards;
 

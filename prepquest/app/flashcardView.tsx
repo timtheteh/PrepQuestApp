@@ -619,7 +619,8 @@ const FlippableFlashcard = (
     recordedAudioUri,
     setRecordedAudioUri,
     updateFlashcardDate,
-    updateDeckCompletionDate
+    updateDeckCompletionDate,
+    startFlashcardTimer
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -651,8 +652,9 @@ const FlippableFlashcard = (
       flashcards: TransformedFlashcard[],
       recordedAudioUri: string | null,
       setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>,
-      updateFlashcardDate: (flashcardId: number, isStudyMode: boolean) => Promise<void>,
-      updateDeckCompletionDate: (isStudyMode: boolean) => Promise<void>
+      updateFlashcardDate: (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => Promise<void>,
+      updateDeckCompletionDate: (isStudyMode: boolean) => Promise<void>,
+      startFlashcardTimer: (flashcardId: number) => void
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -766,6 +768,12 @@ const FlippableFlashcard = (
         setMcqModalVisible(true);
         // Mark that MCQ has been submitted
         setHasSubmittedMCQ(true);
+        
+        // Update flashcard with MCQ correctness in quiz mode or study mode
+        if ((isQuizMode || isStudyMode) && currentFlashcard) {
+          updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, undefined, isCorrect);
+        }
+        
         Animated.parallel([
           Animated.timing(mcqOverlayOpacity, {
             toValue: 0.5,
@@ -1340,6 +1348,14 @@ const FlippableFlashcard = (
 
   // Define the border/circle color based on countdown
   const borderColor = countdown === 0 ? '#F8696B' : '#44B88A';
+
+  // Start timing when current flashcard changes
+  React.useEffect(() => {
+    const currentFlashcard = flashcards[currentIdx];
+    if (currentFlashcard && (isStudyMode || isQuizMode)) {
+      startFlashcardTimer(currentFlashcard.flashcardID);
+    }
+  }, [currentIdx, isStudyMode, isQuizMode, flashcards]);
 
   return (
     <View style={{ flex: 1, position: 'relative' }}>
@@ -1976,8 +1992,29 @@ export default function FlashcardViewPage() {
     }
   };
 
+  // Add time tracking state
+  const [flashcardStartTimes, setFlashcardStartTimes] = useState<{ [flashcardId: number]: number }>({});
+
+  // Function to start timing a flashcard
+  const startFlashcardTimer = (flashcardId: number) => {
+    setFlashcardStartTimes(prev => ({
+      ...prev,
+      [flashcardId]: Date.now()
+    }));
+  };
+
+  // Function to calculate time taken for a flashcard
+  const calculateTimeTaken = (flashcardId: number): number | null => {
+    const startTime = flashcardStartTimes[flashcardId];
+    if (!startTime) return null;
+    
+    const endTime = Date.now();
+    const timeTakenSeconds = Math.round((endTime - startTime) / 1000);
+    return timeTakenSeconds;
+  };
+
   // Function to update last studied/quizzed date
-  const updateFlashcardDate = async (flashcardId: number, isStudyMode: boolean) => {
+  const updateFlashcardDate = async (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => {
     try {
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
@@ -1986,12 +2023,15 @@ export default function FlashcardViewPage() {
       
       const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
       
-      // Update the flashcard's study/quiz date
+      // Calculate time taken if not provided
+      const finalTimeTaken = timeTaken !== undefined ? timeTaken : calculateTimeTaken(flashcardId);
+      
+      // Update the flashcard's study/quiz date, time taken, and MCQ answer correctness
       await db.runAsync(`
         UPDATE ${tableName}
-        SET ${fieldToUpdate} = ?
+        SET ${fieldToUpdate} = ?, timeTaken = ?, isMcqAnswerRight = ?
         WHERE flashcardID = ?
-      `, [currentDate, flashcardId]);
+      `, [currentDate, finalTimeTaken, isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : null, flashcardId]);
 
       // Update the deck's lastModifiedDate since it was actively used
       await db.runAsync(`
@@ -2000,7 +2040,12 @@ export default function FlashcardViewPage() {
         WHERE deckID = ?
       `, [currentDate, parseInt(deckID as string)]);
 
+      // Track this flashcard as attempted for halfway checkpoint
+      trackAttemptedFlashcard(flashcardId);
+
       console.log(`Updated ${fieldToUpdate} for flashcard ${flashcardId} to ${currentDate}`);
+      console.log(`Updated timeTaken for flashcard ${flashcardId} to ${finalTimeTaken || 'null'}`);
+      console.log(`Updated isMcqAnswerRight for flashcard ${flashcardId} to ${isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : 'null'}`);
       console.log(`Updated lastModifiedDate for deck ${deckID} to ${currentDate}`);
     } catch (error) {
       console.error(`Error updating ${isStudyMode ? 'study' : 'quiz'} date:`, error);
@@ -2490,8 +2535,37 @@ export default function FlashcardViewPage() {
   // --- Halfway checkpoint logic ---
   const [hasShownHalfway, setHasShownHalfway] = useState(false);
   const [pauseNextTimer, setPauseNextTimer] = useState(false);
+  const [attemptedFlashcardIds, setAttemptedFlashcardIds] = useState<number[]>([]);
+  const [halfwayCheckpointEnabled, setHalfwayCheckpointEnabled] = useState(true); // Default to true
+
+  // Load halfway checkpoint setting from AsyncStorage
+  const loadHalfwayCheckpointSetting = async () => {
+    try {
+      const setting = await AsyncStorage.getItem('deckSettings_halfwayCheckpoint');
+      setHalfwayCheckpointEnabled(setting !== null ? JSON.parse(setting) : true);
+    } catch (error) {
+      console.error('Error loading halfway checkpoint setting:', error);
+      setHalfwayCheckpointEnabled(true); // Default to true if loading fails
+    }
+  };
+
+  // Load setting when component mounts
   useEffect(() => {
-    if (!isQuizMode || showQuizCountdown) return;
+    loadHalfwayCheckpointSetting();
+  }, []);
+
+  // Track attempted flashcard IDs when flashcards are completed
+  const trackAttemptedFlashcard = (flashcardId: number) => {
+    setAttemptedFlashcardIds(prev => {
+      if (!prev.includes(flashcardId)) {
+        return [...prev, flashcardId];
+      }
+      return prev;
+    });
+  };
+
+  useEffect(() => {
+    if (!isQuizMode || showQuizCountdown || !halfwayCheckpointEnabled) return;
     const total = totalCards;
     if (total <= 1) return;
     const halfway = Math.floor(total / 2);
@@ -2503,10 +2577,15 @@ export default function FlashcardViewPage() {
       setPauseNextTimer(true); // PAUSE TIMER
       router.push({
         pathname: '/viewQuizStats',
-        params: { halfwayCheckpoint: 'true' },
+        params: { 
+          halfwayCheckpoint: 'true',
+          deckID: deckID as string,
+          isAIDeck: isAIDeckParam as string,
+          attemptedFlashcardIds: JSON.stringify(attemptedFlashcardIds)
+        },
       });
     }
-  }, [isQuizMode, currentIdx, totalCards, hasShownHalfway, router, showQuizCountdown]);
+  }, [isQuizMode, currentIdx, totalCards, hasShownHalfway, router, showQuizCountdown, attemptedFlashcardIds, halfwayCheckpointEnabled]);
 
   // Resume timer when returning from halfway checkpoint
   useFocusEffect(
@@ -2739,6 +2818,7 @@ export default function FlashcardViewPage() {
               setRecordedAudioUri={setRecordedAudioUri}
               updateFlashcardDate={updateFlashcardDate}
               updateDeckCompletionDate={updateDeckCompletionDate}
+              startFlashcardTimer={startFlashcardTimer}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

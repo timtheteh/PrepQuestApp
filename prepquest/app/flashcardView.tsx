@@ -187,7 +187,16 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
         lastQuizzedDate
       FROM ${tableName}
       WHERE deckID = ?
-      ORDER BY flashcardID ASC
+      ORDER BY 
+        CASE difficultyRating
+          WHEN 'None' THEN 1
+          WHEN 'Easy' THEN 2
+          WHEN 'Good' THEN 3
+          WHEN 'Hard' THEN 4
+          WHEN 'Again' THEN 5
+          ELSE 6
+        END,
+        flashcardID ASC
     `, [parseInt(deckId)]);
 
     if (!result) {

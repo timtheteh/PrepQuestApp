@@ -774,7 +774,7 @@ export default function FoldersScreen() {
           const newFolderIdsString = JSON.stringify(newFolderIds);
           await db.execAsync(`
             UPDATE decks 
-            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = '${new Date().toISOString()}'
+            SET folderIDs = '${newFolderIdsString}'
             WHERE deckID = ${targetDeckId}
           `);
 
@@ -953,7 +953,7 @@ export default function FoldersScreen() {
           const newFolderIdsString = JSON.stringify(newFolderIds);
           await db.execAsync(`
             UPDATE decks 
-            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = '${new Date().toISOString()}'
+            SET folderIDs = '${newFolderIdsString}'
             WHERE deckID = ${targetDeckId}
           `);
 
@@ -969,14 +969,6 @@ export default function FoldersScreen() {
           `);
           console.log(`Updated lastModifiedDate for destination folder ${folderId}`);
         }
-        
-        // Update lastModifiedDate for the source folder (folder the decks were moved from)
-        await db.execAsync(`
-          UPDATE folders 
-          SET lastModifiedDate = '${new Date().toISOString()}'
-          WHERE folderID = ${currentFolderId}
-        `);
-        console.log(`Updated lastModifiedDate for source folder ${currentFolderId}`);
         
         // Reload folder data to update deck counts
         const updatedFoldersData = await getAllFolders();

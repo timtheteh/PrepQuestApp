@@ -2,134 +2,165 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView, Text, Platform } from 'react-native';
 import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect, Defs, LinearGradient, Stop, Polygon } from 'react-native-svg';
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
+import { db } from '@/db/index';
 
-// Example data
-const data = [
-  {
-    day: 'Mon',
-    date: '18 Mar 2024',
-    flashcards: 15,
-    decks: 6,
-  },
-  {
-    day: 'Tue',
-    date: '19 Mar 2024',
-    flashcards: 22,
-    decks: 8,
-  },
-  {
-    day: 'Wed',
-    date: '20 Mar 2024',
-    flashcards: 18,
-    decks: 7,
-  },
-  {
-    day: 'Thu',
-    date: '21 Mar 2024',
-    flashcards: 25,
-    decks: 9,
-  },
-  {
-    day: 'Fri',
-    date: '22 Mar 2024',
-    flashcards: 20,
-    decks: 8,
-  },
-  {
-    day: 'Sat',
-    date: '23 Mar 2024',
-    flashcards: 28,
-    decks: 10,
-  },
-  {
-    day: 'Sun',
-    date: '24 Mar 2024',
-    flashcards: 16,
-    decks: 7,
-  },
-  {
-    day: 'Mon',
-    date: '25 Mar 2024',
-    flashcards: 24,
-    decks: 9,
-  },
-  {
-    day: 'Tue',
-    date: '26 Mar 2024',
-    flashcards: 30,
-    decks: 11,
-  },
-  {
-    day: 'Wed',
-    date: '27 Mar 2024',
-    flashcards: 22,
-    decks: 8,
-  },
-  {
-    day: 'Thu',
-    date: '28 Mar 2024',
-    flashcards: 26,
-    decks: 10,
-  },
-  {
-    day: 'Fri',
-    date: '29 Mar 2024',
-    flashcards: 19,
-    decks: 7,
-  },
-  {
-    day: 'Sat',
-    date: '30 Mar 2024',
-    flashcards: 32,
-    decks: 12,
-  },
-  {
-    day: 'Sun',
-    date: '31 Mar 2024',
-    flashcards: 18,
-    decks: 8,
-  },
-  {
-    day: 'Mon',
-    date: '1 Apr 2024',
-    flashcards: 10,
-    decks: 8,
-  },
-  {
-    day: 'Tue',
-    date: '2 Apr 2024',
-    flashcards: 10,
-    decks: 10,
-  },
-];
+// Interface for the data structure
+interface DayData {
+  day: string;
+  date: string;
+  flashcards: number;
+  decks: number;
+}
 
-const month_data = [
-    {
-        month: 'Mar 2024',  
-        flashcards: 101,
-        decks: 20,
-    },
-    {
-        month: 'Apr 2024',
-        flashcards: 10,
-        decks: 8,
-    },
-    {
-        month: 'May 2024',
-        flashcards: 70,
-        decks: 6,
-    },
-    {
-        month: 'Jun 2024',
-        flashcards: 70,
-        decks: 6,
-    },
-    // {
-    //     month: 'Jul 2024',
-    //     flashcards: 70,
-    //     decks: 6,
-    // }
-]
+interface MonthData {
+  month: string;
+  flashcards: number;
+  decks: number;
+}
+
+// Function to get day name from date
+const getDayName = (date: Date): string => {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return days[date.getDay()];
+};
+
+// Function to format date as "DD MMM YYYY"
+const formatDate = (date: Date): string => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = date.getDate();
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
+
+// Function to format month as "MMM YYYY"
+const formatMonth = (date: Date): string => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${month} ${year}`;
+};
+
+// Function to fetch real data from database
+const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: MonthData[] }> => {
+  try {
+    // Get all study and quiz dates from decks table
+    const deckDates = await db.getAllAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate 
+      FROM decks 
+      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
+      UNION ALL
+      SELECT lastStudiedDate, lastQuizzedDate 
+      FROM AIDecks 
+      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
+    `);
+
+    // Get all study and quiz dates from flashcards table
+    const flashcardDates = await db.getAllAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate 
+      FROM flashcards 
+      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
+      UNION ALL
+      SELECT lastStudiedDate, lastQuizzedDate 
+      FROM AIFlashcards 
+      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
+    `);
+
+    // Create a map to count decks per date
+    const deckCountMap = new Map<string, number>();
+    const flashcardCountMap = new Map<string, number>();
+
+    // Process deck dates
+    deckDates.forEach((row: any) => {
+      if (row.lastStudiedDate) {
+        const date = new Date(row.lastStudiedDate);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        deckCountMap.set(dateKey, (deckCountMap.get(dateKey) || 0) + 1);
+      }
+      if (row.lastQuizzedDate) {
+        const date = new Date(row.lastQuizzedDate);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        deckCountMap.set(dateKey, (deckCountMap.get(dateKey) || 0) + 1);
+      }
+    });
+
+    // Process flashcard dates
+    flashcardDates.forEach((row: any) => {
+      if (row.lastStudiedDate) {
+        const date = new Date(row.lastStudiedDate);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        flashcardCountMap.set(dateKey, (flashcardCountMap.get(dateKey) || 0) + 1);
+      }
+      if (row.lastQuizzedDate) {
+        const date = new Date(row.lastQuizzedDate);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        flashcardCountMap.set(dateKey, (flashcardCountMap.get(dateKey) || 0) + 1);
+      }
+    });
+
+    // Get all unique dates
+    const allDates = new Set([...deckCountMap.keys(), ...flashcardCountMap.keys()]);
+    const sortedDates = Array.from(allDates).sort();
+
+    // Generate day data for the last 30 days
+    const dayData: DayData[] = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      dayData.push({
+        day: getDayName(date),
+        date: formatDate(date),
+        flashcards: flashcardCountMap.get(dateKey) || 0,
+        decks: deckCountMap.get(dateKey) || 0,
+      });
+    }
+
+    // Generate month data for the last 12 months
+    const monthData: MonthData[] = [];
+    const monthCountMap = new Map<string, { flashcards: number; decks: number }>();
+
+    // Aggregate data by month
+    for (const [dateKey, deckCount] of deckCountMap) {
+      const date = new Date(dateKey);
+      const monthKey = formatMonth(date);
+      const current = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
+      current.decks += deckCount;
+      monthCountMap.set(monthKey, current);
+    }
+
+    for (const [dateKey, flashcardCount] of flashcardCountMap) {
+      const date = new Date(dateKey);
+      const monthKey = formatMonth(date);
+      const current = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
+      current.flashcards += flashcardCount;
+      monthCountMap.set(monthKey, current);
+    }
+
+    // Generate month data for the last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(today);
+      date.setMonth(today.getMonth() - i);
+      const monthKey = formatMonth(date);
+      const monthCount = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
+      
+      monthData.push({
+        month: monthKey,
+        flashcards: monthCount.flashcards,
+        decks: monthCount.decks,
+      });
+    }
+
+    return { dayData, monthData };
+  } catch (error) {
+    console.error('Error fetching review data:', error);
+    // Return empty data if there's an error
+    return { dayData: [], monthData: [] };
+  }
+};
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -153,13 +184,36 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   const graphFadeAnim = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // State for real data
+  const [dayData, setDayData] = useState<DayData[]>([]);
+  const [monthData, setMonthData] = useState<MonthData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const { dayData: fetchedDayData, monthData: fetchedMonthData } = await fetchReviewData();
+        setDayData(fetchedDayData);
+        setMonthData(fetchedMonthData);
+      } catch (error) {
+        console.error('Error loading review data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   // Use correct data
-  const currentData = isMonth ? month_data : data;
+  const currentData = isMonth ? monthData : dayData;
 
   // Calculate total width needed for all data points
   const totalWidth = Math.max(GRAPH_WIDTH, PADDING + (currentData.length - 1) * X_STEP + PADDING);
 
-  const yMaxRaw = Math.max(...currentData.map(d => Math.max(d.flashcards, d.decks)));
+  const yMaxRaw = Math.max(...currentData.map((d: DayData | MonthData) => Math.max(d.flashcards, d.decks)));
   const Y_MAX = Math.ceil(yMaxRaw / 10) * 10;
   const Y_STEP = isMonth ? 10 : 5;
 
@@ -230,11 +284,38 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
 
   // For the fixed (non-scrollable) case, call onContentReady after mount
   useEffect(() => {
-    if (currentData.length <= 4 && onContentReady) {
+    if (currentData.length <= 4 && onContentReady && !isLoading) {
       onContentReady();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentData.length <= 4]);
+  }, [currentData.length <= 4, isLoading]);
+
+  // Show loading or empty state
+  if (isLoading) {
+    return (
+      <View style={{ marginTop: 0, alignItems: 'center' }}>
+        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
+          Decks / Flashcards Reviewed
+        </Text>
+        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
+          Loading review data...
+        </Text>
+      </View>
+    );
+  }
+
+  if (currentData.length === 0) {
+    return (
+      <View style={{ marginTop: 0, alignItems: 'center' }}>
+        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
+          Decks / Flashcards Reviewed
+        </Text>
+        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
+          No review data available yet. Start studying to see your progress!
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -369,7 +450,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                 {/* Decks faded area */}
                 <Polygon points={deckPoly} fill="url(#deckGradient)" stroke="none" />
                 {/* Flashcards value labels */}
-                {currentData.map((d, i) => (
+                {currentData.map((d: DayData | MonthData, i: number) => (
                   <SvgText
                     key={`fc-label-${i}`}
                     x={getX(i)}
@@ -383,7 +464,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                   </SvgText>
                 ))}
                 {/* Decks value labels */}
-                {currentData.map((d, i) => (
+                {currentData.map((d: DayData | MonthData, i: number) => (
                   <SvgText
                     key={`deck-label-${i}`}
                     x={getX(i)}
@@ -411,7 +492,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                   strokeWidth={2}
                 />
                 {/* Flashcards circles */}
-                {currentData.map((d, i) => (
+                {currentData.map((d: DayData | MonthData, i: number) => (
                   <G key={`fc-${i}`}>
                     <Circle
                       cx={getX(i)}
@@ -429,7 +510,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                   </G>
                 ))}
                 {/* Decks circles */}
-                {currentData.map((d, i) => (
+                {currentData.map((d: DayData | MonthData, i: number) => (
                   <G key={`deck-${i}`}>
                     <Circle
                       cx={getX(i)}
@@ -447,7 +528,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                   </G>
                 ))}
                 {/* X axis labels */}
-                {currentData.map((d, i) => (
+                {currentData.map((d: DayData | MonthData, i: number) => (
                   <G key={`xaxis-${i}`}>
                     <Rect
                       x={getX(i) - 30}
@@ -548,7 +629,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               stroke="none"
             />
             {/* Flashcards value labels */}
-            {currentData.map((d, i) => (
+            {currentData.map((d: DayData | MonthData, i: number) => (
               <SvgText
                 key={`fc-label-${i}`}
                 x={PADDING + 10 + i * X_STEP}
@@ -562,7 +643,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               </SvgText>
             ))}
             {/* Decks value labels */}
-            {currentData.map((d, i) => (
+            {currentData.map((d: DayData | MonthData, i: number) => (
               <SvgText
                 key={`deck-label-${i}`}
                 x={PADDING + 10 + i * X_STEP}
@@ -590,7 +671,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               strokeWidth={2}
             />
             {/* Flashcards circles */}
-            {currentData.map((d, i) => (
+            {currentData.map((d: DayData | MonthData, i: number) => (
               <G key={`fc-${i}`}>
                 <Circle
                   cx={PADDING + 10 + i * X_STEP}
@@ -608,7 +689,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               </G>
             ))}
             {/* Decks circles */}
-            {currentData.map((d, i) => (
+            {currentData.map((d: DayData | MonthData, i: number) => (
               <G key={`deck-${i}`}>
                 <Circle
                   cx={PADDING + 10 + i * X_STEP}
@@ -626,7 +707,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               </G>
             ))}
             {/* X axis labels */}
-            {currentData.map((d, i) => (
+            {currentData.map((d: DayData | MonthData, i: number) => (
               <G key={`xaxis-${i}`}>
                 <Rect
                   x={PADDING + 10 + i * X_STEP - 30}

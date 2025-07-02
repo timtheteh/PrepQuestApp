@@ -65,7 +65,7 @@ interface TransformedFlashcard {
 }
 
 // Function to get time limit based on difficulty rating
-const getTimeLimit = async (difficultyRating: string): Promise<number> => {
+const getTimeLimit = async (difficultyRating: string, answerType?: string): Promise<number> => {
   try {
     // Load timer settings from AsyncStorage
     const [
@@ -74,12 +74,14 @@ const getTimeLimit = async (difficultyRating: string): Promise<number> => {
       hardTimerStr,
       goodTimerStr,
       easyTimerStr,
+      voiceRecordedTimerStr,
     ] = await Promise.all([
       AsyncStorage.getItem('deckSettings_defaultTimer'),
       AsyncStorage.getItem('deckSettings_againTimer'),
       AsyncStorage.getItem('deckSettings_hardTimer'),
       AsyncStorage.getItem('deckSettings_goodTimer'),
       AsyncStorage.getItem('deckSettings_easyTimer'),
+      AsyncStorage.getItem('deckSettings_voiceRecordedTimer'),
     ]);
 
     console.log('defaultTimerStr', defaultTimerStr);
@@ -87,6 +89,7 @@ const getTimeLimit = async (difficultyRating: string): Promise<number> => {
     console.log('hardTimerStr', hardTimerStr);
     console.log('goodTimerStr', goodTimerStr);
     console.log('easyTimerStr', easyTimerStr);
+    console.log('voiceRecordedTimerStr', voiceRecordedTimerStr);
 
     // Parse timer values with defaults
     const defaultTimer = defaultTimerStr ? JSON.parse(defaultTimerStr) : { min: 0, sec: 20 };
@@ -94,13 +97,19 @@ const getTimeLimit = async (difficultyRating: string): Promise<number> => {
     const hardTimer = hardTimerStr ? JSON.parse(hardTimerStr) : { min: 0, sec: 45 };
     const goodTimer = goodTimerStr ? JSON.parse(goodTimerStr) : { min: 0, sec: 30 };
     const easyTimer = easyTimerStr ? JSON.parse(easyTimerStr) : { min: 0, sec: 15 };
+    const voiceRecordedTimer = voiceRecordedTimerStr ? JSON.parse(voiceRecordedTimerStr) : { min: 2, sec: 0 };
 
     // Convert minutes and seconds to total seconds
     const convertToSeconds = (timer: { min: number; sec: number }): number => {
       return (timer.min * 60) + timer.sec;
     };
 
-    // Return appropriate timer based on difficulty rating
+    // For voice answer types, always use the voice recorded timer regardless of difficulty
+    if (answerType === 'voice') {
+      return convertToSeconds(voiceRecordedTimer);
+    }
+
+    // Return appropriate timer based on difficulty rating for non-voice answer types
     switch (difficultyRating) {
       case 'Again': return convertToSeconds(againTimer);
       case 'Hard': return convertToSeconds(hardTimer);
@@ -112,6 +121,9 @@ const getTimeLimit = async (difficultyRating: string): Promise<number> => {
   } catch (error) {
     console.error('Error loading timer settings from AsyncStorage:', error);
     // Fallback to default values if loading fails
+    if (answerType === 'voice') {
+      return 120; // 2 minutes default for voice recordings
+    }
     switch (difficultyRating) {
       case 'Again': return 60;
       case 'Hard': return 45;
@@ -316,7 +328,7 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string, retr
       }
 
       // Get time limit asynchronously
-      const timeLimit = await getTimeLimit(flashcard.difficultyRating);
+      const timeLimit = await getTimeLimit(flashcard.difficultyRating, flashcard.answerType);
       console.log("timlimit: ", timeLimit);
 
       transformedFlashcards.push({

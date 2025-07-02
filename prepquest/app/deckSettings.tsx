@@ -247,7 +247,7 @@ export default function DeckSettingsPage() {
     CLOZE_QUESTIONS: 'deckSettings_clozeQuestions',
     MCQ_QUESTIONS: 'deckSettings_mcqQuestions',
     VOICE_RECORDED_ANSWERS: 'deckSettings_voiceRecordedAnswers',
-    RETRY_QUESTIONS_AFTER_QUIZ: 'deckSettings_retryQuestionsAfterQuiz',
+    VOICE_RECORDED_TIMER: 'deckSettings_voiceRecordedTimer',
     HALFWAY_CHECKPOINT: 'deckSettings_halfwayCheckpoint',
     DEFAULT_TIMER: 'deckSettings_defaultTimer',
     AGAIN_TIMER: 'deckSettings_againTimer',
@@ -264,7 +264,7 @@ export default function DeckSettingsPage() {
         clozeQuestions,
         mcqQuestions,
         voiceRecordedAnswers,
-        retryQuestionsAfterQuiz,
+        voiceRecordedTimer,
         halfwayCheckpoint,
         defaultTimer,
         againTimer,
@@ -276,7 +276,7 @@ export default function DeckSettingsPage() {
         AsyncStorage.getItem(STORAGE_KEYS.CLOZE_QUESTIONS),
         AsyncStorage.getItem(STORAGE_KEYS.MCQ_QUESTIONS),
         AsyncStorage.getItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS),
-        AsyncStorage.getItem(STORAGE_KEYS.RETRY_QUESTIONS_AFTER_QUIZ),
+        AsyncStorage.getItem(STORAGE_KEYS.VOICE_RECORDED_TIMER),
         AsyncStorage.getItem(STORAGE_KEYS.HALFWAY_CHECKPOINT),
         AsyncStorage.getItem(STORAGE_KEYS.DEFAULT_TIMER),
         AsyncStorage.getItem(STORAGE_KEYS.AGAIN_TIMER),
@@ -290,7 +290,7 @@ export default function DeckSettingsPage() {
       setClozeQuestionsEnabled(clozeQuestions !== null ? JSON.parse(clozeQuestions) : true);
       setMcqQuestionsEnabled(mcqQuestions !== null ? JSON.parse(mcqQuestions) : true);
       setVoiceRecordedAnswersEnabled(voiceRecordedAnswers !== null ? JSON.parse(voiceRecordedAnswers) : true);
-      setRetryQuestionsAfterQuizEnabled(retryQuestionsAfterQuiz !== null ? JSON.parse(retryQuestionsAfterQuiz) : true);
+      setVoiceRecordedTimerEnabled(voiceRecordedTimer !== null ? JSON.parse(voiceRecordedTimer) : true);
       setHalfwayCheckpointEnabled(halfwayCheckpoint !== null ? JSON.parse(halfwayCheckpoint) : true);
 
       // Set timer values (default to defaultDifficultyTimes if not found)
@@ -299,6 +299,7 @@ export default function DeckSettingsPage() {
       const loadedHardTimer = hardTimer ? JSON.parse(hardTimer) : { min: 0, sec: 45 };
       const loadedGoodTimer = goodTimer ? JSON.parse(goodTimer) : { min: 0, sec: 30 };
       const loadedEasyTimer = easyTimer ? JSON.parse(easyTimer) : { min: 0, sec: 15 };
+      const loadedVoiceRecordedTimer = voiceRecordedTimer ? JSON.parse(voiceRecordedTimer) : { min: 2, sec: 0 };
 
       setDifficultyTimes([
         loadedDefaultTimer,
@@ -307,6 +308,7 @@ export default function DeckSettingsPage() {
         loadedGoodTimer,
         loadedEasyTimer,
       ]);
+      setVoiceRecordedTimer(loadedVoiceRecordedTimer);
     } catch (error) {
       console.error('Error loading deck settings:', error);
       // Use defaults if loading fails
@@ -314,7 +316,7 @@ export default function DeckSettingsPage() {
       setClozeQuestionsEnabled(true);
       setMcqQuestionsEnabled(true);
       setVoiceRecordedAnswersEnabled(true);
-      setRetryQuestionsAfterQuizEnabled(true);
+      setVoiceRecordedTimerEnabled(true);
       setHalfwayCheckpointEnabled(true);
       setDifficultyTimes(defaultDifficultyTimes);
     }
@@ -328,7 +330,7 @@ export default function DeckSettingsPage() {
         AsyncStorage.setItem(STORAGE_KEYS.CLOZE_QUESTIONS, JSON.stringify(clozeQuestionsEnabled)),
         AsyncStorage.setItem(STORAGE_KEYS.MCQ_QUESTIONS, JSON.stringify(mcqQuestionsEnabled)),
         AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS, JSON.stringify(voiceRecordedAnswersEnabled)),
-        AsyncStorage.setItem(STORAGE_KEYS.RETRY_QUESTIONS_AFTER_QUIZ, JSON.stringify(retryQuestionsAfterQuizEnabled)),
+        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_TIMER, JSON.stringify(voiceRecordedTimer)),
         AsyncStorage.setItem(STORAGE_KEYS.HALFWAY_CHECKPOINT, JSON.stringify(halfwayCheckpointEnabled)),
         AsyncStorage.setItem(STORAGE_KEYS.DEFAULT_TIMER, JSON.stringify(difficultyTimes[0])),
         AsyncStorage.setItem(STORAGE_KEYS.AGAIN_TIMER, JSON.stringify(difficultyTimes[1])),
@@ -350,7 +352,7 @@ export default function DeckSettingsPage() {
         AsyncStorage.setItem(STORAGE_KEYS.CLOZE_QUESTIONS, JSON.stringify(true)),
         AsyncStorage.setItem(STORAGE_KEYS.MCQ_QUESTIONS, JSON.stringify(true)),
         AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS, JSON.stringify(true)),
-        AsyncStorage.setItem(STORAGE_KEYS.RETRY_QUESTIONS_AFTER_QUIZ, JSON.stringify(true)),
+        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_TIMER, JSON.stringify({ min: 2, sec: 0 })),
         AsyncStorage.setItem(STORAGE_KEYS.HALFWAY_CHECKPOINT, JSON.stringify(true)),
         AsyncStorage.setItem(STORAGE_KEYS.DEFAULT_TIMER, JSON.stringify(defaultDifficultyTimes[0])),
         AsyncStorage.setItem(STORAGE_KEYS.AGAIN_TIMER, JSON.stringify(defaultDifficultyTimes[1])),
@@ -364,7 +366,8 @@ export default function DeckSettingsPage() {
       setClozeQuestionsEnabled(true);
       setMcqQuestionsEnabled(true);
       setVoiceRecordedAnswersEnabled(true);
-      setRetryQuestionsAfterQuizEnabled(true);
+      setVoiceRecordedTimerEnabled(true);
+      setVoiceRecordedTimer({ min: 2, sec: 0 });
       setHalfwayCheckpointEnabled(true);
       setDifficultyTimes(defaultDifficultyTimes);
       setResetCounter(c => c + 1);
@@ -379,7 +382,8 @@ export default function DeckSettingsPage() {
   const [clozeQuestionsEnabled, setClozeQuestionsEnabled] = React.useState(true);
   const [mcqQuestionsEnabled, setMcqQuestionsEnabled] = React.useState(true);
   const [voiceRecordedAnswersEnabled, setVoiceRecordedAnswersEnabled] = React.useState(true);
-  const [retryQuestionsAfterQuizEnabled, setRetryQuestionsAfterQuizEnabled] = React.useState(true);
+  const [voiceRecordedTimerEnabled, setVoiceRecordedTimerEnabled] = React.useState(true);
+  const [voiceRecordedTimer, setVoiceRecordedTimer] = React.useState({ min: 2, sec: 0 });
   const [halfwayCheckpointEnabled, setHalfwayCheckpointEnabled] = React.useState(true);
   const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
   const [selectedDifficultyIndex, setSelectedDifficultyIndex] = React.useState(0);
@@ -409,7 +413,8 @@ export default function DeckSettingsPage() {
     clozeQuestionsEnabled,
     mcqQuestionsEnabled,
     voiceRecordedAnswersEnabled,
-    retryQuestionsAfterQuizEnabled,
+    voiceRecordedTimerEnabled,
+    voiceRecordedTimer,
     halfwayCheckpointEnabled,
     difficultyTimes,
   ]);
@@ -424,6 +429,10 @@ export default function DeckSettingsPage() {
       updated[selectedDifficultyIndex] = { min, sec };
       return updated;
     });
+  };
+
+  const handleVoiceRecordedTimerChange = (min: number, sec: number) => {
+    setVoiceRecordedTimer({ min, sec });
   };
 
   const handleDifficultyChange = (idx: number) => {
@@ -551,14 +560,23 @@ export default function DeckSettingsPage() {
             ]}
             onHelpPress={handleHelpPress}
           />
-          <Text style={styles.sectionTitle}>Quiz Preferences</Text>
-          <TitleToggleRow 
-            text="Retry Questions After Quiz"
-            value={retryQuestionsAfterQuizEnabled}
-            onValueChange={setRetryQuestionsAfterQuizEnabled}
+          
+          <View style={styles.titleToggleRow}>
+            <Text style={styles.titleToggleText}>Voice Recording Timer</Text>
+          </View>
+          <Text style={[styles.descriptionText, {marginBottom: 0}]}>
+            Set the time limit for voice recording answers in quiz mode.
+          </Text>
+          <TimePicker
+            key={`voice-recorded-timer-${resetCounter}`}
+            initialMinutes={voiceRecordedTimer.min}
+            initialSeconds={voiceRecordedTimer.sec}
+            onChange={handleVoiceRecordedTimerChange}
+            minutesRange={Array.from({ length: 10 }, (_, i) => i)}
+            secondsRange={Array.from({ length: 60 }, (_, i) => i)}
           />
-          <Text style={styles.descriptionText}>
-          {"After questions in a deck have been exhausted in quiz mode, you will retry any questions you classified as 'again' and any MCQ questions you got wrong."}          </Text>
+          
+          <Text style={styles.sectionTitle}>Quiz Preferences</Text>
           <TitleToggleRow 
             text="Halfway Checkpoint"
             value={halfwayCheckpointEnabled}
@@ -594,7 +612,7 @@ export default function DeckSettingsPage() {
           right: 16,
           bottom: 24,
           height: 72,
-          backgroundColor: '#4F41D8',
+          backgroundColor: '#FF3B30',
           borderRadius: 30,
           alignItems: 'center',
           justifyContent: 'center',
@@ -610,7 +628,7 @@ export default function DeckSettingsPage() {
             fontSize: 24,
           }}
         >
-          Reset back to default settings
+          Back to default settings?
         </Text>
       </TouchableOpacity>
       <GreyOverlayBackground 

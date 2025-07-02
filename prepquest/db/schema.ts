@@ -147,6 +147,24 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
       )
     `);
 
+    // Create user statistics table for lifetime accumulated counters
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        accumulatedDecksCreated INTEGER DEFAULT 0,
+        accumulatedFlashcardsCreated INTEGER DEFAULT 0,
+        accumulatedStudyDecksCreated INTEGER DEFAULT 0,
+        accumulatedInterviewDecksCreated INTEGER DEFAULT 0,
+        lastUpdated TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert default user statistics record if it doesn't exist
+    await db.execAsync(`
+      INSERT OR IGNORE INTO users (id, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated)
+      VALUES (1, 0, 0, 0, 0)
+    `);
+
     console.log('Database initialized successfully with new schema');
   } catch (error) {
     console.error('Error initializing database:', error);

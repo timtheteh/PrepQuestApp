@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
 import { db } from '@/db/index';
+import { useIsFocused } from '@react-navigation/native';
 
 interface BreakdownDatum {
   label: string;
@@ -18,59 +19,65 @@ interface BreakdownOfDecksFlashcardsProps {
 // Function to fetch real data from database
 const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flashcardsData: BreakdownDatum[] }> => {
   try {
-    // Get all decks with their types - use interviewType for interview decks, deckType for study decks
-    const decks = await db.getAllAsync(`
-      SELECT 
-        CASE 
-          WHEN deckType = 'interview' THEN interviewType 
-          ELSE deckType 
-        END as categoryType,
-        deckID 
-      FROM decks 
-      WHERE deckType IS NOT NULL
-      UNION ALL
-      SELECT 
-        CASE 
-          WHEN deckType = 'interview' THEN interviewType 
-          ELSE deckType 
-        END as categoryType,
-        deckID 
-      FROM AIDecks 
-      WHERE deckType IS NOT NULL
-    `);
-
-    // Count decks by type
-    const deckTypeCounts = new Map<string, number>();
-    const deckIdsByType = new Map<string, number[]>();
-
-    decks.forEach((deck: any) => {
-      const type = deck.categoryType;
-      deckTypeCounts.set(type, (deckTypeCounts.get(type) || 0) + 1);
-      
-      if (!deckIdsByType.has(type)) {
-        deckIdsByType.set(type, []);
-      }
-      deckIdsByType.get(type)!.push(deck.deckID);
-    });
-
-    // Get flashcard counts for each deck type
-    const flashcardTypeCounts = new Map<string, number>();
-
-    for (const [type, deckIds] of deckIdsByType) {
-      if (deckIds.length === 0) continue;
-
-      const placeholders = deckIds.map(() => '?').join(',');
-      const flashcardCount = await db.getFirstAsync(`
-        SELECT COUNT(*) as count
-        FROM (
-          SELECT flashcardID FROM flashcards WHERE deckID IN (${placeholders})
+    // Single optimized query with JOINs to get both deck counts and flashcard counts
+    const result = await db.getAllAsync(`
+      WITH deck_categories AS (
+        SELECT 
+          CASE 
+            WHEN deckType = 'interview' THEN interviewType 
+            ELSE deckType 
+          END as categoryType,
+          deckID 
+        FROM decks 
+        WHERE deckType IS NOT NULL
+        UNION ALL
+        SELECT 
+          CASE 
+            WHEN deckType = 'interview' THEN interviewType 
+            ELSE deckType 
+          END as categoryType,
+          deckID 
+        FROM AIDecks 
+        WHERE deckType IS NOT NULL
+      ),
+      category_counts AS (
+        SELECT 
+          categoryType,
+          COUNT(*) as deck_count,
+          GROUP_CONCAT(deckID) as deck_ids
+        FROM deck_categories
+        GROUP BY categoryType
+      ),
+      flashcard_counts AS (
+        SELECT 
+          cc.categoryType,
+          cc.deck_count,
+          COALESCE(SUM(flashcard_count), 0) as total_flashcards
+        FROM category_counts cc
+        LEFT JOIN (
+          SELECT 
+            dc.categoryType,
+            COUNT(*) as flashcard_count
+          FROM deck_categories dc
+          LEFT JOIN flashcards f ON dc.deckID = f.deckID
+          GROUP BY dc.categoryType
           UNION ALL
-          SELECT flashcardID FROM AIFlashcards WHERE deckID IN (${placeholders})
-        )
-      `, [...deckIds, ...deckIds]);
-
-      flashcardTypeCounts.set(type, (flashcardCount as any)?.count || 0);
-    }
+          SELECT 
+            dc.categoryType,
+            COUNT(*) as flashcard_count
+          FROM deck_categories dc
+          LEFT JOIN AIFlashcards af ON dc.deckID = af.deckID
+          GROUP BY dc.categoryType
+        ) fc ON cc.categoryType = fc.categoryType
+        GROUP BY cc.categoryType
+      )
+      SELECT 
+        categoryType,
+        deck_count,
+        total_flashcards
+      FROM flashcard_counts
+      ORDER BY deck_count DESC
+    `);
 
     // Define colors for each type
     const typeColors = {
@@ -83,23 +90,23 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
     };
 
     // Calculate totals
-    const totalDecks = Array.from(deckTypeCounts.values()).reduce((sum, count) => sum + count, 0);
-    const totalFlashcards = Array.from(flashcardTypeCounts.values()).reduce((sum, count) => sum + count, 0);
+    const totalDecks = result.reduce((sum: number, row: any) => sum + row.deck_count, 0);
+    const totalFlashcards = result.reduce((sum: number, row: any) => sum + row.total_flashcards, 0);
 
     // Create decks data
-    const decksData: BreakdownDatum[] = Array.from(deckTypeCounts.entries()).map(([type, count]) => ({
-      label: type.charAt(0).toUpperCase() + type.slice(1),
-      value: count,
-      percent: totalDecks > 0 ? Math.round((count / totalDecks) * 100) : 0,
-      color: typeColors[type as keyof typeof typeColors] || '#98CE7F'
+    const decksData: BreakdownDatum[] = result.map((row: any) => ({
+      label: row.categoryType.charAt(0).toUpperCase() + row.categoryType.slice(1),
+      value: row.deck_count,
+      percent: totalDecks > 0 ? Math.round((row.deck_count / totalDecks) * 100) : 0,
+      color: typeColors[row.categoryType as keyof typeof typeColors] || '#98CE7F'
     }));
 
     // Create flashcards data
-    const flashcardsData: BreakdownDatum[] = Array.from(flashcardTypeCounts.entries()).map(([type, count]) => ({
-      label: type.charAt(0).toUpperCase() + type.slice(1),
-      value: count,
-      percent: totalFlashcards > 0 ? Math.round((count / totalFlashcards) * 100) : 0,
-      color: typeColors[type as keyof typeof typeColors] || '#98CE7F'
+    const flashcardsData: BreakdownDatum[] = result.map((row: any) => ({
+      label: row.categoryType.charAt(0).toUpperCase() + row.categoryType.slice(1),
+      value: row.total_flashcards,
+      percent: totalFlashcards > 0 ? Math.round((row.total_flashcards / totalFlashcards) * 100) : 0,
+      color: typeColors[row.categoryType as keyof typeof typeColors] || '#98CE7F'
     }));
 
     return { decksData, flashcardsData };
@@ -124,16 +131,22 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   const screenWidth = Dimensions.get('window').width;
   const containerHeight = 440;
   const containerWidth = screenWidth;
+  const isFocused = useIsFocused();
 
   // Bubble sizes (relative to value or percent)
   const maxRadius = 80;
   const minRadius = 40;
-  const maxValue = Math.max(...data.map(d => d.value));
-  const getRadius = (value: number) => {
-    if (data.length === 0) return minRadius;
-    if (maxValue === 0) return minRadius;
-    return minRadius + ((value / maxValue) * (maxRadius - minRadius));
-  };
+  
+  // Memoized calculations to prevent recalculation on every render
+  const { maxValue, getRadius } = useMemo(() => {
+    const maxValue = Math.max(...data.map(d => d.value));
+    const getRadius = (value: number) => {
+      if (data.length === 0) return minRadius;
+      if (maxValue === 0) return minRadius;
+      return minRadius + ((value / maxValue) * (maxRadius - minRadius));
+    };
+    return { maxValue, getRadius };
+  }, [data, minRadius, maxRadius]);
 
   // Physics engine setup
   const [positions, setPositions] = useState<{ x: number; y: number; }[]>([]);
@@ -142,23 +155,24 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   const worldRef = useRef<any>(null);
   const intervalRef = useRef<any>(null);
 
-  // Fetch data on component mount
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const { decksData: fetchedDecksData, flashcardsData: fetchedFlashcardsData } = await fetchBreakdownData();
-        setDecksData(fetchedDecksData);
-        setFlashcardsData(fetchedFlashcardsData);
-      } catch (error) {
-        console.error('Error loading breakdown data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Function to load data
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const { decksData: fetchedDecksData, flashcardsData: fetchedFlashcardsData } = await fetchBreakdownData();
+      setDecksData(fetchedDecksData);
+      setFlashcardsData(fetchedFlashcardsData);
+    } catch (error) {
+      console.error('Error loading breakdown data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Fetch data on component mount and when screen comes into focus
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [isFocused]); // Refresh data when screen comes into focus
 
   useEffect(() => {
     // Clean up previous engine if any
@@ -178,24 +192,43 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     worldRef.current = world;
     engineRef.current = engine;
 
-    // Create bubbles as circular bodies
+    // Create bubbles as circular bodies with optimized placement
     const bubbles = data.map((d, i) => {
       const radius = getRadius(d.value);
-      // Place bubbles randomly but not overlapping
-      let placed = false;
+      
+      // Optimized placement algorithm - use grid-based placement instead of random
       let x = 0, y = 0;
+      const gridSize = Math.max(radius * 2 + 10, 60);
+      const cols = Math.floor(containerWidth / gridSize);
+      const rows = Math.floor(containerHeight / gridSize);
+      
+      // Try grid positions first, then fall back to random
+      let placed = false;
       let tries = 0;
-      while (!placed && tries < 1000) {
-        x = Math.random() * (containerWidth - 2 * radius) + radius;
-        y = Math.random() * (containerHeight - 2 * radius) + radius;
+      const maxTries = Math.min(100, cols * rows); // Limit tries to prevent infinite loop
+      
+      while (!placed && tries < maxTries) {
+        if (tries < cols * rows) {
+          // Grid-based placement
+          const col = tries % cols;
+          const row = Math.floor(tries / cols);
+          x = col * gridSize + radius + 10;
+          y = row * gridSize + radius + 10;
+        } else {
+          // Fallback to random placement
+          x = Math.random() * (containerWidth - 2 * radius) + radius;
+          y = Math.random() * (containerHeight - 2 * radius) + radius;
+        }
+        
         placed = true;
+        // Only check collision with previously placed bubbles
         for (let j = 0; j < i; j++) {
           const other = bodiesRef.current[j];
           if (other) {
             const dx = x - other.position.x;
             const dy = y - other.position.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < radius + other.circleRadius + 2) {
+            if (dist < radius + other.circleRadius + 5) { // Increased buffer for better spacing
               placed = false;
               break;
             }
@@ -203,6 +236,13 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
         }
         tries++;
       }
+      
+      // If still not placed, use center position
+      if (!placed) {
+        x = containerWidth / 2;
+        y = containerHeight / 2;
+      }
+      
       const body = Bodies.circle(x, y, radius, {
         restitution: 1,
         friction: 0,
@@ -211,6 +251,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
         render: { fillStyle: d.color },
         sleepingAllowed: false,
       });
+      
       // Give a random slow velocity
       const angle = Math.random() * 2 * Math.PI;
       Body.setVelocity(body, {
@@ -236,20 +277,21 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     ];
     World.add(world, walls);
 
-    // Update positions on each tick
+    // Update positions on each tick with optimized velocity enforcement
     intervalRef.current = setInterval(() => {
       Engine.update(engine, 1000 / FPS);
-      // Enforce constant velocity for each bubble
+      
+      // Optimized velocity enforcement - only update if needed
       bodiesRef.current.forEach(b => {
         const vx = b.velocity.x;
         const vy = b.velocity.y;
         const speed = Math.sqrt(vx * vx + vy * vy);
-        if (speed !== BOUNCE_SPEED && speed > 0) {
-          // Normalize to BOUNCE_SPEED, preserve direction
+        if (Math.abs(speed - BOUNCE_SPEED) > 0.1) { // Only update if significantly different
           const scale = BOUNCE_SPEED / speed;
           Body.setVelocity(b, { x: vx * scale, y: vy * scale });
         }
       });
+      
       setPositions(bodiesRef.current.map(b => ({ x: b.position.x, y: b.position.y, r: b.circleRadius })));
     }, 1000 / FPS);
 
@@ -261,7 +303,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       worldRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, getRadius, containerWidth, containerHeight]);
 
   // Fade out, then switch data, then fade in
   useEffect(() => {
@@ -339,7 +381,13 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
                   },
                 ]}
               >
-                <Text style={[styles.bubbleLabel, {color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000'}]}>{d.label}</Text>
+                <Text style={[
+                  styles.bubbleLabel, 
+                  {
+                    color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000',
+                    fontSize: (d.label == 'Case study' || d.label == 'Brainteasers') ? 12 : 16
+                  }
+                ]}>{d.label}</Text>
                 <Text style={[styles.bubbleText, {color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000'}]}>{`${d.value} (${d.percent}%)`}</Text>
               </View>
             );

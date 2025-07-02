@@ -1,10 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Animated } from 'react-native';
 import { SmallGreenToggleMultiple } from './SmallGreenToggleMultiple';
+import { db } from '@/db/index';
+import { useIsFocused } from '@react-navigation/native';
+import { getUserStatistics } from '@/db/users';
 
 interface MoreDetailsStatsProps {
   selectedIndex?: number;
   onSelectedIndexChange?: (index: number) => void;
+}
+
+interface StatsData {
+  accumulatedDecks: number;
+  localStorageDecks: number;
+  totalQuizzedDecks: number;
+  accumulatedFlashcards: number;
+  localStorageFlashcards: number;
+  totalQuizzedFlashcards: number;
+  studyDecks: number;
+  studyLocalStorage: number;
+  studyQuizzed: number;
+  interviewDecks: number;
+  interviewLocalStorage: number;
+  interviewQuizzed: number;
 }
 
 const OPTIONS = ['Decks', 'Flashcards', 'Study', 'Interview'];
@@ -13,6 +31,105 @@ const meshBackground2 = require('../assets/images/meshBackground2.png');
 const meshBackground3 = require('../assets/images/meshBackground3.png');
 const meshBackground4 = require('../assets/images/meshBackground4.png');
 
+// Function to fetch real statistics from database
+const fetchStatsData = async (): Promise<StatsData> => {
+  try {
+    // Get accumulated statistics from userStatistics table (lifetime counters that never decrease)
+    const userStats = await getUserStatistics();
+    
+    // Get current decks in local storage
+    const localStorageDecksResult = await db.getFirstAsync(`
+      SELECT COUNT(*) as count FROM (
+        SELECT deckID FROM decks
+        UNION ALL
+        SELECT deckID FROM AIDecks
+      )
+    `);
+    
+    // Get total decks quizzed (have lastQuizzedDate)
+    const quizzedDecksResult = await db.getFirstAsync(`
+      SELECT COUNT(*) as count FROM (
+        SELECT deckID FROM decks WHERE lastQuizzedDate IS NOT NULL
+        UNION ALL
+        SELECT deckID FROM AIDecks WHERE lastQuizzedDate IS NOT NULL
+      )
+    `);
+    
+    // Get current flashcards in local storage
+    const localStorageFlashcardsResult = await db.getFirstAsync(`
+      SELECT COUNT(*) as count FROM (
+        SELECT flashcardID FROM flashcards
+        UNION ALL
+        SELECT flashcardID FROM AIFlashcards
+      )
+    `);
+    
+    // Get total flashcards quizzed
+    const quizzedFlashcardsResult = await db.getFirstAsync(`
+      SELECT COUNT(*) as count FROM (
+        SELECT flashcardID FROM flashcards WHERE lastQuizzedDate IS NOT NULL
+        UNION ALL
+        SELECT flashcardID FROM AIFlashcards WHERE lastQuizzedDate IS NOT NULL
+      )
+    `);
+    
+    // Get study deck statistics
+    const studyStatsResult = await db.getFirstAsync(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN lastQuizzedDate IS NOT NULL THEN 1 ELSE 0 END) as quizzed
+      FROM (
+        SELECT deckID, lastQuizzedDate FROM decks WHERE deckType = 'study'
+        UNION ALL
+        SELECT deckID, lastQuizzedDate FROM AIDecks WHERE deckType = 'study'
+      )
+    `);
+    
+    // Get interview deck statistics
+    const interviewStatsResult = await db.getFirstAsync(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN lastQuizzedDate IS NOT NULL THEN 1 ELSE 0 END) as quizzed
+      FROM (
+        SELECT deckID, lastQuizzedDate FROM decks WHERE deckType = 'interview'
+        UNION ALL
+        SELECT deckID, lastQuizzedDate FROM AIDecks WHERE deckType = 'interview'
+      )
+    `);
+
+    return {
+      accumulatedDecks: userStats?.accumulatedDecksCreated || 0,
+      localStorageDecks: (localStorageDecksResult as any)?.count || 0,
+      totalQuizzedDecks: (quizzedDecksResult as any)?.count || 0,
+      accumulatedFlashcards: userStats?.accumulatedFlashcardsCreated || 0,
+      localStorageFlashcards: (localStorageFlashcardsResult as any)?.count || 0,
+      totalQuizzedFlashcards: (quizzedFlashcardsResult as any)?.count || 0,
+      studyDecks: userStats?.accumulatedStudyDecksCreated || 0,
+      studyLocalStorage: (studyStatsResult as any)?.total || 0,
+      studyQuizzed: (studyStatsResult as any)?.quizzed || 0,
+      interviewDecks: userStats?.accumulatedInterviewDecksCreated || 0,
+      interviewLocalStorage: (interviewStatsResult as any)?.total || 0,
+      interviewQuizzed: (interviewStatsResult as any)?.quizzed || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching stats data:', error);
+    return {
+      accumulatedDecks: 0,
+      localStorageDecks: 0,
+      totalQuizzedDecks: 0,
+      accumulatedFlashcards: 0,
+      localStorageFlashcards: 0,
+      totalQuizzedFlashcards: 0,
+      studyDecks: 0,
+      studyLocalStorage: 0,
+      studyQuizzed: 0,
+      interviewDecks: 0,
+      interviewLocalStorage: 0,
+      interviewQuizzed: 0,
+    };
+  }
+};
+
 export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedIndexChange }: MoreDetailsStatsProps) {
   const isControlled = controlledIndex !== undefined && onSelectedIndexChange !== undefined;
   const [uncontrolledIndex, setUncontrolledIndex] = useState(0);
@@ -20,6 +137,40 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
   const setSelectedIndex = isControlled ? onSelectedIndexChange! : setUncontrolledIndex;
   const [renderedIndex, setRenderedIndex] = useState(selectedIndex);
   const [fadeAnim] = useState(new Animated.Value(1));
+  const [statsData, setStatsData] = useState<StatsData>({
+    accumulatedDecks: 0,
+    localStorageDecks: 0,
+    totalQuizzedDecks: 0,
+    accumulatedFlashcards: 0,
+    localStorageFlashcards: 0,
+    totalQuizzedFlashcards: 0,
+    studyDecks: 0,
+    studyLocalStorage: 0,
+    studyQuizzed: 0,
+    interviewDecks: 0,
+    interviewLocalStorage: 0,
+    interviewQuizzed: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const isFocused = useIsFocused();
+
+  // Function to load data
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchStatsData();
+      setStatsData(data);
+    } catch (error) {
+      console.error('Error loading stats data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load data on component mount and when screen comes into focus
+  useEffect(() => {
+    loadData();
+  }, [isFocused]); // Refresh data when screen comes into focus
 
   // Fade out, then switch content, then fade in
   useEffect(() => {
@@ -56,15 +207,22 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
           />
         </View>
         <Animated.View style={{ width: '100%', opacity: fadeAnim }}>
+          {/* Loading State */}
+          {isLoading && (
+            <View style={styles.placeholder}>
+              <Text style={styles.placeholderText}>Loading statistics...</Text>
+            </View>
+          )}
+          
           {/* Decks State */}
-          {renderedIndex === 0 && (
+          {!isLoading && renderedIndex === 0 && (
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
                   <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>123</Text>
+                      <Text style={styles.deckNumber}>{statsData.accumulatedDecks}</Text>
                       <Text style={styles.deckLabel}>Accumulated{"\n"}Decks</Text>
                     </View>
                   </View>
@@ -76,7 +234,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>45</Text>
+                      <Text style={styles.deckNumber}>{statsData.localStorageDecks}</Text>
                       <Text style={styles.deckLabel}>Decks in local{"\n"}storage</Text>
                     </View>
                   </View>
@@ -85,7 +243,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>12</Text>
+                      <Text style={styles.deckNumber}>{statsData.totalQuizzedDecks}</Text>
                       <Text style={styles.deckLabel}>Total decks{"\n"}quizzed</Text>
                     </View>
                   </View>
@@ -94,14 +252,14 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
             </View>
           )}
           {/* Flashcards State */}
-          {renderedIndex === 1 && (
+          {!isLoading && renderedIndex === 1 && (
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
                   <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>123</Text>
+                      <Text style={styles.deckNumber}>{statsData.accumulatedFlashcards}</Text>
                       <Text style={styles.deckLabel}>Accumulated{"\n"}Flashcards</Text>
                     </View>
                   </View>
@@ -113,7 +271,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>45</Text>
+                      <Text style={styles.deckNumber}>{statsData.localStorageFlashcards}</Text>
                       <Text style={styles.deckLabel}>Flashcards in {"\n"}local storage</Text>
                     </View>
                   </View>
@@ -122,7 +280,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>12</Text>
+                      <Text style={styles.deckNumber}>{statsData.totalQuizzedFlashcards}</Text>
                       <Text style={styles.deckLabel}>Total Flashcards{"\n"}quizzed</Text>
                     </View>
                   </View>
@@ -131,15 +289,15 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
             </View>
           )}
           {/* Study State */}
-          {renderedIndex === 2 && (
+          {!isLoading && renderedIndex === 2 && (
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
                   <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>123</Text>
-                      <Text style={styles.deckLabel}>Accumulated{"\n"}Decks</Text>
+                      <Text style={styles.deckNumber}>{statsData.studyDecks}</Text>
+                      <Text style={styles.deckLabel}>Accumulated{"\n"}Study Decks</Text>
                     </View>
                   </View>
                 </View>
@@ -150,8 +308,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>45</Text>
-                      <Text style={styles.deckLabel}>Decks in {"\n"}local storage</Text>
+                      <Text style={styles.deckNumber}>{statsData.studyLocalStorage}</Text>
+                      <Text style={styles.deckLabel}>Study decks in {"\n"}local storage</Text>
                     </View>
                   </View>
                 </View>
@@ -159,8 +317,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>12</Text>
-                      <Text style={styles.deckLabel}>Total Decks{"\n"}quizzed</Text>
+                      <Text style={styles.deckNumber}>{statsData.studyQuizzed}</Text>
+                      <Text style={styles.deckLabel}>Total Study decks{"\n"}quizzed</Text>
                     </View>
                   </View>
                 </View>
@@ -168,15 +326,15 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
             </View>
           )}
           {/* Interview State */}
-          {renderedIndex === 3 && (
+          {!isLoading && renderedIndex === 3 && (
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
                   <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>123</Text>
-                      <Text style={styles.deckLabel}>Accumulated{"\n"}Decks</Text>
+                      <Text style={styles.deckNumber}>{statsData.interviewDecks}</Text>
+                      <Text style={styles.deckLabel}>Accumulated{"\n"}Interview Decks</Text>
                     </View>
                   </View>
                 </View>
@@ -187,8 +345,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>45</Text>
-                      <Text style={styles.deckLabel}>Decks in {"\n"}local storage</Text>
+                      <Text style={styles.deckNumber}>{statsData.interviewLocalStorage}</Text>
+                      <Text style={styles.deckLabel}>Interview decks in {"\n"}local storage</Text>
                     </View>
                   </View>
                 </View>
@@ -196,8 +354,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>12</Text>
-                      <Text style={styles.deckLabel}>Total Decks{"\n"}quizzed</Text>
+                      <Text style={styles.deckNumber}>{statsData.interviewQuizzed}</Text>
+                      <Text style={styles.deckLabel}>Total Interview decks{"\n"}quizzed</Text>
                     </View>
                   </View>
                 </View>

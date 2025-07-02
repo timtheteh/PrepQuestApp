@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView, Text, Platform } from 'react-native';
 import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect, Defs, LinearGradient, Stop, Polygon } from 'react-native-svg';
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { db } from '@/db/index';
+import { useIsFocused } from '@react-navigation/native';
 
 // Interface for the data structure
 interface DayData {
@@ -44,78 +45,94 @@ const formatMonth = (date: Date): string => {
 // Function to fetch real data from database
 const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: MonthData[] }> => {
   try {
-    // Get all study and quiz dates from decks table
-    const deckDates = await db.getAllAsync(`
-      SELECT lastStudiedDate, lastQuizzedDate 
-      FROM decks 
-      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
-      UNION ALL
-      SELECT lastStudiedDate, lastQuizzedDate 
-      FROM AIDecks 
-      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
+    // Single optimized query with SQL aggregation - fixed to handle ISO date format
+    const result = await db.getAllAsync(`
+      WITH all_dates AS (
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'deck' as type
+        FROM decks 
+        WHERE lastStudiedDate IS NOT NULL
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'deck' as type
+        FROM decks 
+        WHERE lastQuizzedDate IS NOT NULL
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'deck' as type
+        FROM AIDecks 
+        WHERE lastStudiedDate IS NOT NULL
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'deck' as type
+        FROM AIDecks 
+        WHERE lastQuizzedDate IS NOT NULL
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'flashcard' as type
+        FROM flashcards 
+        WHERE lastStudiedDate IS NOT NULL
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'flashcard' as type
+        FROM flashcards 
+        WHERE lastQuizzedDate IS NOT NULL
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'flashcard' as type
+        FROM AIFlashcards 
+        WHERE lastStudiedDate IS NOT NULL
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'flashcard' as type
+        FROM AIFlashcards 
+        WHERE lastQuizzedDate IS NOT NULL
+      )
+      SELECT 
+        activity_date,
+        SUM(CASE WHEN type = 'deck' THEN 1 ELSE 0 END) as deck_count,
+        SUM(CASE WHEN type = 'flashcard' THEN 1 ELSE 0 END) as flashcard_count
+      FROM all_dates
+      WHERE activity_date IS NOT NULL
+      GROUP BY activity_date
+      ORDER BY activity_date
     `);
 
-    // Get all study and quiz dates from flashcards table
-    const flashcardDates = await db.getAllAsync(`
-      SELECT lastStudiedDate, lastQuizzedDate 
-      FROM flashcards 
-      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
-      UNION ALL
-      SELECT lastStudiedDate, lastQuizzedDate 
-      FROM AIFlashcards 
-      WHERE lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL
-    `);
-
-    // Create a map to count decks per date
-    const deckCountMap = new Map<string, number>();
-    const flashcardCountMap = new Map<string, number>();
-
-    // Process deck dates
-    deckDates.forEach((row: any) => {
-      if (row.lastStudiedDate) {
-        const date = new Date(row.lastStudiedDate);
-        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-        deckCountMap.set(dateKey, (deckCountMap.get(dateKey) || 0) + 1);
-      }
-      if (row.lastQuizzedDate) {
-        const date = new Date(row.lastQuizzedDate);
-        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-        deckCountMap.set(dateKey, (deckCountMap.get(dateKey) || 0) + 1);
-      }
+    // Create maps for quick lookup
+    const dateCountMap = new Map<string, { decks: number; flashcards: number }>();
+    
+    result.forEach((row: any) => {
+      dateCountMap.set(row.activity_date, {
+        decks: row.deck_count || 0,
+        flashcards: row.flashcard_count || 0
+      });
     });
 
-    // Process flashcard dates
-    flashcardDates.forEach((row: any) => {
-      if (row.lastStudiedDate) {
-        const date = new Date(row.lastStudiedDate);
-        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-        flashcardCountMap.set(dateKey, (flashcardCountMap.get(dateKey) || 0) + 1);
-      }
-      if (row.lastQuizzedDate) {
-        const date = new Date(row.lastQuizzedDate);
-        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-        flashcardCountMap.set(dateKey, (flashcardCountMap.get(dateKey) || 0) + 1);
-      }
-    });
-
-    // Get all unique dates
-    const allDates = new Set([...deckCountMap.keys(), ...flashcardCountMap.keys()]);
-    const sortedDates = Array.from(allDates).sort();
-
+    // Pre-calculate today and date ranges
+    const today = new Date();
+    const todayKey = today.toISOString().split('T')[0];
+    
     // Generate day data for the last 30 days
     const dayData: DayData[] = [];
-    const today = new Date();
-    
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const dateKey = date.toISOString().split('T')[0];
+      const counts = dateCountMap.get(dateKey) || { decks: 0, flashcards: 0 };
       
       dayData.push({
         day: getDayName(date),
         date: formatDate(date),
-        flashcards: flashcardCountMap.get(dateKey) || 0,
-        decks: deckCountMap.get(dateKey) || 0,
+        flashcards: counts.flashcards,
+        decks: counts.decks,
       });
     }
 
@@ -123,20 +140,13 @@ const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: Month
     const monthData: MonthData[] = [];
     const monthCountMap = new Map<string, { flashcards: number; decks: number }>();
 
-    // Aggregate data by month
-    for (const [dateKey, deckCount] of deckCountMap) {
+    // Aggregate data by month using the existing dateCountMap
+    for (const [dateKey, counts] of dateCountMap) {
       const date = new Date(dateKey);
       const monthKey = formatMonth(date);
       const current = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
-      current.decks += deckCount;
-      monthCountMap.set(monthKey, current);
-    }
-
-    for (const [dateKey, flashcardCount] of flashcardCountMap) {
-      const date = new Date(dateKey);
-      const monthKey = formatMonth(date);
-      const current = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
-      current.flashcards += flashcardCount;
+      current.decks += counts.decks;
+      current.flashcards += counts.flashcards;
       monthCountMap.set(monthKey, current);
     }
 
@@ -183,45 +193,55 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   const fadeAnim = new Animated.Value(0);
   const graphFadeAnim = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
+  const isFocused = useIsFocused();
 
   // State for real data
   const [dayData, setDayData] = useState<DayData[]>([]);
   const [monthData, setMonthData] = useState<MonthData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch data on component mount
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const { dayData: fetchedDayData, monthData: fetchedMonthData } = await fetchReviewData();
-        setDayData(fetchedDayData);
-        setMonthData(fetchedMonthData);
-      } catch (error) {
-        console.error('Error loading review data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Function to load data
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const { dayData: fetchedDayData, monthData: fetchedMonthData } = await fetchReviewData();
+      setDayData(fetchedDayData);
+      setMonthData(fetchedMonthData);
+    } catch (error) {
+      console.error('Error loading review data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Fetch data on component mount and when screen comes into focus
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [isFocused]); // Refresh data when screen comes into focus
 
   // Use correct data
   const currentData = isMonth ? monthData : dayData;
 
-  // Calculate total width needed for all data points
-  const totalWidth = Math.max(GRAPH_WIDTH, PADDING + (currentData.length - 1) * X_STEP + PADDING);
+  // Memoized calculations to prevent recalculation on every render
+  const { totalWidth, Y_MAX, Y_STEP } = useMemo(() => {
+    // Calculate total width needed for all data points
+    const totalWidth = Math.max(GRAPH_WIDTH, PADDING + (currentData.length - 1) * X_STEP + PADDING);
 
-  const yMaxRaw = Math.max(...currentData.map((d: DayData | MonthData) => Math.max(d.flashcards, d.decks)));
-  const Y_MAX = Math.ceil(yMaxRaw / 10) * 10;
-  const Y_STEP = isMonth ? 10 : 5;
+    const yMaxRaw = Math.max(...currentData.map((d: DayData | MonthData) => Math.max(d.flashcards, d.decks)));
+    const Y_MAX = Math.ceil(yMaxRaw / 10) * 10;
+    const Y_STEP = isMonth ? 10 : 5;
 
-  function getY(value: number, graphHeight: number) {
-    // Invert y for SVG
-    const usableHeight = graphHeight - 2 * PADDING;
-    return PADDING + usableHeight - (value / Y_MAX) * usableHeight;
-  }
+    return { totalWidth, Y_MAX, Y_STEP };
+  }, [currentData, isMonth, GRAPH_WIDTH, X_STEP]);
+
+  // Memoized Y calculation function
+  const getY = useMemo(() => {
+    return (value: number, graphHeight: number) => {
+      // Invert y for SVG
+      const usableHeight = graphHeight - 2 * PADDING;
+      return PADDING + usableHeight - (value / Y_MAX) * usableHeight;
+    };
+  }, [Y_MAX]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -384,7 +404,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               <SvgText
                 x={GRAPH_WIDTH - PADDING + 8}
                 y={getY(y, GRAPH_HEIGHT) + 5}
-                fontSize={isMonth ? 12 : 16}
+                fontSize={isMonth ? 10 : 12}
                 fill="#D5D4DD"
                 fontFamily="Satoshi-Medium"
                 textAnchor="start"

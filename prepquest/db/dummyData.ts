@@ -6,6 +6,44 @@ export async function populateDummyData() {
   try {
     console.log('Starting to populate dummy data...');
     
+    // Get database instance
+    const { db } = await import('./index');
+
+    // Initialize users table with dummy data
+    console.log('Populating users table...');
+    
+    // Clear existing users data and insert fresh dummy data
+    await db.execAsync('DELETE FROM users');
+    
+    const userData = [
+      {
+        id: 1,
+        accumulatedDecksCreated: 200,
+        accumulatedFlashcardsCreated: 1020,
+        accumulatedStudyDecksCreated: 120,
+        accumulatedInterviewDecksCreated: 80,
+        lastUpdated: '2025-01-27T10:30:00.000Z'
+      },
+      {
+        id: 2,
+        accumulatedDecksCreated: 42,
+        accumulatedFlashcardsCreated: 280,
+        accumulatedStudyDecksCreated: 28,
+        accumulatedInterviewDecksCreated: 14,
+        lastUpdated: '2025-01-27T14:45:00.000Z'
+      }
+    ];
+
+    // Insert users
+    for (const user of userData) {
+      await db.execAsync(`
+        INSERT INTO users (id, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated, lastUpdated)
+        VALUES (${user.id}, ${user.accumulatedDecksCreated}, ${user.accumulatedFlashcardsCreated}, ${user.accumulatedStudyDecksCreated}, ${user.accumulatedInterviewDecksCreated}, '${user.lastUpdated}')
+      `);
+    }
+
+    console.log('Users table populated successfully');
+    
     // Helper function to read asset as blob
     async function readAssetAsBlob(asset: Asset): Promise<Uint8Array | null> {
       await asset.downloadAsync();
@@ -38,9 +76,6 @@ export async function populateDummyData() {
     const dummyAudioBlob = await readAssetAsBlob(dummyAudioAsset);
 
     console.log('Assets loaded as blobs!');
-
-    // Get database instance
-    const { db } = await import('./index');
 
     // Populate folders table first
     console.log('Populating folders table...');
@@ -705,7 +740,7 @@ export async function populateDummyData() {
         isAIDeck: 0,
         folderIDs: '[10]',
         interviewJobRole: 'Frontend Engineer',
-        interviewType: 'brainteasers',
+        interviewType: 'technical',
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["JavaScript", "React", "CSS", "Performance"]',
@@ -724,7 +759,7 @@ export async function populateDummyData() {
         isAIDeck: 0,
         folderIDs: '[10]',
         interviewJobRole: 'Full Stack Engineer',
-        interviewType: 'brainteasers',
+        interviewType: 'technical',
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["System Design", "Database Design", "API Design"]',
@@ -836,7 +871,7 @@ export async function populateDummyData() {
         isAIDeck: 0,
         folderIDs: null,
         interviewJobRole: 'Cloud Engineer',
-        interviewType: 'brainteasers',
+        interviewType: 'technical',
         interviewCompany: 'Microsoft',
         interviewExperienceLevel: 'Entry-level',
         interviewTopics: '["Azure Services", "DevOps", "Infrastructure as Code"]',
@@ -1213,7 +1248,7 @@ export async function populateDummyData() {
         studyTopicsSubtopics: null,
         studyExamQuiz: null,
         interviewJobRole: 'Software Engineer',
-        interviewType: 'brainteasers',
+        interviewType: 'technical',
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["Algorithms", "System Design", "Data Structures", "Problem Solving"]',

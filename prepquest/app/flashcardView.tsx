@@ -24,6 +24,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useFocusEffect } from '@react-navigation/native';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -202,12 +203,12 @@ const arrayBufferToBase64 = (buffer: ArrayBufferLike): string => {
 };
 
 // Function to load flashcards from database
-const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Promise<TransformedFlashcard[]> => {
+const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string, retryDifficult?: boolean): Promise<TransformedFlashcard[]> => {
   try {
     const isAIDeckFromParams = isAIDeck === 'true';
     const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
     
-    const result = await db.getAllAsync(`
+    let query = `
       SELECT 
         flashcardID,
         deckID,
@@ -235,6 +236,21 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
         lastQuizzedDate
       FROM ${tableName}
       WHERE deckID = ?
+    `;
+
+    const params: any[] = [parseInt(deckId)];
+
+    if (retryDifficult) {
+      // Filter for difficult flashcards: Again, Hard, or MCQ with wrong answers
+      query += `
+        AND (
+          difficultyRating IN ('Again', 'Hard') 
+          OR (answerType = 'mcq' AND isMcqAnswerRight = 0)
+        )
+      `;
+    }
+
+    query += `
       ORDER BY 
         CASE difficultyRating
           WHEN 'None' THEN 1
@@ -245,7 +261,9 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
           ELSE 6
         END,
         flashcardID ASC
-    `, [parseInt(deckId)]);
+    `;
+
+    const result = await db.getAllAsync(query, params);
 
     if (!result) {
       return [];
@@ -620,7 +638,8 @@ const FlippableFlashcard = (
     setRecordedAudioUri,
     updateFlashcardDate,
     updateDeckCompletionDate,
-    startFlashcardTimer
+    startFlashcardTimer,
+    retryDifficultParam
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -654,7 +673,8 @@ const FlippableFlashcard = (
       setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>,
       updateFlashcardDate: (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => Promise<void>,
       updateDeckCompletionDate: (isStudyMode: boolean) => Promise<void>,
-      startFlashcardTimer: (flashcardId: number) => void
+      startFlashcardTimer: (flashcardId: number) => void,
+      retryDifficultParam?: string
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -1359,8 +1379,8 @@ const FlippableFlashcard = (
 
   return (
     <View style={{ flex: 1, position: 'relative' }}>
-      {/* Left Chevron Button - hidden in study mode */}
-      {!isStudyMode && !isQuizMode && (
+      {/* Left Chevron Button - hidden in study mode, but visible in retry difficult mode */}
+      {(!isStudyMode && !isQuizMode) || (isStudyMode && retryDifficultParam === 'true') ? (
         <TouchableOpacity
           style={styles.leftChevronButton}
           onPress={navigateToPreviousCard}
@@ -1372,7 +1392,7 @@ const FlippableFlashcard = (
             color={isLeftChevronDisabled() ? "#D5D4DD" : "#000000"}
           />
         </TouchableOpacity>
-      )}
+      ) : null}
       {/* Right Chevron Button */}
       <TouchableOpacity
         style={styles.rightChevronButton}
@@ -1903,7 +1923,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
 
 export default function FlashcardViewPage() {
   const router = useRouter();
-  const { deckID, flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam, isAIDeck: isAIDeckParam } = useLocalSearchParams();
+  const { deckID, flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam, isAIDeck: isAIDeckParam, retryDifficult: retryDifficultParam } = useLocalSearchParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -1947,7 +1967,8 @@ export default function FlashcardViewPage() {
       if (deckID && isAIDeckParam) {
         setIsLoadingFlashcards(true);
         try {
-          const loadedFlashcards = await loadFlashcardsFromDatabase(deckID as string, isAIDeckParam as string);
+          const retryDifficult = retryDifficultParam === 'true';
+          const loadedFlashcards = await loadFlashcardsFromDatabase(deckID as string, isAIDeckParam as string, retryDifficult);
           setFlashcards(loadedFlashcards);
           console.log('Loaded flashcards from database:', loadedFlashcards.length);
         } catch (error) {
@@ -1960,7 +1981,7 @@ export default function FlashcardViewPage() {
     };
 
     loadFlashcards();
-  }, [deckID, isAIDeckParam]);
+  }, [deckID, isAIDeckParam, retryDifficultParam]);
 
   // Handler to toggle favorite for current card - UPDATED TO WORK WITH DATABASE
   const handleToggleFavorite = async () => {
@@ -2609,6 +2630,20 @@ export default function FlashcardViewPage() {
           opacity: successFadeAnim,
         }}
       >
+        {/* Home icon button at top left */}
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            top: Platform.OS === 'android' ? 100 : 46,
+            right: 16,
+            zIndex: 10,
+            padding: 8,
+          }}
+          onPress={() => router.replace('/')}
+        >
+          <MaterialIcons name="home" size={32} color="black" />
+        </TouchableOpacity>
+
         {isQuizMode ? (
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
             <LottieView
@@ -2637,6 +2672,34 @@ export default function FlashcardViewPage() {
           {isQuizMode ? 'Nicely done!' : 'Nice studying!'}
         </Text>
         {isQuizMode && (
+          <>
+            <TouchableOpacity
+              style={{
+                width: 318,
+                height: 72,
+                borderRadius: 30,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#4F41D8',
+                marginBottom: 20,
+              }}
+              onPress={() => router.replace({
+                pathname: '/flashcardView',
+                params: { 
+                  deckID: deckID as string,
+                  flashcardIdx: '0',
+                  totalNumberOfFlashcards: totalCards.toString(),
+                  isStudyMode: 'true',
+                  isQuizMode: 'false',
+                  isAIDeck: isAIDeckParam as string,
+                  retryDifficult: 'true'
+                },
+              })}
+            >
+              <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+                Retry difficult flashcards?
+              </Text>
+            </TouchableOpacity>
           <TouchableOpacity
           style={{
             width: 318,
@@ -2647,29 +2710,22 @@ export default function FlashcardViewPage() {
             backgroundColor: '#44B88A',
             marginBottom: 20,
           }}
-          onPress={() => router.push('/viewQuizStats')}
+          onPress={() => router.push({
+            pathname: '/viewQuizStats',
+            params: { 
+              halfwayCheckpoint: 'false',
+              deckID: deckID as string,
+              isAIDeck: isAIDeckParam as string,
+              attemptedFlashcardIds: JSON.stringify(attemptedFlashcardIds)
+            }},
+          )}
         >
           <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
             View Quiz Stats
           </Text>
         </TouchableOpacity>
+        </>
         )}
-        <TouchableOpacity
-          style={{
-            width: 318,
-            height: 72,
-            borderRadius: 30,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#4F41D8',
-            marginBottom: 20,
-          }}
-          onPress={() => router.replace('/')}
-        >
-          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-            Back to Home (Decks Page)
-          </Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={{
             width: 318,
@@ -2819,6 +2875,7 @@ export default function FlashcardViewPage() {
               updateFlashcardDate={updateFlashcardDate}
               updateDeckCompletionDate={updateDeckCompletionDate}
               startFlashcardTimer={startFlashcardTimer}
+              retryDifficultParam={retryDifficultParam as string}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

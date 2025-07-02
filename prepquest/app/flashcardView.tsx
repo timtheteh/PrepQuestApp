@@ -562,7 +562,8 @@ const FlippableFlashcard = (
     flashcards,
     recordedAudioUri,
     setRecordedAudioUri,
-    updateFlashcardDate
+    updateFlashcardDate,
+    updateDeckCompletionDate
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -594,7 +595,8 @@ const FlippableFlashcard = (
       flashcards: TransformedFlashcard[],
       recordedAudioUri: string | null,
       setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>,
-      updateFlashcardDate: (flashcardId: number, isStudyMode: boolean) => Promise<void>
+      updateFlashcardDate: (flashcardId: number, isStudyMode: boolean) => Promise<void>,
+      updateDeckCompletionDate: (isStudyMode: boolean) => Promise<void>
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -780,7 +782,7 @@ const FlippableFlashcard = (
     }
   };
 
-  const navigateToNextCard = () => {
+  const navigateToNextCard = async () => {
     // If in study mode and at last card, and validation is passed, go to success mode
     if ((isQuizMode || isStudyMode) && currentIdx === totalCards - 1) {
       // Repeat the validation logic for the last card
@@ -863,6 +865,9 @@ const FlippableFlashcard = (
       if (currentFlashcard) {
         updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode);
       }
+      
+      // Update the deck's completion date when entire deck is finished
+      await updateDeckCompletionDate(isStudyMode);
       
       // If all validation is passed, set success mode and return
       setIsSuccessMode(true);
@@ -1920,19 +1925,51 @@ export default function FlashcardViewPage() {
     try {
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
       const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
       
       const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
       
+      // Update the flashcard's study/quiz date
       await db.runAsync(`
         UPDATE ${tableName}
         SET ${fieldToUpdate} = ?
         WHERE flashcardID = ?
       `, [currentDate, flashcardId]);
 
+      // Update the deck's lastModifiedDate since it was actively used
+      await db.runAsync(`
+        UPDATE ${deckTableName}
+        SET lastModifiedDate = ?
+        WHERE deckID = ?
+      `, [currentDate, parseInt(deckID as string)]);
+
       console.log(`Updated ${fieldToUpdate} for flashcard ${flashcardId} to ${currentDate}`);
+      console.log(`Updated lastModifiedDate for deck ${deckID} to ${currentDate}`);
     } catch (error) {
       console.error(`Error updating ${isStudyMode ? 'study' : 'quiz'} date:`, error);
+    }
+  };
+
+  // Function to update deck's completion date when entire deck is finished
+  const updateDeckCompletionDate = async (isStudyMode: boolean) => {
+    try {
+      const isAIDeckFromParams = isAIDeckParam === 'true';
+      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+      const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
+      
+      const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
+      
+      // Update the deck's completion date
+      await db.runAsync(`
+        UPDATE ${deckTableName}
+        SET ${fieldToUpdate} = ?
+        WHERE deckID = ?
+      `, [currentDate, parseInt(deckID as string)]);
+
+      console.log(`Updated deck ${deckID} ${fieldToUpdate} to ${currentDate} (deck completed)`);
+    } catch (error) {
+      console.error(`Error updating deck completion date:`, error);
     }
   };
 
@@ -2626,6 +2663,7 @@ export default function FlashcardViewPage() {
               recordedAudioUri={recordedAudioUri}
               setRecordedAudioUri={setRecordedAudioUri}
               updateFlashcardDate={updateFlashcardDate}
+              updateDeckCompletionDate={updateDeckCompletionDate}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

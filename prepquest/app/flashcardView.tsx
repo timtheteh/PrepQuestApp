@@ -1990,13 +1990,32 @@ export default function FlashcardViewPage() {
   }, [isStudyModeParam, isQuizModeParam]);
 
   // Function to update the difficulty of the current flashcard
-  const handleDifficultyChange = (difficulty: string) => {
-    if (flashcards[currentIdx]) {
+  const handleDifficultyChange = async (difficulty: string) => {
+    try {
+      const currentFlashcard = flashcards[currentIdx];
+      if (!currentFlashcard) return;
+
+      const isAIDeckFromParams = isAIDeckParam === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      
+      // Update the database
+      await db.runAsync(`
+        UPDATE ${tableName}
+        SET difficultyRating = ?
+        WHERE flashcardID = ?
+      `, [difficulty, currentFlashcard.flashcardID]);
+
+      // Update local state
       const updatedFlashcards = [...flashcards];
       updatedFlashcards[currentIdx].flashcardDifficulty = difficulty;
       setFlashcards(updatedFlashcards);
+      
       // Force a re-render by incrementing the trigger
       setDifficultyUpdateTrigger(prev => prev + 1);
+      
+      console.log(`Updated difficulty rating for flashcard ${currentFlashcard.flashcardID} to ${difficulty}`);
+    } catch (error) {
+      console.error('Error updating difficulty rating:', error);
     }
   };
 

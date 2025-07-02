@@ -22,11 +22,235 @@ import { Asset } from 'expo-asset';
 import * as Speech from 'expo-speech';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useFocusEffect } from '@react-navigation/native';
+import { db } from '@/db/index';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+// Interface for database flashcard
+interface DatabaseFlashcard {
+  flashcardID: number;
+  deckID: number;
+  difficultyRating: string;
+  cognitiveQnType: string;
+  isFavorited: number;
+  questionType: string;
+  questionText: string | null;
+  questionBlob: string | null; // hex string from SQLite
+  answerType: string;
+  answerText: string | null;
+  answerMCQ: string | null;
+  answerBlob: string | null; // hex string from SQLite
+  timeTaken: number | null;
+  isMcqAnswerRight: number | null;
+  lastStudiedDate: string | null;
+  lastQuizzedDate: string | null;
+}
+
+// Interface for transformed flashcard (matching dummy data format)
+interface TransformedFlashcard {
+  flashcardDifficulty: string;
+  flashcardQnType: string;
+  flashcardQn: string | any; // string for text, require() for image/audio
+  flashcardAnswerType: string;
+  flashcardAnswer: string | any[] | any; // string for text, array for MCQ, require() for image/audio
+  timeLimit: number;
+  cognitiveQnType: string;
+}
+
+// Function to get time limit based on difficulty rating
+const getTimeLimit = (difficultyRating: string): number => {
+  switch (difficultyRating) {
+    case 'Again': return 60;
+    case 'Hard': return 45;
+    case 'Good': return 30;
+    case 'Easy': return 15;
+    case 'None': return 20;
+    default: return 20;
+  }
+};
+
+// Function to convert blob to image source
+const blobToImageSource = (blob: Uint8Array | string): any => {
+  try {
+    // Handle hex string from SQLite BLOB (like in favorites page)
+    if (typeof blob === 'string') {
+      // Check if it's a hex string (from SQLite hex() function)
+      if (/^[0-9A-Fa-f]+$/.test(blob)) {
+        // Convert hex to base64 using a proper approach for binary data
+        const hexString = blob;
+        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+        
+        // Convert to base64 using a proper binary-to-base64 conversion
+        const base64String = arrayBufferToBase64(bytes.buffer);
+        
+        return { uri: `data:image/png;base64,${base64String}` };
+      } else if (blob.startsWith('data:')) {
+        // Already a data URI
+        return { uri: blob };
+      } else {
+        // Try as file path or URL
+        return { uri: blob };
+      }
+    } else if (blob instanceof Uint8Array) {
+      // Handle Uint8Array blob using proper binary-to-base64 conversion
+      const base64String = arrayBufferToBase64(blob.buffer);
+      return { uri: `data:image/png;base64,${base64String}` };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error converting blob to image source:', error);
+    return null;
+  }
+};
+
+// Function to convert blob to audio source
+const blobToAudioSource = (blob: Uint8Array | string): any => {
+  try {
+    // Handle hex string from SQLite BLOB (like in favorites page)
+    if (typeof blob === 'string') {
+      // Check if it's a hex string (from SQLite hex() function)
+      if (/^[0-9A-Fa-f]+$/.test(blob)) {
+        // Convert hex to base64 using a proper approach for binary data
+        const hexString = blob;
+        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+        
+        // Convert to base64 using a proper binary-to-base64 conversion
+        const base64String = arrayBufferToBase64(bytes.buffer);
+        
+        return { uri: `data:audio/mp4;base64,${base64String}` };
+      } else if (blob.startsWith('data:')) {
+        // Already a data URI
+        return { uri: blob };
+      } else {
+        // Try as file path or URL
+        return { uri: blob };
+      }
+    } else if (blob instanceof Uint8Array) {
+      // Handle Uint8Array blob using proper binary-to-base64 conversion
+      const base64String = arrayBufferToBase64(blob.buffer);
+      return { uri: `data:audio/mp4;base64,${base64String}` };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error converting blob to audio source:', error);
+    return null;
+  }
+};
+
+// Helper function to convert ArrayBuffer to base64
+const arrayBufferToBase64 = (buffer: ArrayBufferLike): string => {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
+
+// Function to load flashcards from database
+const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Promise<TransformedFlashcard[]> => {
+  try {
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    const result = await db.getAllAsync(`
+      SELECT 
+        flashcardID,
+        deckID,
+        difficultyRating,
+        cognitiveQnType,
+        isFavorited,
+        questionType,
+        questionText,
+        CASE 
+          WHEN questionBlob IS NOT NULL 
+          THEN hex(questionBlob) 
+          ELSE NULL 
+        END as questionBlob,
+        answerType,
+        answerText,
+        answerMCQ,
+        CASE 
+          WHEN answerBlob IS NOT NULL 
+          THEN hex(answerBlob) 
+          ELSE NULL 
+        END as answerBlob,
+        timeTaken,
+        isMcqAnswerRight,
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM ${tableName}
+      WHERE deckID = ?
+      ORDER BY flashcardID ASC
+    `, [parseInt(deckId)]);
+
+    if (!result) {
+      return [];
+    }
+
+    const flashcards = result as DatabaseFlashcard[];
+    
+    // Transform database flashcards to match dummy data format
+    return flashcards.map(flashcard => {
+      // Transform question
+      let transformedQuestion: string | any;
+      if (flashcard.questionType === 'text') {
+        transformedQuestion = flashcard.questionText || '';
+      } else if (flashcard.questionType === 'image' && flashcard.questionBlob) {
+        transformedQuestion = blobToImageSource(flashcard.questionBlob);
+      } else if (flashcard.questionType === 'audio' && flashcard.questionBlob) {
+        transformedQuestion = blobToAudioSource(flashcard.questionBlob);
+      } else {
+        transformedQuestion = '';
+      }
+
+      // Transform answer
+      let transformedAnswer: string | any[] | any;
+      if (flashcard.answerType === 'text') {
+        transformedAnswer = flashcard.answerText || '';
+      } else if (flashcard.answerType === 'mcq' && flashcard.answerMCQ) {
+        try {
+          const mcqData = JSON.parse(flashcard.answerMCQ);
+          console.log(mcqData);
+          transformedAnswer = mcqData.map((item: any) => ({
+            choice: item.option || item.choice,
+            ans: item.ans || false
+          }));
+        } catch (error) {
+          console.error('Error parsing MCQ data:', error);
+          transformedAnswer = [];
+        }
+      } else if ((flashcard.answerType === 'image' || flashcard.answerType === 'audio') && flashcard.answerBlob) {
+        if (flashcard.answerType === 'image') {
+          transformedAnswer = blobToImageSource(flashcard.answerBlob);
+        } else {
+          transformedAnswer = blobToAudioSource(flashcard.answerBlob);
+        }
+      } else if (flashcard.answerType === 'voice') {
+        transformedAnswer = null;
+      } else {
+        transformedAnswer = '';
+      }
+
+      return {
+        flashcardDifficulty: flashcard.difficultyRating,
+        flashcardQnType: flashcard.questionType,
+        flashcardQn: transformedQuestion,
+        flashcardAnswerType: flashcard.answerType,
+        flashcardAnswer: transformedAnswer,
+        timeLimit: getTimeLimit(flashcard.difficultyRating),
+        cognitiveQnType: flashcard.cognitiveQnType
+      };
+    });
+  } catch (error) {
+    console.error('Error loading flashcards from database:', error);
+    return [];
+  }
+};
 
 // Helper function to copy asset images to clipboard
 const copyAssetToClipboard = async (imageSource: any) => {
@@ -70,52 +294,10 @@ const DIFFICULTY_TYPES = [
   { type: 'Easy', color: '#98CE7F' },
 ];
 
-// Dummy flashcard data
-const dummyFlashcards = [
-//     // text Qn -> text Ans
-//   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
-//   // text Qn (Cloze) -> text Ans
-//   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'A React Hook is a special function that allows functional components to <blank> into React features like state and lifecycle methods without using class components.', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
-//   // image Qn (jpg) -> text Ans
-//   { flashcardDifficulty: 'Hard', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), flashcardAnswerType: 'text', flashcardAnswer: 'UseEffect is a hook that allows you to perform side effects in functional components.' },
-//   // image Qn (HEIC) -> text Ans
-// //   { flashcardDifficulty: 'Easy', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_HEIC_photo.HEIC'), flashcardAnswerType: 'text', flashcardAnswer: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." },
-//   // audio Qn (m4a) -> text Ans
-//   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
-// //   // audio Qn (ogg) -> text Ans
-// //   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_ogg_audio.ogg'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
-  
-//   // text Qn -> MCQ Ans
-//   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
-//     [
-//     {   "choice": "This is the first choice",
-//         "ans": false
-//     }, 
-//     {   "choice": "This is the second choice",
-//         "ans": false
-//     }, 
-//     {   "choice": "This is the third choice",
-//         "ans": false
-//     }, 
-//     {   "choice": "This is the fourth choice",
-//         "ans": true
-//     },
-//     {   "choice": "This is the fifh choice",
-//         "ans": false
-//     }] 
-//     },
-//     // text Qn -> voice recorded
-//   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
-  // text Qn -> audio Ans
-  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), timeLimit: 10, cognitiveQnType: 'Problem-Solving'},
-  // text Qn -> image Ans
-  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), timeLimit: 30, cognitiveQnType: 'Comprehension'},
-];
-
 // Updated DifficultyPillRow to accept currentIdx and totalCards as props
-const DifficultyPillRow = ({ currentIdx, onDifficultyChange }: { currentIdx: number, onDifficultyChange: (difficulty: string) => void }) => {
+const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards }: { currentIdx: number, onDifficultyChange: (difficulty: string) => void, flashcards: TransformedFlashcard[] }) => {
   // Get the current flashcard's difficulty
-  const currentFlashcard = dummyFlashcards[currentIdx];
+  const currentFlashcard = flashcards[currentIdx];
   const currentDifficulty = currentFlashcard?.flashcardDifficulty;
 
   return (
@@ -141,14 +323,15 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange }: { currentIdx: num
 };
 
 // Updated LoadingBar to accept currentIdx and totalCards as props with smooth animations
-const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode }: { 
+const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode, recordedAudioUri }: { 
   currentIdx: number, 
   totalCards: number, 
   isStudyMode: boolean,
   hasFlippedCard: boolean,
   hasSubmittedMCQ: boolean,
   flashcardAnswerType: string,
-  isQuizMode: boolean
+  isQuizMode: boolean,
+  recordedAudioUri: string | null
 }) => {
   // Create animated value for progress
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -162,7 +345,9 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
     // For text, audio, or image answer types - user must have flipped to answer side
     (['text', 'audio', 'image'].includes(flashcardAnswerType) && hasFlippedCard) ||
     // For MCQ answer type - user must have submitted the MCQ
-    (flashcardAnswerType === 'MCQ' && hasSubmittedMCQ)
+    (flashcardAnswerType === 'mcq' && hasSubmittedMCQ) ||
+    // For voice answer type - user must have recorded a voice answer
+    (flashcardAnswerType === 'voice' && recordedAudioUri !== null)
   );
 
   // Animate progress when currentIdx changes
@@ -323,7 +508,10 @@ const FlippableFlashcard = (
     setPauseNextTimer,
     favorited,
     onToggleFavorite,
-    showQuizCountdown
+    showQuizCountdown,
+    flashcards,
+    recordedAudioUri,
+    setRecordedAudioUri
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -351,7 +539,10 @@ const FlippableFlashcard = (
       setPauseNextTimer: React.Dispatch<React.SetStateAction<boolean>>,
       favorited: boolean,
       onToggleFavorite: () => void,
-      showQuizCountdown: boolean
+      showQuizCountdown: boolean,
+      flashcards: TransformedFlashcard[],
+      recordedAudioUri: string | null,
+      setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -365,7 +556,7 @@ const FlippableFlashcard = (
   const cardSlideAnim = useRef(new Animated.Value(0)).current; // 0 = center, -1 = left, 1 = right
 
   // Get current flashcard data
-  const currentFlashcard = dummyFlashcards[currentIdx];
+  const currentFlashcard = flashcards[currentIdx];
   const flashcardQnType = currentFlashcard?.flashcardQnType;
   const flashcardQn = currentFlashcard?.flashcardQn;
   const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
@@ -378,14 +569,13 @@ const FlippableFlashcard = (
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
   const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Generate MCQ options with letters ONCE per card
   const previousCardIndexRef = useRef<number>(currentIdx);
   
   React.useEffect(() => {
-    if (flashcardAnswerType === 'MCQ' && Array.isArray(flashcardAnswer)) {
+    if (flashcardAnswerType === 'mcq' && Array.isArray(flashcardAnswer)) {
       const optionLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
       const indices = Array.from({ length: flashcardAnswer.length }, (_, i) => i);
       // Fisher-Yates shuffle
@@ -449,6 +639,10 @@ const FlippableFlashcard = (
 
   // Handle MCQ option selection
   const handleMCQOptionSelect = (letter: string) => {
+    // In quiz mode, don't allow changing answer after submission
+    if (isQuizMode && hasSubmittedMCQ) {
+      return;
+    }
     setSelectedMCQOption(selectedMCQOption === letter ? null : letter);
   };
 
@@ -485,16 +679,20 @@ const FlippableFlashcard = (
     const isAtLastCard = currentIdx >= totalCards - 1;
     if ((isQuizMode || isStudyMode) && isAtLastCard) {
       // Validation for last card
-      const currentFlashcard = dummyFlashcards[currentIdx];
+      const currentFlashcard = flashcards[currentIdx];
       const answerType = currentFlashcard?.flashcardAnswerType;
       const currentDifficulty = currentFlashcard?.flashcardDifficulty;
       if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         return !(hasFlippedCard && hasDifficultySelected);
       }
-      if (answerType === 'MCQ') {
+      if (answerType === 'mcq') {
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         return !(hasFlippedCard && hasSubmittedMCQ && hasDifficultySelected);
+      }
+      if (answerType === 'voice') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        return !(hasFlippedCard && recordedAudioUri !== null && hasDifficultySelected);
       }
       // fallback: disable if not validated
       return true;
@@ -534,7 +732,7 @@ const FlippableFlashcard = (
     // If in study mode and at last card, and validation is passed, go to success mode
     if ((isQuizMode || isStudyMode) && currentIdx === totalCards - 1) {
       // Repeat the validation logic for the last card
-      const currentFlashcard = dummyFlashcards[currentIdx];
+      const currentFlashcard = flashcards[currentIdx];
       const answerType = currentFlashcard?.flashcardAnswerType;
       const currentDifficulty = currentFlashcard?.flashcardDifficulty;
       if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
@@ -554,7 +752,7 @@ const FlippableFlashcard = (
           }
         }
       }
-      if (answerType === 'MCQ') {
+      if (answerType === 'mcq') {
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         if (!hasFlippedCard) {
           if (!hasDifficultySelected) {
@@ -581,6 +779,33 @@ const FlippableFlashcard = (
           }
         }
       }
+      if (answerType === 'voice') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        if (!hasFlippedCard) {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal("Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!");
+            return;
+          } else {
+            showStudyValidationModal("Please flip the card to view and record your voice answer before moving onto the next flashcard!");
+            return;
+          }
+        } else {
+          if (!hasDifficultySelected) {
+            if (!recordedAudioUri) {
+              showStudyValidationModal("Cannot move on until you have recorded your voice answer and selected a difficulty!");
+              return;
+            } else {
+              showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+              return;
+            }
+          } else {
+            if (!recordedAudioUri) {
+              showStudyValidationModal("Cannot move on until you have recorded your voice answer!");
+              return;
+            }
+          }
+        }
+      }
       // If all validation is passed, set success mode and return
       setIsSuccessMode(true);
       return;
@@ -589,7 +814,7 @@ const FlippableFlashcard = (
     if (!isRightChevronDisabled()) {
       // Study mode validation (for non-last cards)
       if (isQuizMode || isStudyMode) {
-        const currentFlashcard = dummyFlashcards[currentIdx];
+        const currentFlashcard = flashcards[currentIdx];
         const answerType = currentFlashcard?.flashcardAnswerType;
         const currentDifficulty = currentFlashcard?.flashcardDifficulty;
         if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
@@ -609,7 +834,7 @@ const FlippableFlashcard = (
             }
           }
         }
-        if (answerType === 'MCQ') {
+        if (answerType === 'mcq') {
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
@@ -636,6 +861,33 @@ const FlippableFlashcard = (
             }
           }
         }
+        if (answerType === 'voice') {
+          const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+          if (!hasFlippedCard) {
+            if (!hasDifficultySelected) {
+              showStudyValidationModal("Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!");
+              return;
+            } else {
+              showStudyValidationModal("Please flip the card to view and record your voice answer before moving onto the next flashcard!");
+              return;
+            }
+          } else {
+            if (!hasDifficultySelected) {
+              if (!recordedAudioUri) {
+                showStudyValidationModal("Cannot move on until you have recorded your voice answer and selected a difficulty!");
+                return;
+              } else {
+                showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+                return;
+              }
+            } else {
+              if (!recordedAudioUri) {
+                showStudyValidationModal("Cannot move on until you have recorded your voice answer!");
+                return;
+              }
+            }
+          }
+        }
       }
       stopSpeech();
       // Slide out to left
@@ -649,6 +901,7 @@ const FlippableFlashcard = (
           setIsFlipped(false);
           setHasFlippedCard(false); // Reset flipped state for new card
           setHasSubmittedMCQ(false); // Reset MCQ submission state for new card
+          setRecordedAudioUri(null); // Reset voice recording for new card
           flipAnim.setValue(0);
           frontOpacity.setValue(1);
           backOpacity.setValue(0);
@@ -1259,7 +1512,7 @@ const FlippableFlashcard = (
                       {renderQuestionWithBlanks(flashcardAnswer)}
                   </ScrollView>
                   )}
-              {flashcardAnswerType === 'MCQ' && Array.isArray(flashcardAnswer) && (
+              {flashcardAnswerType === 'mcq' && Array.isArray(flashcardAnswer) && (
                 <ScrollView 
                   style={styles.questionScrollView}
                   contentContainerStyle={styles.mcqChoicesContainer}
@@ -1388,7 +1641,7 @@ const FlippableFlashcard = (
             
             {/* Bottom container */}
             <Animated.View style={[styles.bottomContainer, { opacity: backOpacity }]}>
-              {flashcardAnswerType === 'MCQ' && mcqOptionsWithLettersRef.current.length > 0 && (
+              {flashcardAnswerType === 'mcq' && mcqOptionsWithLettersRef.current.length > 0 && (
                 <View style={styles.mcqBottomContainer}>
                   {mcqOptionsWithLettersRef.current.map((option) => (
                     <MCQOption
@@ -1396,11 +1649,13 @@ const FlippableFlashcard = (
                       text={option.letter}
                       selected={selectedMCQOption === option.letter}
                       onPress={() => handleMCQOptionSelect(option.letter)}
+                      disabled={isQuizMode && hasSubmittedMCQ}
                     />
                   ))}
                   <SubmitButton
                     enabled={selectedMCQOption !== null}
                     onPress={handleMCQSubmit}
+                    disabled={isQuizMode && hasSubmittedMCQ}
                   />
                 </View>
               )}
@@ -1441,25 +1696,26 @@ const FlippableFlashcard = (
 };
 
 // Local MCQ Option component
-const MCQOption = ({ text, selected, onPress }: { text: string; selected: boolean; onPress: () => void }) => {
+const MCQOption = ({ text, selected, onPress, disabled }: { text: string; selected: boolean; onPress: () => void; disabled?: boolean }) => {
   return (
     <View style={styles.mcqOptionContainer}>
-      <SmallCircleSelectButton selected={selected} onPress={onPress} />
-      <Text style={styles.mcqOptionLabelText}>{text}</Text>
+      <SmallCircleSelectButton selected={selected} onPress={onPress} disabled={disabled} />
+      <Text style={[styles.mcqOptionLabelText, disabled && { color: '#D5D4DD' }]}>{text}</Text>
     </View>
   );
 };
 
 // Local Submit Button component
-const SubmitButton = ({ enabled, onPress }: { enabled: boolean; onPress: () => void }) => {
+const SubmitButton = ({ enabled, onPress, disabled }: { enabled: boolean; onPress: () => void; disabled?: boolean }) => {
+  const isDisabled = disabled || !enabled;
   return (
     <TouchableOpacity
       style={[
         styles.submitButton,
-        { backgroundColor: enabled ? '#4F41D8' : '#D5D4DD' }
+        { backgroundColor: isDisabled ? '#D5D4DD' : '#4F41D8' }
       ]}
       onPress={onPress}
-      disabled={!enabled}
+      disabled={isDisabled}
       activeOpacity={0.8}
     >
       <Text style={styles.submitButtonText}>Submit</Text>
@@ -1512,9 +1768,13 @@ export default function FlashcardViewPage() {
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
+  // State for loaded flashcards from database
+  const [flashcards, setFlashcards] = useState<TransformedFlashcard[]>([]);
+  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState(true);
+
   // Lift currentIdx state up here
   const [currentIdx, setCurrentIdx] = useState(parseInt(flashcardIdx as string) || 0);
-  const totalCards = parseInt(totalNumberOfFlashcards as string) || dummyFlashcards.length;
+  const totalCards = flashcards.length > 0 ? flashcards.length : parseInt(totalNumberOfFlashcards as string) || 0;
   
   // Add isFlipped state to track card side
   const [isFlipped, setIsFlipped] = useState(false);
@@ -1537,6 +1797,30 @@ export default function FlashcardViewPage() {
 
   // Add quiz countdown state
   const [showQuizCountdown, setShowQuizCountdown] = useState(false);
+
+  // Add voice recording state (lifted from FlippableFlashcard)
+  const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
+
+  // Load flashcards from database when component mounts
+  useEffect(() => {
+    const loadFlashcards = async () => {
+      if (deckID && isAIDeckParam) {
+        setIsLoadingFlashcards(true);
+        try {
+          const loadedFlashcards = await loadFlashcardsFromDatabase(deckID as string, isAIDeckParam as string);
+          setFlashcards(loadedFlashcards);
+          console.log('Loaded flashcards from database:', loadedFlashcards.length);
+        } catch (error) {
+          console.error('Error loading flashcards:', error);
+          setFlashcards([]);
+        } finally {
+          setIsLoadingFlashcards(false);
+        }
+      }
+    };
+
+    loadFlashcards();
+  }, [deckID, isAIDeckParam]);
 
   // Handler to toggle favorite for current card - MOVED HERE
   const handleToggleFavorite = () => {
@@ -1564,8 +1848,10 @@ export default function FlashcardViewPage() {
 
   // Function to update the difficulty of the current flashcard
   const handleDifficultyChange = (difficulty: string) => {
-    if (dummyFlashcards[currentIdx]) {
-      dummyFlashcards[currentIdx].flashcardDifficulty = difficulty;
+    if (flashcards[currentIdx]) {
+      const updatedFlashcards = [...flashcards];
+      updatedFlashcards[currentIdx].flashcardDifficulty = difficulty;
+      setFlashcards(updatedFlashcards);
       // Force a re-render by incrementing the trigger
       setDifficultyUpdateTrigger(prev => prev + 1);
     }
@@ -1647,7 +1933,7 @@ export default function FlashcardViewPage() {
 
   // Handle copy functionality
   const handleCopyPress = async () => {
-    const currentFlashcard = dummyFlashcards[currentIdx];
+    const currentFlashcard = flashcards[currentIdx];
     
     try {
       if (isFlipped) {
@@ -1658,7 +1944,7 @@ export default function FlashcardViewPage() {
         if (answerType === 'text' && typeof answer === 'string') {
           await Clipboard.setStringAsync(answer);
           Alert.alert('Copied text to clipboard!');
-        } else if (answerType === 'MCQ' && Array.isArray(answer)) {
+        } else if (answerType === 'mcq' && Array.isArray(answer)) {
           // Use the displayed MCQ order and labels
           if (mcqOptionsWithLettersRef.current && mcqOptionsWithLettersRef.current.length > 0) {
             const mcqText = mcqOptionsWithLettersRef.current.map(option => {
@@ -1723,7 +2009,7 @@ export default function FlashcardViewPage() {
   };
 
   const handleAudioPressTopBar = async () => {
-    const currentFlashcard = dummyFlashcards[currentIdx];
+    const currentFlashcard = flashcards[currentIdx];
     try {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -1759,7 +2045,7 @@ export default function FlashcardViewPage() {
               setIsSpeechPaused(false);
             },
           });
-        } else if (answerType === 'MCQ' && Array.isArray(answer)) {
+        } else if (answerType === 'mcq' && Array.isArray(answer)) {
           let mcqText = '';
           if (mcqOptionsWithLettersRef.current && mcqOptionsWithLettersRef.current.length > 0) {
             mcqText = mcqOptionsWithLettersRef.current.map(option => {
@@ -1837,11 +2123,11 @@ export default function FlashcardViewPage() {
 
   // Function to determine if copy button should be enabled
   const isCopyButtonEnabled = (isFlipped: boolean) => {
-    const currentFlashcard = dummyFlashcards[currentIdx];
+    const currentFlashcard = flashcards[currentIdx];
     if (isFlipped) {
       // Back side
       const answerType = currentFlashcard?.flashcardAnswerType;
-      return answerType === 'text' || answerType === 'MCQ' || answerType === 'image';
+      return answerType === 'text' || answerType === 'mcq' || answerType === 'image';
     } else {
       // Front side
       const questionType = currentFlashcard?.flashcardQnType;
@@ -1851,11 +2137,11 @@ export default function FlashcardViewPage() {
 
   // Function to determine if audio button should be enabled
   const isAudioButtonEnabled = (isFlipped: boolean) => {
-    const currentFlashcard = dummyFlashcards[currentIdx];
+    const currentFlashcard = flashcards[currentIdx];
     if (isFlipped) {
       // Back side
       const answerType = currentFlashcard?.flashcardAnswerType;
-      return answerType === 'text' || answerType === 'MCQ';
+      return answerType === 'text' || answerType === 'mcq';
     } else {
       // Front side
       const questionType = currentFlashcard?.flashcardQnType;
@@ -1914,11 +2200,12 @@ export default function FlashcardViewPage() {
 
   // Move isCompleted logic to the top of FlashcardViewPage
   const isAtLastCard = currentIdx === totalCards - 1;
-  const currentFlashcard = dummyFlashcards[currentIdx];
+  const currentFlashcard = flashcards[currentIdx];
   const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
   const isCompleted = (isQuizMode || isStudyMode) && isAtLastCard && (
     (['text', 'audio', 'image'].includes(flashcardAnswerType) && hasFlippedCard) ||
-    (flashcardAnswerType === 'MCQ' && hasSubmittedMCQ)
+    (flashcardAnswerType === 'mcq' && hasSubmittedMCQ) ||
+    (flashcardAnswerType === 'voice' && recordedAudioUri !== null)
   );
 
   // At the top of FlashcardViewPage, add state for the end quiz modal
@@ -2053,38 +2340,38 @@ export default function FlashcardViewPage() {
   if (showQuizCountdown) {
     return (
       <View style={styles.safeArea}>
-      <SafeAreaView style={styles.safeArea}>
-      <View style={{
-        flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        {/* Back button at top left */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <AntDesign name="arrowleft" size={32} color="black" />
-        </TouchableOpacity>
-        {/* Quiz starting text */}
-        <Text style={{
-          fontFamily: 'Satoshi-Medium',
-          fontSize: 28,
-          color: '#222',
-          marginBottom: 24,
-          textAlign: 'center',
-        }}>
-          Quiz starting in...
-        </Text>
-        <LottieView
-          source={require('@/assets/animations/CountdownAnimation.json')}
-          autoPlay
-          loop={false}
-          style={{ width: 200, height: 200 }}
-        />
-      </View>
-      </SafeAreaView>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={{
+            flex: 1,
+            backgroundColor: '#fff',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {/* Back button at top left */}
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <AntDesign name="arrowleft" size={32} color="black" />
+            </TouchableOpacity>
+            {/* Quiz starting text */}
+            <Text style={{
+              fontFamily: 'Satoshi-Medium',
+              fontSize: 28,
+              color: '#222',
+              marginBottom: 24,
+              textAlign: 'center',
+            }}>
+              Quiz starting in...
+            </Text>
+            <LottieView
+              source={require('@/assets/animations/CountdownAnimation.json')}
+              autoPlay
+              loop={false}
+              style={{ width: 200, height: 200 }}
+            />
+          </View>
+        </SafeAreaView>
       </View>
     );
   }
@@ -2173,13 +2460,16 @@ export default function FlashcardViewPage() {
               favorited={favoritedMap[currentIdx] || false}
               onToggleFavorite={handleToggleFavorite}
               showQuizCountdown={showQuizCountdown}
+              flashcards={flashcards}
+              recordedAudioUri={recordedAudioUri}
+              setRecordedAudioUri={setRecordedAudioUri}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>
-            <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} />
+            <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} flashcards={flashcards} />
           </View>
           <View style={styles.loadingBarBottomContainer}>
-            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} isQuizMode={isQuizMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={dummyFlashcards[currentIdx]?.flashcardAnswerType || ''} />
+            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} isQuizMode={isQuizMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={flashcards[currentIdx]?.flashcardAnswerType || ''} recordedAudioUri={recordedAudioUri} />
           </View>
         </View>
       </SafeAreaView>

@@ -4,19 +4,25 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 interface SmallCircleSelectButtonProps {
   selected: boolean;
   onPress: () => void;
+  disabled?: boolean;
 }
 
 export function SmallCircleSelectButton({ 
   selected,
-  onPress
+  onPress,
+  disabled = false
 }: SmallCircleSelectButtonProps) {
   return (
     <TouchableOpacity 
       style={styles.container}
       onPress={onPress}
       activeOpacity={0.8}
+      disabled={disabled}
     >
-      <View style={styles.outerCircle}>
+      <View style={[
+        styles.outerCircle,
+        disabled && styles.disabledCircle
+      ]}>
         {selected && <View style={styles.innerCircle} />}
       </View>
     </TouchableOpacity>
@@ -38,6 +44,10 @@ const styles = StyleSheet.create({
     borderColor: '#D5D4DD',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  disabledCircle: {
+    borderColor: '#F0F0F0',
+    opacity: 0.5,
   },
   innerCircle: {
     width: 14,

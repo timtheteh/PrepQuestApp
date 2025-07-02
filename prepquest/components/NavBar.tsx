@@ -94,6 +94,255 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const slideAnimation = useSharedValue(1);
   const isFirstRender = useSharedValue(true);
 
+  // Move useAnimatedStyle hooks to top level
+  const animatedStyle0 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 0;
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            Platform.OS === 'ios' ? SPRING_CONFIG : ANDROID_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const animatedStyle1 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 1;
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            Platform.OS === 'ios' ? SPRING_CONFIG : ANDROID_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const animatedStyle2 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 2;
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            Platform.OS === 'ios' ? SPRING_CONFIG : ANDROID_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const animatedStyle3 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 3;
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            Platform.OS === 'ios' ? SPRING_CONFIG : ANDROID_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const labelAnimatedStyle0 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 0;
+    const progress = isSelected ? 1 : 0;
+
+    return {
+      position: 'absolute',
+      width: 133,
+      alignItems: 'center',
+      opacity: withSpring(progress, LABEL_SPRING),
+      bottom: -1,
+      transform: [
+        {
+          translateY: withSpring(
+            progress === 1 ? 0 : 20,
+            LABEL_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const labelAnimatedStyle1 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 1;
+    const progress = isSelected ? 1 : 0;
+
+    return {
+      position: 'absolute',
+      width: 133,
+      alignItems: 'center',
+      opacity: withSpring(progress, LABEL_SPRING),
+      bottom: -1,
+      transform: [
+        {
+          translateY: withSpring(
+            progress === 1 ? 0 : 20,
+            LABEL_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const labelAnimatedStyle2 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 2;
+    const progress = isSelected ? 1 : 0;
+
+    return {
+      position: 'absolute',
+      width: 133,
+      alignItems: 'center',
+      opacity: withSpring(progress, LABEL_SPRING),
+      bottom: -1,
+      transform: [
+        {
+          translateY: withSpring(
+            progress === 1 ? 0 : 20,
+            LABEL_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const labelAnimatedStyle3 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 3;
+    const progress = isSelected ? 1 : 0;
+
+    return {
+      position: 'absolute',
+      width: 133,
+      alignItems: 'center',
+      opacity: withSpring(progress, LABEL_SPRING),
+      bottom: -1,
+      transform: [
+        {
+          translateY: withSpring(
+            progress === 1 ? 0 : 20,
+            LABEL_SPRING
+          )
+        }
+      ]
+    };
+  }, []);
+
+  const circleStyle0 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 0;
+    const backgroundColor = isFirstRender.value && !isSelected
+      ? 'transparent'
+      : '#4F41D8';
+
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            SPRING_CONFIG
+          )
+        }
+      ],
+      backgroundColor,
+      borderRadius: CIRCLE_SIZE,
+      position: 'absolute',
+      width: CIRCLE_SIZE,
+      height: CIRCLE_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+      opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
+      zIndex: 4
+    };
+  }, []);
+
+  const circleStyle1 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 1;
+    const backgroundColor = isFirstRender.value && !isSelected
+      ? 'transparent'
+      : '#4F41D8';
+
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            SPRING_CONFIG
+          )
+        }
+      ],
+      backgroundColor,
+      borderRadius: CIRCLE_SIZE,
+      position: 'absolute',
+      width: CIRCLE_SIZE,
+      height: CIRCLE_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+      opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
+      zIndex: 4
+    };
+  }, []);
+
+  const circleStyle2 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 2;
+    const backgroundColor = isFirstRender.value && !isSelected
+      ? 'transparent'
+      : '#4F41D8';
+
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            SPRING_CONFIG
+          )
+        }
+      ],
+      backgroundColor,
+      borderRadius: CIRCLE_SIZE,
+      position: 'absolute',
+      width: CIRCLE_SIZE,
+      height: CIRCLE_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+      opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
+      zIndex: 4
+    };
+  }, []);
+
+  const circleStyle3 = useAnimatedStyle(() => {
+    const isSelected = slideAnimation.value === 3;
+    const backgroundColor = isFirstRender.value && !isSelected
+      ? 'transparent'
+      : '#4F41D8';
+
+    return {
+      transform: [
+        {
+          translateY: withSpring(
+            isSelected ? -CIRCLE_SIZE * 0.6 : 0,
+            SPRING_CONFIG
+          )
+        }
+      ],
+      backgroundColor,
+      borderRadius: CIRCLE_SIZE,
+      position: 'absolute',
+      width: CIRCLE_SIZE,
+      height: CIRCLE_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+      opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
+      zIndex: 4
+    };
+  }, []);
+
   const resetAnimation = () => {
     if (Platform.OS === 'ios') {
       slideAnimation.value = withSpring(-2, SPRING_CONFIG);
@@ -138,22 +387,6 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const getIconComponent = useCallback((item: NavItem) => {
     return item.iconType === 'material' ? MaterialIcons : Ionicons;
   }, []);
-
-  const getAnimatedStyle = (index: number) => {
-    return useAnimatedStyle(() => {
-      const isSelected = slideAnimation.value === index;
-      return {
-        transform: [
-          {
-            translateY: withSpring(
-              isSelected ? -CIRCLE_SIZE * 0.6 : 0,
-              Platform.OS === 'ios' ? SPRING_CONFIG : ANDROID_SPRING
-            )
-          }
-        ]
-      };
-    }, []);
-  };
 
   const getWhiteCircleStyle = useAnimatedStyle(() => {
     // Calculate offset based on the current tab
@@ -242,58 +475,6 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     };
   }, []);
 
-  const getLabelAnimatedStyle = (index: number) => {
-    return useAnimatedStyle(() => {
-      const isSelected = slideAnimation.value === index;
-      const progress = isSelected ? 1 : 0;
-
-      return {
-        position: 'absolute',
-        width: 133,
-        alignItems: 'center',
-        opacity: withSpring(progress, LABEL_SPRING),
-        bottom: -1,
-        transform: [
-          {
-            translateY: withSpring(
-              progress === 1 ? 0 : 20,
-              LABEL_SPRING
-            )
-          }
-        ]
-      };
-    }, []);
-  };
-
-  const getCircleStyle = (index: number) => {
-    return useAnimatedStyle(() => {
-      const isSelected = slideAnimation.value === index;
-      const backgroundColor = isFirstRender.value && !isSelected
-        ? 'transparent'
-        : '#4F41D8';
-
-      return {
-        transform: [
-          {
-            translateY: withSpring(
-              isSelected ? -CIRCLE_SIZE * 0.6 : 0,
-              SPRING_CONFIG
-            )
-          }
-        ],
-        backgroundColor,
-        borderRadius: CIRCLE_SIZE,
-        position: 'absolute',
-        width: CIRCLE_SIZE,
-        height: CIRCLE_SIZE,
-        justifyContent: 'center',
-        alignItems: 'center',
-        opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
-        zIndex: 4
-      };
-    }, []);
-  };
-
   const handleTabPress = (index: number) => {
     if (isFirstRender.value) {
       isFirstRender.value = false;
@@ -319,6 +500,11 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
           const IconComponent = getIconComponent(item);
           const isActive = pathname === item.route;
           
+          // Get the correct animated styles based on index
+          const animatedStyle = [animatedStyle0, animatedStyle1, animatedStyle2, animatedStyle3][index];
+          const labelAnimatedStyle = [labelAnimatedStyle0, labelAnimatedStyle1, labelAnimatedStyle2, labelAnimatedStyle3][index];
+          const circleStyle = [circleStyle0, circleStyle1, circleStyle2, circleStyle3][index];
+          
           return (
             <Link
               key={item.name}
@@ -330,16 +516,16 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
                 activeOpacity={1}
                 onPress={() => handleTabPress(index)}
               >
-                <Animated.View style={getLabelAnimatedStyle(index)}>
+                <Animated.View style={labelAnimatedStyle}>
                   <Text style={styles.accountLabel}>
                     {item.name === 'Statistics' ? 'Stats' : item.name}
                   </Text>
                 </Animated.View>
-                <Animated.View style={getCircleStyle(index)} />
+                <Animated.View style={circleStyle} />
                 <Animated.View
                   style={[
                     styles.iconContainer,
-                    getAnimatedStyle(index),
+                    animatedStyle,
                     { zIndex: 5 }
                   ]}
                 >

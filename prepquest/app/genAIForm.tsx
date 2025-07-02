@@ -77,7 +77,7 @@ export default function GenAIFormPage() {
   const [interviewOptionalQuestion3, setInterviewOptionalQuestion3] = useState('');
   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
   const [interviewType, setInterviewType] = useState('');
-  const [questionType, setQuestionType] = useState('');
+  const [questionType, setQuestionType] = useState<string[]>([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -252,7 +252,7 @@ export default function GenAIFormPage() {
     setInterviewOptionalQuestion3('');
     // Common fields
     setNumberOfQuestions(1);
-    setQuestionType('');
+    setQuestionType([]);
   };
 
   const handleToggle = (isRightSide: boolean) => {
@@ -281,14 +281,14 @@ export default function GenAIFormPage() {
     return studyOptionalQuestion1.trim() !== '' && 
            studyOptionalQuestion2.trim() !== '' && 
            studyOptionalQuestion3.trim() !== '' && 
-           questionType !== '';
+           questionType.length > 0;
   };
 
   const isInterviewOptionalFieldsFilled = () => {
     return interviewOptionalQuestion1.trim() !== '' && 
            interviewOptionalQuestion2.trim() !== '' && 
            interviewOptionalQuestion3.trim() !== '' && 
-           questionType !== '';
+           questionType.length > 0;
   };
 
   const isSubmitDisabled = () => {
@@ -605,7 +605,7 @@ export default function GenAIFormPage() {
                 />
                 <KindsOfQuestions
                     value={questionType}
-                    onValueChange={setQuestionType}
+                    onValueChange={(value) => setQuestionType(value)}
                     onHelpPress={() => setIsHelpModalOpen(true)}
                 />
                 <View style={styles.bottomSpacing} />
@@ -636,7 +636,7 @@ export default function GenAIFormPage() {
                 />
                 <KindsOfQuestions
                     value={questionType}
-                    onValueChange={setQuestionType}
+                    onValueChange={(value) => setQuestionType(value)}
                     onHelpPress={() => setIsHelpModalOpen(true)}
                 />
                 <View style={styles.bottomSpacing} />

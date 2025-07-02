@@ -471,4 +471,266 @@ export async function getDifficultyBreakdown(): Promise<{
       Easy: 0
     };
   }
+}
+
+// Speed-related interfaces
+export interface DaySpeed {
+  day: string;
+  date: string;
+  time: number;
+}
+
+export interface MonthSpeed {
+  month: string;
+  time: number;
+}
+
+// Get all study/quiz dates and calculate average speed for each day
+export async function getDailySpeeds(): Promise<DaySpeed[]> {
+  try {
+    console.log('🔍 Fetching daily speeds from database...');
+    
+    // Get all flashcards with study or quiz dates and timeTaken from both tables
+    const result = await db.getAllAsync(`
+      SELECT 
+        timeTaken,
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM (
+        SELECT timeTaken, lastStudiedDate, lastQuizzedDate
+        FROM flashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+        UNION ALL
+        SELECT timeTaken, lastStudiedDate, lastQuizzedDate
+        FROM AIFlashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+      )
+    `);
+
+    console.log('📊 Raw flashcard speed data:', result?.length || 0, 'flashcards found');
+
+    if (!result || result.length === 0) {
+      console.log('❌ No flashcard speed data found');
+      return [];
+    }
+
+    const flashcards = result as Array<{
+      timeTaken: number;
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+    }>;
+
+    // Group flashcards by date (both study and quiz dates)
+    const dateGroups = new Map<string, number[]>();
+
+    flashcards.forEach((flashcard) => {
+      // Add to study date group
+      if (flashcard.lastStudiedDate) {
+        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
+        console.log(`📅 Study date: ${flashcard.lastStudiedDate} -> ${studyDate}, time: ${flashcard.timeTaken}s`);
+        if (!dateGroups.has(studyDate)) {
+          dateGroups.set(studyDate, []);
+        }
+        dateGroups.get(studyDate)!.push(flashcard.timeTaken);
+      }
+
+      // Add to quiz date group
+      if (flashcard.lastQuizzedDate) {
+        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
+        console.log(`📅 Quiz date: ${flashcard.lastQuizzedDate} -> ${quizDate}, time: ${flashcard.timeTaken}s`);
+        if (!dateGroups.has(quizDate)) {
+          dateGroups.set(quizDate, []);
+        }
+        dateGroups.get(quizDate)!.push(flashcard.timeTaken);
+      }
+    });
+
+    console.log('📅 Date groups:', dateGroups.size, 'unique dates');
+    dateGroups.forEach((times, dateKey) => {
+      console.log(`  - ${dateKey}: ${times.length} flashcards, avg: ${Math.round(times.reduce((sum, time) => sum + time, 0) / times.length)}s`);
+    });
+
+    // Calculate average speed for each date
+    const dailySpeeds: DaySpeed[] = [];
+    
+    dateGroups.forEach((timesForDate, dateString) => {
+      const averageTime = Math.round(timesForDate.reduce((sum, time) => sum + time, 0) / timesForDate.length);
+      const date = new Date(dateString);
+      
+      // Format day (Mon, Tue, etc.)
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const day = dayNames[date.getDay()];
+      
+      // Format date (DD MMM YYYY)
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[date.getMonth()];
+      const dayOfMonth = date.getDate();
+      const year = date.getFullYear();
+      const dateFormatted = `${dayOfMonth} ${month} ${year}`;
+      
+      console.log(`📊 ${dateFormatted} (${day}): ${averageTime}s average (${timesForDate.length} flashcards) - from dateString: ${dateString}`);
+      
+      dailySpeeds.push({
+        day,
+        date: dateFormatted,
+        time: averageTime
+      });
+    });
+
+    // Sort by date (oldest first)
+    dailySpeeds.sort((a, b) => {
+      const dateA = new Date(a.date.split(' ').reverse().join('-'));
+      const dateB = new Date(b.date.split(' ').reverse().join('-'));
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    console.log('✅ Daily speeds calculated:', dailySpeeds.length, 'days');
+    return dailySpeeds;
+  } catch (error) {
+    console.error('❌ Error getting daily speeds:', error);
+    return [];
+  }
+}
+
+// Get monthly speeds by consolidating daily speeds
+export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
+  try {
+    const dailySpeeds = await getDailySpeeds();
+    
+    if (dailySpeeds.length === 0) {
+      return [];
+    }
+
+    // Group daily speeds by month
+    const monthGroups = new Map<string, number[]>();
+    
+    dailySpeeds.forEach((daySpeed) => {
+      // Extract month and year from date string (e.g., "15 Mar 2024" -> "Mar 2024")
+      const dateParts = daySpeed.date.split(' ');
+      const month = dateParts[1];
+      const year = dateParts[2];
+      const monthKey = `${month} ${year}`;
+      
+      if (!monthGroups.has(monthKey)) {
+        monthGroups.set(monthKey, []);
+      }
+      monthGroups.get(monthKey)!.push(daySpeed.time);
+    });
+
+    // Calculate average speed for each month
+    const monthlySpeeds: MonthSpeed[] = [];
+    
+    monthGroups.forEach((times, month) => {
+      const averageTime = Math.round(times.reduce((sum, time) => sum + time, 0) / times.length);
+      monthlySpeeds.push({
+        month,
+        time: averageTime
+      });
+    });
+
+    // Sort by date (oldest first)
+    monthlySpeeds.sort((a, b) => {
+      const dateA = new Date(a.month.split(' ').reverse().join('-'));
+      const dateB = new Date(b.month.split(' ').reverse().join('-'));
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    return monthlySpeeds;
+  } catch (error) {
+    console.error('Error getting monthly speeds:', error);
+    return [];
+  }
+}
+
+// Get complete timeline with zero speeds for missing dates
+export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
+  try {
+    console.log('🔍 Getting complete daily speeds...');
+    
+    const dailySpeeds = await getDailySpeeds();
+    
+    console.log('📊 Daily speeds from getDailySpeeds():', dailySpeeds.length, 'entries');
+    dailySpeeds.forEach(speed => {
+      console.log(`  - ${speed.date} (${speed.day}): ${speed.time}s`);
+    });
+    
+    if (dailySpeeds.length === 0) {
+      console.log('❌ No daily speeds found, returning empty array');
+      return [];
+    }
+
+    // Find the date range
+    const dates = dailySpeeds.map(speed => {
+      const dateParts = speed.date.split(' ');
+      return new Date(`${dateParts[2]}-${getMonthNumber(dateParts[1])}-${dateParts[0]}`);
+    });
+    
+    const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    
+    console.log('📅 Date range:', startDate.toISOString().split('T')[0], 'to', endDate.toISOString().split('T')[0]);
+    
+    // Create a map of existing speeds
+    const speedMap = new Map<string, DaySpeed>();
+    dailySpeeds.forEach(speed => {
+      const dateParts = speed.date.split(' ');
+      const day = dateParts[0].padStart(2, '0'); // Pad single-digit days with leading zero
+      const dateKey = `${dateParts[2]}-${getMonthNumber(dateParts[1])}-${day}`;
+      speedMap.set(dateKey, speed);
+      console.log(`🗺️ Mapping ${speed.date} to key: ${dateKey}`);
+    });
+
+    console.log('🗺️ All keys in speedMap:', Array.from(speedMap.keys()));
+
+    // Fill in missing dates with zero speeds
+    const completeSpeeds: DaySpeed[] = [];
+    const currentDate = new Date(startDate);
+    
+    console.log('🔄 Filling in complete timeline...');
+    while (currentDate <= endDate) {
+      const dateKey = currentDate.toISOString().split('T')[0];
+      
+      console.log(`🔍 Looking for dateKey: ${dateKey} in speedMap...`);
+      console.log(`🔍 speedMap has keys:`, Array.from(speedMap.keys()));
+      
+      if (speedMap.has(dateKey)) {
+        const speed = speedMap.get(dateKey)!;
+        completeSpeeds.push(speed);
+        console.log(`✅ ${dateKey}: Found speed ${speed.time}s`);
+      } else {
+        // Create zero speed entry for missing date
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const day = dayNames[currentDate.getDay()];
+        
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[currentDate.getMonth()];
+        const dayOfMonth = currentDate.getDate();
+        const year = currentDate.getFullYear();
+        const dateFormatted = `${dayOfMonth} ${month} ${year}`;
+        
+        const zeroSpeed = {
+          day,
+          date: dateFormatted,
+          time: 0
+        };
+        completeSpeeds.push(zeroSpeed);
+        console.log(`❌ ${dateKey}: Added zero speed for ${dateFormatted}`);
+      }
+      
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    console.log('✅ Complete daily speeds:', completeSpeeds.length, 'entries');
+    completeSpeeds.forEach(speed => {
+      console.log(`  - ${speed.date} (${speed.day}): ${speed.time}s`);
+    });
+
+    return completeSpeeds;
+  } catch (error) {
+    console.error('❌ Error getting complete daily speeds:', error);
+    return [];
+  }
 } 

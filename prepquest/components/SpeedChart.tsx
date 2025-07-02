@@ -2,33 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView, Text, Platform } from 'react-native';
 import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect, Defs, LinearGradient, Stop, Polygon } from 'react-native-svg';
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
-
-// Example data
-const data = [
-  { day: 'Mon', date: '18 Mar 2024', time: 15 },
-  { day: 'Tue', date: '19 Mar 2024', time: 22 },
-  { day: 'Wed', date: '20 Mar 2024', time: 18 },
-  { day: 'Thu', date: '21 Mar 2024', time: 25 },
-  { day: 'Fri', date: '22 Mar 2024', time: 20 },
-  { day: 'Sat', date: '23 Mar 2024', time: 28 },
-  { day: 'Sun', date: '24 Mar 2024', time: 16 },
-  { day: 'Mon', date: '25 Mar 2024', time: 24 },
-  { day: 'Tue', date: '26 Mar 2024', time: 30 },
-  { day: 'Wed', date: '27 Mar 2024', time: 22 },
-  { day: 'Thu', date: '28 Mar 2024', time: 26 },
-  { day: 'Fri', date: '29 Mar 2024', time: 19 },
-  { day: 'Sat', date: '30 Mar 2024', time: 32 },
-  { day: 'Sun', date: '31 Mar 2024', time: 18 },
-  { day: 'Mon', date: '1 Apr 2024', time: 10 },
-  { day: 'Tue', date: '2 Apr 2024', time: 10 },
-];
-
-const month_data = [
-  { month: 'Mar 2024', time: 101 },
-  { month: 'Apr 2024', time: 10 },
-  { month: 'May 2024', time: 70 },
-  { month: 'Jun 2024', time: 70 },
-];
+import { getCompleteDailySpeeds, getMonthlySpeeds, DaySpeed, MonthSpeed } from '@/db/grades';
+import { useIsFocused } from '@react-navigation/native';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -48,17 +23,53 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isMonth, setIsMonth] = useState(false);
   const [pendingFadeIn, setPendingFadeIn] = useState(false);
+  const [data, setData] = useState<DaySpeed[]>([]);
+  const [monthData, setMonthData] = useState<MonthSpeed[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const fadeAnim = new Animated.Value(0);
   const graphFadeAnim = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
+  const isFocused = useIsFocused();
+
+  // Fetch speed data
+  const fetchSpeedData = async () => {
+    try {
+      setIsLoading(true);
+      console.log('🔍 Fetching speed data for SpeedChart...');
+      
+      const [dailySpeeds, monthlySpeeds] = await Promise.all([
+        getCompleteDailySpeeds(),
+        getMonthlySpeeds()
+      ]);
+      
+      console.log('📊 Daily speeds fetched:', dailySpeeds.length, 'entries');
+      console.log('📊 Monthly speeds fetched:', monthlySpeeds.length, 'entries');
+      
+      setData(dailySpeeds);
+      setMonthData(monthlySpeeds);
+    } catch (error) {
+      console.error('❌ Error fetching speed data:', error);
+      setData([]);
+      setMonthData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data when screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      fetchSpeedData();
+    }
+  }, [isFocused]);
 
   // Use correct data
-  const currentData = isMonth ? month_data : data;
+  const currentData = isMonth ? monthData : data;
 
   // Calculate total width needed for all data points
   const totalWidth = Math.max(GRAPH_WIDTH, PADDING + (currentData.length - 1) * X_STEP + PADDING);
 
-  const yMaxRaw = Math.max(...currentData.map(d => d.time));
+  const yMaxRaw = currentData.length > 0 ? Math.max(...currentData.map(d => d.time)) : 0;
   const Y_MAX = Math.ceil(yMaxRaw / 10) * 10;
   const Y_STEP = isMonth ? 10 : 5;
 
@@ -119,21 +130,84 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
     }
   };
 
-  // Points for lines - using all data
-//   const flashcardPoints = currentData.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(isMonth ? d.flashcards : d.flashcards, GRAPH_HEIGHT)}`).join(' ');
-//   const deckPoints = currentData.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(isMonth ? d.decks : d.decks, GRAPH_HEIGHT)}`).join(' ');
-
   const handleDataPointClick = (index: number) => {
     setSelectedIndex(index);
   };
 
   // For the fixed (non-scrollable) case, call onContentReady after mount
   useEffect(() => {
-    if (currentData.length <= 4 && onContentReady) {
+    if (currentData.length <= 4 && onContentReady && !isLoading) {
       onContentReady();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentData.length <= 4]);
+  }, [currentData.length <= 4, isLoading]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View>
+        <View style={{ marginTop: 30, alignItems: 'center' }}>
+          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
+            Speed Chart (average speed per flashcard)
+          </Text>
+          <SmallGreenBinaryToggle
+            leftLabel="Day"
+            rightLabel="Month"
+            style={{ marginTop: 15 }}
+            onToggle={handleToggle}
+          />
+        </View>
+        <View style={{ 
+          width: GRAPH_WIDTH, 
+          height: SVG_HEIGHT, 
+          alignSelf: 'center', 
+          marginLeft: 15, 
+          marginTop: 0,
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
+            Loading speed data...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Show empty state
+  if (currentData.length === 0) {
+    return (
+      <View>
+        <View style={{ marginTop: 30, alignItems: 'center' }}>
+          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
+            Speed Chart (average speed per flashcard)
+          </Text>
+          <SmallGreenBinaryToggle
+            leftLabel="Day"
+            rightLabel="Month"
+            style={{ marginTop: 15 }}
+            onToggle={handleToggle}
+          />
+        </View>
+        <View style={{ 
+          width: GRAPH_WIDTH, 
+          height: SVG_HEIGHT, 
+          alignSelf: 'center', 
+          marginLeft: 15, 
+          marginTop: 0,
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
+            No speed data available
+          </Text>
+          <Text style={{ fontFamily: 'Satoshi-Regular', fontSize: 14, color: '#D5D4DD', marginTop: 8 }}>
+            Study or quiz flashcards to see your speed trends
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View>

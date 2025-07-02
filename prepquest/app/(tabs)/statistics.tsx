@@ -124,8 +124,6 @@ export default function StatisticsScreen() {
             {/* breakdown section */}
             <BreakdownOfDecksFlashcards
               key={breakdownKey}
-              decksData={decksData}
-              flashcardsData={flashcardsData}
             />
             <MoreDetailsStats selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
             {/* More details section */}

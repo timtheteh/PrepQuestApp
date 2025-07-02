@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
+import { db } from '@/db/index';
 
 interface BreakdownDatum {
   label: string;
@@ -11,17 +12,114 @@ interface BreakdownDatum {
 }
 
 interface BreakdownOfDecksFlashcardsProps {
-  decksData: BreakdownDatum[];
-  flashcardsData: BreakdownDatum[];
+  onContentReady?: () => void;
 }
+
+// Function to fetch real data from database
+const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flashcardsData: BreakdownDatum[] }> => {
+  try {
+    // Get all decks with their types - use interviewType for interview decks, deckType for study decks
+    const decks = await db.getAllAsync(`
+      SELECT 
+        CASE 
+          WHEN deckType = 'interview' THEN interviewType 
+          ELSE deckType 
+        END as categoryType,
+        deckID 
+      FROM decks 
+      WHERE deckType IS NOT NULL
+      UNION ALL
+      SELECT 
+        CASE 
+          WHEN deckType = 'interview' THEN interviewType 
+          ELSE deckType 
+        END as categoryType,
+        deckID 
+      FROM AIDecks 
+      WHERE deckType IS NOT NULL
+    `);
+
+    // Count decks by type
+    const deckTypeCounts = new Map<string, number>();
+    const deckIdsByType = new Map<string, number[]>();
+
+    decks.forEach((deck: any) => {
+      const type = deck.categoryType;
+      deckTypeCounts.set(type, (deckTypeCounts.get(type) || 0) + 1);
+      
+      if (!deckIdsByType.has(type)) {
+        deckIdsByType.set(type, []);
+      }
+      deckIdsByType.get(type)!.push(deck.deckID);
+    });
+
+    // Get flashcard counts for each deck type
+    const flashcardTypeCounts = new Map<string, number>();
+
+    for (const [type, deckIds] of deckIdsByType) {
+      if (deckIds.length === 0) continue;
+
+      const placeholders = deckIds.map(() => '?').join(',');
+      const flashcardCount = await db.getFirstAsync(`
+        SELECT COUNT(*) as count
+        FROM (
+          SELECT flashcardID FROM flashcards WHERE deckID IN (${placeholders})
+          UNION ALL
+          SELECT flashcardID FROM AIFlashcards WHERE deckID IN (${placeholders})
+        )
+      `, [...deckIds, ...deckIds]);
+
+      flashcardTypeCounts.set(type, (flashcardCount as any)?.count || 0);
+    }
+
+    // Define colors for each type
+    const typeColors = {
+      'study': '#5CC8BE',
+      'technical': '#D7191C',
+      'case study': '#C3EB79',
+      'behavioral': '#FDAE61',
+      'brainteasers': '#357AF6',
+      'others': '#AF52DE'
+    };
+
+    // Calculate totals
+    const totalDecks = Array.from(deckTypeCounts.values()).reduce((sum, count) => sum + count, 0);
+    const totalFlashcards = Array.from(flashcardTypeCounts.values()).reduce((sum, count) => sum + count, 0);
+
+    // Create decks data
+    const decksData: BreakdownDatum[] = Array.from(deckTypeCounts.entries()).map(([type, count]) => ({
+      label: type.charAt(0).toUpperCase() + type.slice(1),
+      value: count,
+      percent: totalDecks > 0 ? Math.round((count / totalDecks) * 100) : 0,
+      color: typeColors[type as keyof typeof typeColors] || '#98CE7F'
+    }));
+
+    // Create flashcards data
+    const flashcardsData: BreakdownDatum[] = Array.from(flashcardTypeCounts.entries()).map(([type, count]) => ({
+      label: type.charAt(0).toUpperCase() + type.slice(1),
+      value: count,
+      percent: totalFlashcards > 0 ? Math.round((count / totalFlashcards) * 100) : 0,
+      color: typeColors[type as keyof typeof typeColors] || '#98CE7F'
+    }));
+
+    return { decksData, flashcardsData };
+  } catch (error) {
+    console.error('Error fetching breakdown data:', error);
+    // Return empty data if there's an error
+    return { decksData: [], flashcardsData: [] };
+  }
+};
 
 const BOUNCE_SPEED = 2.0; // slightly faster speed
 const FPS = 60;
 
-export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: BreakdownOfDecksFlashcardsProps) {
+export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksFlashcardsProps) {
   const [isFlashcards, setIsFlashcards] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [renderedIsFlashcards, setRenderedIsFlashcards] = useState(false);
+  const [decksData, setDecksData] = useState<BreakdownDatum[]>([]);
+  const [flashcardsData, setFlashcardsData] = useState<BreakdownDatum[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const data = renderedIsFlashcards ? flashcardsData : decksData;
   const screenWidth = Dimensions.get('window').width;
   const containerHeight = 440;
@@ -43,6 +141,24 @@ export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: Breakd
   const bodiesRef = useRef<any[]>([]);
   const worldRef = useRef<any>(null);
   const intervalRef = useRef<any>(null);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const { decksData: fetchedDecksData, flashcardsData: fetchedFlashcardsData } = await fetchBreakdownData();
+        setDecksData(fetchedDecksData);
+        setFlashcardsData(fetchedFlashcardsData);
+      } catch (error) {
+        console.error('Error loading breakdown data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   useEffect(() => {
     // Clean up previous engine if any
@@ -166,6 +282,29 @@ export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: Breakd
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlashcards]);
 
+  // Show loading or empty state
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
+        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
+          Loading breakdown data...
+        </Text>
+      </View>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
+        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
+          No data available yet. Create some decks to see the breakdown!
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
@@ -179,7 +318,7 @@ export function BreakdownOfDecksFlashcards({ decksData, flashcardsData }: Breakd
       </View>
       <View style={{ height: containerHeight, width: '100%', marginTop: 15 }}>
         <Animated.View style={{ flex: 1, width: '100%', height: '100%', opacity: fadeAnim }}>
-          {data.map((d, i) => {
+          {data.map((d: BreakdownDatum, i: number) => {
             const radius = getRadius(d.value);
             const pos = positions[i] || { x: containerWidth / 2, y: containerHeight / 2 };
             return (

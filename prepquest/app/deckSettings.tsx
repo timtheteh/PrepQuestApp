@@ -6,6 +6,7 @@ import HelpIconFilled from '@/assets/icons/helpIconFilled.svg';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
 import { DifficultyToggleRow } from '@/components/DifficultyToggleRow';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Local component for title and toggle row
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
@@ -239,6 +240,141 @@ const timePickerStyles = RNStyleSheet.create({
 
 export default function DeckSettingsPage() {
   const router = useRouter();
+  
+  // AsyncStorage keys
+  const STORAGE_KEYS = {
+    AUTO_DECKS: 'deckSettings_autoDecks',
+    CLOZE_QUESTIONS: 'deckSettings_clozeQuestions',
+    MCQ_QUESTIONS: 'deckSettings_mcqQuestions',
+    VOICE_RECORDED_ANSWERS: 'deckSettings_voiceRecordedAnswers',
+    RETRY_QUESTIONS_AFTER_QUIZ: 'deckSettings_retryQuestionsAfterQuiz',
+    HALFWAY_CHECKPOINT: 'deckSettings_halfwayCheckpoint',
+    DEFAULT_TIMER: 'deckSettings_defaultTimer',
+    AGAIN_TIMER: 'deckSettings_againTimer',
+    HARD_TIMER: 'deckSettings_hardTimer',
+    GOOD_TIMER: 'deckSettings_goodTimer',
+    EASY_TIMER: 'deckSettings_easyTimer',
+  };
+
+  // Load settings from AsyncStorage
+  const loadSettings = async () => {
+    try {
+      const [
+        autoDecks,
+        clozeQuestions,
+        mcqQuestions,
+        voiceRecordedAnswers,
+        retryQuestionsAfterQuiz,
+        halfwayCheckpoint,
+        defaultTimer,
+        againTimer,
+        hardTimer,
+        goodTimer,
+        easyTimer,
+      ] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.AUTO_DECKS),
+        AsyncStorage.getItem(STORAGE_KEYS.CLOZE_QUESTIONS),
+        AsyncStorage.getItem(STORAGE_KEYS.MCQ_QUESTIONS),
+        AsyncStorage.getItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS),
+        AsyncStorage.getItem(STORAGE_KEYS.RETRY_QUESTIONS_AFTER_QUIZ),
+        AsyncStorage.getItem(STORAGE_KEYS.HALFWAY_CHECKPOINT),
+        AsyncStorage.getItem(STORAGE_KEYS.DEFAULT_TIMER),
+        AsyncStorage.getItem(STORAGE_KEYS.AGAIN_TIMER),
+        AsyncStorage.getItem(STORAGE_KEYS.HARD_TIMER),
+        AsyncStorage.getItem(STORAGE_KEYS.GOOD_TIMER),
+        AsyncStorage.getItem(STORAGE_KEYS.EASY_TIMER),
+      ]);
+
+      // Set boolean values (default to true if not found)
+      setAutoDecksEnabled(autoDecks !== null ? JSON.parse(autoDecks) : true);
+      setClozeQuestionsEnabled(clozeQuestions !== null ? JSON.parse(clozeQuestions) : true);
+      setMcqQuestionsEnabled(mcqQuestions !== null ? JSON.parse(mcqQuestions) : true);
+      setVoiceRecordedAnswersEnabled(voiceRecordedAnswers !== null ? JSON.parse(voiceRecordedAnswers) : true);
+      setRetryQuestionsAfterQuizEnabled(retryQuestionsAfterQuiz !== null ? JSON.parse(retryQuestionsAfterQuiz) : true);
+      setHalfwayCheckpointEnabled(halfwayCheckpoint !== null ? JSON.parse(halfwayCheckpoint) : true);
+
+      // Set timer values (default to defaultDifficultyTimes if not found)
+      const loadedDefaultTimer = defaultTimer ? JSON.parse(defaultTimer) : { min: 0, sec: 20 };
+      const loadedAgainTimer = againTimer ? JSON.parse(againTimer) : { min: 1, sec: 0 };
+      const loadedHardTimer = hardTimer ? JSON.parse(hardTimer) : { min: 0, sec: 45 };
+      const loadedGoodTimer = goodTimer ? JSON.parse(goodTimer) : { min: 0, sec: 30 };
+      const loadedEasyTimer = easyTimer ? JSON.parse(easyTimer) : { min: 0, sec: 15 };
+
+      setDifficultyTimes([
+        loadedDefaultTimer,
+        loadedAgainTimer,
+        loadedHardTimer,
+        loadedGoodTimer,
+        loadedEasyTimer,
+      ]);
+    } catch (error) {
+      console.error('Error loading deck settings:', error);
+      // Use defaults if loading fails
+      setAutoDecksEnabled(true);
+      setClozeQuestionsEnabled(true);
+      setMcqQuestionsEnabled(true);
+      setVoiceRecordedAnswersEnabled(true);
+      setRetryQuestionsAfterQuizEnabled(true);
+      setHalfwayCheckpointEnabled(true);
+      setDifficultyTimes(defaultDifficultyTimes);
+    }
+  };
+
+  // Save settings to AsyncStorage
+  const saveSettings = async () => {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(STORAGE_KEYS.AUTO_DECKS, JSON.stringify(autoDecksEnabled)),
+        AsyncStorage.setItem(STORAGE_KEYS.CLOZE_QUESTIONS, JSON.stringify(clozeQuestionsEnabled)),
+        AsyncStorage.setItem(STORAGE_KEYS.MCQ_QUESTIONS, JSON.stringify(mcqQuestionsEnabled)),
+        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS, JSON.stringify(voiceRecordedAnswersEnabled)),
+        AsyncStorage.setItem(STORAGE_KEYS.RETRY_QUESTIONS_AFTER_QUIZ, JSON.stringify(retryQuestionsAfterQuizEnabled)),
+        AsyncStorage.setItem(STORAGE_KEYS.HALFWAY_CHECKPOINT, JSON.stringify(halfwayCheckpointEnabled)),
+        AsyncStorage.setItem(STORAGE_KEYS.DEFAULT_TIMER, JSON.stringify(difficultyTimes[0])),
+        AsyncStorage.setItem(STORAGE_KEYS.AGAIN_TIMER, JSON.stringify(difficultyTimes[1])),
+        AsyncStorage.setItem(STORAGE_KEYS.HARD_TIMER, JSON.stringify(difficultyTimes[2])),
+        AsyncStorage.setItem(STORAGE_KEYS.GOOD_TIMER, JSON.stringify(difficultyTimes[3])),
+        AsyncStorage.setItem(STORAGE_KEYS.EASY_TIMER, JSON.stringify(difficultyTimes[4])),
+      ]);
+      console.log('Deck settings saved successfully');
+    } catch (error) {
+      console.error('Error saving deck settings:', error);
+    }
+  };
+
+  // Reset settings to defaults
+  const resetToDefaults = async () => {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(STORAGE_KEYS.AUTO_DECKS, JSON.stringify(true)),
+        AsyncStorage.setItem(STORAGE_KEYS.CLOZE_QUESTIONS, JSON.stringify(true)),
+        AsyncStorage.setItem(STORAGE_KEYS.MCQ_QUESTIONS, JSON.stringify(true)),
+        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS, JSON.stringify(true)),
+        AsyncStorage.setItem(STORAGE_KEYS.RETRY_QUESTIONS_AFTER_QUIZ, JSON.stringify(true)),
+        AsyncStorage.setItem(STORAGE_KEYS.HALFWAY_CHECKPOINT, JSON.stringify(true)),
+        AsyncStorage.setItem(STORAGE_KEYS.DEFAULT_TIMER, JSON.stringify(defaultDifficultyTimes[0])),
+        AsyncStorage.setItem(STORAGE_KEYS.AGAIN_TIMER, JSON.stringify(defaultDifficultyTimes[1])),
+        AsyncStorage.setItem(STORAGE_KEYS.HARD_TIMER, JSON.stringify(defaultDifficultyTimes[2])),
+        AsyncStorage.setItem(STORAGE_KEYS.GOOD_TIMER, JSON.stringify(defaultDifficultyTimes[3])),
+        AsyncStorage.setItem(STORAGE_KEYS.EASY_TIMER, JSON.stringify(defaultDifficultyTimes[4])),
+      ]);
+
+      // Update local state
+      setAutoDecksEnabled(true);
+      setClozeQuestionsEnabled(true);
+      setMcqQuestionsEnabled(true);
+      setVoiceRecordedAnswersEnabled(true);
+      setRetryQuestionsAfterQuizEnabled(true);
+      setHalfwayCheckpointEnabled(true);
+      setDifficultyTimes(defaultDifficultyTimes);
+      setResetCounter(c => c + 1);
+      
+      console.log('Deck settings reset to defaults');
+    } catch (error) {
+      console.error('Error resetting deck settings:', error);
+    }
+  };
+
   const [autoDecksEnabled, setAutoDecksEnabled] = React.useState(true);
   const [clozeQuestionsEnabled, setClozeQuestionsEnabled] = React.useState(true);
   const [mcqQuestionsEnabled, setMcqQuestionsEnabled] = React.useState(true);
@@ -259,6 +395,24 @@ export default function DeckSettingsPage() {
   const modalOpacity = React.useRef(new Animated.Value(0)).current;
   const [pickerOpacity] = React.useState(new Animated.Value(1));
   const [resetCounter, setResetCounter] = React.useState(0);
+
+  // Load settings when component mounts
+  React.useEffect(() => {
+    loadSettings();
+  }, []);
+
+  // Save settings whenever any setting changes
+  React.useEffect(() => {
+    saveSettings();
+  }, [
+    autoDecksEnabled,
+    clozeQuestionsEnabled,
+    mcqQuestionsEnabled,
+    voiceRecordedAnswersEnabled,
+    retryQuestionsAfterQuizEnabled,
+    halfwayCheckpointEnabled,
+    difficultyTimes,
+  ]);
 
   // When difficulty changes, update picker values
   const pickerMinutes = difficultyTimes[selectedDifficultyIndex].min;
@@ -447,16 +601,7 @@ export default function DeckSettingsPage() {
           zIndex: 100,
         }}
         activeOpacity={0.85}
-        onPress={() => {
-          setAutoDecksEnabled(true);
-          setClozeQuestionsEnabled(true);
-          setMcqQuestionsEnabled(true);
-          setVoiceRecordedAnswersEnabled(true);
-          setRetryQuestionsAfterQuizEnabled(true);
-          setHalfwayCheckpointEnabled(true);
-          setDifficultyTimes(defaultDifficultyTimes);
-          setResetCounter(c => c + 1);
-        }}
+        onPress={resetToDefaults}
       >
         <Text
           style={{

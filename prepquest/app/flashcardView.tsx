@@ -1507,7 +1507,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
 
 export default function FlashcardViewPage() {
   const router = useRouter();
-  const { flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam } = useLocalSearchParams();
+  const { deckID, flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam, isAIDeck: isAIDeckParam } = useLocalSearchParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;

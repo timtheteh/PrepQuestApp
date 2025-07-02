@@ -20,45 +20,6 @@ import { db } from '@/db/index';
 import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists } from '@/db/decks';
 import { Toast } from '@/components/Toast';
 
-// Dummy flashcard data
-const dummyFlashcards = [
-  //     // text Qn -> text Ans
-  //   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
-  //   // text Qn (Cloze) -> text Ans
-  //   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'A React Hook is a special function that allows functional components to <blank> into React features like state and lifecycle methods without using class components.', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
-  //   // image Qn (jpg) -> text Ans
-  //   { flashcardDifficulty: 'Hard', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), flashcardAnswerType: 'text', flashcardAnswer: 'UseEffect is a hook that allows you to perform side effects in functional components.' },
-  //   // image Qn (HEIC) -> text Ans
-  // //   { flashcardDifficulty: 'Easy', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_HEIC_photo.HEIC'), flashcardAnswerType: 'text', flashcardAnswer: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." },
-  //   // audio Qn (m4a) -> text Ans
-  //   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
-  // //   // audio Qn (ogg) -> text Ans
-  // //   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_ogg_audio.ogg'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
-    
-  //   // text Qn -> MCQ Ans
-  //   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
-  //     [
-  //     {   "Qn": "Lorem Ipsum is simply dummy text of the printi",
-  //         "Ans": false
-  //     }, 
-  //     {   "Qn": "has been the industry's standard dummy text ever since the 1500s, when an unknown p",
-  //         "Ans": false
-  //     }, 
-  //     {   "Qn": "s, but also the leap into electronic typesetting, remaining essentially unchanged",
-  //         "Ans": false
-  //     }, 
-  //     {   "Qn": "lishing software like Aldus PageMaker including versions of",
-  //         "Ans": true
-  //     }] 
-  // },
-  //     // text Qn -> voice recorded
-  //   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
-  //   // text Qn -> audio Ans
-  //   { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a') },
-  //   // text Qn -> image Ans
-    { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg') },
-  ];
-
 const getEmptyStateContainerMarginTop = () => {
     const { width, height } = Dimensions.get('window');
   
@@ -546,8 +507,10 @@ export default function DeckDetailsScreen() {
       pathname: '/flashcardView',
       params: {
         flashcardIdx: '0',
-        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        totalNumberOfFlashcards: cardFlashcardCount.toString(),
         isStudyMode: 'true',
+        isAIDeck: isAIDeck as string,
+        deckID: deckId as string,
       }
     });
   };
@@ -558,8 +521,10 @@ export default function DeckDetailsScreen() {
       pathname: '/flashcardView',
       params: {
         flashcardIdx: '0',
-        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        totalNumberOfFlashcards: cardFlashcardCount.toString(),
         isQuizMode: 'true',
+        isAIDeck: isAIDeck as string,
+        deckID: deckId as string,
       }
     });
   };

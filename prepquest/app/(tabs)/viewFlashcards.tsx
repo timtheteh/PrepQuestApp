@@ -13,6 +13,126 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { CircleSelectButtonGreen } from '@/components/CircleSelectButtonGreen';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import Feather from '@expo/vector-icons/Feather';
+import { db } from '@/db/index';
+
+// Interface for flashcard data
+interface Flashcard {
+  flashcardID: number;
+  deckID: number;
+  difficultyRating: string;
+  cognitiveQnType: string;
+  isFavorited: number;
+  questionType: string;
+  questionText: string | null;
+  questionBlob: Uint8Array | null;
+  answerType: string;
+  answerText: string | null;
+  answerMCQ: string | null;
+  answerBlob: Uint8Array | null;
+  timeTaken: number | null;
+  isMcqAnswerRight: number | null;
+  lastStudiedDate: string | null;
+  lastQuizzedDate: string | null;
+}
+
+// Function to load flashcards from database
+const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Promise<Flashcard[]> => {
+  try {
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    const result = await db.getAllAsync(`
+      SELECT 
+        flashcardID,
+        deckID,
+        difficultyRating,
+        cognitiveQnType,
+        isFavorited,
+        questionType,
+        questionText,
+        questionBlob,
+        answerType,
+        answerText,
+        answerMCQ,
+        answerBlob,
+        timeTaken,
+        isMcqAnswerRight,
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM ${tableName}
+      WHERE deckID = ?
+      ORDER BY flashcardID ASC
+    `, [parseInt(deckId)]);
+
+    if (!result) {
+      return [];
+    }
+
+    return result as Flashcard[];
+  } catch (error) {
+    console.error('Error loading flashcards from database:', error);
+    return [];
+  }
+};
+
+// Function to calculate question type counts from flashcards data
+const calculateQuestionTypeCounts = (flashcards: Flashcard[]): { title: string; count: number }[] => {
+  const counts: { [key: string]: number } = {};
+  
+  flashcards.forEach(flashcard => {
+    const cognitiveQnType = flashcard.cognitiveQnType;
+    counts[cognitiveQnType] = (counts[cognitiveQnType] || 0) + 1;
+  });
+  
+  // Convert to array and sort by count (descending)
+  return Object.entries(counts)
+    .map(([title, count]) => ({ title, count }))
+    .sort((a, b) => b.count - a.count);
+};
+
+// Function to load topics from database
+const loadTopicsFromDatabase = async (deckId: string, isAIDeck: string): Promise<string[]> => {
+  try {
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+    
+    const result = await db.getFirstAsync(`
+      SELECT deckType, studyTopicsSubtopics, interviewTopics
+      FROM ${tableName}
+      WHERE deckID = ?
+    `, [parseInt(deckId)]);
+
+    if (!result) {
+      return [];
+    }
+
+    const deck = result as { deckType: string; studyTopicsSubtopics: string | null; interviewTopics: string | null };
+    
+    let topicsField: string | null = null;
+    
+    if (deck.deckType === 'study') {
+      topicsField = deck.studyTopicsSubtopics;
+    } else if (deck.deckType === 'interview') {
+      topicsField = deck.interviewTopics;
+    }
+    
+    if (!topicsField) {
+      return [];
+    }
+    
+    // Parse the JSON string to get the topics array
+    try {
+      const topics = JSON.parse(topicsField);
+      return Array.isArray(topics) ? topics : [];
+    } catch (parseError) {
+      console.error('Error parsing topics JSON:', parseError);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error loading topics from database:', error);
+    return [];
+  }
+};
 
 const SCREEN_TRANSITION_DURATION = 300;
 const ACTION_ROW_HEIGHT = 60;
@@ -52,7 +172,8 @@ const CardForFlashcard = ({
   isSelectMode,
   onPress,
   flashcardIdx,
-  onNavigate
+  onNavigate,
+  flashcards
 }: {
   flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
   flashcardQn: string;
@@ -62,6 +183,7 @@ const CardForFlashcard = ({
   onPress: () => void;
   flashcardIdx: number;
   onNavigate: (flashcardIdx: number) => void;
+  flashcards: Flashcard[];
 }) => {
   const router = useRouter();
   const Container = isSelectMode ? TouchableOpacity : View;
@@ -115,7 +237,7 @@ const CardForFlashcard = ({
         </View>
       )}
       {/* CognitiveQnType pill at the bottom */}
-      {typeof flashcardIdx === 'number' && dummyFlashcards[flashcardIdx]?.cognitiveQnType && (
+      {typeof flashcardIdx === 'number' && flashcards[flashcardIdx]?.cognitiveQnType && (
         <View style={{
           alignSelf: 'center',
           marginBottom: -10,
@@ -130,52 +252,13 @@ const CardForFlashcard = ({
           flexDirection: 'row',
         }}>
           <Text style={{ fontSize: 12, color: '#222', textAlign: 'center', fontFamily: 'Satoshi-Medium' }}>
-            {dummyFlashcards[flashcardIdx].cognitiveQnType} Qn
+            {flashcards[flashcardIdx].cognitiveQnType} Qn
           </Text>
         </View>
       )}
     </Container>
   );
 };
-
-// Dummy flashcard data
-const dummyFlashcards = [
-//     // text Qn -> text Ans
-//   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'What is a react hook?', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
-//   // text Qn (Cloze) -> text Ans
-//   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'A React Hook is a special function that allows functional components to <blank> into React features like state and lifecycle methods without using class components.', flashcardAnswerType: 'text', flashcardAnswer: 'A react hook is a function that allows you to use state and other react features in functional components.' },
-//   // image Qn (jpg) -> text Ans
-//   { flashcardDifficulty: 'Hard', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), flashcardAnswerType: 'text', flashcardAnswer: 'UseEffect is a hook that allows you to perform side effects in functional components.' },
-//   // image Qn (HEIC) -> text Ans
-// //   { flashcardDifficulty: 'Easy', flashcardQnType: 'image', flashcardQn: require('@/assets/dummyPhotos/dummy_HEIC_photo.HEIC'), flashcardAnswerType: 'text', flashcardAnswer: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum." },
-//   // audio Qn (m4a) -> text Ans
-//   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
-// //   // audio Qn (ogg) -> text Ans
-// //   { flashcardDifficulty: 'Good', flashcardQnType: 'audio', flashcardQn: require('@/assets/dummyAudio/dummy_ogg_audio.ogg'), flashcardAnswerType: 'text', flashcardAnswer: 'State is a way to store data that can change over time.' },
-  
-//   // text Qn -> MCQ Ans
-//   { flashcardDifficulty: 'None', flashcardQnType: 'text', flashcardQn: 'How do you use useState?', flashcardAnswerType: 'MCQ', flashcardAnswer: 
-//     [
-//     {   "Qn": "Lorem Ipsum is simply dummy text of the printi",
-//         "Ans": false
-//     }, 
-//     {   "Qn": "has been the industry's standard dummy text ever since the 1500s, when an unknown p",
-//         "Ans": false
-//     }, 
-//     {   "Qn": "s, but also the leap into electronic typesetting, remaining essentially unchanged",
-//         "Ans": false
-//     }, 
-//     {   "Qn": "lishing software like Aldus PageMaker including versions of",
-//         "Ans": true
-//     }] 
-// },
-//     // text Qn -> voice recorded
-//   { flashcardDifficulty: 'Good', flashcardQnType: 'text', flashcardQn: 'What is a component?', flashcardAnswerType: 'voice', flashcardAnswer: null },
-  // text Qn -> audio Ans
-  { flashcardDifficulty: 'Again', flashcardQnType: 'text', flashcardQn: 'What is a react hookcsdcdscdscdscdcsdcsdcdscscscsdcdcdscsdcdscdscdsccsdcsdcdscsd cdsccscds?', flashcardAnswerType: 'audio', flashcardAnswer: require('@/assets/dummyAudio/dummy_m4a_audio.m4a'), timeLimit: 10, cognitiveQnType: 'Problem-Solving'},
-  // text Qn -> image Ans
-  { flashcardDifficulty: 'Hard', flashcardQnType: 'text', flashcardQn: 'Explain useEffect.', flashcardAnswerType: 'image', flashcardAnswer: require('@/assets/dummyPhotos/dummy_JPEG_photo.jpg'), timeLimit: 30, cognitiveQnType: 'Comprehension'},
-];
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const res: T[][] = [];
@@ -215,30 +298,49 @@ export default function ViewFlashcardsScreen() {
   const comingFromFlashcardView = useRef(false);
   const previousViewMode = useRef<'grid' | 'list'>('grid');
 
-  // Dummy topic data
-  const dummyTopics = [
-    'React',
-    'CSS',
-    'TypeScript',
-    'Mobile Development',
-    'UI/UX Design',
-    'API Integration',
-    'State Management',
-    'Navigation',
-    'Performance Optimization',
-    'Testing',
-    'Deployment',
-    'Debugging'
-  ];
+  // State for flashcards
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState(true);
 
-  // Dummy question type data
-  const dummyQuestionTypes = [
-    { title: 'Multiple Choice', count: 5 },
-    { title: 'Short Answer', count: 3 },
-    { title: 'Coding', count: 2 },
-    { title: 'Essay', count: 1 },
-    { title: 'True/False', count: 4 },
-  ];
+  // State for topics
+  const [topics, setTopics] = useState<string[]>([]);
+  const [isLoadingTopics, setIsLoadingTopics] = useState(true);
+
+  // State for question types
+  const [questionTypes, setQuestionTypes] = useState<{ title: string; count: number }[]>([]);
+
+  // Function to load flashcards
+  const loadFlashcards = async () => {
+    try {
+      setIsLoadingFlashcards(true);
+      const loadedFlashcards = await loadFlashcardsFromDatabase(deckId as string, isAIDeck as string);
+      setFlashcards(loadedFlashcards);
+      console.log('Loaded flashcards:', loadedFlashcards.length);
+      const questionTypeCounts = calculateQuestionTypeCounts(loadedFlashcards);
+      setQuestionTypes(questionTypeCounts);
+      console.log('Loaded question types:', questionTypeCounts);
+    } catch (error) {
+      console.error('Error loading flashcards:', error);
+      setFlashcards([]);
+    } finally {
+      setIsLoadingFlashcards(false);
+    }
+  };
+
+  // Function to load topics
+  const loadTopics = async () => {
+    try {
+      setIsLoadingTopics(true);
+      const loadedTopics = await loadTopicsFromDatabase(deckId as string, isAIDeck as string);
+      setTopics(loadedTopics);
+      console.log('Loaded topics:', loadedTopics);
+    } catch (error) {
+      console.error('Error loading topics:', error);
+      setTopics([]);
+    } finally {
+      setIsLoadingTopics(false);
+    }
+  };
 
   // Handle screen transitions
   useEffect(() => {
@@ -255,6 +357,10 @@ export default function ViewFlashcardsScreen() {
         // Reset to grid when coming from other pages
         setViewMode('grid');
       }
+      
+      // Load flashcards when screen comes into focus
+      loadFlashcards();
+      loadTopics();
       
       // Ensure opacity starts at 0 for a clean fade-in
       screenOpacity.setValue(0);
@@ -372,8 +478,10 @@ export default function ViewFlashcardsScreen() {
       pathname: '/flashcardView',
       params: {
         flashcardIdx: '0',
-        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        totalNumberOfFlashcards: flashcards.length.toString(),
         isStudyMode: 'true',
+        isAIDeck: isAIDeck as string,
+        deckID: deckId as string,
       }
     });
   };
@@ -384,8 +492,10 @@ export default function ViewFlashcardsScreen() {
       pathname: '/flashcardView',
       params: {
         flashcardIdx: '0',
-        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        totalNumberOfFlashcards: flashcards.length.toString(),
         isQuizMode: 'true',
+        isAIDeck: isAIDeck as string,
+        deckID: deckId as string,
       }
     });
   };
@@ -442,7 +552,9 @@ export default function ViewFlashcardsScreen() {
       pathname: '/flashcardView',
       params: {
         flashcardIdx: flashcardIdx.toString(),
-        totalNumberOfFlashcards: dummyFlashcards.length.toString(),
+        totalNumberOfFlashcards: flashcards.length.toString(),
+        isAIDeck: isAIDeck as string,
+        deckID: deckId as string,
       }
     });
   };
@@ -498,11 +610,21 @@ export default function ViewFlashcardsScreen() {
                   showsVerticalScrollIndicator={false}
                   nestedScrollEnabled={true}
                 >
-                  <View style={styles.topicsPillsWrap}>
-                    {dummyTopics.map((topic, index) => (
-                      <TopicPill key={index} text={topic} />
-                    ))}
-                  </View>
+                  {isLoadingTopics ? (
+                    <View style={styles.loadingContainer}>
+                      <Text style={styles.loadingText}>Loading topics...</Text>
+                    </View>
+                  ) : topics.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                      <Text style={styles.emptyText}>No topics specified</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.topicsPillsWrap}>
+                      {topics.map((topic, index) => (
+                        <TopicPill key={index} text={topic} />
+                      ))}
+                    </View>
+                  )}
                 </ScrollView>
               </View>
             </View>
@@ -517,9 +639,19 @@ export default function ViewFlashcardsScreen() {
                   showsVerticalScrollIndicator={false}
                   nestedScrollEnabled={true}
                 >
-                  {dummyQuestionTypes.map((item, idx) => (
-                    <QuestionTypeCountRow key={idx} title={item.title} count={item.count} />
-                  ))}
+                  {isLoadingFlashcards ? (
+                    <View style={styles.loadingContainer}>
+                      <Text style={styles.loadingText}>Loading question types...</Text>
+                    </View>
+                  ) : questionTypes.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                      <Text style={styles.emptyText}>No question types found</Text>
+                    </View>
+                  ) : (
+                    questionTypes.map((item, idx) => (
+                      <QuestionTypeCountRow key={idx} title={item.title} count={item.count} />
+                    ))
+                  )}
                 </ScrollView>
               </View>
             </View>
@@ -558,64 +690,85 @@ export default function ViewFlashcardsScreen() {
             {/* Flashcards grid */}
             {viewMode === 'grid' && (
               <Animated.View style={[styles.flashcardsGridContainer, { transform: [{ translateY: headerTranslateY }] }]}> 
-                {chunkArray(dummyFlashcards, 2).map((row, rowIdx) => (
-                  <View style={styles.flashcardsGridRow} key={rowIdx}>
-                    {row.map((card, colIdx) => {
-                      const flatIdx = rowIdx * 2 + colIdx;
-                      return (
-                        <View style={styles.flashcardCol} key={colIdx}>
-                          <CardForFlashcard
-                            flashcardDifficulty={card.flashcardDifficulty as any}
-                            flashcardQn={card.flashcardQn}
-                            flashcardQnType={card.flashcardQnType}
-                            selected={selectedCardIndexes.includes(flatIdx)}
-                            isSelectMode={isSelectMode}
-                            onPress={() => handleCardPress(flatIdx)}
-                            flashcardIdx={flatIdx}
-                            onNavigate={handleNavigateToFlashcardView}
-                          />
-                        </View>
-                      );
-                    })}
-                    {row.length === 1 && <View style={styles.flashcardCol} />}
+                {isLoadingFlashcards ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Loading flashcards...</Text>
                   </View>
-                ))}
+                ) : flashcards.length === 0 ? (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No flashcards found</Text>
+                  </View>
+                ) : (
+                  chunkArray(flashcards, 2).map((row, rowIdx) => (
+                    <View style={styles.flashcardsGridRow} key={rowIdx}>
+                      {row.map((card, colIdx) => {
+                        const flatIdx = rowIdx * 2 + colIdx;
+                        return (
+                          <View style={styles.flashcardCol} key={colIdx}>
+                            <CardForFlashcard
+                              flashcardDifficulty={card.difficultyRating as any}
+                              flashcardQn={card.questionText || ''}
+                              flashcardQnType={card.questionType}
+                              selected={selectedCardIndexes.includes(flatIdx)}
+                              isSelectMode={isSelectMode}
+                              onPress={() => handleCardPress(flatIdx)}
+                              flashcardIdx={flatIdx}
+                              onNavigate={handleNavigateToFlashcardView}
+                              flashcards={flashcards}
+                            />
+                          </View>
+                        );
+                      })}
+                      {row.length === 1 && <View style={styles.flashcardCol} />}
+                    </View>
+                  ))
+                )}
               </Animated.View>
             )}
             {viewMode === 'list' && (
               <Animated.View style={[styles.flashcardsListContainer, { transform: [{ translateY: headerTranslateY }] }]}>
-                {dummyFlashcards.map((card, i) => {
-                  // Determine what text to display based on flashcardQnType
-                  const getDisplayText = () => {
-                    if (card.flashcardQnType === 'text') {
-                      return card.flashcardQn;
-                    } else if (card.flashcardQnType === 'image') {
-                      return '<Image>';
-                    } else if (card.flashcardQnType === 'audio') {
-                      return '<Audio>';
-                    }
-                    return card.flashcardQn; // fallback
-                  };
+                {isLoadingFlashcards ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Loading flashcards...</Text>
+                  </View>
+                ) : flashcards.length === 0 ? (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No flashcards found</Text>
+                  </View>
+                ) : (
+                  flashcards.map((card, i) => {
+                    // Determine what text to display based on flashcardQnType
+                    const getDisplayText = () => {
+                      if (card.questionType === 'text') {
+                        return card.questionText || '';
+                      } else if (card.questionType === 'image') {
+                        return '<Image>';
+                      } else if (card.questionType === 'audio') {
+                        return '<Audio>';
+                      }
+                      return card.questionText || ''; // fallback
+                    };
 
-                  return (
-                    <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }]}>
-                      <View style={styles.flashcardListRowLeft}>  
-                        <FavoriteButton size={25} />
+                    return (
+                      <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }]}>
+                        <View style={styles.flashcardListRowLeft}>  
+                          <FavoriteButton size={25} />
+                        </View>
+                        <Text style={styles.flashcardListQn} numberOfLines={2} ellipsizeMode="tail">{getDisplayText()}</Text>
+                        {isSelectMode ? (
+                          <CircleSelectButtonGreen
+                            selected={selectedCardIndexes.includes(i)}
+                            onPress={() => handleCardPress(i)}
+                          />
+                        ) : (
+                          <TouchableOpacity onPress={() => handleNavigateToFlashcardView(i)}>
+                            <Ionicons name="eye" size={24} color="#444" style={styles.flashcardListEyeIcon} />
+                          </TouchableOpacity>
+                        )}
                       </View>
-                      <Text style={styles.flashcardListQn} numberOfLines={2} ellipsizeMode="tail">{getDisplayText()}</Text>
-                      {isSelectMode ? (
-                        <CircleSelectButtonGreen
-                          selected={selectedCardIndexes.includes(i)}
-                          onPress={() => handleCardPress(i)}
-                        />
-                      ) : (
-                        <TouchableOpacity onPress={() => handleNavigateToFlashcardView(i)}>
-                          <Ionicons name="eye" size={24} color="#444" style={styles.flashcardListEyeIcon} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                })}
+                    );
+                  })
+                )}
               </Animated.View>
             )}
           </View>
@@ -893,5 +1046,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 20 : 15,
     right: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 16,
+    color: '#222',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontFamily: 'Satoshi-Medium',
+    fontSize: 16,
+    color: '#222',
   },
 }); 

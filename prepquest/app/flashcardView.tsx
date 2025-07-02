@@ -259,34 +259,71 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
 // Helper function to copy asset images to clipboard
 const copyAssetToClipboard = async (imageSource: any) => {
   try {
-    let localUri: string;
+    let base64Data: string;
     
-    // Check if it's a require() statement (returns a number)
+    // Handle different image source types
     if (typeof imageSource === 'number') {
-      // For require() statements, we need to get the asset module
+      // For require() statements (returns a number)
       const assetModule = Asset.fromModule(imageSource);
       await assetModule.downloadAsync();
-      localUri = assetModule.localUri || assetModule.uri;
+      const localUri = assetModule.localUri || assetModule.uri;
+      
+      // Convert image to base64
+      base64Data = await FileSystem.readAsStringAsync(localUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
     } else if (typeof imageSource === 'string') {
-      // For string URIs, use Asset.fromURI
-      const asset = Asset.fromURI(imageSource);
-      await asset.downloadAsync();
-      localUri = asset.localUri || asset.uri;
+      // For string URIs
+      if (imageSource.startsWith('data:image')) {
+        // Already a data URI, extract the base64 part
+        const base64Match = imageSource.match(/data:image\/[^;]+;base64,(.+)/);
+        if (base64Match) {
+          base64Data = base64Match[1];
+        } else {
+          throw new Error('Invalid data URI format');
+        }
+      } else {
+        // For file paths or URLs, use Asset.fromURI
+        const asset = Asset.fromURI(imageSource);
+        await asset.downloadAsync();
+        const localUri = asset.localUri || asset.uri;
+        
+        // Convert image to base64
+        base64Data = await FileSystem.readAsStringAsync(localUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      }
+    } else if (imageSource && typeof imageSource === 'object' && imageSource.uri) {
+      // For image source objects with uri property
+      if (imageSource.uri.startsWith('data:image')) {
+        // Already a data URI, extract the base64 part
+        const base64Match = imageSource.uri.match(/data:image\/[^;]+;base64,(.+)/);
+        if (base64Match) {
+          base64Data = base64Match[1];
+        } else {
+          throw new Error('Invalid data URI format');
+        }
+      } else {
+        // For file paths or URLs
+        const asset = Asset.fromURI(imageSource.uri);
+        await asset.downloadAsync();
+        const localUri = asset.localUri || asset.uri;
+        
+        // Convert image to base64
+        base64Data = await FileSystem.readAsStringAsync(localUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      }
     } else {
       throw new Error('Unsupported image source type');
     }
     
-    // Convert image to base64
-    const base64Image = await FileSystem.readAsStringAsync(localUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    
     // Copy base64 image to clipboard
-    await Clipboard.setImageAsync(base64Image);
-    console.log('Asset image copied to clipboard!');
+    await Clipboard.setImageAsync(base64Data);
+    console.log('Image copied to clipboard successfully!');
     return true;
   } catch (error) {
-    console.error('Failed to copy asset:', error);
+    console.error('Failed to copy image to clipboard:', error);
     return false;
   }
 };

@@ -23,6 +23,7 @@ import * as Speech from 'expo-speech';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useFocusEffect } from '@react-navigation/native';
 import { db } from '@/db/index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -63,14 +64,61 @@ interface TransformedFlashcard {
 }
 
 // Function to get time limit based on difficulty rating
-const getTimeLimit = (difficultyRating: string): number => {
-  switch (difficultyRating) {
-    case 'Again': return 60;
-    case 'Hard': return 45;
-    case 'Good': return 30;
-    case 'Easy': return 15;
-    case 'None': return 20;
-    default: return 20;
+const getTimeLimit = async (difficultyRating: string): Promise<number> => {
+  try {
+    // Load timer settings from AsyncStorage
+    const [
+      defaultTimerStr,
+      againTimerStr,
+      hardTimerStr,
+      goodTimerStr,
+      easyTimerStr,
+    ] = await Promise.all([
+      AsyncStorage.getItem('deckSettings_defaultTimer'),
+      AsyncStorage.getItem('deckSettings_againTimer'),
+      AsyncStorage.getItem('deckSettings_hardTimer'),
+      AsyncStorage.getItem('deckSettings_goodTimer'),
+      AsyncStorage.getItem('deckSettings_easyTimer'),
+    ]);
+
+    console.log('defaultTimerStr', defaultTimerStr);
+    console.log('againTimerStr', againTimerStr);
+    console.log('hardTimerStr', hardTimerStr);
+    console.log('goodTimerStr', goodTimerStr);
+    console.log('easyTimerStr', easyTimerStr);
+
+    // Parse timer values with defaults
+    const defaultTimer = defaultTimerStr ? JSON.parse(defaultTimerStr) : { min: 0, sec: 20 };
+    const againTimer = againTimerStr ? JSON.parse(againTimerStr) : { min: 1, sec: 0 };
+    const hardTimer = hardTimerStr ? JSON.parse(hardTimerStr) : { min: 0, sec: 45 };
+    const goodTimer = goodTimerStr ? JSON.parse(goodTimerStr) : { min: 0, sec: 30 };
+    const easyTimer = easyTimerStr ? JSON.parse(easyTimerStr) : { min: 0, sec: 15 };
+
+    // Convert minutes and seconds to total seconds
+    const convertToSeconds = (timer: { min: number; sec: number }): number => {
+      return (timer.min * 60) + timer.sec;
+    };
+
+    // Return appropriate timer based on difficulty rating
+    switch (difficultyRating) {
+      case 'Again': return convertToSeconds(againTimer);
+      case 'Hard': return convertToSeconds(hardTimer);
+      case 'Good': return convertToSeconds(goodTimer);
+      case 'Easy': return convertToSeconds(easyTimer);
+      case 'None': return convertToSeconds(defaultTimer);
+      default: return convertToSeconds(defaultTimer);
+    }
+  } catch (error) {
+    console.error('Error loading timer settings from AsyncStorage:', error);
+    // Fallback to default values if loading fails
+    switch (difficultyRating) {
+      case 'Again': return 60;
+      case 'Hard': return 45;
+      case 'Good': return 30;
+      case 'Easy': return 15;
+      case 'None': return 20;
+      default: return 20;
+    }
   }
 };
 
@@ -206,7 +254,9 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
     const flashcards = result as DatabaseFlashcard[];
     
     // Transform database flashcards to match dummy data format
-    return flashcards.map(flashcard => {
+    const transformedFlashcards: TransformedFlashcard[] = [];
+    
+    for (const flashcard of flashcards) {
       // Transform question
       let transformedQuestion: string | any;
       if (flashcard.questionType === 'text') {
@@ -247,18 +297,24 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
         transformedAnswer = '';
       }
 
-      return {
+      // Get time limit asynchronously
+      const timeLimit = await getTimeLimit(flashcard.difficultyRating);
+      console.log("timlimit: ", timeLimit);
+
+      transformedFlashcards.push({
         flashcardID: flashcard.flashcardID,
         flashcardDifficulty: flashcard.difficultyRating,
         flashcardQnType: flashcard.questionType,
         flashcardQn: transformedQuestion,
         flashcardAnswerType: flashcard.answerType,
         flashcardAnswer: transformedAnswer,
-        timeLimit: getTimeLimit(flashcard.difficultyRating),
+        timeLimit: timeLimit,
         cognitiveQnType: flashcard.cognitiveQnType,
         isFavorited: flashcard.isFavorited === 1
-      };
-    });
+      });
+    }
+    
+    return transformedFlashcards;
   } catch (error) {
     console.error('Error loading flashcards from database:', error);
     return [];

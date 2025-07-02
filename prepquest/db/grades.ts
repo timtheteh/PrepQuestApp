@@ -406,4 +406,69 @@ export async function getAverageGradeAllTime(): Promise<number> {
     console.error('❌ Error calculating average grade for all time:', error);
     return 0;
   }
+}
+
+// Calculate breakdown of flashcards by difficulty rating
+export async function getDifficultyBreakdown(): Promise<{
+  Again: number;
+  Hard: number;
+  Good: number;
+  Easy: number;
+}> {
+  try {
+    console.log('🔍 Calculating difficulty breakdown...');
+    
+    // Get all flashcards with difficulty ratings from both tables
+    const result = await db.getAllAsync(`
+      SELECT 
+        difficultyRating,
+        COUNT(*) as count
+      FROM (
+        SELECT difficultyRating
+        FROM flashcards
+        WHERE difficultyRating != 'None'
+        UNION ALL
+        SELECT difficultyRating
+        FROM AIFlashcards
+        WHERE difficultyRating != 'None'
+      )
+      GROUP BY difficultyRating
+      ORDER BY difficultyRating
+    `);
+
+    console.log('📊 Difficulty breakdown raw data:', result);
+
+    // Initialize breakdown with zeros
+    const breakdown = {
+      Again: 0,
+      Hard: 0,
+      Good: 0,
+      Easy: 0
+    };
+
+    // Fill in the counts from the database
+    result.forEach((row: any) => {
+      const difficulty = row.difficultyRating;
+      const count = row.count;
+      
+      if (difficulty in breakdown) {
+        breakdown[difficulty as keyof typeof breakdown] = count;
+      }
+    });
+
+    const total = breakdown.Again + breakdown.Hard + breakdown.Good + breakdown.Easy;
+    
+    console.log(`✅ Difficulty breakdown:`, breakdown);
+    console.log(`📊 Total flashcards with difficulty ratings: ${total}`);
+    
+    return breakdown;
+  } catch (error) {
+    console.error('❌ Error calculating difficulty breakdown:', error);
+    return {
+      Again: 0,
+      Hard: 0,
+      Good: 0,
+      Easy: 0
+    };
+  }
 } 

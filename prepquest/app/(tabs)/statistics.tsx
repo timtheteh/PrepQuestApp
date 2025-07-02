@@ -12,7 +12,7 @@ import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import { SpeedChart } from '@/components/SpeedChart';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
-import { getAverageGradeAllTime } from '@/db/grades';
+import { getAverageGradeAllTime, getDifficultyBreakdown } from '@/db/grades';
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -22,6 +22,13 @@ export default function StatisticsScreen() {
   const [moreDetailsState, setMoreDetailsState] = useState(0);
   const [averageGrade, setAverageGrade] = useState(0);
   const [isLoadingAverageGrade, setIsLoadingAverageGrade] = useState(true);
+  const [difficultyBreakdown, setDifficultyBreakdown] = useState({
+    Again: 0,
+    Hard: 0,
+    Good: 0,
+    Easy: 0
+  });
+  const [isLoadingDifficultyBreakdown, setIsLoadingDifficultyBreakdown] = useState(true);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 65;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -42,12 +49,32 @@ export default function StatisticsScreen() {
     }
   };
 
+  // Function to fetch difficulty breakdown
+  const fetchDifficultyBreakdown = async () => {
+    try {
+      setIsLoadingDifficultyBreakdown(true);
+      const breakdown = await getDifficultyBreakdown();
+      setDifficultyBreakdown(breakdown);
+    } catch (error) {
+      console.error('Error fetching difficulty breakdown:', error);
+      setDifficultyBreakdown({
+        Again: 0,
+        Hard: 0,
+        Good: 0,
+        Easy: 0
+      });
+    } finally {
+      setIsLoadingDifficultyBreakdown(false);
+    }
+  };
+
   useEffect(() => {
     if (isFocused) {
       setDisableToggleAnimation(true);
       setIsPerformance(false);
-      // Fetch average grade when screen comes into focus
+      // Fetch data when screen comes into focus
       fetchAverageGrade();
+      fetchDifficultyBreakdown();
       setTimeout(() => {
         setDisableToggleAnimation(false);
         Animated.timing(fadeAnim, {
@@ -137,7 +164,7 @@ export default function StatisticsScreen() {
           >
           <GradeChart />
           <AverageGradeThermometer score={averageGrade} />
-          <BreakdownByDifficultyPie />
+          <BreakdownByDifficultyPie breakdown={difficultyBreakdown} />
           <SpeedChart />
           <AverageSpeedTotal />
         </ScrollView>

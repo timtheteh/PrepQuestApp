@@ -1235,7 +1235,7 @@ export default function FavoritesScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            Whoops! No more{'\n'}favorite decks
+            Whoops! Where did{'\n'}all your favorite decks go
           </Text>
         </View>
       );
@@ -1307,7 +1307,7 @@ export default function FavoritesScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            Whoops! No more{'\n'}favorite folders
+            Whoops! Where did{'\n'}all your favorite folders go
           </Text>
         </View>
       );

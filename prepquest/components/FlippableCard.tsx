@@ -333,6 +333,9 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
   );
 });
 
+// Add display name for DrawingCanvas
+DrawingCanvas.displayName = 'DrawingCanvas';
+
 export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({ 
   style, 
   children, 
@@ -1296,6 +1299,9 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     </Animated.View>
   );
 });
+
+// Add display name for FlippableCard
+FlippableCard.displayName = 'FlippableCard';
 
 const styles = StyleSheet.create({
   container: {

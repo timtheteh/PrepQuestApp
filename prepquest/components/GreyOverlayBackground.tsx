@@ -14,15 +14,15 @@ export function GreyOverlayBackground({
   opacity,
   onPress
 }: GreyOverlayBackgroundProps) {
-  if (!visible) {
-    return null;
-  }
-
   const handlePress = useCallback(() => {
     if (onPress) {
       onPress();
     }
   }, [onPress]);
+
+  if (!visible) {
+    return null;
+  }
 
   const baseStyle = styles.overlay;
   const animatedStyle = opacity ? { opacity } : { opacity: 0 };

@@ -404,7 +404,7 @@ export default function DeckSettingsPage() {
             onValueChange={setRetryQuestionsAfterQuizEnabled}
           />
           <Text style={styles.descriptionText}>
-          After questions in a deck have been exhausted in quiz mode, you will retry any questions you classified as 'again' and any MCQ questions you got wrong.          </Text>
+          {"After questions in a deck have been exhausted in quiz mode, you will retry any questions you classified as 'again' and any MCQ questions you got wrong."}          </Text>
           <TitleToggleRow 
             text="Halfway Checkpoint"
             value={halfwayCheckpointEnabled}

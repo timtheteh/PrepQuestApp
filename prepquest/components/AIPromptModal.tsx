@@ -134,7 +134,7 @@ export function AIPromptModal({
             </View>
             
             <View style={styles.emptyStateFooter}>
-              <Text style={styles.emptyStateFooterText}>We'll generate more</Text>
+              <Text style={styles.emptyStateFooterText}>{"We'll generate more"}</Text>
               <Text style={styles.emptyStateFooterText}>as you practice more!</Text>
             </View>
           </>

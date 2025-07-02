@@ -452,6 +452,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   );
 });
 
+// Add display name for HeaderIconButtons
+HeaderIconButtons.displayName = 'HeaderIconButtons';
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',

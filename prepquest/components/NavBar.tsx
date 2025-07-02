@@ -358,6 +358,8 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   );
 });
 
+NavBar.displayName = 'NavBar';
+
 const styles = StyleSheet.create({
   container: {
     height: NAV_HEIGHT,

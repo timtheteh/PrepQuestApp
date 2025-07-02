@@ -1951,10 +1951,57 @@ export default function FlashcardViewPage() {
     });
   };
 
-  const handleConfirmDelete = () => {
-    handleDismissDeleteModal();
-    // TODO: Implement actual delete functionality
-    console.log('Delete flashcard confirmed');
+  const handleConfirmDelete = async () => {
+    try {
+      const currentFlashcard = flashcards[currentIdx];
+      if (!currentFlashcard) return;
+
+      const isAIDeckFromParams = isAIDeckParam === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      
+      // Delete from database
+      await db.runAsync(`
+        DELETE FROM ${tableName}
+        WHERE flashcardID = ?
+      `, [currentFlashcard.flashcardID]);
+
+      // Update local state by removing the deleted flashcard
+      setFlashcards(prev => prev.filter((_, idx) => idx !== currentIdx));
+      
+      console.log(`Deleted flashcard ${currentFlashcard.flashcardID} from ${tableName}`);
+
+      // Navigate to next card or previous card if at the end
+      const newTotalCards = flashcards.length - 1;
+      if (newTotalCards === 0) {
+        // No cards left, go back to previous screen
+        router.back();
+        return;
+      }
+
+      // Determine which card to navigate to
+      let newCurrentIdx = currentIdx;
+      if (currentIdx >= newTotalCards) {
+        // If we're at the last card and it gets deleted, go to the previous card
+        newCurrentIdx = newTotalCards - 1;
+      }
+      // If we're not at the last card, stay at the same index (next card will slide in)
+
+      // Update current index
+      setCurrentIdx(newCurrentIdx);
+      
+      // Reset card states for the new card
+      setIsFlipped(false);
+      setHasFlippedCard(false);
+      setHasSubmittedMCQ(false);
+      setRecordedAudioUri(null);
+
+      // Close the delete modal
+      handleDismissDeleteModal();
+      
+    } catch (error) {
+      console.error('Error deleting flashcard:', error);
+      handleDismissDeleteModal();
+    }
   };
 
   // Handle copy functionality

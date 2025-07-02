@@ -509,7 +509,7 @@ export default function FoldersScreen() {
       // Insert the new folder into the database
       const result = await db.execAsync(`
         INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited)
-        VALUES ('${newFolderName}', datetime('now'), datetime('now'), 0)
+        VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 0)
       `);
       
       // Get the ID of the newly inserted folder
@@ -774,7 +774,7 @@ export default function FoldersScreen() {
           const newFolderIdsString = JSON.stringify(newFolderIds);
           await db.execAsync(`
             UPDATE decks 
-            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = datetime('now')
+            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = '${new Date().toISOString()}'
             WHERE deckID = ${targetDeckId}
           `);
 
@@ -785,10 +785,11 @@ export default function FoldersScreen() {
         for (const folderId of selectedFolderIds) {
           await db.execAsync(`
             UPDATE folders 
-            SET lastModifiedDate = datetime('now')
+            SET lastModifiedDate = '${new Date().toISOString()}'
             WHERE folderID = ${folderId}
           `);
           console.log(`Updated lastModifiedDate for folder ${folderId}`);
+          console.log(`lastModifiedDate: ${new Date().toISOString()}`);
         }
         
         // Reload folder data to update deck counts
@@ -952,7 +953,7 @@ export default function FoldersScreen() {
           const newFolderIdsString = JSON.stringify(newFolderIds);
           await db.execAsync(`
             UPDATE decks 
-            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = datetime('now')
+            SET folderIDs = '${newFolderIdsString}', lastModifiedDate = '${new Date().toISOString()}'
             WHERE deckID = ${targetDeckId}
           `);
 
@@ -963,7 +964,7 @@ export default function FoldersScreen() {
         for (const folderId of selectedFolderIds) {
           await db.execAsync(`
             UPDATE folders 
-            SET lastModifiedDate = datetime('now')
+            SET lastModifiedDate = '${new Date().toISOString()}'
             WHERE folderID = ${folderId}
           `);
           console.log(`Updated lastModifiedDate for destination folder ${folderId}`);
@@ -972,7 +973,7 @@ export default function FoldersScreen() {
         // Update lastModifiedDate for the source folder (folder the decks were moved from)
         await db.execAsync(`
           UPDATE folders 
-          SET lastModifiedDate = datetime('now')
+          SET lastModifiedDate = '${new Date().toISOString()}'
           WHERE folderID = ${currentFolderId}
         `);
         console.log(`Updated lastModifiedDate for source folder ${currentFolderId}`);

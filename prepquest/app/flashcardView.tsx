@@ -552,7 +552,8 @@ const FlippableFlashcard = (
     showQuizCountdown,
     flashcards,
     recordedAudioUri,
-    setRecordedAudioUri
+    setRecordedAudioUri,
+    updateFlashcardDate
   }: { 
       currentIdx: number, 
       setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
@@ -583,7 +584,8 @@ const FlippableFlashcard = (
       showQuizCountdown: boolean,
       flashcards: TransformedFlashcard[],
       recordedAudioUri: string | null,
-      setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>
+      setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>,
+      updateFlashcardDate: (flashcardId: number, isStudyMode: boolean) => Promise<void>
     }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -847,6 +849,12 @@ const FlippableFlashcard = (
           }
         }
       }
+      
+      // Update the date for the last card before going to success mode
+      if (currentFlashcard) {
+        updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode);
+      }
+      
       // If all validation is passed, set success mode and return
       setIsSuccessMode(true);
       return;
@@ -928,6 +936,11 @@ const FlippableFlashcard = (
               }
             }
           }
+        }
+        
+        // Update the date for the current card before moving to the next
+        if (currentFlashcard) {
+          updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode);
         }
       }
       stopSpeech();
@@ -1893,6 +1906,27 @@ export default function FlashcardViewPage() {
     }
   };
 
+  // Function to update last studied/quizzed date
+  const updateFlashcardDate = async (flashcardId: number, isStudyMode: boolean) => {
+    try {
+      const isAIDeckFromParams = isAIDeckParam === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
+      
+      const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
+      
+      await db.runAsync(`
+        UPDATE ${tableName}
+        SET ${fieldToUpdate} = ?
+        WHERE flashcardID = ?
+      `, [currentDate, flashcardId]);
+
+      console.log(`Updated ${fieldToUpdate} for flashcard ${flashcardId} to ${currentDate}`);
+    } catch (error) {
+      console.error(`Error updating ${isStudyMode ? 'study' : 'quiz'} date:`, error);
+    }
+  };
+
   // Set study mode from URL parameter
   useEffect(() => {
     setIsStudyMode(isStudyModeParam === 'true');
@@ -1995,12 +2029,21 @@ export default function FlashcardViewPage() {
 
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
       
       // Delete from database
       await db.runAsync(`
         DELETE FROM ${tableName}
         WHERE flashcardID = ?
       `, [currentFlashcard.flashcardID]);
+
+      // Update the deck's lastModifiedDate since a flashcard was deleted
+      await db.runAsync(`
+        UPDATE ${deckTableName}
+        SET lastModifiedDate = '${new Date().toISOString()}'
+        WHERE deckID = ?
+      `, [parseInt(deckID as string)]);
+      console.log(`Updated lastModifiedDate for deck ${deckID} after flashcard deletion`);
 
       // Update local state by removing the deleted flashcard
       setFlashcards(prev => prev.filter((_, idx) => idx !== currentIdx));
@@ -2573,6 +2616,7 @@ export default function FlashcardViewPage() {
               flashcards={flashcards}
               recordedAudioUri={recordedAudioUri}
               setRecordedAudioUri={setRecordedAudioUri}
+              updateFlashcardDate={updateFlashcardDate}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

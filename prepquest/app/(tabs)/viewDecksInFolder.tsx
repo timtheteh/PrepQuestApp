@@ -398,7 +398,7 @@ export default function ViewDecksInFolderScreen() {
     try {
       await db.execAsync(`
         UPDATE folders 
-        SET folderName = '${trimmedText}', lastModifiedDate = datetime('now')
+        SET folderName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
         WHERE folderID = ${parseInt(folderId as string)}
       `);
       
@@ -523,29 +523,67 @@ export default function ViewDecksInFolderScreen() {
         return;
       }
 
-      // Delete the decks from database
-      const success = await deleteMultipleDecks(selectedDeckIds);
+      // Remove the folderID from each selected deck's folderIDs field
+      const currentFolderId = parseInt(folderId as string);
       
-      if (success) {
-        // Clear selections first to prevent render issues
-        setSelectedDecks(new Set());
+      for (const deckId of selectedDeckIds) {
+        // Get the current deck's folderIDs
+        const deckResult = await db.getFirstAsync(`
+          SELECT folderIDs FROM decks WHERE deckID = ?
+        `, [deckId]);
         
-        // Update local state by removing the deleted decks
-        const remainingDecks = decks.filter(deck => !selectedDeckIds.includes(deck.deckID));
-        setDecks(remainingDecks);
-        setDecksCount(remainingDecks.length);
-
-        // Exit selection mode after state updates
-        setTimeout(() => {
-          handleCancel();
-        }, 0);
-        
-        console.log(`Successfully deleted ${selectedDeckIds.length} deck(s) from folder`);
-      } else {
-        console.error('Failed to delete decks from folder');
+        if (deckResult) {
+          const deck = deckResult as { folderIDs: string | null };
+          let folderIds: number[] = [];
+          
+          // Parse existing folderIDs if they exist
+          if (deck.folderIDs) {
+            try {
+              folderIds = JSON.parse(deck.folderIDs);
+            } catch (error) {
+              console.error('Error parsing folderIDs for deck', deckId, error);
+              folderIds = [];
+            }
+          }
+          
+          // Remove the current folderID from the array
+          const updatedFolderIds = folderIds.filter(id => id !== currentFolderId);
+          
+          // Update the deck with the new folderIDs
+          await db.runAsync(`
+            UPDATE decks 
+            SET folderIDs = ?, lastModifiedDate = '${new Date().toISOString()}'
+            WHERE deckID = ?
+          `, [JSON.stringify(updatedFolderIds), deckId]);
+          
+          console.log(`Removed folder ${currentFolderId} from deck ${deckId}`);
+        }
       }
+      
+      // Update the folder's lastModifiedDate since decks were removed
+      await db.execAsync(`
+        UPDATE folders 
+        SET lastModifiedDate = '${new Date().toISOString()}'
+        WHERE folderID = ${currentFolderId}
+      `);
+      console.log(`Updated lastModifiedDate for folder ${currentFolderId} after deck removal`);
+      
+      // Clear selections first to prevent render issues
+      setSelectedDecks(new Set());
+      
+      // Update local state by removing the decks from the current folder view
+      const remainingDecks = decks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+      setDecks(remainingDecks);
+      setDecksCount(remainingDecks.length);
+
+      // Exit selection mode after state updates
+      setTimeout(() => {
+        handleCancel();
+      }, 0);
+      
+      console.log(`Successfully removed ${selectedDeckIds.length} deck(s) from folder ${currentFolderId}`);
     } catch (error) {
-      console.error('Error deleting decks from folder:', error);
+      console.error('Error removing decks from folder:', error);
     }
   };
 

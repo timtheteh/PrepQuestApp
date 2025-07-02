@@ -469,7 +469,7 @@ export default function DeckDetailsScreen() {
     try {
       await db.execAsync(`
         UPDATE decks 
-        SET deckName = '${trimmedText}', lastModifiedDate = datetime('now')
+        SET deckName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
         WHERE deckID = ${parseInt(deckId as string)}
       `);
       

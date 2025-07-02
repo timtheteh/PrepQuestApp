@@ -588,6 +588,7 @@ export default function ViewFlashcardsScreen() {
 
       const isAIDeckFromParams = isAIDeck === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
       
       // Get the flashcard IDs to delete
       const flashcardIdsToDelete = selectedCardIndexes.map(idx => flashcards[idx].flashcardID);
@@ -598,6 +599,14 @@ export default function ViewFlashcardsScreen() {
         DELETE FROM ${tableName}
         WHERE flashcardID IN (${placeholders})
       `, flashcardIdsToDelete);
+
+      // Update the deck's lastModifiedDate since flashcards were deleted
+      await db.runAsync(`
+        UPDATE ${deckTableName}
+        SET lastModifiedDate = '${new Date().toISOString()}'
+        WHERE deckID = ?
+      `, [parseInt(deckId as string)]);
+      console.log(`Updated lastModifiedDate for deck ${deckId} after flashcard deletion`);
 
       // Update local state by removing deleted flashcards
       setFlashcards(prev => prev.filter((_, idx) => !selectedCardIndexes.includes(idx)));

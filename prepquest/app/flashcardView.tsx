@@ -51,6 +51,7 @@ interface DatabaseFlashcard {
 
 // Interface for transformed flashcard (matching dummy data format)
 interface TransformedFlashcard {
+  flashcardID: number;
   flashcardDifficulty: string;
   flashcardQnType: string;
   flashcardQn: string | any; // string for text, require() for image/audio
@@ -58,6 +59,7 @@ interface TransformedFlashcard {
   flashcardAnswer: string | any[] | any; // string for text, array for MCQ, require() for image/audio
   timeLimit: number;
   cognitiveQnType: string;
+  isFavorited: boolean;
 }
 
 // Function to get time limit based on difficulty rating
@@ -237,13 +239,15 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
       }
 
       return {
+        flashcardID: flashcard.flashcardID,
         flashcardDifficulty: flashcard.difficultyRating,
         flashcardQnType: flashcard.questionType,
         flashcardQn: transformedQuestion,
         flashcardAnswerType: flashcard.answerType,
         flashcardAnswer: transformedAnswer,
         timeLimit: getTimeLimit(flashcard.difficultyRating),
-        cognitiveQnType: flashcard.cognitiveQnType
+        cognitiveQnType: flashcard.cognitiveQnType,
+        isFavorited: flashcard.isFavorited === 1
       };
     });
   } catch (error) {
@@ -1822,12 +1826,34 @@ export default function FlashcardViewPage() {
     loadFlashcards();
   }, [deckID, isAIDeckParam]);
 
-  // Handler to toggle favorite for current card - MOVED HERE
-  const handleToggleFavorite = () => {
-    setFavoritedMap(prev => ({
-      ...prev,
-      [currentIdx]: !prev[currentIdx],
-    }));
+  // Handler to toggle favorite for current card - UPDATED TO WORK WITH DATABASE
+  const handleToggleFavorite = async () => {
+    try {
+      const currentFlashcard = flashcards[currentIdx];
+      if (!currentFlashcard) return;
+
+      const isAIDeckFromParams = isAIDeckParam === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const newFavoriteStatus = currentFlashcard.isFavorited ? 0 : 1;
+
+      // Update database
+      await db.runAsync(`
+        UPDATE ${tableName}
+        SET isFavorited = ?
+        WHERE flashcardID = ?
+      `, [newFavoriteStatus, currentFlashcard.flashcardID]);
+
+      // Update local state
+      setFlashcards(prev => prev.map((card, idx) => 
+        idx === currentIdx 
+          ? { ...card, isFavorited: !card.isFavorited }
+          : card
+      ));
+
+      console.log(`Flashcard ${currentFlashcard.flashcardID} favorite status updated to ${newFavoriteStatus}`);
+    } catch (error) {
+      console.error('Error toggling favorite status:', error);
+    }
   };
 
   // Set study mode from URL parameter
@@ -2457,7 +2483,7 @@ export default function FlashcardViewPage() {
               isQuizMode={isQuizMode}
               pauseNextTimer={pauseNextTimer}
               setPauseNextTimer={setPauseNextTimer}
-              favorited={favoritedMap[currentIdx] || false}
+              favorited={flashcards[currentIdx]?.isFavorited || false}
               onToggleFavorite={handleToggleFavorite}
               showQuizCountdown={showQuizCountdown}
               flashcards={flashcards}

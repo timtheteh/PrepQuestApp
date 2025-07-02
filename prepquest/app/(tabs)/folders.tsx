@@ -5,7 +5,7 @@ import { FolderCard } from '@/components/FolderCard';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { Feather } from '@expo/vector-icons';
 import { useState, useRef, useContext, useEffect } from 'react';
-import { MenuContext } from './_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { NavBarRef } from '@/components/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';

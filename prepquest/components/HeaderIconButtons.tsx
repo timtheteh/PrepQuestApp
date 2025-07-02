@@ -3,7 +3,8 @@ import { StyleSheet, View, Animated, ViewStyle, Text, TouchableOpacity, Dimensio
 import { CircleIconButton } from './CircleIconButton';
 import Feather from '@expo/vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
-import { MenuContext } from '@/app/(tabs)/_layout';
+import { MenuContext } from '@/contexts/MenuContext';
+import { useRouter } from 'expo-router';
 
 export type PageType = 'decks' | 'folders' | 'favorites';
 

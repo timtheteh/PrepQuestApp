@@ -4,7 +4,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { MenuContext } from './_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import { ViewFlashcardsTopBar } from '@/components/ViewFlashcardsTopBar';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';

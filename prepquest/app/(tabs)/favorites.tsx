@@ -11,7 +11,7 @@ import { FolderCard } from '@/components/FolderCard';
 import { ActionButtonsRow } from '@/components/ActionButtonsRow';
 import { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { MenuContext } from './_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders } from '@/db/decks';

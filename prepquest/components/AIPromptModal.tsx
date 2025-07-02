@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { StyleSheet, Animated, Dimensions, Text, View } from 'react-native';
 import { AIDeckCard } from './AIDeckCard';
-import { MenuContext } from '@/app/(tabs)/_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import { AICardDesigns } from '@/constants/cardDesigns';
 import { getAIDecks, convertHexToImageSource, AIDeck } from '@/db/decks';
 import LottieView from 'lottie-react-native';

@@ -1,10 +1,10 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { StyleSheet, Animated, Dimensions, View, Text } from 'react-native';
 import { InterviewStudyToggle } from './InterviewStudyToggle';
 import { AddDeckModalButton } from './AddDeckModalButton';
 import { useRouter } from 'expo-router';
 import Svg, { SvgProps, Path, Defs, Rect, ClipPath, G } from 'react-native-svg';
-import { MenuContext } from '@/app/(tabs)/_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 
 const GenAIFormIcon: React.FC<SvgProps> = (props) => (
     <Svg 

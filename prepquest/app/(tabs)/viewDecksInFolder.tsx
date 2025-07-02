@@ -2,7 +2,7 @@ import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Anima
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/HeaderIconButtons';
 import { Title } from '@/components/Title';
 import { useState, useRef, useContext, useEffect } from 'react';
-import { MenuContext } from './_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { NavBarRef } from '@/components/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';

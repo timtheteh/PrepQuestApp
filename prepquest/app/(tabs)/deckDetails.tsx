@@ -5,7 +5,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { MenuContext } from './_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import { DeckDetailsTopBar } from '@/components/DeckDetailsTopBar';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';

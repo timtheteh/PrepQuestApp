@@ -13,7 +13,7 @@ import { CalendarModal } from '@/components/CalendarModal';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { MenuContext } from './_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks } from '@/db/decks';

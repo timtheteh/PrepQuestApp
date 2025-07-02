@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useContext } from 'react';
 import { RoundedContainer } from '@/components/RoundedContainer';
 import { useIsFocused } from '@react-navigation/native';
 import Svg, { Path, Defs, ClipPath, Polygon , Image as SvgImage } from 'react-native-svg';
-import { MenuContext } from './_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 import FireIcon from '@/assets/icons/FireIcon.svg';
 import DecksStudiedIcon from '@/assets/icons/DecksStudiedIcon.svg';
 import FlashcardsStudiedIcon from '@/assets/icons/FlashcardsStudiedIcon.svg';

@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
-import { MenuContext } from '@/app/(tabs)/_layout';
+import { MenuContext } from '@/contexts/MenuContext';
 
 interface KindsOfQuestionsProps {
   value: string[];

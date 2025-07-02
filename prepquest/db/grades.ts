@@ -733,4 +733,53 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
     console.error('❌ Error getting complete daily speeds:', error);
     return [];
   }
+}
+
+// Calculate average time taken for all time
+export async function getAverageTimeAllTime(): Promise<number> {
+  try {
+    console.log('🔍 Calculating average time for all time...');
+    
+    // Get all flashcards with study or quiz dates and timeTaken from both tables
+    const result = await db.getFirstAsync(`
+      SELECT 
+        AVG(timeTaken) as averageTime,
+        COUNT(*) as attemptedCount
+      FROM (
+        SELECT timeTaken
+        FROM flashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+        UNION ALL
+        SELECT timeTaken
+        FROM AIFlashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+      )
+    `);
+
+    console.log('📊 Average time calculation result:', result);
+
+    if (!result) {
+      console.log('❌ No flashcard data found for average time calculation');
+      return 0;
+    }
+
+    const data = result as { averageTime: number | null; attemptedCount: number };
+    
+    // Return 0 if no attempted flashcards or no time data
+    if (data.attemptedCount === 0 || data.averageTime === null) {
+      console.log('❌ No attempted flashcards or time data found');
+      return 0;
+    }
+
+    const averageTime = Math.round(data.averageTime);
+    
+    console.log(`✅ Average time for all time: ${averageTime}s (${data.attemptedCount} flashcards)`);
+    
+    return averageTime;
+  } catch (error) {
+    console.error('❌ Error calculating average time for all time:', error);
+    return 0;
+  }
 } 

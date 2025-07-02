@@ -12,7 +12,7 @@ import { AverageGradeThermometer } from '@/components/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import { SpeedChart } from '@/components/SpeedChart';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
-import { getAverageGradeAllTime, getDifficultyBreakdown } from '@/db/grades';
+import { getAverageGradeAllTime, getDifficultyBreakdown, getAverageTimeAllTime } from '@/db/grades';
 
 export default function StatisticsScreen() {
   const [isPerformance, setIsPerformance] = useState(false);
@@ -29,6 +29,8 @@ export default function StatisticsScreen() {
     Easy: 0
   });
   const [isLoadingDifficultyBreakdown, setIsLoadingDifficultyBreakdown] = useState(true);
+  const [averageTime, setAverageTime] = useState(0);
+  const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 65;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -68,6 +70,20 @@ export default function StatisticsScreen() {
     }
   };
 
+  // Function to fetch average time
+  const fetchAverageTime = async () => {
+    try {
+      setIsLoadingAverageTime(true);
+      const time = await getAverageTimeAllTime();
+      setAverageTime(time);
+    } catch (error) {
+      console.error('Error fetching average time:', error);
+      setAverageTime(0);
+    } finally {
+      setIsLoadingAverageTime(false);
+    }
+  };
+
   useEffect(() => {
     if (isFocused) {
       setDisableToggleAnimation(true);
@@ -75,6 +91,7 @@ export default function StatisticsScreen() {
       // Fetch data when screen comes into focus
       fetchAverageGrade();
       fetchDifficultyBreakdown();
+      fetchAverageTime();
       setTimeout(() => {
         setDisableToggleAnimation(false);
         Animated.timing(fadeAnim, {
@@ -166,7 +183,7 @@ export default function StatisticsScreen() {
           <AverageGradeThermometer score={averageGrade} />
           <BreakdownByDifficultyPie breakdown={difficultyBreakdown} />
           <SpeedChart />
-          <AverageSpeedTotal />
+          <AverageSpeedTotal averageTime={averageTime} />
         </ScrollView>
         )}
       </Animated.View>

@@ -173,7 +173,9 @@ const CardForFlashcard = ({
   onPress,
   flashcardIdx,
   onNavigate,
-  flashcards
+  flashcards,
+  isFavorited,
+  onToggleFavorite
 }: {
   flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
   flashcardQn: string;
@@ -184,6 +186,8 @@ const CardForFlashcard = ({
   flashcardIdx: number;
   onNavigate: (flashcardIdx: number) => void;
   flashcards: Flashcard[];
+  isFavorited: boolean;
+  onToggleFavorite: () => void;
 }) => {
   const router = useRouter();
   const Container = isSelectMode ? TouchableOpacity : View;
@@ -218,7 +222,7 @@ const CardForFlashcard = ({
         <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
           <Text style={[styles.difficultyPillText]}>{flashcardDifficulty}</Text>
         </View>
-        <FavoriteButton size={20}/>
+        <FavoriteButton size={20} favorited={isFavorited} onPress={onToggleFavorite} />
       </View>
       {/* Centered question */}
       <View style={styles.cardQnContainer}>
@@ -342,6 +346,36 @@ export default function ViewFlashcardsScreen() {
     }
   };
 
+  // Function to toggle favorite status
+  const toggleFavorite = async (flashcardIdx: number) => {
+    try {
+      const flashcard = flashcards[flashcardIdx];
+      if (!flashcard) return;
+
+      const isAIDeckFromParams = isAIDeck === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      const newFavoriteStatus = flashcard.isFavorited === 1 ? 0 : 1;
+
+      // Update database
+      await db.runAsync(`
+        UPDATE ${tableName}
+        SET isFavorited = ?
+        WHERE flashcardID = ?
+      `, [newFavoriteStatus, flashcard.flashcardID]);
+
+      // Update local state
+      setFlashcards(prev => prev.map((card, idx) => 
+        idx === flashcardIdx 
+          ? { ...card, isFavorited: newFavoriteStatus }
+          : card
+      ));
+
+      console.log(`Flashcard ${flashcard.flashcardID} favorite status updated to ${newFavoriteStatus}`);
+    } catch (error) {
+      console.error('Error toggling favorite status:', error);
+    }
+  };
+
   // Handle screen transitions
   useEffect(() => {
     if (isFocused) {
@@ -438,17 +472,14 @@ export default function ViewFlashcardsScreen() {
 
   useEffect(() => {
     if (isFocused) {
-      setHandleDeletion(() => () => {
-        setSelectedCardIndexes([]);
-        setIsSelectMode(false);
-      });
+      setHandleDeletion(() => deleteSelectedFlashcards);
     }
     return () => {
       if (!isFocused) {
         setHandleDeletion(null);
       }
     };
-  }, [isFocused]);
+  }, [isFocused, selectedCardIndexes, flashcards, isAIDeck]);
 
   const handleBackPress = () => {
     // Navigate back to deck details page with all preserved parameters
@@ -518,12 +549,13 @@ export default function ViewFlashcardsScreen() {
     setSelectedCardIndexes([]);
   };
   const handleActionIconPress = (index: number) => {
-    Animated.timing(menuOverlayOpacity, {
-      toValue: 0.5,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
     if (selectedCardIndexes.length === 0) {
+      // No selection - show no selection modal
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
       setIsMenuOpen(true);
       setIsNoSelectionModalOpen(true);
       Animated.timing(noSelectionModalOpacity, {
@@ -532,6 +564,12 @@ export default function ViewFlashcardsScreen() {
         useNativeDriver: true,
       }).start();
     } else {
+      // Has selection - show delete confirmation modal
+      Animated.timing(menuOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
       setIsMenuOpen(true);
       setIsTrashModalOpenInDecksPage(true);
       setDeleteModalText('Are you sure you want to delete these flashcard(s)?');
@@ -540,6 +578,42 @@ export default function ViewFlashcardsScreen() {
         duration: 200,
         useNativeDriver: true,
       }).start();
+    }
+  };
+
+  // Function to delete selected flashcards
+  const deleteSelectedFlashcards = async () => {
+    try {
+      if (selectedCardIndexes.length === 0) return;
+
+      const isAIDeckFromParams = isAIDeck === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      
+      // Get the flashcard IDs to delete
+      const flashcardIdsToDelete = selectedCardIndexes.map(idx => flashcards[idx].flashcardID);
+      
+      // Delete from database
+      const placeholders = flashcardIdsToDelete.map(() => '?').join(',');
+      await db.runAsync(`
+        DELETE FROM ${tableName}
+        WHERE flashcardID IN (${placeholders})
+      `, flashcardIdsToDelete);
+
+      // Update local state by removing deleted flashcards
+      setFlashcards(prev => prev.filter((_, idx) => !selectedCardIndexes.includes(idx)));
+      
+      // Recalculate question types after deletion
+      const updatedFlashcards = flashcards.filter((_, idx) => !selectedCardIndexes.includes(idx));
+      const questionTypeCounts = calculateQuestionTypeCounts(updatedFlashcards);
+      setQuestionTypes(questionTypeCounts);
+
+      console.log(`Deleted ${selectedCardIndexes.length} flashcards from ${tableName}`);
+      
+      // Reset selection mode
+      setSelectedCardIndexes([]);
+      setIsSelectMode(false);
+    } catch (error) {
+      console.error('Error deleting flashcards:', error);
     }
   };
 
@@ -715,6 +789,8 @@ export default function ViewFlashcardsScreen() {
                               flashcardIdx={flatIdx}
                               onNavigate={handleNavigateToFlashcardView}
                               flashcards={flashcards}
+                              isFavorited={card.isFavorited === 1}
+                              onToggleFavorite={() => toggleFavorite(flatIdx)}
                             />
                           </View>
                         );
@@ -752,7 +828,7 @@ export default function ViewFlashcardsScreen() {
                     return (
                       <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }]}>
                         <View style={styles.flashcardListRowLeft}>  
-                          <FavoriteButton size={25} />
+                          <FavoriteButton size={25} favorited={card.isFavorited === 1} onPress={() => toggleFavorite(i)} />
                         </View>
                         <Text style={styles.flashcardListQn} numberOfLines={2} ellipsizeMode="tail">{getDisplayText()}</Text>
                         {isSelectMode ? (

@@ -31,10 +31,12 @@ export default function StatisticsScreen() {
   const [isLoadingDifficultyBreakdown, setIsLoadingDifficultyBreakdown] = useState(true);
   const [averageTime, setAverageTime] = useState(0);
   const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
+  const [isLoadingScreen, setIsLoadingScreen] = useState(false);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 65;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
+  const loadingScreenAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
 
   // Function to fetch average grade
@@ -86,20 +88,34 @@ export default function StatisticsScreen() {
 
   useEffect(() => {
     if (isFocused) {
+      // Show loading screen for 100ms
+      setIsLoadingScreen(true);
+      loadingScreenAnim.setValue(1);
+      
       setDisableToggleAnimation(true);
       setIsPerformance(false);
+      
       // Fetch data when screen comes into focus
       fetchAverageGrade();
       fetchDifficultyBreakdown();
       fetchAverageTime();
+      
+      // Hide loading screen after 100ms and show content
       setTimeout(() => {
+        setIsLoadingScreen(false);
+        Animated.timing(loadingScreenAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+        
         setDisableToggleAnimation(false);
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 200,
           useNativeDriver: true,
         }).start();
-      }, 50);
+      }, 100);
     } else {
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -145,49 +161,67 @@ export default function StatisticsScreen() {
   };
 
   return (
-    <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim}}>
-      <View style={{ marginTop: topPadding, paddingHorizontal: 16 }}>
-        <RoundedContainer
-          leftLabel="Decks / Flashcards"
-          leftLabelStyle={{ fontSize: 16, fontFamily: 'Satoshi-Medium' }}
-          rightLabel="Performance"
-          onToggle={handleToggle}
-          position={isPerformance ? 'right' : 'left'}
-          disableAnimation={disableToggleAnimation}
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      {/* Loading screen overlay */}
+      {isLoadingScreen && (
+        <Animated.View 
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            backgroundColor: '#FFFFFF', 
+            zIndex: 1000,
+            opacity: loadingScreenAnim
+          }} 
         />
-    </View>
-      <View style={{ height: 10, backgroundColor: '#FFFFFF'}} />
-      <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
-        {!isPerformance && (
+      )}
+      
+      <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim}}>
+        <View style={{ marginTop: topPadding, paddingHorizontal: 16 }}>
+          <RoundedContainer
+            leftLabel="Decks / Flashcards"
+            leftLabelStyle={{ fontSize: 16, fontFamily: 'Satoshi-Medium' }}
+            rightLabel="Performance"
+            onToggle={handleToggle}
+            position={isPerformance ? 'right' : 'left'}
+            disableAnimation={disableToggleAnimation}
+          />
+      </View>
+        <View style={{ height: 10, backgroundColor: '#FFFFFF'}} />
+        <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
+          {!isPerformance && (
+            <ScrollView 
+            contentContainerStyle={{ flexGrow: 1}}
+            showsVerticalScrollIndicator={false}
+            >
+              {/* ReviewSection */}
+              <ReviewLineGraph onContentReady={handleDecksContentReady} />
+              {/* breakdown section */}
+              <BreakdownOfDecksFlashcards
+                key={breakdownKey}
+              />
+              <MoreDetailsStats selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
+              {/* More details section */}
+            </ScrollView>
+          )}
+          {/* You can add your Performance content here, wrapped in the same Animated.View */}
+          {isPerformance && (
           <ScrollView 
-          contentContainerStyle={{ flexGrow: 1}}
-          showsVerticalScrollIndicator={false}
-          >
-            {/* ReviewSection */}
-            <ReviewLineGraph onContentReady={handleDecksContentReady} />
-            {/* breakdown section */}
-            <BreakdownOfDecksFlashcards
-              key={breakdownKey}
-            />
-            <MoreDetailsStats selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
-            {/* More details section */}
+            contentContainerStyle={{ flexGrow: 1}}
+            showsVerticalScrollIndicator={false}
+            >
+            <GradeChart />
+            <AverageGradeThermometer score={averageGrade} />
+            <BreakdownByDifficultyPie breakdown={difficultyBreakdown} />
+            <SpeedChart />
+            <AverageSpeedTotal averageTime={averageTime} />
           </ScrollView>
-        )}
-        {/* You can add your Performance content here, wrapped in the same Animated.View */}
-        {isPerformance && (
-        <ScrollView 
-          contentContainerStyle={{ flexGrow: 1}}
-          showsVerticalScrollIndicator={false}
-          >
-          <GradeChart />
-          <AverageGradeThermometer score={averageGrade} />
-          <BreakdownByDifficultyPie breakdown={difficultyBreakdown} />
-          <SpeedChart />
-          <AverageSpeedTotal averageTime={averageTime} />
-        </ScrollView>
-        )}
+          )}
+        </Animated.View>
+        <View style={{ height: 40, backgroundColor: '#FFFFFF'}} />
       </Animated.View>
-      <View style={{ height: 40, backgroundColor: '#FFFFFF'}} />
-    </Animated.View>
+    </View>
   );
 } 

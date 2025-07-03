@@ -782,4 +782,228 @@ export async function getAverageTimeAllTime(): Promise<number> {
     console.error('❌ Error calculating average time for all time:', error);
     return 0;
   }
+}
+
+// Streak-related interfaces
+export interface LongestStreakData {
+  streakLength: number;
+  uniqueFlashcards: number;
+  uniqueDecks: number;
+  streakStartDate: string | null;
+  streakEndDate: string | null;
+}
+
+// Calculate longest streak and related data
+export async function getLongestStreakData(): Promise<LongestStreakData> {
+  try {
+    console.log('🔍 Calculating longest streak data...');
+    
+    // Get all study and quiz dates from both tables
+    const result = await db.getAllAsync(`
+      SELECT 
+        lastStudiedDate,
+        lastQuizzedDate,
+        flashcardID,
+        deckID
+      FROM (
+        SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
+        FROM flashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        UNION ALL
+        SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
+        FROM AIFlashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+      )
+    `);
+
+    console.log('📊 Raw streak data:', result?.length || 0, 'flashcards found');
+
+    if (!result || result.length === 0) {
+      console.log('❌ No streak data found');
+      return {
+        streakLength: 0,
+        uniqueFlashcards: 0,
+        uniqueDecks: 0,
+        streakStartDate: null,
+        streakEndDate: null
+      };
+    }
+
+    const flashcards = result as Array<{
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+      flashcardID: number;
+      deckID: number;
+    }>;
+
+    // Collect all unique dates
+    const allDates = new Set<string>();
+    flashcards.forEach((flashcard) => {
+      if (flashcard.lastStudiedDate) {
+        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
+        allDates.add(studyDate);
+      }
+      if (flashcard.lastQuizzedDate) {
+        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
+        allDates.add(quizDate);
+      }
+    });
+
+    const sortedDates = Array.from(allDates).sort();
+    console.log('📅 All unique dates:', sortedDates.length, 'dates');
+
+    // Find the longest consecutive streak
+    let longestStreak = 0;
+    let currentStreak = 0;
+    let streakStartDate: string | null = null;
+    let streakEndDate: string | null = null;
+    let tempStreakStart: string | null = null;
+
+    for (let i = 0; i < sortedDates.length; i++) {
+      const currentDate = new Date(sortedDates[i]);
+      
+      if (i === 0) {
+        // First date starts a streak
+        currentStreak = 1;
+        tempStreakStart = sortedDates[i];
+      } else {
+        const prevDate = new Date(sortedDates[i - 1]);
+        const dayDiff = (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (dayDiff === 1) {
+          // Consecutive day
+          currentStreak++;
+        } else {
+          // Streak broken
+          if (currentStreak > longestStreak) {
+            longestStreak = currentStreak;
+            streakStartDate = tempStreakStart;
+            streakEndDate = sortedDates[i - 1];
+          }
+          currentStreak = 1;
+          tempStreakStart = sortedDates[i];
+        }
+      }
+    }
+
+    // Check if the last streak is the longest
+    if (currentStreak > longestStreak) {
+      longestStreak = currentStreak;
+      streakStartDate = tempStreakStart;
+      streakEndDate = sortedDates[sortedDates.length - 1];
+    }
+
+    console.log(`📊 Longest streak: ${longestStreak} days (${streakStartDate} to ${streakEndDate})`);
+
+    // Calculate unique flashcards and decks during the longest streak
+    let uniqueFlashcards = 0;
+    let uniqueDecks = 0;
+    
+    if (longestStreak > 0 && streakStartDate && streakEndDate) {
+      const streakStart = new Date(streakStartDate);
+      const streakEnd = new Date(streakEndDate);
+      
+      // Get all flashcards studied/quizzed during the streak period
+      const streakFlashcards = flashcards.filter((flashcard) => {
+        const studyDate = flashcard.lastStudiedDate ? new Date(flashcard.lastStudiedDate).toISOString().split('T')[0] : null;
+        const quizDate = flashcard.lastQuizzedDate ? new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0] : null;
+        
+        if (studyDate) {
+          const studyDateObj = new Date(studyDate);
+          if (studyDateObj >= streakStart && studyDateObj <= streakEnd) return true;
+        }
+        
+        if (quizDate) {
+          const quizDateObj = new Date(quizDate);
+          if (quizDateObj >= streakStart && quizDateObj <= streakEnd) return true;
+        }
+        
+        return false;
+      });
+
+      // Count unique flashcards and decks
+      const uniqueFlashcardIds = new Set(streakFlashcards.map(f => f.flashcardID));
+      const uniqueDeckIds = new Set(streakFlashcards.map(f => f.deckID));
+      
+      uniqueFlashcards = uniqueFlashcardIds.size;
+      uniqueDecks = uniqueDeckIds.size;
+      
+      console.log(`📊 Streak period flashcards: ${uniqueFlashcards} unique flashcards, ${uniqueDecks} unique decks`);
+    }
+
+    const streakData = {
+      streakLength: longestStreak,
+      uniqueFlashcards,
+      uniqueDecks,
+      streakStartDate,
+      streakEndDate
+    };
+
+    console.log('✅ Longest streak data calculated:', streakData);
+    
+    return streakData;
+  } catch (error) {
+    console.error('❌ Error calculating longest streak data:', error);
+    return {
+      streakLength: 0,
+      uniqueFlashcards: 0,
+      uniqueDecks: 0,
+      streakStartDate: null,
+      streakEndDate: null
+    };
+  }
+}
+
+// Get all studied dates for calendar visualization
+export async function getAllStudiedDates(): Promise<string[]> {
+  try {
+    console.log('🔍 Getting all studied dates for calendar...');
+    
+    // Get all study and quiz dates from both tables
+    const result = await db.getAllAsync(`
+      SELECT 
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM (
+        SELECT lastStudiedDate, lastQuizzedDate
+        FROM flashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        UNION ALL
+        SELECT lastStudiedDate, lastQuizzedDate
+        FROM AIFlashcards
+        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+      )
+    `);
+
+    if (!result || result.length === 0) {
+      console.log('❌ No studied dates found');
+      return [];
+    }
+
+    const flashcards = result as Array<{
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+    }>;
+
+    // Collect all unique dates
+    const allDates = new Set<string>();
+    flashcards.forEach((flashcard) => {
+      if (flashcard.lastStudiedDate) {
+        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
+        allDates.add(studyDate);
+      }
+      if (flashcard.lastQuizzedDate) {
+        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
+        allDates.add(quizDate);
+      }
+    });
+
+    const sortedDates = Array.from(allDates).sort();
+    console.log('📅 All studied dates for calendar:', sortedDates.length, 'dates');
+    
+    return sortedDates;
+  } catch (error) {
+    console.error('❌ Error getting studied dates:', error);
+    return [];
+  }
 } 

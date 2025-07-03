@@ -10,6 +10,7 @@ import DecksStudiedIcon from '@/assets/icons/DecksStudiedIcon.svg';
 import FlashcardsStudiedIcon from '@/assets/icons/FlashcardsStudiedIcon.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, isSameDay, parseISO, subDays } from 'date-fns';
+import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
 const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
 const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
@@ -303,6 +304,43 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
 }
 
 const StreakCalendarStats = () => {
+  const [streakData, setStreakData] = useState<LongestStreakData>({
+    streakLength: 0,
+    uniqueFlashcards: 0,
+    uniqueDecks: 0,
+    streakStartDate: null,
+    streakEndDate: null
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const isFocused = useIsFocused();
+
+  // Fetch streak data
+  const fetchStreakData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getLongestStreakData();
+      setStreakData(data);
+    } catch (error) {
+      console.error('Error fetching streak data:', error);
+      setStreakData({
+        streakLength: 0,
+        uniqueFlashcards: 0,
+        uniqueDecks: 0,
+        streakStartDate: null,
+        streakEndDate: null
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data when screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      fetchStreakData();
+    }
+  }, [isFocused]);
+
   return (
     <View style={{ marginHorizontal: 16, marginTop: 20,}}>
       {/* First row - Title */}
@@ -318,7 +356,9 @@ const StreakCalendarStats = () => {
             <FireIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}} />
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center", }}>5</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center", }}>
+              {isLoading ? '...' : streakData.streakLength}
+            </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>days</Text>
@@ -330,7 +370,9 @@ const StreakCalendarStats = () => {
             <DecksStudiedIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}}/>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000',width:150, textAlign: "center"}}>50</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000',width:150, textAlign: "center"}}>
+              {isLoading ? '...' : streakData.uniqueDecks}
+            </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>decks{'\n'}studied</Text>
@@ -342,7 +384,9 @@ const StreakCalendarStats = () => {
             <FlashcardsStudiedIcon width={60} height={60} style={{marginRight: 110}}/>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center"}}>50</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center"}}>
+              {isLoading ? '...' : streakData.uniqueFlashcards}
+            </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>flashcards{'\n'}studied</Text>
@@ -352,13 +396,6 @@ const StreakCalendarStats = () => {
     </View>
   );
 };
-
-// Example studied dates (should be sorted)
-const studiedDatesArr = [
-  '2025-06-01', '2025-06-02', '2025-06-03', '2025-06-04', '2025-06-05', '2025-06-06', '2025-06-07',
-  '2025-06-10', '2025-06-11',
-  '2025-06-13', '2025-06-15',
-];
 
 // Utility to get streak info for each studied date
 function getStreakInfo(studiedArr: string[]): { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' } {
@@ -394,103 +431,130 @@ function getStreakInfo(studiedArr: string[]): { [date: string]: 'start' | 'middl
   return streakInfo;
 }
 
-const streakInfo = getStreakInfo(studiedDatesArr);
+const StreakCalendar = () => {
+  const [studiedDates, setStudiedDates] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const isFocused = useIsFocused();
 
-const StreakCalendar = () => (
-  <View style={{ marginTop: 30, width: '100%', paddingHorizontal: 16 }}>
-    <Calendar
-      markingType={'custom'}
-      disableAllTouchEventsForDisabledDays={true}
-      dayComponent={({ date, state }) => {
-        if (!date) return null;
-        const dateStr = date.dateString;
-        const info = streakInfo[dateStr];
-        const isStreak = info === 'start' || info === 'middle' || info === 'end';
-        const isStreakStart = info === 'start';
-        const isStreakEnd = info === 'end';
-        const isStreakMiddle = info === 'middle';
-        const isStudiedOnly = info === 'studied';
-        return (
-          <View style={{ alignItems: 'center', justifyContent: 'center', width: 36, height: 36, position: 'relative' }}>
-            {/* {isStreak && (
-              <View
+  // Fetch studied dates
+  const fetchStudiedDates = async () => {
+    try {
+      setIsLoading(true);
+      const dates = await getAllStudiedDates();
+      setStudiedDates(dates);
+    } catch (error) {
+      console.error('Error fetching studied dates:', error);
+      setStudiedDates([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data when screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      fetchStudiedDates();
+    }
+  }, [isFocused]);
+
+  const streakInfo = getStreakInfo(studiedDates);
+
+  return (
+    <View style={{ marginTop: 30, width: '100%', paddingHorizontal: 16 }}>
+      <Calendar
+        markingType={'custom'}
+        disableAllTouchEventsForDisabledDays={true}
+        dayComponent={({ date, state }) => {
+          if (!date) return null;
+          const dateStr = date.dateString;
+          const info = streakInfo[dateStr];
+          const isStreak = info === 'start' || info === 'middle' || info === 'end';
+          const isStreakStart = info === 'start';
+          const isStreakEnd = info === 'end';
+          const isStreakMiddle = info === 'middle';
+          const isStudiedOnly = info === 'studied';
+          
+          // Check if this is today's date
+          const today = new Date().toISOString().split('T')[0];
+          const isToday = dateStr === today;
+          
+          return (
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: 36, height: 36, position: 'relative' }}>
+              {/* Yellow circle for studied or streak */}
+              {(isStreak || isStudiedOnly) && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    width: 28,
+                    height: 28,
+                    backgroundColor: isStreak? '#5bcfff' : '#FFCE51',
+                    borderRadius: 99,
+                    top: 4,
+                    left: 4,
+                    zIndex: 1,
+                  }}
+                />
+              )}
+              {/* Fire icon for streak */}
+              {isStreak && (
+                <FireIcon
+                  width={16}
+                  height={16}
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    left: 10,
+                    zIndex: 2,
+                  }}
+                />
+              )}
+              {/* Date number */}
+              <Text
                 style={{
-                  position: 'absolute',
-                  width: 36,
-                  height: 36,
-                  backgroundColor: 'rgba(255, 206, 81, 0.2)',
-                  borderTopLeftRadius: isStreakStart ? 90 : 0,
-                  borderBottomLeftRadius: isStreakStart ? 90 : 0,
-                  borderTopRightRadius: isStreakEnd ? 90 : 0,
-                  borderBottomRightRadius: isStreakEnd ? 90 : 0,
-                  borderRadius: isStreakMiddle ? 0 : 90,
-                  zIndex: 0,
+                  color: isToday ? '#4F41D8' : (state === 'disabled' ? '#d9e1e8' : '#2d4150'),
+                  fontFamily: 'Satoshi-Medium',
+                  fontSize: 16,
+                  zIndex: 3,
+                  fontWeight: isToday ? 'bold' : 'normal',
+                  ...(isToday && {
+                    borderWidth: 2,
+                    borderColor: '#4F41D8',
+                    borderRadius: 28,
+                    width: 28,
+                    height: 28,
+                    textAlign: 'center',
+                    textAlignVertical: 'center',
+                    lineHeight: 20,
+                  }),
                 }}
-              />
-            )} */}
-            {/* Yellow circle for studied or streak */}
-            {(isStreak || isStudiedOnly) && (
-              <View
-                style={{
-                  position: 'absolute',
-                  width: 28,
-                  height: 28,
-                  backgroundColor: isStreak? '#5bcfff' : '#FFCE51',
-                  borderRadius: 99,
-                  top: 4,
-                  left: 4,
-                  zIndex: 1,
-                }}
-              />
-            )}
-            {/* Fire icon for streak */}
-            {isStreak && (
-              <FireIcon
-                width={16}
-                height={16}
-                style={{
-                  position: 'absolute',
-                  top: -8,
-                  left: 10,
-                  zIndex: 2,
-                }}
-              />
-            )}
-            {/* Date number */}
-            <Text
-              style={{
-                color: state === 'disabled' ? '#d9e1e8' : '#2d4150',
-                fontFamily: 'Satoshi-Medium',
-                fontSize: 16,
-                zIndex: 3,
-              }}
-            >
-              {date.day}
-            </Text>
-          </View>
-        );
-      }}
-      theme={{
-        backgroundColor: '#ffffff',
-        calendarBackground: '#ffffff',
-        textSectionTitleColor: '#b6c1cd',
-        selectedDayBackgroundColor: '#4F41D8',
-        selectedDayTextColor: '#ffffff',
-        todayTextColor: '#4F41D8',
-        dayTextColor: '#2d4150',
-        textDisabledColor: '#d9e1e8',
-        dotColor: '#FFCE51',
-        monthTextColor: '#000000',
-        textMonthFontFamily: 'Satoshi-Medium',
-        textDayHeaderFontFamily: 'Satoshi-Regular',
-        textDayFontFamily: 'Satoshi-Regular',
-        textDayHeaderFontSize: 14,
-        textMonthFontSize: 20,
-        arrowColor: '#000000',
-      }}
-    />
-  </View>
-);
+              >
+                {date.day}
+              </Text>
+            </View>
+          );
+        }}
+        theme={{
+          backgroundColor: '#ffffff',
+          calendarBackground: '#ffffff',
+          textSectionTitleColor: '#b6c1cd',
+          selectedDayBackgroundColor: '#4F41D8',
+          selectedDayTextColor: '#ffffff',
+          todayTextColor: '#4F41D8',
+          dayTextColor: '#2d4150',
+          textDisabledColor: '#d9e1e8',
+          dotColor: '#FFCE51',
+          monthTextColor: '#000000',
+          textMonthFontFamily: 'Satoshi-Medium',
+          textDayHeaderFontFamily: 'Satoshi-Regular',
+          textDayFontFamily: 'Satoshi-Regular',
+          textDayHeaderFontSize: 14,
+          textMonthFontSize: 20,
+          arrowColor: '#000000',
+        }}
+      />
+    </View>
+  );
+};
 
 interface BadgeData {
   badgeTitle: string;

@@ -32,6 +32,17 @@ const BOTTOM_SPACING = 40; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -104,12 +115,13 @@ export default function DecksScreen() {
   const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean, isStudyDeck: boolean) => {
     try {
       const newFavoritedValue = currentFavorited ? 0 : 1;
+      const userID = await getCurrentUserID();
       
       // Update database
       await db.execAsync(`
         UPDATE decks 
         SET isFavorited = ${newFavoritedValue}
-        WHERE deckID = ${deckId}
+        WHERE deckID = ${deckId} AND userID = '${userID}'
       `);
       
       // Update local state immediately
@@ -154,8 +166,9 @@ export default function DecksScreen() {
     const checkDatabaseReady = async () => {
       try {
         console.log('Checking if database is ready...');
+        const userID = await getCurrentUserID();
         // Try a simple query to check if database is ready
-        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks');
+        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
         console.log('Database is ready, decks count:', (result[0] as any)?.count);
         setIsDatabaseReady(true);
       } catch (error) {
@@ -989,24 +1002,32 @@ export default function DecksScreen() {
     saveSortPreferences(field, direction);
   };
 
-  // Save sort preferences to AsyncStorage
+  // Save sort preferences to AsyncStorage with userID
   const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
     try {
+      const userID = await getCurrentUserID();
+      const userSpecificFieldKey = `${SORT_FIELD_KEY}_${userID}`;
+      const userSpecificDirectionKey = `${SORT_DIRECTION_KEY}_${userID}`;
+      
       await AsyncStorage.multiSet([
-        [SORT_FIELD_KEY, field],
-        [SORT_DIRECTION_KEY, direction]
+        [userSpecificFieldKey, field],
+        [userSpecificDirectionKey, direction]
       ]);
     } catch (error) {
       console.error('Error saving sort preferences:', error);
     }
   };
 
-  // Load sort preferences from AsyncStorage
+  // Load sort preferences from AsyncStorage with userID
   const loadSortPreferences = async () => {
     try {
+      const userID = await getCurrentUserID();
+      const userSpecificFieldKey = `${SORT_FIELD_KEY}_${userID}`;
+      const userSpecificDirectionKey = `${SORT_DIRECTION_KEY}_${userID}`;
+      
       const [savedField, savedDirection] = await AsyncStorage.multiGet([
-        SORT_FIELD_KEY,
-        SORT_DIRECTION_KEY
+        userSpecificFieldKey,
+        userSpecificDirectionKey
       ]);
       
       if (savedField[1]) {

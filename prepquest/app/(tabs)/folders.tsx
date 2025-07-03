@@ -29,6 +29,17 @@ const SHIFT_DISTANCE = 48; // Distance to shift content down
 const selectUnselectedDuration = 300;
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 export default function FoldersScreen() {
   const router = useRouter();
   const { isAddToFolders, isMoveToFolders, previousMode, selectedState, sourcePage, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, folderTitle, folderId, originalSourcePage, originalFolderTitle, originalFolderId, selectedDeckIds } = useLocalSearchParams();
@@ -202,8 +213,9 @@ export default function FoldersScreen() {
     const checkDatabaseReady = async () => {
       try {
         console.log('Checking if database is ready...');
+        const userID = await getCurrentUserID();
         // Try a simple query to check if database is ready
-        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM folders');
+        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM folders WHERE userID = ?', [userID]);
         console.log('Database is ready, folders count:', (result[0] as any)?.count);
         setIsDatabaseReady(true);
         setFoldersCount((result[0] as any)?.count);
@@ -317,24 +329,32 @@ export default function FoldersScreen() {
     saveSortPreferences(field, direction);
   };
 
-  // Save sort preferences to AsyncStorage
+  // Save sort preferences to AsyncStorage with userID
   const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
     try {
+      const userID = await getCurrentUserID();
+      const userSpecificFieldKey = `${FOLDERS_SORT_FIELD_KEY}_${userID}`;
+      const userSpecificDirectionKey = `${FOLDERS_SORT_DIRECTION_KEY}_${userID}`;
+      
       await AsyncStorage.multiSet([
-        [FOLDERS_SORT_FIELD_KEY, field],
-        [FOLDERS_SORT_DIRECTION_KEY, direction]
+        [userSpecificFieldKey, field],
+        [userSpecificDirectionKey, direction]
       ]);
     } catch (error) {
       console.error('Error saving folders sort preferences:', error);
     }
   };
 
-  // Load sort preferences from AsyncStorage
+  // Load sort preferences from AsyncStorage with userID
   const loadSortPreferences = async () => {
     try {
+      const userID = await getCurrentUserID();
+      const userSpecificFieldKey = `${FOLDERS_SORT_FIELD_KEY}_${userID}`;
+      const userSpecificDirectionKey = `${FOLDERS_SORT_DIRECTION_KEY}_${userID}`;
+      
       const [savedField, savedDirection] = await AsyncStorage.multiGet([
-        FOLDERS_SORT_FIELD_KEY,
-        FOLDERS_SORT_DIRECTION_KEY
+        userSpecificFieldKey,
+        userSpecificDirectionKey
       ]);
       
       if (savedField[1]) {
@@ -507,19 +527,20 @@ export default function FoldersScreen() {
       }
       
       // Insert the new folder into the database
+      const userID = await getCurrentUserID();
       const result = await db.execAsync(`
-        INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited)
-        VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 0)
+        INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited, userID)
+        VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 0, '${userID}')
       `);
       
       // Get the ID of the newly inserted folder
       const newFolderResult = await db.getFirstAsync(`
         SELECT folderID, folderName, dateAdded, lastModifiedDate, isFavorited
         FROM folders 
-        WHERE folderName = '${newFolderName}'
+        WHERE folderName = '${newFolderName}' AND userID = ?
         ORDER BY folderID DESC
         LIMIT 1
-      `);
+      `, [userID]);
       
       if (newFolderResult) {
         const newFolder = newFolderResult as {
@@ -691,9 +712,10 @@ export default function FoldersScreen() {
         
         for (const targetDeckId of targetDeckIds) {
           // Get the current folderIDs for the deck
+          const userID = await getCurrentUserID();
           const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
-          `);
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
+          `, [userID]);
 
           if (!currentDeck) {
             console.error(`Deck ${targetDeckId} not found`);
@@ -745,9 +767,10 @@ export default function FoldersScreen() {
         // Process each deck (only if no existing decks found)
         for (const targetDeckId of targetDeckIds) {
           // Get the current folderIDs for the deck
+          const userID = await getCurrentUserID();
           const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
-          `);
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
+          `, [userID]);
 
           if (!currentDeck) {
             console.error(`Deck ${targetDeckId} not found`);
@@ -775,7 +798,7 @@ export default function FoldersScreen() {
           await db.execAsync(`
             UPDATE decks 
             SET folderIDs = '${newFolderIdsString}'
-            WHERE deckID = ${targetDeckId}
+            WHERE deckID = ${targetDeckId} AND userID = '${userID}'
           `);
 
           console.log(`Successfully added deck ${targetDeckId} to folders: ${selectedFolderIds.join(', ')}`);
@@ -783,10 +806,11 @@ export default function FoldersScreen() {
         
         // Update lastModifiedDate for folders that received new decks
         for (const folderId of selectedFolderIds) {
+          const folderUserID = await getCurrentUserID();
           await db.execAsync(`
             UPDATE folders 
             SET lastModifiedDate = '${new Date().toISOString()}'
-            WHERE folderID = ${folderId}
+            WHERE folderID = ${folderId} AND userID = '${folderUserID}'
           `);
           console.log(`Updated lastModifiedDate for folder ${folderId}`);
           console.log(`lastModifiedDate: ${new Date().toISOString()}`);
@@ -867,9 +891,10 @@ export default function FoldersScreen() {
         
         for (const targetDeckId of targetDeckIds) {
           // Get the current folderIDs for the deck
+          const userID = await getCurrentUserID();
           const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
-          `);
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
+          `, [userID]);
 
           if (!currentDeck) {
             console.error(`Deck ${targetDeckId} not found`);
@@ -921,9 +946,10 @@ export default function FoldersScreen() {
         // Process each deck (only if no existing decks found)
         for (const targetDeckId of targetDeckIds) {
           // Get the current folderIDs for the deck
+          const userID = await getCurrentUserID();
           const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId}
-          `);
+            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
+          `, [userID]);
 
           if (!currentDeck) {
             console.error(`Deck ${targetDeckId} not found`);
@@ -954,7 +980,7 @@ export default function FoldersScreen() {
           await db.execAsync(`
             UPDATE decks 
             SET folderIDs = '${newFolderIdsString}'
-            WHERE deckID = ${targetDeckId}
+            WHERE deckID = ${targetDeckId} AND userID = '${userID}'
           `);
 
           console.log(`Successfully moved deck ${targetDeckId} from folder ${currentFolderId} to folders: ${selectedFolderIds.join(', ')}`);
@@ -962,10 +988,11 @@ export default function FoldersScreen() {
         
         // Update lastModifiedDate for folders that received moved decks
         for (const folderId of selectedFolderIds) {
+          const folderUserID = await getCurrentUserID();
           await db.execAsync(`
             UPDATE folders 
             SET lastModifiedDate = '${new Date().toISOString()}'
-            WHERE folderID = ${folderId}
+            WHERE folderID = ${folderId} AND userID = '${folderUserID}'
           `);
           console.log(`Updated lastModifiedDate for destination folder ${folderId}`);
         }
@@ -1055,12 +1082,13 @@ export default function FoldersScreen() {
   const handleFolderFavoriteToggle = async (folderId: number, currentFavorited: boolean) => {
     try {
       const newFavoritedValue = currentFavorited ? 0 : 1;
+      const userID = await getCurrentUserID();
       
       // Update database
       await db.execAsync(`
         UPDATE folders 
         SET isFavorited = ${newFavoritedValue}
-        WHERE folderID = ${folderId}
+        WHERE folderID = ${folderId} AND userID = '${userID}'
       `);
       
       // Update local state immediately

@@ -29,6 +29,7 @@ import { createManualDeck, createFlashcardsFromCache, checkDeckNameExists, getMo
 import { db } from '../db/index';
 import { Toast } from '../components/Toast';
 import DeckCreationLoadingPage from './DeckCreationLoadingPage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -117,6 +118,16 @@ const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
   return Platform.OS === 'ios' ? 0 : 16;
 };
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
 
 export default function ManualAddDeckPage() {
   const { 
@@ -1331,10 +1342,11 @@ export default function ManualAddDeckPage() {
           const deckResult = await createManualDeck(formData);
           if (deckResult.success && deckResult.deckId) {
             // Update the deck to be favorited
+            const userID = await getCurrentUserID();
             await db.execAsync(`
               UPDATE decks 
               SET isFavorited = 1
-              WHERE deckID = ${deckResult.deckId}
+              WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'
             `);
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
@@ -1374,8 +1386,9 @@ export default function ManualAddDeckPage() {
             const currentFolderId = parseInt(folderId as string);
             if (currentFolderId) {
               // Get the current folderIDs for the deck
+              const userID = await getCurrentUserID();
               const currentDeck = await db.getFirstAsync(`
-                SELECT folderIDs FROM decks WHERE deckID = ${deckResult.deckId}
+                SELECT folderIDs FROM decks WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'
               `);
               
               if (currentDeck) {
@@ -1400,7 +1413,7 @@ export default function ManualAddDeckPage() {
                 await db.execAsync(`
                   UPDATE decks 
                   SET folderIDs = '${newFolderIdsString}'
-                  WHERE deckID = ${deckResult.deckId}
+                  WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'
                 `);
                 
                 console.log(`Successfully added deck ${deckResult.deckId} to folder: ${currentFolderId}`);
@@ -1467,13 +1480,14 @@ export default function ManualAddDeckPage() {
               }
               
               // Insert into userFormEntries table
+              const userID = await getCurrentUserID();
               await db.execAsync(`
                 INSERT INTO userFormEntries (
-                  formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
+                  userID, formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
                   youtubeLink, studyEducationLevel, studySubjects, studyTopics, studySubtopics, studyExam,
                   interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics
                 ) VALUES (
-                  '${mode}', 'manual', '${currentDate}', '${deckNameForEntry.replace(/'/g, "''")}', NULL, NULL,
+                  '${userID}', '${mode}', 'manual', '${currentDate}', '${deckNameForEntry.replace(/'/g, "''")}', NULL, NULL,
                   NULL, 
                   ${studyEducationLevelForm ? `'${studyEducationLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
                   ${studySubjectsForm ? `'${studySubjectsForm.replace(/'/g, "''")}'` : 'NULL'}, 

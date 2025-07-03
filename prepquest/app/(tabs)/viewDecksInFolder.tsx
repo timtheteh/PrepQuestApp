@@ -18,10 +18,22 @@ import { db } from '@/db/index';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/Toast';
 import LottieView from 'lottie-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
+
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
 
 export default function ViewDecksInFolderScreen() {
   const router = useRouter();
@@ -85,8 +97,9 @@ export default function ViewDecksInFolderScreen() {
     const checkDatabaseReady = async () => {
       try {
         console.log('Checking if database is ready...');
+        const userID = await getCurrentUserID();
         // Try a simple query to check if database is ready
-        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks');
+        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
         console.log('Database is ready, decks count:', (result[0] as any)?.count);
         setIsDatabaseReady(true);
       } catch (error) {
@@ -416,10 +429,11 @@ export default function ViewDecksInFolderScreen() {
     
     // If validation passes, update the folder name
     try {
+      const userID = await getCurrentUserID();
       await db.execAsync(`
         UPDATE folders 
         SET folderName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
-        WHERE folderID = ${parseInt(folderId as string)}
+        WHERE folderID = ${parseInt(folderId as string)} AND userID = '${userID}'
       `);
       
       console.log('Updated folder title to:', trimmedText);
@@ -512,12 +526,13 @@ export default function ViewDecksInFolderScreen() {
   const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean) => {
     try {
       const newFavoritedValue = currentFavorited ? 0 : 1;
+      const userID = await getCurrentUserID();
       
       // Update database
       await db.execAsync(`
         UPDATE decks 
         SET isFavorited = ${newFavoritedValue}
-        WHERE deckID = ${deckId}
+        WHERE deckID = ${deckId} AND userID = '${userID}'
       `);
       
       // Update local state immediately
@@ -548,9 +563,10 @@ export default function ViewDecksInFolderScreen() {
       
       for (const deckId of selectedDeckIds) {
         // Get the current deck's folderIDs
+        const userID = await getCurrentUserID();
         const deckResult = await db.getFirstAsync(`
-          SELECT folderIDs FROM decks WHERE deckID = ?
-        `, [deckId]);
+          SELECT folderIDs FROM decks WHERE deckID = ? AND userID = ?
+        `, [deckId, userID]);
         
         if (deckResult) {
           const deck = deckResult as { folderIDs: string | null };
@@ -573,18 +589,19 @@ export default function ViewDecksInFolderScreen() {
           await db.runAsync(`
             UPDATE decks 
             SET folderIDs = ?, lastModifiedDate = '${new Date().toISOString()}'
-            WHERE deckID = ?
-          `, [JSON.stringify(updatedFolderIds), deckId]);
+            WHERE deckID = ? AND userID = ?
+          `, [JSON.stringify(updatedFolderIds), deckId, userID]);
           
           console.log(`Removed folder ${currentFolderId} from deck ${deckId}`);
         }
       }
       
       // Update the folder's lastModifiedDate since decks were removed
+      const folderUserID = await getCurrentUserID();
       await db.execAsync(`
         UPDATE folders 
         SET lastModifiedDate = '${new Date().toISOString()}'
-        WHERE folderID = ${currentFolderId}
+        WHERE folderID = ${currentFolderId} AND userID = '${folderUserID}'
       `);
       console.log(`Updated lastModifiedDate for folder ${currentFolderId} after deck removal`);
       

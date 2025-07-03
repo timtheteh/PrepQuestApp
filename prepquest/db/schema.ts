@@ -10,6 +10,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync('DROP TABLE IF EXISTS flashcards');
     await db.execAsync('DROP TABLE IF EXISTS decks');
     await db.execAsync('DROP TABLE IF EXISTS folders');
+    await db.execAsync('DROP TABLE IF EXISTS users');
     console.log('Existing tables dropped');
     
     // Now create tables with new schema - each in its own execAsync call
@@ -18,6 +19,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS folders (
         folderID INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID TEXT NOT NULL,
         folderName TEXT NOT NULL,
         dateAdded TEXT NOT NULL,
         lastModifiedDate TEXT,
@@ -28,6 +30,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS decks (
         deckID INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID TEXT NOT NULL,
         deckName TEXT NOT NULL,
         dateAdded TEXT NOT NULL,
         lastModifiedDate TEXT,
@@ -56,6 +59,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS flashcards (
         flashcardID INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID TEXT NOT NULL,
         deckID INTEGER NOT NULL,
         difficultyRating TEXT NOT NULL DEFAULT 'None' CHECK (difficultyRating IN ('Easy', 'Good', 'Hard', 'Again', 'None')),
         cognitiveQnType TEXT NOT NULL DEFAULT 'None' CHECK (cognitiveQnType IN ('Recall', 'Comprehension', 'Application', 'Analysis', 'Synthesis', 'Evaluation', 'Problem-Solving', 'None')),
@@ -78,6 +82,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS userFormEntries (
         formEntryID INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID TEXT NOT NULL,
         formEntryType TEXT CHECK (formEntryType IN ('study', 'interview')),
         formEntryMethod TEXT CHECK (formEntryMethod IN ('manual', 'genAIForm', 'fileUpload', 'youtubeLink')),
         formSubmissionDate TEXT NOT NULL,
@@ -101,6 +106,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS AIDecks (
         deckID INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID TEXT NOT NULL,
         deckName TEXT NOT NULL,
         dateAdded TEXT,
         lastModifiedDate TEXT,
@@ -128,6 +134,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS AIFlashcards (
         flashcardID INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID TEXT NOT NULL,
         deckID INTEGER NOT NULL,
         difficultyRating TEXT NOT NULL DEFAULT 'None' CHECK (difficultyRating IN ('Easy', 'Good', 'Hard', 'Again', 'None')),
         cognitiveQnType TEXT NOT NULL DEFAULT 'Recall' CHECK (cognitiveQnType IN ('Recall', 'Comprehension', 'Application', 'Analysis', 'Synthesis', 'Evaluation', 'Problem-Solving')),
@@ -150,19 +157,31 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     // Create user statistics table for lifetime accumulated counters
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID TEXT PRIMARY KEY,
         accumulatedDecksCreated INTEGER DEFAULT 0,
         accumulatedFlashcardsCreated INTEGER DEFAULT 0,
         accumulatedStudyDecksCreated INTEGER DEFAULT 0,
         accumulatedInterviewDecksCreated INTEGER DEFAULT 0,
-        lastUpdated TEXT DEFAULT CURRENT_TIMESTAMP
+        lastUpdated TEXT DEFAULT CURRENT_TIMESTAMP,
+        notificationsEnabled INTEGER DEFAULT 1,
+        autoDecksEnabled INTEGER DEFAULT 1,
+        clozeQuestionsEnabled INTEGER DEFAULT 1,
+        mcqQuestionsEnabled INTEGER DEFAULT 1,
+        voiceRecordedQuestionsEnabled INTEGER DEFAULT 1,
+        voiceRecordedTimer INTEGER DEFAULT 120,
+        halfwayCheckpoint INTEGER DEFAULT 1,
+        defaultTimer INTEGER DEFAULT 20,
+        againTimer INTEGER DEFAULT 60,
+        hardTimer INTEGER DEFAULT 45,
+        goodTimer INTEGER DEFAULT 30,
+        easyTimer INTEGER DEFAULT 15
       )
     `);
 
     // Insert default user statistics record if it doesn't exist
     await db.execAsync(`
-      INSERT OR IGNORE INTO users (id, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated)
-      VALUES (1, 0, 0, 0, 0)
+      INSERT OR IGNORE INTO users (userID, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated)
+      VALUES ('1', 0, 0, 0, 0)
     `);
 
     console.log('Database initialized successfully with new schema');

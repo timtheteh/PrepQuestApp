@@ -19,6 +19,7 @@ import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/ca
 import { db } from '@/db/index';
 import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists } from '@/db/decks';
 import { Toast } from '@/components/Toast';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const getEmptyStateContainerMarginTop = () => {
     const { width, height } = Dimensions.get('window');
@@ -128,6 +129,17 @@ const metadataRowStyles = StyleSheet.create({
   },
 });
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -230,12 +242,13 @@ export default function DeckDetailsScreen() {
   const handleFavoriteToggle = async () => {
     try {
       const newFavoritedValue = favoriteStatus ? 0 : 1;
+      const userID = await getCurrentUserID();
       
       // Update database
       await db.execAsync(`
         UPDATE decks 
         SET isFavorited = ${newFavoritedValue}
-        WHERE deckID = ${deckId}
+        WHERE deckID = ${deckId} AND userID = '${userID}'
       `);
       
       // Update local state immediately
@@ -467,10 +480,11 @@ export default function DeckDetailsScreen() {
     
     // If validation passes, update the deck name
     try {
+      const userID = await getCurrentUserID();
       await db.execAsync(`
         UPDATE decks 
         SET deckName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
-        WHERE deckID = ${parseInt(deckId as string)}
+        WHERE deckID = ${parseInt(deckId as string)} AND userID = '${userID}'
       `);
       
       console.log('Updated deck title to:', trimmedText);
@@ -676,6 +690,7 @@ export default function DeckDetailsScreen() {
   // Function to get AI deck grade
   const getAIDeckGrade = async (deckId: number): Promise<DeckGrade | null> => {
     try {
+      const userID = await getCurrentUserID();
       // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
       // and their difficulty ratings
       const result = await db.getAllAsync(`
@@ -687,7 +702,8 @@ export default function DeckDetailsScreen() {
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
-      `, [deckId]);
+          AND userID = ?
+      `, [deckId, userID]);
 
       if (!result || result.length === 0) {
         // No attempted flashcards, return null
@@ -707,8 +723,8 @@ export default function DeckDetailsScreen() {
       const totalResult = await db.getFirstAsync(`
         SELECT COUNT(*) as total
         FROM AIFlashcards
-        WHERE deckID = ?
-      `, [deckId]);
+        WHERE deckID = ? AND userID = ?
+      `, [deckId, userID]);
 
       const totalFlashcards = (totalResult as { total: number }).total;
 
@@ -766,6 +782,7 @@ export default function DeckDetailsScreen() {
   // Function to get AI deck average time
   const getAIDeckAverageTime = async (deckId: number): Promise<number | null> => {
     try {
+      const userID = await getCurrentUserID();
       // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
       // and their timeTaken values
       const result = await db.getFirstAsync(`
@@ -776,7 +793,8 @@ export default function DeckDetailsScreen() {
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
-      `, [deckId]);
+          AND userID = ?
+      `, [deckId, userID]);
 
       if (!result) {
         return null;
@@ -804,6 +822,7 @@ export default function DeckDetailsScreen() {
       
       // Use the isAIDeck parameter instead of querying the database
       const isAIDeckFromParams = isAIDeck as string === 'true';
+      const userID = await getCurrentUserID();
 
       // Check if any flashcards have been attempted
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
@@ -814,7 +833,8 @@ export default function DeckDetailsScreen() {
         FROM ${tableName}
         WHERE ${idColumn} = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-      `, [parseInt(deckId as string)]);
+          AND userID = ?
+      `, [parseInt(deckId as string), userID]);
 
       if (!result) {
         setHasAttemptedFlashcards(false);
@@ -846,12 +866,14 @@ export default function DeckDetailsScreen() {
         return;
       }
 
+      const userID = await getCurrentUserID();
+
       // Get the AI deck name
       const aiDeckResult = await db.getFirstAsync(`
         SELECT deckName
         FROM AIDecks
-        WHERE deckID = ?
-      `, [parseInt(deckId as string)]);
+        WHERE deckID = ? AND userID = ?
+      `, [parseInt(deckId as string), userID]);
 
       if (!aiDeckResult) {
         setIsAIDeckSaved(false);
@@ -866,7 +888,8 @@ export default function DeckDetailsScreen() {
         FROM decks
         WHERE deckName = ?
           AND isAIDeck = 1
-      `, [aiDeck.deckName]);
+          AND userID = ?
+      `, [aiDeck.deckName, userID]);
 
       setIsAIDeckSaved(!!savedDeckResult);
       
@@ -1077,6 +1100,7 @@ export default function DeckDetailsScreen() {
       const isAIDeckFromParams = isAIDeck as string === 'true';
       
       if (isAIDeckFromParams) {
+        const userID = await getCurrentUserID();
         // Query AIDecks table for AI deck info
         const result = await db.getFirstAsync(`
           SELECT 
@@ -1108,10 +1132,10 @@ export default function DeckDetailsScreen() {
             END as interviewCompanyIcon,
             COUNT(f.flashcardID) as flashcardCount
           FROM AIDecks d
-          LEFT JOIN AIFlashcards f ON d.deckID = f.deckID
-          WHERE d.deckID = ?
+          LEFT JOIN AIFlashcards f ON d.deckID = f.deckID AND f.userID = d.userID
+          WHERE d.deckID = ? AND d.userID = ?
           GROUP BY d.deckID
-        `, [parseInt(deckId as string)]);
+        `, [parseInt(deckId as string), userID]);
 
         if (!result) {
           setDeckInfo(null);
@@ -1138,12 +1162,13 @@ export default function DeckDetailsScreen() {
   // Function to get AI deck progress
   const getAIDeckProgress = async (deckId: number): Promise<number> => {
     try {
+      const userID = await getCurrentUserID();
       // First, check if the AI deck itself has lastStudiedDate or lastQuizzedDate
       const deckResult = await db.getFirstAsync(`
         SELECT lastStudiedDate, lastQuizzedDate
         FROM AIDecks
-        WHERE deckID = ?
-      `, [deckId]);
+        WHERE deckID = ? AND userID = ?
+      `, [deckId, userID]);
 
       if (!deckResult) {
         return 0;
@@ -1162,8 +1187,8 @@ export default function DeckDetailsScreen() {
           COUNT(*) as totalFlashcards,
           COUNT(CASE WHEN lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL THEN 1 END) as completedFlashcards
         FROM AIFlashcards
-        WHERE deckID = ?
-      `, [deckId]);
+        WHERE deckID = ? AND userID = ?
+      `, [deckId, userID]);
 
       if (!progressResult) {
         return 0;

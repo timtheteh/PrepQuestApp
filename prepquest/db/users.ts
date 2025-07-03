@@ -1,4 +1,16 @@
 import { db } from './index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
 
 export interface Users {
   id: number;
@@ -12,9 +24,10 @@ export interface Users {
 // Get current user statistics
 export async function getUserStatistics(): Promise<Users | null> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getFirstAsync(`
-      SELECT * FROM users WHERE id = 1
-    `);
+      SELECT * FROM users WHERE userID = ?
+    `, [userID]);
     
     return result as Users | null;
   } catch (error) {
@@ -26,6 +39,7 @@ export async function getUserStatistics(): Promise<Users | null> {
 // Increment accumulated decks counter
 export async function incrementAccumulatedDecks(deckType?: 'study' | 'interview'): Promise<void> {
   try {
+    const userID = await getCurrentUserID();
     const currentDate = new Date().toISOString();
     
     // Increment general decks counter
@@ -33,8 +47,8 @@ export async function incrementAccumulatedDecks(deckType?: 'study' | 'interview'
       UPDATE users 
       SET accumulatedDecksCreated = accumulatedDecksCreated + 1,
           lastUpdated = ?
-      WHERE id = 1
-    `, [currentDate]);
+      WHERE userID = ?
+    `, [currentDate, userID]);
 
     // Increment specific deck type counter if provided
     if (deckType) {
@@ -43,8 +57,8 @@ export async function incrementAccumulatedDecks(deckType?: 'study' | 'interview'
         UPDATE users 
         SET ${columnName} = ${columnName} + 1,
             lastUpdated = ?
-        WHERE id = 1
-      `, [currentDate]);
+        WHERE userID = ?
+      `, [currentDate, userID]);
     }
   } catch (error) {
     console.error('Error incrementing accumulated decks:', error);
@@ -54,14 +68,15 @@ export async function incrementAccumulatedDecks(deckType?: 'study' | 'interview'
 // Increment accumulated flashcards counter
 export async function incrementAccumulatedFlashcards(): Promise<void> {
   try {
+    const userID = await getCurrentUserID();
     const currentDate = new Date().toISOString();
     
     await db.runAsync(`
       UPDATE users 
       SET accumulatedFlashcardsCreated = accumulatedFlashcardsCreated + 1,
           lastUpdated = ?
-      WHERE id = 1
-    `, [currentDate]);
+      WHERE userID = ?
+    `, [currentDate, userID]);
   } catch (error) {
     console.error('Error incrementing accumulated flashcards:', error);
   }
@@ -70,12 +85,13 @@ export async function incrementAccumulatedFlashcards(): Promise<void> {
 // Initialize user statistics if they don't exist
 export async function initializeUserStatistics(): Promise<void> {
   try {
+    const userID = await getCurrentUserID();
     const existing = await getUserStatistics();
     if (!existing) {
       await db.runAsync(`
-        INSERT INTO users (id, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated)
-        VALUES (1, 0, 0, 0, 0)
-      `);
+        INSERT INTO users (userID, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated, lastUpdated)
+        VALUES (?, 0, 0, 0, 0, ?)
+      `, [userID, new Date().toISOString()]);
     }
   } catch (error) {
     console.error('Error initializing user statistics:', error);

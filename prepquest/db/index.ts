@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeDatabase } from './schema';
 import { populateDummyData, verifyDataLoad } from './dummyData';
 
@@ -8,6 +9,10 @@ export const db = SQLite.openDatabaseSync('prepquest.db');
 // Setup function to initialize the database
 export async function setupDatabase() {
   try {
+    // Initialize AsyncStorage with userID as 1
+    await AsyncStorage.setItem('userID', '1');
+    console.log('✅ AsyncStorage initialized with userID: 1');
+    
     // Wait for schema initialization to complete
     await initializeDatabase(db);
     console.log('Schema initialization completed');

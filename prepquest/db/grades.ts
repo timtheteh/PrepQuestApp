@@ -1,4 +1,16 @@
 import { db } from './index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
 
 export interface DayGrade {
   day: string;
@@ -52,6 +64,9 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
   try {
     console.log('🔍 Fetching daily grades from database...');
     
+    const userID = await getCurrentUserID();
+    console.log('👤 Current userID:', userID);
+    
     // Get all flashcards with study or quiz dates from both tables
     const result = await db.getAllAsync(`
       SELECT 
@@ -65,13 +80,15 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
         FROM flashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
+          AND userID = ?
         UNION ALL
         SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
         FROM AIFlashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
+          AND userID = ?
       )
-    `);
+    `, [userID, userID]);
 
     console.log('📊 Raw flashcard data:', result?.length || 0, 'flashcards found');
 
@@ -333,6 +350,9 @@ export async function getAverageGradeAllTime(): Promise<number> {
   try {
     console.log('🔍 Calculating average grade for all time...');
     
+    const userID = await getCurrentUserID();
+    console.log('👤 Current userID:', userID);
+    
     // Get all flashcards with study or quiz dates from both tables
     const result = await db.getAllAsync(`
       SELECT 
@@ -346,13 +366,15 @@ export async function getAverageGradeAllTime(): Promise<number> {
         FROM flashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
+          AND userID = ?
         UNION ALL
         SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
         FROM AIFlashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
+          AND userID = ?
       )
-    `);
+    `, [userID, userID]);
 
     console.log('📊 Total flashcards for average calculation:', result?.length || 0);
 
@@ -417,7 +439,8 @@ export async function getDifficultyBreakdown(): Promise<{
 }> {
   try {
     console.log('🔍 Calculating difficulty breakdown...');
-    
+    const userID = await getCurrentUserID();
+    console.log('👤 Current userID:', userID);
     // Get all flashcards with difficulty ratings from both tables
     const result = await db.getAllAsync(`
       SELECT 
@@ -426,15 +449,15 @@ export async function getDifficultyBreakdown(): Promise<{
       FROM (
         SELECT difficultyRating
         FROM flashcards
-        WHERE difficultyRating != 'None'
+        WHERE difficultyRating != 'None' AND userID = ?
         UNION ALL
         SELECT difficultyRating
         FROM AIFlashcards
-        WHERE difficultyRating != 'None'
+        WHERE difficultyRating != 'None' AND userID = ?
       )
       GROUP BY difficultyRating
       ORDER BY difficultyRating
-    `);
+    `, [userID, userID]);
 
     console.log('📊 Difficulty breakdown raw data:', result);
 
@@ -489,7 +512,8 @@ export interface MonthSpeed {
 export async function getDailySpeeds(): Promise<DaySpeed[]> {
   try {
     console.log('🔍 Fetching daily speeds from database...');
-    
+    const userID = await getCurrentUserID();
+    console.log('👤 Current userID:', userID);
     // Get all flashcards with study or quiz dates and timeTaken from both tables
     const result = await db.getAllAsync(`
       SELECT 
@@ -501,13 +525,15 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
         FROM flashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
+          AND userID = ?
         UNION ALL
         SELECT timeTaken, lastStudiedDate, lastQuizzedDate
         FROM AIFlashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
+          AND userID = ?
       )
-    `);
+    `, [userID, userID]);
 
     console.log('📊 Raw flashcard speed data:', result?.length || 0, 'flashcards found');
 
@@ -648,7 +674,6 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
 export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
   try {
     console.log('🔍 Getting complete daily speeds...');
-    
     const dailySpeeds = await getDailySpeeds();
     
     console.log('📊 Daily speeds from getDailySpeeds():', dailySpeeds.length, 'entries');
@@ -739,7 +764,8 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
 export async function getAverageTimeAllTime(): Promise<number> {
   try {
     console.log('🔍 Calculating average time for all time...');
-    
+    const userID = await getCurrentUserID();
+    console.log('👤 Current userID:', userID);
     // Get all flashcards with study or quiz dates and timeTaken from both tables
     const result = await db.getFirstAsync(`
       SELECT 
@@ -750,13 +776,15 @@ export async function getAverageTimeAllTime(): Promise<number> {
         FROM flashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
+          AND userID = ?
         UNION ALL
         SELECT timeTaken
         FROM AIFlashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
+          AND userID = ?
       )
-    `);
+    `, [userID, userID]);
 
     console.log('📊 Average time calculation result:', result);
 
@@ -797,7 +825,8 @@ export interface LongestStreakData {
 export async function getLongestStreakData(): Promise<LongestStreakData> {
   try {
     console.log('🔍 Calculating longest streak data...');
-    
+    const userID = await getCurrentUserID();
+    console.log('👤 Current userID:', userID);
     // Get all study and quiz dates from both tables
     const result = await db.getAllAsync(`
       SELECT 
@@ -809,12 +838,14 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
         SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
         FROM flashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND userID = ?
         UNION ALL
         SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
         FROM AIFlashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND userID = ?
       )
-    `);
+    `, [userID, userID]);
 
     console.log('📊 Raw streak data:', result?.length || 0, 'flashcards found');
 
@@ -958,7 +989,8 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
 export async function getAllStudiedDates(): Promise<string[]> {
   try {
     console.log('🔍 Getting all studied dates for calendar...');
-    
+    const userID = await getCurrentUserID();
+    console.log('👤 Current userID:', userID);
     // Get all study and quiz dates from both tables
     const result = await db.getAllAsync(`
       SELECT 
@@ -968,12 +1000,14 @@ export async function getAllStudiedDates(): Promise<string[]> {
         SELECT lastStudiedDate, lastQuizzedDate
         FROM flashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND userID = ?
         UNION ALL
         SELECT lastStudiedDate, lastQuizzedDate
         FROM AIFlashcards
         WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND userID = ?
       )
-    `);
+    `, [userID, userID]);
 
     if (!result || result.length === 0) {
       console.log('❌ No studied dates found');

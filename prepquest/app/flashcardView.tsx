@@ -26,6 +26,17 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -68,59 +79,67 @@ interface TransformedFlashcard {
 // Function to get time limit based on difficulty rating
 const getTimeLimit = async (difficultyRating: string, answerType?: string): Promise<number> => {
   try {
-    // Load timer settings from AsyncStorage
-    const [
-      defaultTimerStr,
-      againTimerStr,
-      hardTimerStr,
-      goodTimerStr,
-      easyTimerStr,
-      voiceRecordedTimerStr,
-    ] = await Promise.all([
-      AsyncStorage.getItem('deckSettings_defaultTimer'),
-      AsyncStorage.getItem('deckSettings_againTimer'),
-      AsyncStorage.getItem('deckSettings_hardTimer'),
-      AsyncStorage.getItem('deckSettings_goodTimer'),
-      AsyncStorage.getItem('deckSettings_easyTimer'),
-      AsyncStorage.getItem('deckSettings_voiceRecordedTimer'),
-    ]);
+    const userID = await getCurrentUserID();
+    
+    // Load timer settings from database
+    const result = await db.getFirstAsync(`
+      SELECT 
+        defaultTimer,
+        againTimer,
+        hardTimer,
+        goodTimer,
+        easyTimer,
+        voiceRecordedTimer
+      FROM users WHERE userID = ?
+    `, [userID]);
 
-    console.log('defaultTimerStr', defaultTimerStr);
-    console.log('againTimerStr', againTimerStr);
-    console.log('hardTimerStr', hardTimerStr);
-    console.log('goodTimerStr', goodTimerStr);
-    console.log('easyTimerStr', easyTimerStr);
-    console.log('voiceRecordedTimerStr', voiceRecordedTimerStr);
+    if (result) {
+      const userData = result as {
+        defaultTimer: number;
+        againTimer: number;
+        hardTimer: number;
+        goodTimer: number;
+        easyTimer: number;
+        voiceRecordedTimer: number;
+      };
 
-    // Parse timer values with defaults
-    const defaultTimer = defaultTimerStr ? JSON.parse(defaultTimerStr) : { min: 0, sec: 20 };
-    const againTimer = againTimerStr ? JSON.parse(againTimerStr) : { min: 1, sec: 0 };
-    const hardTimer = hardTimerStr ? JSON.parse(hardTimerStr) : { min: 0, sec: 45 };
-    const goodTimer = goodTimerStr ? JSON.parse(goodTimerStr) : { min: 0, sec: 30 };
-    const easyTimer = easyTimerStr ? JSON.parse(easyTimerStr) : { min: 0, sec: 15 };
-    const voiceRecordedTimer = voiceRecordedTimerStr ? JSON.parse(voiceRecordedTimerStr) : { min: 2, sec: 0 };
+      console.log('defaultTimer', userData.defaultTimer);
+      console.log('againTimer', userData.againTimer);
+      console.log('hardTimer', userData.hardTimer);
+      console.log('goodTimer', userData.goodTimer);
+      console.log('easyTimer', userData.easyTimer);
+      console.log('voiceRecordedTimer', userData.voiceRecordedTimer);
 
-    // Convert minutes and seconds to total seconds
-    const convertToSeconds = (timer: { min: number; sec: number }): number => {
-      return (timer.min * 60) + timer.sec;
-    };
+      // For voice answer types, always use the voice recorded timer regardless of difficulty
+      if (answerType === 'voice') {
+        return userData.voiceRecordedTimer;
+      }
 
-    // For voice answer types, always use the voice recorded timer regardless of difficulty
-    if (answerType === 'voice') {
-      return convertToSeconds(voiceRecordedTimer);
-    }
-
-    // Return appropriate timer based on difficulty rating for non-voice answer types
-    switch (difficultyRating) {
-      case 'Again': return convertToSeconds(againTimer);
-      case 'Hard': return convertToSeconds(hardTimer);
-      case 'Good': return convertToSeconds(goodTimer);
-      case 'Easy': return convertToSeconds(easyTimer);
-      case 'None': return convertToSeconds(defaultTimer);
-      default: return convertToSeconds(defaultTimer);
+      // Return appropriate timer based on difficulty rating for non-voice answer types
+      switch (difficultyRating) {
+        case 'Again': return userData.againTimer;
+        case 'Hard': return userData.hardTimer;
+        case 'Good': return userData.goodTimer;
+        case 'Easy': return userData.easyTimer;
+        case 'None': return userData.defaultTimer;
+        default: return userData.defaultTimer;
+      }
+    } else {
+      // Fallback to default values if no user data found
+      if (answerType === 'voice') {
+        return 120; // 2 minutes default for voice recordings
+      }
+      switch (difficultyRating) {
+        case 'Again': return 60;
+        case 'Hard': return 45;
+        case 'Good': return 30;
+        case 'Easy': return 15;
+        case 'None': return 20;
+        default: return 20;
+      }
     }
   } catch (error) {
-    console.error('Error loading timer settings from AsyncStorage:', error);
+    console.error('Error loading timer settings from database:', error);
     // Fallback to default values if loading fails
     if (answerType === 'voice') {
       return 120; // 2 minutes default for voice recordings
@@ -347,6 +366,7 @@ const blobToAudioSource = (blob: Uint8Array | string): any => {
 // Function to load flashcards from database
 const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string, retryDifficult?: boolean): Promise<TransformedFlashcard[]> => {
   try {
+    const userID = await getCurrentUserID();
     const isAIDeckFromParams = isAIDeck === 'true';
     const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
     
@@ -377,10 +397,10 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string, retr
         lastStudiedDate,
         lastQuizzedDate
       FROM ${tableName}
-      WHERE deckID = ?
+      WHERE deckID = ? AND userID = ?
     `;
 
-    const params: any[] = [parseInt(deckId)];
+    const params: any[] = [parseInt(deckId), userID];
 
     if (retryDifficult) {
       // Filter for difficult flashcards: Again, Hard, or MCQ with wrong answers
@@ -2290,16 +2310,17 @@ export default function FlashcardViewPage() {
           const retryDifficult = retryDifficultParam === 'true';
           
           // First, get the actual count of flashcards to load
+          const userID = await getCurrentUserID();
           const isAIDeckFromParams = isAIDeckParam === 'true';
           const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
           
           let countQuery = `
             SELECT COUNT(*) as count
             FROM ${tableName}
-            WHERE deckID = ?
+            WHERE deckID = ? AND userID = ?
           `;
           
-          const countParams: any[] = [parseInt(deckID as string)];
+          const countParams: any[] = [parseInt(deckID as string), userID];
           
           const countResult = await db.getFirstAsync(countQuery, countParams);
           const actualCount = (countResult as any)?.count || 0;
@@ -2340,6 +2361,7 @@ export default function FlashcardViewPage() {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
 
+      const userID = await getCurrentUserID();
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
       const newFavoriteStatus = currentFlashcard.isFavorited ? 0 : 1;
@@ -2348,8 +2370,8 @@ export default function FlashcardViewPage() {
       await db.runAsync(`
         UPDATE ${tableName}
         SET isFavorited = ?
-        WHERE flashcardID = ?
-      `, [newFavoriteStatus, currentFlashcard.flashcardID]);
+        WHERE flashcardID = ? AND userID = ?
+      `, [newFavoriteStatus, currentFlashcard.flashcardID, userID]);
 
       // Update local state
       setFlashcards(prev => prev.map((card, idx) => 
@@ -2388,6 +2410,7 @@ export default function FlashcardViewPage() {
   // Function to update last studied/quizzed date
   const updateFlashcardDate = async (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => {
     try {
+      const userID = await getCurrentUserID();
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
       const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
@@ -2402,15 +2425,15 @@ export default function FlashcardViewPage() {
       await db.runAsync(`
         UPDATE ${tableName}
         SET ${fieldToUpdate} = ?, timeTaken = ?, isMcqAnswerRight = ?
-        WHERE flashcardID = ?
-      `, [currentDate, finalTimeTaken, isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : null, flashcardId]);
+        WHERE flashcardID = ? AND userID = ?
+      `, [currentDate, finalTimeTaken, isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : null, flashcardId, userID]);
 
       // Update the deck's lastModifiedDate since it was actively used
       await db.runAsync(`
         UPDATE ${deckTableName}
         SET lastModifiedDate = ?
-        WHERE deckID = ?
-      `, [currentDate, parseInt(deckID as string)]);
+        WHERE deckID = ? AND userID = ?
+      `, [currentDate, parseInt(deckID as string), userID]);
 
       // Track this flashcard as attempted for halfway checkpoint
       trackAttemptedFlashcard(flashcardId);
@@ -2427,6 +2450,7 @@ export default function FlashcardViewPage() {
   // Function to update deck's completion date when entire deck is finished
   const updateDeckCompletionDate = async (isStudyMode: boolean) => {
     try {
+      const userID = await getCurrentUserID();
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
       const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
@@ -2437,8 +2461,8 @@ export default function FlashcardViewPage() {
       await db.runAsync(`
         UPDATE ${deckTableName}
         SET ${fieldToUpdate} = ?
-        WHERE deckID = ?
-      `, [currentDate, parseInt(deckID as string)]);
+        WHERE deckID = ? AND userID = ?
+      `, [currentDate, parseInt(deckID as string), userID]);
 
       console.log(`Updated deck ${deckID} ${fieldToUpdate} to ${currentDate} (deck completed)`);
     } catch (error) {
@@ -2470,6 +2494,7 @@ export default function FlashcardViewPage() {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
 
+      const userID = await getCurrentUserID();
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
       
@@ -2477,8 +2502,8 @@ export default function FlashcardViewPage() {
       await db.runAsync(`
         UPDATE ${tableName}
         SET difficultyRating = ?
-        WHERE flashcardID = ?
-      `, [difficulty, currentFlashcard.flashcardID]);
+        WHERE flashcardID = ? AND userID = ?
+      `, [difficulty, currentFlashcard.flashcardID, userID]);
 
       // Update local state
       const updatedFlashcards = [...flashcards];
@@ -2567,6 +2592,7 @@ export default function FlashcardViewPage() {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
 
+      const userID = await getCurrentUserID();
       const isAIDeckFromParams = isAIDeckParam === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
       const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
@@ -2574,15 +2600,15 @@ export default function FlashcardViewPage() {
       // Delete from database
       await db.runAsync(`
         DELETE FROM ${tableName}
-        WHERE flashcardID = ?
-      `, [currentFlashcard.flashcardID]);
+        WHERE flashcardID = ? AND userID = ?
+      `, [currentFlashcard.flashcardID, userID]);
 
       // Update the deck's lastModifiedDate since a flashcard was deleted
       await db.runAsync(`
         UPDATE ${deckTableName}
         SET lastModifiedDate = '${new Date().toISOString()}'
-        WHERE deckID = ?
-      `, [parseInt(deckID as string)]);
+        WHERE deckID = ? AND userID = ?
+      `, [parseInt(deckID as string), userID]);
       console.log(`Updated lastModifiedDate for deck ${deckID} after flashcard deletion`);
 
       // Update local state by removing the deleted flashcard
@@ -2927,13 +2953,23 @@ export default function FlashcardViewPage() {
   const [attemptedFlashcardIds, setAttemptedFlashcardIds] = useState<number[]>([]);
   const [halfwayCheckpointEnabled, setHalfwayCheckpointEnabled] = useState(true); // Default to true
 
-  // Load halfway checkpoint setting from AsyncStorage
+  // Load halfway checkpoint setting from database
   const loadHalfwayCheckpointSetting = async () => {
     try {
-      const setting = await AsyncStorage.getItem('deckSettings_halfwayCheckpoint');
-      setHalfwayCheckpointEnabled(setting !== null ? JSON.parse(setting) : true);
+      const userID = await getCurrentUserID();
+      const result = await db.getFirstAsync(`
+        SELECT halfwayCheckpoint FROM users WHERE userID = ?
+      `, [userID]);
+      
+      if (result) {
+        const userData = result as { halfwayCheckpoint: number };
+        setHalfwayCheckpointEnabled(userData.halfwayCheckpoint === 1);
+      } else {
+        // Default to true if no user data found
+        setHalfwayCheckpointEnabled(true);
+      }
     } catch (error) {
-      console.error('Error loading halfway checkpoint setting:', error);
+      console.error('Error loading halfway checkpoint setting from database:', error);
       setHalfwayCheckpointEnabled(true); // Default to true if loading fails
     }
   };

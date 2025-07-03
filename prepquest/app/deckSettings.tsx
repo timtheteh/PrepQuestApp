@@ -7,6 +7,7 @@ import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
 import { DifficultyToggleRow } from '@/components/DifficultyToggleRow';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '@/db/index';
 
 // Local component for title and toggle row
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
@@ -241,74 +242,74 @@ const timePickerStyles = RNStyleSheet.create({
 export default function DeckSettingsPage() {
   const router = useRouter();
   
-  // AsyncStorage keys
-  const STORAGE_KEYS = {
-    AUTO_DECKS: 'deckSettings_autoDecks',
-    CLOZE_QUESTIONS: 'deckSettings_clozeQuestions',
-    MCQ_QUESTIONS: 'deckSettings_mcqQuestions',
-    VOICE_RECORDED_ANSWERS: 'deckSettings_voiceRecordedAnswers',
-    VOICE_RECORDED_TIMER: 'deckSettings_voiceRecordedTimer',
-    HALFWAY_CHECKPOINT: 'deckSettings_halfwayCheckpoint',
-    DEFAULT_TIMER: 'deckSettings_defaultTimer',
-    AGAIN_TIMER: 'deckSettings_againTimer',
-    HARD_TIMER: 'deckSettings_hardTimer',
-    GOOD_TIMER: 'deckSettings_goodTimer',
-    EASY_TIMER: 'deckSettings_easyTimer',
-  };
-
-  // Load settings from AsyncStorage
+  // Load settings from database
   const loadSettings = async () => {
     try {
-      const [
-        autoDecks,
-        clozeQuestions,
-        mcqQuestions,
-        voiceRecordedAnswers,
-        voiceRecordedTimer,
-        halfwayCheckpoint,
-        defaultTimer,
-        againTimer,
-        hardTimer,
-        goodTimer,
-        easyTimer,
-      ] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.AUTO_DECKS),
-        AsyncStorage.getItem(STORAGE_KEYS.CLOZE_QUESTIONS),
-        AsyncStorage.getItem(STORAGE_KEYS.MCQ_QUESTIONS),
-        AsyncStorage.getItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS),
-        AsyncStorage.getItem(STORAGE_KEYS.VOICE_RECORDED_TIMER),
-        AsyncStorage.getItem(STORAGE_KEYS.HALFWAY_CHECKPOINT),
-        AsyncStorage.getItem(STORAGE_KEYS.DEFAULT_TIMER),
-        AsyncStorage.getItem(STORAGE_KEYS.AGAIN_TIMER),
-        AsyncStorage.getItem(STORAGE_KEYS.HARD_TIMER),
-        AsyncStorage.getItem(STORAGE_KEYS.GOOD_TIMER),
-        AsyncStorage.getItem(STORAGE_KEYS.EASY_TIMER),
-      ]);
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        const result = await db.getFirstAsync(`
+          SELECT 
+            autoDecksEnabled,
+            clozeQuestionsEnabled,
+            mcqQuestionsEnabled,
+            voiceRecordedQuestionsEnabled,
+            voiceRecordedTimer,
+            halfwayCheckpoint,
+            defaultTimer,
+            againTimer,
+            hardTimer,
+            goodTimer,
+            easyTimer
+          FROM users WHERE userID = ?
+        `, [userID]);
+        
+        if (result) {
+          const userData = result as {
+            autoDecksEnabled: number;
+            clozeQuestionsEnabled: number;
+            mcqQuestionsEnabled: number;
+            voiceRecordedQuestionsEnabled: number;
+            voiceRecordedTimer: number;
+            halfwayCheckpoint: number;
+            defaultTimer: number;
+            againTimer: number;
+            hardTimer: number;
+            goodTimer: number;
+            easyTimer: number;
+          };
 
-      // Set boolean values (default to true if not found)
-      setAutoDecksEnabled(autoDecks !== null ? JSON.parse(autoDecks) : true);
-      setClozeQuestionsEnabled(clozeQuestions !== null ? JSON.parse(clozeQuestions) : true);
-      setMcqQuestionsEnabled(mcqQuestions !== null ? JSON.parse(mcqQuestions) : true);
-      setVoiceRecordedAnswersEnabled(voiceRecordedAnswers !== null ? JSON.parse(voiceRecordedAnswers) : true);
-      setVoiceRecordedTimerEnabled(voiceRecordedTimer !== null ? JSON.parse(voiceRecordedTimer) : true);
-      setHalfwayCheckpointEnabled(halfwayCheckpoint !== null ? JSON.parse(halfwayCheckpoint) : true);
+          // Set boolean values (convert from integer to boolean)
+          setAutoDecksEnabled(userData.autoDecksEnabled === 1);
+          setClozeQuestionsEnabled(userData.clozeQuestionsEnabled === 1);
+          setMcqQuestionsEnabled(userData.mcqQuestionsEnabled === 1);
+          setVoiceRecordedAnswersEnabled(userData.voiceRecordedQuestionsEnabled === 1);
+          setVoiceRecordedTimerEnabled(userData.voiceRecordedQuestionsEnabled === 1);
+          setHalfwayCheckpointEnabled(userData.halfwayCheckpoint === 1);
 
-      // Set timer values (default to defaultDifficultyTimes if not found)
-      const loadedDefaultTimer = defaultTimer ? JSON.parse(defaultTimer) : { min: 0, sec: 20 };
-      const loadedAgainTimer = againTimer ? JSON.parse(againTimer) : { min: 1, sec: 0 };
-      const loadedHardTimer = hardTimer ? JSON.parse(hardTimer) : { min: 0, sec: 45 };
-      const loadedGoodTimer = goodTimer ? JSON.parse(goodTimer) : { min: 0, sec: 30 };
-      const loadedEasyTimer = easyTimer ? JSON.parse(easyTimer) : { min: 0, sec: 15 };
-      const loadedVoiceRecordedTimer = voiceRecordedTimer ? JSON.parse(voiceRecordedTimer) : { min: 2, sec: 0 };
+          // Convert timer values from seconds to {min, sec} format
+          const convertSecondsToTime = (seconds: number) => {
+            const min = Math.floor(seconds / 60);
+            const sec = seconds % 60;
+            return { min, sec };
+          };
 
-      setDifficultyTimes([
-        loadedDefaultTimer,
-        loadedAgainTimer,
-        loadedHardTimer,
-        loadedGoodTimer,
-        loadedEasyTimer,
-      ]);
-      setVoiceRecordedTimer(loadedVoiceRecordedTimer);
+          const loadedDefaultTimer = convertSecondsToTime(userData.defaultTimer);
+          const loadedAgainTimer = convertSecondsToTime(userData.againTimer);
+          const loadedHardTimer = convertSecondsToTime(userData.hardTimer);
+          const loadedGoodTimer = convertSecondsToTime(userData.goodTimer);
+          const loadedEasyTimer = convertSecondsToTime(userData.easyTimer);
+          const loadedVoiceRecordedTimer = convertSecondsToTime(userData.voiceRecordedTimer);
+
+          setDifficultyTimes([
+            loadedDefaultTimer,
+            loadedAgainTimer,
+            loadedHardTimer,
+            loadedGoodTimer,
+            loadedEasyTimer,
+          ]);
+          setVoiceRecordedTimer(loadedVoiceRecordedTimer);
+        }
+      }
     } catch (error) {
       console.error('Error loading deck settings:', error);
       // Use defaults if loading fails
@@ -322,23 +323,47 @@ export default function DeckSettingsPage() {
     }
   };
 
-  // Save settings to AsyncStorage
+  // Save settings to database
   const saveSettings = async () => {
     try {
-      await Promise.all([
-        AsyncStorage.setItem(STORAGE_KEYS.AUTO_DECKS, JSON.stringify(autoDecksEnabled)),
-        AsyncStorage.setItem(STORAGE_KEYS.CLOZE_QUESTIONS, JSON.stringify(clozeQuestionsEnabled)),
-        AsyncStorage.setItem(STORAGE_KEYS.MCQ_QUESTIONS, JSON.stringify(mcqQuestionsEnabled)),
-        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS, JSON.stringify(voiceRecordedAnswersEnabled)),
-        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_TIMER, JSON.stringify(voiceRecordedTimer)),
-        AsyncStorage.setItem(STORAGE_KEYS.HALFWAY_CHECKPOINT, JSON.stringify(halfwayCheckpointEnabled)),
-        AsyncStorage.setItem(STORAGE_KEYS.DEFAULT_TIMER, JSON.stringify(difficultyTimes[0])),
-        AsyncStorage.setItem(STORAGE_KEYS.AGAIN_TIMER, JSON.stringify(difficultyTimes[1])),
-        AsyncStorage.setItem(STORAGE_KEYS.HARD_TIMER, JSON.stringify(difficultyTimes[2])),
-        AsyncStorage.setItem(STORAGE_KEYS.GOOD_TIMER, JSON.stringify(difficultyTimes[3])),
-        AsyncStorage.setItem(STORAGE_KEYS.EASY_TIMER, JSON.stringify(difficultyTimes[4])),
-      ]);
-      console.log('Deck settings saved successfully');
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        // Convert timer values from {min, sec} format to seconds
+        const convertTimeToSeconds = (time: { min: number; sec: number }) => {
+          return time.min * 60 + time.sec;
+        };
+
+        await db.runAsync(`
+          UPDATE users 
+          SET 
+            autoDecksEnabled = ?,
+            clozeQuestionsEnabled = ?,
+            mcqQuestionsEnabled = ?,
+            voiceRecordedQuestionsEnabled = ?,
+            voiceRecordedTimer = ?,
+            halfwayCheckpoint = ?,
+            defaultTimer = ?,
+            againTimer = ?,
+            hardTimer = ?,
+            goodTimer = ?,
+            easyTimer = ?
+          WHERE userID = ?
+        `, [
+          autoDecksEnabled ? 1 : 0,
+          clozeQuestionsEnabled ? 1 : 0,
+          mcqQuestionsEnabled ? 1 : 0,
+          voiceRecordedAnswersEnabled ? 1 : 0,
+          convertTimeToSeconds(voiceRecordedTimer),
+          halfwayCheckpointEnabled ? 1 : 0,
+          convertTimeToSeconds(difficultyTimes[0]),
+          convertTimeToSeconds(difficultyTimes[1]),
+          convertTimeToSeconds(difficultyTimes[2]),
+          convertTimeToSeconds(difficultyTimes[3]),
+          convertTimeToSeconds(difficultyTimes[4]),
+          userID
+        ]);
+        console.log('Deck settings saved successfully');
+      }
     } catch (error) {
       console.error('Error saving deck settings:', error);
     }
@@ -347,32 +372,51 @@ export default function DeckSettingsPage() {
   // Reset settings to defaults
   const resetToDefaults = async () => {
     try {
-      await Promise.all([
-        AsyncStorage.setItem(STORAGE_KEYS.AUTO_DECKS, JSON.stringify(true)),
-        AsyncStorage.setItem(STORAGE_KEYS.CLOZE_QUESTIONS, JSON.stringify(true)),
-        AsyncStorage.setItem(STORAGE_KEYS.MCQ_QUESTIONS, JSON.stringify(true)),
-        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_ANSWERS, JSON.stringify(true)),
-        AsyncStorage.setItem(STORAGE_KEYS.VOICE_RECORDED_TIMER, JSON.stringify({ min: 2, sec: 0 })),
-        AsyncStorage.setItem(STORAGE_KEYS.HALFWAY_CHECKPOINT, JSON.stringify(true)),
-        AsyncStorage.setItem(STORAGE_KEYS.DEFAULT_TIMER, JSON.stringify(defaultDifficultyTimes[0])),
-        AsyncStorage.setItem(STORAGE_KEYS.AGAIN_TIMER, JSON.stringify(defaultDifficultyTimes[1])),
-        AsyncStorage.setItem(STORAGE_KEYS.HARD_TIMER, JSON.stringify(defaultDifficultyTimes[2])),
-        AsyncStorage.setItem(STORAGE_KEYS.GOOD_TIMER, JSON.stringify(defaultDifficultyTimes[3])),
-        AsyncStorage.setItem(STORAGE_KEYS.EASY_TIMER, JSON.stringify(defaultDifficultyTimes[4])),
-      ]);
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        // Convert default timer values to seconds
+        const convertTimeToSeconds = (time: { min: number; sec: number }) => {
+          return time.min * 60 + time.sec;
+        };
 
-      // Update local state
-      setAutoDecksEnabled(true);
-      setClozeQuestionsEnabled(true);
-      setMcqQuestionsEnabled(true);
-      setVoiceRecordedAnswersEnabled(true);
-      setVoiceRecordedTimerEnabled(true);
-      setVoiceRecordedTimer({ min: 2, sec: 0 });
-      setHalfwayCheckpointEnabled(true);
-      setDifficultyTimes(defaultDifficultyTimes);
-      setResetCounter(c => c + 1);
-      
-      console.log('Deck settings reset to defaults');
+        await db.runAsync(`
+          UPDATE users 
+          SET 
+            autoDecksEnabled = 1,
+            clozeQuestionsEnabled = 1,
+            mcqQuestionsEnabled = 1,
+            voiceRecordedQuestionsEnabled = 1,
+            voiceRecordedTimer = ?,
+            halfwayCheckpoint = 1,
+            defaultTimer = ?,
+            againTimer = ?,
+            hardTimer = ?,
+            goodTimer = ?,
+            easyTimer = ?
+          WHERE userID = ?
+        `, [
+          convertTimeToSeconds({ min: 2, sec: 0 }),
+          convertTimeToSeconds(defaultDifficultyTimes[0]),
+          convertTimeToSeconds(defaultDifficultyTimes[1]),
+          convertTimeToSeconds(defaultDifficultyTimes[2]),
+          convertTimeToSeconds(defaultDifficultyTimes[3]),
+          convertTimeToSeconds(defaultDifficultyTimes[4]),
+          userID
+        ]);
+
+        // Update local state
+        setAutoDecksEnabled(true);
+        setClozeQuestionsEnabled(true);
+        setMcqQuestionsEnabled(true);
+        setVoiceRecordedAnswersEnabled(true);
+        setVoiceRecordedTimerEnabled(true);
+        setVoiceRecordedTimer({ min: 2, sec: 0 });
+        setHalfwayCheckpointEnabled(true);
+        setDifficultyTimes(defaultDifficultyTimes);
+        setResetCounter(c => c + 1);
+        
+        console.log('Deck settings reset to defaults');
+      }
     } catch (error) {
       console.error('Error resetting deck settings:', error);
     }

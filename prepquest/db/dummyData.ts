@@ -17,7 +17,7 @@ export async function populateDummyData() {
     
     const userData = [
       {
-        id: 1,
+        userID: '1',
         accumulatedDecksCreated: 200,
         accumulatedFlashcardsCreated: 1020,
         accumulatedStudyDecksCreated: 120,
@@ -25,7 +25,7 @@ export async function populateDummyData() {
         lastUpdated: '2025-01-27T10:30:00.000Z'
       },
       {
-        id: 2,
+        userID: '2',
         accumulatedDecksCreated: 42,
         accumulatedFlashcardsCreated: 280,
         accumulatedStudyDecksCreated: 28,
@@ -37,8 +37,8 @@ export async function populateDummyData() {
     // Insert users
     for (const user of userData) {
       await db.execAsync(`
-        INSERT INTO users (id, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated, lastUpdated)
-        VALUES (${user.id}, ${user.accumulatedDecksCreated}, ${user.accumulatedFlashcardsCreated}, ${user.accumulatedStudyDecksCreated}, ${user.accumulatedInterviewDecksCreated}, '${user.lastUpdated}')
+        INSERT INTO users (userID, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated, lastUpdated)
+        VALUES ('${user.userID}', ${user.accumulatedDecksCreated}, ${user.accumulatedFlashcardsCreated}, ${user.accumulatedStudyDecksCreated}, ${user.accumulatedInterviewDecksCreated}, '${user.lastUpdated}')
       `);
     }
 
@@ -151,8 +151,8 @@ export async function populateDummyData() {
     // Insert folders
     for (const folder of folderData) {
       await db.execAsync(`
-        INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited)
-        VALUES ('${folder.folderName}', '${folder.dateAdded}', '${folder.lastModifiedDate}', ${folder.isFavorited})
+        INSERT INTO folders (userID, folderName, dateAdded, lastModifiedDate, isFavorited)
+        VALUES ('1', '${folder.folderName}', '${folder.dateAdded}', '${folder.lastModifiedDate}', ${folder.isFavorited})
       `);
     }
 
@@ -891,12 +891,12 @@ export async function populateDummyData() {
       
       await db.execAsync(`
         INSERT INTO decks (
-          deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
           lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          ${escapeSqlString(deck.deckName)}, ${escapeSqlString(deck.dateAdded)}, ${escapeSqlString(deck.lastModifiedDate)}, ${deck.isFavorited}, ${escapeSqlString(deck.deckType)}, ${escapeSqlString(deck.creationMethod)},
+          '1', ${escapeSqlString(deck.deckName)}, ${escapeSqlString(deck.dateAdded)}, ${escapeSqlString(deck.lastModifiedDate)}, ${deck.isFavorited}, ${escapeSqlString(deck.deckType)}, ${escapeSqlString(deck.creationMethod)},
           ${escapeSqlString(deck.lastStudiedDate)}, ${escapeSqlString(deck.lastQuizzedDate)}, ${deck.cardDesignIndex}, ${deck.isAIDeck}, ${escapeSqlString(deck.folderIDs)},
           ${escapeSqlString(deck.studyEducationLevel)}, ${escapeSqlString(deck.studySubjects)}, ${escapeSqlString(deck.studyTopicsSubtopics)}, ${escapeSqlString(deck.studyExamQuiz)},
           ${escapeSqlString(deck.interviewJobRole)}, ${escapeSqlString(deck.interviewType)}, ${escapeSqlString(deck.interviewCompany)}, ${escapeSqlString(deck.interviewExperienceLevel)}, ${escapeSqlString(deck.interviewTopics)}, ${companyIconBlob}
@@ -1161,10 +1161,10 @@ export async function populateDummyData() {
         
         await db.execAsync(`
           INSERT INTO flashcards (
-            deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            ${flashcard.deckID}, ${escapeSqlString(flashcard.difficultyRating)}, ${escapeSqlString(flashcard.cognitiveQnType)}, ${flashcard.isFavorited}, ${escapeSqlString(flashcard.questionType)}, 
+            '1', ${flashcard.deckID}, ${escapeSqlString(flashcard.difficultyRating)}, ${escapeSqlString(flashcard.cognitiveQnType)}, ${flashcard.isFavorited}, ${escapeSqlString(flashcard.questionType)}, 
             ${escapeSqlString(flashcard.questionText)}, ${questionBlobHex},
             ${escapeSqlString(flashcard.answerType)}, ${escapeSqlString(flashcard.answerText)}, 
             ${escapeSqlString(flashcard.answerMCQ)}, ${answerBlobHex},
@@ -1262,12 +1262,12 @@ export async function populateDummyData() {
       
       await db.execAsync(`
         INSERT INTO AIDecks (
-          deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
           lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
+          '1', ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
           ${escapeSqlString(aiDeck.lastStudiedDate)}, ${escapeSqlString(aiDeck.lastQuizzedDate)}, ${aiDeck.cardDesignIndex}, ${aiDeck.isAIDeck}, ${escapeSqlString(aiDeck.folderIDs)},
           ${escapeSqlString(aiDeck.studyEducationLevel)}, ${escapeSqlString(aiDeck.studySubjects)}, ${escapeSqlString(aiDeck.studyTopicsSubtopics)}, ${escapeSqlString(aiDeck.studyExamQuiz)},
           ${escapeSqlString(aiDeck.interviewJobRole)}, ${escapeSqlString(aiDeck.interviewType)}, ${escapeSqlString(aiDeck.interviewCompany)}, ${escapeSqlString(aiDeck.interviewExperienceLevel)}, ${escapeSqlString(aiDeck.interviewTopics)}, ${companyIconBlob}
@@ -1543,10 +1543,10 @@ export async function populateDummyData() {
         
         await db.execAsync(`
           INSERT INTO AIFlashcards (
-            deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            ${aiFlashcard.deckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
+            '1', ${aiFlashcard.deckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
             ${escapeSqlString(aiFlashcard.questionText)}, ${questionBlobHex},
             ${escapeSqlString(aiFlashcard.answerType)}, ${escapeSqlString(aiFlashcard.answerText)}, 
             ${escapeSqlString(aiFlashcard.answerMCQ)}, ${answerBlobHex},

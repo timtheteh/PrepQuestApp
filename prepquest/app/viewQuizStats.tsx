@@ -9,6 +9,17 @@ import DoubleChevron from '@/assets/icons/DoubleChevron.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 const ConfettiIcon = require('@/assets/icons/ConfettiIcon.png');
 const FlagIcon = require('@/assets/icons/FlagIcon.png');
 
@@ -66,6 +77,7 @@ export default function ViewQuizStatsModal() {
 
       // Get attempted flashcards with their difficulty ratings and time taken
       const placeholders = attemptedIds.map(() => '?').join(',');
+      const userID = await getCurrentUserID();
       const attemptedFlashcards = await db.getAllAsync(`
         SELECT 
           flashcardID,
@@ -79,14 +91,15 @@ export default function ViewQuizStatsModal() {
         WHERE flashcardID IN (${placeholders})
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
-      `, attemptedIds);
+          AND userID = ?
+      `, [...attemptedIds, userID]);
 
       // Get total flashcard count for the deck
       const totalResult = await db.getFirstAsync(`
         SELECT COUNT(*) as total
         FROM ${tableName}
-        WHERE deckID = ?
-      `, [deckId]);
+        WHERE deckID = ? AND userID = ?
+      `, [deckId, userID]);
 
       const totalCount = (totalResult as any)?.total || 0;
       const attemptedCount = attemptedFlashcards?.length || 0;

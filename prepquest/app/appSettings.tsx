@@ -9,6 +9,7 @@ import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
+import { db } from '@/db/index';
 
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
     return (
@@ -57,9 +58,16 @@ export default function AppSettingsScreen() {
 
   const loadNotificationsPreference = async () => {
     try {
-      const savedPreference = await AsyncStorage.getItem('notificationsEnabled');
-      if (savedPreference !== null) {
-        setNotificationsAccessEnabled(JSON.parse(savedPreference));
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        const result = await db.getFirstAsync(`
+          SELECT notificationsEnabled FROM users WHERE userID = ?
+        `, [userID]);
+        
+        if (result) {
+          const userData = result as { notificationsEnabled: number };
+          setNotificationsAccessEnabled(userData.notificationsEnabled === 1);
+        }
       }
     } catch (error) {
       console.error('Error loading notifications preference:', error);
@@ -68,7 +76,14 @@ export default function AppSettingsScreen() {
 
   const saveNotificationsPreference = async (value: boolean) => {
     try {
-      await AsyncStorage.setItem('notificationsEnabled', JSON.stringify(value));
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        await db.runAsync(`
+          UPDATE users 
+          SET notificationsEnabled = ?
+          WHERE userID = ?
+        `, [value ? 1 : 0, userID]);
+      }
     } catch (error) {
       console.error('Error saving notifications preference:', error);
     }

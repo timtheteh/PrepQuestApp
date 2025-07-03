@@ -4,6 +4,7 @@ import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
 import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface BreakdownDatum {
   label: string;
@@ -16,9 +17,21 @@ interface BreakdownOfDecksFlashcardsProps {
   onContentReady?: () => void;
 }
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 // Function to fetch real data from database
 const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flashcardsData: BreakdownDatum[] }> => {
   try {
+    const userID = await getCurrentUserID();
     // Single optimized query with JOINs to get both deck counts and flashcard counts
     const result = await db.getAllAsync(`
       WITH deck_categories AS (
@@ -29,7 +42,7 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
           END as categoryType,
           deckID 
         FROM decks 
-        WHERE deckType IS NOT NULL
+        WHERE deckType IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           CASE 
@@ -38,7 +51,7 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
           END as categoryType,
           deckID 
         FROM AIDecks 
-        WHERE deckType IS NOT NULL
+        WHERE deckType IS NOT NULL AND userID = ?
       ),
       category_counts AS (
         SELECT 
@@ -59,14 +72,14 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
             dc.categoryType,
             COUNT(*) as flashcard_count
           FROM deck_categories dc
-          LEFT JOIN flashcards f ON dc.deckID = f.deckID
+          LEFT JOIN flashcards f ON dc.deckID = f.deckID AND f.userID = ?
           GROUP BY dc.categoryType
           UNION ALL
           SELECT 
             dc.categoryType,
             COUNT(*) as flashcard_count
           FROM deck_categories dc
-          LEFT JOIN AIFlashcards af ON dc.deckID = af.deckID
+          LEFT JOIN AIFlashcards af ON dc.deckID = af.deckID AND af.userID = ?
           GROUP BY dc.categoryType
         ) fc ON cc.categoryType = fc.categoryType
         GROUP BY cc.categoryType
@@ -77,7 +90,7 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
         total_flashcards
       FROM flashcard_counts
       ORDER BY deck_count DESC
-    `);
+    `, [userID, userID, userID, userID]);
 
     // Define colors for each type
     const typeColors = {

@@ -4,6 +4,7 @@ import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect, Defs, LinearGrad
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Interface for the data structure
 interface DayData {
@@ -42,9 +43,22 @@ const formatMonth = (date: Date): string => {
   return `${month} ${year}`;
 };
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 // Function to fetch real data from database
 const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: MonthData[] }> => {
   try {
+    const userID = await getCurrentUserID();
+    
     // Single optimized query with SQL aggregation - fixed to handle ISO date format
     const result = await db.getAllAsync(`
       WITH all_dates AS (
@@ -52,49 +66,49 @@ const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: Month
           strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
           'deck' as type
         FROM decks 
-        WHERE lastStudiedDate IS NOT NULL
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
           'deck' as type
         FROM decks 
-        WHERE lastQuizzedDate IS NOT NULL
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
           'deck' as type
         FROM AIDecks 
-        WHERE lastStudiedDate IS NOT NULL
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
           'deck' as type
         FROM AIDecks 
-        WHERE lastQuizzedDate IS NOT NULL
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
           'flashcard' as type
         FROM flashcards 
-        WHERE lastStudiedDate IS NOT NULL
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
           'flashcard' as type
         FROM flashcards 
-        WHERE lastQuizzedDate IS NOT NULL
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
           'flashcard' as type
         FROM AIFlashcards 
-        WHERE lastStudiedDate IS NOT NULL
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
         UNION ALL
         SELECT 
           strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
           'flashcard' as type
         FROM AIFlashcards 
-        WHERE lastQuizzedDate IS NOT NULL
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
       )
       SELECT 
         activity_date,
@@ -104,7 +118,7 @@ const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: Month
       WHERE activity_date IS NOT NULL
       GROUP BY activity_date
       ORDER BY activity_date
-    `);
+    `, [userID, userID, userID, userID, userID, userID, userID, userID]);
 
     // Create maps for quick lookup
     const dateCountMap = new Map<string, { decks: number; flashcards: number }>();

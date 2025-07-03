@@ -14,6 +14,7 @@ import { CircleSelectButtonGreen } from '@/components/CircleSelectButtonGreen';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import Feather from '@expo/vector-icons/Feather';
 import { db } from '@/db/index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Interface for flashcard data
 interface Flashcard {
@@ -38,6 +39,7 @@ interface Flashcard {
 // Function to load flashcards from database
 const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Promise<Flashcard[]> => {
   try {
+    const userID = await getCurrentUserID();
     const isAIDeckFromParams = isAIDeck === 'true';
     const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
     
@@ -60,7 +62,7 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
         lastStudiedDate,
         lastQuizzedDate
       FROM ${tableName}
-      WHERE deckID = ?
+      WHERE deckID = ? AND userID = ?
       ORDER BY 
         CASE difficultyRating
           WHEN 'None' THEN 1
@@ -71,7 +73,7 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Pro
           ELSE 6
         END,
         flashcardID ASC
-    `, [parseInt(deckId)]);
+    `, [parseInt(deckId), userID]);
 
     if (!result) {
       return [];
@@ -102,14 +104,15 @@ const calculateQuestionTypeCounts = (flashcards: Flashcard[]): { title: string; 
 // Function to load topics from database
 const loadTopicsFromDatabase = async (deckId: string, isAIDeck: string): Promise<string[]> => {
   try {
+    const userID = await getCurrentUserID();
     const isAIDeckFromParams = isAIDeck === 'true';
     const tableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
     
     const result = await db.getFirstAsync(`
       SELECT deckType, studyTopicsSubtopics, interviewTopics
       FROM ${tableName}
-      WHERE deckID = ?
-    `, [parseInt(deckId)]);
+      WHERE deckID = ? AND userID = ?
+    `, [parseInt(deckId), userID]);
 
     if (!result) {
       return [];
@@ -281,6 +284,17 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return res;
 }
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 export default function ViewFlashcardsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -363,6 +377,7 @@ export default function ViewFlashcardsScreen() {
       const flashcard = flashcards[flashcardIdx];
       if (!flashcard) return;
 
+      const userID = await getCurrentUserID();
       const isAIDeckFromParams = isAIDeck === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
       const newFavoriteStatus = flashcard.isFavorited === 1 ? 0 : 1;
@@ -371,8 +386,8 @@ export default function ViewFlashcardsScreen() {
       await db.runAsync(`
         UPDATE ${tableName}
         SET isFavorited = ?
-        WHERE flashcardID = ?
-      `, [newFavoriteStatus, flashcard.flashcardID]);
+        WHERE flashcardID = ? AND userID = ?
+      `, [newFavoriteStatus, flashcard.flashcardID, userID]);
 
       // Update local state
       setFlashcards(prev => prev.map((card, idx) => 
@@ -609,6 +624,7 @@ export default function ViewFlashcardsScreen() {
     try {
       if (selectedCardIndexes.length === 0) return;
 
+      const userID = await getCurrentUserID();
       const isAIDeckFromParams = isAIDeck === 'true';
       const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
       const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
@@ -620,15 +636,15 @@ export default function ViewFlashcardsScreen() {
       const placeholders = flashcardIdsToDelete.map(() => '?').join(',');
       await db.runAsync(`
         DELETE FROM ${tableName}
-        WHERE flashcardID IN (${placeholders})
-      `, flashcardIdsToDelete);
+        WHERE flashcardID IN (${placeholders}) AND userID = ?
+      `, [...flashcardIdsToDelete, userID]);
 
       // Update the deck's lastModifiedDate since flashcards were deleted
       await db.runAsync(`
         UPDATE ${deckTableName}
         SET lastModifiedDate = '${new Date().toISOString()}'
-        WHERE deckID = ?
-      `, [parseInt(deckId as string)]);
+        WHERE deckID = ? AND userID = ?
+      `, [parseInt(deckId as string), userID]);
       console.log(`Updated lastModifiedDate for deck ${deckId} after flashcard deletion`);
 
       // Update local state by removing deleted flashcards

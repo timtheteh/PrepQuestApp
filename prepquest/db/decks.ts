@@ -1,4 +1,5 @@
 import { db } from './index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 
@@ -29,18 +30,30 @@ export interface Deck {
   flashcardCount: number;
 }
 
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
+
 export async function getStudyDecks(): Promise<Deck[]> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getAllAsync(`
       SELECT 
         d.*,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
-      WHERE d.deckType = 'study'
+      WHERE d.deckType = 'study' AND d.userID = ?
       GROUP BY d.deckID
       ORDER BY d.lastModifiedDate DESC
-    `);
+    `, [userID]);
     return result as Deck[];
   } catch (error) {
     console.error('Error fetching study decks:', error);
@@ -50,6 +63,7 @@ export async function getStudyDecks(): Promise<Deck[]> {
 
 export async function getInterviewDecks(): Promise<Deck[]> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getAllAsync(`
       SELECT 
         d.deckID,
@@ -82,10 +96,10 @@ export async function getInterviewDecks(): Promise<Deck[]> {
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
-      WHERE d.deckType = 'interview'
+      WHERE d.deckType = 'interview' AND d.userID = ?
       GROUP BY d.deckID
       ORDER BY d.lastModifiedDate DESC
-    `);
+    `, [userID]);
         
     return result as Deck[];
   } catch (error) {
@@ -96,12 +110,13 @@ export async function getInterviewDecks(): Promise<Deck[]> {
 
 export async function getDeckProgress(deckId: number): Promise<number> {
   try {
+    const userID = await getCurrentUserID();
     // First, check if the deck itself has lastStudiedDate or lastQuizzedDate
     const deckResult = await db.getFirstAsync(`
       SELECT lastStudiedDate, lastQuizzedDate
       FROM decks
-      WHERE deckID = ?
-    `, [deckId]);
+      WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
 
     if (!deckResult) {
       return 0;
@@ -120,8 +135,8 @@ export async function getDeckProgress(deckId: number): Promise<number> {
         COUNT(*) as totalFlashcards,
         COUNT(CASE WHEN lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL THEN 1 END) as completedFlashcards
       FROM flashcards
-      WHERE deckID = ?
-    `, [deckId]);
+      WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
 
     if (!progressResult) {
       return 0;
@@ -174,19 +189,20 @@ export async function getInterviewDecksWithProgress(): Promise<(Deck & { progres
 
 export async function deleteDeck(deckId: number): Promise<boolean> {
   try {
+    const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
     // First, delete all flashcards associated with this deck
     await db.execAsync(`
       DELETE FROM flashcards 
-      WHERE deckID = ${deckId}
+      WHERE deckID = ${deckId} AND userID = '${userID}'
     `);
     
     // Then delete the deck itself
     const result = await db.execAsync(`
       DELETE FROM decks 
-      WHERE deckID = ${deckId}
+      WHERE deckID = ${deckId} AND userID = '${userID}'
     `);
     
     // Commit the transaction
@@ -208,6 +224,7 @@ export async function deleteMultipleDecks(deckIds: number[]): Promise<boolean> {
       return true;
     }
     
+    const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
@@ -217,13 +234,13 @@ export async function deleteMultipleDecks(deckIds: number[]): Promise<boolean> {
     // First, delete all flashcards associated with these decks
     await db.execAsync(`
       DELETE FROM flashcards 
-      WHERE deckID IN (${deckIdsString})
+      WHERE deckID IN (${deckIdsString}) AND userID = '${userID}'
     `);
     
     // Then delete the decks themselves
     await db.execAsync(`
       DELETE FROM decks 
-      WHERE deckID IN (${deckIdsString})
+      WHERE deckID IN (${deckIdsString}) AND userID = '${userID}'
     `);
     
     // Commit the transaction
@@ -241,6 +258,7 @@ export async function deleteMultipleDecks(deckIds: number[]): Promise<boolean> {
 
 export async function getFavoritedDecks(): Promise<(Deck & { progress: number })[]> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getAllAsync(`
       SELECT 
         d.deckID,
@@ -273,10 +291,10 @@ export async function getFavoritedDecks(): Promise<(Deck & { progress: number })
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
-      WHERE d.isFavorited = 1
+      WHERE d.isFavorited = 1 AND d.userID = ?
       GROUP BY d.deckID
       ORDER BY d.lastModifiedDate DESC
-    `);
+    `, [userID]);
     
     const decks = result as Deck[];
     const decksWithProgress = await Promise.all(
@@ -304,6 +322,7 @@ export interface Folder {
 
 export async function getFavoritedFolders(): Promise<Folder[]> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getAllAsync(`
       SELECT 
         f.*,
@@ -315,10 +334,11 @@ export async function getFavoritedFolders(): Promise<Folder[]> {
           SELECT CAST(json_extract(value, '$') AS INTEGER)
           FROM json_each(d.folderIDs)
         )
-      WHERE f.isFavorited = 1
+        AND d.userID = ?
+      WHERE f.isFavorited = 1 AND f.userID = ?
       GROUP BY f.folderID
       ORDER BY f.lastModifiedDate DESC, f.dateAdded DESC
-    `);
+    `, [userID, userID]);
     return result as Folder[];
   } catch (error) {
     console.error('Error fetching favorited folders:', error);
@@ -328,6 +348,7 @@ export async function getFavoritedFolders(): Promise<Folder[]> {
 
 export async function getAllFolders(): Promise<Folder[]> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getAllAsync(`
       SELECT 
         f.*,
@@ -339,9 +360,11 @@ export async function getAllFolders(): Promise<Folder[]> {
           SELECT CAST(json_extract(value, '$') AS INTEGER)
           FROM json_each(d.folderIDs)
         )
+        AND d.userID = ?
+      WHERE f.userID = ?
       GROUP BY f.folderID
       ORDER BY f.lastModifiedDate DESC, f.dateAdded DESC
-    `);
+    `, [userID, userID]);
     return result as Folder[];
   } catch (error) {
     console.error('Error fetching all folders:', error);
@@ -351,6 +374,7 @@ export async function getAllFolders(): Promise<Folder[]> {
 
 export async function deleteFolder(folderId: number): Promise<boolean> {
   try {
+    const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
@@ -359,8 +383,8 @@ export async function deleteFolder(folderId: number): Promise<boolean> {
     const decksWithFolder = await db.getAllAsync(`
       SELECT deckID, folderIDs 
       FROM decks 
-      WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%'
-    `);
+      WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%' AND userID = ?
+    `, [userID]);
     
     // Update each deck to remove this folder from their folderIDs
     for (const deck of decksWithFolder) {
@@ -383,7 +407,7 @@ export async function deleteFolder(folderId: number): Promise<boolean> {
         await db.execAsync(`
           UPDATE decks 
           SET folderIDs = NULL 
-          WHERE deckID = ${deckData.deckID}
+          WHERE deckID = ${deckData.deckID} AND userID = '${userID}'
         `);
       } else {
         // Update with the remaining folder IDs
@@ -391,7 +415,7 @@ export async function deleteFolder(folderId: number): Promise<boolean> {
         await db.execAsync(`
           UPDATE decks 
           SET folderIDs = '${newFolderIdsString}'
-          WHERE deckID = ${deckData.deckID}
+          WHERE deckID = ${deckData.deckID} AND userID = '${userID}'
         `);
       }
     }
@@ -399,7 +423,7 @@ export async function deleteFolder(folderId: number): Promise<boolean> {
     // Then delete the folder itself
     const result = await db.execAsync(`
       DELETE FROM folders 
-      WHERE folderID = ${folderId}
+      WHERE folderID = ${folderId} AND userID = '${userID}'
     `);
     
     // Commit the transaction
@@ -421,6 +445,7 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
       return true;
     }
     
+    const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
@@ -430,8 +455,8 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
       const decksWithFolder = await db.getAllAsync(`
         SELECT deckID, folderIDs 
         FROM decks 
-        WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%'
-      `);
+        WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%' AND userID = ?
+      `, [userID]);
       
       // Update each deck to remove this folder from their folderIDs
       for (const deck of decksWithFolder) {
@@ -454,7 +479,7 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
           await db.execAsync(`
             UPDATE decks 
             SET folderIDs = NULL 
-            WHERE deckID = ${deckData.deckID}
+            WHERE deckID = ${deckData.deckID} AND userID = '${userID}'
           `);
         } else {
           // Update with the remaining folder IDs
@@ -462,7 +487,7 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
           await db.execAsync(`
             UPDATE decks 
             SET folderIDs = '${newFolderIdsString}'
-            WHERE deckID = ${deckData.deckID}
+            WHERE deckID = ${deckData.deckID} AND userID = '${userID}'
           `);
         }
       }
@@ -474,7 +499,7 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
     // Delete the folders themselves
     await db.execAsync(`
       DELETE FROM folders 
-      WHERE folderID IN (${folderIdsString})
+      WHERE folderID IN (${folderIdsString}) AND userID = '${userID}'
     `);
     
     // Commit the transaction
@@ -492,6 +517,7 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
 
 export async function checkFolderNameExists(folderName: string, excludeFolderId?: number): Promise<boolean> {
   try {
+    const userID = await getCurrentUserID();
     let query: string;
     let params: any[];
     
@@ -500,17 +526,17 @@ export async function checkFolderNameExists(folderName: string, excludeFolderId?
       query = `
         SELECT COUNT(*) as count 
         FROM folders 
-        WHERE folderName = ? AND folderID != ?
+        WHERE folderName = ? AND folderID != ? AND userID = ?
       `;
-      params = [folderName, excludeFolderId];
+      params = [folderName, excludeFolderId, userID];
     } else {
       // Check if folder name exists (for new folders)
       query = `
         SELECT COUNT(*) as count 
         FROM folders 
-        WHERE folderName = ?
+        WHERE folderName = ? AND userID = ?
       `;
-      params = [folderName];
+      params = [folderName, userID];
     }
     
     const result = await db.getFirstAsync(query, params);
@@ -525,6 +551,7 @@ export async function checkFolderNameExists(folderName: string, excludeFolderId?
 
 export async function checkDeckNameExists(deckName: string, excludeDeckId?: number): Promise<boolean> {
   try {
+    const userID = await getCurrentUserID();
     let query: string;
     let params: any[];
     
@@ -533,17 +560,17 @@ export async function checkDeckNameExists(deckName: string, excludeDeckId?: numb
       query = `
         SELECT COUNT(*) as count 
         FROM decks 
-        WHERE LOWER(deckName) = LOWER(?) AND deckID != ?
+        WHERE LOWER(deckName) = LOWER(?) AND deckID != ? AND userID = ?
       `;
-      params = [deckName, excludeDeckId];
+      params = [deckName, excludeDeckId, userID];
     } else {
       // Check if deck name exists (for new decks)
       query = `
         SELECT COUNT(*) as count 
         FROM decks 
-        WHERE LOWER(deckName) = LOWER(?)
+        WHERE LOWER(deckName) = LOWER(?) AND userID = ?
       `;
-      params = [deckName];
+      params = [deckName, userID];
     }
     
     const result = await db.getFirstAsync(query, params);
@@ -558,6 +585,7 @@ export async function checkDeckNameExists(deckName: string, excludeDeckId?: numb
 
 export async function getDecksInFolder(folderId: number): Promise<(Deck & { progress: number })[]> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getAllAsync(`
       SELECT 
         d.deckID,
@@ -596,9 +624,10 @@ export async function getDecksInFolder(folderId: number): Promise<(Deck & { prog
           SELECT CAST(json_extract(value, '$') AS INTEGER)
           FROM json_each(d.folderIDs)
         )
+        AND d.userID = ?
       GROUP BY d.deckID
       ORDER BY d.lastModifiedDate DESC, d.dateAdded DESC
-    `);
+    `, [userID]);
     
     const decks = result as Deck[];
     const decksWithProgress = await Promise.all(
@@ -722,6 +751,7 @@ const getBreakdown = (ratings: string[]) => {
 
 export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
   try {
+    const userID = await getCurrentUserID();
     // Get attempted flashcards from both regular and AI flashcards tables
     const result = await db.getAllAsync(`
       SELECT 
@@ -736,14 +766,16 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
+          AND userID = ?
         UNION ALL
         SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
         FROM AIFlashcards
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND difficultyRating != 'None'
+          AND userID = ?
       )
-    `, [deckId, deckId]);
+    `, [deckId, userID, deckId, userID]);
 
     if (!result || result.length === 0) {
       // No attempted flashcards, return null
@@ -764,9 +796,9 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
     // Get total number of flashcards for this deck from both tables
     const totalResult = await db.getFirstAsync(`
       SELECT 
-        (SELECT COUNT(*) FROM flashcards WHERE deckID = ?) +
-        (SELECT COUNT(*) FROM AIFlashcards WHERE deckID = ?) as total
-    `, [deckId, deckId]);
+        (SELECT COUNT(*) FROM flashcards WHERE deckID = ? AND userID = ?) +
+        (SELECT COUNT(*) FROM AIFlashcards WHERE deckID = ? AND userID = ?) as total
+    `, [deckId, userID, deckId, userID]);
 
     const totalFlashcards = (totalResult as { total: number }).total;
     
@@ -834,6 +866,7 @@ export function testGradeCalculation() {
 
 export async function getDeckAverageTime(deckId: number): Promise<number | null> {
   try {
+    const userID = await getCurrentUserID();
     // Get attempted flashcards from both regular and AI flashcards tables
     const result = await db.getFirstAsync(`
       SELECT 
@@ -845,14 +878,16 @@ export async function getDeckAverageTime(deckId: number): Promise<number | null>
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
+          AND userID = ?
         UNION ALL
         SELECT timeTaken
         FROM AIFlashcards
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
+          AND userID = ?
       )
-    `, [deckId, deckId]);
+    `, [deckId, userID, deckId, userID]);
 
     if (!result) {
       return null;
@@ -875,10 +910,11 @@ export async function getDeckAverageTime(deckId: number): Promise<number | null>
 
 export async function getDeckInfo(deckId: number): Promise<any | null> {
   try {
+    const userID = await getCurrentUserID();
     // Get deck information
     const deckResult = await db.getFirstAsync(`
-      SELECT * FROM decks WHERE deckID = ?
-    `, [deckId]);
+      SELECT * FROM decks WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
 
     if (!deckResult) {
       return null;
@@ -893,6 +929,7 @@ export async function getDeckInfo(deckId: number): Promise<any | null> {
 
 export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { progress: number; flashcardCount: number }) | null> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getFirstAsync(`
       SELECT 
         d.deckID,
@@ -925,9 +962,9 @@ export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { 
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
-      WHERE d.deckID = ?
+      WHERE d.deckID = ? AND d.userID = ?
       GROUP BY d.deckID
-    `, [deckId]);
+    `, [deckId, userID]);
 
     if (!result) {
       return null;
@@ -969,6 +1006,7 @@ export interface AIDeck {
 
 export async function getAIDecks(): Promise<AIDeck[]> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getAllAsync(`
       SELECT 
         d.*,
@@ -980,10 +1018,11 @@ export async function getAIDecks(): Promise<AIDeck[]> {
         COUNT(f.flashcardID) as flashcardCount
       FROM AIDecks d
       LEFT JOIN AIFlashcards f ON d.deckID = f.deckID
+      WHERE d.userID = ?
       GROUP BY d.deckID
       ORDER BY d.dateAdded DESC
       LIMIT 3
-    `);
+    `, [userID]);
     
     return result as AIDeck[];
   } catch (error) {
@@ -1018,6 +1057,7 @@ export function convertHexToImageSource(hexString: string | null): { uri: string
 
 export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; newDeckId?: number }> {
   try {
+    const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
@@ -1026,7 +1066,7 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
       const aiDeckResult = await db.getFirstAsync(`
         SELECT *
         FROM AIDecks
-        WHERE deckID = ${aiDeckId}
+        WHERE deckID = ${aiDeckId} AND userID = '${userID}'
       `);
       
       if (!aiDeckResult) {
@@ -1043,13 +1083,13 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
       
       await db.execAsync(`
         INSERT INTO decks (
-          deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
           lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon,
           AICardDesignIndex
         ) VALUES (
-          '${aiDeck.deckName}', '${currentDate}', '${currentDate}', ${aiDeck.isFavorited}, '${aiDeck.deckType}', '${aiDeck.creationMethod}',
+          '${userID}', '${aiDeck.deckName}', '${currentDate}', '${currentDate}', ${aiDeck.isFavorited}, '${aiDeck.deckType}', '${aiDeck.creationMethod}',
           ${aiDeck.lastStudiedDate ? `'${aiDeck.lastStudiedDate}'` : 'NULL'}, ${aiDeck.lastQuizzedDate ? `'${aiDeck.lastQuizzedDate}'` : 'NULL'}, 0, 1, ${aiDeck.folderIDs ? `'${aiDeck.folderIDs}'` : 'NULL'},
           ${aiDeck.studyEducationLevel ? `'${aiDeck.studyEducationLevel}'` : 'NULL'}, ${aiDeck.studySubjects ? `'${aiDeck.studySubjects}'` : 'NULL'}, ${aiDeck.studyTopicsSubtopics ? `'${aiDeck.studyTopicsSubtopics}'` : 'NULL'}, ${aiDeck.studyExamQuiz ? `'${aiDeck.studyExamQuiz}'` : 'NULL'},
           ${aiDeck.interviewJobRole ? `'${aiDeck.interviewJobRole}'` : 'NULL'}, ${aiDeck.interviewType ? `'${aiDeck.interviewType}'` : 'NULL'}, ${aiDeck.interviewCompany ? `'${aiDeck.interviewCompany}'` : 'NULL'}, ${aiDeck.interviewExperienceLevel ? `'${aiDeck.interviewExperienceLevel}'` : 'NULL'}, ${aiDeck.interviewTopics ? `'${aiDeck.interviewTopics}'` : 'NULL'}, ${companyIconBlob},
@@ -1065,7 +1105,7 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
       const aiFlashcardsResult = await db.getAllAsync(`
         SELECT *
         FROM AIFlashcards
-        WHERE deckID = ${aiDeckId}
+        WHERE deckID = ${aiDeckId} AND userID = '${userID}'
       `);
       
       const aiFlashcards = aiFlashcardsResult as any[];
@@ -1081,10 +1121,10 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
         // Insert the flashcard
         await db.execAsync(`
           INSERT INTO flashcards (
-            deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            ${newDeckId}, '${aiFlashcard.difficultyRating}', '${aiFlashcard.cognitiveQnType}', ${aiFlashcard.isFavorited}, '${aiFlashcard.questionType}', 
+            '${userID}', ${newDeckId}, '${aiFlashcard.difficultyRating}', '${aiFlashcard.cognitiveQnType}', ${aiFlashcard.isFavorited}, '${aiFlashcard.questionType}', 
             ${aiFlashcard.questionText ? `'${aiFlashcard.questionText}'` : 'NULL'}, ${questionBlobHex},
             '${aiFlashcard.answerType}', ${aiFlashcard.answerText ? `'${aiFlashcard.answerText}'` : 'NULL'}, 
             ${aiFlashcard.answerMCQ ? `'${aiFlashcard.answerMCQ}'` : 'NULL'}, ${answerBlobHex},
@@ -1100,13 +1140,13 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
       // 6. Delete all AI flashcards from AIFlashcards table
       await db.execAsync(`
         DELETE FROM AIFlashcards
-        WHERE deckID = ${aiDeckId}
+        WHERE deckID = ${aiDeckId} AND userID = '${userID}'
       `);
       
       // 7. Delete the AI deck from AIDecks table
       await db.execAsync(`
         DELETE FROM AIDecks
-        WHERE deckID = ${aiDeckId}
+        WHERE deckID = ${aiDeckId} AND userID = '${userID}'
       `);
       
       // Commit the transaction
@@ -1138,6 +1178,7 @@ export async function createManualDeck(formData: {
   interviewType?: string;
 }): Promise<{ success: boolean; deckId?: number }> {
   try {
+    const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
@@ -1180,12 +1221,12 @@ export async function createManualDeck(formData: {
       // Insert the new deck
       await db.execAsync(`
         INSERT INTO decks (
-          deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
           lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          '${formData.deckName.replace(/'/g, "''")}', '${currentDate}', '${currentDate}', 0, '${formData.mode}', 'Manual',
+          '${userID}', '${formData.deckName.replace(/'/g, "''")}', '${currentDate}', '${currentDate}', 0, '${formData.mode}', 'Manual',
           NULL, NULL, ${cardDesignIndex}, 0, NULL,
           ${studyEducationLevel ? `'${studyEducationLevel.replace(/'/g, "''")}'` : 'NULL'}, 
           ${studySubjects ? `'${studySubjects.replace(/'/g, "''")}'` : 'NULL'}, 
@@ -1228,11 +1269,11 @@ export async function createManualDeck(formData: {
       
       await db.execAsync(`
         INSERT INTO userFormEntries (
-          formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
+          userID, formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
           youtubeLink, studyEducationLevel, studySubjects, studyTopics, studySubtopics, studyExam,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics
         ) VALUES (
-          '${formData.mode}', 'manual', '${currentDate}', '${formData.deckName.replace(/'/g, "''")}', NULL, NULL,
+          '${userID}', '${formData.mode}', 'manual', '${currentDate}', '${formData.deckName.replace(/'/g, "''")}', NULL, NULL,
           NULL, 
           ${studyEducationLevelForm ? `'${studyEducationLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
           ${studySubjectsForm ? `'${studySubjectsForm.replace(/'/g, "''")}'` : 'NULL'}, 
@@ -1253,7 +1294,7 @@ export async function createManualDeck(formData: {
           accumulatedDecksCreated = accumulatedDecksCreated + 1,
           ${formData.mode === 'study' ? 'accumulatedStudyDecksCreated = accumulatedStudyDecksCreated + 1' : 'accumulatedInterviewDecksCreated = accumulatedInterviewDecksCreated + 1'},
           lastUpdated = '${currentDate}'
-        WHERE id = 1
+        WHERE userID = '${userID}'
       `);
       
       // Commit the transaction
@@ -1314,6 +1355,7 @@ async function uriToBlob(uri: string): Promise<Uint8Array | null> {
 
 export async function createFlashcardsFromCache(deckId: number, cardCache: any[]): Promise<{ success: boolean; flashcardCount?: number }> {
   try {
+    const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
@@ -1435,10 +1477,10 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
           // Insert the flashcard
           await db.execAsync(`
             INSERT INTO flashcards (
-              deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+              userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
               answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
             ) VALUES (
-              ${deckId}, 'None', 'None', 0, '${questionType}', 
+              '${userID}', ${deckId}, 'None', 'None', 0, '${questionType}', 
               ${questionText ? `'${(questionText as string).replace(/'/g, "''")}'` : 'NULL'}, ${questionBlobHex},
               '${answerType}', ${answerText ? `'${(answerText as string).replace(/'/g, "''")}'` : 'NULL'}, 
               ${answerMCQ ? `'${(answerMCQ as string).replace(/'/g, "''")}'` : 'NULL'}, ${answerBlobHex},
@@ -1460,7 +1502,7 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
           SET 
             accumulatedFlashcardsCreated = accumulatedFlashcardsCreated + ${flashcardCount},
             lastUpdated = '${currentDate}'
-          WHERE id = 1
+          WHERE userID = '${userID}'
         `);
       }
       
@@ -1518,14 +1560,16 @@ function extractTextFromContent(content: any): string {
 
 export async function getMostRecentManualFormEntry(mode: 'study' | 'interview'): Promise<any | null> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getFirstAsync(`
       SELECT *
       FROM userFormEntries
       WHERE formEntryType = ? 
         AND formEntryMethod = 'manual'
+        AND userID = ?
       ORDER BY formSubmissionDate DESC
       LIMIT 1
-    `, [mode]);
+    `, [mode, userID]);
 
     if (!result) {
       return null;
@@ -1540,9 +1584,10 @@ export async function getMostRecentManualFormEntry(mode: 'study' | 'interview'):
 
 export async function getDeckNameById(deckId: number): Promise<string | null> {
   try {
+    const userID = await getCurrentUserID();
     const result = await db.getFirstAsync(`
-      SELECT deckName FROM decks WHERE deckID = ?
-    `, [deckId]);
+      SELECT deckName FROM decks WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
 
     if (!result) {
       return null;

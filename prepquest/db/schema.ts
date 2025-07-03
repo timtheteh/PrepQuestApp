@@ -58,7 +58,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         flashcardID INTEGER PRIMARY KEY AUTOINCREMENT,
         deckID INTEGER NOT NULL,
         difficultyRating TEXT NOT NULL DEFAULT 'None' CHECK (difficultyRating IN ('Easy', 'Good', 'Hard', 'Again', 'None')),
-        cognitiveQnType TEXT NOT NULL DEFAULT 'Recall' CHECK (cognitiveQnType IN ('Recall', 'Comprehension', 'Application', 'Analysis', 'Synthesis', 'Evaluation', 'Problem-Solving')),
+        cognitiveQnType TEXT NOT NULL DEFAULT 'None' CHECK (cognitiveQnType IN ('Recall', 'Comprehension', 'Application', 'Analysis', 'Synthesis', 'Evaluation', 'Problem-Solving', 'None')),
         isFavorited INTEGER DEFAULT 0,
         questionType TEXT NOT NULL DEFAULT 'text' CHECK (questionType IN ('text', 'image', 'audio')),
         questionText TEXT,
@@ -94,7 +94,11 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         interviewType TEXT,
         interviewCompany TEXT,
         interviewExperienceLevel TEXT,
-        interviewTopics TEXT
+        interviewTopics TEXT,
+        isInFavoritesPage INTEGER DEFAULT 0,
+        isInIndexPage INTEGER DEFAULT 0,
+        isInViewFlashcardsPage INTEGER DEFAULT 0,
+        isInViewDecksInFolderPage INTEGER DEFAULT 0
       )
     `);
 

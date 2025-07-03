@@ -1118,3 +1118,249 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
     return { success: false };
   }
 }
+
+export async function createManualDeck(formData: {
+  deckName: string;
+  mode: 'study' | 'interview';
+  studyMandatoryQuestion1?: string;
+  studyMandatoryQuestion2?: string;
+  studyMandatoryQuestion3?: string;
+  interviewMandatoryQuestion1?: string;
+  interviewMandatoryQuestion2?: string;
+  interviewType?: string;
+}): Promise<{ success: boolean; deckId?: number }> {
+  try {
+    // Start a transaction to ensure data consistency
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    try {
+      // Generate current date
+      const currentDate = new Date().toISOString();
+      
+      // Generate random card design index (0, 1, 2, 3)
+      const cardDesignIndex = Math.floor(Math.random() * 4);
+      
+      // Prepare study-specific fields
+      let studyEducationLevel = null;
+      let studySubjects = null;
+      let studyExamQuiz = null;
+      
+      if (formData.mode === 'study') {
+        studyEducationLevel = formData.studyMandatoryQuestion1 || null;
+        // Convert comma-separated string to JSON array
+        if (formData.studyMandatoryQuestion2) {
+          const subjects = formData.studyMandatoryQuestion2.split(',').map(s => s.trim());
+          studySubjects = JSON.stringify(subjects);
+        }
+        studyExamQuiz = formData.studyMandatoryQuestion3 || null;
+      }
+      
+      // Prepare interview-specific fields
+      let interviewJobRole = null;
+      let interviewType = null;
+      let interviewExperienceLevel = null;
+      
+      if (formData.mode === 'interview') {
+        interviewJobRole = formData.interviewMandatoryQuestion1 || null;
+        // Convert interview type to lowercase
+        if (formData.interviewType) {
+          interviewType = formData.interviewType.toLowerCase();
+        }
+        interviewExperienceLevel = formData.interviewMandatoryQuestion2 || null;
+      }
+      
+      // Insert the new deck
+      await db.execAsync(`
+        INSERT INTO decks (
+          deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
+          studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
+          interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
+        ) VALUES (
+          '${formData.deckName.replace(/'/g, "''")}', '${currentDate}', '${currentDate}', 0, '${formData.mode}', 'Manual',
+          NULL, NULL, ${cardDesignIndex}, 0, NULL,
+          ${studyEducationLevel ? `'${studyEducationLevel.replace(/'/g, "''")}'` : 'NULL'}, 
+          ${studySubjects ? `'${studySubjects.replace(/'/g, "''")}'` : 'NULL'}, 
+          NULL, 
+          ${studyExamQuiz ? `'${studyExamQuiz.replace(/'/g, "''")}'` : 'NULL'},
+          ${interviewJobRole ? `'${interviewJobRole.replace(/'/g, "''")}'` : 'NULL'}, 
+          ${interviewType ? `'${interviewType.replace(/'/g, "''")}'` : 'NULL'}, 
+          NULL, 
+          ${interviewExperienceLevel ? `'${interviewExperienceLevel.replace(/'/g, "''")}'` : 'NULL'}, 
+          NULL, 
+          NULL
+        )
+      `);
+      
+      // Get the new deck ID
+      const newDeckIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as newDeckId');
+      const newDeckId = (newDeckIdResult as any).newDeckId;
+      
+      // Update user statistics
+      await db.execAsync(`
+        UPDATE users 
+        SET 
+          accumulatedDecksCreated = accumulatedDecksCreated + 1,
+          ${formData.mode === 'study' ? 'accumulatedStudyDecksCreated = accumulatedStudyDecksCreated + 1' : 'accumulatedInterviewDecksCreated = accumulatedInterviewDecksCreated + 1'},
+          lastUpdated = '${currentDate}'
+        WHERE id = 1
+      `);
+      
+      // Commit the transaction
+      await db.execAsync('COMMIT');
+      
+      console.log(`Successfully created manual deck ${newDeckId} with name: ${formData.deckName}`);
+      return { success: true, deckId: newDeckId };
+      
+    } catch (error) {
+      // Rollback the transaction on error
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+    
+  } catch (error) {
+    console.error('Error creating manual deck:', error);
+    return { success: false };
+  }
+}
+
+export async function createFlashcardsFromCache(deckId: number, cardCache: any[]): Promise<{ success: boolean; flashcardCount?: number }> {
+  try {
+    // Start a transaction to ensure data consistency
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    try {
+      let flashcardCount = 0;
+      
+      // Process each submitted card in the cache
+      for (const card of cardCache) {
+        if (card.submitted && card.frontContent && card.backContent) {
+          // Extract content from the cached card
+          const frontContent = card.frontContent;
+          const backContent = card.backContent;
+          
+          // Determine question and answer types and content
+          let questionType = 'text';
+          let questionText = null;
+          let questionBlob = null;
+          
+          let answerType = 'text';
+          let answerText = null;
+          let answerMCQ = null;
+          let answerBlob = null;
+          
+          // Process front content (question)
+          if (frontContent.type === 'text' && frontContent.content) {
+            questionType = 'text';
+            questionText = extractTextFromContent(frontContent.content);
+          } else if (frontContent.type === 'camera' && frontContent.content) {
+            questionType = 'image';
+            questionBlob = frontContent.content; // This should be a blob
+          } else if (frontContent.type === 'mic' && frontContent.audioUri) {
+            questionType = 'audio';
+            questionBlob = frontContent.audioUri; // This should be a blob
+          } else if (frontContent.type === 'marker' && frontContent.content) {
+            questionType = 'image';
+            questionBlob = frontContent.content; // Drawing content as blob
+          }
+          
+          // Process back content (answer)
+          if (backContent.type === 'text' && backContent.content) {
+            answerType = 'text';
+            answerText = extractTextFromContent(backContent.content);
+          } else if (backContent.type === 'camera' && backContent.content) {
+            answerType = 'image';
+            answerBlob = backContent.content; // This should be a blob
+          } else if (backContent.type === 'mic' && backContent.audioUri) {
+            answerType = 'audio';
+            answerBlob = backContent.audioUri; // This should be a blob
+          } else if (backContent.type === 'marker' && backContent.content) {
+            answerType = 'image';
+            answerBlob = backContent.content; // Drawing content as blob
+          }
+          
+          // Convert blobs to hex format for SQLite
+          const questionBlobHex = questionBlob ? `X'${Array.from(questionBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+          const answerBlobHex = answerBlob ? `X'${Array.from(answerBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+          
+          // Insert the flashcard
+          await db.execAsync(`
+            INSERT INTO flashcards (
+              deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+              answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
+            ) VALUES (
+              ${deckId}, 'None', 'None', 0, '${questionType}', 
+              ${questionText ? `'${(questionText as string).replace(/'/g, "''")}'` : 'NULL'}, ${questionBlobHex},
+              '${answerType}', ${answerText ? `'${(answerText as string).replace(/'/g, "''")}'` : 'NULL'}, 
+              ${answerMCQ ? `'${(answerMCQ as string).replace(/'/g, "''")}'` : 'NULL'}, ${answerBlobHex},
+              NULL, NULL, NULL, NULL
+            )
+          `);
+          
+          flashcardCount++;
+        }
+      }
+      
+      // Update user statistics for flashcards created
+      if (flashcardCount > 0) {
+        const currentDate = new Date().toISOString();
+        await db.execAsync(`
+          UPDATE users 
+          SET 
+            accumulatedFlashcardsCreated = accumulatedFlashcardsCreated + ${flashcardCount},
+            lastUpdated = '${currentDate}'
+          WHERE id = 1
+        `);
+      }
+      
+      // Commit the transaction
+      await db.execAsync('COMMIT');
+      
+      console.log(`Successfully created ${flashcardCount} flashcards for deck ${deckId}`);
+      return { success: true, flashcardCount };
+      
+    } catch (error) {
+      // Rollback the transaction on error
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+    
+  } catch (error) {
+    console.error('Error creating flashcards from cache:', error);
+    return { success: false };
+  }
+}
+
+// Helper function to extract text from React content
+function extractTextFromContent(content: any): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+  
+  if (typeof content === 'number') {
+    return content.toString();
+  }
+  
+  if (content === null || content === undefined) {
+    return '';
+  }
+  
+  // If it's a React element, try to extract text from props
+  if (typeof content === 'object' && content !== null) {
+    // Check if it has children prop
+    if ('props' in content && content.props) {
+      const props = content.props as { children?: any };
+      if (props.children) {
+        if (typeof props.children === 'string') {
+          return props.children;
+        }
+        if (Array.isArray(props.children)) {
+          return props.children.map((child: any) => extractTextFromContent(child)).join('');
+        }
+        return extractTextFromContent(props.children);
+      }
+    }
+  }
+  
+  return '';
+}

@@ -25,6 +25,7 @@ import EyeIcon from '@/assets/icons/eyeIcon.svg';
 import { CircleSelectButtonGreen } from '../components/CircleSelectButtonGreen';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import LottieView from 'lottie-react-native';
+import { createManualDeck, createFlashcardsFromCache } from '../db/decks';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -88,14 +89,24 @@ const getFormContentGap = () => {
 
 
 export default function ManualAddDeckPage() {
-  const { mode } = useLocalSearchParams();
+  const { 
+    mode, 
+    deckId, 
+    folderId, 
+    isInFavoritesPage, 
+    isInIndexPage,
+    isInViewFlashcardsPage,
+    isInViewDecksInFolderPage
+  } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
   const [deckName, setDeckName] = useState('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
   const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
+  const [studyMandatoryQuestion3, setStudyMandatoryQuestion3] = useState('');
   const [interviewMandatoryQuestion1, setInterviewMandatoryQuestion1] = useState('');
+  const [interviewMandatoryQuestion2, setInterviewMandatoryQuestion2] = useState('');
   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
   const [interviewType, setInterviewType] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -164,6 +175,19 @@ export default function ManualAddDeckPage() {
     const timer = setTimeout(() => setIsReady(true), 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Debug logging for received parameters
+  useEffect(() => {
+    console.log('🔍 manualAddDeck received parameters:', {
+      mode,
+      deckId,
+      folderId,
+      isInFavoritesPage,
+      isInIndexPage,
+      isInViewFlashcardsPage,
+      isInViewDecksInFolderPage
+    });
+  }, [mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewFlashcardsPage, isInViewDecksInFolderPage]);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -1143,7 +1167,7 @@ export default function ManualAddDeckPage() {
     });
   };
 
-  const handleSuccessConfirm = () => {
+  const handleSuccessConfirm = async () => {
     // Animate out first, then navigate
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -1159,7 +1183,38 @@ export default function ManualAddDeckPage() {
     ]).start(() => {
       setIsSuccessModalOpen(false);
       // Navigate after animation completes
-      setTimeout(() => {
+      setTimeout(async () => {
+        if (isInIndexPage === 'true') {
+          // Create the deck in the database
+          const formData = {
+            deckName,
+            mode: mode as 'study' | 'interview',
+            studyMandatoryQuestion1,
+            studyMandatoryQuestion2,
+            studyMandatoryQuestion3,
+            interviewMandatoryQuestion1,
+            interviewMandatoryQuestion2,
+            interviewType
+          };
+          
+          const deckResult = await createManualDeck(formData);
+          if (deckResult.success && deckResult.deckId) {
+            console.log('Successfully created deck with ID:', deckResult.deckId);
+            
+            // Create flashcards from the card cache
+            const submittedCards = getSubmittedCards();
+            if (submittedCards.length > 0) {
+              const flashcardResult = await createFlashcardsFromCache(deckResult.deckId, submittedCards);
+              if (flashcardResult.success) {
+                console.log('Successfully created', flashcardResult.flashcardCount, 'flashcards');
+              } else {
+                console.error('Failed to create flashcards');
+              }
+            }
+          } else {
+            console.error('Failed to create deck');
+          }
+        }
         router.back();
       }, 50);
     });
@@ -1275,6 +1330,13 @@ export default function ManualAddDeckPage() {
                       onChangeText={setStudyMandatoryQuestion2}
                       helperText="What subject(s) would this deck be for?"
                     />
+                    <QuestionTextBar
+                      label="3. Exam/Quiz?"
+                      placeholder="e.g. SAT, GRE, IB, A-Levels etc."
+                      value={studyMandatoryQuestion3}
+                      onChangeText={setStudyMandatoryQuestion3}
+                      helperText="What exam or quiz would this deck be for?"
+                    />
                   </>
                 )}
                 {mode !== 'study' && (
@@ -1290,13 +1352,20 @@ export default function ManualAddDeckPage() {
                       value={interviewType}
                       onValueChange={setInterviewType}
                     />
+                    <QuestionTextBar
+                      label="3. Experience Level?"
+                      placeholder="e.g. Mid-Level, Senior, etc"
+                      value={interviewMandatoryQuestion2}
+                      onChangeText={setInterviewMandatoryQuestion2}
+                      helperText="What experience level is your interview for?"
+                    />
                   </>
                 )}
-                <NumberOfQuestions
+                {/* <NumberOfQuestions
                   title="3. Number of questions:"
                   value={numberOfQuestions}
                   onValueChange={setNumberOfQuestions}
-                />
+                /> */}
                 <View style={styles.bottomSpacing} />
               </View>
           </Animated.View>

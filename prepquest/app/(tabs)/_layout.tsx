@@ -7,7 +7,7 @@ import { AIPromptModal } from '@/components/AIPromptModal';
 import { AddDeckModal } from '@/components/AddDeckModal';
 import { GenericModal } from '@/components/GenericModal';
 import { MenuContext } from '@/contexts/MenuContext';
-import { useState, useRef, useCallback, RefObject } from 'react';
+import { useState, useRef, useCallback, RefObject, useEffect } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 
 const DeleteModalIcon: React.FC<SvgProps> = (props) => (
@@ -72,8 +72,12 @@ export default function TabLayout() {
   const moveToFoldersModalOpacity = useRef(new Animated.Value(0)).current;
   const router = useRouter();
   const pathname = usePathname();
-  const { sourcePage, folderTitle, folderId } = useLocalSearchParams();
   const [sourcePageForFolders, setSourcePageForFolders] = useState('');
+  const [currentDeckId, setCurrentDeckId] = useState<string | undefined>();
+  const [currentFolderId, setCurrentFolderId] = useState<string | undefined>();
+  const [currentFolderTitle, setCurrentFolderTitle] = useState<string | undefined>();
+  const [currentSourcePage, setCurrentSourcePage] = useState<string | undefined>();
+  const [currentDeckType, setCurrentDeckType] = useState<string | undefined>();
   const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false);
   const [unfavoriteModalText, setUnfavoriteModalText] = useState('');
   const unfavoriteModalOpacity = useRef(new Animated.Value(0)).current;
@@ -348,6 +352,34 @@ export default function TabLayout() {
     navbarRef.current?.resetAnimation();
   }, [handleDismissMenu]);
 
+  // Debug logging to verify parameter passing
+  useEffect(() => {
+    console.log('🔍 Debug - Page states:', {
+      isInViewFlashcardsPage,
+      isInViewDecksInFolderPage,
+      currentDeckId,
+      currentFolderId
+    });
+    
+    if (isInViewFlashcardsPage) {
+      console.log('✅ viewFlashcards page focused');
+      if (currentDeckId) {
+        console.log('✅ deckId received:', currentDeckId);
+      } else {
+        console.log('❌ No deckId found');
+      }
+    }
+    
+    if (isInViewDecksInFolderPage) {
+      console.log('✅ viewDecksInFolder page focused');
+      if (currentFolderId) {
+        console.log('✅ folderId received:', currentFolderId);
+      } else {
+        console.log('❌ No folderId found');
+      }
+    }
+  }, [isInViewFlashcardsPage, isInViewDecksInFolderPage]);
+
   return (
     <MenuContext.Provider value={{ 
       isMenuOpen, 
@@ -401,6 +433,16 @@ export default function TabLayout() {
       setUnfavoriteModalText,
       handleUnfavorite,
       setHandleUnfavorite,
+      currentDeckId,
+      setCurrentDeckId,
+      currentFolderId,
+      setCurrentFolderId,
+      currentFolderTitle,
+      setCurrentFolderTitle,
+      currentSourcePage,
+      setCurrentSourcePage,
+      currentDeckType,
+      setCurrentDeckType,
       isSubmitCustomFormModalOpen,
       setIsSubmitCustomFormModalOpen,
       submitCustomFormModalOpacity,
@@ -516,6 +558,9 @@ export default function TabLayout() {
           isInFavoritesPage={isInFavoritesPage}
           isInViewFlashcardsPage={isInViewFlashcardsPage}
           isInViewDecksInFolderPage={isInViewDecksInFolderPage}
+          deckId={currentDeckId}
+          folderId={currentFolderId}
+          deckType={currentDeckType}
         />
         <GenericModal
           visible={isTrashModalOpenInDecksPage}
@@ -619,8 +664,8 @@ export default function TabLayout() {
                   router.push({
                     pathname: '/(tabs)/viewDecksInFolder',
                     params: {
-                      folderTitle: folderTitle as string,
-                      folderId: folderId as string,
+                      folderTitle: currentFolderTitle || '',
+                      folderId: currentFolderId || '',
                       selectedState: 'true',
                       sourcePage: sourcePageForFolders
                     }
@@ -630,8 +675,8 @@ export default function TabLayout() {
                 router.push({
                   pathname: '/(tabs)/viewDecksInFolder',
                   params: {
-                    folderTitle: folderTitle as string,
-                    folderId: folderId as string,
+                    folderTitle: currentFolderTitle || '',
+                    folderId: currentFolderId || '',
                     selectedState: 'true',
                     sourcePage: sourcePageForFolders
                   }

@@ -81,6 +81,16 @@ interface MenuContextType {
   decksAlreadyInFoldersModalOpacity: Animated.Value;
   deckDetailsSaveModalType: 'add' | 'move' | 'ai';
   setDeckDetailsSaveModalType: (type: 'add' | 'move' | 'ai') => void;
+  currentDeckId: string | undefined;
+  setCurrentDeckId: (deckId: string | undefined) => void;
+  currentFolderId: string | undefined;
+  setCurrentFolderId: (folderId: string | undefined) => void;
+  currentFolderTitle: string | undefined;
+  setCurrentFolderTitle: (folderTitle: string | undefined) => void;
+  currentSourcePage: string | undefined;
+  setCurrentSourcePage: (sourcePage: string | undefined) => void;
+  currentDeckType: string | undefined;
+  setCurrentDeckType: (deckType: string | undefined) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -162,4 +172,14 @@ export const MenuContext = createContext<MenuContextType>({
   decksAlreadyInFoldersModalOpacity: new Animated.Value(0),
   deckDetailsSaveModalType: 'add',
   setDeckDetailsSaveModalType: () => {},
+  currentDeckId: undefined,
+  setCurrentDeckId: () => {},
+  currentFolderId: undefined,
+  setCurrentFolderId: () => {},
+  currentFolderTitle: undefined,
+  setCurrentFolderTitle: () => {},
+  currentSourcePage: undefined,
+  setCurrentSourcePage: () => {},
+  currentDeckType: undefined,
+  setCurrentDeckType: () => {},
 }); 

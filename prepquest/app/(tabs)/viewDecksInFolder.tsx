@@ -35,6 +35,7 @@ export default function ViewDecksInFolderScreen() {
     setShowSlidingMenu,
     navbarRef,
     setIsNoSelectionModalOpen,
+    noSelectionModalSubtitle,
     noSelectionModalOpacity,
     setSourcePageForFolders,
     setIsTrashModalOpenInDecksPage,
@@ -44,6 +45,9 @@ export default function ViewDecksInFolderScreen() {
     setIsDeleteFolderModalOpen,
     deleteFolderModalOpacity,
     setHandleDeleteFolder,
+    setCurrentFolderId,
+    setCurrentFolderTitle,
+    setCurrentSourcePage,
   } = useContext(MenuContext);
 
   // Animation values
@@ -175,6 +179,22 @@ export default function ViewDecksInFolderScreen() {
       setEditNameSelected(false);
     }
   }, [isFocused]);
+
+  // Set the folder parameters in context when component mounts
+  useEffect(() => {
+    if (folderId) {
+      setCurrentFolderId(folderId as string);
+      console.log('✅ viewDecksInFolder: Setting folderId in context:', folderId);
+    }
+    if (folderTitle) {
+      setCurrentFolderTitle(folderTitle as string);
+      console.log('✅ viewDecksInFolder: Setting folderTitle in context:', folderTitle);
+    }
+    if (sourcePage) {
+      setCurrentSourcePage(sourcePage as string);
+      console.log('✅ viewDecksInFolder: Setting sourcePage in context:', sourcePage);
+    }
+  }, [folderId, folderTitle, sourcePage, setCurrentFolderId, setCurrentFolderTitle, setCurrentSourcePage]);
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {

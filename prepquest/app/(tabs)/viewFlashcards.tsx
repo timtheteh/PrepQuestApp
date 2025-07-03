@@ -250,7 +250,7 @@ const CardForFlashcard = ({
         </View>
       )}
       {/* CognitiveQnType pill at the bottom */}
-      {typeof flashcardIdx === 'number' && flashcards[flashcardIdx]?.cognitiveQnType && (
+      {typeof flashcardIdx === 'number' && flashcards[flashcardIdx]?.cognitiveQnType && flashcards[flashcardIdx].cognitiveQnType !== 'None' && (
         <View style={{
           alignSelf: 'center',
           marginBottom: -10,
@@ -297,6 +297,8 @@ export default function ViewFlashcardsScreen() {
     trashModalOpacity,
     noSelectionModalOpacity,
     menuOverlayOpacity,
+    setCurrentDeckId,
+    setCurrentDeckType,
   } = useContext(MenuContext);
 
   // View state management - always start in "grid" state
@@ -489,6 +491,18 @@ export default function ViewFlashcardsScreen() {
       }
     };
   }, [isFocused, selectedCardIndexes, flashcards, isAIDeck]);
+
+  // Set the deckId and deckType in context when component mounts
+  useEffect(() => {
+    if (deckId) {
+      setCurrentDeckId(deckId as string);
+      console.log('✅ viewFlashcards: Setting deckId in context:', deckId);
+    }
+    if (deckType) {
+      setCurrentDeckType(deckType as string);
+      console.log('✅ viewFlashcards: Setting deckType in context:', deckType);
+    }
+  }, [deckId, deckType, setCurrentDeckId, setCurrentDeckType]);
 
   const handleBackPress = () => {
     // Navigate back to deck details page with all preserved parameters
@@ -1155,10 +1169,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 25,
   },
   emptyText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 16,
     color: '#222',
   },
-}); 
+});

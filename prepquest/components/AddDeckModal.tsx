@@ -135,6 +135,9 @@ interface AddDeckModalProps {
   isInFavoritesPage?: boolean;
   isInViewFlashcardsPage?: boolean;
   isInViewDecksInFolderPage?: boolean;
+  deckId?: string;
+  folderId?: string;
+  deckType?: string;
 }
 
 export function AddDeckModal({ 
@@ -143,10 +146,51 @@ export function AddDeckModal({
   currentMode,
   isInFavoritesPage = false,
   isInViewFlashcardsPage = false,
-  isInViewDecksInFolderPage = false
+  isInViewDecksInFolderPage = false,
+  deckId,
+  folderId,
+  deckType
 }: AddDeckModalProps) {
   const { setCurrentMode, handleDismissMenu } = useContext(MenuContext);
   const router = useRouter();
+
+  // Debug logging to verify parameter passing
+  useEffect(() => {
+    if (visible) {
+      console.log('🔍 AddDeckModal Debug:', {
+        isInFavoritesPage,
+        isInViewFlashcardsPage,
+        isInViewDecksInFolderPage,
+        deckId,
+        folderId,
+        deckType,
+        currentMode
+      });
+      
+      if (isInViewFlashcardsPage) {
+        console.log('✅ AddDeckModal opened from viewFlashcards');
+        if (deckId) {
+          console.log('✅ deckId available:', deckId);
+        } else {
+          console.log('❌ No deckId available');
+        }
+        if (deckType) {
+          console.log('✅ deckType available:', deckType);
+        } else {
+          console.log('❌ No deckType available');
+        }
+      }
+      
+      if (isInViewDecksInFolderPage) {
+        console.log('✅ AddDeckModal opened from viewDecksInFolder');
+        if (folderId) {
+          console.log('✅ folderId available:', folderId);
+        } else {
+          console.log('❌ No folderId available');
+        }
+      }
+    }
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -156,25 +200,73 @@ export function AddDeckModal({
 
   const handleGenAIFormPress = () => {
     handleDismissMenu();
+    const params: any = { mode: currentMode };
+    if (isInViewFlashcardsPage && deckId) {
+      params.deckId = deckId;
+    }
+    if (isInViewFlashcardsPage && deckType) {
+      params.mode = deckType;
+    }
+    if (isInViewDecksInFolderPage && folderId) {
+      params.folderId = folderId;
+    }
+    if (isInFavoritesPage) {
+      params.isInFavoritesPage = true;
+    }
+    if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
+      params.isInIndexPage = true;
+    }
     router.push({
       pathname: '/genAIForm',
-      params: { mode: currentMode }
+      params
     });
   };
 
   const handleFormUploadPagePress = () => {
     handleDismissMenu();
+    const params: any = { mode: currentMode };
+    if (isInViewFlashcardsPage && deckId) {
+      params.deckId = deckId;
+    }
+    if (isInViewFlashcardsPage && deckType) {
+      params.mode = deckType;
+    }
+    if (isInViewDecksInFolderPage && folderId) {
+      params.folderId = folderId;
+    }
+    if (isInFavoritesPage) {
+      params.isInFavoritesPage = true;
+    }
+    if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
+      params.isInIndexPage = true;
+    }
     router.push({
       pathname: '/fileUploadPage',
-      params: { mode: currentMode }
+      params
     });
   };
 
   const handleYoutubeLinkPress = () => {
     handleDismissMenu();
+    const params: any = { mode: currentMode };
+    if (isInViewFlashcardsPage && deckId) {
+      params.deckId = deckId;
+    }
+    if (isInViewFlashcardsPage && deckType) {
+      params.mode = deckType;
+    }
+    if (isInViewDecksInFolderPage && folderId) {
+      params.folderId = folderId;
+    }
+    if (isInFavoritesPage) {
+      params.isInFavoritesPage = true;
+    }
+    if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
+      params.isInIndexPage = true;
+    }
     router.push({
       pathname: '/youtubeLink',
-      params: { mode: currentMode }
+      params
     });
   };
 
@@ -232,9 +324,25 @@ export function AddDeckModal({
               isInViewFlashcardsPage={isInViewFlashcardsPage}
               marginBottom={6}
               onPress={() => {
+                const params: any = { mode: currentMode };
+                if (isInViewFlashcardsPage && deckId) {
+                  params.deckId = deckId;
+                }
+                if (isInViewFlashcardsPage && deckType) {
+                  params.mode = deckType;
+                }
+                if (isInViewDecksInFolderPage && folderId) {
+                  params.folderId = folderId;
+                }
+                if (isInFavoritesPage) {
+                  params.isInFavoritesPage = true;
+                }
+                if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
+                  params.isInIndexPage = true;
+                }
                 router.push({
                   pathname: '/manualAddDeck',
-                  params: { mode: currentMode }
+                  params
                 });
                 handleDismissMenu();
               }}

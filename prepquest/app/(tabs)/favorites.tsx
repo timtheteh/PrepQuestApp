@@ -233,9 +233,89 @@ export default function FavoritesScreen() {
     }).start();
   };
 
-  const handleFabPress = () => {
+  const handleFabPress = async () => {
     if (isFavFoldersMode) {
-      console.log("Favorite Folders FAB clicked!");
+      try {
+        console.log("Favorite Folders FAB clicked!");
+        
+        // Check for existing folders that start with "New Folder" from the entire folders table
+        const existingNewFoldersResult = await db.getAllAsync(`
+          SELECT folderName
+          FROM folders
+          WHERE folderName LIKE 'New Folder%'
+          ORDER BY folderName
+        `);
+        
+        const existingNewFolders = existingNewFoldersResult as Array<{ folderName: string }>;
+        
+        let newFolderName: string;
+        
+        if (existingNewFolders.length === 0) {
+          // No existing "New Folder" folders, use just "New Folder"
+          newFolderName = 'New Folder';
+        } else {
+          // Find the highest number used in existing "New Folder" names
+          const numbers = existingNewFolders.map(folder => {
+            const match = folder.folderName.match(/New Folder(?: (\d+))?$/);
+            if (match) {
+              // If there's a number, use it; otherwise, it's "New Folder" (no number)
+              return match[1] ? parseInt(match[1]) : 0;
+            }
+            return 0;
+          });
+          
+          const maxNumber = Math.max(...numbers);
+          const nextNumber = maxNumber + 1;
+          newFolderName = `New Folder ${nextNumber}`;
+        }
+        
+        // Insert the new folder into the database with isFavorited = 1
+        const result = await db.execAsync(`
+          INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited)
+          VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 1)
+        `);
+        
+        // Get the ID of the newly inserted folder
+        const newFolderResult = await db.getFirstAsync(`
+          SELECT folderID, folderName, dateAdded, lastModifiedDate, isFavorited
+          FROM folders 
+          WHERE folderName = '${newFolderName}'
+          ORDER BY folderID DESC
+          LIMIT 1
+        `);
+        
+        if (newFolderResult) {
+          const newFolder = newFolderResult as {
+            folderID: number;
+            folderName: string;
+            dateAdded: string;
+            lastModifiedDate: string;
+            isFavorited: number;
+          };
+          
+          // Create the new folder object with deckCount set to 0
+          const newFolderObject: Folder = {
+            ...newFolder,
+            deckCount: 0
+          };
+          
+          // Add the new folder to the local state
+          const updatedFolders = [...favoritedFolders, newFolderObject];
+          setFavoritedFolders(updatedFolders);
+          
+          // Update filtered folders if not searching
+          if (!isSearching) {
+            const sortedUpdatedFolders = sortFolders(updatedFolders);
+            setFilteredFavoritedFolders(sortedUpdatedFolders);
+          }
+          
+          console.log('Successfully created new favorited folder:', newFolderName);
+        } else {
+          console.error('Failed to retrieve the newly created folder');
+        }
+      } catch (error) {
+        console.error('Error creating new favorited folder:', error);
+      }
     } else {
       setIsMenuOpen(true);
       setIsAddDeckOpen(true);

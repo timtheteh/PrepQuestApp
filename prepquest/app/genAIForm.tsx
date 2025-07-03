@@ -376,6 +376,27 @@ export default function GenAIFormPage() {
       }
     }
 
+    // Validate interviewOptionalQuestion3 (topics) format for interview mode
+    if (mode === 'interview' && interviewOptionalQuestion3.trim() !== '') {
+      const topics = interviewOptionalQuestion3.split(',').map(s => s.trim());
+      
+      // Check if there are any empty topics after splitting and trimming
+      const hasEmptyTopics = topics.some(topic => topic === '');
+      
+      // Check if there are any topics that are just whitespace or special characters
+      const hasInvalidTopics = topics.some(topic => 
+        topic === '' || 
+        /^[^\w\s]+$/.test(topic) || // Only special characters
+        topic.length < 2 // Too short
+      );
+      
+      if (hasEmptyTopics || hasInvalidTopics) {
+        setShowToast(true);
+        setToastMessage("Invalid form input for 'Topic(s)'");
+        return false;
+      }
+    }
+
     // Case 1: Mandatory fields and optional fields not filled up
     if (!mandatoryFieldsFilled) {
       setErrorMessage("All mandatory fields must be filled up!");

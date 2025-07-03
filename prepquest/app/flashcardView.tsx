@@ -1304,7 +1304,7 @@ const FlippableFlashcard = (
       recordingRef.current = recording;
       setIsRecording(true);
     } catch (err) {
-      console.error('Failed to start recording', err);
+      // console.error('Failed to start recording', err);
     }
   };
 
@@ -1728,7 +1728,7 @@ const FlippableFlashcard = (
             
             {/* Bottom container */}
             <Animated.View style={[styles.bottomContainer, { opacity: frontOpacity }]}>
-              {currentFlashcard?.cognitiveQnType && (
+              {currentFlashcard?.cognitiveQnType && currentFlashcard.cognitiveQnType !== 'None' && (
                 <View style={{
                   width: '50%',
                   height: '60%',

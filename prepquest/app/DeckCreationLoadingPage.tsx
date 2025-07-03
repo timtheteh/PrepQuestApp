@@ -8,12 +8,14 @@ interface DeckCreationLoadingPageProps {
   progress: number; // 0 to 1
   current: number;
   total: number;
+  isInViewFlashcardsPage: boolean;
 }
 
 export default function DeckCreationLoadingPage({
   progress = 0,
   current = 0,
   total = 1,
+  isInViewFlashcardsPage = false,
 }: DeckCreationLoadingPageProps) {
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -54,7 +56,9 @@ export default function DeckCreationLoadingPage({
       </View>
       {/* Text and progress below */}
       <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
-        <Text style={styles.title}>{'Your fantastic deck is\non its way!'}</Text>
+        <Text style={styles.title}>
+            {isInViewFlashcardsPage ? 'Your flashcards are\non their way!' : 'Your fantastic deck is\non its way!'}
+        </Text>
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBarBg}>
             <Animated.View 

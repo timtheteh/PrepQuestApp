@@ -1537,3 +1537,20 @@ export async function getMostRecentManualFormEntry(mode: 'study' | 'interview'):
     return null;
   }
 }
+
+export async function getDeckNameById(deckId: number): Promise<string | null> {
+  try {
+    const result = await db.getFirstAsync(`
+      SELECT deckName FROM decks WHERE deckID = ?
+    `, [deckId]);
+
+    if (!result) {
+      return null;
+    }
+
+    return (result as { deckName: string }).deckName;
+  } catch (error) {
+    console.error('Error getting deck name by ID:', error);
+    return null;
+  }
+}

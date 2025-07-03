@@ -25,7 +25,8 @@ import EyeIcon from '@/assets/icons/eyeIcon.svg';
 import { CircleSelectButtonGreen } from '../components/CircleSelectButtonGreen';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import LottieView from 'lottie-react-native';
-import { createManualDeck, createFlashcardsFromCache, checkDeckNameExists, getMostRecentManualFormEntry } from '../db/decks';
+import { createManualDeck, createFlashcardsFromCache, checkDeckNameExists, getMostRecentManualFormEntry, getDeckNameById } from '../db/decks';
+import { db } from '../db/index';
 import { Toast } from '../components/Toast';
 import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 
@@ -62,9 +63,36 @@ const ManualAddDeckMainSection = () => {
   );
 };
 
-const getFormContentGap = () => {
+const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
   const { width, height } = Dimensions.get('window');
 
+  // If we're in view flashcards page, use smaller gaps since we don't have the deck name field
+  if (isInViewFlashcardsPage) {
+    // iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 940) {
+      return 35;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return 32;
+    }
+
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return 50;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return 32;
+    }
+    
+    // Default smaller gap for view flashcards page
+    return Platform.OS === 'ios' ? 28 : 30;
+  }
+
+  // Original gap values for other pages (index, favorites, view decks in folder)
   // iphone 16 pro max
   if (Platform.OS === 'ios' && height >= 940) {
     return 25;
@@ -496,15 +524,31 @@ export default function ManualAddDeckPage() {
   };
 
   const isStudyMandatoryFieldsFilled = () => {
+    if (isInViewFlashcardsPage === 'true') {
+      // When adding flashcards to existing deck, only need the study questions
+      return studyMandatoryQuestion1.trim() !== '' && 
+             studyMandatoryQuestion2.trim() !== '' &&
+             studyMandatoryQuestion3.trim() !== '';
+    }
+    // When creating new deck, need deck name and study questions
     return deckName.trim() !== '' && 
            studyMandatoryQuestion1.trim() !== '' && 
-           studyMandatoryQuestion2.trim() !== '';
+           studyMandatoryQuestion2.trim() !== '' &&
+           studyMandatoryQuestion3.trim() !== '';
   };
 
   const isInterviewMandatoryFieldsFilled = () => {
+    if (isInViewFlashcardsPage === 'true') {
+      // When adding flashcards to existing deck, only need the interview questions
+      return interviewMandatoryQuestion1.trim() !== '' && 
+             interviewType !== '' &&
+             interviewMandatoryQuestion2.trim() !== '';
+    }
+    // When creating new deck, need deck name and interview questions
     return deckName.trim() !== '' && 
            interviewMandatoryQuestion1.trim() !== '' && 
-           interviewType !== '';
+           interviewType !== '' &&
+           interviewMandatoryQuestion2.trim() !== '';
   };
 
   const isSubmitDisabled = () => {
@@ -528,8 +572,8 @@ export default function ManualAddDeckPage() {
       return hasFrontContent && hasBackContent;
     });
 
-    // Check if deck name already exists
-    if (deckName.trim() !== '') {
+    // Check if deck name already exists (only for new deck creation, not when adding to existing deck)
+    if (!isInViewFlashcardsPage && deckName.trim() !== '') {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
@@ -1232,7 +1276,7 @@ export default function ManualAddDeckPage() {
       })
     ]).start(() => {
       setIsSuccessModalOpen(false);
-      setTimeout(async () => {
+      setTimeout(async () => {        
         if (isInIndexPage === 'true') {
           const formData = {
             deckName,
@@ -1267,6 +1311,194 @@ export default function ManualAddDeckPage() {
             console.error('Failed to create deck');
           }
         }
+        if (isInFavoritesPage === 'true') {
+          console.log('🔍 Creating deck for favorites page');
+          const formData = {
+            deckName,
+            mode: mode as 'study' | 'interview',
+            studyMandatoryQuestion1,
+            studyMandatoryQuestion2,
+            studyMandatoryQuestion3,
+            interviewMandatoryQuestion1,
+            interviewMandatoryQuestion2,
+            interviewType
+          };
+          const submittedCards = getSubmittedCards();
+          setLoadingTotal(submittedCards.length);
+          setLoadingCurrent(0);
+          setLoadingProgress(0);
+          setShowLoadingPage(true);
+          const deckResult = await createManualDeck(formData);
+          if (deckResult.success && deckResult.deckId) {
+            // Update the deck to be favorited
+            await db.execAsync(`
+              UPDATE decks 
+              SET isFavorited = 1
+              WHERE deckID = ${deckResult.deckId}
+            `);
+            let createdCount = 0;
+            for (let i = 0; i < submittedCards.length; i++) {
+              await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
+              createdCount++;
+              setLoadingCurrent(createdCount);
+              setLoadingProgress(createdCount / submittedCards.length);
+            }
+            setTimeout(() => {
+              setShowLoadingPage(false);
+              router.back();
+            }, 800);
+            return;
+          } else {
+            console.error('Failed to create deck');
+          }
+        }
+        if (isInViewDecksInFolderPage === 'true') {
+          const formData = {
+            deckName,
+            mode: mode as 'study' | 'interview',
+            studyMandatoryQuestion1,
+            studyMandatoryQuestion2,
+            studyMandatoryQuestion3,
+            interviewMandatoryQuestion1,
+            interviewMandatoryQuestion2,
+            interviewType
+          };
+          const submittedCards = getSubmittedCards();
+          setLoadingTotal(submittedCards.length);
+          setLoadingCurrent(0);
+          setLoadingProgress(0);
+          setShowLoadingPage(true);
+          const deckResult = await createManualDeck(formData);
+          if (deckResult.success && deckResult.deckId) {
+            // Append the folderId to the deck's folderIDs field
+            const currentFolderId = parseInt(folderId as string);
+            if (currentFolderId) {
+              // Get the current folderIDs for the deck
+              const currentDeck = await db.getFirstAsync(`
+                SELECT folderIDs FROM decks WHERE deckID = ${deckResult.deckId}
+              `);
+              
+              if (currentDeck) {
+                const deckData = currentDeck as { folderIDs: string | null };
+                let currentFolderIds: number[] = [];
+                
+                // Parse existing folderIDs if they exist
+                if (deckData.folderIDs) {
+                  try {
+                    currentFolderIds = JSON.parse(deckData.folderIDs);
+                  } catch (error) {
+                    console.error('Error parsing existing folderIDs:', error);
+                    currentFolderIds = [];
+                  }
+                }
+                
+                // Add the new folder ID (avoid duplicates)
+                const newFolderIds = [...new Set([...currentFolderIds, currentFolderId])];
+                
+                // Update the deck's folderIDs in the database
+                const newFolderIdsString = JSON.stringify(newFolderIds);
+                await db.execAsync(`
+                  UPDATE decks 
+                  SET folderIDs = '${newFolderIdsString}'
+                  WHERE deckID = ${deckResult.deckId}
+                `);
+                
+                console.log(`Successfully added deck ${deckResult.deckId} to folder: ${currentFolderId}`);
+              }
+            }
+            let createdCount = 0;
+            for (let i = 0; i < submittedCards.length; i++) {
+              await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
+              createdCount++;
+              setLoadingCurrent(createdCount);
+              setLoadingProgress(createdCount / submittedCards.length);
+            }
+            setTimeout(() => {
+              setShowLoadingPage(false);
+              router.back();
+            }, 800);
+            return;
+          } else {
+            console.error('Failed to create deck');
+          }
+        }
+        if (isInViewFlashcardsPage === 'true') {
+          const submittedCards = getSubmittedCards();
+          const currentDeckId = parseInt(deckId as string);
+          
+          if (currentDeckId) {
+            setLoadingTotal(submittedCards.length);
+            setLoadingCurrent(0);
+            setLoadingProgress(0);
+            setShowLoadingPage(true);
+            
+            // Get the deck name for the user form entry
+            const deckNameForEntry = await getDeckNameById(currentDeckId);
+            
+            // Create flashcards
+            let createdCount = 0;
+            for (let i = 0; i < submittedCards.length; i++) {
+              await createFlashcardsFromCache(currentDeckId, [submittedCards[i]]);
+              createdCount++;
+              setLoadingCurrent(createdCount);
+              setLoadingProgress(createdCount / submittedCards.length);
+            }
+            
+            // Insert user form entry for adding flashcards to existing deck
+            if (deckNameForEntry) {
+              const currentDate = new Date().toISOString();
+              
+              // Prepare form data for the entry
+              let studyEducationLevelForm = null;
+              let studySubjectsForm = null;
+              let studyExamForm = null;
+              let interviewJobRoleForm = null;
+              let interviewTypeForm = null;
+              let interviewExperienceLevelForm = null;
+              
+              if (mode === 'study') {
+                studyEducationLevelForm = studyMandatoryQuestion1 || null;
+                studySubjectsForm = studyMandatoryQuestion2 || null;
+                studyExamForm = studyMandatoryQuestion3 || null;
+              } else {
+                interviewJobRoleForm = interviewMandatoryQuestion1 || null;
+                interviewTypeForm = interviewType || null;
+                interviewExperienceLevelForm = interviewMandatoryQuestion2 || null;
+              }
+              
+              // Insert into userFormEntries table
+              await db.execAsync(`
+                INSERT INTO userFormEntries (
+                  formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
+                  youtubeLink, studyEducationLevel, studySubjects, studyTopics, studySubtopics, studyExam,
+                  interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics
+                ) VALUES (
+                  '${mode}', 'manual', '${currentDate}', '${deckNameForEntry.replace(/'/g, "''")}', NULL, NULL,
+                  NULL, 
+                  ${studyEducationLevelForm ? `'${studyEducationLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
+                  ${studySubjectsForm ? `'${studySubjectsForm.replace(/'/g, "''")}'` : 'NULL'}, 
+                  NULL, NULL, 
+                  ${studyExamForm ? `'${studyExamForm.replace(/'/g, "''")}'` : 'NULL'},
+                  ${interviewJobRoleForm ? `'${interviewJobRoleForm.replace(/'/g, "''")}'` : 'NULL'}, 
+                  ${interviewTypeForm ? `'${interviewTypeForm.replace(/'/g, "''")}'` : 'NULL'}, 
+                  NULL, 
+                  ${interviewExperienceLevelForm ? `'${interviewExperienceLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
+                  NULL
+                )
+              `);
+              
+              console.log('User form entry created for adding flashcards to existing deck:', deckNameForEntry);
+            }
+            
+            setTimeout(() => {
+              setShowLoadingPage(false);
+              router.back();
+            }, 800);
+            return;
+          } else {
+            console.error('No valid deckId provided for view flashcards page');
+          }
+        }
         router.back();
       }, 50);
     });
@@ -1274,7 +1506,7 @@ export default function ManualAddDeckPage() {
 
   if (showLoadingPage) {
     return (
-      <DeckCreationLoadingPage progress={loadingProgress} current={loadingCurrent} total={loadingTotal} />
+      <DeckCreationLoadingPage progress={loadingProgress} current={loadingCurrent} total={loadingTotal} isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}/>
     );
   }
 
@@ -1361,17 +1593,19 @@ export default function ManualAddDeckPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={[
-            styles.formContent,
+            { gap: getFormContentGap(isInViewFlashcardsPage === 'true') },
             { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
           ]}>
-              <View style={styles.formContent}>
-                <TitleTextBar
-                  title=" Deck Name"
-                  highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                  placeholder="Type here!"
-                  value={deckName}
-                  onChangeText={setDeckName}
-                />
+              <View style={{ gap: getFormContentGap(isInViewFlashcardsPage === 'true') }}>
+                {!isInViewFlashcardsPage && (
+                  <TitleTextBar
+                    title=" Deck Name"
+                    highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
+                    placeholder="Type here!"
+                    value={deckName}
+                    onChangeText={setDeckName}
+                  />
+                )}
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
@@ -1861,9 +2095,6 @@ const styles = StyleSheet.create({
   toggleContainer: {
     marginTop: 4,
     paddingHorizontal: 16,
-  },
-  formContent: {
-    gap: getFormContentGap(),
   },
   manualAddDeckContent: {
     marginTop: Platform.OS === 'android' && Dimensions.get('window').height > 960 ? 20 : 0,

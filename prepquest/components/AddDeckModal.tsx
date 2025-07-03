@@ -203,12 +203,15 @@ export function AddDeckModal({
     const params: any = { mode: currentMode };
     if (isInViewFlashcardsPage && deckId) {
       params.deckId = deckId;
+      params.isInViewFlashcardsPage = true;
     }
     if (isInViewFlashcardsPage && deckType) {
       params.mode = deckType;
+      params.isInViewFlashcardsPage = true;
     }
     if (isInViewDecksInFolderPage && folderId) {
       params.folderId = folderId;
+      params.isInViewDecksInFolderPage = true;
     }
     if (isInFavoritesPage) {
       params.isInFavoritesPage = true;
@@ -227,12 +230,15 @@ export function AddDeckModal({
     const params: any = { mode: currentMode };
     if (isInViewFlashcardsPage && deckId) {
       params.deckId = deckId;
+      params.isInViewFlashcardsPage = true;
     }
     if (isInViewFlashcardsPage && deckType) {
       params.mode = deckType;
+      params.isInViewFlashcardsPage = true;
     }
     if (isInViewDecksInFolderPage && folderId) {
       params.folderId = folderId;
+      params.isInViewDecksInFolderPage = true;
     }
     if (isInFavoritesPage) {
       params.isInFavoritesPage = true;
@@ -251,12 +257,15 @@ export function AddDeckModal({
     const params: any = { mode: currentMode };
     if (isInViewFlashcardsPage && deckId) {
       params.deckId = deckId;
+      params.isInViewFlashcardsPage = true;
     }
     if (isInViewFlashcardsPage && deckType) {
       params.mode = deckType;
+      params.isInViewFlashcardsPage = true;
     }
     if (isInViewDecksInFolderPage && folderId) {
       params.folderId = folderId;
+      params.isInViewDecksInFolderPage = true;
     }
     if (isInFavoritesPage) {
       params.isInFavoritesPage = true;
@@ -327,12 +336,15 @@ export function AddDeckModal({
                 const params: any = { mode: currentMode };
                 if (isInViewFlashcardsPage && deckId) {
                   params.deckId = deckId;
+                  params.isInViewFlashcardsPage = true;
                 }
                 if (isInViewFlashcardsPage && deckType) {
                   params.mode = deckType;
+                  params.isInViewFlashcardsPage = true;
                 }
                 if (isInViewDecksInFolderPage && folderId) {
                   params.folderId = folderId;
+                  params.isInViewDecksInFolderPage = true;
                 }
                 if (isInFavoritesPage) {
                   params.isInFavoritesPage = true;

@@ -531,7 +531,7 @@ export async function checkDeckNameExists(deckName: string, excludeDeckId?: numb
       query = `
         SELECT COUNT(*) as count 
         FROM decks 
-        WHERE deckName = ? AND deckID != ?
+        WHERE LOWER(deckName) = LOWER(?) AND deckID != ?
       `;
       params = [deckName, excludeDeckId];
     } else {
@@ -539,7 +539,7 @@ export async function checkDeckNameExists(deckName: string, excludeDeckId?: numb
       query = `
         SELECT COUNT(*) as count 
         FROM decks 
-        WHERE deckName = ?
+        WHERE LOWER(deckName) = LOWER(?)
       `;
       params = [deckName];
     }

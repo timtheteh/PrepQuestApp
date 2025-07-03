@@ -18,6 +18,8 @@ import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import { checkDeckNameExists } from '../db/decks';
+import { Toast } from '../components/Toast';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -151,6 +153,8 @@ export default function YouTubeLinkPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isBackConfirmationModalOpen, setIsBackConfirmationModalOpen] = useState(false);
   const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -310,9 +314,40 @@ export default function YouTubeLinkPage() {
     return false; // Always enabled now
   };
 
-  const validateFormSubmission = () => {
+  const validateFormSubmission = async () => {
     const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
     const youtubeLinkFilled = youtubeLink.trim() !== '';
+
+    // Check if deck name already exists
+    if (deckName.trim() !== '') {
+      const deckNameExists = await checkDeckNameExists(deckName.trim());
+      if (deckNameExists) {
+        setShowToast(true);
+        setToastMessage("Deckname already in use");
+        return false;
+      }
+    }
+
+    // Validate studyMandatoryQuestion2 format for study mode
+    if (mode === 'study' && studyMandatoryQuestion2.trim() !== '') {
+      const subjects = studyMandatoryQuestion2.split(',').map(s => s.trim());
+      
+      // Check if there are any empty subjects after splitting and trimming
+      const hasEmptySubjects = subjects.some(subject => subject === '');
+      
+      // Check if there are any subjects that are just whitespace or special characters
+      const hasInvalidSubjects = subjects.some(subject => 
+        subject === '' || 
+        /^[^\w\s]+$/.test(subject) || // Only special characters
+        subject.length < 2 // Too short
+      );
+      
+      if (hasEmptySubjects || hasInvalidSubjects) {
+        setShowToast(true);
+        setToastMessage("Invalid form input for 'Subject(s)'");
+        return false;
+      }
+    }
 
     // Error 1: mandatory fields not filled up and youtube link not filled up
     if (!mandatoryFieldsFilled && !youtubeLinkFilled) {
@@ -340,8 +375,8 @@ export default function YouTubeLinkPage() {
     return true;
   };
 
-  const handleSubmit = () => {
-    validateFormSubmission();
+  const handleSubmit = async () => {
+    await validateFormSubmission();
   };
 
   const handleDismissErrorModal = () => {
@@ -755,6 +790,12 @@ export default function YouTubeLinkPage() {
         textMarginBottom={40}
         contentMarginTop={-10}
         Icon={DeleteModalIcon}
+      />
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+        duration={3000}
       />
     </View>
   );

@@ -25,7 +25,8 @@ import EyeIcon from '@/assets/icons/eyeIcon.svg';
 import { CircleSelectButtonGreen } from '../components/CircleSelectButtonGreen';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import LottieView from 'lottie-react-native';
-import { createManualDeck, createFlashcardsFromCache } from '../db/decks';
+import { createManualDeck, createFlashcardsFromCache, checkDeckNameExists } from '../db/decks';
+import { Toast } from '../components/Toast';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -145,6 +146,8 @@ export default function ManualAddDeckPage() {
   const successModalOpacity = useRef(new Animated.Value(0)).current;
   const [errorMessage, setErrorMessage] = useState('');
   const [incompleteCardNumber, setIncompleteCardNumber] = useState<number>(0);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Cache for storing all created cards
   interface CachedCard {
@@ -503,7 +506,7 @@ export default function ManualAddDeckPage() {
     return false; // Always enabled now
   };
 
-  const validateFormSubmission = () => {
+  const validateFormSubmission = async () => {
     const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
     const submittedCards = getSubmittedCards();
     const hasCards = submittedCards.length >= 1;
@@ -513,6 +516,37 @@ export default function ManualAddDeckPage() {
       card.frontContent && card.backContent && 
       card.frontContent.content && card.backContent.content
     );
+
+    // Check if deck name already exists
+    if (deckName.trim() !== '') {
+      const deckNameExists = await checkDeckNameExists(deckName.trim());
+      if (deckNameExists) {
+        setShowToast(true);
+        setToastMessage("Deckname already in use");
+        return false;
+      }
+    }
+
+    // Validate studyMandatoryQuestion2 format for study mode
+    if (mode === 'study' && studyMandatoryQuestion2.trim() !== '') {
+      const subjects = studyMandatoryQuestion2.split(',').map(s => s.trim());
+      
+      // Check if there are any empty subjects after splitting and trimming
+      const hasEmptySubjects = subjects.some(subject => subject === '');
+      
+      // Check if there are any subjects that are just whitespace or special characters
+      const hasInvalidSubjects = subjects.some(subject => 
+        subject === '' || 
+        /^[^\w\s]+$/.test(subject) || // Only special characters
+        subject.length < 2 // Too short
+      );
+      
+      if (hasEmptySubjects || hasInvalidSubjects) {
+        setShowToast(true);
+        setToastMessage("Invalid form input for 'Subject(s)'");
+        return false;
+      }
+    }
 
     // Error 1: mandatory fields not filled up and no cards
     if (!mandatoryFieldsFilled && !hasCards) {
@@ -555,8 +589,8 @@ export default function ManualAddDeckPage() {
     return true;
   };
 
-  const handleSubmit = () => {
-    validateFormSubmission();
+  const handleSubmit = async () => {
+    await validateFormSubmission();
   };
 
   const handleDismissHelp = () => {
@@ -1328,7 +1362,7 @@ export default function ManualAddDeckPage() {
                       placeholder="e.g. Computer Science, Math, Physics, etc."
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText="What subject(s) would this deck be for?"
+                      helperText="What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc."
                     />
                     <QuestionTextBar
                       label="3. Exam/Quiz?"
@@ -1714,6 +1748,13 @@ Next Card?"
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
+      />
+      
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+        duration={3000}
       />
     </View>
   );

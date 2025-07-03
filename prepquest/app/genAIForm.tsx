@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import { checkDeckNameExists } from '../db/decks';
+import { Toast } from '../components/Toast';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -95,6 +97,8 @@ export default function GenAIFormPage() {
   const [isOptionalFieldsWarningModalOpen, setIsOptionalFieldsWarningModalOpen] = useState(false);
   const optionalFieldsWarningModalOpacity = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -295,9 +299,82 @@ export default function GenAIFormPage() {
     return false; // Always enabled now
   };
 
-  const validateFormSubmission = () => {
+  const validateFormSubmission = async () => {
     const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
     const optionalFieldsFilled = mode === 'study' ? isStudyOptionalFieldsFilled() : isInterviewOptionalFieldsFilled();
+
+    // Check if deck name already exists
+    if (deckName.trim() !== '') {
+      const deckNameExists = await checkDeckNameExists(deckName.trim());
+      if (deckNameExists) {
+        setShowToast(true);
+        setToastMessage("Deckname already in use");
+        return false;
+      }
+    }
+
+    // Validate studyMandatoryQuestion2 format for study mode
+    if (mode === 'study' && studyMandatoryQuestion2.trim() !== '') {
+      const subjects = studyMandatoryQuestion2.split(',').map(s => s.trim());
+      
+      // Check if there are any empty subjects after splitting and trimming
+      const hasEmptySubjects = subjects.some(subject => subject === '');
+      
+      // Check if there are any subjects that are just whitespace or special characters
+      const hasInvalidSubjects = subjects.some(subject => 
+        subject === '' || 
+        /^[^\w\s]+$/.test(subject) || // Only special characters
+        subject.length < 2 // Too short
+      );
+      
+      if (hasEmptySubjects || hasInvalidSubjects) {
+        setShowToast(true);
+        setToastMessage("Invalid form input for 'Subject(s)'");
+        return false;
+      }
+    }
+
+    // Validate studyOptionalQuestion1 (topics) format for study mode
+    if (mode === 'study' && studyOptionalQuestion1.trim() !== '') {
+      const topics = studyOptionalQuestion1.split(',').map(s => s.trim());
+      
+      // Check if there are any empty topics after splitting and trimming
+      const hasEmptyTopics = topics.some(topic => topic === '');
+      
+      // Check if there are any topics that are just whitespace or special characters
+      const hasInvalidTopics = topics.some(topic => 
+        topic === '' || 
+        /^[^\w\s]+$/.test(topic) || // Only special characters
+        topic.length < 2 // Too short
+      );
+      
+      if (hasEmptyTopics || hasInvalidTopics) {
+        setShowToast(true);
+        setToastMessage("Invalid form input for 'Topic(s)'");
+        return false;
+      }
+    }
+
+    // Validate studyOptionalQuestion2 (subtopics) format for study mode
+    if (mode === 'study' && studyOptionalQuestion2.trim() !== '') {
+      const subtopics = studyOptionalQuestion2.split(',').map(s => s.trim());
+      
+      // Check if there are any empty subtopics after splitting and trimming
+      const hasEmptySubtopics = subtopics.some(subtopic => subtopic === '');
+      
+      // Check if there are any subtopics that are just whitespace or special characters
+      const hasInvalidSubtopics = subtopics.some(subtopic => 
+        subtopic === '' || 
+        /^[^\w\s]+$/.test(subtopic) || // Only special characters
+        subtopic.length < 2 // Too short
+      );
+      
+      if (hasEmptySubtopics || hasInvalidSubtopics) {
+        setShowToast(true);
+        setToastMessage("Invalid form input for 'Subtopic(s)'");
+        return false;
+      }
+    }
 
     // Case 1: Mandatory fields and optional fields not filled up
     if (!mandatoryFieldsFilled) {
@@ -317,8 +394,8 @@ export default function GenAIFormPage() {
     return true;
   };
 
-  const handleSubmit = () => {
-    validateFormSubmission();
+  const handleSubmit = async () => {
+    await validateFormSubmission();
   };
 
   const handleDismissHelp = () => {
@@ -546,7 +623,7 @@ export default function GenAIFormPage() {
                       placeholder="e.g. Computer Science, Math, Physics, etc."
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText="What subject(s) would this deck be for?"
+                      helperText="What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc."
                     />
                   </>
                 )}
@@ -587,21 +664,21 @@ export default function GenAIFormPage() {
                   placeholder="e.g. Microeconomics, Electromagnetism, etc"
                   value={studyOptionalQuestion1}
                   onChangeText={setStudyOptionalQuestion1}
-                  helperText="Which topics would you like to study?"
+                  helperText="Which topics would you like to study? Provide your answer in a comma separated list, e.g Microeconomics, Electromagnetism, etc"
                 />
                 <QuestionTextBar
                   label="2. Subtopic(s)?"
                   placeholder="e.g. Demand and Supply, etc"
                   value={studyOptionalQuestion2}
                   onChangeText={setStudyOptionalQuestion2}
-                  helperText="Which subtopics would you like to focus on?"
+                  helperText="Which subtopics would you like to focus on? Provide your answer in a comma separated list, e.g Demand and Supply, etc"
                 />
                 <QuestionTextBar
                   label="3. Exam/Quiz?"
                   placeholder="e.g. SAT, ACT, GRE, etc"
                   value={studyOptionalQuestion3}
                   onChangeText={setStudyOptionalQuestion3}
-                  helperText="Are you studying for an exam or quiz?"
+                  helperText="What exam or quiz would you like to study for?"
                 />
                 <KindsOfQuestions
                     value={questionType}
@@ -728,7 +805,7 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isOptionalFieldsWarningModalOpen}
         opacity={optionalFieldsWarningModalOpacity}
-        text="Submit form without filling up optional fields?"
+        text="Submit form without filling up all optional fields?"
         buttons="double"
         onCancel={handleDismissOptionalFieldsWarning}
         onConfirm={handleOptionalFieldsWarningConfirm}
@@ -741,6 +818,13 @@ export default function GenAIFormPage() {
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
+      />
+      
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+        duration={3000}
       />
     </View>
   );

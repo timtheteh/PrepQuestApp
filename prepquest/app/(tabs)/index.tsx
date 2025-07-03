@@ -646,11 +646,13 @@ export default function DecksScreen() {
 
   const handleSelectAll = () => {
     if (isInterviewMode) {
-      const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
+      // Use the same arrays that are being rendered in the UI
+      const decksToUse = isSearching ? searchedInterviewDecks : filteredInterviewDecksByDate;
       const allInterviewIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedInterviewCards(allInterviewIndices);
     } else {
-      const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
+      // Use the same arrays that are being rendered in the UI
+      const decksToUse = isSearching ? searchedStudyDecks : filteredStudyDecksByDate;
       const allStudyIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedStudyCards(allStudyIndices);
     }
@@ -662,10 +664,12 @@ export default function DecksScreen() {
       let selectedDeckIds: number[] = [];
       
       if (isInterviewMode) {
-        const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
+        // Use the same arrays that are being rendered in the UI
+        const decksToUse = isSearching ? searchedInterviewDecks : filteredInterviewDecksByDate;
         selectedDeckIds = Array.from(selectedInterviewCards).map(index => decksToUse[index].deckID);
       } else {
-        const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
+        // Use the same arrays that are being rendered in the UI
+        const decksToUse = isSearching ? searchedStudyDecks : filteredStudyDecksByDate;
         selectedDeckIds = Array.from(selectedStudyCards).map(index => decksToUse[index].deckID);
       }
 
@@ -681,24 +685,20 @@ export default function DecksScreen() {
         // Batch state updates to prevent rapid re-renders
         const updateState = () => {
           if (isInterviewMode) {
-            const decksToUse = isSearching ? filteredInterviewDecks : interviewDecks;
-            const remainingDecks = decksToUse.filter((_, index) => !selectedInterviewCards.has(index));
+            // Remove deleted decks from both original and filtered arrays
+            const remainingOriginalDecks = interviewDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+            const remainingFilteredDecks = filteredInterviewDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
             
-            if (isSearching) {
-              setFilteredInterviewDecks(remainingDecks);
-            } else {
-              setInterviewDecks(remainingDecks);
-            }
+            setInterviewDecks(remainingOriginalDecks);
+            setFilteredInterviewDecks(remainingFilteredDecks);
             setSelectedInterviewCards(new Set());
           } else {
-            const decksToUse = isSearching ? filteredStudyDecks : studyDecks;
-            const remainingDecks = decksToUse.filter((_, index) => !selectedStudyCards.has(index));
+            // Remove deleted decks from both original and filtered arrays
+            const remainingOriginalDecks = studyDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+            const remainingFilteredDecks = filteredStudyDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
             
-            if (isSearching) {
-              setFilteredStudyDecks(remainingDecks);
-            } else {
-              setStudyDecks(remainingDecks);
-            }
+            setStudyDecks(remainingOriginalDecks);
+            setFilteredStudyDecks(remainingFilteredDecks);
             setSelectedStudyCards(new Set());
           }
         };

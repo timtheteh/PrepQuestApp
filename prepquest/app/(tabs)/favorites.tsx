@@ -437,11 +437,13 @@ export default function FavoritesScreen() {
 
   const handleSelectAll = () => {
     if (isFavFoldersMode) {
-      const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+      // Use the same arrays that are being rendered in the UI
+      const foldersToUse = isSearching ? searchedFavoritedFolders : filteredFavoritedFoldersByDate;
       const allFolderIndices = new Set(Array.from({ length: foldersToUse.length }, (_, i) => i));
       setSelectedFavFolderCards(allFolderIndices);
     } else {
-      const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+      // Use the same arrays that are being rendered in the UI
+      const decksToUse = isSearching ? searchedFavoritedDecks : filteredFavoritedDecksByDate;
       const allDeckIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedFavDeckCards(allDeckIndices);
     }
@@ -623,8 +625,8 @@ export default function FavoritesScreen() {
 
   const handleUnfavoriteSelectedDecks = async () => {
     try {
-      // Get the selected deck IDs
-      const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+      // Get the selected deck IDs using the same arrays as handleSelectAll
+      const decksToUse = isSearching ? searchedFavoritedDecks : filteredFavoritedDecksByDate;
       const selectedDeckIds = Array.from(selectedFavDeckCards).map(index => decksToUse[index].deckID);
 
       if (selectedDeckIds.length === 0) {
@@ -667,8 +669,8 @@ export default function FavoritesScreen() {
 
   const handleUnfavoriteSelectedFolders = async () => {
     try {
-      // Get the selected folder IDs
-      const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+      // Get the selected folder IDs using the same arrays as handleSelectAll
+      const foldersToUse = isSearching ? searchedFavoritedFolders : filteredFavoritedFoldersByDate;
       const selectedFolderIds = Array.from(selectedFavFolderCards).map(index => foldersToUse[index].folderID);
 
       if (selectedFolderIds.length === 0) {
@@ -1221,8 +1223,8 @@ export default function FavoritesScreen() {
 
   const handleDeleteSelectedFavoritedDecks = async () => {
     try {
-      // Get the selected deck IDs
-      const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+      // Get the selected deck IDs using the same arrays as handleSelectAll
+      const decksToUse = isSearching ? searchedFavoritedDecks : filteredFavoritedDecksByDate;
       const selectedDeckIds = Array.from(selectedFavDeckCards).map(index => decksToUse[index].deckID);
 
       if (selectedDeckIds.length === 0) {
@@ -1270,8 +1272,8 @@ export default function FavoritesScreen() {
 
   const handleDeleteSelectedFavoritedFolders = async () => {
     try {
-      // Get the selected folder IDs
-      const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+      // Get the selected folder IDs using the same arrays as handleSelectAll
+      const foldersToUse = isSearching ? searchedFavoritedFolders : filteredFavoritedFoldersByDate;
       const selectedFolderIds = Array.from(selectedFavFolderCards).map(index => foldersToUse[index].folderID);
 
       if (selectedFolderIds.length === 0) {

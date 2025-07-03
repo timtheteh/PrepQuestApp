@@ -8,6 +8,7 @@ import DarkSwitchBody from '@/assets/icons/darkSwitchBody.svg';
 import LightSwitch from '@/assets/icons/lightSwitch.svg';
 import DarkSwitch from '@/assets/icons/darkSwitch.svg';
 import GrapeStem from '@/assets/icons/grapeStem.svg';
+// import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 
 export default function AccountScreen() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -18,6 +19,10 @@ export default function AccountScreen() {
   const [sharePressed, setSharePressed] = useState(false);
   const [ratePressed, setRatePressed] = useState(false);
   const [websitePressed, setWebsitePressed] = useState(false);
+  // const [showLoadingPage, setShowLoadingPage] = useState(false);
+  // const [loadingProgress, setLoadingProgress] = useState(0.4);
+  // const [loadingCurrent, setLoadingCurrent] = useState(12);
+  // const [loadingTotal, setLoadingTotal] = useState(48);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 60;
   const router = useRouter();
@@ -47,12 +52,20 @@ export default function AccountScreen() {
     }).start();
   };
 
-    const handleDeckSettingsPress = () => {
-      router.push('/deckSettings');
-    };
+  const handleDeckSettingsPress = () => {
+    router.push('/deckSettings');
+  };
 
   const handleAppSettingsPress = () => {
     router.push('/appSettings');
+  };
+
+  const handleSignOut = () => {
+    // setShowLoadingPage(true);
+    // // Optionally, you can update loading values here for testing
+    // setLoadingProgress(0.4);
+    // setLoadingCurrent(12);
+    // setLoadingTotal(48);
   };
 
   // Button position: 0 (left) for dark, 1 (right) for light
@@ -71,58 +84,58 @@ export default function AccountScreen() {
     const { width, height } = Dimensions.get('window');
 
     // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.16;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.15;
-  }
+    if (Platform.OS === 'ios' && height >= 940) {
+      return height * 0.16;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return height * 0.15;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return -5;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return -5;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return height * 0.17;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return height * 0.15;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return height * 0.17;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return height * 0.15;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return height * 0.13;
   }
 
   const getDeckSettingsLeftPosition = () => {
     const { width, height } = Dimensions.get('window');
   
-  // iphone 16 plus, iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 920) {
-    return width * 0.33;
-  }
+    // iphone 16 plus, iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 920) {
+      return width * 0.33;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return width * 0.31;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return width * 0.31;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return width * 0.33;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return width * 0.33;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return width * 0.33;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return width * 0.33;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return width * 0.33;
   }
 
@@ -130,58 +143,58 @@ export default function AccountScreen() {
     const { width, height } = Dimensions.get('window');
 
     // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.34;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.34;
-  }
+    if (Platform.OS === 'ios' && height >= 940) {
+      return height * 0.34;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return height * 0.34;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return height * 0.27;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return height * 0.27;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return height * 0.35;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return height * 0.33;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return height * 0.35;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return height * 0.33;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return height * 0.32;
   }
 
   const getAppSettingsLeftPosition = () => {
     const { width, height } = Dimensions.get('window');
   
-  // iphone 16 plus, iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 920) {
-    return width * 0.335;
-  }
+    // iphone 16 plus, iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 920) {
+      return width * 0.335;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return width * 0.31;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return width * 0.31;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return width * 0.335;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return width * 0.33;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return width * 0.335;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return width * 0.33;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return width * 0.325;
   }
 
@@ -189,58 +202,58 @@ export default function AccountScreen() {
     const { width, height } = Dimensions.get('window');
 
     // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.29;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.29;
-  }
+    if (Platform.OS === 'ios' && height >= 940) {
+      return height * 0.29;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return height * 0.29;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return height * 0.21;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return height * 0.21;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return height * 0.3;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return height * 0.28;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return height * 0.3;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return height * 0.28;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return height * 0.265;
   }
 
   const getTCLeftPosition = () => {
     const { width, height } = Dimensions.get('window');
   
-  // iphone 16 plus, iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 920) {
-    return width * 0.13;
-  }
+    // iphone 16 plus, iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 920) {
+      return width * 0.13;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return width * 0.08;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return width * 0.08;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return width * 0.15;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return width * 0.1;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return width * 0.15;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return width * 0.1;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return width * 0.09;
   }
 
@@ -248,58 +261,58 @@ export default function AccountScreen() {
     const { width, height } = Dimensions.get('window');
 
     // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.32;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.32;
-  }
+    if (Platform.OS === 'ios' && height >= 940) {
+      return height * 0.32;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return height * 0.32;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return height * 0.23;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return height * 0.23;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return height * 0.32;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return height * 0.30;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return height * 0.32;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return height * 0.30;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return height * 0.3;
   }
 
   const getShareLeftPosition = () => {
     const { width, height } = Dimensions.get('window');
   
-  // iphone 16 plus, iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 920) {
-    return width * 0.57;
-  }
+    // iphone 16 plus, iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 920) {
+      return width * 0.57;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return width * 0.57;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return width * 0.57;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return width * 0.57;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return width * 0.58;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return width * 0.57;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return width * 0.58;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return width * 0.6;
   }
 
@@ -307,58 +320,58 @@ export default function AccountScreen() {
     const { width, height } = Dimensions.get('window');
 
     // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.21;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.21;
-  }
+    if (Platform.OS === 'ios' && height >= 940) {
+      return height * 0.21;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return height * 0.21;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return height * 0.08;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return height * 0.08;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return height * 0.21;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return height * 0.19;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return height * 0.21;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return height * 0.19;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return height * 0.18;
   }
 
   const getRateLeftPosition = () => {
     const { width, height } = Dimensions.get('window');
   
-  // iphone 16 plus, iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 920) {
-    return width * 0.55;
-  }
+    // iphone 16 plus, iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 920) {
+      return width * 0.55;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return width * 0.56;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return width * 0.56;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return width * 0.56;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return width * 0.565;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return width * 0.56;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return width * 0.565;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return width * 0.56;
   }
 
@@ -366,58 +379,58 @@ export default function AccountScreen() {
     const { width, height } = Dimensions.get('window');
 
     // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.18;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.18;
-  }
+    if (Platform.OS === 'ios' && height >= 940) {
+      return height * 0.18;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return height * 0.18;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return height * 0.06;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return height * 0.06;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return height * 0.19;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return height * 0.16;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return height * 0.19;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return height * 0.16;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return height * 0.15;
   }
 
   const getWebsiteLeftPosition = () => {
     const { width, height } = Dimensions.get('window');
   
-  // iphone 16 plus, iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 920) {
-    return width * 0.13;
-  }
+    // iphone 16 plus, iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 920) {
+      return width * 0.13;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return width * 0.1;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return width * 0.1;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return width * 0.15;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return width * 0.13;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return width * 0.15;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return width * 0.13;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return width * 0.12;
   }
 
@@ -425,58 +438,58 @@ export default function AccountScreen() {
     const { width, height } = Dimensions.get('window');
 
     // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return height * 0.11;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return height * 0.11;
-  }
+    if (Platform.OS === 'ios' && height >= 940) {
+      return height * 0.11;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return height * 0.11;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return -23;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return -23;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return height * 0.14;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return height * 0.1;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return height * 0.14;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return height * 0.1;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return height * 0.09;
   }
 
   const getStemLeftPosition = () => {
     const { width, height } = Dimensions.get('window');
   
-  // iphone 16 plus, iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 920) {
-    return width * 0.13;
-  }
+    // iphone 16 plus, iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 920) {
+      return width * 0.13;
+    }
 
-  // iphone se
-  if (Platform.OS === 'ios' && height < 670) {
-    return width * 0.08;
-  }
+    // iphone se
+    if (Platform.OS === 'ios' && height < 670) {
+      return width * 0.08;
+    }
 
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return width * 0.1;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return width * 0.09;
-  }
-  
-  // iphone 16, iphone 16 plus, Pixel 7 Pro, 
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return width * 0.1;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return width * 0.09;
+    }
+    
+    // iphone 16, iphone 16 plus, Pixel 7 Pro, 
     return width * 0.09;
   }
 
@@ -493,7 +506,7 @@ export default function AccountScreen() {
   const MainContent = (
     <>
       <View style={[styles.topBar, { paddingTop: topPadding }]}> 
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleSignOut}>
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleToggle} activeOpacity={0.8} style={styles.switchContainer}>
@@ -644,6 +657,12 @@ export default function AccountScreen() {
       </View>
     </>
   );
+
+  // if (showLoadingPage) {
+  //   return (
+  //     <DeckCreationLoadingPage progress={loadingProgress} current={loadingCurrent} total={loadingTotal} />
+  //   );
+  // }
 
   return (
     <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim }}>

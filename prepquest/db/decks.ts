@@ -1,4 +1,6 @@
 import { db } from './index';
+import * as FileSystem from 'expo-file-system';
+import { Asset } from 'expo-asset';
 
 export interface Deck {
   deckID: number;
@@ -767,7 +769,7 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
     `, [deckId, deckId]);
 
     const totalFlashcards = (totalResult as { total: number }).total;
-
+    
     // Update totalFlashcards in the result
     grade.totalFlashcards = totalFlashcards;
 
@@ -1073,6 +1075,10 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
         const questionBlobHex = aiFlashcard.questionBlob ? `X'${Array.from(aiFlashcard.questionBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
         const answerBlobHex = aiFlashcard.answerBlob ? `X'${Array.from(aiFlashcard.answerBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
         
+        console.log('Question blob hex length:', questionBlobHex !== 'NULL' ? questionBlobHex.length - 3 : 0);
+        console.log('Answer blob hex length:', answerBlobHex !== 'NULL' ? answerBlobHex.length - 3 : 0);
+        
+        // Insert the flashcard
         await db.execAsync(`
           INSERT INTO flashcards (
             deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
@@ -1087,6 +1093,8 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
             ${aiFlashcard.lastQuizzedDate ? `'${aiFlashcard.lastQuizzedDate}'` : 'NULL'}
           )
         `);
+        
+        console.log(`Inserted flashcard with questionType: ${aiFlashcard.questionType}, answerType: ${aiFlashcard.answerType}`);
       }
       
       // 6. Delete all AI flashcards from AIFlashcards table
@@ -1266,6 +1274,44 @@ export async function createManualDeck(formData: {
   }
 }
 
+// Helper function to convert URI to blob
+async function uriToBlob(uri: string): Promise<Uint8Array | null> {
+  try {
+    // Handle data URIs (like SVG data URIs)
+    if (uri.startsWith('data:')) {
+      // Extract base64 data from data URI
+      const base64Data = uri.split(',')[1];
+      if (!base64Data) {
+        console.error('Invalid data URI format');
+        return null;
+      }
+      
+      // Convert base64 to Uint8Array
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    }
+    
+    // Handle file URIs
+    const fileContent = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    // Convert base64 to Uint8Array
+    const binaryString = atob(fileContent);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  } catch (error) {
+    console.error('Error converting URI to blob:', error);
+    return null;
+  }
+}
+
 export async function createFlashcardsFromCache(deckId: number, cardCache: any[]): Promise<{ success: boolean; flashcardCount?: number }> {
   try {
     // Start a transaction to ensure data consistency
@@ -1296,14 +1342,43 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             questionType = 'text';
             questionText = extractTextFromContent(frontContent.content);
           } else if (frontContent.type === 'camera' && frontContent.content) {
+            console.log('frontContent.content', frontContent.content);
             questionType = 'image';
-            questionBlob = frontContent.content; // This should be a blob
+            // Convert image URI to blob
+            questionBlob = await uriToBlob(frontContent.content.props.source.uri);
           } else if (frontContent.type === 'mic' && frontContent.audioUri) {
             questionType = 'audio';
-            questionBlob = frontContent.audioUri; // This should be a blob
+            // Convert audio URI to blob
+            questionBlob = await uriToBlob(frontContent.audioUri);
           } else if (frontContent.type === 'marker' && frontContent.content) {
+            console.log('Processing front drawing content:', frontContent.content);
             questionType = 'image';
-            questionBlob = frontContent.content; // Drawing content as blob
+            // Convert drawing data to image, then to blob
+            const drawingRenderer = frontContent.content as React.ReactElement<{ drawingData: { path: string; strokeWidth: number }[] }>;
+            console.log('Drawing renderer props:', drawingRenderer.props);
+            if (drawingRenderer.props.drawingData) {
+              console.log('Drawing data found:', drawingRenderer.props.drawingData);
+              // Convert drawing data to SVG string
+              const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+                ${drawingRenderer.props.drawingData.map(pathData => 
+                  `<path d="${pathData.path}" stroke="black" stroke-width="${pathData.strokeWidth}" fill="none"/>`
+                ).join('')}
+              </svg>`;
+              
+              console.log('Generated SVG string:', svgString);
+              
+              // Convert SVG to base64 data URI
+              const base64Svg = btoa(svgString);
+              const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
+              
+              console.log('Generated data URI:', dataUri);
+              
+              // Convert data URI to blob
+              questionBlob = await uriToBlob(dataUri);
+              console.log('Generated question blob:', questionBlob ? questionBlob.length : 'null');
+            } else {
+              console.log('No drawing data found in front content');
+            }
           }
           
           // Process back content (answer)
@@ -1311,19 +1386,51 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             answerType = 'text';
             answerText = extractTextFromContent(backContent.content);
           } else if (backContent.type === 'camera' && backContent.content) {
+            console.log('backContent.content', backContent.content);
             answerType = 'image';
-            answerBlob = backContent.content; // This should be a blob
+            // Convert image URI to blob
+            answerBlob = await uriToBlob(backContent.content.props.source.uri);
           } else if (backContent.type === 'mic' && backContent.audioUri) {
             answerType = 'audio';
-            answerBlob = backContent.audioUri; // This should be a blob
+            // Convert audio URI to blob
+            answerBlob = await uriToBlob(backContent.audioUri);
           } else if (backContent.type === 'marker' && backContent.content) {
+            console.log('Processing back drawing content:', backContent.content);
             answerType = 'image';
-            answerBlob = backContent.content; // Drawing content as blob
+            // Convert drawing data to image, then to blob
+            const drawingRenderer = backContent.content as React.ReactElement<{ drawingData: { path: string; strokeWidth: number }[] }>;
+            console.log('Back drawing renderer props:', drawingRenderer.props);
+            if (drawingRenderer.props.drawingData) {
+              console.log('Back drawing data found:', drawingRenderer.props.drawingData);
+              // Convert drawing data to SVG string
+              const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+                ${drawingRenderer.props.drawingData.map(pathData => 
+                  `<path d="${pathData.path}" stroke="black" stroke-width="${pathData.strokeWidth}" fill="none"/>`
+                ).join('')}
+              </svg>`;
+              
+              console.log('Generated back SVG string:', svgString);
+              
+              // Convert SVG to base64 data URI
+              const base64Svg = btoa(svgString);
+              const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
+              
+              console.log('Generated back data URI:', dataUri);
+              
+              // Convert data URI to blob
+              answerBlob = await uriToBlob(dataUri);
+              console.log('Generated answer blob:', answerBlob ? answerBlob.length : 'null');
+            } else {
+              console.log('No drawing data found in back content');
+            }
           }
           
           // Convert blobs to hex format for SQLite
-          const questionBlobHex = questionBlob ? `X'${Array.from(questionBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
-          const answerBlobHex = answerBlob ? `X'${Array.from(answerBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+          const questionBlobHex = questionBlob ? `X'${Array.from(questionBlob).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+          const answerBlobHex = answerBlob ? `X'${Array.from(answerBlob).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
+          
+          console.log('Question blob hex length:', questionBlobHex !== 'NULL' ? questionBlobHex.length - 3 : 0);
+          console.log('Answer blob hex length:', answerBlobHex !== 'NULL' ? answerBlobHex.length - 3 : 0);
           
           // Insert the flashcard
           await db.execAsync(`
@@ -1338,6 +1445,8 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
               NULL, NULL, NULL, NULL
             )
           `);
+          
+          console.log(`Inserted flashcard with questionType: ${questionType}, answerType: ${answerType}`);
           
           flashcardCount++;
         }

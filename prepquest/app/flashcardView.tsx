@@ -135,72 +135,62 @@ const getTimeLimit = async (difficultyRating: string, answerType?: string): Prom
   }
 };
 
-// Function to convert blob to image source
-const blobToImageSource = (blob: Uint8Array | string): any => {
+// Helper function to extract SVG paths from blob data
+const extractSVGFromBlob = (blob: string | Uint8Array): { paths: Array<{ d: string; stroke: string; strokeWidth: string; fill: string }>; viewBox: string } | null => {
   try {
-    // Handle hex string from SQLite BLOB (like in favorites page)
+    let base64String: string;
+    
     if (typeof blob === 'string') {
-      // Check if it's a hex string (from SQLite hex() function)
+      // Handle hex string from SQLite
       if (/^[0-9A-Fa-f]+$/.test(blob)) {
-        // Convert hex to base64 using a proper approach for binary data
-        const hexString = blob;
-        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
-        
-        // Convert to base64 using a proper binary-to-base64 conversion
-        const base64String = arrayBufferToBase64(bytes.buffer);
-        
-        return { uri: `data:image/png;base64,${base64String}` };
+        const bytes = new Uint8Array(blob.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+        base64String = arrayBufferToBase64(bytes.buffer);
       } else if (blob.startsWith('data:')) {
-        // Already a data URI
-        return { uri: blob };
+        // Already a data URI, extract base64
+        const base64Match = blob.match(/data:image\/svg\+xml;base64,(.+)/);
+        if (base64Match) {
+          base64String = base64Match[1];
+        } else {
+          return null;
+        }
       } else {
-        // Try as file path or URL
-        return { uri: blob };
+        return null;
       }
     } else if (blob instanceof Uint8Array) {
-      // Handle Uint8Array blob using proper binary-to-base64 conversion
-      const base64String = arrayBufferToBase64(blob.buffer);
-      return { uri: `data:image/png;base64,${base64String}` };
+      base64String = arrayBufferToBase64(blob.buffer);
+    } else {
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error('Error converting blob to image source:', error);
-    return null;
-  }
-};
 
-// Function to convert blob to audio source
-const blobToAudioSource = (blob: Uint8Array | string): any => {
-  try {
-    // Handle hex string from SQLite BLOB (like in favorites page)
-    if (typeof blob === 'string') {
-      // Check if it's a hex string (from SQLite hex() function)
-      if (/^[0-9A-Fa-f]+$/.test(blob)) {
-        // Convert hex to base64 using a proper approach for binary data
-        const hexString = blob;
-        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
-        
-        // Convert to base64 using a proper binary-to-base64 conversion
-        const base64String = arrayBufferToBase64(bytes.buffer);
-        
-        return { uri: `data:audio/mp4;base64,${base64String}` };
-      } else if (blob.startsWith('data:')) {
-        // Already a data URI
-        return { uri: blob };
-      } else {
-        // Try as file path or URL
-        return { uri: blob };
+    // Decode base64 to get SVG string
+    const decodedString = atob(base64String);
+    
+    // Check if it's actually SVG content
+    if (decodedString.includes('<svg') || decodedString.includes('<?xml')) {
+      // Extract viewBox
+      const viewBoxMatch = decodedString.match(/viewBox="([^"]+)"/);
+      const viewBox = viewBoxMatch ? viewBoxMatch[1] : '0 0 400 300';
+
+      // Extract paths using regex
+      const pathRegex = /<path[^>]*d="([^"]*)"[^>]*stroke="([^"]*)"[^>]*stroke-width="([^"]*)"[^>]*fill="([^"]*)"[^>]*\/>/g;
+      const paths: Array<{ d: string; stroke: string; strokeWidth: string; fill: string }> = [];
+      let match;
+
+      while ((match = pathRegex.exec(decodedString)) !== null) {
+        paths.push({
+          d: match[1] || '',
+          stroke: match[2] || 'black',
+          strokeWidth: match[3] || '1',
+          fill: match[4] || 'none'
+        });
       }
-    } else if (blob instanceof Uint8Array) {
-      // Handle Uint8Array blob using proper binary-to-base64 conversion
-      const base64String = arrayBufferToBase64(blob.buffer);
-      return { uri: `data:audio/mp4;base64,${base64String}` };
+
+      return { paths, viewBox };
     }
-    return null;
   } catch (error) {
-    console.error('Error converting blob to audio source:', error);
-    return null;
+    console.error('Error extracting SVG from blob:', error);
   }
+  return null;
 };
 
 // Helper function to convert ArrayBuffer to base64
@@ -212,6 +202,145 @@ const arrayBufferToBase64 = (buffer: ArrayBufferLike): string => {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
+};
+
+// Cache for blob conversions to avoid expensive reprocessing
+const blobCache = new Map<string, any>();
+const MAX_CACHE_SIZE = 50; // Limit cache to 50 entries
+
+// Function to clear blob cache to manage memory
+const clearBlobCache = () => {
+  blobCache.clear();
+  console.log('Blob cache cleared');
+};
+
+// Function to add to cache with size limit
+const addToCache = (key: string, value: any) => {
+  // If cache is full, remove oldest entries
+  if (blobCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = blobCache.keys().next().value;
+    if (firstKey) {
+      blobCache.delete(firstKey);
+    }
+  }
+  blobCache.set(key, value);
+};
+
+// Function to convert blob to image source with caching
+const blobToImageSource = (blob: Uint8Array | string): any => {
+  try {
+    // Create a cache key from the blob
+    const cacheKey = typeof blob === 'string' ? blob : Array.from(blob).join(',');
+    
+    // Check if we have this blob cached
+    if (blobCache.has(cacheKey)) {
+      return blobCache.get(cacheKey);
+    }
+
+    let result: any = null;
+
+    // Handle hex string from SQLite BLOB (like in favorites page)
+    if (typeof blob === 'string') {
+      // Check if it's a hex string (from SQLite hex() function)
+      if (/^[0-9A-Fa-f]+$/.test(blob)) {
+        // Convert hex to base64 using a proper approach for binary data
+        const hexString = blob;
+        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+        
+        // Convert to base64 using a proper binary-to-base64 conversion
+        const base64String = arrayBufferToBase64(bytes.buffer);
+        
+        // Check if the blob contains SVG data by looking for SVG markers
+        const decodedString = atob(base64String);
+        if (decodedString.includes('<svg') || decodedString.includes('<?xml')) {
+          // It's SVG data, preserve SVG MIME type
+          result = { uri: `data:image/svg+xml;base64,${base64String}` };
+        } else {
+          // It's regular image data, use PNG MIME type
+          result = { uri: `data:image/png;base64,${base64String}` };
+        }
+      } else if (blob.startsWith('data:')) {
+        // Already a data URI
+        result = { uri: blob };
+      } else {
+        // Try as file path or URL
+        result = { uri: blob };
+      }
+    } else if (blob instanceof Uint8Array) {
+      // Handle Uint8Array blob using proper binary-to-base64 conversion
+      const base64String = arrayBufferToBase64(blob.buffer);
+      
+      // Check if the blob contains SVG data
+      const decodedString = atob(base64String);
+      if (decodedString.includes('<svg') || decodedString.includes('<?xml')) {
+        // It's SVG data, preserve SVG MIME type
+        result = { uri: `data:image/svg+xml;base64,${base64String}` };
+      } else {
+        // It's regular image data, use PNG MIME type
+        result = { uri: `data:image/png;base64,${base64String}` };
+      }
+    }
+
+    // Cache the result if we have one
+    if (result) {
+      addToCache(cacheKey, result);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error converting blob to image source:', error);
+    return null;
+  }
+};
+
+// Function to convert blob to audio source
+const blobToAudioSource = (blob: Uint8Array | string): any => {
+  try {
+    // Create a cache key from the blob
+    const cacheKey = `audio_${typeof blob === 'string' ? blob : Array.from(blob).join(',')}`;
+    
+    // Check if we have this blob cached
+    if (blobCache.has(cacheKey)) {
+      return blobCache.get(cacheKey);
+    }
+
+    let result: any = null;
+
+    // Handle hex string from SQLite BLOB (like in favorites page)
+    if (typeof blob === 'string') {
+      // Check if it's a hex string (from SQLite hex() function)
+      if (/^[0-9A-Fa-f]+$/.test(blob)) {
+        // Convert hex to base64 using a proper approach for binary data
+        const hexString = blob;
+        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+        
+        // Convert to base64 using a proper binary-to-base64 conversion
+        const base64String = arrayBufferToBase64(bytes.buffer);
+        
+        result = { uri: `data:audio/mp4;base64,${base64String}` };
+      } else if (blob.startsWith('data:')) {
+        // Already a data URI
+        result = { uri: blob };
+      } else {
+        // Try as file path or URL
+        result = { uri: blob };
+      }
+    } else if (blob instanceof Uint8Array) {
+      // Handle Uint8Array blob using proper binary-to-base64 conversion
+      const base64String = arrayBufferToBase64(blob.buffer);
+      result = { uri: `data:audio/mp4;base64,${base64String}` };
+    }
+
+    // Cache the result if we have one
+    if (result) {
+      addToCache(cacheKey, result);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error converting blob to audio source:', error);
+    return null;
+  }
 };
 
 // Function to load flashcards from database
@@ -379,8 +508,8 @@ const copyAssetToClipboard = async (imageSource: any) => {
         }
       } else {
         // For file paths or URLs, use Asset.fromURI
-        const asset = Asset.fromURI(imageSource);
-        await asset.downloadAsync();
+      const asset = Asset.fromURI(imageSource);
+      await asset.downloadAsync();
         const localUri = asset.localUri || asset.uri;
         
         // Convert image to base64
@@ -395,19 +524,19 @@ const copyAssetToClipboard = async (imageSource: any) => {
         const base64Match = imageSource.uri.match(/data:image\/[^;]+;base64,(.+)/);
         if (base64Match) {
           base64Data = base64Match[1];
-        } else {
+    } else {
           throw new Error('Invalid data URI format');
-        }
+    }
       } else {
         // For file paths or URLs
         const asset = Asset.fromURI(imageSource.uri);
         await asset.downloadAsync();
         const localUri = asset.localUri || asset.uri;
-        
-        // Convert image to base64
+    
+    // Convert image to base64
         base64Data = await FileSystem.readAsStringAsync(localUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+      encoding: FileSystem.EncodingType.Base64,
+    });
       }
     } else {
       throw new Error('Unsupported image source type');
@@ -1532,11 +1661,42 @@ const FlippableFlashcard = (
                 </ScrollView>
               )}
               {flashcardQnType === 'image' && !!flashcardQn && (
+                (() => {
+                  // Check if this is SVG content by examining the source
+                  const source = flashcardQn as any;
+                  if (source && source.uri && source.uri.startsWith('data:image/svg+xml')) {
+                    // It's SVG content, extract and render
+                    const svgData = extractSVGFromBlob(source.uri);
+                    if (svgData && svgData.paths.length > 0) {
+                      return (
+                        <View style={styles.middleImage}>
+                          <Svg width="100%" height="100%" viewBox={svgData.viewBox}>
+                            {svgData.paths.map((path, index) => (
+                              <Path
+                                key={index}
+                                d={path.d}
+                                stroke={path.stroke}
+                                strokeWidth={path.strokeWidth}
+                                fill={path.fill}
+                              />
+                            ))}
+                          </Svg>
+                        </View>
+                      );
+                    } else {
+                      return null;
+                    }
+                  } else {
+                    // It's regular image content, use Image component
+                    return (
                 <Image
                   source={flashcardQn as ImageSourcePropType}
                   style={styles.middleImage}
                   resizeMode="contain"
                 />
+                    );
+                  }
+                })()
               )}
               {flashcardQnType === 'audio' && !!flashcardQn && (
                 <View style={styles.audioContainer}>
@@ -1779,11 +1939,42 @@ const FlippableFlashcard = (
                 </View>
               )}
               {flashcardAnswerType === 'image' && !!flashcardAnswer && (
+                (() => {
+                  // Check if this is SVG content by examining the source
+                  const source = flashcardAnswer as any;
+                  if (source && source.uri && source.uri.startsWith('data:image/svg+xml')) {
+                    // It's SVG content, extract and render
+                    const svgData = extractSVGFromBlob(source.uri);
+                    if (svgData && svgData.paths.length > 0) {
+                      return (
+                        <View style={styles.middleImage}>
+                          <Svg width="100%" height="100%" viewBox={svgData.viewBox}>
+                            {svgData.paths.map((path, index) => (
+                              <Path
+                                key={index}
+                                d={path.d}
+                                stroke={path.stroke}
+                                strokeWidth={path.strokeWidth}
+                                fill={path.fill}
+                              />
+                            ))}
+                          </Svg>
+                        </View>
+                      );
+                    } else {
+                      return null;
+                    }
+                  } else {
+                    // It's regular image content, use Image component
+                    return (
                 <Image
                   source={flashcardAnswer}
                   style={styles.middleImage}
                   resizeMode="contain"
                 />
+                    );
+                  }
+                })()
               )}
               {flashcardAnswerType === 'audio' && !!flashcardAnswer && (
                 <View style={styles.audioContainer}>
@@ -2275,7 +2466,7 @@ export default function FlashcardViewPage() {
       setRecordedAudioUri(null);
 
       // Close the delete modal
-      handleDismissDeleteModal();
+    handleDismissDeleteModal();
       
     } catch (error) {
       console.error('Error deleting flashcard:', error);
@@ -2479,10 +2670,24 @@ export default function FlashcardViewPage() {
     if (isFlipped) {
       // Back side
       const answerType = currentFlashcard?.flashcardAnswerType;
+      if (answerType === 'image') {
+        // Check if it's SVG content
+        const answer = currentFlashcard?.flashcardAnswer as any;
+        if (answer && answer.uri && answer.uri.startsWith('data:image/svg+xml')) {
+          return false; // Disable copy for SVG images
+        }
+      }
       return answerType === 'text' || answerType === 'mcq' || answerType === 'image';
     } else {
       // Front side
       const questionType = currentFlashcard?.flashcardQnType;
+      if (questionType === 'image') {
+        // Check if it's SVG content
+        const question = currentFlashcard?.flashcardQn as any;
+        if (question && question.uri && question.uri.startsWith('data:image/svg+xml')) {
+          return false; // Disable copy for SVG images
+        }
+      }
       return questionType === 'text' || questionType === 'image';
     }
   };
@@ -2515,6 +2720,7 @@ export default function FlashcardViewPage() {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (appState.current.match(/active|foreground/) && nextAppState === 'background') {
         await stopSpeech();
+        clearBlobCache(); // Clear blob cache when app goes to background
       }
       appState.current = nextAppState;
     };
@@ -2685,16 +2891,16 @@ export default function FlashcardViewPage() {
         </Text>
         {isQuizMode && (
           <>
-            <TouchableOpacity
-              style={{
-                width: 318,
-                height: 72,
-                borderRadius: 30,
-                alignItems: 'center',
-                justifyContent: 'center',
+          <TouchableOpacity
+          style={{
+            width: 318,
+            height: 72,
+            borderRadius: 30,
+            alignItems: 'center',
+            justifyContent: 'center',
                 backgroundColor: '#4F41D8',
-                marginBottom: 20,
-              }}
+            marginBottom: 20,
+          }}
               onPress={() => router.replace({
                 pathname: '/flashcardView',
                 params: { 
@@ -2707,12 +2913,12 @@ export default function FlashcardViewPage() {
                   retryDifficult: 'true'
                 },
               })}
-            >
-              <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+        >
+          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
                 Retry difficult flashcards?
-              </Text>
-            </TouchableOpacity>
-          <TouchableOpacity
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={{
             width: 318,
             height: 72,
@@ -2761,38 +2967,38 @@ export default function FlashcardViewPage() {
   if (showQuizCountdown) {
     return (
       <View style={styles.safeArea}>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={{
-            flex: 1,
-            backgroundColor: '#fff',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            {/* Back button at top left */}
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <AntDesign name="arrowleft" size={32} color="black" />
-            </TouchableOpacity>
-            {/* Quiz starting text */}
-            <Text style={{
-              fontFamily: 'Satoshi-Medium',
-              fontSize: 28,
-              color: '#222',
-              marginBottom: 24,
-              textAlign: 'center',
-            }}>
-              Quiz starting in...
-            </Text>
-            <LottieView
-              source={require('@/assets/animations/CountdownAnimation.json')}
-              autoPlay
-              loop={false}
-              style={{ width: 200, height: 200 }}
-            />
-          </View>
-        </SafeAreaView>
+      <SafeAreaView style={styles.safeArea}>
+      <View style={{
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        {/* Back button at top left */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <AntDesign name="arrowleft" size={32} color="black" />
+        </TouchableOpacity>
+        {/* Quiz starting text */}
+        <Text style={{
+          fontFamily: 'Satoshi-Medium',
+          fontSize: 28,
+          color: '#222',
+          marginBottom: 24,
+          textAlign: 'center',
+        }}>
+          Quiz starting in...
+        </Text>
+        <LottieView
+          source={require('@/assets/animations/CountdownAnimation.json')}
+          autoPlay
+          loop={false}
+          style={{ width: 200, height: 200 }}
+        />
+      </View>
+      </SafeAreaView>
       </View>
     );
   }

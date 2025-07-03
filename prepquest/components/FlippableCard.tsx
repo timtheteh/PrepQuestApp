@@ -497,7 +497,14 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       setBackContent(null);
     },
     hasContent: () => {
-      return frontContent !== null && backContent !== null;
+      // Check if both front and back content exist
+      const hasFrontContent = frontContent !== null && (
+        frontContent.type === 'mic' ? frontContent.audioUri !== null : frontContent.content !== null
+      );
+      const hasBackContent = backContent !== null && (
+        backContent.type === 'mic' ? backContent.audioUri !== null : backContent.content !== null
+      );
+      return hasFrontContent && hasBackContent;
     },
     getCurrentContent: () => {
       return isFlipped ? backContent : frontContent;

@@ -27,6 +27,7 @@ import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import LottieView from 'lottie-react-native';
 import { createManualDeck, createFlashcardsFromCache, checkDeckNameExists, getMostRecentManualFormEntry } from '../db/decks';
 import { Toast } from '../components/Toast';
+import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -148,6 +149,10 @@ export default function ManualAddDeckPage() {
   const [incompleteCardNumber, setIncompleteCardNumber] = useState<number>(0);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [loadingProgress, setLoadingProgress] = React.useState(0);
+  const [loadingCurrent, setLoadingCurrent] = React.useState(0);
+  const [loadingTotal, setLoadingTotal] = React.useState(0);
+  const [showLoadingPage, setShowLoadingPage] = React.useState(false);
 
   // Cache for storing all created cards
   interface CachedCard {
@@ -512,10 +517,16 @@ export default function ManualAddDeckPage() {
     const hasCards = submittedCards.length >= 1;
 
     // Check if all submitted cards have both front and back content
-    const allCardsComplete = submittedCards.every(card => 
-      card.frontContent && card.backContent && 
-      card.frontContent.content && card.backContent.content
-    );
+    const allCardsComplete = submittedCards.every(card => {
+      // Check if both front and back content exist
+      const hasFrontContent = card.frontContent && (
+        card.frontContent.type === 'mic' ? card.frontContent.audioUri : card.frontContent.content
+      );
+      const hasBackContent = card.backContent && (
+        card.backContent.type === 'mic' ? card.backContent.audioUri : card.backContent.content
+      );
+      return hasFrontContent && hasBackContent;
+    });
 
     // Check if deck name already exists
     if (deckName.trim() !== '') {
@@ -572,10 +583,16 @@ export default function ManualAddDeckPage() {
     // Error 4: mandatory fields filled up and has cards BUT not all cards have content
     if (mandatoryFieldsFilled && hasCards && !allCardsComplete) {
       // Find the first incomplete card
-      const incompleteCard = submittedCards.find(card => 
-        !card.frontContent || !card.backContent || 
-        !card.frontContent.content || !card.backContent.content
-      );
+      const incompleteCard = submittedCards.find(card => {
+        // Check if both front and back content exist
+        const hasFrontContent = card.frontContent && (
+          card.frontContent.type === 'mic' ? card.frontContent.audioUri : card.frontContent.content
+        );
+        const hasBackContent = card.backContent && (
+          card.backContent.type === 'mic' ? card.backContent.audioUri : card.backContent.content
+        );
+        return !hasFrontContent || !hasBackContent;
+      });
       if (incompleteCard) {
         setIncompleteCardNumber(incompleteCard.cardNumber);
         setErrorMessage(`You have missing question/answer\ndata for card ${incompleteCard.cardNumber}`);
@@ -1202,7 +1219,6 @@ export default function ManualAddDeckPage() {
   };
 
   const handleSuccessConfirm = async () => {
-    // Animate out first, then navigate
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -1216,10 +1232,8 @@ export default function ManualAddDeckPage() {
       })
     ]).start(() => {
       setIsSuccessModalOpen(false);
-      // Navigate after animation completes
       setTimeout(async () => {
         if (isInIndexPage === 'true') {
-          // Create the deck in the database
           const formData = {
             deckName,
             mode: mode as 'study' | 'interview',
@@ -1230,21 +1244,25 @@ export default function ManualAddDeckPage() {
             interviewMandatoryQuestion2,
             interviewType
           };
-          
+          const submittedCards = getSubmittedCards();
+          setLoadingTotal(submittedCards.length);
+          setLoadingCurrent(0);
+          setLoadingProgress(0);
+          setShowLoadingPage(true);
           const deckResult = await createManualDeck(formData);
           if (deckResult.success && deckResult.deckId) {
-            console.log('Successfully created deck with ID:', deckResult.deckId);
-            
-            // Create flashcards from the card cache
-            const submittedCards = getSubmittedCards();
-            if (submittedCards.length > 0) {
-              const flashcardResult = await createFlashcardsFromCache(deckResult.deckId, submittedCards);
-              if (flashcardResult.success) {
-                console.log('Successfully created', flashcardResult.flashcardCount, 'flashcards');
-              } else {
-                console.error('Failed to create flashcards');
-              }
+            let createdCount = 0;
+            for (let i = 0; i < submittedCards.length; i++) {
+              await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
+              createdCount++;
+              setLoadingCurrent(createdCount);
+              setLoadingProgress(createdCount / submittedCards.length);
             }
+            setTimeout(() => {
+              setShowLoadingPage(false);
+              router.back();
+            }, 800);
+            return;
           } else {
             console.error('Failed to create deck');
           }
@@ -1253,6 +1271,12 @@ export default function ManualAddDeckPage() {
       }, 50);
     });
   };
+
+  if (showLoadingPage) {
+    return (
+      <DeckCreationLoadingPage progress={loadingProgress} current={loadingCurrent} total={loadingTotal} />
+    );
+  }
 
   return (
     <View style={styles.container}>

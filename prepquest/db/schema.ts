@@ -82,7 +82,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         formEntryMethod TEXT CHECK (formEntryMethod IN ('manual', 'genAIForm', 'fileUpload', 'youtubeLink')),
         formSubmissionDate TEXT NOT NULL,
         deckName TEXT NOT NULL,
-        numberOfQuestions INTEGER NOT NULL,
+        numberOfQuestions INTEGER,
         kindsOfQuestions TEXT,
         youtubeLink TEXT,
         studyEducationLevel TEXT,
@@ -94,11 +94,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         interviewType TEXT,
         interviewCompany TEXT,
         interviewExperienceLevel TEXT,
-        interviewTopics TEXT,
-        isInFavoritesPage INTEGER DEFAULT 0,
-        isInIndexPage INTEGER DEFAULT 0,
-        isInViewFlashcardsPage INTEGER DEFAULT 0,
-        isInViewDecksInFolderPage INTEGER DEFAULT 0
+        interviewTopics TEXT
       )
     `);
 

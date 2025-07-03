@@ -1196,6 +1196,48 @@ export async function createManualDeck(formData: {
       const newDeckIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as newDeckId');
       const newDeckId = (newDeckIdResult as any).newDeckId;
       
+      // Insert into userFormEntries table
+      let studyEducationLevelForm = null;
+      let studySubjectsForm = null;
+      let studyExamForm = null;
+      let interviewJobRoleForm = null;
+      let interviewTypeForm = null;
+      let interviewExperienceLevelForm = null;
+      
+      if (formData.mode === 'study') {
+        studyEducationLevelForm = formData.studyMandatoryQuestion1 || null;
+        // Convert comma-separated string to JSON array for form entry
+        if (formData.studyMandatoryQuestion2) {
+          const subjects = formData.studyMandatoryQuestion2.split(',').map(s => s.trim());
+          studySubjectsForm = JSON.stringify(subjects);
+        }
+        studyExamForm = formData.studyMandatoryQuestion3 || null;
+      } else if (formData.mode === 'interview') {
+        interviewJobRoleForm = formData.interviewMandatoryQuestion1 || null;
+        interviewTypeForm = formData.interviewType || null;
+        interviewExperienceLevelForm = formData.interviewMandatoryQuestion2 || null;
+      }
+      
+      await db.execAsync(`
+        INSERT INTO userFormEntries (
+          formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
+          youtubeLink, studyEducationLevel, studySubjects, studyTopics, studySubtopics, studyExam,
+          interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics
+        ) VALUES (
+          '${formData.mode}', 'manual', '${currentDate}', '${formData.deckName.replace(/'/g, "''")}', NULL, NULL,
+          NULL, 
+          ${studyEducationLevelForm ? `'${studyEducationLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
+          ${studySubjectsForm ? `'${studySubjectsForm.replace(/'/g, "''")}'` : 'NULL'}, 
+          NULL, NULL, 
+          ${studyExamForm ? `'${studyExamForm.replace(/'/g, "''")}'` : 'NULL'},
+          ${interviewJobRoleForm ? `'${interviewJobRoleForm.replace(/'/g, "''")}'` : 'NULL'}, 
+          ${interviewTypeForm ? `'${interviewTypeForm.replace(/'/g, "''")}'` : 'NULL'}, 
+          NULL, 
+          ${interviewExperienceLevelForm ? `'${interviewExperienceLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
+          NULL
+        )
+      `);
+      
       // Update user statistics
       await db.execAsync(`
         UPDATE users 
@@ -1363,4 +1405,26 @@ function extractTextFromContent(content: any): string {
   }
   
   return '';
+}
+
+export async function getMostRecentManualFormEntry(mode: 'study' | 'interview'): Promise<any | null> {
+  try {
+    const result = await db.getFirstAsync(`
+      SELECT *
+      FROM userFormEntries
+      WHERE formEntryType = ? 
+        AND formEntryMethod = 'manual'
+      ORDER BY formSubmissionDate DESC
+      LIMIT 1
+    `, [mode]);
+
+    if (!result) {
+      return null;
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error fetching most recent manual form entry:', error);
+    return null;
+  }
 }

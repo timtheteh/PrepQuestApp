@@ -25,7 +25,7 @@ import EyeIcon from '@/assets/icons/eyeIcon.svg';
 import { CircleSelectButtonGreen } from '../components/CircleSelectButtonGreen';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import LottieView from 'lottie-react-native';
-import { createManualDeck, createFlashcardsFromCache, checkDeckNameExists } from '../db/decks';
+import { createManualDeck, createFlashcardsFromCache, checkDeckNameExists, getMostRecentManualFormEntry } from '../db/decks';
 import { Toast } from '../components/Toast';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
@@ -1654,10 +1654,45 @@ Next Card?"
         opacity={recentFormModalOpacity}
         text={['Use most recent', 'form entry?']}
         buttons='double'
-        onConfirm={() => {
+        onConfirm={async () => {
+          try {
+            // Fetch the most recent manual form entry for the current mode
+            const mostRecentEntry = await getMostRecentManualFormEntry(mode as 'study' | 'interview');
+            
+            if (mostRecentEntry) {
+              // Populate the form fields with the most recent entry
+              setDeckName(mostRecentEntry.deckName || '');
+              
+              if (mode === 'study') {
+                setStudyMandatoryQuestion1(mostRecentEntry.studyEducationLevel || '');
+                // Convert JSON array back to comma-separated string
+                if (mostRecentEntry.studySubjects) {
+                  try {
+                    const subjects = JSON.parse(mostRecentEntry.studySubjects);
+                    setStudyMandatoryQuestion2(Array.isArray(subjects) ? subjects.join(', ') : mostRecentEntry.studySubjects);
+                  } catch (error) {
+                    // If parsing fails, use the raw string
+                    setStudyMandatoryQuestion2(mostRecentEntry.studySubjects);
+                  }
+                } else {
+                  setStudyMandatoryQuestion2('');
+                }
+                setStudyMandatoryQuestion3(mostRecentEntry.studyExam || '');
+              } else if (mode === 'interview') {
+                setInterviewMandatoryQuestion1(mostRecentEntry.interviewJobRole || '');
+                setInterviewType(mostRecentEntry.interviewType || '');
+                setInterviewMandatoryQuestion2(mostRecentEntry.interviewExperienceLevel || '');
+              }
+              
+              console.log('Form populated with most recent manual entry:', mostRecentEntry);
+            } else {
+              console.log('No recent manual form entry found for mode:', mode);
+            }
+          } catch (error) {
+            console.error('Error loading most recent form entry:', error);
+          }
+          
           handleDismissRecentForm();
-          // TODO: Implement loading most recent form
-          console.log('Load most recent form');
         }}
         onCancel={handleDismissRecentForm}
       />

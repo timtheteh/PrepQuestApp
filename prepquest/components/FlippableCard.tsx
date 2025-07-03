@@ -865,7 +865,6 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       setIsRecording(true);
       console.log('Recording started');
     } catch (err) {
-      console.error('Failed to start recording', err);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image, Alert, AppState, AppStateStatus, ImageSourcePropType , Easing } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -62,6 +62,7 @@ interface TransformedFlashcard {
   timeLimit: number;
   cognitiveQnType: string;
   isFavorited: boolean;
+  isMcqAnswerRight: number | null; // Add this field to track MCQ correctness
 }
 
 // Function to get time limit based on difficulty rating
@@ -469,7 +470,8 @@ const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string, retr
         flashcardAnswer: transformedAnswer,
         timeLimit: timeLimit,
         cognitiveQnType: flashcard.cognitiveQnType,
-        isFavorited: flashcard.isFavorited === 1
+        isFavorited: flashcard.isFavorited === 1,
+        isMcqAnswerRight: flashcard.isMcqAnswerRight
       });
     }
     
@@ -2124,6 +2126,115 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
   );
 };
 
+// Loading Screen Component to avoid hooks in conditional render
+const LoadingScreen = ({ progress, current, total }: { progress: number; current: number; total: number }) => {
+  const percent = Math.round(progress * 100);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(progressAnim, {
+      toValue: progress,
+      useNativeDriver: false,
+      tension: 50,
+      friction: 7,
+    }).start();
+  }, [progress, progressAnim]);
+
+  const animatedWidth = useCallback(() => {
+    return progressAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+    });
+  }, [progressAnim]);
+
+  return (
+    <View style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={{
+          flex: 1,
+          backgroundColor: '#fff',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {/* Stacked image + Lottie animation */}
+          <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+            <Image
+              source={require('@/assets/images/loadingBackground.png')}
+              style={{ width: '100%', height: '100%', borderRadius: 24 }}
+              resizeMode="contain"
+              fadeDuration={0}
+            />
+            <LottieView
+              source={require('@/assets/animations/LoadingAnimation2.json')}
+              autoPlay
+              loop
+              style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}
+              cacheComposition={true}
+            />
+          </View>
+          {/* Text and progress below */}
+          <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
+            <Text style={{
+              fontFamily: 'Satoshi-Variable',
+              fontWeight: '700',
+              fontSize: 24,
+              color: '#000',
+              textAlign: 'center',
+              marginTop: 24,
+              marginBottom: 16,
+            }}>
+              Loading your flashcards...
+            </Text>
+            <View style={{
+              width: '100%',
+              marginTop: 8,
+              marginBottom: 8,
+              alignItems: 'center',
+            }}>
+              <View style={{
+                width: '100%',
+                height: 16,
+                backgroundColor: '#D5D4DD',
+                borderRadius: 8,
+                overflow: 'hidden',
+              }}>
+                <Animated.View 
+                  style={{
+                    height: '100%',
+                    backgroundColor: percent === 100 ? '#44B88A' : '#4F41D8',
+                    borderRadius: 8,
+                    width: animatedWidth(),
+                  }} 
+                />
+              </View>
+            </View>
+            <Text style={{
+              fontFamily: 'Satoshi-Variable',
+              fontWeight: '700',
+              fontSize: 24,
+              color: '#4F41D8',
+              textAlign: 'center',
+              marginTop: 4,
+              marginBottom: 4,
+            }}>
+              {percent}%
+            </Text>
+            <Text style={{
+              fontFamily: 'Satoshi-Medium',
+              fontSize: 14,
+              color: '#000',
+              textAlign: 'center',
+              marginTop: 2,
+            }}>
+              {`${current} out of ${total} Flashcards loaded`}
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+};
+
 export default function FlashcardViewPage() {
   const router = useRouter();
   const { deckID, flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam, isAIDeck: isAIDeckParam, retryDifficult: retryDifficultParam } = useLocalSearchParams();
@@ -2134,6 +2245,9 @@ export default function FlashcardViewPage() {
   // State for loaded flashcards from database
   const [flashcards, setFlashcards] = useState<TransformedFlashcard[]>([]);
   const [isLoadingFlashcards, setIsLoadingFlashcards] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingCurrent, setLoadingCurrent] = useState(0);
+  const [loadingTotal, setLoadingTotal] = useState(1);
 
   // Lift currentIdx state up here
   const [currentIdx, setCurrentIdx] = useState(parseInt(flashcardIdx as string) || 0);
@@ -2169,9 +2283,43 @@ export default function FlashcardViewPage() {
     const loadFlashcards = async () => {
       if (deckID && isAIDeckParam) {
         setIsLoadingFlashcards(true);
+        setLoadingProgress(0);
+        setLoadingCurrent(0);
+        
         try {
           const retryDifficult = retryDifficultParam === 'true';
+          
+          // First, get the actual count of flashcards to load
+          const isAIDeckFromParams = isAIDeckParam === 'true';
+          const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+          
+          let countQuery = `
+            SELECT COUNT(*) as count
+            FROM ${tableName}
+            WHERE deckID = ?
+          `;
+          
+          const countParams: any[] = [parseInt(deckID as string)];
+          
+          const countResult = await db.getFirstAsync(countQuery, countParams);
+          const actualCount = (countResult as any)?.count || 0;
+          
+          // Set the actual total
+          setLoadingTotal(actualCount);
+          
+          // Load flashcards with progress tracking
           const loadedFlashcards = await loadFlashcardsFromDatabase(deckID as string, isAIDeckParam as string, retryDifficult);
+          
+          // Update progress as each flashcard is processed
+          let processedCount = 0;
+          for (const flashcard of loadedFlashcards) {
+            // Simulate processing time for each flashcard
+            await new Promise(resolve => setTimeout(resolve, 50));
+            processedCount++;
+            setLoadingCurrent(processedCount);
+            setLoadingProgress(processedCount / loadedFlashcards.length);
+          }
+          
           setFlashcards(loadedFlashcards);
           console.log('Loaded flashcards from database:', loadedFlashcards.length);
         } catch (error) {
@@ -2302,9 +2450,11 @@ export default function FlashcardViewPage() {
   useEffect(() => {
     setIsStudyMode(isStudyModeParam === 'true');
     setIsQuizMode(isQuizModeParam === 'true');
-    
-    // Show countdown screen for quiz mode
-    if (isQuizModeParam === 'true') {
+  }, [isStudyModeParam, isQuizModeParam]);
+
+  // Show countdown screen for quiz mode AFTER flashcards are loaded
+  useEffect(() => {
+    if (isQuizMode && !isLoadingFlashcards && flashcards.length > 0) {
       setShowQuizCountdown(true);
       // Hide countdown after 3 seconds
       const timer = setTimeout(() => {
@@ -2312,7 +2462,7 @@ export default function FlashcardViewPage() {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isStudyModeParam, isQuizModeParam]);
+  }, [isQuizMode, isLoadingFlashcards, flashcards.length]);
 
   // Function to update the difficulty of the current flashcard
   const handleDifficultyChange = async (difficulty: string) => {
@@ -2835,6 +2985,21 @@ export default function FlashcardViewPage() {
     }, [pauseNextTimer])
   );
 
+  // Function to check if there are any difficult flashcards to retry
+  const hasDifficultFlashcards = () => {
+    return flashcards.some(flashcard => {
+      // Check for difficult difficulty ratings
+      if (flashcard.flashcardDifficulty === 'Again' || flashcard.flashcardDifficulty === 'Hard') {
+        return true;
+      }
+      // Check for MCQ flashcards that were answered wrongly
+      if (flashcard.flashcardAnswerType === 'mcq' && flashcard.isMcqAnswerRight === 0) {
+        return true;
+      }
+      return false;
+    });
+  };
+
   // 4. In FlashcardViewPage render, show Success UI if isSuccessMode is true
   if (isSuccessMode) {
     return (
@@ -2898,24 +3063,35 @@ export default function FlashcardViewPage() {
             borderRadius: 30,
             alignItems: 'center',
             justifyContent: 'center',
-                backgroundColor: '#4F41D8',
+                backgroundColor: hasDifficultFlashcards() ? '#4F41D8' : '#D5D4DD',
             marginBottom: 20,
           }}
-              onPress={() => router.replace({
-                pathname: '/flashcardView',
-                params: { 
-                  deckID: deckID as string,
-                  flashcardIdx: '0',
-                  totalNumberOfFlashcards: totalCards.toString(),
-                  isStudyMode: 'true',
-                  isQuizMode: 'false',
-                  isAIDeck: isAIDeckParam as string,
-                  retryDifficult: 'true'
-                },
-              })}
+              onPress={() => {
+                if (hasDifficultFlashcards()) {
+                  router.replace({
+                    pathname: '/flashcardView',
+                    params: { 
+                      deckID: deckID as string,
+                      flashcardIdx: '0',
+                      totalNumberOfFlashcards: totalCards.toString(),
+                      isStudyMode: 'true',
+                      isQuizMode: 'false',
+                      isAIDeck: isAIDeckParam as string,
+                      retryDifficult: 'true'
+                    },
+                  });
+                }
+              }}
+              disabled={!hasDifficultFlashcards()}
+              activeOpacity={hasDifficultFlashcards() ? 0.8 : 1}
         >
-          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-                Retry difficult flashcards?
+          <Text style={{ 
+            color: "#fff", 
+            fontFamily: 'Satoshi-Variable', 
+            fontWeight: '400', 
+            fontSize: 20 
+          }}>
+                {hasDifficultFlashcards() ? 'Retry difficult flashcards?' : 'No difficult flashcards to retry'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -3001,6 +3177,11 @@ export default function FlashcardViewPage() {
       </SafeAreaView>
       </View>
     );
+  }
+
+  // Show loading screen while flashcards are being loaded
+  if (isLoadingFlashcards) {
+    return <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} />;
   }
 
   return (

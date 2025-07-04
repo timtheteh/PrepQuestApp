@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Dimensions, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
@@ -398,6 +398,13 @@ export default function GenAIFormPage() {
       }
     }
 
+    // Validate that the number of question types does not exceed the number of questions
+    if (questionType.length > numberOfQuestions) {
+      setShowToast(true);
+      setToastMessage("Number of questions insufficient to cover all kinds of questions chosen!");
+      return false;
+    }
+
     // Case 1: Mandatory fields and optional fields not filled up
     if (!mandatoryFieldsFilled) {
       setErrorMessage("All mandatory fields must be filled up!");
@@ -505,6 +512,47 @@ export default function GenAIFormPage() {
     });
   };
 
+  const callGenAIFlashcardsGeneration = async () => {
+    const formData = {
+      mode,
+      deckName,
+      studyMandatoryQuestion1,
+      studyMandatoryQuestion2,
+      studyOptionalQuestion1,
+      studyOptionalQuestion2,
+      studyOptionalQuestion3,
+      interviewMandatoryQuestion1,
+      interviewOptionalQuestion1,
+      interviewOptionalQuestion2,
+      interviewOptionalQuestion3,
+      numberOfQuestions,
+      interviewType,
+      questionType,
+    };
+    try {
+      // You may want to show a loading indicator here
+      const response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+        },
+        body: JSON.stringify(formData),
+      });
+      console.log("fetch complete, status:", response.status);
+      if (!response.ok) {
+        throw new Error('Failed to generate flashcards');
+      }
+      const data = await response.json();
+      console.log("data", data);
+      // Handle the response (e.g., show success, navigate, etc.)
+      // Alert.alert('Success', 'Flashcards generated!');
+      // You can process 'data' as needed
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Something went wrong');
+    }
+  };
+
   const handleSuccessConfirm = () => {
     // Animate out first, then navigate
     Animated.parallel([
@@ -521,7 +569,8 @@ export default function GenAIFormPage() {
     ]).start(() => {
       setIsSuccessModalOpen(false);
       // Navigate after animation completes
-      setTimeout(() => {
+      setTimeout(async () => {
+        await callGenAIFlashcardsGeneration();
         router.back();
       }, 50);
     });
@@ -560,7 +609,8 @@ export default function GenAIFormPage() {
     ]).start(() => {
       setIsOptionalFieldsWarningModalOpen(false);
       // Navigate after animation completes
-      setTimeout(() => {
+      setTimeout(async () => {
+        await callGenAIFlashcardsGeneration();
         router.back();
       }, 50);
     });

@@ -594,7 +594,7 @@ export default function DeckSettingsPage() {
             onValueChange={setVoiceRecordedAnswersEnabled}
           />
           <Text style={styles.descriptionText}>
-          With this enabled, you can record your answers and get feedback by AI. This applies if you are preparing for Behavioral Interviews of if you are preparing for these question types:          </Text>
+          With this enabled, you can record your answers and get feedback by AI. This applies if you are preparing for Behavioral Interviews and Case Interviews or if you are preparing for these question types:          </Text>
           <ListParagraph 
             listItems={[
               "Application-based questions",

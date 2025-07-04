@@ -11,6 +11,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync('DROP TABLE IF EXISTS decks');
     await db.execAsync('DROP TABLE IF EXISTS folders');
     await db.execAsync('DROP TABLE IF EXISTS users');
+    await db.execAsync('DROP TABLE IF EXISTS interviewCompanyIcons');
     console.log('Existing tables dropped');
     
     // Now create tables with new schema - each in its own execAsync call
@@ -51,7 +52,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         interviewCompany TEXT,
         interviewExperienceLevel TEXT,
         interviewTopics TEXT,
-        interviewCompanyIcon BLOB,
+        interviewCompanyIcon TEXT,
         AICardDesignIndex INTEGER DEFAULT NULL
       )
     `);
@@ -127,7 +128,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         interviewCompany TEXT,
         interviewExperienceLevel TEXT,
         interviewTopics TEXT,
-        interviewCompanyIcon BLOB
+        interviewCompanyIcon TEXT
       )
     `);
 
@@ -175,6 +176,13 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         hardTimer INTEGER DEFAULT 45,
         goodTimer INTEGER DEFAULT 30,
         easyTimer INTEGER DEFAULT 15
+      )
+    `);
+
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS interviewCompanyIcons (
+        name TEXT PRIMARY KEY,
+        icon BLOB NOT NULL
       )
     `);
 

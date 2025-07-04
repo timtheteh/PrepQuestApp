@@ -17,7 +17,7 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
-import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists } from '@/db/decks';
+import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists, getCompanyIconImageSource } from '@/db/decks';
 import { Toast } from '@/components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -184,6 +184,9 @@ export default function DeckDetailsScreen() {
   const [isAIDeckSaved, setIsAIDeckSaved] = useState<boolean | null>(null);
   const [isLoadingSavedStatus, setIsLoadingSavedStatus] = useState(true);
 
+  // State for company logo image source
+  const [companyLogoImageSource, setCompanyLogoImageSource] = useState<any>(null);
+
   // Get deck information from database
   const deckTitle = deckInfo?.deckName || '';
   const deckType = deckInfo?.deckType || '';
@@ -203,28 +206,11 @@ export default function DeckDetailsScreen() {
     if (deckInfo.deckType === 'study') {
       return require('@/assets/companyIcons/StudyCardIcon.png');
     } else if (deckInfo.deckType === 'interview') {
-      if (deckInfo.interviewCompanyIcon && typeof deckInfo.interviewCompanyIcon === 'string') {
-        // Convert hex blob to image source
-        try {
-          if (/^[0-9A-Fa-f]+$/.test(deckInfo.interviewCompanyIcon)) {
-            // Convert hex to base64
-            const hexString = deckInfo.interviewCompanyIcon;
-            const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map((byte: string) => parseInt(byte, 16)) || []);
-            const base64String = btoa(String.fromCharCode(...bytes));
-            return { uri: `data:image/png;base64,${base64String}` };
-          } else if (deckInfo.interviewCompanyIcon.startsWith('data:')) {
-            // Already a data URI
-            return { uri: deckInfo.interviewCompanyIcon };
-          } else {
-            // Try as file path or URL
-            return { uri: deckInfo.interviewCompanyIcon };
-          }
-        } catch (error) {
-          console.error('Error converting company icon:', error);
-          return require('@/assets/companyIcons/companyDefaultIcon.png');
-        }
+      // Only show company logo if interviewCompanyIcon is not null and we have a valid image source
+      if (deckInfo.interviewCompanyIcon && companyLogoImageSource) {
+        return companyLogoImageSource;
       } else {
-        // No company icon or invalid type, use default
+        // If no company icon or null, use study icon instead of default company icon
         return require('@/assets/companyIcons/companyDefaultIcon.png');
       }
     }
@@ -1125,11 +1111,7 @@ export default function DeckDetailsScreen() {
             d.interviewCompany,
             d.interviewExperienceLevel,
             d.interviewTopics,
-            CASE 
-              WHEN d.interviewCompanyIcon IS NOT NULL 
-              THEN hex(d.interviewCompanyIcon) 
-              ELSE NULL 
-            END as interviewCompanyIcon,
+            d.interviewCompanyIcon,
             COUNT(f.flashcardID) as flashcardCount
           FROM AIDecks d
           LEFT JOIN AIFlashcards f ON d.deckID = f.deckID AND f.userID = d.userID
@@ -1144,11 +1126,24 @@ export default function DeckDetailsScreen() {
 
         // Calculate progress for AI deck
         const progress = await getAIDeckProgress(parseInt(deckId as string));
-        setDeckInfo({ ...result, progress, flashcardCount: (result as any).flashcardCount });
+        const deckData = { ...result, progress, flashcardCount: (result as any).flashcardCount } as any;
+        setDeckInfo(deckData);
+
+        // Load company logo image source if it's an interview deck
+        if (deckData.deckType === 'interview' && deckData.interviewCompanyIcon) {
+          const imageSource = await getCompanyIconImageSource(deckData.interviewCompanyIcon);
+          setCompanyLogoImageSource(imageSource);
+        }
       } else {
         // Query regular decks table
         const info = await getDeckInfoWithProgress(parseInt(deckId as string));
         setDeckInfo(info);
+
+        // Load company logo image source if it's an interview deck
+        if (info?.deckType === 'interview' && info?.interviewCompanyIcon) {
+          const imageSource = await getCompanyIconImageSource(info.interviewCompanyIcon);
+          setCompanyLogoImageSource(imageSource);
+        }
       }
       
     } catch (error) {

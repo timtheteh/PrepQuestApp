@@ -88,11 +88,7 @@ export async function getInterviewDecks(): Promise<Deck[]> {
         d.interviewExperienceLevel,
         d.interviewTopics,
         d.AICardDesignIndex,
-        CASE 
-          WHEN d.interviewCompanyIcon IS NOT NULL 
-          THEN hex(d.interviewCompanyIcon) 
-          ELSE NULL 
-        END as interviewCompanyIcon,
+        d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
@@ -283,11 +279,7 @@ export async function getFavoritedDecks(): Promise<(Deck & { progress: number })
         d.interviewExperienceLevel,
         d.interviewTopics,
         d.AICardDesignIndex,
-        CASE 
-          WHEN d.interviewCompanyIcon IS NOT NULL 
-          THEN hex(d.interviewCompanyIcon) 
-          ELSE NULL 
-        END as interviewCompanyIcon,
+        d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
@@ -610,11 +602,7 @@ export async function getDecksInFolder(folderId: number): Promise<(Deck & { prog
         d.interviewExperienceLevel,
         d.interviewTopics,
         d.AICardDesignIndex,
-        CASE 
-          WHEN d.interviewCompanyIcon IS NOT NULL 
-          THEN hex(d.interviewCompanyIcon) 
-          ELSE NULL 
-        END as interviewCompanyIcon,
+        d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
@@ -954,11 +942,7 @@ export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { 
         d.interviewExperienceLevel,
         d.interviewTopics,
         d.AICardDesignIndex,
-        CASE 
-          WHEN d.interviewCompanyIcon IS NOT NULL 
-          THEN hex(d.interviewCompanyIcon) 
-          ELSE NULL 
-        END as interviewCompanyIcon,
+        d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
       LEFT JOIN flashcards f ON d.deckID = f.deckID
@@ -1010,11 +994,7 @@ export async function getAIDecks(): Promise<AIDeck[]> {
     const result = await db.getAllAsync(`
       SELECT 
         d.*,
-        CASE 
-          WHEN d.interviewCompanyIcon IS NOT NULL 
-          THEN hex(d.interviewCompanyIcon) 
-          ELSE NULL 
-        END as interviewCompanyIcon,
+        d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM AIDecks d
       LEFT JOIN AIFlashcards f ON d.deckID = f.deckID
@@ -1031,29 +1011,6 @@ export async function getAIDecks(): Promise<AIDeck[]> {
   }
 }
 
-// Helper function to convert hex string to image source
-export function convertHexToImageSource(hexString: string | null): { uri: string } | undefined {
-  if (!hexString) return undefined;
-  
-  try {
-    // Check if it's a hex string
-    if (/^[0-9A-Fa-f]+$/.test(hexString)) {
-      // Convert hex to base64
-      const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
-      const base64String = btoa(String.fromCharCode(...bytes));
-      return { uri: `data:image/png;base64,${base64String}` };
-    } else if (hexString.startsWith('data:')) {
-      // Already a data URI
-      return { uri: hexString };
-    } else {
-      // Try as file path or URL
-      return { uri: hexString };
-    }
-  } catch (error) {
-    console.error('Error converting hex to image source:', error);
-    return undefined;
-  }
-}
 
 export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; newDeckId?: number }> {
   try {
@@ -1078,7 +1035,6 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
       // 2. Insert the AI deck into the regular decks table
       // Convert the cardDesignIndex to AICardDesignIndex and set cardDesignIndex to 0
       // Update lastModifiedDate to current date
-      const companyIconBlob = aiDeck.interviewCompanyIcon ? `X'${Array.from(aiDeck.interviewCompanyIcon as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
       const currentDate = new Date().toISOString();
       
       await db.execAsync(`
@@ -1092,7 +1048,7 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
           '${userID}', '${aiDeck.deckName}', '${currentDate}', '${currentDate}', ${aiDeck.isFavorited}, '${aiDeck.deckType}', '${aiDeck.creationMethod}',
           ${aiDeck.lastStudiedDate ? `'${aiDeck.lastStudiedDate}'` : 'NULL'}, ${aiDeck.lastQuizzedDate ? `'${aiDeck.lastQuizzedDate}'` : 'NULL'}, 0, 1, ${aiDeck.folderIDs ? `'${aiDeck.folderIDs}'` : 'NULL'},
           ${aiDeck.studyEducationLevel ? `'${aiDeck.studyEducationLevel}'` : 'NULL'}, ${aiDeck.studySubjects ? `'${aiDeck.studySubjects}'` : 'NULL'}, ${aiDeck.studyTopicsSubtopics ? `'${aiDeck.studyTopicsSubtopics}'` : 'NULL'}, ${aiDeck.studyExamQuiz ? `'${aiDeck.studyExamQuiz}'` : 'NULL'},
-          ${aiDeck.interviewJobRole ? `'${aiDeck.interviewJobRole}'` : 'NULL'}, ${aiDeck.interviewType ? `'${aiDeck.interviewType}'` : 'NULL'}, ${aiDeck.interviewCompany ? `'${aiDeck.interviewCompany}'` : 'NULL'}, ${aiDeck.interviewExperienceLevel ? `'${aiDeck.interviewExperienceLevel}'` : 'NULL'}, ${aiDeck.interviewTopics ? `'${aiDeck.interviewTopics}'` : 'NULL'}, ${companyIconBlob},
+          ${aiDeck.interviewJobRole ? `'${aiDeck.interviewJobRole}'` : 'NULL'}, ${aiDeck.interviewType ? `'${aiDeck.interviewType}'` : 'NULL'}, ${aiDeck.interviewCompany ? `'${aiDeck.interviewCompany}'` : 'NULL'}, ${aiDeck.interviewExperienceLevel ? `'${aiDeck.interviewExperienceLevel}'` : 'NULL'}, ${aiDeck.interviewTopics ? `'${aiDeck.interviewTopics}'` : 'NULL'}, ${aiDeck.interviewCompanyIcon ? `'${aiDeck.interviewCompanyIcon}'` : 'NULL'},
           ${aiDeck.cardDesignIndex}
         )
       `);
@@ -1597,5 +1553,52 @@ export async function getDeckNameById(deckId: number): Promise<string | null> {
   } catch (error) {
     console.error('Error getting deck name by ID:', error);
     return null;
+  }
+}
+
+// Helper function to convert hex string to image source
+export function convertHexToImageSource(hexString: string | null): { uri: string } | undefined {
+  if (!hexString) return undefined;
+  
+  try {
+    // Check if it's a hex string
+    if (/^[0-9A-Fa-f]+$/.test(hexString)) {
+      // Convert hex to base64
+      const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+      const base64String = btoa(String.fromCharCode(...bytes));
+      return { uri: `data:image/png;base64,${base64String}` };
+    } else if (hexString.startsWith('data:')) {
+      // Already a data URI
+      return { uri: hexString };
+    } else {
+      // Try as file path or URL
+      return { uri: hexString };
+    }
+  } catch (error) {
+    console.error('Error converting hex to image source:', error);
+    return undefined;
+  }
+}
+
+// Helper function to get company icon from interviewCompanyIcons table
+export async function getCompanyIconImageSource(companyName: string | null): Promise<{ uri: string } | undefined> {
+  if (!companyName) return undefined;
+  
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(`
+      SELECT hex(icon) as iconHex
+      FROM interviewCompanyIcons
+      WHERE name = ?
+    `, [companyName]);
+
+    if (!result) {
+      return undefined;
+    }
+
+    const iconHex = (result as { iconHex: string }).iconHex;
+    return convertHexToImageSource(iconHex);
+  } catch (error) {
+    return undefined;
   }
 }

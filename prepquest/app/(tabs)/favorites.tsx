@@ -14,7 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders } from '@/db/decks';
+import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders, getCompanyIconImageSource } from '@/db/decks';
 import { db } from '@/db/index';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -101,6 +101,7 @@ export default function FavoritesScreen() {
   const router = useRouter();
   const { mode, selected } = useLocalSearchParams();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
 
   const selectUnselectedDuration = 300;
 
@@ -726,34 +727,6 @@ export default function FavoritesScreen() {
     }
   };
 
-  // Helper function to get image source for interview decks
-  const getImageSource = (deck: Deck & { progress: number }) => {
-    if (deck.interviewCompanyIcon) {
-      try {
-        // Handle hex string from SQLite BLOB
-        if (typeof deck.interviewCompanyIcon === 'string') {
-          // Check if it's a hex string (from SQLite hex() function)
-          if (/^[0-9A-Fa-f]+$/.test(deck.interviewCompanyIcon)) {
-            // Convert hex to base64
-            const hexString = deck.interviewCompanyIcon;
-            const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
-            const base64String = btoa(String.fromCharCode(...bytes));
-            return { uri: `data:image/png;base64,${base64String}` };
-          } else if (deck.interviewCompanyIcon.startsWith('data:')) {
-            // Already a data URI
-            return { uri: deck.interviewCompanyIcon };
-          } else {
-            // Try as file path or URL
-            return { uri: deck.interviewCompanyIcon };
-          }
-        }
-      } catch (error) {
-        return undefined;
-      }
-    }
-    return undefined;
-  };
-
   // Helper function to convert null to undefined
   const nullToUndefined = (value: string | null): string | undefined => {
     return value === null ? undefined : value;
@@ -1032,6 +1005,14 @@ export default function FavoritesScreen() {
         setFilteredFavoritedFolders(foldersData);
         setFavDeckCardsCount(decksData.length);
         setFavFolderCardsCount(foldersData.length);
+
+        // Load image sources for each deck
+        const sources = new Map<number, { uri: string } | undefined>();
+        for (const deck of decksData) {
+          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+          sources.set(deck.deckID, imageSource);
+        }
+        setImageSources(sources);
       } catch (error) {
         console.error('Error loading favorited data:', error);
       }
@@ -1375,7 +1356,7 @@ export default function FavoritesScreen() {
           circleButtonOpacity={circleButtonOpacity}
           percent={data.progress}
           showProgress={!isSelectMode}
-          image={data.interviewCompanyIcon ? getImageSource(data) : undefined}
+          image={imageSources.get(data.deckID)}
           cardType={data.deckType === 'interview' && data.interviewType ? data.interviewType : data.deckType}
           title={data.deckName}
           date={formatDate(data.dateAdded)}

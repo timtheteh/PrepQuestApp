@@ -16,7 +16,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
-import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks } from '@/db/decks';
+import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks, getCompanyIconImageSource } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
@@ -64,6 +64,7 @@ export default function DecksScreen() {
   const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
   const [shouldShowStudyAnimation, setShouldShowStudyAnimation] = useState(true);
   const [shouldShowInterviewAnimation, setShouldShowInterviewAnimation] = useState(true);
+  const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -203,6 +204,15 @@ export default function DecksScreen() {
         setFilteredInterviewDecks(interviewData);
         setStudyCardsCount(studyData.length);
         setInterviewCardsCount(interviewData.length);
+        
+        // Load image sources for all decks (both study and interview)
+        const sources = new Map<number, { uri: string } | undefined>();
+        const allDecks = [...studyData, ...interviewData];
+        for (const deck of allDecks) {
+          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+          sources.set(deck.deckID, imageSource);
+        }
+        setImageSources(sources);
       } catch (error) {
         console.error('Error loading deck data:', error);
       }
@@ -816,25 +826,7 @@ export default function DecksScreen() {
       const style = index === 0 ? styles.firstCard : styles.card;
       const isSelected = selectedInterviewCards.has(index);
       const cardDesign = getDeckCardDesign(data.cardDesignIndex, data.isAIDeck === 1, data.AICardDesignIndex);
-      let imageSource: any = undefined;
-      if (data.interviewCompanyIcon) {
-        try {
-          if (typeof data.interviewCompanyIcon === 'string') {
-            if (/^[0-9A-Fa-f]+$/.test(data.interviewCompanyIcon)) {
-              const hexString = data.interviewCompanyIcon;
-              const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
-              const base64String = btoa(String.fromCharCode(...bytes));
-              imageSource = { uri: `data:image/png;base64,${base64String}` };
-            } else if (data.interviewCompanyIcon.startsWith('data:')) {
-              imageSource = { uri: data.interviewCompanyIcon };
-            } else {
-              imageSource = { uri: data.interviewCompanyIcon };
-            }
-          }
-        } catch (error) {
-          imageSource = undefined;
-        }
-      }
+      const imageSource = imageSources.get(data.deckID);
       return (
         <Card
           key={`interview-${data.deckID}`}

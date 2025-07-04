@@ -13,7 +13,7 @@ import { Card } from '@/components/Card';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Feather } from '@expo/vector-icons';
 import { BottomTextInputModal } from '@/components/BottomTextInputModal';
-import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder, checkFolderNameExists } from '@/db/decks';
+import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder, checkFolderNameExists, getCompanyIconImageSource } from '@/db/decks';
 import { db } from '@/db/index';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/Toast';
@@ -72,6 +72,7 @@ export default function ViewDecksInFolderScreen() {
   const [selectedDecks, setSelectedDecks] = useState<Set<number>>(new Set());
   const [decks, setDecks] = useState<(Deck & { progress: number })[]>([]);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const selectUnselectedDuration = 300;
   const selectTextAnim = useRef(new Animated.Value(0)).current;
   const fabOpacity = useRef(new Animated.Value(1)).current;
@@ -126,6 +127,14 @@ export default function ViewDecksInFolderScreen() {
         console.log('Decks loaded for folder:', decksData.length);
         setDecks(decksData);
         setDecksCount(decksData.length);
+        
+        // Load image sources for each deck
+        const sources = new Map<number, { uri: string } | undefined>();
+        for (const deck of decksData) {
+          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+          sources.set(deck.deckID, imageSource);
+        }
+        setImageSources(sources);
       } catch (error) {
         console.error('Error loading decks data for folder:', error);
       }
@@ -224,33 +233,6 @@ export default function ViewDecksInFolderScreen() {
     }
   };
 
-  // Helper function to get image source for interview decks
-  const getImageSource = (deck: Deck & { progress: number }) => {
-    if (deck.interviewCompanyIcon) {
-      try {
-        // Handle hex string from SQLite BLOB
-        if (typeof deck.interviewCompanyIcon === 'string') {
-          // Check if it's a hex string (from SQLite hex() function)
-          if (/^[0-9A-Fa-f]+$/.test(deck.interviewCompanyIcon)) {
-            // Convert hex to base64
-            const hexString = deck.interviewCompanyIcon;
-            const bytes = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
-            const base64String = btoa(String.fromCharCode(...bytes));
-            return { uri: `data:image/png;base64,${base64String}` };
-          } else if (deck.interviewCompanyIcon.startsWith('data:')) {
-            // Already a data URI
-            return { uri: deck.interviewCompanyIcon };
-          } else {
-            // Try as file path or URL
-            return { uri: deck.interviewCompanyIcon };
-          }
-        }
-      } catch (error) {
-        return undefined;
-      }
-    }
-    return undefined;
-  };
 
   const handleBackPress = () => {
     // Reset header icons state
@@ -756,7 +738,7 @@ export default function ViewDecksInFolderScreen() {
           circleButtonOpacity={circleButtonOpacity}
           percent={data.progress}
           showProgress={!isSelectMode}
-          image={data.interviewCompanyIcon ? getImageSource(data) : undefined}
+          image={imageSources.get(data.deckID)}
           cardType={data.deckType === 'interview' && data.interviewType ? data.interviewType : data.deckType}
           title={data.deckName}
           date={formatDate(data.dateAdded)}

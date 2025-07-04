@@ -341,7 +341,7 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["Algorithms", "System Design", "Behavioral"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       },
       {
         deckName: 'Meta Frontend Interview',
@@ -360,7 +360,7 @@ export async function populateDummyData() {
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["React", "JavaScript", "CSS"]',
-        interviewCompanyIcon: metaIconBlob
+        interviewCompanyIcon: 'Meta'
       },
       {
         deckName: 'JPMorgan Backend Interview',
@@ -379,7 +379,7 @@ export async function populateDummyData() {
         interviewCompany: 'JPMorgan Chase',
         interviewExperienceLevel: 'Entry-level',
         interviewTopics: '["Java", "Spring", "Databases"]',
-        interviewCompanyIcon: jpmIconBlob
+        interviewCompanyIcon: 'JPMorgan Chase'
       },
 
       // Data Science Interviews folder (folderID: 5)
@@ -400,7 +400,7 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["Machine Learning", "Statistics", "Python"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       },
       {
         deckName: 'Meta ML Engineer Interview',
@@ -419,7 +419,7 @@ export async function populateDummyData() {
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["Deep Learning", "PyTorch", "System Design"]',
-        interviewCompanyIcon: metaIconBlob
+        interviewCompanyIcon: 'Meta'
       },
       {
         deckName: 'JPMorgan Quant Interview',
@@ -438,7 +438,7 @@ export async function populateDummyData() {
         interviewCompany: 'JPMorgan Chase',
         interviewExperienceLevel: 'Entry-level',
         interviewTopics: '["Financial Modeling", "Statistics", "Programming"]',
-        interviewCompanyIcon: jpmIconBlob
+        interviewCompanyIcon: 'JPMorgan Chase'
       },
 
       // Product Management Interviews folder (folderID: 6)
@@ -459,7 +459,7 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["Product Strategy", "User Research", "Metrics"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       },
       {
         deckName: 'Meta Product Strategy Interview',
@@ -478,7 +478,7 @@ export async function populateDummyData() {
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["Product Vision", "Go-to-Market", "Competitive Analysis"]',
-        interviewCompanyIcon: metaIconBlob
+        interviewCompanyIcon: 'Meta'
       },
       {
         deckName: 'JPMorgan Product Owner Interview',
@@ -497,7 +497,7 @@ export async function populateDummyData() {
         interviewCompany: 'JPMorgan Chase',
         interviewExperienceLevel: 'Entry-level',
         interviewTopics: '["Agile", "Stakeholder Management", "Requirements"]',
-        interviewCompanyIcon: jpmIconBlob
+        interviewCompanyIcon: 'JPMorgan Chase'
       },
 
       // UX/UI Design Interviews folder (folderID: 7)
@@ -518,7 +518,7 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["User Research", "Wireframing", "Prototyping"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       },
       {
         deckName: 'Meta UI Designer Interview',
@@ -537,7 +537,7 @@ export async function populateDummyData() {
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["Visual Design", "Design Systems", "Accessibility"]',
-        interviewCompanyIcon: metaIconBlob
+        interviewCompanyIcon: 'Meta'
       },
       {
         deckName: 'JPMorgan Design Systems Interview',
@@ -556,7 +556,7 @@ export async function populateDummyData() {
         interviewCompany: 'JPMorgan Chase',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["Design Tokens", "Component Libraries", "Documentation"]',
-        interviewCompanyIcon: jpmIconBlob
+        interviewCompanyIcon: 'JPMorgan Chase'
       },
 
       // Business Analyst Interviews folder (folderID: 8)
@@ -577,7 +577,7 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["Data Analysis", "SQL", "Business Intelligence"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       },
       {
         deckName: 'Meta Analytics Interview',
@@ -596,7 +596,7 @@ export async function populateDummyData() {
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["A/B Testing", "Data Visualization", "Metrics"]',
-        interviewCompanyIcon: metaIconBlob
+        interviewCompanyIcon: 'Meta'
       },
       {
         deckName: 'JPMorgan Risk Analyst Interview',
@@ -615,7 +615,7 @@ export async function populateDummyData() {
         interviewCompany: 'JPMorgan Chase',
         interviewExperienceLevel: 'Entry-level',
         interviewTopics: '["Risk Modeling", "Regulatory Compliance", "Financial Analysis"]',
-        interviewCompanyIcon: jpmIconBlob
+        interviewCompanyIcon: 'JPMorgan Chase'
       },
 
       // Mixed folders - Machine Learning & AI (folderID: 9) - 2 study + 2 interview
@@ -670,7 +670,7 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["Machine Learning", "System Design", "Python"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       },
       {
         deckName: 'Meta AI Research Interview',
@@ -689,7 +689,7 @@ export async function populateDummyData() {
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'PhD',
         interviewTopics: '["Research Papers", "Algorithm Design", "Publications"]',
-        interviewCompanyIcon: metaIconBlob
+        interviewCompanyIcon: 'Meta'
       },
 
       // Mixed folders - Web Development (folderID: 10) - 2 study + 2 interview
@@ -744,7 +744,7 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["JavaScript", "React", "CSS", "Performance"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       },
       {
         deckName: 'Meta Full Stack Interview',
@@ -763,7 +763,7 @@ export async function populateDummyData() {
         interviewCompany: 'Meta',
         interviewExperienceLevel: 'Senior',
         interviewTopics: '["System Design", "Database Design", "API Design"]',
-        interviewCompanyIcon: metaIconBlob
+        interviewCompanyIcon: 'Meta'
       },
 
       // 3 additional study decks not in any folder
@@ -887,8 +887,6 @@ export async function populateDummyData() {
 
     // Insert decks
     for (const deck of deckData) {
-      const companyIconBlob = deck.interviewCompanyIcon ? `X'${Array.from(deck.interviewCompanyIcon).map(b => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
-      
       await db.execAsync(`
         INSERT INTO decks (
           userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
@@ -899,12 +897,46 @@ export async function populateDummyData() {
           '1', ${escapeSqlString(deck.deckName)}, ${escapeSqlString(deck.dateAdded)}, ${escapeSqlString(deck.lastModifiedDate)}, ${deck.isFavorited}, ${escapeSqlString(deck.deckType)}, ${escapeSqlString(deck.creationMethod)},
           ${escapeSqlString(deck.lastStudiedDate)}, ${escapeSqlString(deck.lastQuizzedDate)}, ${deck.cardDesignIndex}, ${deck.isAIDeck}, ${escapeSqlString(deck.folderIDs)},
           ${escapeSqlString(deck.studyEducationLevel)}, ${escapeSqlString(deck.studySubjects)}, ${escapeSqlString(deck.studyTopicsSubtopics)}, ${escapeSqlString(deck.studyExamQuiz)},
-          ${escapeSqlString(deck.interviewJobRole)}, ${escapeSqlString(deck.interviewType)}, ${escapeSqlString(deck.interviewCompany)}, ${escapeSqlString(deck.interviewExperienceLevel)}, ${escapeSqlString(deck.interviewTopics)}, ${companyIconBlob}
+          ${escapeSqlString(deck.interviewJobRole)}, ${escapeSqlString(deck.interviewType)}, ${escapeSqlString(deck.interviewCompany)}, ${escapeSqlString(deck.interviewExperienceLevel)}, ${escapeSqlString(deck.interviewTopics)}, ${escapeSqlString(deck.interviewCompanyIcon)}
         )
       `);
     }
 
     console.log('Decks table populated successfully');
+    
+    // Populate interviewCompanyIcons table
+    console.log('Populating interviewCompanyIcons table...');
+    
+    // Clear existing company icons data
+    await db.execAsync('DELETE FROM interviewCompanyIcons');
+    
+    // Insert company icons with their blob data
+    const companyIconsData = [
+      {
+        name: 'Google',
+        icon: googleIconBlob
+      },
+      {
+        name: 'Meta',
+        icon: metaIconBlob
+      },
+      {
+        name: 'JPMorgan Chase',
+        icon: jpmIconBlob
+      }
+    ];
+
+    for (const companyIcon of companyIconsData) {
+      if (companyIcon.icon) {
+        const iconBlob = `X'${Array.from(companyIcon.icon).map(b => b.toString(16).padStart(2, '0')).join('')}'`;
+        await db.execAsync(`
+          INSERT INTO interviewCompanyIcons (name, icon)
+          VALUES ('${companyIcon.name}', ${iconBlob})
+        `);
+      }
+    }
+
+    console.log('InterviewCompanyIcons table populated successfully');
     
     // Populate flashcards table
     console.log('Populating flashcards table...');
@@ -1252,14 +1284,12 @@ export async function populateDummyData() {
         interviewCompany: 'Google',
         interviewExperienceLevel: 'Mid-level',
         interviewTopics: '["Algorithms", "System Design", "Data Structures", "Problem Solving"]',
-        interviewCompanyIcon: googleIconBlob
+        interviewCompanyIcon: 'Google'
       }
     ];
 
     // Insert AIDecks
     for (const aiDeck of aiDeckData) {
-      const companyIconBlob = aiDeck.interviewCompanyIcon ? `X'${Array.from(aiDeck.interviewCompanyIcon).map(b => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
-      
       await db.execAsync(`
         INSERT INTO AIDecks (
           userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
@@ -1270,7 +1300,7 @@ export async function populateDummyData() {
           '1', ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
           ${escapeSqlString(aiDeck.lastStudiedDate)}, ${escapeSqlString(aiDeck.lastQuizzedDate)}, ${aiDeck.cardDesignIndex}, ${aiDeck.isAIDeck}, ${escapeSqlString(aiDeck.folderIDs)},
           ${escapeSqlString(aiDeck.studyEducationLevel)}, ${escapeSqlString(aiDeck.studySubjects)}, ${escapeSqlString(aiDeck.studyTopicsSubtopics)}, ${escapeSqlString(aiDeck.studyExamQuiz)},
-          ${escapeSqlString(aiDeck.interviewJobRole)}, ${escapeSqlString(aiDeck.interviewType)}, ${escapeSqlString(aiDeck.interviewCompany)}, ${escapeSqlString(aiDeck.interviewExperienceLevel)}, ${escapeSqlString(aiDeck.interviewTopics)}, ${companyIconBlob}
+          ${escapeSqlString(aiDeck.interviewJobRole)}, ${escapeSqlString(aiDeck.interviewType)}, ${escapeSqlString(aiDeck.interviewCompany)}, ${escapeSqlString(aiDeck.interviewExperienceLevel)}, ${escapeSqlString(aiDeck.interviewTopics)}, ${escapeSqlString(aiDeck.interviewCompanyIcon)}
         )
       `);
     }
@@ -1598,6 +1628,10 @@ export async function verifyDataLoad() {
     const aiFlashcardsResult = await db.getAllAsync('SELECT COUNT(*) as count FROM AIFlashcards');
     console.log(`✅ AIFlashcards loaded: ${(aiFlashcardsResult[0] as any).count} AI flashcards`);
     
+    // Check interviewCompanyIcons
+    const companyIconsResult = await db.getAllAsync('SELECT COUNT(*) as count FROM interviewCompanyIcons');
+    console.log(`✅ InterviewCompanyIcons loaded: ${(companyIconsResult[0] as any).count} company icons`);
+    
     // Show sample data
     console.log('\n=== SAMPLE DATA ===');
     
@@ -1620,6 +1654,10 @@ export async function verifyDataLoad() {
     // Sample AIFlashcards
     const sampleAIFlashcards = await db.getAllAsync('SELECT questionType, answerType, difficultyRating FROM AIFlashcards LIMIT 3');
     console.log('🤖 Sample AI flashcards:', sampleAIFlashcards);
+    
+    // Sample company icons
+    const sampleCompanyIcons = await db.getAllAsync('SELECT name FROM interviewCompanyIcons');
+    console.log('🏢 Sample company icons:', sampleCompanyIcons);
     
     // Check deck types distribution
     const deckTypes = await db.getAllAsync('SELECT deckType, COUNT(*) as count FROM decks GROUP BY deckType');
@@ -1645,11 +1683,13 @@ export async function verifyDataLoad() {
       flashcards: (flashcardsResult[0] as any).count,
       aiDecks: (aiDecksResult[0] as any).count,
       aiFlashcards: (aiFlashcardsResult[0] as any).count,
+      companyIcons: (companyIconsResult[0] as any).count,
       sampleFolders,
       sampleDecks,
       sampleFlashcards,
       sampleAIDecks,
       sampleAIFlashcards,
+      sampleCompanyIcons,
       deckTypes,
       aiDeckTypes,
       flashcardTypes,

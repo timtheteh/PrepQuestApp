@@ -3,7 +3,7 @@ import { StyleSheet, Animated, Dimensions, Text, View } from 'react-native';
 import { AIDeckCard } from './AIDeckCard';
 import { MenuContext } from '@/contexts/MenuContext';
 import { AICardDesigns } from '@/constants/cardDesigns';
-import { getAIDecks, convertHexToImageSource, AIDeck } from '@/db/decks';
+import { getAIDecks, getCompanyIconImageSource, AIDeck } from '@/db/decks';
 import LottieView from 'lottie-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -19,8 +19,9 @@ export function AIPromptModal({
   opacity = new Animated.Value(0),
   sourcePage
 }: AIPromptModalProps) {
-  const { 
-    setIsMenuOpen, 
+  const {
+    isMenuOpen,
+    setIsMenuOpen,
     menuOverlayOpacity,
     setIsAIPromptOpen,
     aiPromptOpacity
@@ -28,6 +29,7 @@ export function AIPromptModal({
 
   const [aiDecks, setAiDecks] = useState<AIDeck[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
 
   // Load AI decks from database
   useEffect(() => {
@@ -36,6 +38,14 @@ export function AIPromptModal({
         setLoading(true);
         const decks = await getAIDecks();
         setAiDecks(decks);
+        
+        // Load image sources for each deck
+        const sources = new Map<number, { uri: string } | undefined>();
+        for (const deck of decks) {
+          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+          sources.set(deck.deckID, imageSource);
+        }
+        setImageSources(sources);
       } catch (error) {
         console.error('Error loading AI decks:', error);
         setAiDecks([]);
@@ -96,7 +106,7 @@ export function AIPromptModal({
             <View style={styles.imageContainer}>
               {aiDecks.map((deck, index) => {
                 const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
-                const imageSource = convertHexToImageSource(deck.interviewCompanyIcon);
+                const imageSource = imageSources.get(deck.deckID);
                 
                 return (
                   <AIDeckCard

@@ -66,12 +66,14 @@ export async function populateDummyData() {
     const googleIconAsset = Asset.fromModule(require('../assets/companyIcons/GoogleIcon.png'));
     const jpmIconAsset = Asset.fromModule(require('../assets/companyIcons/JPMIcon.png'));
     const metaIconAsset = Asset.fromModule(require('../assets/companyIcons/MetaIcon.png'));
+    const microsoftIconAsset = Asset.fromModule(require('../assets/companyIcons/Microsoft.png'));
     const dummyPhotoAsset = Asset.fromModule(require('../assets/dummyPhotos/dummy_JPEG_photo.jpg'));
     const dummyAudioAsset = Asset.fromModule(require('../assets/dummyAudio/dummy_m4a_audio.m4a'));
 
     const googleIconBlob = await readAssetAsBlob(googleIconAsset);
     const jpmIconBlob = await readAssetAsBlob(jpmIconAsset);
     const metaIconBlob = await readAssetAsBlob(metaIconAsset);
+    const microsoftIconBlob = await readAssetAsBlob(microsoftIconAsset);
     const dummyPhotoBlob = await readAssetAsBlob(dummyPhotoAsset);
     const dummyAudioBlob = await readAssetAsBlob(dummyAudioAsset);
 
@@ -923,6 +925,10 @@ export async function populateDummyData() {
       {
         name: 'JPMorgan Chase',
         icon: jpmIconBlob
+      },
+      {
+        name: 'Microsoft',
+        icon: microsoftIconBlob
       }
     ];
 

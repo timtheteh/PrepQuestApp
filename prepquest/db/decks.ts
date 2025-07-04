@@ -1602,3 +1602,40 @@ export async function getCompanyIconImageSource(companyName: string | null): Pro
     return undefined;
   }
 }
+
+// Helper function to get all company names from interviewCompanyIcons table
+export async function getAllCompanyNames(): Promise<string[]> {
+  try {
+    const result = await db.getAllAsync(`
+      SELECT name
+      FROM interviewCompanyIcons
+      ORDER BY name ASC
+    `);
+
+    return result.map((row: any) => row.name);
+  } catch (error) {
+    console.error('Error fetching company names:', error);
+    return [];
+  }
+}
+
+// Helper function to get company icon image source by name
+export async function getCompanyIconByName(companyName: string): Promise<{ uri: string } | undefined> {
+  try {
+    const result = await db.getFirstAsync(`
+      SELECT hex(icon) as iconHex
+      FROM interviewCompanyIcons
+      WHERE name = ?
+    `, [companyName]);
+
+    if (!result) {
+      return undefined;
+    }
+
+    const iconHex = (result as { iconHex: string }).iconHex;
+    return convertHexToImageSource(iconHex);
+  } catch (error) {
+    console.error('Error fetching company icon:', error);
+    return undefined;
+  }
+}

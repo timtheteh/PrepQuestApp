@@ -6,6 +6,7 @@ import { RoundedContainer } from '@/components/RoundedContainer';
 import { ActionButton } from '@/components/ActionButton';
 import { TitleTextBar } from '@/components/TitleTextBar';
 import { QuestionTextBar } from '@/components/QuestionTextBar';
+import { QuestionTextBarWithDropdown } from '@/components/QuestionTextBarWithDropdown';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import { KindsOfQuestions } from '@/components/KindsOfQuestions';
@@ -711,12 +712,13 @@ export default function GenAIFormPage() {
             )}
             {!isMandatory && mode === 'interview' && (
               <View style={styles.formContent}>
-                <QuestionTextBar
+                <QuestionTextBarWithDropdown
                   label="1. Company?"
                   placeholder="e.g. Google, Meta, Microsoft, etc"
                   value={interviewOptionalQuestion1}
                   onChangeText={setInterviewOptionalQuestion1}
                   helperText="Which company are you preparing to interview with?"
+                  showDropdown={true}
                 />
                 <QuestionTextBar
                   label="2. Experience Level?"

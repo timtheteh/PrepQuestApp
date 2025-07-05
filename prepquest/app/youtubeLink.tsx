@@ -367,16 +367,15 @@ export default function YouTubeLinkPage() {
 
     // Validate studyMandatoryQuestion2 format for study mode
     if (mode === 'study' && studyMandatoryQuestion2.trim() !== '') {
-      const subjects = studyMandatoryQuestion2.split(',').map(s => s.trim());
+      const subjects = studyMandatoryQuestion2.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
       
       // Check if there are any empty subjects after splitting and trimming
       const hasEmptySubjects = subjects.some(subject => subject === '');
       
       // Check if there are any subjects that are just whitespace or special characters
       const hasInvalidSubjects = subjects.some(subject => 
-        subject === '' || 
-        /^[^\w\s]+$/.test(subject) || // Only special characters
-        subject.length < 2 // Too short
+        subject === '' ||
+        !/^[\p{L}\p{N} ]+$/u.test(subject) // Only letters, numbers, and spaces
       );
       
       if (hasEmptySubjects || hasInvalidSubjects) {

@@ -318,16 +318,15 @@ export default function GenAIFormPage() {
 
     // Validate studyMandatoryQuestion2 format for study mode
     if (mode === 'study' && studyMandatoryQuestion2.trim() !== '') {
-      const subjects = studyMandatoryQuestion2.split(',').map(s => s.trim());
+      const subjects = studyMandatoryQuestion2.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
       
       // Check if there are any empty subjects after splitting and trimming
       const hasEmptySubjects = subjects.some(subject => subject === '');
       
       // Check if there are any subjects that are just whitespace or special characters
       const hasInvalidSubjects = subjects.some(subject => 
-        subject === '' || 
-        /^[^\w\s]+$/.test(subject) || // Only special characters
-        subject.length < 2 // Too short
+        subject === '' ||
+        !/^[\p{L}\p{N} ]+$/u.test(subject) // Only letters, numbers, and spaces
       );
       
       if (hasEmptySubjects || hasInvalidSubjects) {
@@ -339,16 +338,16 @@ export default function GenAIFormPage() {
 
     // Validate studyOptionalQuestion1 (topics) format for study mode
     if (mode === 'study' && studyOptionalQuestion1.trim() !== '') {
-      const topics = studyOptionalQuestion1.split(',').map(s => s.trim());
+      const topics = studyOptionalQuestion1.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
       
       // Check if there are any empty topics after splitting and trimming
       const hasEmptyTopics = topics.some(topic => topic === '');
       
       // Check if there are any topics that are just whitespace or special characters
+      // Check if there are any subjects that are just whitespace or special characters
       const hasInvalidTopics = topics.some(topic => 
-        topic === '' || 
-        /^[^\w\s]+$/.test(topic) || // Only special characters
-        topic.length < 2 // Too short
+        topic === '' ||
+        !/^[\p{L}\p{N} ]+$/u.test(topic) // Only letters, numbers, and spaces
       );
       
       if (hasEmptyTopics || hasInvalidTopics) {
@@ -360,16 +359,15 @@ export default function GenAIFormPage() {
 
     // Validate studyOptionalQuestion2 (subtopics) format for study mode
     if (mode === 'study' && studyOptionalQuestion2.trim() !== '') {
-      const subtopics = studyOptionalQuestion2.split(',').map(s => s.trim());
+      const subtopics = studyOptionalQuestion2.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
       
       // Check if there are any empty subtopics after splitting and trimming
       const hasEmptySubtopics = subtopics.some(subtopic => subtopic === '');
       
       // Check if there are any subtopics that are just whitespace or special characters
       const hasInvalidSubtopics = subtopics.some(subtopic => 
-        subtopic === '' || 
-        /^[^\w\s]+$/.test(subtopic) || // Only special characters
-        subtopic.length < 2 // Too short
+        subtopic === '' ||
+        !/^[\p{L}\p{N} ]+$/u.test(subtopic) // Only letters, numbers, and spaces
       );
       
       if (hasEmptySubtopics || hasInvalidSubtopics) {
@@ -381,16 +379,15 @@ export default function GenAIFormPage() {
 
     // Validate interviewOptionalQuestion3 (topics) format for interview mode
     if (mode === 'interview' && interviewOptionalQuestion3.trim() !== '') {
-      const topics = interviewOptionalQuestion3.split(',').map(s => s.trim());
+      const topics = interviewOptionalQuestion3.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
       
       // Check if there are any empty topics after splitting and trimming
       const hasEmptyTopics = topics.some(topic => topic === '');
       
       // Check if there are any topics that are just whitespace or special characters
       const hasInvalidTopics = topics.some(topic => 
-        topic === '' || 
-        /^[^\w\s]+$/.test(topic) || // Only special characters
-        topic.length < 2 // Too short
+        topic === '' ||
+        !/^[\p{L}\p{N} ]+$/u.test(topic) // Only letters, numbers, and spaces
       );
       
       if (hasEmptyTopics || hasInvalidTopics) {

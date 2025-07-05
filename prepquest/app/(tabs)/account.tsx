@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import LightSwitchBody from '@/assets/icons/lightSwitchBody.svg';
@@ -8,6 +8,7 @@ import DarkSwitchBody from '@/assets/icons/darkSwitchBody.svg';
 import LightSwitch from '@/assets/icons/lightSwitch.svg';
 import DarkSwitch from '@/assets/icons/darkSwitch.svg';
 import GrapeStem from '@/assets/icons/grapeStem.svg';
+import { useLanguage } from '@/contexts/LanguageContext';
 // import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 
 export default function AccountScreen() {
@@ -26,6 +27,7 @@ export default function AccountScreen() {
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 60;
   const router = useRouter();
+  const { language, reloadLanguage } = useLanguage();
 
   // For button animation
   const buttonAnim = useRef(new Animated.Value(1)).current; // 1 = right (light), 0 = left (dark)
@@ -42,6 +44,12 @@ export default function AccountScreen() {
       }).start();
     }
   }, [isFocused]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      reloadLanguage();
+    }, [])
+  );
 
   const handleToggle = () => {
     setIsDarkMode((prev) => !prev);
@@ -507,7 +515,7 @@ export default function AccountScreen() {
     <>
       <View style={[styles.topBar, { paddingTop: topPadding }]}> 
         <TouchableOpacity onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.signOutText}>{language === 'Chinese' ? '退出登录' : 'Sign Out'}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleToggle} activeOpacity={0.8} style={styles.switchContainer}>
           <Animated.View style={[StyleSheet.absoluteFill, { opacity: lightBodyOpacity }]}> 
@@ -533,12 +541,14 @@ export default function AccountScreen() {
       </View>
       <View style={styles.infoColumn}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoHeading}>Username</Text>
-          <Text style={styles.infoValue}>johnappleseed@gmail.com</Text>
+          <Text style={styles.infoHeading}>{language === 'Chinese' ? '用户名' : 'Username'}</Text>
+          <Text style={[styles.infoValue, {
+            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+            }]}>johnappleseed@gmail.com</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoHeading}>Current Plan</Text>
-          <Text style={styles.infoValue}>Basic Plan</Text>
+          <Text style={styles.infoHeading}>{language === 'Chinese' ? '当前订阅计划' : 'Current Plan'}</Text>
+          <Text style={styles.infoValue}>{language === 'Chinese' ? '基础版' : 'Basic Plan'}</Text>
         </View>
       </View>
       <View style={styles.grapeContainer}>
@@ -563,7 +573,7 @@ export default function AccountScreen() {
               zIndex: 7}
           ]}
         >
-          <Text style={[styles.grapeMenuText, {marginLeft: -48, marginBottom: 15, textAlign: 'center'}]}>Website</Text>
+          <Text style={[styles.grapeMenuText, {marginLeft: -48, marginBottom: 15, textAlign: 'center'}]}>{language === 'Chinese' ? '官网' : 'Website'}</Text>
         </TouchableOpacity>
         {/* Rate & Review button (behind) */}
         <TouchableOpacity
@@ -577,7 +587,7 @@ export default function AccountScreen() {
               zIndex: 8}
           ]}
         >
-          <Text style={[styles.grapeMenuText, {marginLeft: 25, marginBottom: 15, textAlign: 'center'}]}>Rate &{'\n'}Review</Text>
+          <Text style={[styles.grapeMenuText, {marginLeft: 25, marginBottom: 15, textAlign: 'center'}]}>{language === 'Chinese' ? '评分' + '\n' + '与评价' : 'Rate &\nReview'}</Text>
         </TouchableOpacity>
         {/* Share button (behind) */}
         <TouchableOpacity
@@ -592,7 +602,7 @@ export default function AccountScreen() {
               zIndex: 9}
           ]}
         >
-          <Text style={[styles.grapeMenuText, {marginLeft: 15, marginTop: 5, textAlign: 'center'}]}>Share</Text>
+          <Text style={[styles.grapeMenuText, {marginLeft: 15, marginTop: 5, textAlign: 'center'}]}>{language === 'Chinese' ? '分享' : 'Share'}</Text>
         </TouchableOpacity>
         {/* T&C button (behind) */}
         <TouchableOpacity
@@ -606,7 +616,7 @@ export default function AccountScreen() {
               zIndex: 9}
           ]}
         >
-          <Text style={[styles.grapeMenuText, {marginRight: 22, textAlign: 'center'}]}>Terms &{'\n'}Conditions</Text>
+          <Text style={[styles.grapeMenuText, {marginRight: 22, textAlign: 'center'}]}>{language === 'Chinese' ? '条款' + '\n' + '与协议' : 'Terms &\nConditions'}</Text>
         </TouchableOpacity>
          {/* App Settings button (behind) */}
          <TouchableOpacity
@@ -621,7 +631,7 @@ export default function AccountScreen() {
               zIndex: 8}
           ]}
         >
-          <Text style={[styles.grapeMenuText, {marginTop: 50, textAlign: 'center'}]}>App{'\n'}Settings</Text>
+          <Text style={[styles.grapeMenuText, {marginTop: 50, textAlign: 'center'}]}>{language === 'Chinese' ? '应用' + '\n' + '设置' : 'App\nSettings'}</Text>
         </TouchableOpacity>
         {/* Deck Settings button (behind) */}
         <TouchableOpacity
@@ -636,9 +646,7 @@ export default function AccountScreen() {
               zIndex: 8}
           ]}
         >
-          <Text style={[styles.grapeMenuText, {marginBottom: 48, textAlign: 'center'}]}>
-            Deck{'\n'}Settings
-          </Text>
+          <Text style={[styles.grapeMenuText, {marginBottom: 48, textAlign: 'center'}]}>{language === 'Chinese' ? '卡片组' + '\n' + '设置' : 'Deck\nSettings'}</Text>
         </TouchableOpacity>
         {/* Upgrade button (on top) */}
         <TouchableOpacity
@@ -647,7 +655,7 @@ export default function AccountScreen() {
           onPressOut={() => setUpgradePressed(false)}
           style={[styles.grapeCircle, { backgroundColor: upgradePressed ? '#8684FF' : '#685CDD', zIndex: 10, marginTop: Dimensions.get('window').height < 670 ? 80 : 0}]}
         >
-          <Text style={styles.grapeMenuText}>Upgrade</Text>
+          <Text style={styles.grapeMenuText}>{language === 'Chinese' ? '升级' : 'Upgrade'}</Text>
           <Image 
             source={require('@/assets/images/Diamond.png')} 
             style={styles.diamondImage}

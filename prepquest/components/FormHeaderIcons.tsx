@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { Entypo } from '@expo/vector-icons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FormHeaderIconsProps {
   onUseMostRecentFormPress?: () => void;
@@ -12,6 +13,7 @@ export function FormHeaderIcons({
   onUseMostRecentFormPress,
   onClearAllPress
 }: FormHeaderIconsProps) {
+  const { language } = useLanguage();
   return (
     <View style={styles.container}>
       <CircleIconButton 
@@ -21,7 +23,7 @@ export function FormHeaderIcons({
         onPress={onUseMostRecentFormPress}
       />
       <TouchableOpacity onPress={onClearAllPress}>
-        <Text style={styles.clearAllText}>Clear All</Text>
+        <Text style={styles.clearAllText}>{language === 'Chinese' ? '清空' : 'Clear All'}</Text>
       </TouchableOpacity>
     </View>
   );

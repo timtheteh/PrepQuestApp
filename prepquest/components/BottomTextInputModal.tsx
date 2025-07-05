@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BottomTextInputModalProps {
   visible: boolean;
@@ -18,6 +19,7 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = ({
   placeholder = 'Type your text here...',
   autoFocus = true,
 }) => {
+  const { language } = useLanguage();
   if (!visible) return null;
 
   return (
@@ -28,9 +30,17 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = ({
       >
         <View style={styles.modalView}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Edit deck name</Text>
+            <Text style={[styles.headerTitle, 
+              // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
+              ]}>
+              {language === 'Chinese' ? '编辑卡组名称' : 'Edit deck name'}
+            </Text>
             <TouchableOpacity onPress={onDone}>
-              <Text style={styles.doneButton}>Done</Text>
+              <Text style={[styles.doneButton, 
+                // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
+                ]}>
+                {language === 'Chinese' ? '完成' : 'Done'}
+              </Text>
             </TouchableOpacity>
           </View>
           <TextInput

@@ -19,6 +19,7 @@ import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/Toast';
 import LottieView from 'lottie-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -61,6 +62,7 @@ export default function ViewDecksInFolderScreen() {
     setCurrentFolderTitle,
     setCurrentSourcePage,
   } = useContext(MenuContext);
+  const { language } = useLanguage();
 
   // Animation values
   const screenOpacity = useRef(new Animated.Value(0)).current;
@@ -714,8 +716,10 @@ export default function ViewDecksInFolderScreen() {
             loop
             style={styles.emptyStateAnimation}
           />
-          <Text style={styles.emptyStateText}>
-            Whoops! No more{'\n'}decks in this folder
+          <Text style={[styles.emptyStateText, 
+            // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
+            ]}>
+            {language === 'Chinese' ? '此文件夹中没有卡组' : "Whoops! No more\ndecks in this folder"}
           </Text>
         </View>
       );
@@ -785,9 +789,10 @@ export default function ViewDecksInFolderScreen() {
           ]}>
             <View style={styles.content}>
               <View style={styles.titleRow}>
-                
-                <Text style={styles.title} numberOfLines={2}>
-                  {folderTitle || 'Folder'}
+                <Text style={[
+                  styles.title,
+                ]} numberOfLines={2}>
+                  {folderTitle}
                 </Text>
               </View>
 
@@ -820,8 +825,11 @@ export default function ViewDecksInFolderScreen() {
               >
                   <View style={styles.titleRow}>
                     <View style={styles.titleContainer}>
-                      <Title style={[styles.titleAbsolute]}>
-                          {`Decks (${decksCount})`}
+                      <Title style={[
+                        styles.titleAbsolute,
+                        // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium', fontSize: 20 }
+                      ]}>
+                          {language === 'Chinese' ? `卡组 (${decksCount})` : `Decks (${decksCount})`}
                       </Title>
                     </View>
                         
@@ -833,16 +841,18 @@ export default function ViewDecksInFolderScreen() {
                         <Animated.Text style={[
                             isSelectMode ? styles.selectButton : (decks.length === 0 ? styles.selectButtonDisabled : styles.selectButton),
                             styles.selectButtonAbsolute,
-                            { opacity: selectOpacity }
+                            { opacity: selectOpacity },
+                            // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
                         ]}>
-                            Select
+                            {language === 'Chinese' ? '选择' : 'Select'}
                         </Animated.Text>
                         <Animated.Text style={[
                             styles.selectButton,
                             styles.selectButtonAbsolute,
-                            { opacity: selectAllOpacity }
+                            { opacity: selectAllOpacity },
+                            // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
                         ]}>
-                            Select All
+                            {language === 'Chinese' ? '全选' : 'Select All'}
                         </Animated.Text>
                     </TouchableOpacity>
                   </View>
@@ -882,7 +892,7 @@ export default function ViewDecksInFolderScreen() {
         value={editText}
         onChangeText={setEditText}
         onDone={handleDoneEdit}
-        placeholder="Edit folder name..."
+        placeholder={language === 'Chinese' ? '编辑文件夹名称...' : 'Edit folder name...'}
       />
       <Toast
         visible={showToast}

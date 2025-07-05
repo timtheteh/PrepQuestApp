@@ -5,6 +5,7 @@ import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';
 import { getUserStatistics } from '@/db/users';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MoreDetailsStatsProps {
   selectedIndex?: number;
@@ -26,7 +27,6 @@ interface StatsData {
   interviewQuizzed: number;
 }
 
-const OPTIONS = ['Decks', 'Flashcards', 'Study', 'Interview'];
 const meshBackground1 = require('../assets/images/meshBackground1.png');
 const meshBackground2 = require('../assets/images/meshBackground2.png');
 const meshBackground3 = require('../assets/images/meshBackground3.png');
@@ -145,6 +145,7 @@ const fetchStatsData = async (): Promise<StatsData> => {
 };
 
 export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedIndexChange }: MoreDetailsStatsProps) {
+  const { language } = useLanguage();
   const isControlled = controlledIndex !== undefined && onSelectedIndexChange !== undefined;
   const [uncontrolledIndex, setUncontrolledIndex] = useState(0);
   const selectedIndex = isControlled ? controlledIndex : uncontrolledIndex;
@@ -167,6 +168,13 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
   });
   const [isLoading, setIsLoading] = useState(true);
   const isFocused = useIsFocused();
+
+  const localizedOptions = [
+    language === 'Chinese' ? '卡组' : 'Decks',
+    language === 'Chinese' ? '卡片' : 'Flashcards',
+    language === 'Chinese' ? '学习' : 'Study',
+    language === 'Chinese' ? '面试' : 'Interview',
+  ];
 
   // Function to load data
   const loadData = async () => {
@@ -212,10 +220,10 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
       <Image source={meshBackground3} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} />
       <Image source={meshBackground4} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} />
       <View style={styles.container}>
-        <Text style={styles.title}>More Details</Text>
+        <Text style={styles.title}>{language === 'Chinese' ? '更多统计数据' : 'More Details'}</Text>
         <View style={{ marginTop: 15, marginBottom: 18 }}>
           <SmallGreenToggleMultiple
-            options={OPTIONS}
+            options={localizedOptions}
             onToggle={setSelectedIndex}
             initialIndex={selectedIndex}
           />
@@ -224,7 +232,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
           {/* Loading State */}
           {isLoading && (
             <View style={styles.placeholder}>
-              <Text style={styles.placeholderText}>Loading statistics...</Text>
+              <Text style={styles.placeholderText}>{language === 'Chinese' ? '正在加载统计数据...' : 'Loading statistics...'}</Text>
             </View>
           )}
           
@@ -237,7 +245,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.accumulatedDecks}</Text>
-                      <Text style={styles.deckLabel}>Accumulated{"\n"}Decks</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡组' : 'Accumulated Decks'}</Text>
                     </View>
                   </View>
                 </View>
@@ -249,7 +257,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.localStorageDecks}</Text>
-                      <Text style={styles.deckLabel}>Decks in local{"\n"}storage</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片组' : 'Decks in local storage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -258,7 +266,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.totalQuizzedDecks}</Text>
-                      <Text style={styles.deckLabel}>Total decks{"\n"}quizzed</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡组' : 'Total decks quizzed'}</Text>
                     </View>
                   </View>
                 </View>
@@ -274,7 +282,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.accumulatedFlashcards}</Text>
-                      <Text style={styles.deckLabel}>Accumulated{"\n"}Flashcards</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡片' : 'Accumulated Flashcards'}</Text>
                     </View>
                   </View>
                 </View>
@@ -286,7 +294,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.localStorageFlashcards}</Text>
-                      <Text style={styles.deckLabel}>Flashcards in {"\n"}local storage</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片' : 'Flashcards in local storage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -295,7 +303,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.totalQuizzedFlashcards}</Text>
-                      <Text style={styles.deckLabel}>Total Flashcards{"\n"}quizzed</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡片' : 'Total Flashcards quizzed'}</Text>
                     </View>
                   </View>
                 </View>
@@ -311,7 +319,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.studyDecks}</Text>
-                      <Text style={styles.deckLabel}>Accumulated{"\n"}Study Decks</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计学习卡组' : 'Accumulated Study Decks'}</Text>
                     </View>
                   </View>
                 </View>
@@ -323,7 +331,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.studyLocalStorage}</Text>
-                      <Text style={styles.deckLabel}>Study decks in {"\n"}local storage</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的学习卡组' : 'Study decks in local storage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -332,7 +340,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.studyQuizzed}</Text>
-                      <Text style={styles.deckLabel}>Total Study decks{"\n"}quizzed</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n学习卡组' : 'Total Study decks quizzed'}</Text>
                     </View>
                   </View>
                 </View>
@@ -348,7 +356,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.interviewDecks}</Text>
-                      <Text style={styles.deckLabel}>Accumulated{"\n"}Interview Decks</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计面试卡组' : 'Accumulated Interview Decks'}</Text>
                     </View>
                   </View>
                 </View>
@@ -360,7 +368,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.interviewLocalStorage}</Text>
-                      <Text style={styles.deckLabel}>Interview decks in {"\n"}local storage</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的面试卡组' : 'Interview decks in local storage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -369,7 +377,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.interviewQuizzed}</Text>
-                      <Text style={styles.deckLabel}>Total Interview decks{"\n"}quizzed</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n面试卡组' : 'Total Interview decks quizzed'}</Text>
                     </View>
                   </View>
                 </View>

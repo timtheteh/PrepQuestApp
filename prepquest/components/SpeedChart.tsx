@@ -4,6 +4,7 @@ import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect, Defs, LinearGrad
 import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { getCompleteDailySpeeds, getMonthlySpeeds, DaySpeed, MonthSpeed } from '@/db/grades';
 import { useIsFocused } from '@react-navigation/native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -17,6 +18,7 @@ type SpeedChartProps = {
 
 export function SpeedChart({ onContentReady }: SpeedChartProps) {
   const { width: windowWidth } = useWindowDimensions();
+  const { language } = useLanguage();
   const GRAPH_WIDTH = Math.round(windowWidth * 0.93);
   const X_STEP = (GRAPH_WIDTH - 2 * PADDING) / 3 - 16;
   const SVG_HEIGHT = GRAPH_HEIGHT + X_AXIS_EXTRA_HEIGHT;
@@ -148,11 +150,11 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
       <View>
         <View style={{ marginTop: 30, alignItems: 'center' }}>
           <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            Speed Chart (average speed per flashcard)
+            {language === 'Chinese' ? '速度图表（每张卡片的平均速度）' : 'Speed Chart (average speed per flashcard)'}
           </Text>
           <SmallGreenBinaryToggle
-            leftLabel="Day"
-            rightLabel="Month"
+            leftLabel={language === 'Chinese' ? '日' : 'Day'}
+            rightLabel={language === 'Chinese' ? '月' : 'Month'}
             style={{ marginTop: 15 }}
             onToggle={handleToggle}
           />
@@ -167,7 +169,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
           alignItems: 'center'
         }}>
           <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
-            Loading speed data...
+            {language === 'Chinese' ? '正在加载速度数据...' : 'Loading speed data...'}
           </Text>
         </View>
       </View>
@@ -180,11 +182,11 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
       <View>
         <View style={{ marginTop: 30, alignItems: 'center' }}>
           <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            Speed Chart (average speed per flashcard)
+            {language === 'Chinese' ? '速度图表（每张卡片的平均速度）' : 'Speed Chart (average speed per flashcard)'}
           </Text>
           <SmallGreenBinaryToggle
-            leftLabel="Day"
-            rightLabel="Month"
+            leftLabel={language === 'Chinese' ? '日' : 'Day'}
+            rightLabel={language === 'Chinese' ? '月' : 'Month'}
             style={{ marginTop: 15 }}
             onToggle={handleToggle}
           />
@@ -199,10 +201,10 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
           alignItems: 'center'
         }}>
           <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
-            No speed data available
+            {language === 'Chinese' ? '暂无速度数据' : 'No speed data available'}
           </Text>
           <Text style={{ fontFamily: 'Satoshi-Regular', fontSize: 14, color: '#D5D4DD', marginTop: 8 }}>
-            Study or quiz flashcards to see your speed trends
+            {language === 'Chinese' ? '学习或测验卡片以查看速度趋势' : 'Study or quiz flashcards to see your speed trends'}
           </Text>
         </View>
       </View>
@@ -213,11 +215,11 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
     <View>
     <View style={{ marginTop: 30, alignItems: 'center' }}>
         <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            Speed Chart (average speed per flashcard)
+            {language === 'Chinese' ? '速度图表（每张卡片的平均速度）' : 'Speed Chart (average speed per flashcard)'}
         </Text>
         <SmallGreenBinaryToggle
-            leftLabel="Day"
-            rightLabel="Month"
+            leftLabel={language === 'Chinese' ? '日' : 'Day'}
+            rightLabel={language === 'Chinese' ? '月' : 'Month'}
             style={{ marginTop: 15}}
             onToggle={handleToggle}
         />

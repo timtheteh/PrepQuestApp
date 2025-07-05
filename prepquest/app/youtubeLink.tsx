@@ -20,6 +20,7 @@ import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import { checkDeckNameExists } from '../db/decks';
 import { Toast } from '../components/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -38,7 +39,41 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink }: { youtubeLink: string; setYoutubeLink: (text: string) => void }) => {
+// Add language mappings for all user-facing strings
+const STRINGS = {
+  mandatory: { English: 'Mandatory', Chinese: '必填' },
+  youtubeLink: { English: 'YouTube Link', Chinese: 'YouTube链接' },
+  deckName: { English: ' Deck Name', Chinese: '卡组名称' },
+  study: { English: 'Study', Chinese: '学习' },
+  interview: { English: 'Interview', Chinese: '面试' },
+  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
+  educationLevel: { English: '1. Education Level?', Chinese: '1. 教育程度？' },
+  educationLevelPH: { English: 'e.g. Freshman, Sophomore, etc', Chinese: '例如：大一，大二等' },
+  educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
+  subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
+  subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
+  subjectsHelper: { English: 'What subject(s) would this deck be for?', Chinese: '这个卡组适用于哪些科目？' },
+  jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
+  jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
+  jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
+  numQuestions: { English: '3. Number of questions:', Chinese: '3. 题目数量：' },
+  pasteLinkHere: { English: 'Paste Link Here', Chinese: '在此粘贴链接' },
+  pasteYoutubeLink: { English: 'Paste your YouTube Link here!', Chinese: '请在此粘贴您的YouTube链接！' },
+  aiGenerate: { English: 'AI Generate new card content?', Chinese: 'AI生成新卡片内容？' },
+  submit: { English: 'Submit', Chinese: '提交' },
+  deckNameInUse: { English: 'Deckname already in use', Chinese: '卡组名称已被使用' },
+  invalidSubjects: { English: "Invalid form input for 'Subject(s)'", Chinese: '“科目”输入无效' },
+  fillAllAndPaste: { English: 'Fill up all mandatory fields and paste your Youtube Link!', Chinese: '请填写所有必填项并粘贴YouTube链接！' },
+  pasteBeforeSubmit: { English: 'Paste your Youtube Link before submitting!', Chinese: '请先粘贴YouTube链接再提交！' },
+  fillAll: { English: 'Fill up all mandatory fields!', Chinese: '请填写所有必填项！' },
+  helpModal: { English: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.", Chinese: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。' },
+  aiHelpModal: { English: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.', Chinese: '勾选此项将让AI生成与上传内容无关的新建议卡片。' },
+  useRecent: { English: ['Use most recent', 'form entry?'], Chinese: ['使用最近的', '表单记录？'] },
+  greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
+  leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
+};
+
+const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { youtubeLink: string; setYoutubeLink: (text: string) => void; language: 'English' | 'Chinese' }) => {
   return (
     <View style={styles.youtubeLinkMainSection}>
       <View style={styles.youtubeImageContainer}>
@@ -50,7 +85,7 @@ const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink }: { youtubeLink: 
       <View style={styles.textAreaContainer}>
         <TextInput
           style={styles.textArea}
-          placeholder="Paste Link Here"
+          placeholder={STRINGS.pasteLinkHere[language]}
           placeholderTextColor="#D5D4DD"
           multiline={true}
           numberOfLines={4}
@@ -155,6 +190,8 @@ export default function YouTubeLinkPage() {
   const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const { language } = useLanguage();
+  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -323,7 +360,7 @@ export default function YouTubeLinkPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage("Deckname already in use");
+        setToastMessage(STRINGS.deckNameInUse[lang]);
         return false;
       }
     }
@@ -344,28 +381,28 @@ export default function YouTubeLinkPage() {
       
       if (hasEmptySubjects || hasInvalidSubjects) {
         setShowToast(true);
-        setToastMessage("Invalid form input for 'Subject(s)'");
+        setToastMessage(STRINGS.invalidSubjects[lang]);
         return false;
       }
     }
 
     // Error 1: mandatory fields not filled up and youtube link not filled up
     if (!mandatoryFieldsFilled && !youtubeLinkFilled) {
-      setErrorMessage("Fill up all mandatory fields and paste your Youtube Link!");
+      setErrorMessage(STRINGS.fillAllAndPaste[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 2: mandatory fields filled up but youtube link not filled up
     if (mandatoryFieldsFilled && !youtubeLinkFilled) {
-      setErrorMessage("Paste your Youtube Link before submitting!");
+      setErrorMessage(STRINGS.pasteBeforeSubmit[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 3: mandatory fields not filled up but youtube link is filled up
     if (!mandatoryFieldsFilled && youtubeLinkFilled) {
-      setErrorMessage("Fill up all mandatory fields!");
+      setErrorMessage(STRINGS.fillAll[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
@@ -570,8 +607,8 @@ export default function YouTubeLinkPage() {
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
           <RoundedContainer 
-            leftLabel="Mandatory"
-            rightLabel="YouTube Link"
+            leftLabel={STRINGS.mandatory[lang]}
+            rightLabel={STRINGS.youtubeLink[lang]}
             onToggle={handleToggle}
           />
         </View>
@@ -597,38 +634,38 @@ export default function YouTubeLinkPage() {
             {isMandatory && (
               <View style={styles.formContent}>
                 <TitleTextBar
-                  title=" Deck Name"
-                  highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                  placeholder="Type here!"
+                  title={STRINGS.deckName[lang]}
+                  highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
+                  placeholder={STRINGS.typeHere[lang]}
                   value={deckName}
                   onChangeText={setDeckName}
                 />
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
-                      label="1. Education Level?"
-                      placeholder="e.g. Freshman, Sophomore, etc"
+                      label={STRINGS.educationLevel[lang]}
+                      placeholder={STRINGS.educationLevelPH[lang]}
                       value={studyMandatoryQuestion1}
                       onChangeText={setStudyMandatoryQuestion1}
-                      helperText="What education level is your preparation for?"
+                      helperText={STRINGS.educationLevelHelper[lang]}
                     />
                     <QuestionTextBar
-                      label="2. Subject(s)?"
-                      placeholder="e.g. Computer Science, Math, Physics, etc."
+                      label={STRINGS.subjects[lang]}
+                      placeholder={STRINGS.subjectsPH[lang]}
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText="What subject(s) would this deck be for?"
+                      helperText={STRINGS.subjectsHelper[lang]}
                     />
                   </>
                 )}
                 {mode !== 'study' && (
                   <>
                     <QuestionTextBar
-                      label="1. Job/Role?"
-                      placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                      label={STRINGS.jobRole[lang]}
+                      placeholder={STRINGS.jobRolePH[lang]}
                       value={interviewMandatoryQuestion1}
                       onChangeText={setInterviewMandatoryQuestion1}
-                      helperText="What job or role are you preparing for?"
+                      helperText={STRINGS.jobRoleHelper[lang]}
                     />
                     <TypeOfInterviewQn
                       value={interviewType}
@@ -637,7 +674,7 @@ export default function YouTubeLinkPage() {
                   </>
                 )}
                 <NumberOfQuestions
-                  title="3. Number of questions:"
+                  title={STRINGS.numQuestions[lang]}
                   value={numberOfQuestions}
                   onValueChange={setNumberOfQuestions}
                 />
@@ -663,15 +700,15 @@ export default function YouTubeLinkPage() {
                 keyboardShouldPersistTaps="handled"
               >
                 <Text style={styles.youtubeLinkTitle}>
-                    Paste your YouTube Link here!
+                    {STRINGS.pasteYoutubeLink[lang]}
                     </Text>
-                    <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} />
+                    <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={lang} />
                     <View style={styles.aiGenerateRow}>
                         <SmallCircleSelectButton
                         selected={isAIGenerate}
                         onPress={() => setIsAIGenerate(!isAIGenerate)}
                         />
-                        <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+                        <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
                         <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
                         <HelpIconOutline width={24} height={24} />
                         </TouchableOpacity>
@@ -680,15 +717,15 @@ export default function YouTubeLinkPage() {
               </ScrollView>
             )}
             <Text style={styles.youtubeLinkTitle}>
-            Paste your YouTube Link here!
+            {STRINGS.pasteYoutubeLink[lang]}
             </Text>
-            <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} />
+            <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={lang} />
             <View style={styles.aiGenerateRow}>
                 <SmallCircleSelectButton
                 selected={isAIGenerate}
                 onPress={() => setIsAIGenerate(!isAIGenerate)}
                 />
-                <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+                <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
                 <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
                 <HelpIconOutline width={24} height={24} />
                 </TouchableOpacity>
@@ -701,7 +738,7 @@ export default function YouTubeLinkPage() {
           { bottom: bottomOffset }
         ]}>
           <ActionButton
-            text="Submit"
+            text={STRINGS.submit[lang]}
             backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
             onPress={handleSubmit}
             disabled={isSubmitDisabled()}
@@ -718,7 +755,7 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text="Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."
+        text={STRINGS.helpModal[lang]}
         buttons='none'
         textStyle={{
           highlightWord: "our website",
@@ -729,14 +766,14 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isAIHelpModalOpen}
         opacity={aiHelpModalOpacity}
-        text="Ticking this option will let AI generate new, suggested cards outside the content of your upload."
+        text={STRINGS.aiHelpModal[lang]}
         buttons='none'
         Icon={HelpIconFilled}
       />
       <GenericModal
         visible={isRecentFormModalOpen}
         opacity={recentFormModalOpacity}
-        text={['Use most recent', 'form entry?']}
+        text={STRINGS.useRecent[lang]}
         buttons='double'
         onConfirm={() => {
           handleDismissRecentForm();
@@ -755,7 +792,7 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isSuccessModalOpen}
         opacity={successModalOpacity}
-        text="Great! 😊 Do you want to go ahead and submit?"
+        text={STRINGS.greatSubmit[lang]}
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
@@ -763,7 +800,7 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isBackConfirmationModalOpen}
         opacity={backConfirmationModalOpacity}
-        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        text={STRINGS.leaveConfirm[lang]}
         buttons="double"
         onCancel={handleDismissBackConfirmation}
         onConfirm={() => {

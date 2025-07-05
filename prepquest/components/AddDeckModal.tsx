@@ -5,6 +5,7 @@ import { AddDeckModalButton } from './AddDeckModalButton';
 import { useRouter } from 'expo-router';
 import Svg, { SvgProps, Path, Defs, Rect, ClipPath, G } from 'react-native-svg';
 import { MenuContext } from '@/contexts/MenuContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const GenAIFormIcon: React.FC<SvgProps> = (props) => (
     <Svg 
@@ -153,6 +154,7 @@ export function AddDeckModal({
 }: AddDeckModalProps) {
   const { setCurrentMode, handleDismissMenu } = useContext(MenuContext);
   const router = useRouter();
+  const { language } = useLanguage();
 
   // Debug logging to verify parameter passing
   useEffect(() => {
@@ -293,9 +295,17 @@ export function AddDeckModal({
         <View style={styles.column}>
           <View style={styles.titleRow}>
             {isInViewFlashcardsPage ? (
-              <Text style={[styles.title, { fontSize: 28 }]}>Add Flashcard(s) to Deck</Text>
+              <Text style={[styles.title, { fontSize: 28, 
+                // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular' 
+              }]}>{language === 'Chinese' ? '添加卡片到卡片组' : 'Add Flashcard(s) to Deck'}</Text>
             ) : (
-              <Text style={styles.title}>{isInFavoritesPage ? "Add Deck to Favorites" : isInViewDecksInFolderPage ? "Add Deck to Folder" : "Add Deck"}</Text>
+              <Text style={[styles.title, { fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', fontSize: language === 'Chinese' ? 28 : 32 }]}>
+                {isInFavoritesPage
+                  ? language === 'Chinese' ? '添加卡片组到收藏夹' : 'Add Deck to Favorites'
+                  : isInViewDecksInFolderPage
+                    ? language === 'Chinese' ? '添加卡片组到文件夹' : 'Add Deck to Folder'
+                    : language === 'Chinese' ? '添加卡片组' : 'Add Deck'}
+              </Text>
             )}
           </View>
           {!isInViewFlashcardsPage ? (<View style={styles.toggleRow}>
@@ -307,13 +317,13 @@ export function AddDeckModal({
           </View>): <View style={{ height: 35 }} />}
           <View style={styles.firstButtonRow}>
             <AddDeckModalButton
-              title="Gen AI Form"
+              title={language === 'Chinese' ? 'AI 生成表单' : 'Gen AI Form'}
               Icon={GenAIFormIcon}
               onPress={handleGenAIFormPress}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
             <AddDeckModalButton
-              title="File Upload"
+              title={language === 'Chinese' ? '文件上传' : 'File Upload'}
               Icon={FileUploadIcon}
               marginBottom={3}
               onPress={handleFormUploadPagePress}
@@ -322,13 +332,13 @@ export function AddDeckModal({
           </View>
           <View style={styles.buttonRow}>
             <AddDeckModalButton
-              title="YouTube Link"
+              title={language === 'Chinese' ? 'YouTube 链接' : 'YouTube Link'}
               Icon={YoutubeIcon}
               onPress={handleYoutubeLinkPress}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
             <AddDeckModalButton
-              title="Manual"
+              title={language === 'Chinese' ? '手动添加' : 'Manual'}
               Icon={ManualFormIcon}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
               marginBottom={6}

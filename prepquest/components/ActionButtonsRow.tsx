@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-nativ
 import { CircleIconButton } from './CircleIconButton';
 import { UnfavoriteButton } from './UnfavoriteButton';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ActionButtonsRowProps {
   style?: ViewStyle;
@@ -25,6 +26,8 @@ export function ActionButtonsRow({
   showUnfavoriteButton = false,
   onUnfavoritePress
 }: ActionButtonsRowProps) {
+  const { language } = useLanguage();
+
   return (
     <View style={[styles.container, style]}>
       {iconNames.map((iconName, index) => (
@@ -40,7 +43,9 @@ export function ActionButtonsRow({
         <UnfavoriteButton onPress={onUnfavoritePress} />
       )}
       <TouchableOpacity onPress={onCancel}>
-        <Text style={styles.cancelButton}>Cancel</Text>
+        <Text style={{ fontSize: 14.5, 
+          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium', 
+          color: '#000000' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
       </TouchableOpacity>
     </View>
   );

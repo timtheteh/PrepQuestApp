@@ -3,6 +3,7 @@ import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dime
 import { CircleSelectButton } from './CircleSelectButton';
 import { FavoriteButton } from './FavoriteButton';
 import { useRouter } from 'expo-router';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
@@ -67,6 +68,7 @@ export function Card({
   deckID,
 }: CardProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
   const [showSelectPill, setShowSelectPill] = useState(isSelectMode);
@@ -179,12 +181,12 @@ export function Card({
 
   // Card type color and label logic
   const cardTypeMap: Record<string, { color: string; label: string }> = {
-    behavioral: { color: '#FDAE61', label: 'Behavioral' },
-    technical: { color: '#D7191C', label: 'Technical' },
-    brainteasers: { color: '#357AF6', label: 'Brainteasers' },
-    'case study': { color: '#C3EB79', label: 'Case Study' },
-    others: { color: '#FDAE61', label: 'Others' },
-    study: { color: '#5CC8BE', label: 'Study' },
+    behavioral: { color: '#FDAE61', label: language === 'Chinese' ? '行为面试' : 'Behavioral' },
+    technical: { color: '#D7191C', label: language === 'Chinese' ? '技术面试' : 'Technical' },
+    brainteasers: { color: '#357AF6', label: language === 'Chinese' ? '脑筋急转弯' : 'Brainteasers' },
+    'case study': { color: '#C3EB79', label: language === 'Chinese' ? '案例分析' : 'Case Study' },
+    others: { color: '#FDAE61', label: language === 'Chinese' ? '其他' : 'Others' },
+    study: { color: '#5CC8BE', label: language === 'Chinese' ? '学习' : 'Study' },
   };
   const typeInfo = cardType && cardTypeMap[cardType] ;
 
@@ -249,7 +251,9 @@ export function Card({
                       <Text style={styles.dateText}>{date}</Text>
                     )}
                     {flashcardCount !== undefined && (
-                      <Text style={styles.flashcardCountText}>{flashcardCount} cards</Text>
+                      <Text style={[styles.flashcardCountText, {
+                        // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+                      }]}>{flashcardCount} {language === 'Chinese' ? '张卡片' : 'cards'}</Text>
                     )}
                   </View>
                 )}
@@ -288,9 +292,9 @@ export function Card({
                 {showProgressRow && (
                   <Animated.View style={[styles.progressRow, { opacity: progressAnim }]}> 
                     <View style={styles.loadingBarFlexWrapper}>
-                      <LoadingBar percent={percent} />
+                      <LoadingBar percent={percent} language={language} />
                     </View>
-                    <Text style={styles.progressLabel}>{percent}% progress</Text>
+                    <Text style={styles.progressLabel}>{percent}% {language === 'Chinese' ? '进度' : 'progress'}</Text>
                   </Animated.View>
                 )}
               </View>
@@ -313,14 +317,14 @@ export function Card({
   );
 }
 
-function LoadingBar({ percent }: { percent: number }) {
+function LoadingBar({ percent, language }: { percent: number, language: string }) {
   const isComplete = percent === 100;
   return (
     <View style={styles.loadingBarBg}>
       <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? '#44B88A' : '#4F41D8' }]} />
       {isComplete && (
         <View style={styles.loadingBarTextContainer}>
-          <Text style={styles.loadingBarCompleteText}>Completed!</Text>
+          <Text style={styles.loadingBarCompleteText}>{language === 'Chinese' ? '已完成！' : 'Completed!'}</Text>
         </View>
       )}
     </View>

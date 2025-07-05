@@ -13,6 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { Audio } from 'expo-av';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CardContent {
   content: React.ReactNode;
@@ -85,6 +86,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
   const [currentPath, setCurrentPath] = useState<string>('');
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const { language } = useLanguage();
   
   // History management for undo/redo
   const [history, setHistory] = useState<{ path: string; strokeWidth: number }[][]>([]);
@@ -301,7 +303,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
     <View style={[styles.drawingCanvas, style]}>
       {!hasDrawn && (
         <View style={styles.overlayTextContainer}>
-          <Text style={styles.overlayText}>Draw here!</Text>
+          <Text style={styles.overlayText}>{language === 'Chinese' ? '请在此绘图！' : 'Draw here!'}</Text>
         </View>
       )}
       <Svg style={StyleSheet.absoluteFill}>
@@ -335,6 +337,16 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
 
 // Add display name for DrawingCanvas
 DrawingCanvas.displayName = 'DrawingCanvas';
+
+// Add language mappings for all overlay/instructional text
+const STRINGS = {
+  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
+  drawHere: { English: 'Draw here!', Chinese: '请在此绘图！' },
+  pressHoldMic: { English: 'Press & hold mic \nbutton to record', Chinese: '按住麦克风按钮录音' },
+  greatReplay: { English: 'Great! Click the replay\nbutton below to play\nthe recorded audio!', Chinese: '太棒了！点击下方按钮播放录音' },
+  clickToTakeOrUpload: { English: 'Click here to take\nyour picture or\nupload from library!', Chinese: '点击此处拍照或上传图片' },
+  chooseManual: { English: 'Choose your manual \noption above', Chinese: '请选择上方的手动选项' },
+};
 
 export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({ 
   style, 
@@ -371,6 +383,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [audioPosition, setAudioPosition] = useState(0);
   const audioSoundRef = useRef<Audio.Sound | null>(null);
+  const { language } = useLanguage();
+  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
   // Listen for focus events to check if text was typed in modal
   useFocusEffect(
@@ -658,17 +672,17 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     
     switch (effectiveCardType) {
       case 'text':
-        return "Type here!";
+        return STRINGS.typeHere[lang];
       case 'mic':
-        return hasAudioRecording ? "Great! Click the replay\nbutton below to play\nthe recorded audio!" : "Press & hold mic \nbutton to record";
+        return hasAudioRecording ? STRINGS.greatReplay[lang] : STRINGS.pressHoldMic[lang];
       case 'marker':
-        return "Draw here!";
+        return STRINGS.drawHere[lang];
       case 'camera':
-        return "Click here to take\nyour picture or\nupload from library!";
+        return STRINGS.clickToTakeOrUpload[lang];
       case 'none':
-        return "Choose your manual \noption above";
+        return STRINGS.chooseManual[lang];
       default:
-        return "Choose your manual \noption above";
+        return STRINGS.chooseManual[lang];
     }
   };
 

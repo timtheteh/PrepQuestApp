@@ -15,6 +15,7 @@ import { FloatingActionButton } from '@/components/FloatingActionButton';
 import Feather from '@expo/vector-icons/Feather';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Interface for flashcard data
 interface Flashcard {
@@ -36,265 +37,6 @@ interface Flashcard {
   lastQuizzedDate: string | null;
 }
 
-// Function to load flashcards from database
-const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Promise<Flashcard[]> => {
-  try {
-    const userID = await getCurrentUserID();
-    const isAIDeckFromParams = isAIDeck === 'true';
-    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-    
-    const result = await db.getAllAsync(`
-      SELECT 
-        flashcardID,
-        deckID,
-        difficultyRating,
-        cognitiveQnType,
-        isFavorited,
-        questionType,
-        questionText,
-        questionBlob,
-        answerType,
-        answerText,
-        answerMCQ,
-        answerBlob,
-        timeTaken,
-        isMcqAnswerRight,
-        lastStudiedDate,
-        lastQuizzedDate
-      FROM ${tableName}
-      WHERE deckID = ? AND userID = ?
-      ORDER BY 
-        CASE difficultyRating
-          WHEN 'None' THEN 1
-          WHEN 'Easy' THEN 2
-          WHEN 'Good' THEN 3
-          WHEN 'Hard' THEN 4
-          WHEN 'Again' THEN 5
-          ELSE 6
-        END,
-        flashcardID ASC
-    `, [parseInt(deckId), userID]);
-
-    if (!result) {
-      return [];
-    }
-
-    return result as Flashcard[];
-  } catch (error) {
-    console.error('Error loading flashcards from database:', error);
-    return [];
-  }
-};
-
-// Function to calculate question type counts from flashcards data
-const calculateQuestionTypeCounts = (flashcards: Flashcard[]): { title: string; count: number }[] => {
-  const counts: { [key: string]: number } = {};
-  
-  flashcards.forEach(flashcard => {
-    const cognitiveQnType = flashcard.cognitiveQnType;
-    counts[cognitiveQnType] = (counts[cognitiveQnType] || 0) + 1;
-  });
-  
-  // Convert to array and sort by count (descending)
-  return Object.entries(counts)
-    .map(([title, count]) => ({ title, count }))
-    .sort((a, b) => b.count - a.count);
-};
-
-// Function to load topics from database
-const loadTopicsFromDatabase = async (deckId: string, isAIDeck: string): Promise<string[]> => {
-  try {
-    const userID = await getCurrentUserID();
-    const isAIDeckFromParams = isAIDeck === 'true';
-    const tableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
-    
-    const result = await db.getFirstAsync(`
-      SELECT deckType, studyTopicsSubtopics, interviewTopics
-      FROM ${tableName}
-      WHERE deckID = ? AND userID = ?
-    `, [parseInt(deckId), userID]);
-
-    if (!result) {
-      return [];
-    }
-
-    const deck = result as { deckType: string; studyTopicsSubtopics: string | null; interviewTopics: string | null };
-    
-    let topicsField: string | null = null;
-    
-    if (deck.deckType === 'study') {
-      topicsField = deck.studyTopicsSubtopics;
-    } else if (deck.deckType === 'interview') {
-      topicsField = deck.interviewTopics;
-    }
-    
-    if (!topicsField) {
-      return [];
-    }
-    
-    // Parse the JSON string to get the topics array
-    try {
-      const topics = JSON.parse(topicsField);
-      return Array.isArray(topics) ? topics : [];
-    } catch (parseError) {
-      console.error('Error parsing topics JSON:', parseError);
-      return [];
-    }
-  } catch (error) {
-    console.error('Error loading topics from database:', error);
-    return [];
-  }
-};
-
-const SCREEN_TRANSITION_DURATION = 300;
-const ACTION_ROW_HEIGHT = 60;
-const ACTION_ROW_ANIMATION_DURATION = 300;
-
-// Local TopicPill component
-const TopicPill = ({ text }: { text: string }) => {
-  return (
-    <View style={styles.topicPill}>
-      <Text style={styles.topicPillText} numberOfLines={1}>
-        {text}
-      </Text>
-    </View>
-  );
-};
-
-// Local QuestionTypeCountRow component
-const QuestionTypeCountRow = ({ title, count }: { title: string; count: number }) => (
-  <View style={styles.questionTypeCountRow}>
-    <Text style={styles.questionTypeCountText}>{title}</Text>
-    <Text style={styles.questionTypeCountText}>{count}</Text>
-  </View>
-);
-
-const difficultyColors: Record<string, string> = {
-  Again: '#F8696B',
-  Hard: '#FA9473',
-  Good: '#FFEB84',
-  Easy: '#98CE7F',
-};
-
-const CardForFlashcard = ({
-  flashcardDifficulty,
-  flashcardQn,
-  flashcardQnType,
-  selected,
-  isSelectMode,
-  onPress,
-  flashcardIdx,
-  onNavigate,
-  flashcards,
-  isFavorited,
-  onToggleFavorite
-}: {
-  flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
-  flashcardQn: string;
-  flashcardQnType: string;
-  selected: boolean;
-  isSelectMode: boolean;
-  onPress: () => void;
-  flashcardIdx: number;
-  onNavigate: (flashcardIdx: number) => void;
-  flashcards: Flashcard[];
-  isFavorited: boolean;
-  onToggleFavorite: () => void;
-}) => {
-  const router = useRouter();
-  const Container = isSelectMode ? TouchableOpacity : View;
-  
-  // Determine what text to display based on flashcardQnType
-  const getDisplayText = () => {
-    if (flashcardQnType === 'text') {
-      return flashcardQn;
-    } else if (flashcardQnType === 'image') {
-      return '<Image>';
-    } else if (flashcardQnType === 'audio') {
-      return '<Audio>';
-    }
-    return flashcardQn; // fallback
-  };
-
-  return (
-    <Container
-      style={[
-        styles.cardForFlashcard,
-        selected && styles.cardForFlashcardSelected,
-      ]}
-      onPress={isSelectMode ? onPress : undefined}
-      activeOpacity={0.7}
-      disabled={!isSelectMode}
-    >
-      {/* Top row */}
-      <View style={styles.cardTopRow}>
-        <TouchableOpacity onPress={() => onNavigate(flashcardIdx)}>
-          <Ionicons name="eye" size={20} color="#444" />
-        </TouchableOpacity>
-        <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
-          <Text style={[styles.difficultyPillText]}>{flashcardDifficulty}</Text>
-        </View>
-        <FavoriteButton size={20} favorited={isFavorited} onPress={onToggleFavorite} />
-      </View>
-      {/* Centered question */}
-      <View style={styles.cardQnContainer}>
-        <Text
-          style={styles.cardQnText}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          {getDisplayText()}
-        </Text>
-      </View>
-      {/* Green tick if selected */}
-      {selected && (
-        <View style={styles.greenTickContainer}>
-          <GreenTickIcon width={20} height={20} />
-        </View>
-      )}
-      {/* CognitiveQnType pill at the bottom */}
-      {typeof flashcardIdx === 'number' && flashcards[flashcardIdx]?.cognitiveQnType && flashcards[flashcardIdx].cognitiveQnType !== 'None' && (
-        <View style={{
-          alignSelf: 'center',
-          marginBottom: -10,
-          backgroundColor: '#fff',
-          borderColor: '#4F41D8',
-          borderWidth: 1,
-          borderRadius: 12,
-          minHeight: 24,
-          paddingHorizontal: 12,
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexDirection: 'row',
-        }}>
-          <Text style={{ fontSize: 12, color: '#222', textAlign: 'center', fontFamily: 'Satoshi-Medium' }}>
-            {flashcards[flashcardIdx].cognitiveQnType} Qn
-          </Text>
-        </View>
-      )}
-    </Container>
-  );
-};
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const res: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    res.push(arr.slice(i, i + size));
-  }
-  return res;
-}
-
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-}
-
 export default function ViewFlashcardsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -314,6 +56,55 @@ export default function ViewFlashcardsScreen() {
     setCurrentDeckId,
     setCurrentDeckType,
   } = useContext(MenuContext);
+
+  const { language } = useLanguage();
+  console.log('Current language in viewFlashcards:', language);
+
+  // Localized labels
+  const COLUMN_TITLES = {
+    topics: language === 'Chinese' ? '主题' : 'Topics',
+    qnTypes: language === 'Chinese' ? '题型' : 'Qn Types',
+    flashcards: language === 'Chinese' ? '卡片' : 'Flashcards',
+    select: language === 'Chinese' ? '选择' : 'Select',
+    selectAll: language === 'Chinese' ? '全选' : 'Select All',
+  };
+  const LOADING = {
+    topics: language === 'Chinese' ? '正在加载主题...' : 'Loading topics...',
+    qnTypes: language === 'Chinese' ? '正在加载题型...' : 'Loading question types...',
+    flashcards: language === 'Chinese' ? '正在加载卡片...' : 'Loading flashcards...'
+  };
+  const EMPTY = {
+    topics: language === 'Chinese' ? '未指定主题' : 'No topics specified',
+    qnTypes: language === 'Chinese' ? '未找到题型' : 'No question types found',
+    flashcards: language === 'Chinese' ? '未找到卡片' : 'No flashcards found',
+  };
+  const DIFFICULTY_LABELS: Record<string, string> = {
+    Again: language === 'Chinese' ? '重来' : 'Again',
+    Hard: language === 'Chinese' ? '困难' : 'Hard',
+    Good: language === 'Chinese' ? '良好' : 'Good',
+    Easy: language === 'Chinese' ? '简单' : 'Easy',
+    None: language === 'Chinese' ? '无' : 'None',
+  };
+
+  // Mapping for cognitiveQnType to Chinese/English
+  const COGNITIVE_QN_TYPE_LABELS: Record<string, { en: string; zh: string }> = {
+    'Recall': { en: 'Recall', zh: '回忆' },
+    'Application': { en: 'Application', zh: '应用' },
+    'Analysis': { en: 'Analysis', zh: '分析' },
+    'Synthesis': { en: 'Synthesis', zh: '综合' },
+    'Evaluation': { en: 'Evaluation', zh: '评估' },
+    'Comprehension': { en: 'Comprehension', zh: '理解' },
+    'Problem-Solving': { en: 'Problem-Solving', zh: '解决' },
+    'None': { en: 'None', zh: '无' },
+    // Add more as needed
+  };
+
+  // Helper to get localized cognitiveQnType label
+  const getCognitiveQnTypeLabel = (type: string) => {
+    const entry = COGNITIVE_QN_TYPE_LABELS[type];
+    if (!entry) return type;
+    return language === 'Chinese' ? entry.zh : entry.en;
+  };
 
   // View state management - always start in "grid" state
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -337,6 +128,127 @@ export default function ViewFlashcardsScreen() {
 
   // State for question types
   const [questionTypes, setQuestionTypes] = useState<{ title: string; count: number }[]>([]);
+
+  // Helper function to get current userID from AsyncStorage
+  async function getCurrentUserID(): Promise<string> {
+    try {
+      const userID = await AsyncStorage.getItem('userID');
+      return userID || '1'; // Default to '1' if not found
+    } catch (error) {
+      console.error('Error getting userID from AsyncStorage:', error);
+      return '1'; // Default to '1' on error
+    }
+  }
+
+  // Function to load flashcards from database
+  const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Promise<Flashcard[]> => {
+    try {
+      const userID = await getCurrentUserID();
+      const isAIDeckFromParams = isAIDeck === 'true';
+      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+      
+      const result = await db.getAllAsync(`
+        SELECT 
+          flashcardID,
+          deckID,
+          difficultyRating,
+          cognitiveQnType,
+          isFavorited,
+          questionType,
+          questionText,
+          questionBlob,
+          answerType,
+          answerText,
+          answerMCQ,
+          answerBlob,
+          timeTaken,
+          isMcqAnswerRight,
+          lastStudiedDate,
+          lastQuizzedDate
+        FROM ${tableName}
+        WHERE deckID = ? AND userID = ?
+        ORDER BY 
+          CASE difficultyRating
+            WHEN 'None' THEN 1
+            WHEN 'Easy' THEN 2
+            WHEN 'Good' THEN 3
+            WHEN 'Hard' THEN 4
+            WHEN 'Again' THEN 5
+            ELSE 6
+          END,
+          flashcardID ASC
+      `, [parseInt(deckId), userID]);
+  
+      if (!result) {
+        return [];
+      }
+  
+      return result as Flashcard[];
+    } catch (error) {
+      console.error('Error loading flashcards from database:', error);
+      return [];
+    }
+  };
+
+  // Function to load topics from database
+  const loadTopicsFromDatabase = async (deckId: string, isAIDeck: string): Promise<string[]> => {
+    try {
+      const userID = await getCurrentUserID();
+      const isAIDeckFromParams = isAIDeck === 'true';
+      const tableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+      
+      const result = await db.getFirstAsync(`
+        SELECT deckType, studyTopicsSubtopics, interviewTopics
+        FROM ${tableName}
+        WHERE deckID = ? AND userID = ?
+      `, [parseInt(deckId), userID]);
+  
+      if (!result) {
+        return [];
+      }
+  
+      const deck = result as { deckType: string; studyTopicsSubtopics: string | null; interviewTopics: string | null };
+      
+      let topicsField: string | null = null;
+      
+      if (deck.deckType === 'study') {
+        topicsField = deck.studyTopicsSubtopics;
+      } else if (deck.deckType === 'interview') {
+        topicsField = deck.interviewTopics;
+      }
+      
+      if (!topicsField) {
+        return [];
+      }
+      
+      // Parse the JSON string to get the topics array
+      try {
+        const topics = JSON.parse(topicsField);
+        return Array.isArray(topics) ? topics : [];
+      } catch (parseError) {
+        console.error('Error parsing topics JSON:', parseError);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error loading topics from database:', error);
+      return [];
+    }
+  };
+
+  // Function to calculate question type counts from flashcards data
+  const calculateQuestionTypeCounts = (flashcards: Flashcard[]): { title: string; count: number }[] => {
+    const counts: { [key: string]: number } = {};
+    
+    flashcards.forEach(flashcard => {
+      const cognitiveQnType = flashcard.cognitiveQnType;
+      counts[cognitiveQnType] = (counts[cognitiveQnType] || 0) + 1;
+    });
+    
+    // Convert to array and sort by count (descending)
+    return Object.entries(counts)
+      .map(([title, count]) => ({ title, count }))
+      .sort((a, b) => b.count - a.count);
+  };
 
   // Function to load flashcards
   const loadFlashcards = async () => {
@@ -581,7 +493,15 @@ export default function ViewFlashcardsScreen() {
 
   // Action row handlers
   const handleSelect = () => setIsSelectMode(true);
-  const handleSelectAll = () => {/* TODO: select all logic */};
+  const handleSelectAll = () => {
+    if (selectedCardIndexes.length === flashcards.length) {
+      // If all are selected, deselect all
+      setSelectedCardIndexes([]);
+    } else {
+      // Otherwise, select all
+      setSelectedCardIndexes(flashcards.map((_, idx) => idx));
+    }
+  };
   const handleCancel = () => {
     setIsSelectMode(false);
     setSelectedCardIndexes([]);
@@ -691,6 +611,154 @@ export default function ViewFlashcardsScreen() {
     );
   };
 
+  function chunkArray<T>(arr: T[], size: number): T[][] {
+    const res: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) {
+      res.push(arr.slice(i, i + size));
+    }
+    return res;
+  }
+
+  // Local TopicPill component
+  const TopicPill = ({ text }: { text: string }) => {
+    return (
+      <View style={styles.topicPill}>
+        <Text style={[styles.topicPillText, language === 'Chinese' && { 
+          // fontFamily: 'NotoSansSC-Medium' 
+          }]} numberOfLines={1}>
+          {text}
+        </Text>
+      </View>
+    );
+  };
+
+  // Local QuestionTypeCountRow component
+  const QuestionTypeCountRow = ({ title, count }: { title: string; count: number }) => (
+    <View style={styles.questionTypeCountRow}>
+      <Text style={[styles.questionTypeCountText, language === 'Chinese' && {
+        //  fontFamily: 'NotoSansSC-Medium' 
+         }]}>{getCognitiveQnTypeLabel(title)}</Text>
+      <Text style={[styles.questionTypeCountText, language === 'Chinese' && { 
+        // fontFamily: 'NotoSansSC-Medium' 
+        }]}>{count}</Text>
+    </View>
+  );
+
+  const difficultyColors: Record<string, string> = {
+    Again: '#F8696B',
+    Hard: '#FA9473',
+    Good: '#FFEB84',
+    Easy: '#98CE7F',
+  };
+
+  const CardForFlashcard = ({
+    flashcardDifficulty,
+    flashcardQn,
+    flashcardQnType,
+    selected,
+    isSelectMode,
+    onPress,
+    flashcardIdx,
+    onNavigate,
+    flashcards,
+    isFavorited,
+    onToggleFavorite
+  }: {
+    flashcardDifficulty: 'Again' | 'Hard' | 'Good' | 'Easy';
+    flashcardQn: string;
+    flashcardQnType: string;
+    selected: boolean;
+    isSelectMode: boolean;
+    onPress: () => void;
+    flashcardIdx: number;
+    onNavigate: (flashcardIdx: number) => void;
+    flashcards: Flashcard[];
+    isFavorited: boolean;
+    onToggleFavorite: () => void;
+  }) => {
+    const router = useRouter();
+    const Container = isSelectMode ? TouchableOpacity : View;
+    // Determine what text to display based on flashcardQnType
+    const getDisplayText = () => {
+      if (flashcardQnType === 'text') {
+        return flashcardQn;
+      } else if (flashcardQnType === 'image') {
+        return language === 'Chinese' ? '<图片>' : '<Image>';
+      } else if (flashcardQnType === 'audio') {
+        return language === 'Chinese' ? '<音频>' : '<Audio>';
+      }
+      return flashcardQn; // fallback
+    };
+    return (
+      <Container
+        style={[
+          styles.cardForFlashcard,
+          selected && styles.cardForFlashcardSelected,
+        ]}
+        onPress={isSelectMode ? onPress : undefined}
+        activeOpacity={0.7}
+        disabled={!isSelectMode}
+      >
+        {/* Top row */}
+        <View style={styles.cardTopRow}>
+          <TouchableOpacity onPress={() => onNavigate(flashcardIdx)}>
+            <Ionicons name="eye" size={20} color="#444" />
+          </TouchableOpacity>
+          <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
+            <Text style={[styles.difficultyPillText, language === 'Chinese' && { 
+              // fontFamily: 'NotoSansSC-Medium' 
+              }]}>{DIFFICULTY_LABELS[flashcardDifficulty]}</Text>
+          </View>
+          <FavoriteButton size={20} favorited={isFavorited} onPress={onToggleFavorite} />
+        </View>
+        {/* Centered question */}
+        <View style={styles.cardQnContainer}>
+          <Text
+            style={[styles.cardQnText, language === 'Chinese' && { 
+              // fontFamily: 'NotoSansSC-Medium' 
+            }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {getDisplayText()}
+          </Text>
+        </View>
+        {/* Green tick if selected */}
+        {selected && (
+          <View style={styles.greenTickContainer}>
+            <GreenTickIcon width={20} height={20} />
+          </View>
+        )}
+        {/* CognitiveQnType pill at the bottom */}
+        {typeof flashcardIdx === 'number' && flashcards[flashcardIdx]?.cognitiveQnType && flashcards[flashcardIdx].cognitiveQnType !== 'None' && (
+          <View style={{
+            alignSelf: 'center',
+            marginBottom: -10,
+            backgroundColor: '#fff',
+            borderColor: '#4F41D8',
+            borderWidth: 1,
+            borderRadius: 12,
+            minHeight: 24,
+            paddingHorizontal: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexDirection: 'row',
+          }}>
+            <Text style={{ fontSize: 12, color: '#222', textAlign: 'center', 
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium' 
+              }}>
+              {getCognitiveQnTypeLabel(flashcards[flashcardIdx].cognitiveQnType)} {language === 'Chinese' ? '题' : 'Qn'}
+            </Text>
+          </View>
+        )}
+      </Container>
+    );
+  };
+
+  const SCREEN_TRANSITION_DURATION = 300;
+  const ACTION_ROW_HEIGHT = 60;
+  const ACTION_ROW_ANIMATION_DURATION = 300;
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -720,11 +788,12 @@ export default function ViewFlashcardsScreen() {
               styles.mainScrollViewContent,
               isSelectMode && { paddingBottom: 60 }
             ]}
+            showsVerticalScrollIndicator={false}
           >
             <View style={styles.headerRow}>
             {/* First Column - Title */}
             <View style={styles.column}>
-              <Text style={styles.columnTitle}>Topics</Text>
+              <Text style={styles.columnTitle}>{COLUMN_TITLES.topics}</Text>
               <View style={styles.componentContainer}>
                 <ScrollView 
                   style={styles.topicsScrollView}
@@ -734,11 +803,11 @@ export default function ViewFlashcardsScreen() {
                 >
                   {isLoadingTopics ? (
                     <View style={styles.loadingContainer}>
-                      <Text style={styles.loadingText}>Loading topics...</Text>
+                      <Text style={styles.loadingText}>{LOADING.topics}</Text>
                     </View>
                   ) : topics.length === 0 ? (
                     <View style={styles.emptyContainer}>
-                      <Text style={styles.emptyText}>No topics specified</Text>
+                      <Text style={styles.emptyText}>{EMPTY.topics}</Text>
                     </View>
                   ) : (
                     <View style={styles.topicsPillsWrap}>
@@ -753,7 +822,7 @@ export default function ViewFlashcardsScreen() {
             
             {/* Second Column - Question Types */}
             <View style={styles.column}>
-              <Text style={styles.columnTitle}>Qn Types</Text>
+              <Text style={styles.columnTitle}>{COLUMN_TITLES.qnTypes}</Text>
               <View style={styles.componentContainer}>
                 <ScrollView 
                   style={styles.qnTypesScrollView}
@@ -763,11 +832,11 @@ export default function ViewFlashcardsScreen() {
                 >
                   {isLoadingFlashcards ? (
                     <View style={styles.loadingContainer}>
-                      <Text style={styles.loadingText}>Loading question types...</Text>
+                      <Text style={styles.loadingText}>{LOADING.qnTypes}</Text>
                     </View>
                   ) : questionTypes.length === 0 ? (
                     <View style={styles.emptyContainer}>
-                      <Text style={styles.emptyText}>No question types found</Text>
+                      <Text style={styles.emptyText}>{EMPTY.qnTypes}</Text>
                     </View>
                   ) : (
                     questionTypes.map((item, idx) => (
@@ -799,13 +868,13 @@ export default function ViewFlashcardsScreen() {
             </Animated.View>
             {/* Flashcards title row */}
             <Animated.View style={[styles.flashcardsHeaderRow, { transform: [{ translateY: headerTranslateY }] }]}> 
-              <Text style={styles.flashcardsTitle}>Flashcards</Text>
+              <Text style={styles.flashcardsTitle}>{COLUMN_TITLES.flashcards}</Text>
               <TouchableOpacity 
                 onPress={isSelectMode ? handleSelectAll : handleSelect}
                 style={styles.selectButtonContainer}
               >
                 <Animated.Text style={styles.selectButton}>
-                  {isSelectMode ? 'Select All' : 'Select'}
+                  {isSelectMode ? COLUMN_TITLES.selectAll : COLUMN_TITLES.select}
                 </Animated.Text>
               </TouchableOpacity>
             </Animated.View>
@@ -814,11 +883,11 @@ export default function ViewFlashcardsScreen() {
               <Animated.View style={[styles.flashcardsGridContainer, { transform: [{ translateY: headerTranslateY }] }]}> 
                 {isLoadingFlashcards ? (
                   <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingText}>Loading flashcards...</Text>
+                    <Text style={styles.loadingText}>{LOADING.flashcards}</Text>
                   </View>
                 ) : flashcards.length === 0 ? (
                   <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No flashcards found</Text>
+                    <Text style={styles.emptyText}>{EMPTY.flashcards}</Text>
                   </View>
                 ) : (
                   chunkArray(flashcards, 2).map((row, rowIdx) => (
@@ -853,11 +922,11 @@ export default function ViewFlashcardsScreen() {
               <Animated.View style={[styles.flashcardsListContainer, { transform: [{ translateY: headerTranslateY }] }]}>
                 {isLoadingFlashcards ? (
                   <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingText}>Loading flashcards...</Text>
+                    <Text style={styles.loadingText}>{LOADING.flashcards}</Text>
                   </View>
                 ) : flashcards.length === 0 ? (
                   <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No flashcards found</Text>
+                    <Text style={styles.emptyText}>{EMPTY.flashcards}</Text>
                   </View>
                 ) : (
                   flashcards.map((card, i) => {
@@ -866,9 +935,9 @@ export default function ViewFlashcardsScreen() {
                       if (card.questionType === 'text') {
                         return card.questionText || '';
                       } else if (card.questionType === 'image') {
-                        return '<Image>';
+                        return language === 'Chinese' ? '<图片>' : '<Image>';
                       } else if (card.questionType === 'audio') {
-                        return '<Audio>';
+                        return language === 'Chinese' ? '<音频>' : '<Audio>';
                       }
                       return card.questionText || ''; // fallback
                     };

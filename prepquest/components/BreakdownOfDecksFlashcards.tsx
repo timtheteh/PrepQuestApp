@@ -5,6 +5,7 @@ import { Engine, World, Bodies, Body, Events } from 'matter-js';
 import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BreakdownDatum {
   label: string;
@@ -133,7 +134,18 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
 const BOUNCE_SPEED = 2.0; // slightly faster speed
 const FPS = 60;
 
+// Mapping for category labels to Chinese/English
+const CATEGORY_LABELS: Record<string, { en: string; zh: string }> = {
+  'Study': { en: 'Study', zh: '学习' },
+  'Technical': { en: 'Technical', zh: '技术' },
+  'Case study': { en: 'Case study', zh: '案例分析' },
+  'Behavioral': { en: 'Behavioral', zh: '行为' },
+  'Brainteasers': { en: 'Brainteasers', zh: '脑筋急转弯' },
+  'Others': { en: 'Others', zh: '其他' },
+};
+
 export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksFlashcardsProps) {
+  const { language } = useLanguage();
   const [isFlashcards, setIsFlashcards] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [renderedIsFlashcards, setRenderedIsFlashcards] = useState(false);
@@ -378,9 +390,9 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
+        <Text style={styles.title}>{language === 'Chinese' ? '卡组 / 卡片数量分析' : 'Breakdown of Number of Decks / Flashcards'}</Text>
         <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
-          Loading breakdown data...
+          {language === 'Chinese' ? '正在加载...' : 'Loading...'}
         </Text>
       </View>
     );
@@ -389,9 +401,9 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   if (data.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
+        <Text style={styles.title}>{language === 'Chinese' ? '卡组 / 卡片数量分析' : 'Breakdown of Number of Decks / Flashcards'}</Text>
         <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
-          No data available yet. Create some decks to see the breakdown!
+          {language === 'Chinese' ? '暂无数据' : 'No data available'}
         </Text>
       </View>
     );
@@ -399,11 +411,11 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Breakdown of Number of {'\n'}Decks / Flashcards</Text>
+      <Text style={styles.title}>{language === 'Chinese' ? '卡组 / 卡片数量分析' : 'Breakdown of Number of Decks / Flashcards'}</Text>
       <View style={{ alignItems: 'center', marginTop: 15 }}>
         <SmallGreenBinaryToggle
-          leftLabel="Decks"
-          rightLabel="Flashcards"
+          leftLabel={language === 'Chinese' ? '卡组' : 'Decks'}
+          rightLabel={language === 'Chinese' ? '卡片' : 'Flashcards'}
           onToggle={setIsFlashcards}
           initialPosition={isFlashcards ? 'right' : 'left'}
         />
@@ -437,7 +449,11 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
                     color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000',
                     fontSize: (d.label == 'Case study' || d.label == 'Brainteasers') ? 12 : 16
                   }
-                ]}>{d.label}</Text>
+                ]}>{
+                  language === 'Chinese'
+                    ? CATEGORY_LABELS[d.label]?.zh || d.label
+                    : CATEGORY_LABELS[d.label]?.en || d.label
+                }</Text>
                 <Text style={[styles.bubbleText, {color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : '#000000'}]}>{`${d.value} (${d.percent}%)`}</Text>
               </View>
             );

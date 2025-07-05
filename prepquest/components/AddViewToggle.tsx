@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated, Dimensions, ViewStyle } from 'react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AddViewToggleProps {
   onToggle?: (option: 'add' | 'view') => void;
@@ -14,6 +15,7 @@ export function AddViewToggle({
   selected: externalSelected,
   style
 }: AddViewToggleProps) {
+  const { language } = useLanguage();
   const [internalSelected, setInternalSelected] = useState<'add' | 'view'>(initialState);
   const translateX = useState(new Animated.Value(initialState === 'add' ? 0 : 1))[0];
   const screenWidth = Dimensions.get('window').width;
@@ -73,7 +75,7 @@ export function AddViewToggle({
             styles.text,
             selected === 'add' ? styles.selectedText : styles.unselectedText
           ]}>
-            Add Flashcard(s)
+            {language === 'Chinese' ? '添加卡片' : 'Add Flashcard(s)'}
           </Text>
         </View>
       </TouchableOpacity>
@@ -86,7 +88,7 @@ export function AddViewToggle({
             styles.text,
             selected === 'view' ? styles.selectedText : styles.unselectedText
           ]}>
-            View Flashcard(s)
+            {language === 'Chinese' ? '查看卡片' : 'View Flashcard(s)'}
           </Text>
         </View>
       </TouchableOpacity>

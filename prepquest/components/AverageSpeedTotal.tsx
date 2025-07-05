@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import Svg, { Path, G, Text as SvgText } from 'react-native-svg';
 import GaugeIcon from '../assets/icons/gaugeIcon.svg';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const WIDTH = 320;
 const HEIGHT = 180;
@@ -48,6 +49,7 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
 }
 
 export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProps) {
+  const { language } = useLanguage();
   // Use provided averageTime or default to 0 if no data
   const value = averageTime ?? 0;
   
@@ -70,13 +72,16 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
   const gaugeAngle = valueToAngle(cappedValue);
   // Label positions (slightly outside arc)
   const labelPositions = LABELS.map(v => polarToCartesian(CX-7, CY -8, R+8, valueToAngle(v)));
+  // Localized title and label
+  const title = language === 'Chinese' ? '平均每张卡片用时' : 'Average time per flashcard';
+  const secondsLabel = language === 'Chinese' ? '秒' : 's';
 
   // For gaugeIcon.svg: its tip (0,0) should be at the arc center (CX,CY), so translate and rotate accordingly
   // The SVG is 12x80, tip at (6,0), so offset x by -6, y by -10 (to move tip to center)
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.title}>Average time per flashcard</Text>
+      <Text style={[styles.title, language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }]}>{title}</Text>
       <View style={styles.svgWrap}>
         <Svg width={WIDTH} height={HEIGHT}>
           <G>
@@ -95,11 +100,11 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
                 x={labelPositions[i].x}
                 y={labelPositions[i].y + 8}
                 fontSize={22}
-                fontFamily="Satoshi-Medium"
+                fontFamily={language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'}
                 fill="#000"
                 textAnchor={i === 0 ? 'end' : i === LABELS.length - 1 ? 'start' : 'middle'}
               >
-                {v + 's'}
+                {v + secondsLabel}
               </SvgText>
             ))}
           </G>
@@ -134,7 +139,7 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
           </View>
         </View>
         {/* Value at bottom center - show actual value, not capped */}
-        <Text style={styles.valueText}>{value}s</Text>
+        <Text style={[styles.valueText, language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }]}>{value}{secondsLabel}</Text>
       </View>
     </View>
   );

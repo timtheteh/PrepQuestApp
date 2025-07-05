@@ -13,8 +13,10 @@ import BreakdownByDifficultyPie from '@/components/BreakdownByDifficulty';
 import { SpeedChart } from '@/components/SpeedChart';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 import { getAverageGradeAllTime, getDifficultyBreakdown, getAverageTimeAllTime } from '@/db/grades';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function StatisticsScreen() {
+  const { language } = useLanguage();
   const [isPerformance, setIsPerformance] = useState(false);
   const [pendingDecksFadeIn, setPendingDecksFadeIn] = useState(false);
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
@@ -181,9 +183,9 @@ export default function StatisticsScreen() {
       <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim}}>
         <View style={{ marginTop: topPadding, paddingHorizontal: 16 }}>
           <RoundedContainer
-            leftLabel="Decks / Flashcards"
+            leftLabel={language === 'Chinese' ? '卡组 / 卡片' : 'Decks / Flashcards'}
             leftLabelStyle={{ fontSize: 16, fontFamily: 'Satoshi-Medium' }}
-            rightLabel="Performance"
+            rightLabel={language === 'Chinese' ? '表现' : 'Performance'}
             onToggle={handleToggle}
             position={isPerformance ? 'right' : 'left'}
             disableAnimation={disableToggleAnimation}

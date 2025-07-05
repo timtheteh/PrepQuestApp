@@ -175,7 +175,8 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         againTimer INTEGER DEFAULT 60,
         hardTimer INTEGER DEFAULT 45,
         goodTimer INTEGER DEFAULT 30,
-        easyTimer INTEGER DEFAULT 15
+        easyTimer INTEGER DEFAULT 15,
+        language TEXT DEFAULT 'English'
       )
     `);
 

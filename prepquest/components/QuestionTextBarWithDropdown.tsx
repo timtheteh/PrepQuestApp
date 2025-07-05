@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, Platform, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllCompanyNames, getCompanyIconByName } from '@/db/decks';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface QuestionTextBarWithDropdownProps {
   label: string;
@@ -28,6 +29,7 @@ export function QuestionTextBarWithDropdown({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (showDropdown && isDropdownOpen) {
@@ -139,7 +141,7 @@ export function QuestionTextBarWithDropdown({
         <View style={styles.dropdownContainer}>
           <View style={styles.dropdownHeader}>
             <Text style={styles.dropdownHeaderText}>
-              {value.trim() ? `Companies starting with "${value}"` : 'Select a company'}
+              {value.trim() ? (language === 'Chinese' ? `以 "${value}" 开头的公司` : `Companies starting with "${value}"`) : (language === 'Chinese' ? '选择一个公司' : 'Select a company')}
             </Text>
             <TouchableOpacity 
               style={styles.closeDropdownButton}
@@ -157,7 +159,7 @@ export function QuestionTextBarWithDropdown({
               <Text style={styles.loadingText}>Loading companies...</Text>
             ) : filteredCompanies.length === 0 ? (
               <Text style={styles.loadingText}>
-                {value.trim() ? `No companies found starting with "${value}"` : 'No companies found'}
+                {value.trim() ? (language === 'Chinese' ? `没有以 "${value}" 开头的公司` : `No companies found starting with "${value}"`) : (language === 'Chinese' ? '没有公司' : 'No companies found')}
               </Text>
             ) : (
               filteredCompanies.map((company) => (

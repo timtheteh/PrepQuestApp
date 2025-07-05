@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type ToggleOption = 'study' | 'interview';
 
@@ -16,11 +17,12 @@ export function InterviewStudyToggle({
 }: InterviewStudyToggleProps) {
   const [selected, setSelected] = useState<ToggleOption>(initialState);
   const translateX = useState(new Animated.Value(initialState === 'study' ? 0 : 93))[0];
+  const { language } = useLanguage();
 
   useEffect(() => {
     setSelected(initialState);
     Animated.timing(translateX, {
-      toValue: initialState === 'study' ? 0 : 93,
+      toValue: language === 'English' ? (initialState === 'study' ? 0 : 93) : (initialState === 'study' ? -3 : 108),
       duration: 300,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: false,
@@ -34,7 +36,7 @@ export function InterviewStudyToggle({
     }
 
     Animated.timing(translateX, {
-      toValue: option === 'study' ? 0 : 93,
+      toValue: language === 'English' ? (option === 'study' ? 0 : 93) : (option === 'study' ? -3 : 108),
       duration: 300,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: false,
@@ -52,7 +54,7 @@ export function InterviewStudyToggle({
             styles.text,
             selected === 'study' ? styles.selectedText : styles.unselectedText
           ]}>
-            Study
+            {language === 'Chinese' ? '学习' : 'Study'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 
@@ -63,7 +65,7 @@ export function InterviewStudyToggle({
             styles.text,
             selected === 'interview' ? styles.selectedText : styles.unselectedText
           ]}>
-            Interview
+            {language === 'Chinese' ? '面试' : 'Interview'}
           </Text>
         </TouchableOpacity>
       </View>

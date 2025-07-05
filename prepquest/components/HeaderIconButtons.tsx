@@ -5,6 +5,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter } from 'expo-router';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export type PageType = 'decks' | 'folders' | 'favorites';
 
@@ -40,11 +41,23 @@ export const CALENDAR_TITLES: Record<PageType, string> = {
   favorites: 'Filter Favorites based on\ndate added'
 };
 
-const SEARCH_PLACEHOLDERS: Record<PageType, string> = {
-  decks: 'Search for Decks',
-  folders: 'Search for Folders',
-  favorites: 'Search Favorites'
-};
+function getSearchPlaceholder(pageType: PageType, language: string) {
+  if (language === 'Chinese') {
+    switch (pageType) {
+      case 'decks': return '搜索卡片组';
+      case 'folders': return '搜索文件夹';
+      case 'favorites': return '搜索收藏';
+      default: return '搜索';
+    }
+  } else {
+    switch (pageType) {
+      case 'decks': return 'Search for Decks';
+      case 'folders': return 'Search for Folders';
+      case 'favorites': return 'Search Favorites';
+      default: return 'Search';
+    }
+  }
+}
 
 const DEFAULT_SORT_FIELD: SortField = 'lastModified';
 const DEFAULT_SORT_DIRECTION: SortDirection = 'desc';
@@ -81,6 +94,15 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const expandAnim = useRef(new Animated.Value(0)).current;
   const searchFadeAnim = useRef(new Animated.Value(0)).current;
+
+  const { language } = useLanguage();
+
+  const searchPlaceholder = language === 'Chinese' ? '搜索卡片组' : 'Search decks';
+  const sortOptions = [
+    { label: language === 'Chinese' ? '名称' : 'Name', value: 'name' },
+    { label: language === 'Chinese' ? '添加日期' : 'Date Added', value: 'dateAdded' },
+    { label: language === 'Chinese' ? '最近修改' : 'Last Modified', value: 'lastModified' },
+  ];
 
   // Update sort state when initial props change
   useEffect(() => {
@@ -313,7 +335,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
           />
           <TextInput
             style={styles.searchInput}
-            placeholder={SEARCH_PLACEHOLDERS[pageType]}
+            placeholder={getSearchPlaceholder(pageType, language)}
             value={searchText}
             onChangeText={(text) => {
               setSearchText(text);
@@ -390,7 +412,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             ]}
             onPress={collapseFilter}
           >
-            <Text style={styles.rowText}>{FIELD_LABELS[selectedField]}</Text>
+            <Text style={[styles.rowText, {
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+              }]}>{sortOptions.find(o => o.value === selectedField)?.label}</Text>
             <Feather 
               name={sortDirections[selectedField] === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 
@@ -405,7 +429,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             ]} 
             onPress={() => handleSortPress('name')}
           >
-            <Text style={styles.rowText}>Name</Text>
+            <Text style={[styles.rowText, {
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+              }]}>{sortOptions[0].label}</Text>
             <Feather 
               name={sortDirections.name === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 
@@ -420,7 +446,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             ]}
             onPress={() => handleSortPress('dateAdded')}
           >
-            <Text style={styles.rowText}>Date Added</Text>
+            <Text style={[styles.rowText, {
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+              }]}>{sortOptions[1].label}</Text>
             <Feather 
               name={sortDirections.dateAdded === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 
@@ -435,7 +463,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             ]}
             onPress={() => handleSortPress('lastModified')}
           >
-            <Text style={styles.rowText}>Last Modified</Text>
+            <Text style={[styles.rowText, {
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+              }]}>{sortOptions[2].label}</Text>
             <Feather 
               name={sortDirections.lastModified === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 

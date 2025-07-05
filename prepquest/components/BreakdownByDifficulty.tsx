@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import Svg, { G, Path, Text as SvgText } from 'react-native-svg';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SIZE = 300;
 const RADIUS = SIZE / 2;
 const COLORS = ['#F8696B', '#FA9473', '#FFEB84', '#98CE7F']; // Again, Hard, Good, Easy
-const LABELS = ['Again', 'Hard', 'Good', 'Easy'];
 
 interface BreakdownByDifficultyPieProps {
   breakdown?: {
@@ -53,6 +53,14 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
 }
 
 export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPieProps) {
+  const { language } = useLanguage();
+  // Localized labels
+  const LABELS = language === 'Chinese'
+    ? ['再来', '困难', '良好', '简单']
+    : ['Again', 'Hard', 'Good', 'Easy'];
+  const title = language === 'Chinese' ? '按难度分布的卡片' : 'Breakdown of Flashcards by Difficulty';
+  const emptyText = language === 'Chinese' ? '暂无难度数据' : 'No difficulty data available';
+  const emptySubtext = language === 'Chinese' ? '完成一些卡片以查看分布' : 'Complete some flashcards to see your breakdown';
   // Use breakdown data if provided, otherwise use default values
   const values = breakdown ? [
     breakdown.Again,
@@ -67,10 +75,12 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
   if (total === 0) {
     return (
       <View style={styles.wrapper}>
-        <Text style={styles.title}>Breakdown of Flashcards by Difficulty</Text>
+        <Text style={[styles.title, 
+          // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
+          ]}>{title}</Text>
         <View style={styles.container}>
-          <Text style={styles.emptyText}>No difficulty data available</Text>
-          <Text style={styles.emptySubtext}>Complete some flashcards to see your breakdown</Text>
+          <Text style={styles.emptyText}>{emptyText}</Text>
+          <Text style={styles.emptySubtext}>{emptySubtext}</Text>
         </View>
       </View>
     );
@@ -93,7 +103,9 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.title}>Breakdown of Flashcards by Difficulty</Text>
+      <Text style={[styles.title, 
+        // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
+        ]}>{title}</Text>
       <View style={styles.container}>
         <Svg width={SIZE} height={SIZE}>
           <G>
@@ -108,7 +120,7 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
                     x={slice.labelPos.x}
                     y={slice.labelPos.y - 10}
                     fontSize={16}
-                    fontFamily="Satoshi-Medium"
+                    // fontFamily={language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'}
                     fill="#111"
                     textAnchor="middle"
                     alignmentBaseline="middle"
@@ -119,7 +131,7 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
                     x={slice.labelPos.x}
                     y={slice.labelPos.y + 10}
                     fontSize={16}
-                    fontFamily="Satoshi-Medium"
+                    // fontFamily={language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'}
                     fill="#111"
                     textAnchor="middle"
                     alignmentBaseline="middle"

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { View, StyleSheet, ImageBackground, Platform, ImageSourcePropType, Pressable, Text, Image, Dimensions } from 'react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AIDeckCardProps {
   backgroundImage: ImageSourcePropType;
@@ -20,6 +21,19 @@ interface AIDeckCardProps {
   deckID?: number;
 }
 
+// Add language mappings for all user-facing strings
+const STRINGS = {
+  cardTypes: {
+    behavioral: { English: 'Behavioral', Chinese: '行为面试' },
+    technical: { English: 'Technical', Chinese: '技术面试' },
+    brainteasers: { English: 'Brainteasers', Chinese: '脑筋急转弯' },
+    'case study': { English: 'Case Study', Chinese: '案例分析' },
+    others: { English: 'Others', Chinese: '其他' },
+    study: { English: 'Study', Chinese: '学习' },
+  },
+  cards: { English: 'cards', Chinese: '张卡片' },
+};
+
 export function AIDeckCard({ 
   backgroundImage,
   pressedBackgroundImage,
@@ -38,6 +52,8 @@ export function AIDeckCard({
   deckID
 }: AIDeckCardProps) {
   const [isPressed, setIsPressed] = useState(false);
+  const { language } = useLanguage();
+  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
   const handlePressIn = () => {
     setIsPressed(true);
@@ -67,13 +83,13 @@ export function AIDeckCard({
   };
 
   // Card type color and label logic
-  const cardTypeMap: Record<string, { color: string; label: string }> = {
-    behavioral: { color: '#FDAE61', label: 'Behavioral' },
-    technical: { color: '#D7191C', label: 'Technical' },
-    brainteasers: { color: '#357AF6', label: 'Brainteasers' },
-    'case study': { color: '#C3EB79', label: 'Case Study' },
-    others: { color: '#FDAE61', label: 'Others' },
-    study: { color: '#5CC8BE', label: 'Study' },
+  const cardTypeMap: Record<string, { color: string; label: { English: string; Chinese: string } }> = {
+    behavioral: { color: '#FDAE61', label: STRINGS.cardTypes.behavioral },
+    technical: { color: '#D7191C', label: STRINGS.cardTypes.technical },
+    brainteasers: { color: '#357AF6', label: STRINGS.cardTypes.brainteasers },
+    'case study': { color: '#C3EB79', label: STRINGS.cardTypes['case study'] },
+    others: { color: '#FDAE61', label: STRINGS.cardTypes.others },
+    study: { color: '#5CC8BE', label: STRINGS.cardTypes.study },
   };
   const typeInfo = cardType && cardTypeMap[cardType];
 
@@ -122,11 +138,15 @@ export function AIDeckCard({
                           { borderColor: typeInfo.color }
                         ]}
                       >
-                        <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
+                        <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label[lang]}</Text>
                       </View>
                     )}
                     {flashcardCount !== undefined && (
-                      <Text style={styles.flashcardCountText}>{flashcardCount} cards</Text>
+                      <Text style={styles.flashcardCountText}>
+                        {lang === 'Chinese'
+                          ? `${flashcardCount}${STRINGS.cards[lang]}`
+                          : `${flashcardCount} ${STRINGS.cards[lang]}`}
+                      </Text>
                     )}
                   </View>
                 )}

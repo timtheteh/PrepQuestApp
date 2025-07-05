@@ -8,6 +8,8 @@ import { GenericModal } from '@/components/GenericModal';
 import { DifficultyToggleRow } from '@/components/DifficultyToggleRow';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Local component for title and toggle row
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
@@ -61,12 +63,14 @@ const TimePicker = ({
   onChange,
   minutesRange = Array.from({ length: 3 }, (_, i) => i),
   secondsRange = Array.from({ length: 60 }, (_, i) => i ),
+  language = 'English',
 }: {
   initialMinutes?: number;
   initialSeconds?: number;
   onChange?: (min: number, sec: number) => void;
   minutesRange?: number[];
   secondsRange?: number[];
+  language?: string;
 }) => {
   const [selectedMin, setSelectedMin] = React.useState<number>(initialMinutes);
   const [selectedSec, setSelectedSec] = React.useState<number>(initialSeconds);
@@ -156,7 +160,7 @@ const TimePicker = ({
         </Animated.ScrollView>
       </View>
       {/* Label */}
-      <Text style={timePickerStyles.label}>min</Text>
+      <Text style={timePickerStyles.label}>{language === 'Chinese' ? '分' : 'min'}</Text>
       {/* Seconds */}
       <View style={[timePickerStyles.pickerColumn, timePickerStyles.secColumn]}>
         <Animated.ScrollView
@@ -185,7 +189,7 @@ const TimePicker = ({
         </Animated.ScrollView>
       </View>
       {/* Label */}
-      <Text style={timePickerStyles.label}>sec</Text>
+      <Text style={timePickerStyles.label}>{language === 'Chinese' ? '秒' : 'sec'}</Text>
     </View>
   );
 };
@@ -241,7 +245,14 @@ const timePickerStyles = RNStyleSheet.create({
 
 export default function DeckSettingsPage() {
   const router = useRouter();
+  const { language, reloadLanguage } = useLanguage();
   
+  useFocusEffect(
+    React.useCallback(() => {
+      reloadLanguage();
+    }, [])
+  );
+
   // Load settings from database
   const loadSettings = async () => {
     try {
@@ -545,7 +556,11 @@ export default function DeckSettingsPage() {
         >
           <AntDesign name="arrowleft" size={32} color="black" />
         </TouchableOpacity>
-        <Text style={styles.title}>Deck Settings</Text>
+        <Text style={[styles.title, { 
+          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Regular' : 'Neuton-Regular',
+          marginLeft: language === 'Chinese' ? 0 : 16,
+          marginBottom: language === 'Chinese' ? Platform.OS === 'ios' ? 0 : 5 : Platform.OS === 'ios' ? 5 : 10, 
+          }]}>{language === 'Chinese' ? '卡片组设置' : 'Deck Settings'}</Text>
       </View>
       <View style={styles.mainContainer}>
         <ScrollView 
@@ -556,60 +571,69 @@ export default function DeckSettingsPage() {
           overScrollMode="always"
         >
           <TitleToggleRow 
-            text="Auto-decks"
+            text={language === 'Chinese' ? '自动创建卡片组' : 'Auto-decks'}
             value={autoDecksEnabled}
             onValueChange={setAutoDecksEnabled}
           />
           <Text style={styles.descriptionText}>
-            Turning this on will allow decks to be auto-generated based on your most recent decks created and reviewed.
+            {language === 'Chinese' ? '开启此功能后，系统将根据您最近创建和复习的卡片组自动生成新卡片组。' : 'Turning this on will allow decks to be auto-generated based on your most recent decks created and reviewed.'}
           </Text>
-          <Text style={styles.sectionTitle}>Flashcard settings</Text>
+          <Text style={styles.sectionTitle}>{language === 'Chinese' ? '闪卡设置' : 'Flashcard settings'}</Text>
           <TitleToggleRow 
-            text="Cloze Questions"
+            text={language === 'Chinese' ? '填空题' : 'Cloze Questions'}
             value={clozeQuestionsEnabled}
             onValueChange={setClozeQuestionsEnabled}
           />
           <Text style={styles.descriptionText}>
-          Enabling this will allow questions to be generated and displayed in cloze format to you. This applies mainly to recall-based questions.          
+            {language === 'Chinese' ? '启用后，系统将以填空题形式生成并显示问题，主要适用于回忆类问题。' : 'Enabling this will allow questions to be generated and displayed in cloze format to you. This applies mainly to recall-based questions.'}
           </Text>
           <TitleToggleRow 
-            text="MCQ Questions"
+            text={language === 'Chinese' ? '选择题' : 'MCQ Questions'}
             value={mcqQuestionsEnabled}
             onValueChange={setMcqQuestionsEnabled}
           />
           <Text style={styles.descriptionText}>
-          Enabling this will allow answers to be generated and displayed in a MCQ format to you. This applies mainly to the following question types:          
+            {language === 'Chinese' ? '启用后，系统将以选择题格式生成并显示答案，主要适用于以下题型：' : 'Enabling this will allow answers to be generated and displayed in a MCQ format to you. This applies mainly to the following question types:'}
           </Text>
           <ListParagraph 
-            listItems={[
-              "Recall-based questions",
-              "Comprehension-based questions", 
-              "Analysis-based questions"
+            listItems={language === 'Chinese' ? [
+              '回忆类问题 (Recall questions)',
+              '理解类问题 (Comprehension questions)',
+              '分析类问题 (Analysis questions)',
+            ] : [
+              'Recall-based questions',
+              'Comprehension-based questions', 
+              'Analysis-based questions',
             ]}
             onHelpPress={handleHelpPress}
           />
           <TitleToggleRow 
-            text="Voice-Recorded Answers"
+            text={language === 'Chinese' ? '语音回答' : 'Voice-Recorded Answers'}
             value={voiceRecordedAnswersEnabled}
             onValueChange={setVoiceRecordedAnswersEnabled}
           />
           <Text style={styles.descriptionText}>
-          With this enabled, you can record your answers and get feedback by AI. This applies if you are preparing for Behavioral Interviews and Case Interviews or if you are preparing for these question types:          </Text>
+            {language === 'Chinese' ? '启用此功能后，您可以通过录音回答问题并获得AI反馈。此功能适用于行为面试（Behavioral Interviews）和案例面试（Case Interviews）的准备，或以下题型的练习：' : 'With this enabled, you can record your answers and get feedback by AI. This applies if you are preparing for Behavioral Interviews and Case Interviews or if you are preparing for these question types:'}
+          </Text>
           <ListParagraph 
-            listItems={[
-              "Application-based questions",
-              "Synthesis-based questions", 
-              "Evaluation-based questions",
-              "Problem-Solving questions"
+            listItems={language === 'Chinese' ? [
+              '应用类问题 (Application questions)',
+              '综合类问题 (Synthesis questions)',
+              '评估类问题 (Evaluation questions)',
+              '解决问题类问题 (Problem-Solving)',
+            ] : [
+              'Application-based questions',
+              'Synthesis-based questions', 
+              'Evaluation-based questions',
+              'Problem-Solving questions',
             ]}
             onHelpPress={handleHelpPress}
           />
-          
           <View style={styles.titleToggleRow}>
-            <Text style={styles.titleToggleText}>Voice Recording Timer</Text>
+            <Text style={styles.titleToggleText}>{language === 'Chinese' ? '语音录制计时器' : 'Voice Recording Timer'}</Text>
           </View>
-          <Text style={[styles.descriptionText, {marginBottom: 0}]}>
-            Set the time limit for voice recording answers in quiz mode.
+          <Text style={[styles.descriptionText, {marginBottom: 0}]}> 
+            {language === 'Chinese' ? '设置答题时语音录制的时间限制。' : 'Set the time limit for voice recording answers in quiz mode.'}
           </Text>
           <TimePicker
             key={`voice-recorded-timer-${resetCounter}`}
@@ -618,25 +642,25 @@ export default function DeckSettingsPage() {
             onChange={handleVoiceRecordedTimerChange}
             minutesRange={Array.from({ length: 10 }, (_, i) => i)}
             secondsRange={Array.from({ length: 60 }, (_, i) => i)}
+            language={language}
           />
-          
-          <Text style={styles.sectionTitle}>Quiz Preferences</Text>
+          <Text style={styles.sectionTitle}>{language === 'Chinese' ? '测验偏好' : 'Quiz Preferences'}</Text>
           <TitleToggleRow 
-            text="Halfway Checkpoint"
+            text={language === 'Chinese' ? '中途检查点' : 'Halfway Checkpoint'}
             value={halfwayCheckpointEnabled}
             onValueChange={setHalfwayCheckpointEnabled}
           />
           <Text style={styles.descriptionText}>
-          Turning this on will let you see current statistics of your quiz performance halfway through the quiz.
+            {language === 'Chinese' ? '开启此功能后，您将在答题中途看到当前测验表现的统计数据。' : 'Turning this on will let you see current statistics of your quiz performance halfway through the quiz.'}
           </Text>
           <View style={styles.titleToggleRow}>
-            <Text style={styles.titleToggleText}>Timer Settings for Respective Difficulty</Text>
+            <Text style={styles.titleToggleText}>{language === 'Chinese' ? '各难度级别的计时设置' : 'Timer Settings for Respective Difficulty'}</Text>
           </View>
-          
           <View style={{marginTop: 10}}>
             <DifficultyToggleRow
               onToggle={handleDifficultyChange}
               initialIndex={selectedDifficultyIndex}
+              language={language}
             />
           </View>
           <Animated.View style={{ opacity: pickerOpacity }}>
@@ -645,6 +669,7 @@ export default function DeckSettingsPage() {
               initialMinutes={pickerMinutes}
               initialSeconds={pickerSeconds}
               onChange={handleTimeChange}
+              language={language}
             />
           </Animated.View>
         </ScrollView>
@@ -668,11 +693,11 @@ export default function DeckSettingsPage() {
         <Text
           style={{
             color: '#fff',
-            fontFamily: 'Satoshi-Medium',
+            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium',
             fontSize: 24,
           }}
         >
-          Back to default settings?
+          {language === 'Chinese' ? '恢复默认设置？' : 'Back to default settings?'}
         </Text>
       </TouchableOpacity>
       <GreyOverlayBackground 
@@ -683,10 +708,10 @@ export default function DeckSettingsPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text="Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."
+        text={language === 'Chinese' ? '我们的团队基于布鲁姆分类法，确定了7种主要认知题型，助力高效学习。了解更多内容，请访问我们的官网。' : "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."}
         buttons='none'
         textStyle={{
-          highlightWord: "our website",
+          highlightWord: language === 'Chinese' ? '官网' : 'our website',
           highlightColor: "#44B88A"
         }}
         Icon={HelpIconFilled}

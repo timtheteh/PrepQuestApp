@@ -18,6 +18,7 @@ import Svg, { SvgProps, Path } from 'react-native-svg';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import { checkDeckNameExists } from '../db/decks';
 import { Toast } from '../components/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -100,6 +101,7 @@ export default function GenAIFormPage() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const { language } = useLanguage();
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -652,8 +654,8 @@ export default function GenAIFormPage() {
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
           <RoundedContainer 
-            leftLabel="Mandatory"
-            rightLabel="Optional"
+            leftLabel={language === 'Chinese' ? '必填' : 'Mandatory'}
+            rightLabel={language === 'Chinese' ? '选填' : 'Optional'}
             onToggle={handleToggle}
           />
         </View>
@@ -675,38 +677,38 @@ export default function GenAIFormPage() {
             {isMandatory && (
               <View style={styles.formContent}>
                 <TitleTextBar
-                  title=" Deck Name"
-                  highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                  placeholder="Type here!"
+                  title={language === 'Chinese' ? '卡组名称' : ' Deck Name'}
+                  highlightedWord={mode === 'study' ? (language === 'Chinese' ? '学习' : 'Study') : (language === 'Chinese' ? '面试' : 'Interview')}
+                  placeholder={language === 'Chinese' ? '请输入！' : 'Type here!'}
                   value={deckName}
                   onChangeText={setDeckName}
                 />
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
-                      label="1. Education Level?"
-                      placeholder="e.g. Freshman, Sophomore, etc"
+                      label={language === 'Chinese' ? '1. 教育水平？' : '1. Education Level?'}
+                      placeholder={language === 'Chinese' ? '例如：大一，大二等' : 'e.g. Freshman, Sophomore, etc'}
                       value={studyMandatoryQuestion1}
                       onChangeText={setStudyMandatoryQuestion1}
-                      helperText="What education level is your preparation for?"
+                      helperText={language === 'Chinese' ? '你的准备是针对哪个教育水平？' : 'What education level is your preparation for?'}
                     />
                     <QuestionTextBar
-                      label="2. Subject(s)?"
-                      placeholder="e.g. Computer Science, Math, Physics, etc."
+                      label={language === 'Chinese' ? '2. 科目？' : '2. Subject(s)?'}
+                      placeholder={language === 'Chinese' ? '例如：计算机科学，数学，物理等' : 'e.g. Computer Science, Math, Physics, etc.'}
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText="What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc."
+                      helperText={language === 'Chinese' ? '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。' : 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.'}
                     />
                   </>
                 )}
                 {mode !== 'study' && (
                   <>
                   <QuestionTextBar
-                    label="1. Job/Role?"
-                    placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                    label={language === 'Chinese' ? '1. 职位/角色？' : '1. Job/Role?'}
+                    placeholder={language === 'Chinese' ? '例如：前端开发，私募股权分析师等' : 'e.g. Frontend Developer, Private Equity Analyst, etc'}
                     value={interviewMandatoryQuestion1}
                     onChangeText={setInterviewMandatoryQuestion1}
-                    helperText="What job or role are you preparing for?"
+                    helperText={language === 'Chinese' ? '你正在准备什么职位或角色？' : 'What job or role are you preparing for?'}
                     />
                   <TypeOfInterviewQn
                     value={interviewType}
@@ -716,7 +718,7 @@ export default function GenAIFormPage() {
                   
                 )}
                 <NumberOfQuestions
-                  title="3. Number of questions:"
+                  title={language === 'Chinese' ? '3. 题目数量：' : '3. Number of questions:'}
                   value={numberOfQuestions}
                   onValueChange={setNumberOfQuestions}
                 />
@@ -732,25 +734,25 @@ export default function GenAIFormPage() {
             {!isMandatory && mode === 'study' && (
               <View style={styles.formContent}>
                 <QuestionTextBar
-                  label="1. Topic(s)?"
-                  placeholder="e.g. Microeconomics, Electromagnetism, etc"
+                  label={language === 'Chinese' ? '1. 主题？' : '1. Topic(s)?'}
+                  placeholder={language === 'Chinese' ? '例如：微观经济学，电磁学等' : 'e.g. Microeconomics, Electromagnetism, etc'}
                   value={studyOptionalQuestion1}
                   onChangeText={setStudyOptionalQuestion1}
-                  helperText="Which topics would you like to study? Provide your answer in a comma separated list, e.g Microeconomics, Electromagnetism, etc"
+                  helperText={language === 'Chinese' ? '你想学习哪些主题？请用逗号分隔，例如：微观经济学，电磁学等。' : 'Which topics would you like to study? Provide your answer in a comma separated list, e.g Microeconomics, Electromagnetism, etc'}
                 />
                 <QuestionTextBar
-                  label="2. Subtopic(s)?"
-                  placeholder="e.g. Demand and Supply, etc"
+                  label={language === 'Chinese' ? '2. 子主题？' : '2. Subtopic(s)?'}
+                  placeholder={language === 'Chinese' ? '例如：供需关系等' : 'e.g. Demand and Supply, etc'}
                   value={studyOptionalQuestion2}
                   onChangeText={setStudyOptionalQuestion2}
-                  helperText="Which subtopics would you like to focus on? Provide your answer in a comma separated list, e.g Demand and Supply, etc"
+                  helperText={language === 'Chinese' ? '你想专注于哪些子主题？请用逗号分隔，例如：供需关系等。' : 'Which subtopics would you like to focus on? Provide your answer in a comma separated list, e.g Demand and Supply, etc'}
                 />
                 <QuestionTextBar
-                  label="3. Exam/Quiz?"
-                  placeholder="e.g. SAT, ACT, GRE, etc"
+                  label={language === 'Chinese' ? '3. 考试/测验？' : '3. Exam/Quiz?'}
+                  placeholder={language === 'Chinese' ? '例如：SAT，ACT，GRE等' : 'e.g. SAT, ACT, GRE, etc'}
                   value={studyOptionalQuestion3}
                   onChangeText={setStudyOptionalQuestion3}
-                  helperText="What exam or quiz would you like to study for?"
+                  helperText={language === 'Chinese' ? '你想为哪些考试或测验学习？' : 'What exam or quiz would you like to study for?'}
                 />
                 <KindsOfQuestions
                     value={questionType}
@@ -763,26 +765,26 @@ export default function GenAIFormPage() {
             {!isMandatory && mode === 'interview' && (
               <View style={styles.formContent}>
                 <QuestionTextBarWithDropdown
-                  label="1. Company?"
-                  placeholder="e.g. Google, Meta, Microsoft, etc"
+                  label={language === 'Chinese' ? '1. 公司？' : '1. Company?'}
+                  placeholder={language === 'Chinese' ? '例如：谷歌，Meta，微软等' : 'e.g. Google, Meta, Microsoft, etc'}
                   value={interviewOptionalQuestion1}
                   onChangeText={setInterviewOptionalQuestion1}
-                  helperText="Which company are you preparing to interview with?"
+                  helperText={language === 'Chinese' ? '你正在准备面试哪家公司？' : 'Which company are you preparing to interview with?'}
                   showDropdown={true}
                 />
                 <QuestionTextBar
-                  label="2. Experience Level?"
-                  placeholder="e.g. Junior Developer, Senior Developer, etc"
+                  label={language === 'Chinese' ? '2. 经验水平？' : '2. Experience Level?'}
+                  placeholder={language === 'Chinese' ? '例如：初级开发者，高级开发者等' : 'e.g. Junior Developer, Senior Developer, etc'}
                   value={interviewOptionalQuestion2}
                   onChangeText={setInterviewOptionalQuestion2}
-                  helperText="Which experience level is your interview for?"
+                  helperText={language === 'Chinese' ? '你的面试是针对哪个经验水平？' : 'Which experience level is your interview for?'}
                 />
                 <QuestionTextBar
-                  label="3. Topic(s)?"
-                  placeholder="e.g. React, Java, Operating Systems, etc"
+                  label={language === 'Chinese' ? '3. 主题？' : '3. Topic(s)?'}
+                  placeholder={language === 'Chinese' ? '例如：React，Java，操作系统等' : 'e.g. React, Java, Operating Systems, etc'}
                   value={interviewOptionalQuestion3}
                   onChangeText={setInterviewOptionalQuestion3}
-                  helperText="Which topics would you like to focus on?"
+                  helperText={language === 'Chinese' ? '你想专注于哪些主题？' : 'Which topics would you like to focus on?'}
                 />
                 <KindsOfQuestions
                     value={questionType}
@@ -800,7 +802,7 @@ export default function GenAIFormPage() {
           { bottom: bottomOffset }
         ]}>
           <ActionButton
-            text="Submit"
+            text={language === 'Chinese' ? '提交' : 'Submit'}
             backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
             onPress={handleSubmit}
             disabled={isSubmitDisabled()}
@@ -817,10 +819,10 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text="Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."
+        text={language === 'Chinese' ? '我们的团队根据布鲁姆的认知分类法确定了7种主要的认知问题类型，以帮助您的学习。请访问我们的网站了解更多信息。' : 'Our team has identified 7 main types of cognitive questions based on Bloom\'s taxonomy to help with your learning. Visit our website to learn more.'}
         buttons='none'
         textStyle={{
-          highlightWord: "our website",
+          highlightWord: language === 'Chinese' ? '网站' : 'our website',
           highlightColor: "#44B88A"
         }}
         Icon={HelpIconFilled}
@@ -828,7 +830,7 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isRecentFormModalOpen}
         opacity={recentFormModalOpacity}
-        text={['Use most recent', 'form entry?']}
+        text={language === 'Chinese' ? ['使用最近的', '表单条目?'] : ['Use most recent', 'form entry?']}
         buttons='double'
         onConfirm={() => {
           handleDismissRecentForm();
@@ -840,7 +842,7 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isBackConfirmationModalOpen}
         opacity={backConfirmationModalOpacity}
-        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        text={language === 'Chinese' ? ['你确定要离开吗？', '所有进度将丢失'] : ['Are you sure you want', 'to leave? All your', 'progress will be lost']}
         buttons="double"
         onCancel={handleDismissBackConfirmation}
         onConfirm={() => {
@@ -871,14 +873,14 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isErrorModalOpen}
         opacity={errorModalOpacity}
-        text={errorMessage}
+        text={language === 'Chinese' ? '所有必填项都必须填写！' : errorMessage}
         buttons="none"
         Icon={DeleteModalIcon}
       />
       <GenericModal
         visible={isOptionalFieldsWarningModalOpen}
         opacity={optionalFieldsWarningModalOpacity}
-        text="Submit form without filling up all optional fields?"
+        text={language === 'Chinese' ? '未填写所有可选项就提交表单？' : 'Submit form without filling up all optional fields?'}
         buttons="double"
         onCancel={handleDismissOptionalFieldsWarning}
         onConfirm={handleOptionalFieldsWarningConfirm}
@@ -887,7 +889,7 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isSuccessModalOpen}
         opacity={successModalOpacity}
-        text={"Great! 😊 Do you want to go ahead and submit?"}
+        text={language === 'Chinese' ? '太棒了！😊 要继续提交吗？' : 'Great! 😊 Do you want to go ahead and submit?'}
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}

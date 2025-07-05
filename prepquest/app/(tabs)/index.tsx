@@ -12,7 +12,7 @@ import { MenuButton } from '@/components/MenuButton';
 import { CalendarModal } from '@/components/CalendarModal';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
@@ -20,6 +20,7 @@ import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteM
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -94,18 +95,32 @@ export default function DecksScreen() {
   const { mode, selected } = useLocalSearchParams();
   const calendarOpacity = useRef(new Animated.Value(0)).current;
   const calendarMenuOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const { language, reloadLanguage } = useLanguage();
 
   const selectUnselectedDuration = 300;
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadLanguage();
+    }, [])
+  );
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[date.getMonth()];
-      const day = date.getDate();
-      const year = date.getFullYear();
-      return `${month} ${day}, ${year}`;
+      if (language === 'Chinese') {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        return `${year}年${month}月${day}日`;
+      } else {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = months[date.getMonth()];
+        const day = date.getDate();
+        const year = date.getFullYear();
+        return `${month} ${day}, ${year}`;
+      }
     } catch (error) {
       console.error('Error formatting date:', error);
       return dateString; // Return original string if parsing fails
@@ -753,7 +768,7 @@ export default function DecksScreen() {
           />
           )}
           <Text style={styles.emptyStateText}>
-            Where have all the{'\n'}decks gone
+            {language === 'Chinese' ? '所有卡片组都去哪了？' : 'Where have all the\ndecks gone'}
           </Text>
         </View>
       );
@@ -815,7 +830,7 @@ export default function DecksScreen() {
           />
           )}
           <Text style={styles.emptyStateText}>
-            Where have all the{'\n'}decks gone
+            {language === 'Chinese' ? '所有卡片组都去哪了？' : 'Where have all the\ndecks gone'}
           </Text>
         </View>
       );
@@ -1064,8 +1079,8 @@ export default function DecksScreen() {
           ]}>
             <View style={styles.content}>
               <RoundedContainer 
-                leftLabel={`Study (${studyDeckCount})`}
-                rightLabel={`Interview (${interviewDeckCount})`}
+                leftLabel={language === 'Chinese' ? `学习 (${studyDeckCount})` : `Study (${studyDeckCount})`}
+                rightLabel={language === 'Chinese' ? `面试 (${interviewDeckCount})` : `Interview (${interviewDeckCount})`}
                 onToggle={handleToggle}
               />
 
@@ -1097,11 +1112,15 @@ export default function DecksScreen() {
               >
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
-                    <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                      {`My Study Decks (${studyDeckCount})`}
+                    <Title style={[styles.titleAbsolute, {
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
+                      fontSize: language === 'Chinese' ? 20 : 24}]} animatedOpacity={studyOpacity}>
+                      {language === 'Chinese' ? `我的学习卡片组 (${studyDeckCount})` : `My Study Decks (${studyDeckCount})`}
                     </Title>
-                    <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                      {`My Interview Decks (${interviewDeckCount})`}
+                    <Title style={[styles.titleAbsolute, {
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
+                      fontSize: language === 'Chinese' ? 20 : 24}]} animatedOpacity={interviewOpacity}>
+                      {language === 'Chinese' ? `我的面试卡片组 (${interviewDeckCount})` : `My Interview Decks (${interviewDeckCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1114,14 +1133,14 @@ export default function DecksScreen() {
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
-                      Select
+                      {language === 'Chinese' ? '选择' : 'Select'}
                     </Animated.Text>
                     <Animated.Text style={[
                       styles.selectButton,
                       styles.selectButtonAbsolute,
                       { opacity: selectAllOpacity }
                     ]}>
-                      Select All
+                      {language === 'Chinese' ? '全选' : 'Select All'}
                     </Animated.Text>
                   </TouchableOpacity>
                 </View>
@@ -1175,7 +1194,7 @@ export default function DecksScreen() {
 
       <CalendarModal
         visible={isCalendarOpen}
-        title={"Filter decks based on\ndate added"}
+        title={language === 'Chinese' ? '按添加日期筛选卡片组' : 'Filter decks based on\ndate added'}
         onDone={(selectedFilter, customDate) => {
           setCalendarFilter(selectedFilter);
           setCalendarCustomDate(customDate || null);

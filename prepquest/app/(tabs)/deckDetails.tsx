@@ -20,6 +20,18 @@ import { db } from '@/db/index';
 import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists, getCompanyIconImageSource } from '@/db/decks';
 import { Toast } from '@/components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
 
 const getEmptyStateContainerMarginTop = () => {
     const { width, height } = Dimensions.get('window');
@@ -54,92 +66,6 @@ const getEmptyStateContainerMarginTop = () => {
 
 const SCREEN_TRANSITION_DURATION = 300;
 
-// Helper function to format date
-const formatDate = (dateString: string | null): string => {
-  if (!dateString) return '--';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  } catch (error) {
-    return '--';
-  }
-};
-
-// Card type color and label logic
-const cardTypeMap: Record<string, { color: string; label: string }> = {
-  behavioral: { color: '#FDAE61', label: 'Behavioral' },
-  technical: { color: '#D7191C', label: 'Technical' },
-  brainteasers: { color: '#357AF6', label: 'Brainteasers' },
-  'case study': { color: '#C3EB79', label: 'Case Study' },
-  others: { color: '#FDAE61', label: 'Others' },
-  study: { color: '#5CC8BE', label: 'Study' },
-};
-
-const getCardTypeColor = (cardType: string) => {
-  return cardTypeMap[cardType]?.color || '#FDAE61';
-};
-
-const getCardTypeLabel = (cardType: string) => {
-  return cardTypeMap[cardType]?.label || 'Others';
-};
-
-// Local MetadataRow component
-interface MetadataRowProps {
-  label: string;
-  value: string;
-}
-
-function MetadataRow({ label, value }: MetadataRowProps) {
-  return (
-    <View style={metadataRowStyles.container}>
-      <Text style={metadataRowStyles.label}>{label}</Text>
-      <Text style={metadataRowStyles.value} numberOfLines={2}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-const metadataRowStyles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  label: {
-    fontFamily: 'Satoshi-Variable',
-    fontSize: 16,
-    color: '#111',
-    flex: 0,
-    marginRight: 16,
-  },
-  value: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 16,
-    color: '#111',
-    textAlign: 'right',
-    flex: 1,
-    flexWrap: 'wrap',
-  },
-});
-
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-}
-
 export default function DeckDetailsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -160,6 +86,38 @@ export default function DeckDetailsScreen() {
     deckDetailsSaveModalOpacity,
     setDeckDetailsSaveModalType,
   } = useContext(MenuContext);
+  const { language } = useLanguage();
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return '--';
+    try {
+      const date = new Date(dateString);
+      if (language === 'Chinese') {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        return `${year}年${month}月${day}日`;
+      } else {
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+      }
+    } catch (error) {
+      return '--';
+    }
+  };
+
+  // Card type color and label logic
+  const cardTypeMap: Record<string, { color: string; label: string }> = {
+    behavioral: { color: '#FDAE61', label: language === 'Chinese' ? '行为面试' : 'Behavioral' },
+    technical: { color: '#D7191C', label: language === 'Chinese' ? '技术面试' : 'Technical' },
+    brainteasers: { color: '#357AF6', label: language === 'Chinese' ? '脑筋急转弯' : 'Brainteasers' },
+    'case study': { color: '#C3EB79', label: language === 'Chinese' ? '案例分析' : 'Case Study' },
+    others: { color: '#FDAE61', label: language === 'Chinese' ? '其他' : 'Others' },
+    study: { color: '#5CC8BE', label: language === 'Chinese' ? '学习' : 'Study' },
+  };
 
   // State for favorite status
   const [favoriteStatus, setFavoriteStatus] = useState(isFavorited === '1');
@@ -1202,6 +1160,71 @@ export default function DeckDetailsScreen() {
     }
   };
 
+  // Local MetadataRow component
+  interface MetadataRowProps {
+    label: string;
+    value: string;
+  }
+  function MetadataRow({ label, value }: MetadataRowProps) {
+    // Map English label to Chinese if needed
+    const labelMap: Record<string, string> = {
+      'Created via': '创建方式',
+      'Subject(s)': '科目',
+      'Topics/Subtopics': '主题/子主题',
+      'Education Level': '教育水平',
+      'Exam/Quiz': '考试/测验',
+      'Last Reviewed date': '上次复习日期',
+      'Job/Role': '职位',
+      'Company': '公司',
+      'Topics': '主题',
+      'Experience Level': '经验水平',
+    };
+    const localizedLabel = language === 'Chinese' && labelMap[label] ? labelMap[label] : label;
+    return (
+      <View style={metadataRowStyles.container}>
+        <Text style={[metadataRowStyles.label, {
+          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+          }]}>{localizedLabel}</Text>
+        <Text style={[metadataRowStyles.value, {
+          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+          }]} numberOfLines={2}>
+          {value}
+        </Text>
+      </View>
+    );
+  }
+  const metadataRowStyles = StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingVertical: 8,
+      paddingHorizontal: 8,
+    },
+    label: {
+      fontFamily: 'Satoshi-Variable',
+      fontSize: 16,
+      color: '#111',
+      flex: 0,
+      marginRight: 16,
+    },
+    value: {
+      fontFamily: 'Satoshi-Medium',
+      fontSize: 16,
+      color: '#111',
+      textAlign: 'right',
+      flex: 1,
+      flexWrap: 'wrap',
+    },
+  });
+
+  const getCardTypeColor = (cardType: string) => {
+    return cardTypeMap[cardType]?.color || '#FDAE61';
+  };
+  const getCardTypeLabel = (cardType: string) => {
+    return cardTypeMap[cardType]?.label || (language === 'Chinese' ? '其他' : 'Others');
+  };
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
@@ -1272,7 +1295,9 @@ export default function DeckDetailsScreen() {
                           </View>
                         )}
                         {cardFlashcardCount !== undefined && (
-                          <Text style={styles.aiDeckFlashcardCount}>{cardFlashcardCount} cards</Text>
+                          <Text style={[styles.aiDeckFlashcardCount, {
+                            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+                          }]}>{cardFlashcardCount} {language === 'Chinese' ? '张卡片' : 'cards'}</Text>
                         )}
                       </View>
                     </View>
@@ -1317,7 +1342,7 @@ export default function DeckDetailsScreen() {
                             <Text style={styles.dateText}>{cardDate}</Text>
                           )}
                           {cardFlashcardCount !== undefined && (
-                            <Text style={styles.flashcardCountText}>{cardFlashcardCount} cards</Text>
+                            <Text style={styles.flashcardCountText}>{cardFlashcardCount} {language === 'Chinese' ? '张卡片' : 'cards'}</Text>
                           )}
                         </View>
                       )}
@@ -1337,7 +1362,7 @@ export default function DeckDetailsScreen() {
                       <View style={styles.loadingBarFlexWrapper}>
                         <LoadingBar percent={cardPercent} />
                       </View>
-                      <Text style={styles.progressLabel}>{cardPercent}% progress</Text>
+                      <Text style={styles.progressLabel}>{cardPercent}% {language === 'Chinese' ? '进度' : 'progress'}</Text>
                     </View>
                   )}
                 </View>
@@ -1392,7 +1417,7 @@ export default function DeckDetailsScreen() {
                       </View>
                       {/* Stats message for all deck types */}
                       <Text style={styles.aiDeckStatsMessage}>
-                      No stats yet! View, study or quiz yourself on this deck in the meantime!
+                        {language === 'Chinese' ? '暂无统计数据！你可以先浏览、学习或测验此卡组。' : 'No stats yet! View, study or quiz yourself on this deck in the meantime!'}
                       </Text>
                     </View>
                   ) : (
@@ -1449,18 +1474,19 @@ export default function DeckDetailsScreen() {
 }
 
 function LoadingBar({ percent }: { percent: number }) {
-    const isComplete = percent === 100;
-    return (
-      <View style={styles.loadingBarBg}>
-        <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? '#44B88A' : '#4F41D8' }]} />
-        {isComplete && (
-          <View style={styles.loadingBarTextContainer}>
-            <Text style={styles.loadingBarCompleteText}>Completed!</Text>
-          </View>
-        )}
-      </View>
-    );
-  }
+  const { language } = useLanguage();
+  const isComplete = percent === 100;
+  return (
+    <View style={styles.loadingBarBg}>
+      <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? '#44B88A' : '#4F41D8' }]} />
+      {isComplete && (
+        <View style={styles.loadingBarTextContainer}>
+          <Text style={styles.loadingBarCompleteText}>{language === 'Chinese' ? '已完成！' : 'Completed!'}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   animatedContainer: {

@@ -5,6 +5,7 @@ interface DifficultyToggleRowProps extends ViewProps {
   onToggle?: (selectedIndex: number) => void;
   initialIndex?: number;
   optionLabelStyle?: StyleProp<TextStyle>;
+  language?: string;
 }
 
 export function DifficultyToggleRow({
@@ -12,9 +13,10 @@ export function DifficultyToggleRow({
   initialIndex = 0,
   optionLabelStyle,
   style,
+  language,
   ...props
 }: DifficultyToggleRowProps) {
-  const options = ["Default", "Again", "Hard", "Good", "Easy"];
+  const options = language === 'Chinese' ? ["默认", "重来", "困难", "良好", "简单"] : ["Default", "Again", "Hard", "Good", "Easy"];
   const { width: windowWidth } = useWindowDimensions();
   const [selectedIndex, setSelectedIndex] = useState(initialIndex);
   const positionAnim = useRef(new Animated.Value(initialIndex)).current;

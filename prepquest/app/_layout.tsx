@@ -9,6 +9,7 @@ import { Animated } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -29,6 +30,14 @@ export default function RootLayout() {
     'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
     'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
     'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
+    'NotoSansSC-Black': require('../assets/fonts/NotoSansSC-Black.ttf'),
+    'NotoSansSC-Bold': require('../assets/fonts/NotoSansSC-Bold.ttf'),
+    'NotoSansSC-ExtraBold': require('../assets/fonts/NotoSansSC-ExtraBold.ttf'),
+    'NotoSansSC-ExtraLight': require('../assets/fonts/NotoSansSC-ExtraLight.ttf'),
+    'NotoSansSC-Light': require('../assets/fonts/NotoSansSC-Light.ttf'),
+    'NotoSansSC-Medium': require('../assets/fonts/NotoSansSC-Medium.ttf'),
+    'NotoSansSC-Regular': require('../assets/fonts/NotoSansSC-Regular.ttf'),
+    'NotoSansSC-SemiBold': require('../assets/fonts/NotoSansSC-SemiBold.ttf'),
   });
 
   // Initialize database when app starts
@@ -86,6 +95,7 @@ export default function RootLayout() {
   }
 
   return (
+    <LanguageProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -165,5 +175,6 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+    </LanguageProvider>
   );
 }

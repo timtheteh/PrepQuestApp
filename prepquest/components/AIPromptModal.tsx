@@ -5,6 +5,7 @@ import { MenuContext } from '@/contexts/MenuContext';
 import { AICardDesigns } from '@/constants/cardDesigns';
 import { getAIDecks, getCompanyIconImageSource, AIDeck } from '@/db/decks';
 import LottieView from 'lottie-react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -30,6 +31,7 @@ export function AIPromptModal({
   const [aiDecks, setAiDecks] = useState<AIDeck[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
+  const { language } = useLanguage();
 
   // Load AI decks from database
   useEffect(() => {
@@ -91,17 +93,21 @@ export function AIPromptModal({
       <View style={styles.content}>
         {loading ? (
           <>
-            <Text style={styles.title}>
-              Try these AI Decks created just for you!
+            <Text style={[styles.title, {
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Variable', 
+              fontSize: language === 'Chinese' ? 24 : 24}]}>
+              {language === 'Chinese' ? '试试为你量身定制的AI卡片组！' : 'Try these AI Decks created just for you!'}
             </Text>
             <View style={styles.imageContainer}>
-              <Text style={styles.loadingText}>Loading AI decks...</Text>
+              <Text style={styles.loadingText}>{language === 'Chinese' ? '正在加载AI卡片组...' : 'Loading AI decks...'}</Text>
             </View>
           </>
         ) : aiDecks.length > 0 ? (
           <>
-            <Text style={styles.title}>
-              Try these AI Decks created just for you!
+            <Text style={[styles.title, {
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Variable', 
+              fontSize: language === 'Chinese' ? 24 : 24}]}>
+              {language === 'Chinese' ? '试试为你量身定制的AI卡片组！' : 'Try these AI Decks created just for you!'}
             </Text>
             <View style={styles.imageContainer}>
               {aiDecks.map((deck, index) => {
@@ -130,8 +136,8 @@ export function AIPromptModal({
         ) : (
           <>
             <View style={styles.emptyStateHeader}>
-              <Text style={styles.emptyStateTitle}>Oops! No deck</Text>
-              <Text style={styles.emptyStateTitle}>suggestions for now</Text>
+              <Text style={styles.emptyStateTitle}>{language === 'Chinese' ? '哎呀！' : 'Oops! No deck'}</Text>
+              <Text style={styles.emptyStateTitle}>{language === 'Chinese' ? '暂无推荐卡片组' : 'suggestions for now'}</Text>
             </View>
             
             <View style={styles.emptyStateAnimationContainer}>
@@ -144,8 +150,8 @@ export function AIPromptModal({
             </View>
             
             <View style={styles.emptyStateFooter}>
-              <Text style={styles.emptyStateFooterText}>{"We'll generate more"}</Text>
-              <Text style={styles.emptyStateFooterText}>as you practice more!</Text>
+              <Text style={styles.emptyStateFooterText}>{language === 'Chinese' ? '随着你的练习' : "We'll generate more"}</Text>
+              <Text style={styles.emptyStateFooterText}>{language === 'Chinese' ? '我们会生成更多推荐！' : 'as you practice more!'}</Text>
             </View>
           </>
         )}

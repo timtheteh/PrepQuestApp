@@ -11,6 +11,7 @@ import FlashcardsStudiedIcon from '@/assets/icons/FlashcardsStudiedIcon.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, isSameDay, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
+import { useLanguage } from '@/contexts/LanguageContext';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
 const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
 const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
@@ -127,6 +128,7 @@ const NumberPicker = ({ value, setValue, min, max }: { value: number, setValue: 
 };
 
 const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boolean) => void }) => {
+  const { language } = useLanguage();
   const [decks, setDecks] = useState(3);
   const [days, setDays] = useState(5);
   const [signature, setSignature] = useState<string | null>(null);
@@ -235,24 +237,29 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
     >
       <View style={{ flex: 1, width: '100%', flexDirection: 'column', paddingHorizontal: 10, paddingVertical: 20, justifyContent: 'center' }}>
         <View style={{ paddingLeft: 20}}>
-        {/*iphone 16 plus, iphone 16 pro max, pixel 7 pro, pixel 7, pixel 8, pixel 9 pro, pixel 9 pro xl */}
-        {/* First line: intro text */}
+          {/* First line: intro text */}
           <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222', textAlign: 'justify', lineHeight: 30, }}>
-            To achieve my goals, I pledge to 
+            {language === 'Chinese' ? '为了实现我的目标，我承诺' : 'To achieve my goals, I pledge to'}
           </Text>
           <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222', textAlign: 'justify', lineHeight: 30}}>
-            study diligently by studying
+            {language === 'Chinese' ? '努力学习，通过学习' : 'study diligently by studying'}
           </Text>
           {/* Second line: decks number picker */}
           <View style={{ flexDirection: 'row', alignItems: 'center', }}>
             <NumberPicker value={decks} setValue={setDecks} min={1} max={30} />
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222', lineHeight: 30}}>decks continuously</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222', lineHeight: 30}}>
+              {language === 'Chinese' ? '天连续的卡组' : 'decks continuously'}
+            </Text>
           </View>
           {/* Fourth line: days number picker and 'days.' */}
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222',}}>for </Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222',}}>
+              {language === 'Chinese' ? '持续' : 'for '}
+            </Text>
             <NumberPicker value={days} setValue={setDays} min={1} max={100} />
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222',}}>days.</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222',}}>
+              {language === 'Chinese' ? '天。' : 'days.'}
+            </Text>
           </View>
         </View>
 
@@ -265,7 +272,7 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
             fontFamily: 'Satoshi-Medium',
             color: signature && !isSubmitCustomFormModalOpen ? '#44B88A' : '#D5D4DD',
             marginTop: 50
-          }}>Submit</Text>
+          }}>{language === 'Chinese' ? '提交' : 'Submit'}</Text>
         </TouchableOpacity>
         {/* Signature area */}
         <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'flex-end', marginLeft: 30, height: 75}}>
@@ -293,7 +300,9 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
             )}
             <View style={{ height: 2, backgroundColor: '#111', width: '100%', marginTop: signatureHeight - 2, zIndex: 0 }} />
           </View>
-          <Text style={{ fontFamily: 'Satoshi-Italic', fontSize: 12, color: '#222', textAlign: 'center', position: 'absolute', left: 0, right: 0, bottom:-13}}>(single finger stroke)</Text>
+          <Text style={{ fontFamily: 'Satoshi-Italic', fontSize: 12, color: '#222', textAlign: 'center', position: 'absolute', left: 0, right: 0, bottom:-13}}>
+            {language === 'Chinese' ? '（单指签名）' : '(single finger stroke)'}
+          </Text>
         </View>
       </View>
 
@@ -304,6 +313,7 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
 }
 
 const StreakCalendarStats = () => {
+  const { language } = useLanguage();
   const [streakData, setStreakData] = useState<LongestStreakData>({
     streakLength: 0,
     uniqueFlashcards: 0,
@@ -345,7 +355,7 @@ const StreakCalendarStats = () => {
     <View style={{ marginHorizontal: 16, marginTop: 20,}}>
       {/* First row - Title */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={styles.title}>Longest Streak</Text>
+        <Text style={styles.title}>{language === 'Chinese' ? '最长连续天数' : 'Longest Streak'}</Text>
       </View>
 
       {/* 3x3 Grid */}
@@ -361,7 +371,7 @@ const StreakCalendarStats = () => {
             </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>days</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: language === 'Chinese' ? 30 : 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>{language === 'Chinese' ? '天' : 'days'}</Text>
           </View>
         </View>
         {/* Row 2 */}
@@ -375,7 +385,7 @@ const StreakCalendarStats = () => {
             </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>decks{'\n'}studied</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>{language === 'Chinese' ? '已学习' : 'decks'}{'\n'}{language === 'Chinese' ? '卡片组' : 'studied'}</Text>
           </View>
         </View>
         {/* Row 3 */}
@@ -389,7 +399,7 @@ const StreakCalendarStats = () => {
             </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>flashcards{'\n'}studied</Text>
+            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>{language === 'Chinese' ? '已学习' : 'flashcards'}{'\n'}{language === 'Chinese' ? '卡片' : 'studied'}</Text>
           </View>
         </View>
       </View>
@@ -642,6 +652,7 @@ type BadgeWallProps = {
 };
 
 const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
+  const { language } = useLanguage();
   const [viewAll, setViewAll] = useState(false);
   // Sort badges: non-achieved first (desc by createdDate), then achieved (desc by createdDate)
   const sortedBadges = [
@@ -737,7 +748,7 @@ const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
             fontSize: 16,
             fontFamily: 'Satoshi-Medium',
             textAlign: 'center',
-          }}>{viewAll ? 'Collapse' : 'View All'}</Text>
+          }}>{viewAll ? (language === 'Chinese' ? '收起' : 'Collapse') : (language === 'Chinese' ? '查看所有' : 'View All')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -1484,6 +1495,7 @@ export default function AwardsScreen() {
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
   const isFocused = useIsFocused();
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (isFocused) {
@@ -1561,8 +1573,8 @@ export default function AwardsScreen() {
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <View style={{ marginTop: topPadding, paddingHorizontal: 16 }}>
         <RoundedContainer
-          leftLabel="Goals"
-          rightLabel="Achievements"
+          leftLabel={language === 'Chinese' ? '目标' : 'Goals'}
+          rightLabel={language === 'Chinese' ? '成就' : 'Achievements'}
           onToggle={handleToggle}
           position={isAchievements ? 'right' : 'left'}
           disableAnimation={disableToggleAnimation}
@@ -1577,7 +1589,7 @@ export default function AwardsScreen() {
             style={{ marginBottom: 40, marginTop: 20 }}
           >
         <View style={styles.wrapper}>
-          <Text style={styles.title}>Fill in your custom goal here!</Text>
+          <Text style={[styles.title, language === 'Chinese' && {marginTop: 20}]}>{language === 'Chinese' ? '在这里填写你\n的自定义目标!' : 'Fill in your custom goal here!'}</Text>
               <CustomGoalForm setScrollEnabled={setScrollEnabled} />
               <StreakCalendarStats />
               <StreakCalendar />
@@ -1604,11 +1616,11 @@ export default function AwardsScreen() {
             style={{ marginBottom: 40, marginTop: 20, marginHorizontal: 16 }}
           >
             <View style={{ flexDirection: 'column', gap: 30 }}>
-              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title="Custom Badges" />
-              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title="Daily Streak Badges" />
-              <BadgeWall badges={dummyBadges3} backgroundImage={LargeMeshBackground3} title="Weekly Streak Badges" />
-              <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title="Welcome Badges" />
-              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title="Lifetime Badges" />
+              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={language === 'Chinese' ? '自定义徽章' : 'Custom Badges'} />
+              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title={language === 'Chinese' ? '每日连续天数徽章' : 'Daily Streak Badges'} />
+              <BadgeWall badges={dummyBadges3} backgroundImage={LargeMeshBackground3} title={language === 'Chinese' ? '每周连续天数徽章' : 'Weekly Streak Badges'} />
+              <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title={language === 'Chinese' ? '欢迎徽章' : 'Welcome Badges'} />
+              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={language === 'Chinese' ? '终身徽章' : 'Lifetime Badges'} />
             </View>
           </ScrollView>
     </Animated.View>

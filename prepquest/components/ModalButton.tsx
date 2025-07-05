@@ -7,14 +7,17 @@ interface ModalButtonProps {
   onPress?: () => void;
   style?: ViewStyle;
   selected?: boolean;
+  language?: string;
 }
 
 export function ModalButton({ 
   text,
   onPress,
   style,
-  selected = false
+  selected = false,
+  language = 'English'
 }: ModalButtonProps) {
+  // const fontFamily = language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium';
   return (
     <TouchableOpacity 
       style={[

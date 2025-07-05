@@ -25,6 +25,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -582,10 +583,24 @@ const DIFFICULTY_TYPES = [
 ];
 
 // Updated DifficultyPillRow to accept currentIdx and totalCards as props
-const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards }: { currentIdx: number, onDifficultyChange: (difficulty: string) => void, flashcards: TransformedFlashcard[] }) => {
+interface DifficultyPillRowProps {
+  currentIdx: number;
+  onDifficultyChange: (difficulty: string) => void;
+  flashcards: TransformedFlashcard[];
+  language: string;
+}
+
+const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards, language }: DifficultyPillRowProps) => {
   // Get the current flashcard's difficulty
   const currentFlashcard = flashcards[currentIdx];
   const currentDifficulty = currentFlashcard?.flashcardDifficulty;
+
+  const DIFFICULTY_LABELS: { [key: string]: string } = {
+    Again: language === 'Chinese' ? '重来' : 'Again',
+    Hard: language === 'Chinese' ? '困难' : 'Hard',
+    Good: language === 'Chinese' ? '良好' : 'Good',
+    Easy: language === 'Chinese' ? '简单' : 'Easy',
+  };
 
   return (
     <View style={styles.difficultyPillRow}>
@@ -602,7 +617,7 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards }: { cur
             onDifficultyChange(type);
           }}
         >
-          <Text style={styles.difficultyPillButtonText}>{type}</Text>
+          <Text style={styles.difficultyPillButtonText}>{DIFFICULTY_LABELS[type]}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -610,16 +625,19 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards }: { cur
 };
 
 // Updated LoadingBar to accept currentIdx and totalCards as props with smooth animations
-const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode, recordedAudioUri }: { 
-  currentIdx: number, 
-  totalCards: number, 
-  isStudyMode: boolean,
-  hasFlippedCard: boolean,
-  hasSubmittedMCQ: boolean,
-  flashcardAnswerType: string,
-  isQuizMode: boolean,
-  recordedAudioUri: string | null
-}) => {
+interface LoadingBarProps {
+  currentIdx: number;
+  totalCards: number;
+  isStudyMode: boolean;
+  hasFlippedCard: boolean;
+  hasSubmittedMCQ: boolean;
+  flashcardAnswerType: string;
+  isQuizMode: boolean;
+  recordedAudioUri: string | null;
+  language: string;
+}
+
+const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode, recordedAudioUri, language }: LoadingBarProps) => {
   // Create animated value for progress
   const progressAnim = useRef(new Animated.Value(0)).current;
   
@@ -666,7 +684,9 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
         />
         {isCompleted && (
           <View style={styles.loadingBarTextContainer}>
-            <Text style={styles.loadingBarCompleteText}>Completed!</Text>
+            <Text style={styles.loadingBarCompleteText}>
+              {language === 'Chinese' ? '已完成！' : 'Completed!'}
+            </Text>
           </View>
         )}
       </View>
@@ -767,28 +787,68 @@ async function playAudio(uri: any) {
   }
 }
 
+// Move this above FlippableFlashcard:
+interface FlippableFlashcardProps {
+  currentIdx: number;
+  setCurrentIdx: React.Dispatch<React.SetStateAction<number>>;
+  totalCards: number;
+  setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>;
+  mcqModalOpacity: Animated.Value;
+  mcqOverlayOpacity: Animated.Value;
+  isFlipped: boolean;
+  setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>;
+  mcqOptionsWithLettersRef: React.MutableRefObject<{ choice: string; ans: boolean; letter: string }[]>;
+  stopSpeech: () => Promise<void>;
+  setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>;
+  isStudyMode: boolean;
+  hasFlippedCard: boolean;
+  setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>;
+  hasSubmittedMCQ: boolean;
+  setHasSubmittedMCQ: React.Dispatch<React.SetStateAction<boolean>>;
+  showStudyValidationModal: (message: string) => void;
+  setIsSuccessMode: React.Dispatch<React.SetStateAction<boolean>>;
+  isSuccessMode: boolean;
+  isQuizMode: boolean;
+  pauseNextTimer: boolean;
+  setPauseNextTimer: React.Dispatch<React.SetStateAction<boolean>>;
+  favorited: boolean;
+  onToggleFavorite: () => void;
+  showQuizCountdown: boolean;
+  flashcards: TransformedFlashcard[];
+  recordedAudioUri: string | null;
+  setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>;
+  updateFlashcardDate: (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => Promise<void>;
+  updateDeckCompletionDate: (isStudyMode: boolean) => Promise<void>;
+  startFlashcardTimer: (flashcardId: number) => void;
+  retryDifficultParam?: string;
+  language: string;
+}
+
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
-const FlippableFlashcard = (
-  { currentIdx, 
-    setCurrentIdx, 
-    totalCards, 
-    setMcqModalVisible, 
-    setMcqModalCorrect, 
-    mcqModalOpacity, 
-    mcqOverlayOpacity, 
-    isFlipped, 
-    setIsFlipped, 
-    mcqOptionsWithLettersRef, 
-    stopSpeech, 
-    setIsSpeechPlaying, 
-    setIsSpeechPaused, 
-    isStudyMode, 
-    hasFlippedCard, 
-    setHasFlippedCard, 
-    hasSubmittedMCQ, 
-    setHasSubmittedMCQ, 
-    showStudyValidationModal, 
-    setIsSuccessMode, 
+const FlippableFlashcard = (props: FlippableFlashcardProps) => {
+  const {
+    currentIdx,
+    setCurrentIdx,
+    totalCards,
+    setMcqModalVisible,
+    setMcqModalCorrect,
+    mcqModalOpacity,
+    mcqOverlayOpacity,
+    isFlipped,
+    setIsFlipped,
+    mcqOptionsWithLettersRef,
+    stopSpeech,
+    setIsSpeechPlaying,
+    setIsSpeechPaused,
+    isStudyMode,
+    hasFlippedCard,
+    setHasFlippedCard,
+    hasSubmittedMCQ,
+    setHasSubmittedMCQ,
+    showStudyValidationModal,
+    setIsSuccessMode,
     isSuccessMode,
     isQuizMode,
     pauseNextTimer,
@@ -802,43 +862,9 @@ const FlippableFlashcard = (
     updateFlashcardDate,
     updateDeckCompletionDate,
     startFlashcardTimer,
-    retryDifficultParam
-  }: { 
-      currentIdx: number, 
-      setCurrentIdx: React.Dispatch<React.SetStateAction<number>>, 
-      totalCards: number, 
-      setMcqModalVisible: React.Dispatch<React.SetStateAction<boolean>>, 
-      setMcqModalCorrect: React.Dispatch<React.SetStateAction<boolean>>, 
-      mcqModalOpacity: Animated.Value, 
-      mcqOverlayOpacity: Animated.Value, 
-      isFlipped: boolean, 
-      setIsFlipped: React.Dispatch<React.SetStateAction<boolean>>, 
-      mcqOptionsWithLettersRef: React.MutableRefObject<{ choice: string; ans: boolean; letter: string }[]>, 
-      stopSpeech: () => Promise<void>, 
-      setIsSpeechPlaying: React.Dispatch<React.SetStateAction<boolean>>, 
-      setIsSpeechPaused: React.Dispatch<React.SetStateAction<boolean>>, 
-      isStudyMode: boolean, 
-      hasFlippedCard: boolean, 
-      setHasFlippedCard: React.Dispatch<React.SetStateAction<boolean>>, 
-      hasSubmittedMCQ: boolean, 
-      setHasSubmittedMCQ: React.Dispatch<React.SetStateAction<boolean>>, 
-      showStudyValidationModal: (message: string) => void, 
-      setIsSuccessMode: React.Dispatch<React.SetStateAction<boolean>>, 
-      isSuccessMode: boolean,
-      isQuizMode: boolean,
-      pauseNextTimer: boolean,
-      setPauseNextTimer: React.Dispatch<React.SetStateAction<boolean>>,
-      favorited: boolean,
-      onToggleFavorite: () => void,
-      showQuizCountdown: boolean,
-      flashcards: TransformedFlashcard[],
-      recordedAudioUri: string | null,
-      setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>,
-      updateFlashcardDate: (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => Promise<void>,
-      updateDeckCompletionDate: (isStudyMode: boolean) => Promise<void>,
-      startFlashcardTimer: (flashcardId: number) => void,
-      retryDifficultParam?: string
-    }) => {
+    retryDifficultParam,
+    language
+  } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
@@ -944,7 +970,7 @@ const FlippableFlashcard = (
   // Handle MCQ submit
   const handleMCQSubmit = () => {
     if (selectedMCQOption) {
-      const selectedOption = mcqOptionsWithLettersRef.current.find(option => option.letter === selectedMCQOption);
+      const selectedOption = mcqOptionsWithLettersRef.current.find((option: any) => option.letter === selectedMCQOption);
       if (selectedOption) {
         const isCorrect = selectedOption.ans;
         setMcqModalCorrect(isCorrect);
@@ -1011,7 +1037,7 @@ const FlippableFlashcard = (
         duration: 200,
         useNativeDriver: true,
       }).start(() => {
-        setCurrentIdx(idx => {
+        setCurrentIdx((idx: number) => {
           // Always reset to front side
           setIsFlipped(false);
           flipAnim.setValue(0);
@@ -1040,15 +1066,15 @@ const FlippableFlashcard = (
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         if (!hasFlippedCard) {
           if (!hasDifficultySelected) {
-            showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
+            showStudyValidationModal(language === 'Chinese' ? '请先查看答案并选择难度后再继续!' : 'Cannot move on until you have viewed answer and selected a difficulty!');
             return;
           } else {
-            showStudyValidationModal("Please flip the card to view the answer before moving on to the next flashcard!");
+            showStudyValidationModal(language === 'Chinese' ? '请翻转卡片查看答案后再继续!' : 'Please flip the card to view the answer before moving on to the next flashcard!');
             return;
           }
         } else {
           if (!hasDifficultySelected) {
-            showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+            showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
             return;
           }
         }
@@ -1057,24 +1083,24 @@ const FlippableFlashcard = (
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         if (!hasFlippedCard) {
           if (!hasDifficultySelected) {
-            showStudyValidationModal("Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!");
+            showStudyValidationModal(language === 'Chinese' ? '请先查看背面、回答选择题并选择难度后再继续!' : 'Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!');
             return;
           } else {
-            showStudyValidationModal("Please flip the card to view and answer the MCQ before moving onto the next flashcard!");
+            showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并回答选择题后再继续!' : 'Please flip the card to view and answer the MCQ before moving onto the next flashcard!');
             return;
           }
         } else {
           if (!hasDifficultySelected) {
             if (!hasSubmittedMCQ) {
-              showStudyValidationModal("Cannot move on until you have answered the MCQ and selected a difficulty!");
+              showStudyValidationModal(language === 'Chinese' ? '请先回答选择题并选择难度后再继续!' : 'Cannot move on until you have answered the MCQ and selected a difficulty!');
               return;
             } else {
-              showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+              showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
               return;
             }
           } else {
             if (!hasSubmittedMCQ) {
-              showStudyValidationModal("Cannot move on until you have answered the MCQ!");
+              showStudyValidationModal(language === 'Chinese' ? '请先回答选择题后再继续!' : 'Cannot move on until you have answered the MCQ!');
               return;
             }
           }
@@ -1084,24 +1110,24 @@ const FlippableFlashcard = (
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         if (!hasFlippedCard) {
           if (!hasDifficultySelected) {
-            showStudyValidationModal("Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!");
+            showStudyValidationModal(language === 'Chinese' ? '请先查看背面、录音作答并选择难度后再继续!' : 'Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!');
             return;
           } else {
-            showStudyValidationModal("Please flip the card to view and record your voice answer before moving onto the next flashcard!");
+            showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并录音作答后再继续!' : 'Please flip the card to view and record your voice answer before moving onto the next flashcard!');
             return;
           }
         } else {
           if (!hasDifficultySelected) {
             if (!recordedAudioUri) {
-              showStudyValidationModal("Cannot move on until you have recorded your voice answer and selected a difficulty!");
+              showStudyValidationModal(language === 'Chinese' ? '请先录音作答并选择难度后再继续!' : 'Cannot move on until you have recorded your voice answer and selected a difficulty!');
               return;
             } else {
-              showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+              showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
               return;
             }
           } else {
             if (!recordedAudioUri) {
-              showStudyValidationModal("Cannot move on until you have recorded your voice answer!");
+              showStudyValidationModal(language === 'Chinese' ? '请先录音作答后再继续!' : 'Cannot move on until you have recorded your voice answer!');
               return;
             }
           }
@@ -1131,15 +1157,15 @@ const FlippableFlashcard = (
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
-              showStudyValidationModal("Cannot move on until you have viewed answer and selected a difficulty!");
+              showStudyValidationModal(language === 'Chinese' ? '请先查看答案并选择难度后再继续!' : 'Cannot move on until you have viewed answer and selected a difficulty!');
               return;
             } else {
-              showStudyValidationModal("Please flip the card to view the answer before moving on to the next flashcard!");
+              showStudyValidationModal(language === 'Chinese' ? '请翻转卡片查看答案后再继续!' : 'Please flip the card to view the answer before moving on to the next flashcard!');
               return;
             }
           } else {
             if (!hasDifficultySelected) {
-              showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+              showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
               return;
             }
           }
@@ -1148,24 +1174,24 @@ const FlippableFlashcard = (
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
-              showStudyValidationModal("Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!");
+              showStudyValidationModal(language === 'Chinese' ? '请先查看背面、回答选择题并选择难度后再继续!' : 'Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!');
               return;
             } else {
-              showStudyValidationModal("Please flip the card to view and answer the MCQ before moving onto the next flashcard!");
+              showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并回答选择题后再继续!' : 'Please flip the card to view and answer the MCQ before moving onto the next flashcard!');
               return;
             }
           } else {
             if (!hasDifficultySelected) {
               if (!hasSubmittedMCQ) {
-                showStudyValidationModal("Cannot move on until you have answered the MCQ and selected a difficulty!");
+                showStudyValidationModal(language === 'Chinese' ? '请先回答选择题并选择难度后再继续!' : 'Cannot move on until you have answered the MCQ and selected a difficulty!');
                 return;
               } else {
-                showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+                showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
                 return;
               }
             } else {
               if (!hasSubmittedMCQ) {
-                showStudyValidationModal("Cannot move on until you have answered the MCQ!");
+                showStudyValidationModal(language === 'Chinese' ? '请先回答选择题后再继续!' : 'Cannot move on until you have answered the MCQ!');
                 return;
               }
             }
@@ -1175,24 +1201,24 @@ const FlippableFlashcard = (
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
-              showStudyValidationModal("Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!");
+              showStudyValidationModal(language === 'Chinese' ? '请先查看背面、录音作答并选择难度后再继续!' : 'Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!');
               return;
             } else {
-              showStudyValidationModal("Please flip the card to view and record your voice answer before moving onto the next flashcard!");
+              showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并录音作答后再继续!' : 'Please flip the card to view and record your voice answer before moving onto the next flashcard!');
               return;
             }
           } else {
             if (!hasDifficultySelected) {
               if (!recordedAudioUri) {
-                showStudyValidationModal("Cannot move on until you have recorded your voice answer and selected a difficulty!");
+                showStudyValidationModal(language === 'Chinese' ? '请先录音作答并选择难度后再继续!' : 'Cannot move on until you have recorded your voice answer and selected a difficulty!');
                 return;
               } else {
-                showStudyValidationModal("Give this flashcard a difficulty rating before moving onto the next flashcard!");
+                showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
                 return;
               }
             } else {
               if (!recordedAudioUri) {
-                showStudyValidationModal("Cannot move on until you have recorded your voice answer!");
+                showStudyValidationModal(language === 'Chinese' ? '请先录音作答后再继续!' : 'Cannot move on until you have recorded your voice answer!');
                 return;
               }
             }
@@ -1211,7 +1237,7 @@ const FlippableFlashcard = (
         duration: 200,
         useNativeDriver: true,
       }).start(() => {
-        setCurrentIdx(idx => {
+        setCurrentIdx((idx: number) => {
           // Always reset to front side
           setIsFlipped(false);
           setHasFlippedCard(false); // Reset flipped state for new card
@@ -1540,6 +1566,26 @@ const FlippableFlashcard = (
     }
   }, [currentIdx, isStudyMode, isQuizMode, flashcards]);
 
+  // Mapping for cognitiveQnType to Chinese/English
+  const COGNITIVE_QN_TYPE_LABELS: Record<string, { en: string; zh: string }> = {
+    'Recall': { en: 'Recall', zh: '回忆' },
+    'Application': { en: 'Application', zh: '应用' },
+    'Analysis': { en: 'Analysis', zh: '分析' },
+    'Synthesis': { en: 'Synthesis', zh: '综合' },
+    'Evaluation': { en: 'Evaluation', zh: '评估' },
+    'Comprehension': { en: 'Comprehension', zh: '理解' },
+    'Problem-Solving': { en: 'Problem-Solving', zh: '解决' },
+    'None': { en: 'None', zh: '无' },
+    // Add more as needed
+  };
+
+  // Helper to get localized cognitiveQnType label
+  const getCognitiveQnTypeLabel = (type: string, language: string) => {
+    const entry = COGNITIVE_QN_TYPE_LABELS[type];
+    if (!entry) return type;
+    return language === 'Chinese' ? entry.zh : entry.en;
+  };
+
   return (
     <View style={{ flex: 1, position: 'relative' }}>
       {/* Left Chevron Button - hidden in study mode, but visible in retry difficult mode */}
@@ -1656,16 +1702,16 @@ const FlippableFlashcard = (
             <Animated.View style={[styles.topContainer, { opacity: frontOpacity }]}>
               <View style={styles.topContainerContent}>
                 <Text style={styles.flashcardIndexText}>
-                  {`Qn ${displayNumber} of ${totalCards}`}
+                  {`${language === 'Chinese' ? '题' : 'Qn'} ${displayNumber} ${language === 'Chinese' ? '共' : 'of'} ${totalCards}`}
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{"Time's Up!"}</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{language === 'Chinese' ? '时间到!' : "Time's Up!"}</Text>
                   ) : (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{countdown}s</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{language === 'Chinese' ? `${countdown}秒` : `${countdown}s`}</Text>
                   )}
                 </View>
               )}
@@ -1722,7 +1768,7 @@ const FlippableFlashcard = (
               )}
               {flashcardQnType === 'audio' && !!flashcardQn && (
                 <View style={styles.audioContainer}>
-                  <Text style={styles.audioLabel}>Question:</Text>
+                  <Text style={styles.audioLabel}>{language === 'Chinese' ? '问题' : 'Question'}:</Text>
                   <Pressable
                     style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
                     onPress={() => handleAudioButtonPress(flashcardQn)}
@@ -1762,7 +1808,7 @@ const FlippableFlashcard = (
                   left: 10, 
                 }}>
                   <Text style={{ fontSize: 14, color: '#222', textAlign: 'center', fontFamily: 'Satoshi-Medium' }}>
-                    {currentFlashcard.cognitiveQnType} Qn
+                    {getCognitiveQnTypeLabel(currentFlashcard.cognitiveQnType, language)} {language === 'Chinese' ? '题' : 'Qn'}
                   </Text>
                 </View>
               )}
@@ -1840,16 +1886,16 @@ const FlippableFlashcard = (
             <Animated.View style={[styles.topContainer, { opacity: backOpacity }]}>
               <View style={styles.topContainerContent}>
                 <Text style={styles.flashcardIndexText}>
-                  {`Ans ${displayNumber} of ${totalCards}`}
+                  {`${language === 'Chinese' ? '答' : 'Ans'} ${displayNumber} ${language === 'Chinese' ? '共' : 'of'} ${totalCards}`}
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{"Time's Up!"}</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{language === 'Chinese' ? '时间到!' : "Time's Up!"}</Text>
                   ) : (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{countdown}s</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{language === 'Chinese' ? `${countdown}秒` : `${countdown}s`}</Text>
                   )}
                 </View>
               )}
@@ -1872,7 +1918,7 @@ const FlippableFlashcard = (
                   contentContainerStyle={styles.mcqChoicesContainer}
                   showsVerticalScrollIndicator={false}
                 >
-                  {mcqOptionsWithLettersRef.current.map((option, idx) => (
+                  {mcqOptionsWithLettersRef.current.map((option: any, idx: number) => (
                     <View key={idx} style={styles.mcqOptionRow}>
                         <Text style={styles.mcqOptionText}>
                             {option.letter}) {option.choice}
@@ -1886,7 +1932,9 @@ const FlippableFlashcard = (
                   {!isRecording ? (
                     <>
                       <Text style={styles.voiceAnswerText}>
-                        {recordedAudioUri ? "Great answer! Replay your audio or get feedback by AI!" : "Record your answer and get feedback by AI!"}
+                        {recordedAudioUri ? 
+                        language === 'Chinese' ? "回答得很好！重放你的音频或通过AI获取反馈!" : "Great answer! Replay your audio or get feedback by AI!" : 
+                        language === 'Chinese' ? "录音答题，获取AI反馈!" : "Record your answer and get feedback by AI!"}
                       </Text>
                       <LottieView
                         source={require('@/assets/animations/DownArrowAnimation.json')}
@@ -2000,7 +2048,7 @@ const FlippableFlashcard = (
               )}
               {flashcardAnswerType === 'audio' && !!flashcardAnswer && (
                 <View style={styles.audioContainer}>
-                  <Text style={styles.audioLabel}>Answer:</Text>
+                  <Text style={styles.audioLabel}>{language === 'Chinese' ? '答案' : 'Answer'}:</Text>
                   <Pressable
                     style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
                     onPress={() => handleAudioButtonPress(flashcardAnswer)}
@@ -2028,7 +2076,7 @@ const FlippableFlashcard = (
             <Animated.View style={[styles.bottomContainer, { opacity: backOpacity }]}>
               {flashcardAnswerType === 'mcq' && mcqOptionsWithLettersRef.current.length > 0 && (
                 <View style={styles.mcqBottomContainer}>
-                  {mcqOptionsWithLettersRef.current.map((option) => (
+                  {mcqOptionsWithLettersRef.current.map((option: any) => (
                     <MCQOption
                       key={option.letter}
                       text={option.letter}
@@ -2041,6 +2089,7 @@ const FlippableFlashcard = (
                     enabled={selectedMCQOption !== null}
                     onPress={handleMCQSubmit}
                     disabled={isQuizMode && hasSubmittedMCQ}
+                    language={language}
                   />
                 </View>
               )}
@@ -2091,7 +2140,7 @@ const MCQOption = ({ text, selected, onPress, disabled }: { text: string; select
 };
 
 // Local Submit Button component
-const SubmitButton = ({ enabled, onPress, disabled }: { enabled: boolean; onPress: () => void; disabled?: boolean }) => {
+const SubmitButton = ({ enabled, onPress, disabled, language }: { enabled: boolean; onPress: () => void; disabled?: boolean; language: string }) => {
   const isDisabled = disabled || !enabled;
   return (
     <TouchableOpacity
@@ -2103,13 +2152,13 @@ const SubmitButton = ({ enabled, onPress, disabled }: { enabled: boolean; onPres
       disabled={isDisabled}
       activeOpacity={0.8}
     >
-      <Text style={styles.submitButtonText}>Submit</Text>
+      <Text style={styles.submitButtonText}>{language === 'Chinese' ? '提交' : 'Submit'}</Text>
     </TouchableOpacity>
   );
 };
 
 // Local MCQ Feedback Modal component
-const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80, isStudyMode, isQuizMode }: {
+const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80, isStudyMode, isQuizMode, language }: {
   visible: boolean;
   opacity: Animated.Value;
   isCorrect: boolean;
@@ -2117,6 +2166,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
   lottieMarginTop?: number;
   isStudyMode: boolean;
   isQuizMode: boolean;
+  language: string;
 }) => {
   if (!visible) return null;
   return (
@@ -2128,7 +2178,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
       {/* Centered text */}
       <View style={styles.mcqModalTextCenterWrap}>
         <Text style={[styles.mcqModalText]}>
-          {isCorrect ? "That's correct! Good job!" : "Oops that's incorrect! Try again next time!"}
+          {isCorrect ? (language === 'Chinese' ? "回答正确! 干得漂亮!" : "That's correct! Good job!") : (language === 'Chinese' ? "回答错误! 下次再试!" : "Oops that's incorrect! Try again next time!")}
         </Text>
       </View>
       {/* Lottie animation absolutely positioned */}
@@ -2140,14 +2190,14 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
       />
       {/* Button absolutely at bottom center */}
       <TouchableOpacity style={styles.mcqModalButtonAbsolute} onPress={onDismiss} activeOpacity={0.8}>
-        <Text style={styles.mcqModalButtonText}>OK</Text>
+        <Text style={styles.mcqModalButtonText}>{language === 'Chinese' ? '好的' : 'OK'}</Text>
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
 // Loading Screen Component to avoid hooks in conditional render
-const LoadingScreen = ({ progress, current, total }: { progress: number; current: number; total: number }) => {
+const LoadingScreen = ({ progress, current, total, language }: { progress: number; current: number; total: number; language: string }) => {
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -2203,7 +2253,7 @@ const LoadingScreen = ({ progress, current, total }: { progress: number; current
               marginTop: 24,
               marginBottom: 16,
             }}>
-              Loading your flashcards...
+              {language === 'Chinese' ? '加载你的卡片...' : 'Loading your flashcards...'}
             </Text>
             <View style={{
               width: '100%',
@@ -2246,7 +2296,7 @@ const LoadingScreen = ({ progress, current, total }: { progress: number; current
               textAlign: 'center',
               marginTop: 2,
             }}>
-              {`${current} out of ${total} Flashcards loaded`}
+              {language === 'Chinese' ? `${current} / ${total} 张卡片已加载` : `${current} out of ${total} Flashcards loaded`}
             </Text>
           </View>
         </View>
@@ -2257,6 +2307,7 @@ const LoadingScreen = ({ progress, current, total }: { progress: number; current
 
 export default function FlashcardViewPage() {
   const router = useRouter();
+  const { language } = useLanguage();
   const { deckID, flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam, isAIDeck: isAIDeckParam, retryDifficult: retryDifficultParam } = useLocalSearchParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
@@ -2662,7 +2713,7 @@ export default function FlashcardViewPage() {
         
         if (answerType === 'text' && typeof answer === 'string') {
           await Clipboard.setStringAsync(answer);
-          Alert.alert('Copied text to clipboard!');
+          Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied text to clipboard!');
         } else if (answerType === 'mcq' && Array.isArray(answer)) {
           // Use the displayed MCQ order and labels
           if (mcqOptionsWithLettersRef.current && mcqOptionsWithLettersRef.current.length > 0) {
@@ -2670,7 +2721,7 @@ export default function FlashcardViewPage() {
               return `${option.letter}) ${option.choice}`;
             }).join('\n');
             await Clipboard.setStringAsync(mcqText);
-            Alert.alert('Copied MCQ text to clipboard!');
+            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied MCQ text to clipboard!');
           } else {
             // fallback to original order if ref is empty
             const mcqText = answer.map((option, index) => {
@@ -2678,14 +2729,14 @@ export default function FlashcardViewPage() {
               return `${letter}) ${option.choice}`;
             }).join('\n');
             await Clipboard.setStringAsync(mcqText);
-            Alert.alert('Copied MCQ text to clipboard!');
+            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied MCQ text to clipboard!');
           }
         } else if (answerType === 'image' && answer) {
           const success = await copyAssetToClipboard(answer);
           if (success) {
-            Alert.alert('Copied image to clipboard!');
+            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied image to clipboard!');
           } else {
-            Alert.alert('Error', 'Failed to copy image to clipboard');
+            Alert.alert(language === 'Chinese' ? '复制失败!' : 'Failed to copy image to clipboard');
           }
         }
       } else {
@@ -2695,19 +2746,19 @@ export default function FlashcardViewPage() {
         
         if (questionType === 'text' && typeof question === 'string') {
           await Clipboard.setStringAsync(question);
-          Alert.alert('Copied text to clipboard!');
+          Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied text to clipboard!');
         } else if (questionType === 'image' && question) {
           const success = await copyAssetToClipboard(question);
           if (success) {
-            Alert.alert('Copied image to clipboard!');
+            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied image to clipboard!');
           } else {
-            Alert.alert('Error', 'Failed to copy image to clipboard');
+            Alert.alert(language === 'Chinese' ? '复制失败!' : 'Failed to copy image to clipboard');
           }
         }
       }
     } catch (error) {
       console.error('Error copying to clipboard:', error);
-      Alert.alert('Error', 'Failed to copy to clipboard');
+      Alert.alert(language === 'Chinese' ? '复制失败!' : 'Failed to copy to clipboard');
     }
   };
 
@@ -3088,7 +3139,7 @@ export default function FlashcardViewPage() {
           />
         )}
         <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 40, color: '#222', textAlign: 'center', marginBottom: 48 }}>
-          {isQuizMode ? 'Nicely done!' : 'Nice studying!'}
+          {isQuizMode ? (language === 'Chinese' ? '干得漂亮!' : 'Nicely done!') : (language === 'Chinese' ? '学习得不错!' : 'Nice studying!')}
         </Text>
         {isQuizMode && (
           <>
@@ -3127,7 +3178,7 @@ export default function FlashcardViewPage() {
             fontWeight: '400', 
             fontSize: 20 
           }}>
-                {hasDifficultFlashcards() ? 'Retry difficult flashcards?' : 'No difficult flashcards to retry'}
+                {hasDifficultFlashcards() ? (language === 'Chinese' ? '重做难题' : 'Retry difficult flashcards?') : (language === 'Chinese' ? '没有难题可重做' : 'No difficult flashcards to retry')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -3151,7 +3202,7 @@ export default function FlashcardViewPage() {
           )}
         >
           <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-            View Quiz Stats
+            {language === 'Chinese' ? '查看测验统计' : 'View Quiz Stats'}
           </Text>
         </TouchableOpacity>
         </>
@@ -3168,7 +3219,7 @@ export default function FlashcardViewPage() {
           onPress={() => router.back()}
         >
           <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-            Back to Deck
+            {language === 'Chinese' ? '返回卡组' : 'Back to Deck'}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -3201,7 +3252,7 @@ export default function FlashcardViewPage() {
           marginBottom: 24,
           textAlign: 'center',
         }}>
-          Quiz starting in...
+          {language === 'Chinese' ? '测验即将开始...' : 'Quiz starting in...'}
         </Text>
         <LottieView
           source={require('@/assets/animations/CountdownAnimation.json')}
@@ -3217,7 +3268,7 @@ export default function FlashcardViewPage() {
 
   // Show loading screen while flashcards are being loaded
   if (isLoadingFlashcards) {
-    return <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} />;
+    return <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} language={language} />;
   }
 
   return (
@@ -3311,13 +3362,14 @@ export default function FlashcardViewPage() {
               updateDeckCompletionDate={updateDeckCompletionDate}
               startFlashcardTimer={startFlashcardTimer}
               retryDifficultParam={retryDifficultParam as string}
+              language={language}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>
-            <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} flashcards={flashcards} />
+            <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} flashcards={flashcards} language={language} />
           </View>
           <View style={styles.loadingBarBottomContainer}>
-            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} isQuizMode={isQuizMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={flashcards[currentIdx]?.flashcardAnswerType || ''} recordedAudioUri={recordedAudioUri} />
+            <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} isQuizMode={isQuizMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={flashcards[currentIdx]?.flashcardAnswerType || ''} recordedAudioUri={recordedAudioUri} language={language} />
           </View>
         </View>
       </SafeAreaView>
@@ -3332,7 +3384,7 @@ export default function FlashcardViewPage() {
         visible={isDeleteModalOpen}
         opacity={deleteModalOpacity}
         Icon={DeleteModalIcon}
-        text="Are you sure you want to delete this flashcard?"
+        text={language === 'Chinese' ? "确定要删除这张卡片吗?" : "Are you sure you want to delete this flashcard?"}
         buttons="double"
         onConfirm={handleConfirmDelete}
         onCancel={handleDismissDeleteModal}
@@ -3366,6 +3418,7 @@ export default function FlashcardViewPage() {
         lottieMarginTop={80}
         isStudyMode={isStudyMode}
         isQuizMode={isQuizMode}
+        language={language}
       />
 
       {/* Study Validation Modal and Overlay - root level, above all other UI */}
@@ -3404,7 +3457,7 @@ export default function FlashcardViewPage() {
         visible={showEndStudyModal}
         opacity={endStudyModalOpacity}
         Icon={DeleteModalIcon}
-        text="End study session midway?"
+        text={language === 'Chinese' ? "中途退出学习?" : "End study session midway?"}
         buttons="double"
         onConfirm={() => {
           Animated.parallel([
@@ -3462,7 +3515,7 @@ export default function FlashcardViewPage() {
         visible={showEndQuizModal}
         opacity={endQuizModalOpacity}
         Icon={DeleteModalIcon}
-        text="End quiz session midway?"
+        text={language === 'Chinese' ? '中途退出测验?' : 'End quiz session midway?'}
         buttons="double"
         onConfirm={() => {
           Animated.parallel([

@@ -3,6 +3,7 @@ import { StyleSheet, Animated, View, Platform, Dimensions, Text, TouchableOpacit
 import { Feather } from '@expo/vector-icons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SlidingMenuProps {
   visible: boolean;
@@ -18,6 +19,7 @@ export function SlidingMenu({
   onFolderPress
 }: SlidingMenuProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   
   if (!visible) return null;
 
@@ -56,14 +58,18 @@ export function SlidingMenu({
           onPress={handleFolderPress}
         >
           <FontAwesome name="folder" size={30} color="white" />
-          <Text style={styles.menuText}>View Folders</Text>
+          <Text style={[styles.menuText, {
+            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+            }]}>{language === 'Chinese' ? '查看文件夹' : 'View Folders'}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.menuItem, styles.secondItem]}
           onPress={handleFavoritesPress}
         >
           <FontAwesome name="star" size={30} color="white" />
-          <Text style={styles.menuText}>View Favorites</Text>
+          <Text style={[styles.menuText, {
+            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+            }]}>{language === 'Chinese' ? '查看收藏' : 'View Favorites'}</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>

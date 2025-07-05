@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, Animated } from 'react-native';
 import LottieView from 'lottie-react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -11,12 +12,21 @@ interface DeckCreationLoadingPageProps {
   isInViewFlashcardsPage: boolean;
 }
 
+// Add language mappings for all user-facing strings
+const STRINGS = {
+  deckOnWay: { English: 'Your fantastic deck is\non its way!', Chinese: '你的精彩卡组正在生成！' },
+  flashcardsOnWay: { English: 'Your flashcards are\non their way!', Chinese: '你的卡片正在生成！' },
+  flashcardsGenerated: { English: '{current} out of {total} Flashcards generated', Chinese: '已生成 {current}/{total} 张卡片' },
+};
+
 export default function DeckCreationLoadingPage({
   progress = 0,
   current = 0,
   total = 1,
   isInViewFlashcardsPage = false,
 }: DeckCreationLoadingPageProps) {
+  const { language } = useLanguage();
+  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -57,7 +67,7 @@ export default function DeckCreationLoadingPage({
       {/* Text and progress below */}
       <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
         <Text style={styles.title}>
-            {isInViewFlashcardsPage ? 'Your flashcards are\non their way!' : 'Your fantastic deck is\non its way!'}
+          {isInViewFlashcardsPage ? STRINGS.flashcardsOnWay[lang] : STRINGS.deckOnWay[lang]}
         </Text>
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBarBg}>
@@ -73,7 +83,11 @@ export default function DeckCreationLoadingPage({
           </View>
         </View>
         <Text style={styles.percentText}>{percent}%</Text>
-        <Text style={styles.countText}>{`${current} out of ${total} Flashcards generated`}</Text>
+        <Text style={styles.countText}>{
+          lang === 'Chinese'
+            ? STRINGS.flashcardsGenerated[lang].replace('{current}', String(current)).replace('{total}', String(total))
+            : `${current} out of ${total} Flashcards generated`
+        }</Text>
       </View>
     </View>
   );

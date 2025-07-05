@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
 import { MenuContext } from '@/contexts/MenuContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface KindsOfQuestionsProps {
   value: string[];
@@ -19,6 +20,16 @@ const QUESTION_TYPES = [
   'Problem-Solving'
 ];
 
+const QUESTION_TYPE_LABELS: Record<string, { en: string; zh: string }> = {
+  'Recall': { en: 'Recall', zh: '回忆问题' },
+  'Comprehension': { en: 'Comprehension', zh: '理解问题' },
+  'Application': { en: 'Application', zh: '应用问题' },
+  'Analysis': { en: 'Analysis', zh: '分析问题' },
+  'Synthesis': { en: 'Synthesis', zh: '综合问题' },
+  'Evaluation': { en: 'Evaluation', zh: '评估问题' },
+  'Problem-Solving': { en: 'Problem-Solving', zh: '解决问题' },
+};
+
 export function KindsOfQuestions({
   value,
   onValueChange,
@@ -30,6 +41,7 @@ export function KindsOfQuestions({
     setIsNoSelectionModalOpen,
     noSelectionModalOpacity
   } = useContext(MenuContext);
+  const { language } = useLanguage();
 
   const handleSelect = (selectedValue: string) => {
     const newValue = [...value]; // Create a copy of the current array
@@ -53,7 +65,7 @@ export function KindsOfQuestions({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>4. What kinds of questions do you want to practice more of? (Pick any)</Text>
+      <Text style={styles.title}>{language === 'Chinese' ? '4. 你想多练习哪些类型的问题？（可多选）' : '4. What kinds of questions do you want to practice more of? (Pick any)'}</Text>
       <View style={styles.buttonContainer}>
         <View style={styles.buttonsRow}>
           {QUESTION_TYPES.map((type) => (
@@ -66,7 +78,7 @@ export function KindsOfQuestions({
               onPress={() => handleSelect(type)}
             >
               <Text style={styles.buttonText}>
-                {type}
+                {language === 'Chinese' ? QUESTION_TYPE_LABELS[type]?.zh || type : QUESTION_TYPE_LABELS[type]?.en || type}
               </Text>
             </TouchableOpacity>
           ))}

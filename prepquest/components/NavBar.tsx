@@ -11,6 +11,7 @@ import Animated, {
   Easing
 } from 'react-native-reanimated';
 import { Svg, Path } from 'react-native-svg';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const EllipseForNavBar = () => (
   <Svg 
@@ -93,6 +94,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const pathname = usePathname();
   const slideAnimation = useSharedValue(1);
   const isFirstRender = useSharedValue(true);
+  const { language } = useLanguage();
 
   // Move useAnimatedStyle hooks to top level
   const animatedStyle0 = useAnimatedStyle(() => {
@@ -490,6 +492,20 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     }
   };
 
+  // Add Chinese labels for nav items
+  const getTabLabel = (name: string) => {
+    if (language === 'Chinese') {
+      switch (name) {
+        case 'Account': return '账户';
+        case 'Decks': return '卡片组';
+        case 'Statistics': return '统计';
+        case 'Awards': return '奖励';
+        default: return name;
+      }
+    }
+    return name === 'Statistics' ? 'Stats' : name;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -518,7 +534,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
               >
                 <Animated.View style={labelAnimatedStyle}>
                   <Text style={styles.accountLabel}>
-                    {item.name === 'Statistics' ? 'Stats' : item.name}
+                    {getTabLabel(item.name)}
                   </Text>
                 </Animated.View>
                 <Animated.View style={circleStyle} />

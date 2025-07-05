@@ -30,6 +30,7 @@ import { db } from '../db/index';
 import { Toast } from '../components/Toast';
 import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -129,6 +130,58 @@ async function getCurrentUserID(): Promise<string> {
   }
 }
 
+// Add language mappings for all user-facing strings
+const STRINGS = {
+  mandatory: { English: 'Mandatory', Chinese: '必填' },
+  manual: { English: 'Manual', Chinese: '手动添加' },
+  deckName: { English: ' Deck Name', Chinese: '卡组名称' },
+  study: { English: 'Study', Chinese: '学习' },
+  interview: { English: 'Interview', Chinese: '面试' },
+  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
+  educationLevel: { English: '1. Education Level?', Chinese: '1. 教育程度？' },
+  educationLevelPH: { English: 'e.g. Freshman, Sophomore, etc', Chinese: '例如：大一，大二等' },
+  educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
+  subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
+  subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
+  subjectsHelper: { English: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.', Chinese: '这个卡组适用于哪些科目？请用逗号分隔，例如：无机化学，有机化学等。' },
+  exam: { English: '3. Exam/Quiz?', Chinese: '3. 考试/测验？' },
+  examPH: { English: 'e.g. SAT, GRE, IB, A-Levels etc.', Chinese: '例如：SAT，GRE，IB，A-Levels等' },
+  examHelper: { English: 'What exam or quiz would this deck be for?', Chinese: '这个卡组适用于哪些考试或测验？' },
+  jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
+  jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
+  jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
+  experienceLevel: { English: '3. Experience Level?', Chinese: '3. 经验水平？' },
+  experienceLevelPH: { English: 'e.g. Mid-Level, Senior, etc', Chinese: '例如：中级，高级等' },
+  experienceLevelHelper: { English: 'What experience level is your interview for?', Chinese: '你的面试是针对什么经验水平？' },
+  submitFormWithCards: { English: 'Submit Form With Cards?', Chinese: '提交表单和卡片？' },
+  moveToNextCard: { English: 'Move To\nNext Card?', Chinese: '移动到\n下一张卡片？' },
+  select: { English: 'Select', Chinese: '选择' },
+  selectAll: { English: 'Select All', Chinese: '全选' },
+  cancel: { English: 'Cancel', Chinese: '取消' },
+  noFlashcards: { English: 'No flashcards added\nat the moment!', Chinese: '当前没有添加卡片！' },
+  inProgress: { English: 'In Progress...', Chinese: '进行中...' },
+  image: { English: '<Image>', Chinese: '<图片>' },
+  voice: { English: '<Voice Recording>', Chinese: '<语音录音>' },
+  drawing: { English: '<Drawing>', Chinese: '<绘图>' },
+  deckNameInUse: { English: 'Deckname already in use', Chinese: '卡组名称已被使用' },
+  invalidSubjects: { English: "Invalid form input for 'Subject(s)'", Chinese: '“科目"输入无效' },
+  fillAllAndAdd: { English: 'Fill up all mandatory fields\nand add your cards before submitting!', Chinese: '请填写所有必填项并添加卡片后再提交！' },
+  addBeforeSubmit: { English: 'Add your card(s)\nbefore submitting!', Chinese: '请先添加卡片再提交！' },
+  fillAll: { English: 'Fill up all mandatory fields and all QA pairs for all cards!', Chinese: '请填写所有必填项和所有卡片的问答对！' },
+  missingQA: { English: 'You have missing question/answer\ndata for card', Chinese: '第' },
+  helpModal: { English: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.", Chinese: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。' },
+  aiHelpModal: { English: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.', Chinese: '勾选此项将让AI生成与上传内容无关的新建议卡片。' },
+  useRecent: { English: ['Use most recent', 'form entry?'], Chinese: ['使用最近的', '表单记录？'] },
+  greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
+  leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
+  noSelection: { English: 'No selection made!', Chinese: '未选择任何卡片！' },
+  selectAtLeastOne: { English: 'Select at least one flashcard to delete.', Chinese: '请至少选择一张卡片进行删除。' },
+  delete: { English: 'delete', Chinese: '删除' },
+  areYouSureDelete: { English: 'Are you sure you want to delete', Chinese: '确定要删除' },
+  flashcard: { English: 'flashcard', Chinese: '张卡片' },
+  flashcards: { English: 'flashcards', Chinese: '张卡片' },
+};
+
 export default function ManualAddDeckPage() {
   const { 
     mode, 
@@ -192,6 +245,8 @@ export default function ManualAddDeckPage() {
   const [loadingCurrent, setLoadingCurrent] = React.useState(0);
   const [loadingTotal, setLoadingTotal] = React.useState(0);
   const [showLoadingPage, setShowLoadingPage] = React.useState(false);
+  const { language } = useLanguage();
+  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
   // Cache for storing all created cards
   interface CachedCard {
@@ -588,7 +643,7 @@ export default function ManualAddDeckPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage("Deckname already in use");
+        setToastMessage(STRINGS.deckNameInUse[lang]);
         return false;
       }
     }
@@ -609,28 +664,28 @@ export default function ManualAddDeckPage() {
       
       if (hasEmptySubjects || hasInvalidSubjects) {
         setShowToast(true);
-        setToastMessage("Invalid form input for 'Subject(s)'");
+        setToastMessage(STRINGS.invalidSubjects[lang]);
         return false;
       }
     }
 
     // Error 1: mandatory fields not filled up and no cards
     if (!mandatoryFieldsFilled && !hasCards) {
-      setErrorMessage("Fill up all mandatory fields\nand add your cards before submitting!");
+      setErrorMessage(STRINGS.fillAllAndAdd[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 2: mandatory fields filled up but no cards
     if (mandatoryFieldsFilled && !hasCards) {
-      setErrorMessage("Add your card(s)\nbefore submitting!");
+      setErrorMessage(STRINGS.addBeforeSubmit[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 3: mandatory fields not filled up but has cards
     if (!mandatoryFieldsFilled && hasCards) {
-      setErrorMessage("Fill up all mandatory fields and all QA pairs for all cards!");
+      setErrorMessage(STRINGS.fillAll[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
@@ -650,7 +705,7 @@ export default function ManualAddDeckPage() {
       });
       if (incompleteCard) {
         setIncompleteCardNumber(incompleteCard.cardNumber);
-        setErrorMessage(`You have missing question/answer\ndata for card ${incompleteCard.cardNumber}`);
+        setErrorMessage(`${STRINGS.missingQA[lang]}${incompleteCard.cardNumber}`);
         setIsErrorModalOpen(true);
         return false;
       }
@@ -1189,21 +1244,21 @@ export default function ManualAddDeckPage() {
       if (textContent && textContent.length > 100) {
         return textContent.substring(0, 100) + '...';
       }
-      return textContent || 'In Progress...';
+      return textContent || STRINGS.inProgress[lang];
     }
 
     if (card.frontContent?.type === 'camera' && card.frontContent?.content) {
-      return '<Image>'
+      return STRINGS.image[lang]
     }
     if (card.frontContent?.type === 'mic' && card.frontContent?.audioUri) {
-      return '<Voice Recording>'
+      return STRINGS.voice[lang]
     }
     if (card.frontContent?.type === 'marker' && card.frontContent?.content) {
-      return '<Drawing>'
+      return STRINGS.drawing[lang]
     }
     
     // Default to "Card X" for other content types
-    return 'In Progress...';
+    return STRINGS.inProgress[lang];
   };
 
   const extractTextFromContent = (content: React.ReactNode): string => {
@@ -1572,8 +1627,8 @@ export default function ManualAddDeckPage() {
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
           <RoundedContainer 
-            leftLabel="Mandatory"
-            rightLabel="Manual"
+            leftLabel={STRINGS.mandatory[lang]}
+            rightLabel={STRINGS.manual[lang]}
             onToggle={handleToggle}
           />
 
@@ -1613,9 +1668,9 @@ export default function ManualAddDeckPage() {
               <View style={{ gap: getFormContentGap(isInViewFlashcardsPage === 'true') }}>
                 {!isInViewFlashcardsPage && (
                   <TitleTextBar
-                    title=" Deck Name"
-                    highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                    placeholder="Type here!"
+                    title={STRINGS.deckName[lang]}
+                    highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
+                    placeholder={STRINGS.typeHere[lang]}
                     value={deckName}
                     onChangeText={setDeckName}
                   />
@@ -1623,47 +1678,47 @@ export default function ManualAddDeckPage() {
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
-                      label="1. Education Level?"
-                      placeholder="e.g. Freshman, Sophomore, etc"
+                      label={STRINGS.educationLevel[lang]}
+                      placeholder={STRINGS.educationLevelPH[lang]}
                       value={studyMandatoryQuestion1}
                       onChangeText={setStudyMandatoryQuestion1}
-                      helperText="What education level is your preparation for?"
+                      helperText={STRINGS.educationLevelHelper[lang]}
                     />
                     <QuestionTextBar
-                      label="2. Subject(s)?"
-                      placeholder="e.g. Computer Science, Math, Physics, etc."
+                      label={STRINGS.subjects[lang]}
+                      placeholder={STRINGS.subjectsPH[lang]}
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText="What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc."
+                      helperText={STRINGS.subjectsHelper[lang]}
                     />
                     <QuestionTextBar
-                      label="3. Exam/Quiz?"
-                      placeholder="e.g. SAT, GRE, IB, A-Levels etc."
+                      label={STRINGS.exam[lang]}
+                      placeholder={STRINGS.examPH[lang]}
                       value={studyMandatoryQuestion3}
                       onChangeText={setStudyMandatoryQuestion3}
-                      helperText="What exam or quiz would this deck be for?"
+                      helperText={STRINGS.examHelper[lang]}
                     />
                   </>
                 )}
                 {mode !== 'study' && (
                   <>
                     <QuestionTextBar
-                      label="1. Job/Role?"
-                      placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                      label={STRINGS.jobRole[lang]}
+                      placeholder={STRINGS.jobRolePH[lang]}
                       value={interviewMandatoryQuestion1}
                       onChangeText={setInterviewMandatoryQuestion1}
-                      helperText="What job or role are you preparing for?"
+                      helperText={STRINGS.jobRoleHelper[lang]}
                     />
                     <TypeOfInterviewQn
                       value={interviewType}
                       onValueChange={setInterviewType}
                     />
                     <QuestionTextBar
-                      label="3. Experience Level?"
-                      placeholder="e.g. Mid-Level, Senior, etc"
+                      label={STRINGS.experienceLevel[lang]}
+                      placeholder={STRINGS.experienceLevelPH[lang]}
                       value={interviewMandatoryQuestion2}
                       onChangeText={setInterviewMandatoryQuestion2}
-                      helperText="What experience level is your interview for?"
+                      helperText={STRINGS.experienceLevelHelper[lang]}
                     />
                   </>
                 )}
@@ -1733,7 +1788,7 @@ export default function ManualAddDeckPage() {
                 const submittedCards = getSubmittedCards();
                 setSelectedFlashcards(submittedCards.map(card => card.cardNumber));
               }}>
-                <Text style={styles.selectAllText}>Select All</Text>
+                <Text style={styles.selectAllText}>{STRINGS.selectAll[lang]}</Text>
               </TouchableOpacity>
               <CircleIconButton
                 iconName="trash"
@@ -1744,7 +1799,7 @@ export default function ManualAddDeckPage() {
                 setSelectExpanded(false);
                 setSelectedFlashcards([]);
               }}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{STRINGS.cancel[lang]}</Text>
               </TouchableOpacity>
             </Animated.View>
           ) : (
@@ -1757,7 +1812,7 @@ export default function ManualAddDeckPage() {
                 <Text style={[
                   styles.selectText,
                   getSubmittedCards().length === 0 && styles.selectTextDisabled
-                ]}>Select</Text>
+                ]}>{STRINGS.select[lang]}</Text>
               </TouchableOpacity>
             </Animated.View>
           )
@@ -1772,7 +1827,7 @@ export default function ManualAddDeckPage() {
                 loop
                 style={styles.emptyStateAnimation}
               />
-              <Text style={styles.emptyStateText}>No flashcards added{'\n'}at the moment!</Text>
+              <Text style={styles.emptyStateText}>{STRINGS.noFlashcards[lang]}</Text>
             </View>
           ) : (
             <ScrollView 
@@ -1834,7 +1889,7 @@ export default function ManualAddDeckPage() {
         ]}>
           {isMandatory ? (
             <ActionButton
-              text="Submit Form With Cards?"
+              text={STRINGS.submitFormWithCards[lang]}
               backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
@@ -1843,16 +1898,14 @@ export default function ManualAddDeckPage() {
           ) : addViewState === 'add' ? (
             <View style={{ flexDirection: 'row', gap: 8, width: '100%', paddingHorizontal: 16}}>
               <ActionButton
-                text="Submit Form 
-With Cards?"
+                text={STRINGS.submitFormWithCards[lang]}
                 backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled()}
                 style={{ flex: 1 }}
               />
               <ActionButton
-                text="Move To
-Next Card?"
+                text={STRINGS.moveToNextCard[lang]}
                 backgroundColor={hasCardContent ? "#44B88A" : "#D5D4DD"}
                 style={{ flex: 1 }}
                 onPress={handleNextFlashcard}
@@ -1861,7 +1914,7 @@ Next Card?"
             </View>
           ) : (
             <ActionButton
-              text="Submit Form With Cards?"
+              text={STRINGS.submitFormWithCards[lang]}
               backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
@@ -1879,7 +1932,7 @@ Next Card?"
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text="Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."
+        text={STRINGS.helpModal[lang]}
         buttons='none'
         textStyle={{
           highlightWord: "our website",
@@ -1890,7 +1943,7 @@ Next Card?"
       <GenericModal
         visible={isAIHelpModalOpen}
         opacity={aiHelpModalOpacity}
-        text="Ticking this option will let AI generate new, suggested cards outside the content of your upload."
+        text={STRINGS.aiHelpModal[lang]}
         buttons='none'
         Icon={HelpIconFilled}
       />
@@ -1898,7 +1951,7 @@ Next Card?"
         visible={isDeleteModalOpen}
         opacity={deleteModalOpacity}
         Icon={DeleteModalIcon}
-        text={`Are you sure you want to delete ${selectedFlashcards.length} flashcard${selectedFlashcards.length === 1 ? '' : 's'}?`}
+        text={`${STRINGS.areYouSureDelete[lang]} ${selectedFlashcards.length} ${STRINGS.flashcard[lang]}${selectedFlashcards.length === 1 ? '' : STRINGS.flashcards[lang]}?`}
         textStyle={{
           highlightWord: "delete",
           highlightColor: "#D7191C"
@@ -1924,7 +1977,7 @@ Next Card?"
       <GenericModal
         visible={isRecentFormModalOpen}
         opacity={recentFormModalOpacity}
-        text={['Use most recent', 'form entry?']}
+        text={STRINGS.useRecent[lang]}
         buttons='double'
         onConfirm={async () => {
           try {
@@ -2006,7 +2059,7 @@ Next Card?"
       <GenericModal
         visible={isBackConfirmationModalOpen}
         opacity={backConfirmationModalOpacity}
-        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        text={STRINGS.leaveConfirm[lang]}
         buttons="double"
         onCancel={handleDismissBackConfirmation}
         onConfirm={() => {
@@ -2037,8 +2090,8 @@ Next Card?"
       <GenericModal
         visible={isNoSelectionModalOpen}
         opacity={noSelectionModalOpacity}
-        subtitle="Select at least one flashcard to delete."
-        text="No selection made!"
+        subtitle={STRINGS.selectAtLeastOne[lang]}
+        text={STRINGS.noSelection[lang]}
         onConfirm={handleDismissNoSelection}
       />
       <GenericModal
@@ -2051,7 +2104,7 @@ Next Card?"
       <GenericModal
         visible={isSuccessModalOpen}
         opacity={successModalOpacity}
-        text={"Great! 😊 Do you want to go ahead and submit?"}
+        text={STRINGS.greatSubmit[lang]}
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}

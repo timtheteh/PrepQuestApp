@@ -26,6 +26,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import LottieView from 'lottie-react-native';
 import { checkDeckNameExists } from '../db/decks';
 import { Toast } from '../components/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -50,7 +51,7 @@ const FileUploadMainSection = ({
   browseFiles, 
   isUploadSuccess, 
   uploadType,
-  uploadedFileName
+  uploadedFileName,
 }: { 
   pickImage: () => void; 
   takePhoto: () => void; 
@@ -58,7 +59,9 @@ const FileUploadMainSection = ({
   isUploadSuccess: boolean;
   uploadType: 'image' | 'file' | null;
   uploadedFileName: string;
+  language: 'English' | 'Chinese';
 }) => {
+  const { language } = useLanguage();
   return (
     <View style={styles.fileUploadMainSection}>
       <View style={styles.uploadContent}>
@@ -74,13 +77,12 @@ const FileUploadMainSection = ({
         )}
         <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
           {isUploadSuccess 
-            ? `${uploadType === 'image' ? 'Image' : 'File'} uploaded successfully!\n${uploadType === 'file' ? `File: ${uploadedFileName}` : ''}`
-            : 'Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks'
+            ? `${uploadType === 'image' ? (language === 'Chinese' ? '图片' : 'Image') : (language === 'Chinese' ? '文件' : 'File')} ${language === 'Chinese' ? '上传成功！' : 'uploaded successfully!'}\n${uploadType === 'file' ? (language === 'Chinese' ? `文件：${uploadedFileName}` : `File: ${uploadedFileName}`) : ''}`
+            : language === 'Chinese' ? '支持的文件格式：Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' : 'Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks'
           }
         </Text>
         <PrimaryButton 
-          text="Browse 
-Files"
+          text={STRINGS.browseFiles[language]}
           onPress={browseFiles}
         />
       </View>
@@ -154,6 +156,44 @@ const getFileUploadContentPaddingTop = () => {
   return Platform.OS === 'ios' ? 34 : 16;
 };
 
+// Add language mappings for all user-facing strings
+const STRINGS = {
+  mandatory: { English: 'Mandatory', Chinese: '必填' },
+  fileUpload: { English: 'File Upload', Chinese: '文件上传' },
+  deckName: { English: ' Deck Name', Chinese: '卡组名称' },
+  study: { English: 'Study', Chinese: '学习' },
+  interview: { English: 'Interview', Chinese: '面试' },
+  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
+  educationLevel: { English: '1. Education Level?', Chinese: '1. 教育程度？' },
+  educationLevelPH: { English: 'e.g. Freshman, Sophomore, etc', Chinese: '例如：大一，大二等' },
+  educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
+  subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
+  subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
+  subjectsHelper: { English: 'What subject(s) would this deck be for?', Chinese: '这个卡组适用于哪些科目？' },
+  jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
+  jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
+  jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
+  numQuestions: { English: '3. Number of questions:', Chinese: '3. 题目数量：' },
+  uploadTitle: { English: 'Upload any file document to generate a new deck!', Chinese: '上传任意文件以生成新卡组！' },
+  browseFiles: { English: 'Browse\nFiles', Chinese: '浏览\n文件' },
+  supportedFiles: { English: 'Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks', Chinese: 'Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' },
+  imageUploaded: { English: 'Image uploaded successfully!', Chinese: '图片上传成功！' },
+  fileUploaded: { English: 'File uploaded successfully!', Chinese: '文件上传成功！' },
+  fileLabel: { English: 'File:', Chinese: '文件：' },
+  aiGenerate: { English: 'AI Generate new card content?', Chinese: 'AI生成新卡片内容？' },
+  submit: { English: 'Submit', Chinese: '提交' },
+  deckNameInUse: { English: 'Deckname already in use', Chinese: '卡组名称已被使用' },
+  invalidSubjects: { English: "Invalid form input for 'Subject(s)'", Chinese: '“科目”输入无效' },
+  fillAllAndUpload: { English: 'Fill up all mandatory fields\nand upload your file!', Chinese: '请填写所有必填项并上传文件！' },
+  uploadBeforeSubmit: { English: 'Upload your file\nbefore submitting!', Chinese: '请先上传文件再提交！' },
+  fillAll: { English: 'Fill up all\nmandatory fields!', Chinese: '请填写所有必填项！' },
+  helpModal: { English: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.", Chinese: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。' },
+  aiHelpModal: { English: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.', Chinese: '勾选此项将让AI生成与上传内容无关的新建议卡片。' },
+  useRecent: { English: ['Use most recent', 'form entry?'], Chinese: ['使用最近的', '表单记录？'] },
+  greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
+  leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
+};
+
 export default function FileUploadPage() {
   const { mode } = useLocalSearchParams();
   const router = useRouter();
@@ -189,6 +229,9 @@ export default function FileUploadPage() {
   const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const { language } = useLanguage();
+  // Type language as 'English' | 'Chinese' for STRINGS indexing
+  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -373,7 +416,7 @@ export default function FileUploadPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage("Deckname already in use");
+        setToastMessage(STRINGS.deckNameInUse[lang]);
         return false;
       }
     }
@@ -394,28 +437,28 @@ export default function FileUploadPage() {
       
       if (hasEmptySubjects || hasInvalidSubjects) {
         setShowToast(true);
-        setToastMessage("Invalid form input for 'Subject(s)'");
+        setToastMessage(STRINGS.invalidSubjects[lang]);
         return false;
       }
     }
 
     // Error 1: mandatory fields not filled up and no file/image uploaded
     if (!mandatoryFieldsFilled && !hasFileUploaded) {
-      setErrorMessage("Fill up all mandatory fields\nand upload your file!");
+      setErrorMessage(STRINGS.fillAllAndUpload[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 2: mandatory fields filled up but file/image not uploaded
     if (mandatoryFieldsFilled && !hasFileUploaded) {
-      setErrorMessage("Upload your file\nbefore submitting!");
+      setErrorMessage(STRINGS.uploadBeforeSubmit[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 3: mandatory fields not filled up but got file/image uploaded
     if (!mandatoryFieldsFilled && hasFileUploaded) {
-      setErrorMessage("Fill up all\nmandatory fields!");
+      setErrorMessage(STRINGS.fillAll[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
@@ -712,8 +755,8 @@ export default function FileUploadPage() {
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
           <RoundedContainer 
-            leftLabel="Mandatory"
-            rightLabel="File Upload"
+            leftLabel={STRINGS.mandatory[lang]}
+            rightLabel={STRINGS.fileUpload[lang]}
             onToggle={handleToggle}
           />
         </View>
@@ -737,38 +780,38 @@ export default function FileUploadPage() {
           ]}>
               <View style={styles.formContent}>
                 <TitleTextBar
-                  title=" Deck Name"
-                  highlightedWord={mode === 'study' ? 'Study' : 'Interview'}
-                  placeholder="Type here!"
+                  title={STRINGS.deckName[lang]}
+                  highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
+                  placeholder={STRINGS.typeHere[lang]}
                   value={deckName}
                   onChangeText={setDeckName}
                 />
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
-                      label="1. Education Level?"
-                      placeholder="e.g. Freshman, Sophomore, etc"
+                      label={STRINGS.educationLevel[lang]}
+                      placeholder={STRINGS.educationLevelPH[lang]}
                       value={studyMandatoryQuestion1}
                       onChangeText={setStudyMandatoryQuestion1}
-                      helperText="What education level is your preparation for?"
+                      helperText={STRINGS.educationLevelHelper[lang]}
                     />
                     <QuestionTextBar
-                      label="2. Subject(s)?"
-                      placeholder="e.g. Computer Science, Math, Physics, etc."
+                      label={STRINGS.subjects[lang]}
+                      placeholder={STRINGS.subjectsPH[lang]}
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText="What subject(s) would this deck be for?"
+                      helperText={STRINGS.subjectsHelper[lang]}
                     />
                   </>
                 )}
                 {mode !== 'study' && (
                   <>
                   <QuestionTextBar
-                    label="1. Job/Role?"
-                    placeholder="e.g. Frontend Developer, Private Equity Analyst, etc"
+                    label={STRINGS.jobRole[lang]}
+                    placeholder={STRINGS.jobRolePH[lang]}
                     value={interviewMandatoryQuestion1}
                     onChangeText={setInterviewMandatoryQuestion1}
-                    helperText="What job or role are you preparing for?"
+                    helperText={STRINGS.jobRoleHelper[lang]}
                     />
                   <TypeOfInterviewQn
                     value={interviewType}
@@ -777,7 +820,7 @@ export default function FileUploadPage() {
                   </>
                 )}
                 <NumberOfQuestions
-                  title="3. Number of questions:"
+                  title={STRINGS.numQuestions[lang]}
                   value={numberOfQuestions}
                   onValueChange={setNumberOfQuestions}
                 />
@@ -802,15 +845,15 @@ export default function FileUploadPage() {
               keyboardShouldPersistTaps="handled"
             >
             <Text style={styles.fileUploadTitle}>
-            Upload any file document to generate a new deck!
+            {STRINGS.uploadTitle[lang]}
           </Text>
-          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} />
+          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} language={lang} />
           <View style={styles.aiGenerateRow}>
             <SmallCircleSelectButton
               selected={isAIGenerate}
               onPress={() => setIsAIGenerate(!isAIGenerate)}
                 />
-            <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+            <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
             <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
               <HelpIconOutline width={24} height={24} />
             </TouchableOpacity>
@@ -820,15 +863,15 @@ export default function FileUploadPage() {
           )}
           
           <Text style={styles.fileUploadTitle}>
-            Upload any file document to generate a new deck!
+            {STRINGS.uploadTitle[lang]}
           </Text>
-          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} />
+          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} language={lang} />
           <View style={styles.aiGenerateRow}>
             <SmallCircleSelectButton
               selected={isAIGenerate}
               onPress={() => setIsAIGenerate(!isAIGenerate)}
                 />
-            <Text style={styles.aiGenerateText}>AI Generate new card content?</Text>
+            <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
             <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
               <HelpIconOutline width={24} height={24} />
             </TouchableOpacity>
@@ -841,7 +884,7 @@ export default function FileUploadPage() {
           { bottom: bottomOffset }
         ]}>
           <ActionButton
-            text="Submit"
+            text={STRINGS.submit[lang]}
             backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
             onPress={handleSubmit}
             disabled={isSubmitDisabled()}
@@ -857,7 +900,7 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text="Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."
+        text={STRINGS.helpModal[lang]}
         buttons='none'
         textStyle={{
           highlightWord: "our website",
@@ -868,14 +911,14 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isAIHelpModalOpen}
         opacity={aiHelpModalOpacity}
-        text="Ticking this option will let AI generate new, suggested cards outside the content of your upload."
+        text={STRINGS.aiHelpModal[lang]}
         buttons='none'
         Icon={HelpIconFilled}
       />
       <GenericModal
         visible={isRecentFormModalOpen}
         opacity={recentFormModalOpacity}
-        text={['Use most recent', 'form entry?']}
+        text={STRINGS.useRecent[lang]}
         buttons='double'
         onConfirm={() => {
           handleDismissRecentForm();
@@ -894,7 +937,7 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isSuccessModalOpen}
         opacity={successModalOpacity}
-        text={"Great! 😊 Do you want to go ahead and submit?"}
+        text={STRINGS.greatSubmit[lang]}
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
@@ -902,7 +945,7 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isBackConfirmationModalOpen}
         opacity={backConfirmationModalOpacity}
-        text={['Are you sure you want', 'to leave? All your', 'progress will be lost']}
+        text={STRINGS.leaveConfirm[lang]}
         buttons="double"
         onCancel={handleDismissBackConfirmation}
         onConfirm={() => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Rect, Text as SvgText, G, Polygon, Defs, ClipPath, Path } from 'react-native-svg';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AverageGradeThermometerProps {
   score?: number; // 0-100
@@ -21,6 +22,7 @@ const RECT_HEIGHT = 24;
 const RADIUS = 12;
 
 export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerProps) {
+  const { language } = useLanguage();
   // Calculate segment widths
   const segmentWidths = SEGMENTS.slice(1).map((val, i) => (val - SEGMENTS[i]) / 100 * RECT_WIDTH);
   // Calculate arrow position
@@ -28,7 +30,11 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Average Grade</Text>
+      <Text style={[styles.title, 
+        // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
+        ]}>
+        {language === 'Chinese' ? '平均分数' : 'Average Grade'}
+      </Text>
       <Text style={styles.scoreText}>{score}%</Text>
       <View style={{ marginTop: 10, alignItems: 'center', width: RECT_WIDTH, height: RECT_HEIGHT + 38 }}>
         <Svg width={RECT_WIDTH} height={RECT_HEIGHT + 38}>

@@ -5,6 +5,7 @@ import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
 import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Interface for the data structure
 interface DayData {
@@ -198,6 +199,7 @@ type ReviewLineGraphProps = {
 
 export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   const { width: windowWidth } = useWindowDimensions();
+  const { language } = useLanguage();
   const GRAPH_WIDTH = Math.round(windowWidth * 0.93);
   const X_STEP = (GRAPH_WIDTH - 2 * PADDING) / 3 - 16;
   const SVG_HEIGHT = GRAPH_HEIGHT + X_AXIS_EXTRA_HEIGHT;
@@ -329,10 +331,10 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
     return (
       <View style={{ marginTop: 0, alignItems: 'center' }}>
         <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
-          Decks / Flashcards Reviewed
+          {language === 'Chinese' ? '已复习卡组 / 卡片' : 'Decks / Flashcards Reviewed'}
         </Text>
         <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
-          Loading review data...
+          {language === 'Chinese' ? '正在加载复习数据...' : 'Loading review data...'}
         </Text>
       </View>
     );
@@ -342,10 +344,10 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
     return (
       <View style={{ marginTop: 0, alignItems: 'center' }}>
         <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
-          Decks / Flashcards Reviewed
+          {language === 'Chinese' ? '已复习卡组 / 卡片' : 'Decks / Flashcards Reviewed'}
         </Text>
         <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
-          No review data available yet. Start studying to see your progress!
+          {language === 'Chinese' ? '暂无复习数据，开始学习以查看进度！' : 'No review data available yet. Start studying to see your progress!'}
         </Text>
       </View>
     );
@@ -355,11 +357,11 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
     <View>
     <View style={{ marginTop: 0, alignItems: 'center' }}>
         <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
-            Decks / Flashcards Reviewed
+            {language === 'Chinese' ? '已复习卡组 / 卡片' : 'Decks / Flashcards Reviewed'}
         </Text>
         <SmallGreenBinaryToggle
-            leftLabel="Day"
-            rightLabel="Month"
+            leftLabel={language === 'Chinese' ? '日' : 'Day'}
+            rightLabel={language === 'Chinese' ? '月' : 'Month'}
             style={{ marginTop: 15}}
             onToggle={handleToggle}
         />
@@ -369,13 +371,13 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 18 }}>
             <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: '#4F41D8' }} />
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#4F41D8', marginLeft: -1 }} />
-            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#4F41D8' }}>Decks</Text>
+            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#4F41D8' }}>{language === 'Chinese' ? '卡组' : 'Decks'}</Text>
           </View>
           {/* Flashcards Legend */}
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: '#44B88A' }} />
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#44B88A', marginLeft: -1 }} />
-            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#44B88A' }}>Flashcards</Text>
+            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#44B88A' }}>{language === 'Chinese' ? '卡片' : 'Flashcards'}</Text>
           </View>
         </View>
     </View>

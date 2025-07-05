@@ -16,6 +16,7 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/CalendarModal';
 import LottieView from 'lottie-react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -86,6 +87,7 @@ export default function FoldersScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
   const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
+  const { language } = useLanguage();
 
   // Animation values
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -1351,7 +1353,7 @@ export default function FoldersScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            Where have all the{'\n'}folders gone
+            {language === 'Chinese' ? '所有文件夹都去哪了？' : "Where have all the\nfolders gone"}
           </Text>
         </View>
       );
@@ -1456,7 +1458,7 @@ export default function FoldersScreen() {
                 {(isAddToFoldersMode || isMoveToFoldersMode) ? (
                   <View style={styles.doneButtonContainer}>
                     <TouchableOpacity onPress={handleDone}>
-                      <Text style={styles.doneButton}>Done</Text>
+                      <Text style={styles.doneButton}>{language === 'Chinese' ? '完成' : 'Done'}</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -1477,8 +1479,14 @@ export default function FoldersScreen() {
               >
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
-                    <Title>
-                      {isAddToFoldersMode ? 'Add to Folder(s)' : isMoveToFoldersMode ? 'Move to Folder(s)' : `Folders (${foldersCountToShow})`}
+                    <Title style={{fontSize: language === 'Chinese' ? 20 : 24, 
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular'
+                      }}>
+                      {isAddToFoldersMode
+                        ? language === 'Chinese' ? '添加到文件夹' : 'Add to Folder(s)'
+                        : isMoveToFoldersMode
+                          ? language === 'Chinese' ? '移动到文件夹' : 'Move to Folder(s)'
+                          : language === 'Chinese' ? `文件夹 (${foldersCountToShow})` : `Folders (${foldersCountToShow})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1491,14 +1499,14 @@ export default function FoldersScreen() {
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
-                      Select
+                      {language === 'Chinese' ? '选择' : 'Select'}
                     </Animated.Text>
                     <Animated.Text style={[
                       styles.selectButton,
                       styles.selectButtonAbsolute,
                       { opacity: selectAllOpacity }
                     ]}>
-                      Select All
+                      {language === 'Chinese' ? '全选' : 'Select All'}
                     </Animated.Text>
                   </TouchableOpacity>
                 </View>
@@ -1533,7 +1541,7 @@ export default function FoldersScreen() {
       <CalendarModal
         visible={isCalendarOpen}
         onDismiss={handleCalendarDismiss}
-        title={"Filter folders based on\ndate added"}
+        title={language === 'Chinese' ? '按添加日期筛选文件夹' : 'Filter folders based on\ndate added'}
         onDone={(selectedFilter, customDate) => {
           setCalendarFilter(selectedFilter);
           setCalendarCustomDate(customDate || null);

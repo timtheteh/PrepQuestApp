@@ -8,6 +8,7 @@ import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 import DoubleChevron from '@/assets/icons/DoubleChevron.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -39,6 +40,7 @@ interface QuizStats {
 
 export default function ViewQuizStatsModal() {
   const router = useRouter();
+  const { language } = useLanguage();
   const { halfwayCheckpoint, deckID, isAIDeck, attemptedFlashcardIds } = useLocalSearchParams();
   const isHalfwayCheckpoint = halfwayCheckpoint === 'true';
   
@@ -187,15 +189,22 @@ export default function ViewQuizStatsModal() {
     loadQuizStats();
   }, [deckID, isAIDeck, attemptedFlashcardIds]);
 
-  // Format time from seconds to "Xmin Ys" format
+  // Format time from seconds to "Xmin Ys" format, localized
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    
-    if (minutes > 0) {
-      return `${minutes}min ${remainingSeconds}s`;
+    if (language === 'Chinese') {
+      if (minutes > 0) {
+        return `${minutes}分${remainingSeconds}秒`;
+      } else {
+        return `${remainingSeconds}秒`;
+      }
     } else {
-      return `${remainingSeconds}s`;
+      if (minutes > 0) {
+        return `${minutes}min ${remainingSeconds}s`;
+      } else {
+        return `${remainingSeconds}s`;
+      }
     }
   };
 
@@ -218,9 +227,9 @@ export default function ViewQuizStatsModal() {
             <Image source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
           )}
           {isHalfwayCheckpoint ? (
-            <Text style={styles.wellDoneTitle}>{"Halfway\nCheckpoint"}</Text>
+            <Text style={styles.wellDoneTitle}>{language === 'Chinese' ? '中途\n检查点' : 'Halfway\nCheckpoint'}</Text>
           ) : (
-            <Text style={styles.wellDoneTitle}>Well Done!</Text>
+            <Text style={styles.wellDoneTitle}>{language === 'Chinese' ? '干得漂亮!' : 'Well Done!'}</Text>
           )}
           {isHalfwayCheckpoint ? (
             <Image source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
@@ -233,7 +242,9 @@ export default function ViewQuizStatsModal() {
         {isHalfwayCheckpoint && (
           <View style={styles.progressIndicator}>
             <Text style={styles.progressText}>
-              {quizStats.attemptedCount} of {quizStats.totalCount} flashcards completed
+              {language === 'Chinese'
+                ? `${quizStats.attemptedCount} / ${quizStats.totalCount} 张卡片已完成`
+                : `${quizStats.attemptedCount} of ${quizStats.totalCount} flashcards completed`}
             </Text>
           </View>
         )}
@@ -255,7 +266,7 @@ export default function ViewQuizStatsModal() {
         
         {/* Total time spent */}
         <View style={styles.totalTimeWrap}>
-          <Text style={styles.totalTimeLabel}>Total time spent:</Text>
+          <Text style={styles.totalTimeLabel}>{language === 'Chinese' ? '总用时:' : 'Total time spent:'}</Text>
           <Text style={styles.totalTimeValue}>{formatTime(quizStats.totalTimeSeconds)}</Text>
         </View>
       </ScrollView>
@@ -265,7 +276,7 @@ export default function ViewQuizStatsModal() {
         <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
           <TouchableOpacity style={styles.fixedBottomButton} activeOpacity={0.85} onPress={() => router.back()}>
             <View style={styles.buttonContentRow}>
-              <Text style={styles.buttonText}>Continue with quiz</Text>
+              <Text style={styles.buttonText}>{language === 'Chinese' ? '继续测验' : 'Continue with quiz'}</Text>
               <DoubleChevron width={36} height={36} />
             </View>
           </TouchableOpacity>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { ModalButton } from './ModalButton';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -24,6 +25,7 @@ export function CalendarModal({
   const [currentFilter, setCurrentFilter] = useState<TimeFilter>('all');
   const [confirmedDate, setConfirmedDate] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const { language } = useLanguage();
 
   // Reset to last confirmed selection when modal opens
   React.useEffect(() => {
@@ -75,38 +77,45 @@ export function CalendarModal({
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
               <View style={styles.content}>
                 <View style={styles.subtitleRow}>
-                  <Text style={styles.subtitle}>
-                    Press Done or Choose Date to apply your selection.
+                  <Text style={[styles.subtitle, {
+                    // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
+                    fontSize: language === 'Chinese' ? 14 : 16}]}>
+                    {language === 'Chinese' ? '点击"确定"或"选择日期"应用您的选择。' : 'Press "Done" or "Choose Date" to apply your selection.'}
                   </Text>
                 </View>
                 <View style={styles.headerRow}>
-                  <Text style={styles.title}>
+                  <Text style={[styles.title, {
+                    // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
+                    fontSize: language === 'Chinese' ? 20 : 24}]}>
                     {title}
                   </Text>
                   <TouchableOpacity onPress={handleDone}>
-                    <Text style={styles.doneButton}>Done</Text>
+                    <Text style={[styles.doneButton, {
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium', 
+                      fontSize: language === 'Chinese' ? 18 : 20}]}>{language === 'Chinese' ? '确定' : 'Done'}</Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.buttonRow}>
                   <ModalButton 
-                    text="Today"
+                    text={language === 'Chinese' ? '今天' : 'Today'}
                     selected={currentFilter === 'today'}
                     onPress={() => handleButtonPress('today')}
+                    language={language}
                   />
                   <ModalButton 
-                    text="This Week"
+                    text={language === 'Chinese' ? '本周' : 'This Week'}
                     selected={currentFilter === 'week'}
                     onPress={() => handleButtonPress('week')}
                   />
                 </View>
                 <View style={styles.buttonRow}>
                   <ModalButton 
-                    text="This Month"
+                    text={language === 'Chinese' ? '本月' : 'This Month'}
                     selected={currentFilter === 'month'}
                     onPress={() => handleButtonPress('month')}
                   />
                   <ModalButton 
-                    text="All Time"
+                    text={language === 'Chinese' ? '全部' : 'All'}
                     selected={currentFilter === 'all'}
                     onPress={() => handleButtonPress('all')}
                   />
@@ -150,7 +159,9 @@ export function CalendarModal({
                       style={styles.chooseDateButton}
                       onPress={handleDone}
                     >
-                      <Text style={styles.chooseDateButtonText}>Choose Date</Text>
+                      <Text style={[styles.chooseDateButtonText, {
+                        // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+                        }]}>{language === 'Chinese' ? '选择日期' : 'Choose Date'}</Text>
                     </TouchableOpacity>
                   </View>
                 )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimensions, Switch, Alert, Linking, ScrollView , Animated } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimensions, Switch, Alert, Linking, ScrollView , Animated, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -10,11 +10,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
 import { db } from '@/db/index';
+import { Picker } from '@react-native-picker/picker';
 
-const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
+const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
     return (
       <View style={styles.titleToggleRow}>
-        <Text style={styles.titleToggleText}>{text}</Text>
+        <Text style={[
+          styles.titleToggleText,
+          // { fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' }
+        ]}>
+          {text}
+        </Text>
         <Switch
           value={value}
           onValueChange={onValueChange}
@@ -32,6 +38,7 @@ export default function AppSettingsScreen() {
   const [galleryAccessEnabled, setGalleryAccessEnabled] = React.useState(false);
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
   const [notificationsAccessEnabled, setNotificationsAccessEnabled] = React.useState(false);
+  const [language, setLanguage] = React.useState('English');
 
   // Backup modal state
   const [isBackupModalOpen, setIsBackupModalOpen] = React.useState(false);
@@ -48,12 +55,16 @@ export default function AppSettingsScreen() {
   const deleteLocalStorageOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const deleteLocalStorageModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // language modal state
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = React.useState(false);
+
   // Check camera permission status on component mount
   React.useEffect(() => {
     checkCameraPermission();
     checkGalleryPermission();
     checkMicPermission();
     loadNotificationsPreference();
+    loadLanguagePreference();
   }, []);
 
   const loadNotificationsPreference = async () => {
@@ -109,6 +120,47 @@ export default function AppSettingsScreen() {
     setMicAccessEnabled(status === 'granted');
   };
 
+  const loadLanguagePreference = async () => {
+    try {
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        const result = await db.getFirstAsync(`
+          SELECT language FROM users WHERE userID = ?
+        `, [userID]);
+        const userData = result as { language?: string } | undefined;
+        if (userData && typeof userData.language === 'string') {
+          setLanguage(userData.language);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading language preference:', error);
+    }
+  };
+
+  const saveLanguagePreference = async (value: string) => {
+    try {
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        await db.runAsync(`
+          UPDATE users 
+          SET language = ?
+          WHERE userID = ?
+        `, [value, userID]);
+      }
+    } catch (error) {
+      console.error('Error saving language preference:', error);
+    }
+  };
+
+  const handleLanguageRowPress = () => {
+    setIsLanguageModalOpen(true);
+  };
+
+  const handleLanguageSelect = (value: string) => {
+    setLanguage(value);
+    saveLanguagePreference(value);
+    setIsLanguageModalOpen(false);
+  };
 
   const handleCameraToggle = async (value: boolean) => {
     if (value) {
@@ -330,67 +382,163 @@ export default function AppSettingsScreen() {
             >
             <AntDesign name="arrowleft" size={32} color="black" />
             </TouchableOpacity>
-            <Text style={styles.title}>App Settings</Text>
+            <Text style={[styles.title, { 
+              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Regular' : 'Neuton-Regular',
+              marginLeft: language === 'Chinese' ? 0 : 16,
+              marginBottom: language === 'Chinese' ? Platform.OS === 'ios' ? 0 : 5 : Platform.OS === 'ios' ? 5 : 10,
+              }]}>{language === 'Chinese' ? '应用设置' : 'App Settings'}</Text>
         </View>
         <View style={styles.mainContainer}>
             <ScrollView 
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 140 }}
             >
+                <View style={styles.titleToggleRow}>
+                  <Text style={[styles.titleToggleText, { 
+                    // fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' 
+                    }]}>{language === 'Chinese' ? '语言' : 'Language'}</Text>
+                  <TouchableOpacity
+                    style={{
+                      width: 170,
+                      height: 35,
+                      borderRadius: 10,
+                      backgroundColor: '#F8F8F8',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingHorizontal: 16,
+                    }}
+                    activeOpacity={0.7}
+                    onPress={handleLanguageRowPress}
+                  >
+                    <Text style={{ color: '#757575', fontSize: 18, fontFamily: 'Satoshi-Variable' }}>
+                      {language === 'Chinese' ? '中文' : 'English'}
+                    </Text>
+                    <AntDesign name="right" size={20} color="#757575" />
+                  </TouchableOpacity>
+                </View>
+                <Modal
+                  visible={isLanguageModalOpen}
+                  transparent
+                  animationType="fade"
+                  onRequestClose={() => setIsLanguageModalOpen(false)}
+                >
+                  <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} activeOpacity={1} onPressOut={() => setIsLanguageModalOpen(false)}>
+                    <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
+                      <TouchableOpacity style={{ paddingVertical: 18 }} onPress={() => handleLanguageSelect('English')}>
+                        <Text style={{ fontFamily: 'Satoshi-Variable', fontSize: 24, color: language === 'English' ? '#44B88A' : '#222', textAlign: 'center' }}>English</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={{ paddingVertical: 18 }} onPress={() => handleLanguageSelect('Chinese')}>
+                        <Text style={{ 
+                          // fontFamily: 'NotoSansSC-ExtraBold', 
+                          fontSize: 24, color: language === 'Chinese' ? '#44B88A' : '#222', textAlign: 'center' }}>中文</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={{ marginBottom: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
+                        <Text style={{ color: '#8684FF', fontSize: 20, 
+                          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Regular' : 'Satoshi-Medium' 
+                          }}>
+                          {language === 'Chinese' ? '取消' : 'Cancel'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                </Modal>
                 <TitleToggleRow 
-                    text="Camera Access"
+                    text={language === 'Chinese' ? '允许访问相机' : 'Camera Access'}
                     value={cameraAccessEnabled}
                     onValueChange={handleCameraToggle}
+                    language={language}
                 />
                 <TitleToggleRow 
-                    text="Gallery Access"
+                    text={language === 'Chinese' ? '允许访问相册' : 'Gallery Access'}
                     value={galleryAccessEnabled}
                     onValueChange={handleGalleryToggle}
+                    language={language}
                 />
                 <TitleToggleRow 
-                    text="Microphone Access"
+                    text={language === 'Chinese' ? '允许访问麦克风' : 'Microphone Access'}
                     value={micAccessEnabled}
                     onValueChange={handleMicToggle}
+                    language={language}
                 />
                 <TitleToggleRow 
-                    text="Notifications"
+                    text={language === 'Chinese' ? '允许发送通知' : 'Notifications'}
                     value={notificationsAccessEnabled}
                     onValueChange={handleNotificationsToggle}
+                    language={language}
                 />
 
                 <TouchableOpacity style={[styles.cloudButton,]}
                   onPress={handleBackupPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-upload" size={30} color="#fff" />
-                    <Text style={styles.cloudButtonText}>Backup data to cloud</Text>
+                    <Text style={styles.cloudButtonText}>{language === 'Chinese' ? '备份数据到云端' : 'Backup data to cloud'}</Text>
                   </View>
                 </TouchableOpacity>
-                <Text style={styles.descriptionText}>
+                <Text style={[styles.descriptionText, { 
+                  // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Italic' 
+                  }]}>
+                  { language === "English" ? 
+                  <>
                   {"Backup your local storage to cloud regularly so that you can access your data on other devices.\n\nEach backup will replace the previous one. For more clarification, please refer to the FAQ in our "}
                   <Text style={[styles.descriptionText, { color: '#44B88A' }]}>website</Text>
-                  <Text style={styles.descriptionText}>.</Text>
+                  <Text style={styles.descriptionText}>.</Text> </>:
+                  <>
+                  {"请定期将本地存储备份至云端，以便在其他设备上访问数据。\n\n每次备份将覆盖之前的记录。如需进一步了解，请参考"}
+                  <Text style={[styles.descriptionText, { 
+                    color: '#44B88A', 
+                    // fontFamily: 'NotoSansSC-Medium'
+                    }]}>官网FAQ</Text>
+                  <Text style={[styles.descriptionText, { fontFamily: 'NotoSansSC-Medium'}]}>帮助文档。</Text>
+                  </>
+                  }
+                  
+                  
                 </Text>
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#8684FF', marginTop: 20 }]}
                   onPress={handleLoadDataPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-download" size={30} color="#fff" />
-                    <Text style={styles.cloudButtonText}>Load data from cloud</Text>
+                    <Text style={[styles.cloudButtonText, { 
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' 
+                      }]}>{language === 'Chinese' ? '导入云端备份' : 'Load data from cloud'}</Text>
                   </View>
                 </TouchableOpacity>
-                <Text style={styles.descriptionText}>
+                <Text style={[styles.descriptionText, { 
+                  // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Italic' 
+                  }]}>
+                  {language === "English" ? 
+                  <>
                   {"Import your existing data and progress from cloud if you logging in from another phone.\n\nEach import will replace your existing local storage. For more clarification, please refer to the FAQ in our "}
-                  <Text style={[styles.descriptionText, { color: '#44B88A' }]}>website</Text>
-                  <Text style={styles.descriptionText}>.</Text>
+                  <Text style={[styles.descriptionText, { color: '#44B88A'}]}>website</Text>
+                  <Text style={styles.descriptionText}>.</Text> </> :
+                  <>
+                  {"若从其他手机登录，可从云端导入现有数据和进度。\n\n每次导入将覆盖本地现有存储。如需进一步了解，请参阅"}
+                  <Text style={[styles.descriptionText, { 
+                    color: '#44B88A', 
+                    // fontFamily: 'NotoSansSC-Medium'
+                    }]}>官网FAQ</Text>
+                  <Text style={[styles.descriptionText, { 
+                    // fontFamily: 'NotoSansSC-Medium'
+                    }]}>帮助文档。</Text>
+                  </>
+                  }
                 </Text>
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#FF3B30', marginTop: 20 }]}
                   onPress={handleDeleteLocalStoragePress}>
                   <View style={styles.buttonContent}>
                     <Ionicons name="trash" size={30} color="#fff" />
-                    <Text style={styles.cloudButtonText}>Clear local storage data</Text>
+                    <Text style={[styles.cloudButtonText, { 
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' 
+                      }]}>{language === 'Chinese' ? '删除本地文件' : 'Clear local storage data'}</Text>
                   </View>
                 </TouchableOpacity>
-                <Text style={styles.descriptionText}>
-                  {"This will delete all your local storage data and you will not be able to recover it. Please backup your data to cloud before clearing."}
+                <Text style={[styles.descriptionText, { 
+                  // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Italic'
+                   }]}>
+                  {language === "English" ? "This will delete all your local storage data and you will not be able to recover it. Please backup your data to cloud before clearing." : "此操作将删除所有本地存储数据且无法恢复。请在清除前将数据备份至云端。"}
                 </Text>
             </ScrollView>
         </View>

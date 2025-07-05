@@ -20,6 +20,7 @@ import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/CalendarModal';
 import LottieView from 'lottie-react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -102,6 +103,7 @@ export default function FavoritesScreen() {
   const { mode, selected } = useLocalSearchParams();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
+  const { language } = useLanguage();
 
   const selectUnselectedDuration = 300;
 
@@ -1323,7 +1325,7 @@ export default function FavoritesScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            Whoops! Where did{'\n'}all your favorite decks go
+            {language === 'Chinese' ? '哎呀！你所有收藏的卡片组都去哪了？' : "Whoops! Where did\nall your favorite decks go"}
           </Text>
         </View>
       );
@@ -1395,7 +1397,7 @@ export default function FavoritesScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            Whoops! Where did{'\n'}all your favorite folders go
+            {language === 'Chinese' ? '哎呀！你所有收藏的文件夹都去哪了？' : "Whoops! Where did\nall your favorite folders go"}
           </Text>
         </View>
       );
@@ -1484,8 +1486,8 @@ export default function FavoritesScreen() {
           ]}>
             <View style={styles.content}>
               <RoundedContainer 
-                leftLabel={`Fav Decks (${favDeckCount})`}
-                rightLabel={`Fav Folders (${favFolderCount})`}
+                leftLabel={language === 'Chinese' ? `收藏卡片组 (${favDeckCount})` : `Fav Decks (${favDeckCount})`}
+                rightLabel={language === 'Chinese' ? `收藏文件夹 (${favFolderCount})` : `Fav Folders (${favFolderCount})`}
                 onToggle={handleToggle}
               />
 
@@ -1519,11 +1521,15 @@ export default function FavoritesScreen() {
               >
                 <View style={styles.titleRow}>
                   <View style={styles.titleContainer}>
-                    <Title style={[styles.titleAbsolute]} animatedOpacity={studyOpacity}>
-                      {`Favorite Decks (${favDeckCount})`}
+                    <Title style={[styles.titleAbsolute, {fontSize: language === 'Chinese' ? 20 : 24, 
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular'
+                      }]} animatedOpacity={studyOpacity}>
+                      {language === 'Chinese' ? `收藏卡片组 (${favDeckCount})` : `Favorite Decks (${favDeckCount})`}
                     </Title>
-                    <Title style={[styles.titleAbsolute]} animatedOpacity={interviewOpacity}>
-                      {`Favorite Folders (${favFolderCount})`}
+                    <Title style={[styles.titleAbsolute, {fontSize: language === 'Chinese' ? 20 : 24, 
+                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular'
+                      }]} animatedOpacity={interviewOpacity}>
+                      {language === 'Chinese' ? `收藏文件夹 (${favFolderCount})` : `Favorite Folders (${favFolderCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1536,14 +1542,14 @@ export default function FavoritesScreen() {
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
-                      Select
+                      {language === 'Chinese' ? '选择' : 'Select'}
                     </Animated.Text>
                     <Animated.Text style={[
                       styles.selectButton,
                       styles.selectButtonAbsolute,
                       { opacity: selectAllOpacity }
                     ]}>
-                      Select All
+                      {language === 'Chinese' ? '全选' : 'Select All'}
                     </Animated.Text>
                   </TouchableOpacity>
                 </View>
@@ -1598,7 +1604,7 @@ export default function FavoritesScreen() {
       <CalendarModal
         visible={isCalendarOpen}
         onDismiss={handleCalendarDismiss}
-        title={"Filter favorites based on\ndate added"}
+        title={language === 'Chinese' ? '按添加日期筛选收藏' : 'Filter favorites based on\ndate added'}
         onDone={(selectedFilter, customDate) => {
           setCalendarFilter(selectedFilter);
           setCalendarCustomDate(customDate || null);

@@ -402,12 +402,12 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
           // Determine which side to update based on current flip state
           if (isFlipped) {
             setBackContent({
-              content: <Text style={styles.contentText}>{typedText}</Text>,
+              content: <Text style={[styles.contentText, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
               type: cardType
             });
           } else {
             setFrontContent({
-              content: <Text style={styles.contentText}>{typedText}</Text>,
+              content: <Text style={[styles.contentText, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
               type: cardType
             });
           }

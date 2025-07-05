@@ -1279,7 +1279,9 @@ export default function DeckDetailsScreen() {
                       <View style={styles.aiDeckColumn2}>
                         {deckTitle && (
                           <Text 
-                            style={styles.aiDeckTitle}
+                            style={[styles.aiDeckTitle,
+                              /[\u4e00-\u9fff]/.test(deckTitle) && { paddingTop: 10 },
+                            ]}
                             numberOfLines={2}
                           >
                             {deckTitle}
@@ -1324,7 +1326,9 @@ export default function DeckDetailsScreen() {
                       {/* Title */}
                       {deckTitle && (
                         <Text 
-                          style={styles.cardTitle}
+                          style={[styles.cardTitle,
+                            /[\u4e00-\u9fff]/.test(deckTitle) && { paddingTop: 10 },
+                          ]}
                           numberOfLines={2}
                         >
                           {deckTitle}

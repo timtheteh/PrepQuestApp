@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Satoshi-Bold',
     color: '#FFFFFF',
+    textAlign: 'center',
   },
   textLine: {
     marginTop: 0,

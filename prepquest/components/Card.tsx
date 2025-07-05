@@ -232,7 +232,8 @@ export function Card({
                   <Text 
                     style={[
                       styles.cardTitle,
-                      isSelectMode && styles.cardTitleSelectMode
+                      isSelectMode && styles.cardTitleSelectMode,
+                      /[\u4e00-\u9fff]/.test(title) && { paddingTop: 10 },
                     ]} 
                     numberOfLines={2}
                   >

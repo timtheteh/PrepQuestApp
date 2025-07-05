@@ -1001,6 +1001,10 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                     setIsEraserMode(true);
                     setSelectedTool('eraser');
                   }}
+                  onResizePress={() => {
+                    setIsEraserMode(false); // Optional: if you want to exit eraser mode
+                    setSelectedTool('marker');
+                  }}
                   onResizeValueChange={handleMarkerSizeChange}
                   onUndoPress={handleUndo}
                   onForwarddoPress={handleRedo}

@@ -18,6 +18,7 @@ interface DrawableOptionsRowProps {
   onClearPress?: () => void;
   currentMarkerSize?: number; // Current marker size (1-10)
   selectedTool?: 'marker' | 'eraser'; // Control which tool is selected
+  onSelectTool?: (tool: 'marker' | 'eraser') => void;
 }
 
 export function DrawableOptionsRow({
@@ -29,22 +30,26 @@ export function DrawableOptionsRow({
   onForwarddoPress,
   onClearPress,
   currentMarkerSize = 3,
-  selectedTool = 'marker'
+  selectedTool = 'marker',
+  onSelectTool
 }: DrawableOptionsRowProps) {
   const [isResizeSliderVisible, setIsResizeSliderVisible] = useState(false);
 
   const handleMarkerPress = () => {
     onMarkerPress?.();
+    onSelectTool?.('marker');
   };
 
   const handleEraserPress = () => {
     setIsResizeSliderVisible(false);
     onEraserPress?.();
+    onSelectTool?.('eraser');
   };
 
   const handleResizePress = () => {
     setIsResizeSliderVisible(prev => !prev);
     onResizePress?.();
+    onSelectTool?.('marker');
   };
 
   return (

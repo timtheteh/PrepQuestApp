@@ -659,7 +659,7 @@ export default function ManualAddDeckPage() {
       // Check if there are any subjects that are just whitespace or special characters
       const hasInvalidSubjects = subjects.some(subject => 
         subject === '' ||
-        !/^[\p{L}\p{N} ]+$/u.test(subject) // Only letters, numbers, and spaces
+        !/^[\p{L}\p{N} '\u2019]+$/u.test(subject) // Only letters, numbers, spaces, and apostrophes
       );
       
       if (hasEmptySubjects || hasInvalidSubjects) {

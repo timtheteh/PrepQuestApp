@@ -1639,3 +1639,91 @@ export async function getCompanyIconByName(companyName: string): Promise<{ uri: 
     return undefined;
   }
 }
+
+export async function saveUserGenAIFormEntry({
+  deckName,
+  formEntryType,
+  formEntryMethod,
+  formSubmissionDate,
+  numberOfQuestions,
+  kindsOfQuestions,
+  studyEducationLevel,
+  studySubjects,
+  studyTopics,
+  studySubtopics,
+  studyExam,
+  interviewJobRole,
+  interviewType,
+  interviewCompany,
+  interviewExperienceLevel,
+  interviewTopics
+}: {
+  deckName: string;
+  formEntryType: string;
+  formEntryMethod: string;
+  formSubmissionDate: string;
+  numberOfQuestions: number;
+  kindsOfQuestions: string;
+  studyEducationLevel?: string;
+  studySubjects?: string;
+  studyTopics?: string;
+  studySubtopics?: string;
+  studyExam?: string;
+  interviewJobRole?: string;
+  interviewType?: string;
+  interviewCompany?: string;
+  interviewExperienceLevel?: string;
+  interviewTopics?: string;
+}): Promise<{ success: boolean }> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.execAsync(`
+      INSERT INTO userFormEntries (
+        userID, formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
+        youtubeLink, studyEducationLevel, studySubjects, studyTopics, studySubtopics, studyExam,
+        interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics
+      ) VALUES (
+        '${userID}', '${formEntryType}', '${formEntryMethod}', '${formSubmissionDate}', '${deckName.replace(/'/g, "''")}',
+        ${typeof numberOfQuestions === 'number' ? numberOfQuestions : 'NULL'},
+        ${kindsOfQuestions ? `'${kindsOfQuestions}'` : 'NULL'},
+        NULL,
+        ${studyEducationLevel ? `'${studyEducationLevel.replace(/'/g, "''")}'` : 'NULL'},
+        ${studySubjects ? `'${studySubjects.replace(/'/g, "''")}'` : 'NULL'},
+        ${studyTopics ? `'${studyTopics.replace(/'/g, "''")}'` : 'NULL'},
+        ${studySubtopics ? `'${studySubtopics.replace(/'/g, "''")}'` : 'NULL'},
+        ${studyExam ? `'${studyExam.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewJobRole ? `'${interviewJobRole.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewType ? `'${interviewType.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewCompany ? `'${interviewCompany.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewExperienceLevel ? `'${interviewExperienceLevel.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewTopics ? `'${interviewTopics.replace(/'/g, "''")}'` : 'NULL'}
+      )
+    `);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving user form entry:', error);
+    return { success: false };
+  }
+}
+
+export async function getMostRecentGenAIFormEntry(mode: 'study' | 'interview'): Promise<any | null> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(`
+      SELECT *
+      FROM userFormEntries
+      WHERE formEntryMethod = 'genAIForm'
+        AND formEntryType = ?
+        AND userID = ?
+      ORDER BY formSubmissionDate DESC
+      LIMIT 1
+    `, [mode, userID]);
+    if (!result) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    console.error('Error fetching most recent genaiform entry:', error);
+    return null;
+  }
+}

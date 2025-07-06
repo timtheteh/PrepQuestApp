@@ -16,9 +16,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
-import { checkDeckNameExists } from '../db/decks';
+import { checkDeckNameExists, saveUserGenAIFormEntry, getMostRecentGenAIFormEntry } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUserQuestionSettings } from '../db/users';
+
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -326,7 +340,7 @@ export default function GenAIFormPage() {
       // Check if there are any subjects that are just whitespace or special characters
       const hasInvalidSubjects = subjects.some(subject => 
         subject === '' ||
-        !/^[\p{L}\p{N} ]+$/u.test(subject) // Only letters, numbers, and spaces
+        !/^[\p{L}\p{N} '\u2019]+$/u.test(subject) // Only letters, numbers, spaces, and apostrophes
       );
       
       if (hasEmptySubjects || hasInvalidSubjects) {
@@ -347,7 +361,7 @@ export default function GenAIFormPage() {
       // Check if there are any subjects that are just whitespace or special characters
       const hasInvalidTopics = topics.some(topic => 
         topic === '' ||
-        !/^[\p{L}\p{N} ]+$/u.test(topic) // Only letters, numbers, and spaces
+        !/^[\p{L}\p{N} '\u2019]+$/u.test(topic) // Only letters, numbers, spaces, and apostrophes
       );
       
       if (hasEmptyTopics || hasInvalidTopics) {
@@ -367,7 +381,7 @@ export default function GenAIFormPage() {
       // Check if there are any subtopics that are just whitespace or special characters
       const hasInvalidSubtopics = subtopics.some(subtopic => 
         subtopic === '' ||
-        !/^[\p{L}\p{N} ]+$/u.test(subtopic) // Only letters, numbers, and spaces
+        !/^[\p{L}\p{N} '\u2019]+$/u.test(subtopic) // Only letters, numbers, spaces, and apostrophes
       );
       
       if (hasEmptySubtopics || hasInvalidSubtopics) {
@@ -387,7 +401,7 @@ export default function GenAIFormPage() {
       // Check if there are any topics that are just whitespace or special characters
       const hasInvalidTopics = topics.some(topic => 
         topic === '' ||
-        !/^[\p{L}\p{N} ]+$/u.test(topic) // Only letters, numbers, and spaces
+        !/^[\p{L}\p{N} '\u2019]+$/u.test(topic) // Only letters, numbers, spaces, and apostrophes
       );
       
       if (hasEmptyTopics || hasInvalidTopics) {
@@ -515,38 +529,127 @@ export default function GenAIFormPage() {
     const formData = {
       mode,
       deckName,
-      studyMandatoryQuestion1,
-      studyMandatoryQuestion2,
-      studyOptionalQuestion1,
-      studyOptionalQuestion2,
-      studyOptionalQuestion3,
-      interviewMandatoryQuestion1,
-      interviewOptionalQuestion1,
-      interviewOptionalQuestion2,
-      interviewOptionalQuestion3,
+      studyMandatoryQuestion1, // education level
+      studyMandatoryQuestion2, // subjects
+      studyOptionalQuestion1, // topics
+      studyOptionalQuestion2, // subtopics
+      studyOptionalQuestion3, // exam
+      interviewMandatoryQuestion1, // role
+      interviewOptionalQuestion1, // company
+      interviewOptionalQuestion2, // experience level
+      interviewOptionalQuestion3, // topics
       numberOfQuestions,
       interviewType,
-      questionType,
+      questionType, // cognitive qn types
     };
     try {
-      // You may want to show a loading indicator here
-      const response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
-        },
-        body: JSON.stringify(formData),
-      });
-      console.log("fetch complete, status:", response.status);
-      if (!response.ok) {
-        throw new Error('Failed to generate flashcards');
+      const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
+      const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
+        isMcqEnabled,
+        isClozeEnabled,
+        isVoiceRecordedEnabled,
+        interviewType,
+        numberOfQuestions,
+        questionType // this is the allowed cognitive types
+      );
+
+      var prompt = ""
+      if (mode === 'interview' && language === 'English') {
+        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
+        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+          prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion1}.\n`
+        }
+        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+          prompt += `The experience level for this position is ${interviewOptionalQuestion2}.\n`
+        }
+        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+          prompt += `The topics I would like to focus on are ${interviewOptionalQuestion3}.\n`
+        }
       }
-      const data = await response.json();
-      console.log("data", data);
-      // Handle the response (e.g., show success, navigate, etc.)
-      // Alert.alert('Success', 'Flashcards generated!');
-      // You can process 'data' as needed
+      if (mode === 'interview' && language === 'Chinese') {
+        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
+        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+          prompt += `我准备面试的公司是${interviewOptionalQuestion1}。\n`
+        }
+        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+          prompt += `这个职位的经验水平是${interviewOptionalQuestion2}。\n`
+        }
+        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+          prompt += `我想要聚焦的领域是${interviewOptionalQuestion3}。\n`
+        }
+      }
+      if (mode === 'study' && language === 'English') {
+        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
+        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+          prompt += `The topics I would like to study are ${studyOptionalQuestion1}.\n`
+        }
+        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+          prompt += `The subtopics I would like to focus on are ${studyOptionalQuestion2}.\n`
+        }
+        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+          prompt += `The exam I am preparing for is ${studyOptionalQuestion3}.\n`
+        }
+      }
+      if (mode === 'study' && language === 'Chinese') { 
+        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
+        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+          prompt += `我想要学习的领域是${studyOptionalQuestion1}。\n`
+        }
+        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+          prompt += `我想要聚焦的子领域是${studyOptionalQuestion2}。\n`
+        }
+        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+          prompt += `我正在准备${studyOptionalQuestion3}考试。\n`
+        }
+      }
+      if (distributionOfFlashcards) {   
+        if (language === 'English') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
+            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
+          }
+        } 
+        if (language === 'Chinese') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
+            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
+          }
+        }
+      }
+      if (language === 'English' && mode === 'interview') { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'interview') { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+      if (language === 'English' && mode === 'study') { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'study') { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+      console.log("prompt >>>> \n", prompt);
+      // // You may want to show a loading indicator here
+      // const response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+      //   },
+      //   body: JSON.stringify({prompt}),
+      // });
+      // console.log("fetch complete, status:", response.status);
+      // if (!response.ok) {
+      //   throw new Error('Failed to generate flashcards');
+      // }
+      // const data = await response.json();
+      // const flashcards = data.flashcards.flashcards     // Handle the response (e.g., show success, navigate, etc.)
+      // // Alert.alert('Success', 'Flashcards generated!');
+      // // You can process 'data' as needed
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Something went wrong');
     }
@@ -569,6 +672,25 @@ export default function GenAIFormPage() {
       setIsSuccessModalOpen(false);
       // Navigate after animation completes
       setTimeout(async () => {
+        const now = new Date().toISOString();
+        await saveUserGenAIFormEntry({
+          deckName,
+          formEntryType: mode === 'study' ? 'study' : 'interview',
+          formEntryMethod: 'genAIForm',
+          formSubmissionDate: now,
+          numberOfQuestions,
+          kindsOfQuestions: JSON.stringify(questionType),
+          studyEducationLevel: studyMandatoryQuestion1,
+          studySubjects: studyMandatoryQuestion2,
+          studyTopics: studyOptionalQuestion1,
+          studySubtopics: studyOptionalQuestion2,
+          studyExam: studyOptionalQuestion3,
+          interviewJobRole: interviewMandatoryQuestion1,
+          interviewType,
+          interviewCompany: interviewOptionalQuestion1,
+          interviewExperienceLevel: interviewOptionalQuestion2,
+          interviewTopics: interviewOptionalQuestion3
+        });
         await callGenAIFlashcardsGeneration();
         router.back();
       }, 50);
@@ -829,10 +951,25 @@ export default function GenAIFormPage() {
         opacity={recentFormModalOpacity}
         text={language === 'Chinese' ? ['使用最近的', '表单条目?'] : ['Use most recent', 'form entry?']}
         buttons='double'
-        onConfirm={() => {
+        onConfirm={async () => {
+          const entry = await getMostRecentGenAIFormEntry(mode as 'study' | 'interview');
+          console.log("entry", entry);
+          if (entry) {
+            setDeckName(entry.deckName || '');
+            setNumberOfQuestions(entry.numberOfQuestions || 1);
+            setQuestionType(entry.kindsOfQuestions ? JSON.parse(entry.kindsOfQuestions) : []);
+            setStudyMandatoryQuestion1(entry.studyEducationLevel || '');
+            setStudyMandatoryQuestion2(entry.studySubjects || '');
+            setStudyOptionalQuestion1(entry.studyTopics || '');
+            setStudyOptionalQuestion2(entry.studySubtopics || '');
+            setStudyOptionalQuestion3(entry.studyExam || '');
+            setInterviewMandatoryQuestion1(entry.interviewJobRole || '');
+            setInterviewType(entry.interviewType || '');
+            setInterviewOptionalQuestion1(entry.interviewCompany || '');
+            setInterviewOptionalQuestion2(entry.interviewExperienceLevel || '');
+            setInterviewOptionalQuestion3(entry.interviewTopics || '');
+          }
           handleDismissRecentForm();
-          // TODO: Implement loading most recent form
-          console.log('Load most recent form');
         }}
         onCancel={handleDismissRecentForm}
       />

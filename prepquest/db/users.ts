@@ -96,4 +96,33 @@ export async function initializeUserStatistics(): Promise<void> {
   } catch (error) {
     console.error('Error initializing user statistics:', error);
   }
+}
+
+// Fetch question type settings for the current user
+export async function getUserQuestionSettings(): Promise<{
+  isMcqEnabled: boolean,
+  isClozeEnabled: boolean,
+  isVoiceRecordedEnabled: boolean
+}> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(
+      `SELECT mcqQuestionsEnabled, clozeQuestionsEnabled, voiceRecordedQuestionsEnabled FROM users WHERE userID = ?`,
+      [userID]
+    ) as { mcqQuestionsEnabled?: number, clozeQuestionsEnabled?: number, voiceRecordedQuestionsEnabled?: number } | null;
+    if (!result) throw new Error('User not found');
+    return {
+      isMcqEnabled: !!result.mcqQuestionsEnabled,
+      isClozeEnabled: !!result.clozeQuestionsEnabled,
+      isVoiceRecordedEnabled: !!result.voiceRecordedQuestionsEnabled,
+    };
+  } catch (error) {
+    console.error('Error fetching user question settings:', error);
+    // Default to all enabled if error
+    return {
+      isMcqEnabled: true,
+      isClozeEnabled: true,
+      isVoiceRecordedEnabled: true,
+    };
+  }
 } 

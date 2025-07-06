@@ -666,7 +666,7 @@ export default function GenAIFormPage() {
         prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
       }
       if (language === 'English' && mode === 'study') { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n"
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
         prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
       }
       if (language === 'Chinese' && mode === 'study') { 
@@ -688,11 +688,16 @@ export default function GenAIFormPage() {
         throw new Error('Failed to generate flashcards');
       }
       const data = await response.json();
-      const flashcards = data.flashcards.flashcards     // Handle the response (e.g., show success, navigate, etc.)
-      console.log("flashcards >>>> \n", flashcards);
-      return flashcards
-      // Alert.alert('Success', 'Flashcards generated!');
-      // You can process 'data' as needed
+      console.log("DATA >>>>>>>>>>>>>>>>> ", data);
+      let flashcards = data.flashcards?.flashcards ?? data.flashcards;
+
+      // If it's a single object, wrap in array
+      if (flashcards && !Array.isArray(flashcards)) {
+        flashcards = [flashcards];
+      }
+
+      console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
+      return flashcards;
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Something went wrong');
     }
@@ -714,18 +719,37 @@ export default function GenAIFormPage() {
     ]).start(async () => {
       setIsSuccessModalOpen(false);
       setShowStatusPage(true);
-      setStatusRequestReceived(true);
       setStatusGeneratingFlashcards(false);
       setStatusAddingDeckAndFlashcards(false);
       try {
+        const now = new Date().toISOString();
+        await saveUserGenAIFormEntry({
+          deckName,
+          formEntryType: mode === 'study' ? 'study' : 'interview',
+          formEntryMethod: 'genAIForm',
+          formSubmissionDate: now,
+          numberOfQuestions,
+          kindsOfQuestions: JSON.stringify(questionType),
+          studyEducationLevel: studyMandatoryQuestion1,
+          studySubjects: studyMandatoryQuestion2,
+          studyTopics: studyOptionalQuestion1,
+          studySubtopics: studyOptionalQuestion2,
+          studyExam: studyOptionalQuestion3,
+          interviewJobRole: interviewMandatoryQuestion1,
+          interviewType,
+          interviewCompany: interviewOptionalQuestion1,
+          interviewExperienceLevel: interviewOptionalQuestion2,
+          interviewTopics: interviewOptionalQuestion3
+        });
         // 1. Generating flashcards
         setTimeout(async () => {
-          setStatusGeneratingFlashcards(true);
+          setStatusRequestReceived(true);
           // Call the flashcard generation API (simulate delay if needed)
           const flashcards = await callGenAIFlashcardsGeneration();
+          setStatusGeneratingFlashcards(true);
+          console.log("FLAHSCARDS GENERATED >>>>>>>>>>>>>>>>>>>>>>>>>>>> \n", flashcards);
           // 2. Adding deck/flashcards
           setTimeout(async () => {
-            setStatusAddingDeckAndFlashcards(true);
             // Use the same logic as before for DB insert, but skip UI updates
             if (isInIndexPage) {
               await createDeckWithGenAIFlashcards({
@@ -798,6 +822,7 @@ export default function GenAIFormPage() {
                 flashcards
               });
             }
+            setStatusAddingDeckAndFlashcards(true);
             // Optionally, add a delay for user to see all ticks
             setTimeout(() => {
               setShowStatusPage(false);
@@ -831,18 +856,36 @@ export default function GenAIFormPage() {
     ]).start(async () => {
       setIsOptionalFieldsWarningModalOpen(false);
       setShowStatusPage(true);
-      setStatusRequestReceived(true);
       setStatusGeneratingFlashcards(false);
       setStatusAddingDeckAndFlashcards(false);
       try {
+        const now = new Date().toISOString();
+        await saveUserGenAIFormEntry({
+          deckName,
+          formEntryType: mode === 'study' ? 'study' : 'interview',
+          formEntryMethod: 'genAIForm',
+          formSubmissionDate: now,
+          numberOfQuestions,
+          kindsOfQuestions: JSON.stringify(questionType),
+          studyEducationLevel: studyMandatoryQuestion1,
+          studySubjects: studyMandatoryQuestion2,
+          studyTopics: studyOptionalQuestion1,
+          studySubtopics: studyOptionalQuestion2,
+          studyExam: studyOptionalQuestion3,
+          interviewJobRole: interviewMandatoryQuestion1,
+          interviewType,
+          interviewCompany: interviewOptionalQuestion1,
+          interviewExperienceLevel: interviewOptionalQuestion2,
+          interviewTopics: interviewOptionalQuestion3
+        });
         // 1. Generating flashcards
         setTimeout(async () => {
-          setStatusGeneratingFlashcards(true);
+          setStatusRequestReceived(true);
           // Call the flashcard generation API (simulate delay if needed)
           const flashcards = await callGenAIFlashcardsGeneration();
           // 2. Adding deck/flashcards
           setTimeout(async () => {
-            setStatusAddingDeckAndFlashcards(true);
+            setStatusGeneratingFlashcards(true);
             // Use the same logic as before for DB insert, but skip UI updates
             if (isInIndexPage) {
               await createDeckWithGenAIFlashcards({
@@ -915,6 +958,7 @@ export default function GenAIFormPage() {
                 flashcards
               });
             }
+            setStatusAddingDeckAndFlashcards(true);
             // Optionally, add a delay for user to see all ticks
             setTimeout(() => {
               setShowStatusPage(false);
@@ -953,7 +997,7 @@ export default function GenAIFormPage() {
         statusRows={[
           { done: statusRequestReceived, label: 'Request received' },
           { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? 'Successfully generated flashcards' : 'Generating flashcards' },
-          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? 'Successfully added flashcards and deck' : 'Adding flashcards and deck' }
+          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? 'Successfully added\nflashcards and deck' : 'Adding flashcards\nand deck' }
         ]}
       />
     );

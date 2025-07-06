@@ -1760,6 +1760,7 @@ export async function createDeckWithGenAIFlashcards({
   try {
     const userID = await getCurrentUserID();
     await db.execAsync('BEGIN TRANSACTION');
+    console.log(">>>>>>>>>>>>>>>>> QUERY IS IS CALLED & BEGININNING ADDINGGGGG<<<<<<<<<<<<<<<< ")
     try {
       const currentDate = new Date().toISOString();
       const cardDesignIndex = Math.floor(Math.random() * 4);

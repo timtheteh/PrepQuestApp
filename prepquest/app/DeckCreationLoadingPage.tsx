@@ -119,17 +119,17 @@ export function DeckCreationStatusPage({ statusRows }: { statusRows: { done: boo
           cacheComposition={true}
         />
       </View>
-      <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center', marginTop: 24 }}>
-        <Text style={styles.title}>Creating Deck</Text>
-        <View style={{ width: '100%', marginTop: 24 }}>
+      <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center', marginTop: 8 }}>
+        <Text style={styles.title}>Creating Deck...</Text>
+        <View style={{ width: '80%', marginTop: 8, marginLeft: '12%'}}>
           {statusRows.map((row, idx) => (
             <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
               {row.done ? (
-                <GreenTickIcon width={28} height={28} style={{ marginRight: 12 }} />
+                <GreenTickIcon width={28} height={28} style={{ marginRight: 12, marginTop: 5}} />
               ) : (
                 <DeleteModalIcon width={28} height={28} style={{ marginRight: 12 }} />
               )}
-              <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 18, color: '#000' }}>{row.label}</Text>
+              <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 18, color: '#000'}}>{row.label}</Text>
             </View>
           ))}
         </View>

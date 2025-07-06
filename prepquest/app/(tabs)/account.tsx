@@ -9,6 +9,7 @@ import LightSwitch from '@/assets/icons/lightSwitch.svg';
 import DarkSwitch from '@/assets/icons/darkSwitch.svg';
 import GrapeStem from '@/assets/icons/grapeStem.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
 // import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 
 export default function AccountScreen() {
@@ -20,10 +21,10 @@ export default function AccountScreen() {
   const [sharePressed, setSharePressed] = useState(false);
   const [ratePressed, setRatePressed] = useState(false);
   const [websitePressed, setWebsitePressed] = useState(false);
-  // const [showLoadingPage, setShowLoadingPage] = useState(false);
-  // const [loadingProgress, setLoadingProgress] = useState(0.4);
-  // const [loadingCurrent, setLoadingCurrent] = useState(12);
-  // const [loadingTotal, setLoadingTotal] = useState(48);
+  const [showLoadingPage, setShowLoadingPage] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0.4);
+  const [loadingCurrent, setLoadingCurrent] = useState(12);
+  const [loadingTotal, setLoadingTotal] = useState(48);
   const screenHeight = Dimensions.get('window').height;
   const topPadding = screenHeight < 670 ? 40 : 60;
   const router = useRouter();
@@ -69,11 +70,11 @@ export default function AccountScreen() {
   };
 
   const handleSignOut = () => {
-    // setShowLoadingPage(true);
-    // // Optionally, you can update loading values here for testing
-    // setLoadingProgress(0.4);
-    // setLoadingCurrent(12);
-    // setLoadingTotal(48);
+    setShowLoadingPage(true);
+    // Optionally, you can update loading values here for testing
+    setLoadingProgress(0.4);
+    setLoadingCurrent(12);
+    setLoadingTotal(48);
   };
 
   // Button position: 0 (left) for dark, 1 (right) for light
@@ -666,11 +667,17 @@ export default function AccountScreen() {
     </>
   );
 
-  // if (showLoadingPage) {
-  //   return (
-  //     <DeckCreationLoadingPage progress={loadingProgress} current={loadingCurrent} total={loadingTotal} />
-  //   );
-  // }
+  if (showLoadingPage) {
+    return (
+      <DeckCreationStatusPage
+        statusRows={[
+          { done: true, label: 'Request received' },
+          { done: true, label: 'Successfully generated flashcards' },
+          { done: true, label: 'Successfully added flashcards\nand deck' }
+        ]}
+      />
+    );
+  }
 
   return (
     <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim }}>

@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, Animated } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
+import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 
 const { width } = Dimensions.get('window');
 
@@ -10,6 +12,12 @@ interface DeckCreationLoadingPageProps {
   current: number;
   total: number;
   isInViewFlashcardsPage: boolean;
+}
+
+interface DeckCreationStatusPageProps {
+  requestReceived: boolean;
+  generatingFlashcards: boolean;
+  addingDeckAndFlashcards: boolean;
 }
 
 // Add language mappings for all user-facing strings
@@ -88,6 +96,43 @@ export default function DeckCreationLoadingPage({
             ? STRINGS.flashcardsGenerated[lang].replace('{current}', String(current)).replace('{total}', String(total))
             : `${current} out of ${total} Flashcards generated`
         }</Text>
+      </View>
+    </View>
+  );
+}
+
+export function DeckCreationStatusPage({ statusRows }: { statusRows: { done: boolean, label: string }[] }) {
+  return (
+    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+        <Image
+          source={require('@/assets/images/loadingBackground.png')}
+          style={{ width: '100%', height: '100%', borderRadius: 24 }}
+          resizeMode="contain"
+          fadeDuration={0}
+        />
+        <LottieView
+          source={require('@/assets/animations/LoadingAnimation1.json')}
+          autoPlay
+          loop
+          style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}
+          cacheComposition={true}
+        />
+      </View>
+      <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center', marginTop: 24 }}>
+        <Text style={styles.title}>Creating Deck</Text>
+        <View style={{ width: '100%', marginTop: 24 }}>
+          {statusRows.map((row, idx) => (
+            <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+              {row.done ? (
+                <GreenTickIcon width={28} height={28} style={{ marginRight: 12 }} />
+              ) : (
+                <DeleteModalIcon width={28} height={28} style={{ marginRight: 12 }} />
+              )}
+              <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 18, color: '#000' }}>{row.label}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </View>
   );

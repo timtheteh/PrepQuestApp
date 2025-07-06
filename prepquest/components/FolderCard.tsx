@@ -5,6 +5,7 @@ import { FavoriteButton } from './FavoriteButton';
 import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FolderCardProps {
   style?: ViewStyle;
@@ -42,6 +43,7 @@ export function FolderCard({
   onFavoriteToggle,
 }: FolderCardProps) {
   const [isPressed, setIsPressed] = useState(false);
+  const { language } = useLanguage();
 
   const containerStyle = {
     width: containerWidthPercentage.interpolate({
@@ -134,7 +136,7 @@ export function FolderCard({
                     <Text style={styles.dateText}>{dateCreated}</Text>
                   )}
                   {deckCount !== undefined && (
-                    <Text style={styles.deckCountText}>{deckCount} decks</Text>
+                    <Text style={styles.deckCountText}>{deckCount} {language === 'Chinese' ? '张卡片' : 'decks'}</Text>
                   )}
                 </View>
               )}

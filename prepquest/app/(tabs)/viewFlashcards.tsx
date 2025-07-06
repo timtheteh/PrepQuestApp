@@ -37,6 +37,17 @@ interface Flashcard {
   lastQuizzedDate: string | null;
 }
 
+// Safe JSON parse helper
+function safeParseJSON(val: any, fallback: any[] = []): any[] {
+  if (!val || val === 'NULL') return fallback;
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function ViewFlashcardsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -221,14 +232,8 @@ export default function ViewFlashcardsScreen() {
         return [];
       }
       
-      // Parse the JSON string to get the topics array
-      try {
-        const topics = JSON.parse(topicsField);
-        return Array.isArray(topics) ? topics : [];
-      } catch (parseError) {
-        console.error('Error parsing topics JSON:', parseError);
-        return [];
-      }
+      // Parse the JSON string to get the topics array safely
+      return safeParseJSON(topicsField, []);
     } catch (error) {
       console.error('Error loading topics from database:', error);
       return [];

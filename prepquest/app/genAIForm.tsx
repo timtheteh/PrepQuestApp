@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
-import { checkDeckNameExists, saveUserGenAIFormEntry, getMostRecentGenAIFormEntry } from '../db/decks';
+import { checkDeckNameExists, saveUserGenAIFormEntry, getMostRecentGenAIFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
@@ -51,9 +51,36 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-const getFormContentGap = () => {
+const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
   const { width, height } = Dimensions.get('window');
 
+  // If we're in view flashcards page, use smaller gaps since we don't have the deck name field
+  if (isInViewFlashcardsPage) {
+    // iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 940) {
+      return 35;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return 32;
+    }
+
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return 50;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return 32;
+    }
+    
+    // Default smaller gap for view flashcards page
+    return Platform.OS === 'ios' ? 28 : 30;
+  }
+
+  // Original gap values for other pages (index, favorites, view decks in folder)
   // iphone 16 pro max
   if (Platform.OS === 'ios' && height >= 940) {
     return 25;
@@ -79,7 +106,15 @@ const getFormContentGap = () => {
 };
 
 export default function GenAIFormPage() {
-  const { mode } = useLocalSearchParams();
+  const { 
+    mode, 
+    deckId, 
+    folderId, 
+    isInFavoritesPage, 
+    isInIndexPage,
+    isInViewFlashcardsPage,
+    isInViewDecksInFolderPage
+  } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
@@ -320,8 +355,8 @@ export default function GenAIFormPage() {
     const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
     const optionalFieldsFilled = mode === 'study' ? isStudyOptionalFieldsFilled() : isInterviewOptionalFieldsFilled();
 
-    // Check if deck name already exists
-    if (deckName.trim() !== '') {
+    // Check if deck name already exists (only for new deck creation, not when adding to existing deck)
+    if (!isInViewFlashcardsPage && deckName.trim() !== '') {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
@@ -633,23 +668,24 @@ export default function GenAIFormPage() {
         prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
       }
       console.log("prompt >>>> \n", prompt);
-      // // You may want to show a loading indicator here
-      // const response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
-      //   },
-      //   body: JSON.stringify({prompt}),
-      // });
-      // console.log("fetch complete, status:", response.status);
-      // if (!response.ok) {
-      //   throw new Error('Failed to generate flashcards');
-      // }
-      // const data = await response.json();
-      // const flashcards = data.flashcards.flashcards     // Handle the response (e.g., show success, navigate, etc.)
-      // // Alert.alert('Success', 'Flashcards generated!');
-      // // You can process 'data' as needed
+      // You may want to show a loading indicator here
+      const response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+        },
+        body: JSON.stringify({prompt}),
+      });
+      console.log("fetch complete, status:", response.status);
+      if (!response.ok) {
+        throw new Error('Failed to generate flashcards');
+      }
+      const data = await response.json();
+      const flashcards = data.flashcards.flashcards     // Handle the response (e.g., show success, navigate, etc.)
+      return flashcards
+      // Alert.alert('Success', 'Flashcards generated!');
+      // You can process 'data' as needed
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Something went wrong');
     }
@@ -691,7 +727,78 @@ export default function GenAIFormPage() {
           interviewExperienceLevel: interviewOptionalQuestion2,
           interviewTopics: interviewOptionalQuestion3
         });
-        await callGenAIFlashcardsGeneration();
+        const flashcards = await callGenAIFlashcardsGeneration();
+        if (isInIndexPage) {
+          await createDeckWithGenAIFlashcards({
+            deckName,
+            mode: mode === 'study' ? 'study' : 'interview',
+            formFields: {
+              studyEducationLevel: studyMandatoryQuestion1,
+              studySubjects: studyMandatoryQuestion2,
+              studyTopics: studyOptionalQuestion1,
+              studySubtopics: studyOptionalQuestion2,
+              studyExam: studyOptionalQuestion3,
+              interviewJobRole: interviewMandatoryQuestion1,
+              interviewType,
+              interviewCompany: interviewOptionalQuestion1,
+              interviewExperienceLevel: interviewOptionalQuestion2,
+              interviewTopics: interviewOptionalQuestion3,
+              numberOfQuestions,
+              kindsOfQuestions: JSON.stringify(questionType)
+            },
+            flashcards
+          });
+        }
+        if (isInFavoritesPage) {
+          await createDeckWithGenAIFlashcards({
+            deckName,
+            mode: mode === 'study' ? 'study' : 'interview',
+            formFields: {
+              studyEducationLevel: studyMandatoryQuestion1,
+              studySubjects: studyMandatoryQuestion2,
+              studyTopics: studyOptionalQuestion1,
+              studySubtopics: studyOptionalQuestion2,
+              studyExam: studyOptionalQuestion3,
+              interviewJobRole: interviewMandatoryQuestion1,
+              interviewType,
+              interviewCompany: interviewOptionalQuestion1,
+              interviewExperienceLevel: interviewOptionalQuestion2,
+              interviewTopics: interviewOptionalQuestion3,
+              numberOfQuestions,
+              kindsOfQuestions: JSON.stringify(questionType)
+            },
+            flashcards,
+            isFavorited: 1
+          });
+        }
+        if (isInViewDecksInFolderPage) {
+          await createDeckWithGenAIFlashcards({
+            deckName,
+            mode: mode === 'study' ? 'study' : 'interview',
+            formFields: {
+              studyEducationLevel: studyMandatoryQuestion1,
+              studySubjects: studyMandatoryQuestion2,
+              studyTopics: studyOptionalQuestion1,
+              studySubtopics: studyOptionalQuestion2,
+              studyExam: studyOptionalQuestion3,
+              interviewJobRole: interviewMandatoryQuestion1,
+              interviewType,
+              interviewCompany: interviewOptionalQuestion1,
+              interviewExperienceLevel: interviewOptionalQuestion2,
+              interviewTopics: interviewOptionalQuestion3,
+              numberOfQuestions,
+              kindsOfQuestions: JSON.stringify(questionType)
+            },
+            flashcards,
+            folderIDs: `[${folderId}]`
+          });
+        }
+        if (isInViewFlashcardsPage) {
+          await createGenAIFlashcardsForDeck({
+            deckId: Number(deckId),
+            flashcards
+          });
+        }
         router.back();
       }, 50);
     });
@@ -731,7 +838,97 @@ export default function GenAIFormPage() {
       setIsOptionalFieldsWarningModalOpen(false);
       // Navigate after animation completes
       setTimeout(async () => {
-        await callGenAIFlashcardsGeneration();
+        const now = new Date().toISOString();
+        await saveUserGenAIFormEntry({
+          deckName,
+          formEntryType: mode === 'study' ? 'study' : 'interview',
+          formEntryMethod: 'genAIForm',
+          formSubmissionDate: now,
+          numberOfQuestions,
+          kindsOfQuestions: JSON.stringify(questionType),
+          studyEducationLevel: studyMandatoryQuestion1,
+          studySubjects: studyMandatoryQuestion2,
+          studyTopics: studyOptionalQuestion1,
+          studySubtopics: studyOptionalQuestion2,
+          studyExam: studyOptionalQuestion3,
+          interviewJobRole: interviewMandatoryQuestion1,
+          interviewType,
+          interviewCompany: interviewOptionalQuestion1,
+          interviewExperienceLevel: interviewOptionalQuestion2,
+          interviewTopics: interviewOptionalQuestion3
+        });
+        const flashcards = await callGenAIFlashcardsGeneration();
+        if (isInIndexPage) {
+          await createDeckWithGenAIFlashcards({
+            deckName,
+            mode: mode === 'study' ? 'study' : 'interview',
+            formFields: {
+              studyEducationLevel: studyMandatoryQuestion1,
+              studySubjects: studyMandatoryQuestion2,
+              studyTopics: studyOptionalQuestion1,
+              studySubtopics: studyOptionalQuestion2,
+              studyExam: studyOptionalQuestion3,
+              interviewJobRole: interviewMandatoryQuestion1,
+              interviewType,
+              interviewCompany: interviewOptionalQuestion1,
+              interviewExperienceLevel: interviewOptionalQuestion2,
+              interviewTopics: interviewOptionalQuestion3,
+              numberOfQuestions,
+              kindsOfQuestions: JSON.stringify(questionType)
+            },
+            flashcards
+          });
+        }
+        if (isInFavoritesPage) {
+          await createDeckWithGenAIFlashcards({
+            deckName,
+            mode: mode === 'study' ? 'study' : 'interview',
+            formFields: {
+              studyEducationLevel: studyMandatoryQuestion1,
+              studySubjects: studyMandatoryQuestion2,
+              studyTopics: studyOptionalQuestion1,
+              studySubtopics: studyOptionalQuestion2,
+              studyExam: studyOptionalQuestion3,
+              interviewJobRole: interviewMandatoryQuestion1,
+              interviewType,
+              interviewCompany: interviewOptionalQuestion1,
+              interviewExperienceLevel: interviewOptionalQuestion2,
+              interviewTopics: interviewOptionalQuestion3,
+              numberOfQuestions,
+              kindsOfQuestions: JSON.stringify(questionType)
+            },
+            flashcards,
+            isFavorited: 1
+          });
+        }
+        if (isInViewDecksInFolderPage) {
+          await createDeckWithGenAIFlashcards({
+            deckName,
+            mode: mode === 'study' ? 'study' : 'interview',
+            formFields: {
+              studyEducationLevel: studyMandatoryQuestion1,
+              studySubjects: studyMandatoryQuestion2,
+              studyTopics: studyOptionalQuestion1,
+              studySubtopics: studyOptionalQuestion2,
+              studyExam: studyOptionalQuestion3,
+              interviewJobRole: interviewMandatoryQuestion1,
+              interviewType,
+              interviewCompany: interviewOptionalQuestion1,
+              interviewExperienceLevel: interviewOptionalQuestion2,
+              interviewTopics: interviewOptionalQuestion3,
+              numberOfQuestions,
+              kindsOfQuestions: JSON.stringify(questionType)
+            },
+            flashcards,
+            folderIDs: `[${folderId}]`
+          });
+        }
+        if (isInViewFlashcardsPage) {
+          await createGenAIFlashcardsForDeck({
+            deckId: Number(deckId),
+            flashcards
+          });
+        }
         router.back();
       }, 50);
     });
@@ -790,18 +987,18 @@ export default function GenAIFormPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={[
-            styles.formContent,
-            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
+            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex', gap: getFormContentGap(isInViewFlashcardsPage === 'true')}
           ]}>
             {isMandatory && (
-              <View style={styles.formContent}>
-                <TitleTextBar
+              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
+                {!isInViewFlashcardsPage && (                
+                  <TitleTextBar
                   title={language === 'Chinese' ? '卡组名称' : ' Deck Name'}
                   highlightedWord={mode === 'study' ? (language === 'Chinese' ? '学习' : 'Study') : (language === 'Chinese' ? '面试' : 'Interview')}
                   placeholder={language === 'Chinese' ? '请输入！' : 'Type here!'}
                   value={deckName}
                   onChangeText={setDeckName}
-                />
+                />)}
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
@@ -847,11 +1044,10 @@ export default function GenAIFormPage() {
           </Animated.View>
 
           <Animated.View style={[
-            styles.formContent,
-            { opacity: optionalOpacity, display: !isMandatory ? 'flex' : 'none' }
+            { opacity: optionalOpacity, display: !isMandatory ? 'flex' : 'none', gap: getFormContentGap(isInViewFlashcardsPage === 'true')}
           ]}>
             {!isMandatory && mode === 'study' && (
-              <View style={styles.formContent}>
+              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
                 <QuestionTextBar
                   label={language === 'Chinese' ? '1. 主题？' : '1. Topic(s)?'}
                   placeholder={language === 'Chinese' ? '例如：微观经济学，电磁学等' : 'e.g. Microeconomics, Electromagnetism, etc'}
@@ -882,7 +1078,7 @@ export default function GenAIFormPage() {
               </View>
             )}
             {!isMandatory && mode === 'interview' && (
-              <View style={styles.formContent}>
+              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
                 <QuestionTextBarWithDropdown
                   label={language === 'Chinese' ? '1. 公司？' : '1. Company?'}
                   placeholder={language === 'Chinese' ? '例如：谷歌，Meta，微软等' : 'e.g. Google, Meta, Microsoft, etc'}
@@ -1077,9 +1273,6 @@ const styles = StyleSheet.create({
   toggleContainer: {
     marginTop: 4,
     paddingHorizontal: 16,
-  },
-  formContent: {
-    gap: getFormContentGap(),
   },
   buttonContainer: {
     position: 'absolute',

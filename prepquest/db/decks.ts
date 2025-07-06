@@ -2,6 +2,7 @@ import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
+import { promptAndData } from '../constants/promptEngineering';
 
 export interface Deck {
   deckID: number;
@@ -1693,7 +1694,7 @@ export async function saveUserGenAIFormEntry({
         ${studySubtopics ? `'${studySubtopics.replace(/'/g, "''")}'` : 'NULL'},
         ${studyExam ? `'${studyExam.replace(/'/g, "''")}'` : 'NULL'},
         ${interviewJobRole ? `'${interviewJobRole.replace(/'/g, "''")}'` : 'NULL'},
-        ${interviewType ? `'${interviewType.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewType ? `'${interviewType.toLowerCase().replace(/'/g, "''")}'` : 'NULL'},
         ${interviewCompany ? `'${interviewCompany.replace(/'/g, "''")}'` : 'NULL'},
         ${interviewExperienceLevel ? `'${interviewExperienceLevel.replace(/'/g, "''")}'` : 'NULL'},
         ${interviewTopics ? `'${interviewTopics.replace(/'/g, "''")}'` : 'NULL'}
@@ -1725,5 +1726,181 @@ export async function getMostRecentGenAIFormEntry(mode: 'study' | 'interview'): 
   } catch (error) {
     console.error('Error fetching most recent genaiform entry:', error);
     return null;
+  }
+}
+
+export async function createDeckWithGenAIFlashcards({
+  deckName,
+  mode,
+  formFields,
+  flashcards,
+  isFavorited = 0,
+  folderIDs = null,
+}: {
+  deckName: string;
+  mode: 'study' | 'interview';
+  formFields: {
+    studyEducationLevel?: string;
+    studySubjects?: string;
+    studyTopics?: string;
+    studySubtopics?: string;
+    studyExam?: string;
+    interviewJobRole?: string;
+    interviewType?: string;
+    interviewCompany?: string;
+    interviewExperienceLevel?: string;
+    interviewTopics?: string;
+    numberOfQuestions?: number;
+    kindsOfQuestions?: string;
+  };
+  flashcards: Array<{ flashcardType: string; question: string; answer: any }>;
+  isFavorited?: number;
+  folderIDs?: string | null;
+}): Promise<{ success: boolean; deckId?: number }> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.execAsync('BEGIN TRANSACTION');
+    try {
+      const currentDate = new Date().toISOString();
+      const cardDesignIndex = Math.floor(Math.random() * 4);
+      const creationMethod = 'Gen AI Form';
+      const interviewCompanyIcon = formFields.interviewCompany || null;
+      // Insert deck
+      await db.execAsync(`
+        INSERT INTO decks (
+          userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
+          studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
+          interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
+        ) VALUES (
+          '${userID}', '${deckName.replace(/'/g, "''")}', '${currentDate}', '${currentDate}', ${isFavorited}, '${mode}', '${creationMethod}',
+          NULL, NULL, ${cardDesignIndex}, 0, ${folderIDs ? `'${folderIDs}'` : 'NULL'},
+          ${formFields.studyEducationLevel ? `'${formFields.studyEducationLevel.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.studySubjects ? `'${formFields.studySubjects.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.studyTopics || formFields.studySubtopics ? `'${[formFields.studyTopics, formFields.studySubtopics].filter(Boolean).join(', ').replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.studyExam ? `'${formFields.studyExam.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewJobRole ? `'${formFields.interviewJobRole.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewType ? `'${formFields.interviewType.toLowerCase().replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewCompany ? `'${formFields.interviewCompany.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewExperienceLevel ? `'${formFields.interviewExperienceLevel.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewTopics ? `'${formFields.interviewTopics.replace(/'/g, "''")}'` : 'NULL'},
+          ${interviewCompanyIcon ? `'${interviewCompanyIcon.replace(/'/g, "''")}'` : 'NULL'}
+        )
+      `);
+      // Get new deckId
+      const newDeckIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as newDeckId');
+      const newDeckId = (newDeckIdResult as any).newDeckId;
+      // Insert flashcards
+      let flashcardCount = 0;
+      for (const card of flashcards) {
+        const mapping = (promptAndData as Record<string, any>)[card.flashcardType];
+        if (!mapping) continue;
+        const questionType = mapping.questionType;
+        const answerType = mapping.answerType;
+        const cognitiveQnType = mapping.cognitiveQnType;
+        let answerText = null;
+        let answerMCQ = null;
+        if (answerType === 'mcq') {
+          answerMCQ = JSON.stringify(card.answer);
+        } else {
+          answerText = typeof card.answer === 'string' ? card.answer : JSON.stringify(card.answer);
+        }
+        await db.execAsync(`
+          INSERT INTO flashcards (
+            userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
+          ) VALUES (
+            '${userID}', ${newDeckId}, 'None', '${cognitiveQnType}', ${isFavorited}, '${questionType}',
+            ${card.question ? `'${card.question.replace(/'/g, "''")}'` : 'NULL'}, NULL,
+            '${answerType}', ${answerText ? `'${answerText.replace(/'/g, "''")}'` : 'NULL'},
+            ${answerMCQ ? `'${answerMCQ.replace(/'/g, "''")}'` : 'NULL'}, NULL,
+            NULL, NULL, NULL, NULL
+          )
+        `);
+        flashcardCount++;
+      }
+      // Update user statistics
+      if (flashcardCount > 0) {
+        await db.execAsync(`
+          UPDATE users 
+          SET 
+            accumulatedDecksCreated = accumulatedDecksCreated + 1,
+            accumulatedFlashcardsCreated = accumulatedFlashcardsCreated + ${flashcardCount},
+            ${mode === 'study' ? 'accumulatedStudyDecksCreated = accumulatedStudyDecksCreated + 1' : 'accumulatedInterviewDecksCreated = accumulatedInterviewDecksCreated + 1'},
+            lastUpdated = '${currentDate}'
+          WHERE userID = '${userID}'
+        `);
+      }
+      await db.execAsync('COMMIT');
+      return { success: true, deckId: newDeckId };
+    } catch (error) {
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error creating GenAI deck:', error);
+    return { success: false };
+  }
+}
+
+export async function createGenAIFlashcardsForDeck({
+  deckId,
+  flashcards
+}: {
+  deckId: number;
+  flashcards: Array<{ flashcardType: string; question: string; answer: any }>;
+}): Promise<{ success: boolean; flashcardCount?: number }> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.execAsync('BEGIN TRANSACTION');
+    try {
+      let flashcardCount = 0;
+      for (const card of flashcards) {
+        const mapping = (promptAndData as Record<string, any>)[card.flashcardType];
+        if (!mapping) continue;
+        const questionType = mapping.questionType;
+        const answerType = mapping.answerType;
+        const cognitiveQnType = mapping.cognitiveQnType;
+        let answerText = null;
+        let answerMCQ = null;
+        if (answerType === 'mcq') {
+          answerMCQ = JSON.stringify(card.answer);
+        } else {
+          answerText = typeof card.answer === 'string' ? card.answer : JSON.stringify(card.answer);
+        }
+        await db.execAsync(`
+          INSERT INTO flashcards (
+            userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
+          ) VALUES (
+            '${userID}', ${deckId}, 'None', '${cognitiveQnType}', 0, '${questionType}',
+            ${card.question ? `'${card.question.replace(/'/g, "''")}'` : 'NULL'}, NULL,
+            '${answerType}', ${answerText ? `'${answerText.replace(/'/g, "''")}'` : 'NULL'},
+            ${answerMCQ ? `'${answerMCQ.replace(/'/g, "''")}'` : 'NULL'}, NULL,
+            NULL, NULL, NULL, NULL
+          )
+        `);
+        flashcardCount++;
+      }
+      // Update user statistics
+      if (flashcardCount > 0) {
+        const currentDate = new Date().toISOString();
+        await db.execAsync(`
+          UPDATE users 
+          SET 
+            accumulatedFlashcardsCreated = accumulatedFlashcardsCreated + ${flashcardCount},
+            lastUpdated = '${currentDate}'
+          WHERE userID = '${userID}'
+        `);
+      }
+      await db.execAsync('COMMIT');
+      return { success: true, flashcardCount };
+    } catch (error) {
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error creating GenAI flashcards for deck:', error);
+    return { success: false };
   }
 }

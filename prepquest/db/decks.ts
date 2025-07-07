@@ -1760,7 +1760,6 @@ export async function createDeckWithGenAIFlashcards({
   try {
     const userID = await getCurrentUserID();
     await db.execAsync('BEGIN TRANSACTION');
-    console.log(">>>>>>>>>>>>>>>>> QUERY IS IS CALLED & BEGININNING ADDINGGGGG<<<<<<<<<<<<<<<< ")
     try {
       const currentDate = new Date().toISOString();
       const cardDesignIndex = Math.floor(Math.random() * 4);
@@ -1839,7 +1838,7 @@ export async function createDeckWithGenAIFlashcards({
       throw error;
     }
   } catch (error) {
-    console.error('Error creating GenAI deck:', error);
+    // console.error('Error creating GenAI deck:', error);
     return { success: false };
   }
 }
@@ -1901,7 +1900,7 @@ export async function createGenAIFlashcardsForDeck({
       throw error;
     }
   } catch (error) {
-    console.error('Error creating GenAI flashcards for deck:', error);
+    // console.error('Error creating GenAI flashcards for deck:', error);
     return { success: false };
   }
 }

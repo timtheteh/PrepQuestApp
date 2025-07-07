@@ -674,18 +674,48 @@ export default function GenAIFormPage() {
         prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
       }
       console.log("prompt >>>> \n", prompt);
-      // You may want to show a loading indicator here
-      const response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
-        },
-        body: JSON.stringify({prompt}),
-      });
+      let response;
+      try {
+        response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+          },
+          body: JSON.stringify({prompt}),
+        });
+      } catch (networkError) {
+        Alert.alert('Error', 'Network error. Please check your connection and try again.');
+        return null;
+      }
       console.log("fetch complete, status:", response.status);
       if (!response.ok) {
-        throw new Error('Failed to generate flashcards');
+        let message = '';
+        switch (response.status) {
+          case 400:
+            message = 'Something went wrong. Please try again.';
+            break;
+          case 401:
+            message = "You're not logged in. Please sign in to continue.";
+            break;
+          case 403:
+            message = "You don't have permission to perform this action.";
+            break;
+          case 404:
+            message = 'The requested resource was not found.';
+            break;
+          case 500:
+            message = 'Server error. Please try again later.';
+            break;
+          case 502:
+          case 503:
+            message = 'Service temporarily unavailable. Please try again shortly.';
+            break;
+          default:
+            message = 'Something went wrong. Please try again.';
+        }
+        Alert.alert('Error', message);
+        return null;
       }
       const data = await response.json();
       console.log("DATA >>>>>>>>>>>>>>>>> ", data);
@@ -721,169 +751,33 @@ export default function GenAIFormPage() {
       setShowStatusPage(true);
       setStatusGeneratingFlashcards(false);
       setStatusAddingDeckAndFlashcards(false);
-      try {
-        const now = new Date().toISOString();
-        await saveUserGenAIFormEntry({
-          deckName,
-          formEntryType: mode === 'study' ? 'study' : 'interview',
-          formEntryMethod: 'genAIForm',
-          formSubmissionDate: now,
-          numberOfQuestions,
-          kindsOfQuestions: JSON.stringify(questionType),
-          studyEducationLevel: studyMandatoryQuestion1,
-          studySubjects: studyMandatoryQuestion2,
-          studyTopics: studyOptionalQuestion1,
-          studySubtopics: studyOptionalQuestion2,
-          studyExam: studyOptionalQuestion3,
-          interviewJobRole: interviewMandatoryQuestion1,
-          interviewType,
-          interviewCompany: interviewOptionalQuestion1,
-          interviewExperienceLevel: interviewOptionalQuestion2,
-          interviewTopics: interviewOptionalQuestion3
-        });
-        // 1. Generating flashcards
-        setTimeout(async () => {
-          setStatusRequestReceived(true);
-          // Call the flashcard generation API (simulate delay if needed)
-          const flashcards = await callGenAIFlashcardsGeneration();
-          setStatusGeneratingFlashcards(true);
-          console.log("FLAHSCARDS GENERATED >>>>>>>>>>>>>>>>>>>>>>>>>>>> \n", flashcards);
-          // 2. Adding deck/flashcards
-          setTimeout(async () => {
-            // Use the same logic as before for DB insert, but skip UI updates
-            if (isInIndexPage) {
-              await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards
-              });
-            }
-            if (isInFavoritesPage) {
-              await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards,
-                isFavorited: 1
-              });
-            }
-            if (isInViewDecksInFolderPage) {
-              await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards,
-                folderIDs: `[${folderId}]`
-              });
-            }
-            if (isInViewFlashcardsPage) {
-              await createGenAIFlashcardsForDeck({
-                deckId: Number(deckId),
-                flashcards
-              });
-            }
-            setStatusAddingDeckAndFlashcards(true);
-            // Optionally, add a delay for user to see all ticks
-            setTimeout(() => {
-              setShowStatusPage(false);
-              // Optionally, navigate or show a final success UI
-              router.back();
-            }, 1200);
-          }, 900);
-        }, 900);
-      } catch (err) {
-        // Optionally handle error and show error UI
-        setShowStatusPage(false);
-        setErrorMessage('An error occurred during deck creation.');
-        setIsErrorModalOpen(true);
-      }
-    });
-  };
-
-  const handleOptionalFieldsWarningConfirm = async () => {
-    // Animate out modal, then show status page and step through statuses
-    Animated.parallel([
-      Animated.timing(overlayOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(optionalFieldsWarningModalOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start(async () => {
-      setIsOptionalFieldsWarningModalOpen(false);
-      setShowStatusPage(true);
-      setStatusGeneratingFlashcards(false);
-      setStatusAddingDeckAndFlashcards(false);
-      try {
-        const now = new Date().toISOString();
-        await saveUserGenAIFormEntry({
-          deckName,
-          formEntryType: mode === 'study' ? 'study' : 'interview',
-          formEntryMethod: 'genAIForm',
-          formSubmissionDate: now,
-          numberOfQuestions,
-          kindsOfQuestions: JSON.stringify(questionType),
-          studyEducationLevel: studyMandatoryQuestion1,
-          studySubjects: studyMandatoryQuestion2,
-          studyTopics: studyOptionalQuestion1,
-          studySubtopics: studyOptionalQuestion2,
-          studyExam: studyOptionalQuestion3,
-          interviewJobRole: interviewMandatoryQuestion1,
-          interviewType,
-          interviewCompany: interviewOptionalQuestion1,
-          interviewExperienceLevel: interviewOptionalQuestion2,
-          interviewTopics: interviewOptionalQuestion3
-        });
-        // 1. Generating flashcards
-        setTimeout(async () => {
-          setStatusRequestReceived(true);
-          // Call the flashcard generation API (simulate delay if needed)
-          const flashcards = await callGenAIFlashcardsGeneration();
-          // 2. Adding deck/flashcards
+      const now = new Date().toISOString();
+      await saveUserGenAIFormEntry({
+        deckName,
+        formEntryType: mode === 'study' ? 'study' : 'interview',
+        formEntryMethod: 'genAIForm',
+        formSubmissionDate: now,
+        numberOfQuestions,
+        kindsOfQuestions: JSON.stringify(questionType),
+        studyEducationLevel: studyMandatoryQuestion1,
+        studySubjects: studyMandatoryQuestion2,
+        studyTopics: studyOptionalQuestion1,
+        studySubtopics: studyOptionalQuestion2,
+        studyExam: studyOptionalQuestion3,
+        interviewJobRole: interviewMandatoryQuestion1,
+        interviewType,
+        interviewCompany: interviewOptionalQuestion1,
+        interviewExperienceLevel: interviewOptionalQuestion2,
+        interviewTopics: interviewOptionalQuestion3
+      });
+      // 1. Generating flashcards
+      setTimeout(async () => {
+        setStatusRequestReceived(true);
+        // Call the flashcard generation API (simulate delay if needed)
+        const flashcards = await callGenAIFlashcardsGeneration();
+        console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
+        // 2. Adding deck/flashcards
+        if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
           setTimeout(async () => {
             setStatusGeneratingFlashcards(true);
             // Use the same logic as before for DB insert, but skip UI updates
@@ -966,13 +860,150 @@ export default function GenAIFormPage() {
               router.back();
             }, 1200);
           }, 900);
-        }, 900);
-      } catch (err) {
-        // Optionally handle error and show error UI
-        setShowStatusPage(false);
-        setErrorMessage('An error occurred during deck creation.');
-        setIsErrorModalOpen(true);
-      }
+        } else {
+          setShowStatusPage(false);
+          // setErrorMessage('An error occurred during flashcard generation.');
+          // setIsErrorModalOpen(true);
+          router.back();
+        }
+      }, 900);
+    });
+  };
+
+  const handleOptionalFieldsWarningConfirm = async () => {
+    // Animate out modal, then show status page and step through statuses
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(optionalFieldsWarningModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(async () => {
+      setIsOptionalFieldsWarningModalOpen(false);
+      setShowStatusPage(true);
+      setStatusGeneratingFlashcards(false);
+      setStatusAddingDeckAndFlashcards(false);
+      const now = new Date().toISOString();
+      await saveUserGenAIFormEntry({
+        deckName,
+        formEntryType: mode === 'study' ? 'study' : 'interview',
+        formEntryMethod: 'genAIForm',
+        formSubmissionDate: now,
+        numberOfQuestions,
+        kindsOfQuestions: JSON.stringify(questionType),
+        studyEducationLevel: studyMandatoryQuestion1,
+        studySubjects: studyMandatoryQuestion2,
+        studyTopics: studyOptionalQuestion1,
+        studySubtopics: studyOptionalQuestion2,
+        studyExam: studyOptionalQuestion3,
+        interviewJobRole: interviewMandatoryQuestion1,
+        interviewType,
+        interviewCompany: interviewOptionalQuestion1,
+        interviewExperienceLevel: interviewOptionalQuestion2,
+        interviewTopics: interviewOptionalQuestion3
+      });
+      // 1. Generating flashcards
+      setTimeout(async () => {
+        setStatusRequestReceived(true);
+        // Call the flashcard generation API (simulate delay if needed)
+        const flashcards = await callGenAIFlashcardsGeneration();
+        console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
+        // 2. Adding deck/flashcards
+        if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
+          setTimeout(async () => {
+            setStatusGeneratingFlashcards(true);
+            // Use the same logic as before for DB insert, but skip UI updates
+            if (isInIndexPage) {
+              await createDeckWithGenAIFlashcards({
+                deckName,
+                mode: mode === 'study' ? 'study' : 'interview',
+                formFields: {
+                  studyEducationLevel: studyMandatoryQuestion1,
+                  studySubjects: studyMandatoryQuestion2,
+                  studyTopics: studyOptionalQuestion1,
+                  studySubtopics: studyOptionalQuestion2,
+                  studyExam: studyOptionalQuestion3,
+                  interviewJobRole: interviewMandatoryQuestion1,
+                  interviewType,
+                  interviewCompany: interviewOptionalQuestion1,
+                  interviewExperienceLevel: interviewOptionalQuestion2,
+                  interviewTopics: interviewOptionalQuestion3,
+                  numberOfQuestions,
+                  kindsOfQuestions: JSON.stringify(questionType)
+                },
+                flashcards
+              });
+            }
+            if (isInFavoritesPage) {
+              await createDeckWithGenAIFlashcards({
+                deckName,
+                mode: mode === 'study' ? 'study' : 'interview',
+                formFields: {
+                  studyEducationLevel: studyMandatoryQuestion1,
+                  studySubjects: studyMandatoryQuestion2,
+                  studyTopics: studyOptionalQuestion1,
+                  studySubtopics: studyOptionalQuestion2,
+                  studyExam: studyOptionalQuestion3,
+                  interviewJobRole: interviewMandatoryQuestion1,
+                  interviewType,
+                  interviewCompany: interviewOptionalQuestion1,
+                  interviewExperienceLevel: interviewOptionalQuestion2,
+                  interviewTopics: interviewOptionalQuestion3,
+                  numberOfQuestions,
+                  kindsOfQuestions: JSON.stringify(questionType)
+                },
+                flashcards,
+                isFavorited: 1
+              });
+            }
+            if (isInViewDecksInFolderPage) {
+              await createDeckWithGenAIFlashcards({
+                deckName,
+                mode: mode === 'study' ? 'study' : 'interview',
+                formFields: {
+                  studyEducationLevel: studyMandatoryQuestion1,
+                  studySubjects: studyMandatoryQuestion2,
+                  studyTopics: studyOptionalQuestion1,
+                  studySubtopics: studyOptionalQuestion2,
+                  studyExam: studyOptionalQuestion3,
+                  interviewJobRole: interviewMandatoryQuestion1,
+                  interviewType,
+                  interviewCompany: interviewOptionalQuestion1,
+                  interviewExperienceLevel: interviewOptionalQuestion2,
+                  interviewTopics: interviewOptionalQuestion3,
+                  numberOfQuestions,
+                  kindsOfQuestions: JSON.stringify(questionType)
+                },
+                flashcards,
+                folderIDs: `[${folderId}]`
+              });
+            }
+            if (isInViewFlashcardsPage) {
+              await createGenAIFlashcardsForDeck({
+                deckId: Number(deckId),
+                flashcards
+              });
+            }
+            setStatusAddingDeckAndFlashcards(true);
+            // Optionally, add a delay for user to see all ticks
+            setTimeout(() => {
+              setShowStatusPage(false);
+              // Optionally, navigate or show a final success UI
+              router.back();
+            }, 1200);
+          }, 900);
+        } else {
+          setShowStatusPage(false);
+          // setErrorMessage('An error occurred during flashcard generation.');
+          // setIsErrorModalOpen(true);
+          router.back();
+        }
+      }, 900);
     });
   };
 

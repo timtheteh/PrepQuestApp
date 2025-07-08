@@ -1904,3 +1904,68 @@ export async function createGenAIFlashcardsForDeck({
     return { success: false };
   }
 }
+
+export async function saveUserFileUploadFormEntry({
+  deckName,
+  studyEducationLevel,
+  studySubjects,
+  numberOfQuestions,
+  interviewJobRole,
+  interviewType
+}: {
+  deckName: string;
+  studyEducationLevel?: string;
+  studySubjects?: string;
+  numberOfQuestions: number;
+  interviewJobRole?: string;
+  interviewType?: string;
+}): Promise<{ success: boolean }> {
+  console.log("interviewType >>>>>>>>>>>>>>>>> \n", interviewType);
+  try {
+    const userID = await getCurrentUserID();
+    const formSubmissionDate = new Date().toISOString();
+    await db.execAsync(`
+      INSERT INTO userFormEntries (
+        userID, formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions,
+        studyEducationLevel, studySubjects, interviewJobRole, interviewType
+      ) VALUES (
+        '${userID}',
+        ${interviewJobRole || interviewType ? `'interview'` : `'study'`},
+        'fileUpload',
+        '${formSubmissionDate}',
+        '${deckName.replace(/'/g, "''")}',
+        ${typeof numberOfQuestions === 'number' ? numberOfQuestions : 'NULL'},
+        ${studyEducationLevel ? `'${studyEducationLevel.replace(/'/g, "''")}'` : 'NULL'},
+        ${studySubjects ? `'${studySubjects.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewJobRole ? `'${interviewJobRole.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewType ? `'${interviewType.toLowerCase().replace(/'/g, "''")}'` : 'NULL'}
+      )
+    `);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving user file upload form entry:', error);
+    return { success: false };
+  }
+}
+
+export async function getMostRecentFileUploadFormEntry(mode: 'study' | 'interview'): Promise<any | null> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(`
+      SELECT *
+      FROM userFormEntries
+      WHERE formEntryMethod = 'fileUpload'
+        AND formEntryType = ?
+        AND userID = ?
+      ORDER BY formSubmissionDate DESC
+      LIMIT 1
+    `, [mode, userID]);
+    if (!result) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    console.error('Error fetching most recent file upload form entry:', error);
+    return null;
+  }
+}

@@ -24,7 +24,7 @@ import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import LottieView from 'lottie-react-native';
-import { checkDeckNameExists } from '../db/decks';
+import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -78,7 +78,7 @@ const FileUploadMainSection = ({
         <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
           {isUploadSuccess 
             ? `${uploadType === 'image' ? (language === 'Chinese' ? '图片' : 'Image') : (language === 'Chinese' ? '文件' : 'File')} ${language === 'Chinese' ? '上传成功！' : 'uploaded successfully!'}\n${uploadType === 'file' ? (language === 'Chinese' ? `文件：${uploadedFileName}` : `File: ${uploadedFileName}`) : ''}`
-            : language === 'Chinese' ? '支持的文件格式：Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' : 'Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks'
+            : language === 'Chinese' ? '支持的文件格式：Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' : '.docx, .doc, .txt, .pptx, .ppt,\n.xlsx, .xls, .pdf, Anki Decks (.apkg), images'
           }
         </Text>
         <PrimaryButton 
@@ -98,9 +98,36 @@ const FileUploadMainSection = ({
   );
 };
 
-const getFormContentGap = () => {
+const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
   const { width, height } = Dimensions.get('window');
 
+  // If we're in view flashcards page, use smaller gaps since we don't have the deck name field
+  if (isInViewFlashcardsPage) {
+    // iphone 16 pro max
+    if (Platform.OS === 'ios' && height >= 940) {
+      return 35;
+    }
+    
+    // iphone 16 plus
+    if (Platform.OS === 'ios' && height >= 920) {
+      return 32;
+    }
+
+    // Pixel 9 Pro, Pixel 9 Pro XL 
+    if (Platform.OS === 'android' && height >= 935) {
+      return 50;
+    }
+    
+    // Pixel 7, Pixel 8, Pixel 9
+    if (Platform.OS === 'android' && height >= 900) {
+      return 32;
+    }
+    
+    // Default smaller gap for view flashcards page
+    return Platform.OS === 'ios' ? 28 : 30;
+  }
+
+  // Original gap values for other pages (index, favorites, view decks in folder)
   // iphone 16 pro max
   if (Platform.OS === 'ios' && height >= 940) {
     return 25;
@@ -195,7 +222,15 @@ const STRINGS = {
 };
 
 export default function FileUploadPage() {
-  const { mode } = useLocalSearchParams();
+  const { 
+    mode, 
+    deckId, 
+    folderId, 
+    isInFavoritesPage, 
+    isInIndexPage,
+    isInViewFlashcardsPage,
+    isInViewDecksInFolderPage
+  } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
@@ -392,12 +427,24 @@ export default function FileUploadPage() {
   };
 
   const isStudyMandatoryFieldsFilled = () => {
+    if (isInViewFlashcardsPage === 'true') {
+      // When adding flashcards to existing deck, only need the study questions
+      return studyMandatoryQuestion1.trim() !== '' && 
+             studyMandatoryQuestion2.trim() !== '';
+    }
+    // When creating new deck, need deck name and study questions
     return deckName.trim() !== '' && 
            studyMandatoryQuestion1.trim() !== '' && 
            studyMandatoryQuestion2.trim() !== '';
   };
 
   const isInterviewMandatoryFieldsFilled = () => {
+    if (isInViewFlashcardsPage === 'true') {
+      // When adding flashcards to existing deck, only need the interview questions
+      return interviewMandatoryQuestion1.trim() !== '' && 
+             interviewType !== ''; 
+    }
+    // When creating new deck, need deck name and interview questions
     return deckName.trim() !== '' && 
            interviewMandatoryQuestion1.trim() !== '' && 
            interviewType !== '';
@@ -411,8 +458,8 @@ export default function FileUploadPage() {
     const mandatoryFieldsFilled = mode === 'study' ? isStudyMandatoryFieldsFilled() : isInterviewMandatoryFieldsFilled();
     const hasFileUploaded = isUploadSuccess;
 
-    // Check if deck name already exists
-    if (deckName.trim() !== '') {
+    // Check if deck name already exists (only for new deck creation, not when adding to existing deck)
+    if (!isInViewFlashcardsPage && deckName.trim() !== '') {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
@@ -556,7 +603,16 @@ export default function FileUploadPage() {
     });
   };
 
-  const handleSuccessConfirm = () => {
+  const handleSuccessConfirm = async () => {
+    // Save form submission to userFormEntries
+    await saveUserFileUploadFormEntry({
+      deckName,
+      studyEducationLevel: studyMandatoryQuestion1,
+      studySubjects: studyMandatoryQuestion2,
+      numberOfQuestions,
+      interviewJobRole: interviewMandatoryQuestion1,
+      interviewType
+    });
     // Animate out first, then navigate
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -609,6 +665,19 @@ export default function FileUploadPage() {
         useNativeDriver: true,
       })
     ]).start();
+  };
+
+  const handleLoadMostRecentForm = async () => {
+    const recent = await getMostRecentFileUploadFormEntry((mode as 'study' | 'interview'));
+    if (recent) {
+      setDeckName(recent.deckName || '');
+      setStudyMandatoryQuestion1(recent.studyEducationLevel || '');
+      setStudyMandatoryQuestion2(recent.studySubjects || '');
+      setNumberOfQuestions(recent.numberOfQuestions || 1);
+      setInterviewMandatoryQuestion1(recent.interviewJobRole || '');
+      setInterviewType(recent.interviewType || '');
+    }
+    setIsRecentFormModalOpen(false);
   };
 
   const pickImage = async () => {
@@ -777,14 +846,16 @@ export default function FileUploadPage() {
           <Animated.View style={[
             { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
           ]}>
-              <View style={styles.formContent}>
-                <TitleTextBar
+              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
+                {!isInViewFlashcardsPage && (<TitleTextBar
                   title={STRINGS.deckName[lang]}
                   highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
                   placeholder={STRINGS.typeHere[lang]}
                   value={deckName}
                   onChangeText={setDeckName}
-                />
+                />)
+                }
+                
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
@@ -919,11 +990,7 @@ export default function FileUploadPage() {
         opacity={recentFormModalOpacity}
         text={STRINGS.useRecent[lang]}
         buttons='double'
-        onConfirm={() => {
-          handleDismissRecentForm();
-          // TODO: Implement loading most recent form
-          console.log('Load most recent form');
-        }}
+        onConfirm={handleLoadMostRecentForm}
         onCancel={handleDismissRecentForm}
       />
       <GenericModal
@@ -1021,9 +1088,6 @@ const styles = StyleSheet.create({
   toggleContainer: {
     marginTop: 4,
     paddingHorizontal: 16,
-  },
-  formContent: {
-    gap: getFormContentGap(),
   },
   fileUploadContent: {
     paddingHorizontal: 16,

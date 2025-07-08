@@ -328,15 +328,27 @@ export default function GenAIFormPage() {
   };
 
   const isStudyMandatoryFieldsFilled = () => {
+    if (isInViewFlashcardsPage === 'true') {
+      // When adding flashcards to existing deck, only need the study questions
+      return studyMandatoryQuestion1.trim() !== '' && 
+             studyMandatoryQuestion2.trim() !== '';
+    }
+    // When creating new deck, need deck name and study questions
     return deckName.trim() !== '' && 
            studyMandatoryQuestion1.trim() !== '' && 
            studyMandatoryQuestion2.trim() !== '';
   };
 
   const isInterviewMandatoryFieldsFilled = () => {
+    if (isInViewFlashcardsPage === 'true') {  
+      // When adding flashcards to existing deck, only need the interview questions
+      return interviewMandatoryQuestion1.trim() !== '' && 
+             interviewType !== '' 
+    }
+    // When creating new deck, need deck name and interview questions
     return deckName.trim() !== '' && 
            interviewMandatoryQuestion1.trim() !== '' && 
-           interviewType !== '';
+           interviewType !== '' 
   };
 
   const isStudyOptionalFieldsFilled = () => {

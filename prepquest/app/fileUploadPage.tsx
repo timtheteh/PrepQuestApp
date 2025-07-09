@@ -27,6 +27,11 @@ import LottieView from 'lottie-react-native';
 import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import * as mammoth from 'mammoth';
+import * as FileSystem from 'expo-file-system';
+import JSZip from 'jszip';
+// @ts-ignore
+import * as XLSX from 'xlsx'; // Use CommonJS import for React Native compatibility
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -78,7 +83,7 @@ const FileUploadMainSection = ({
         <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
           {isUploadSuccess 
             ? `${uploadType === 'image' ? (language === 'Chinese' ? '图片' : 'Image') : (language === 'Chinese' ? '文件' : 'File')} ${language === 'Chinese' ? '上传成功！' : 'uploaded successfully!'}\n${uploadType === 'file' ? (language === 'Chinese' ? `文件：${uploadedFileName}` : `File: ${uploadedFileName}`) : ''}`
-            : language === 'Chinese' ? '支持的文件格式：Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' : '.docx, .doc, .txt, .pptx, .ppt,\n.xlsx, .xls, .pdf, Anki Decks (.apkg), images'
+            : language === 'Chinese' ? '支持的文件格式：Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' : '.docx, .txt, .pptx, .xlsx, .pdf, Anki Decks (.apkg), images'
           }
         </Text>
         <PrimaryButton 
@@ -221,6 +226,135 @@ const STRINGS = {
   leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
 };
 
+// Utility: Save base64 image to file
+async function saveBase64ImageToFile(base64Data: string, fileName: string) {
+  const fileUri = FileSystem.documentDirectory + `docxExtracted/${fileName}`;
+  // Ensure directory exists
+  const dirUri = FileSystem.documentDirectory + 'docxExtracted';
+  const dirInfo = await FileSystem.getInfoAsync(dirUri);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(dirUri, { intermediates: true });
+  }
+  await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: FileSystem.EncodingType.Base64 });
+  return fileUri;
+}
+
+// Extract text and images from docx
+async function extractDocxTextAndImages(docxUri: string) {
+  // Read file as base64
+  const base64 = await FileSystem.readAsStringAsync(docxUri, { encoding: FileSystem.EncodingType.Base64 });
+  // Convert base64 to ArrayBuffer
+  const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  // Use JSZip to unzip
+  const zip = await JSZip.loadAsync(binary);
+  // Extract images
+  const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('word/media/'));
+  const savedImages: string[] = [];
+  for (const imgName of imageFiles) {
+    const ext = imgName.split('.').pop() || 'img';
+    const imgData = await zip.files[imgName].async('base64');
+    const savedUri = await saveBase64ImageToFile(imgData, `${Date.now()}_${imgName.replace('word/media/', '')}`);
+    savedImages.push(savedUri);
+  }
+  // Extract text with mammoth
+  const arrayBuffer = binary.buffer;
+  const { value: text } = await mammoth.extractRawText({ arrayBuffer });
+  return { text, images: savedImages };
+}
+
+// Extract text and images from pptx
+async function extractPptxTextAndImages(pptxUri: string) {
+  // Read file as base64
+  const base64 = await FileSystem.readAsStringAsync(pptxUri, { encoding: FileSystem.EncodingType.Base64 });
+  // Convert base64 to ArrayBuffer
+  const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  // Use JSZip to unzip
+  const zip = await JSZip.loadAsync(binary);
+  // Extract images
+  const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/'));
+  const savedImages: string[] = [];
+  for (const imgName of imageFiles) {
+    const ext = imgName.split('.').pop() || 'img';
+    const imgData = await zip.files[imgName].async('base64');
+    const savedUri = await saveBase64ImageToFile(imgData, `${Date.now()}_${imgName.replace('ppt/media/', '')}`);
+    savedImages.push(savedUri);
+  }
+  // Extract text from slide XMLs
+  const slideFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'));
+  let allText = '';
+  for (const slideName of slideFiles) {
+    const xml = await zip.files[slideName].async('string');
+    // Extract text between <a:t>...</a:t> tags
+    const matches = Array.from(xml.matchAll(/<a:t>(.*?)<\/a:t>/g));
+    for (const m of matches) {
+      allText += m[1] + '\n';
+    }
+  }
+  return { text: allText, images: savedImages };
+}
+
+// Extract text and images from xlsx using only JSZip
+async function extractXlsxTextAndImages(xlsxUri: string) {
+  // Read file as base64
+  const base64 = await FileSystem.readAsStringAsync(xlsxUri, { encoding: FileSystem.EncodingType.Base64 });
+  // Convert base64 to ArrayBuffer
+  const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  // Use JSZip to unzip
+  const zip = await JSZip.loadAsync(binary);
+  // Extract images
+  const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('xl/media/'));
+  const savedImages: string[] = [];
+  for (const imgName of imageFiles) {
+    const ext = imgName.split('.').pop() || 'img';
+    const imgData = await zip.files[imgName].async('base64');
+    const savedUri = await saveBase64ImageToFile(imgData, `${Date.now()}_${imgName.replace('xl/media/', '')}`);
+    savedImages.push(savedUri);
+  }
+  // Extract shared strings (for cell value lookup)
+  let sharedStrings: string[] = [];
+  if (zip.files['xl/sharedStrings.xml']) {
+    const sharedStringsXml = await zip.files['xl/sharedStrings.xml'].async('string');
+    sharedStrings = Array.from(sharedStringsXml.matchAll(/<t[^>]*>(.*?)<\/t>/g)).map(m => m[1]);
+  }
+  // Extract text from all sheets
+  const sheetFiles = Object.keys(zip.files).filter(name => name.startsWith('xl/worksheets/sheet') && name.endsWith('.xml'));
+  let allText = '';
+  for (const sheetName of sheetFiles) {
+    const xml = await zip.files[sheetName].async('string');
+    // Extract all rows
+    const rows = xml.split(/<row[^>]*>/g).slice(1); // skip before first <row>
+    for (const rowXml of rows) {
+      // Extract all cells in the row
+      const cells = Array.from(rowXml.matchAll(/<c[^>]*?t="([^"]*)"[^>]*?r="([^"]*)"[^>]*>([\s\S]*?)<\/c>/g));
+      let rowValues: string[] = [];
+      if (cells.length === 0) {
+        // fallback: try to match all <v>...</v> in row
+        const vMatches = Array.from(rowXml.matchAll(/<v>(.*?)<\/v>/g));
+        rowValues = vMatches.map(m => m[1]);
+      } else {
+        for (const cell of cells) {
+          const type = cell[1];
+          const ref = cell[2];
+          const cellContent = cell[3];
+          // Get value
+          const vMatch = cellContent.match(/<v>(.*?)<\/v>/);
+          let value = vMatch ? vMatch[1] : '';
+          if (type === 's' && sharedStrings.length > 0) {
+            // Shared string lookup
+            const idx = parseInt(value, 10);
+            value = sharedStrings[idx] || '';
+          }
+          rowValues.push(value);
+        }
+      }
+      if (rowValues.length > 0) {
+        allText += rowValues.join('\t') + '\n';
+      }
+    }
+  }
+  return { text: allText, images: savedImages };
+}
+
 export default function FileUploadPage() {
   const { 
     mode, 
@@ -267,6 +401,7 @@ export default function FileUploadPage() {
   const { language } = useLanguage();
   // Type language as 'English' | 'Chinese' for STRINGS indexing
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
+  const [selectedFile, setSelectedFile] = useState<any>(null);
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -613,6 +748,44 @@ export default function FileUploadPage() {
       interviewJobRole: interviewMandatoryQuestion1,
       interviewType
     });
+
+    // If PDF file was uploaded, send to OCR endpoint
+    if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
+      try {
+        const fileUri = selectedFile.uri;
+        const fileName = selectedFile.name;
+        const mimeType = selectedFile.mimeType || 'application/pdf';
+
+        const formData = new FormData();
+        // @ts-ignore
+        formData.append('file', {
+          uri: fileUri,
+          name: fileName,
+          type: mimeType,
+        });
+
+        const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/ocr-pdf';
+        const response = await fetch(SUPABASE_FUNCTION_URL, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+          },
+        });
+        console.log("response status >>>>>", response.status);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('OCR API error:', errorText);
+        } else {
+          const ocrResult = await response.json();
+          console.log('OCR Result:', ocrResult);
+        }
+      } catch (err) {
+        console.error('Error sending PDF to OCR function:', err);
+      }
+    }
+
     // Animate out first, then navigate
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -666,6 +839,7 @@ export default function FileUploadPage() {
       })
     ]).start();
   };
+  
 
   const handleLoadMostRecentForm = async () => {
     const recent = await getMostRecentFileUploadFormEntry((mode as 'study' | 'interview'));
@@ -754,17 +928,48 @@ export default function FileUploadPage() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const selectedFile = result.assets[0];
+        const selected = result.assets[0];
+        setSelectedFile(selected); // <-- Store the file object
         console.log('File selected:', {
-          name: selectedFile.name,
-          size: selectedFile.size,
-          uri: selectedFile.uri,
-          mimeType: selectedFile.mimeType,
+          name: selected.name,
+          size: selected.size,
+          uri: selected.uri,
+          mimeType: selected.mimeType,
         });
+        // If docx, extract text and images
+        if (selected.name.endsWith('.docx')) {
+          try {
+            const { text, images } = await extractDocxTextAndImages(selected.uri);
+            console.log('Extracted text:', text);
+            console.log('Extracted images:', images);
+          } catch (err) {
+            console.error('Docx extraction failed:', err);
+          }
+        }
+        // If pptx, extract text and images
+        else if (selected.name.endsWith('.pptx')) {
+          try {
+            const { text, images } = await extractPptxTextAndImages(selected.uri);
+            console.log('Extracted PPTX text:', text);
+            console.log('Extracted PPTX images:', images);
+          } catch (err) {
+            console.error('PPTX extraction failed:', err);
+          }
+        }
+        // If xlsx, extract text and images
+        else if (selected.name.endsWith('.xlsx')) {
+          try {
+            const { text, images } = await extractXlsxTextAndImages(selected.uri);
+            console.log('Extracted XLSX text:', text);
+            console.log('Extracted XLSX images:', images);
+          } catch (err) {
+            console.error('XLSX extraction failed:', err);
+          }
+        }
         // Show success animation and update text permanently
         setUploadType('file');
         setIsUploadSuccess(true);
-        setUploadedFileName(selectedFile.name);
+        setUploadedFileName(selected.name);
       }
     } catch (error) {
       console.error('Error picking document:', error);

@@ -749,7 +749,7 @@ export default function FileUploadPage() {
       interviewType
     });
 
-    // If PDF file was uploaded, send to OCR endpoint
+    // If PDF file was uploaded, send to Claude PDF Caption endpoint
     if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
       try {
         const fileUri = selectedFile.uri;
@@ -757,32 +757,32 @@ export default function FileUploadPage() {
         const mimeType = selectedFile.mimeType || 'application/pdf';
 
         const formData = new FormData();
-        // @ts-ignore
+        // @ts-ignore: React Native FormData file object
         formData.append('file', {
           uri: fileUri,
           name: fileName,
           type: mimeType,
         });
 
-        const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/ocr-pdf';
+        const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
         const response = await fetch(SUPABASE_FUNCTION_URL, {
           method: 'POST',
           body: formData,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            // Let fetch set Content-Type
             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
           },
         });
-        console.log("response status >>>>>", response.status);
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('OCR API error:', errorText);
+          console.error('Claude PDF Caption API error:', errorText);
         } else {
-          const ocrResult = await response.json();
-          console.log('OCR Result:', ocrResult);
+          const result = await response.json();
+          const caption = result.caption;
+          console.log('Claude PDF Caption:', caption);
         }
       } catch (err) {
-        console.error('Error sending PDF to OCR function:', err);
+        console.error('Error sending PDF to Claude PDF Caption function:', err);
       }
     }
 

@@ -1,6 +1,16 @@
-// import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const GOOGLE_CLOUD_VISION_API_KEY = Deno.env.get("GOOGLE_CLOUD_VISION_API_KEY");
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
@@ -19,9 +29,9 @@ Deno.serve(async (req: Request) => {
     return new Response("No file uploaded", { status: 400 });
   }
 
-  // Read file as base64
+  // Read file as base64 (safe for large files)
   const arrayBuffer = await file.arrayBuffer();
-  const base64Pdf = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+  const base64Pdf = arrayBufferToBase64(arrayBuffer);
 
   // Prepare request to Google Cloud Vision API
   const visionUrl = `https://vision.googleapis.com/v1/files:annotate?key=${GOOGLE_CLOUD_VISION_API_KEY}`;

@@ -24,7 +24,7 @@ import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import LottieView from 'lottie-react-native';
-import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry } from '../db/decks';
+import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import * as mammoth from 'mammoth';
@@ -32,6 +32,11 @@ import * as FileSystem from 'expo-file-system';
 import JSZip from 'jszip';
 // @ts-ignore
 import * as XLSX from 'xlsx'; // Use CommonJS import for React Native compatibility
+// @ts-ignore
+import * as ImageManipulator from 'expo-image-manipulator';
+import { getUserQuestionSettings } from '@/db/users';
+import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -355,6 +360,35 @@ async function extractXlsxTextAndImages(xlsxUri: string) {
   return { text: allText, images: savedImages };
 }
 
+// Utility: Resize and compress image to fit Claude API limits
+async function prepareImageForUpload(uri: string): Promise<string> {
+  // Resize to max 1568px on the long edge, compress to JPEG
+  let manipResult = { uri };
+  try {
+    // Get image dimensions
+    const { width, height } = await ImageManipulator.manipulateAsync(uri, [], { base64: false });
+    let resize = {};
+    if (width && height) {
+      if (width > height && width > 1568) {
+        resize = { width: 1568 };
+      } else if (height > width && height > 1568) {
+        resize = { height: 1568 };
+      } else if (width === height && width > 1568) {
+        resize = { width: 1568, height: 1568 };
+      }
+    }
+    manipResult = await ImageManipulator.manipulateAsync(
+      uri,
+      resize ? [{ resize }] : [],
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+    );
+  } catch (e) {
+    // fallback to original if manipulation fails
+    manipResult = { uri };
+  }
+  return manipResult.uri;
+}
+
 export default function FileUploadPage() {
   const { 
     mode, 
@@ -402,11 +436,202 @@ export default function FileUploadPage() {
   // Type language as 'English' | 'Chinese' for STRINGS indexing
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [extractedImages, setExtractedImages] = useState<string[]>([]);
+  const [extractedText, setExtractedText] = useState<string>('');
+  const [showStatusPage, setShowStatusPage] = useState(false);
+  const [statusExtractingInformationFromFiles, setStatusExtractingInformationFromFiles] = useState(false);
+  const [statusGeneratingFlashcards, setStatusGeneratingFlashcards] = useState(false);
+  const [statusAddingDeckAndFlashcards, setStatusAddingDeckAndFlashcards] = useState(false);
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
     30;
+
+    // Error messages for network/API errors
+  const ERROR_MESSAGES = {
+    network: {
+      English: 'Network error. Please check your connection and try again.',
+      Chinese: '网络错误。请检查您的连接并重试。'
+    },
+    400: {
+      English: 'Something went wrong. Please try again.',
+      Chinese: '出现错误，请重试。'
+    },
+    401: {
+      English: "You're not logged in. Please sign in to continue.",
+      Chinese: '您尚未登录。请先登录。'
+    },
+    403: {
+      English: "You don't have permission to perform this action.",
+      Chinese: '您没有权限执行此操作。'
+    },
+    404: {
+      English: 'The requested resource was not found.',
+      Chinese: '未找到请求的资源。'
+    },
+    500: {
+      English: 'Server error. Please try again later.',
+      Chinese: '服务器错误，请稍后再试。'
+    },
+    502: {
+      English: 'Service temporarily unavailable. Please try again shortly.',
+      Chinese: '服务暂时不可用，请稍后再试。'
+    },
+    503: {
+      English: 'Service temporarily unavailable. Please try again shortly.',
+      Chinese: '服务暂时不可用，请稍后再试。'
+    },
+    default: {
+      English: 'Something went wrong. Please try again.',
+      Chinese: '出现错误，请重试。'
+    }
+  };
+
+  const callGenAIFlashcardsGeneration = async (
+    pdfCaption?: string | null,
+    extractedText?: string | null,
+    imageCaption?: string | null,
+  ) => {
+    try {
+      const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
+      const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
+        isMcqEnabled,
+        isClozeEnabled,
+        isVoiceRecordedEnabled,
+        interviewType,
+        numberOfQuestions,
+      );
+
+      var prompt = ""
+      if (mode === 'interview' && language === 'English') {
+        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
+      }
+      if (mode === 'interview' && language === 'Chinese') {
+        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
+      }
+      if (mode === 'study' && language === 'English') {
+        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
+      }
+      if (mode === 'study' && language === 'Chinese') { 
+        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
+      }
+
+      if (pdfCaption && language === 'English') {
+        prompt += `Here is additional information and context from a PDF file for my preparation: ${pdfCaption}\n`
+      }
+      if (pdfCaption && language === 'Chinese') {
+        prompt += `这里有一些额外的信息和上下文，来自一个PDF文件，用于我的准备：${pdfCaption}\n`
+      }
+      if (extractedText && extractedText.trim() !== '' && language === 'English') {
+        prompt += `Here is additional information and context from a text file for my preparation: ${extractedText}\n`
+      }
+      if (extractedText && extractedText.trim() !== '' && language === 'Chinese') {
+        prompt += `这里有一些额外的信息和上下文，来自一个文本文件，用于我的准备：${extractedText}\n`
+      }
+      if (imageCaption && language === 'English') {
+        prompt += `Here is additional information and context from some images for my preparation: ${imageCaption}\n`
+      }
+      if (imageCaption && language === 'Chinese') {
+        prompt += `这里有一些额外的信息和上下文，来自一些图像，用于我的准备：${imageCaption}\n`
+      }
+
+      if (distributionOfFlashcards) {   
+        if (language === 'English') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
+            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
+          }
+        } 
+        if (language === 'Chinese') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
+            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
+          }
+        }
+      }
+
+      if (language === 'English' && mode === 'interview' && isAIGenerate) { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'English' && mode === 'interview' && !isAIGenerate) { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\nHowever, it is EXTREMELY CRUCIAL THAT YOU DO NOT DEVIATE from the information and context I have provided from the PDF file, text file or images. STICK ONLY TO CONTENT FROM THE PDF FILE, TEXT FILE OR IMAGES. "
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'interview' && isAIGenerate) { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+      if (language === 'English' && mode === 'study' && isAIGenerate) { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'study' && isAIGenerate) { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+      console.log("prompt >>>> \n", prompt);
+      let response;
+      try {
+        response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+          },
+          body: JSON.stringify({prompt}),
+        });
+      } catch (networkError) {
+        Alert.alert('Error', ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English);
+        return null;
+      }
+      console.log("fetch complete, status:", response.status);
+      if (!response.ok) {
+        let message = '';
+        switch (response.status) {
+          case 400:
+            message = ERROR_MESSAGES[400][language] || ERROR_MESSAGES[400].English;
+            break;
+          case 401:
+            message = ERROR_MESSAGES[401][language] || ERROR_MESSAGES[401].English;
+            break;
+          case 403:
+            message = ERROR_MESSAGES[403][language] || ERROR_MESSAGES[403].English;
+            break;
+          case 404:
+            message = ERROR_MESSAGES[404][language] || ERROR_MESSAGES[404].English;
+            break;
+          case 500:
+            message = ERROR_MESSAGES[500][language] || ERROR_MESSAGES[500].English;
+            break;
+          case 502:
+            message = ERROR_MESSAGES[502][language] || ERROR_MESSAGES[502].English;
+            break;
+          case 503:
+            message = ERROR_MESSAGES[503][language] || ERROR_MESSAGES[503].English;
+            break;
+          default:
+            message = ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English;
+        }
+        Alert.alert('Error', message);
+        return null;
+      }
+      const data = await response.json();
+      console.log("DATA >>>>>>>>>>>>>>>>> ", data);
+      let flashcards = data.flashcards?.flashcards ?? data.flashcards;
+
+      // If it's a single object, wrap in array
+      if (flashcards && !Array.isArray(flashcards)) {
+        flashcards = [flashcards];
+      }
+
+      console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
+      return flashcards;
+    } catch (error: any) {
+      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : (ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English));
+    }
+  };
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -738,102 +963,285 @@ export default function FileUploadPage() {
     });
   };
 
+  // const handleSuccessConfirm = async () => {
+  //   // Save form submission to userFormEntries
+  //   await saveUserFileUploadFormEntry({
+  //     deckName,
+  //     studyEducationLevel: studyMandatoryQuestion1,
+  //     studySubjects: studyMandatoryQuestion2,
+  //     numberOfQuestions,
+  //     interviewJobRole: interviewMandatoryQuestion1,
+  //     interviewType
+  //   });
+
+  //   let pdfCaptionClaudeCaption = null;
+  //   let imageCaptionClaudeCaption = null;
+
+  //   // If PDF file was uploaded, send to Claude PDF Caption endpoint
+  //   if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
+  //     const fileUri = selectedFile.uri;
+  //     const fileName = selectedFile.name;
+  //     const mimeType = selectedFile.mimeType || 'application/pdf';
+
+  //     const formData = new FormData();
+  //     // @ts-ignore: React Native FormData file object
+  //     formData.append('file', {
+  //       uri: fileUri,
+  //       name: fileName,
+  //       type: mimeType,
+  //     });
+  //     let pdfCaptionClaudeResponse;
+  //     try {
+  //       const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
+  //       pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
+  //         method: 'POST',
+  //         body: formData,
+  //         headers: {
+  //           // Let fetch set Content-Type
+  //           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+  //         },
+  //       });
+  //     } catch (networkError) {
+  //       Alert.alert(
+  //         language === 'Chinese' ? '错误' : 'Error',
+  //         language === 'Chinese'
+  //           ? '网络错误。请检查您的网络连接，然后重试。'
+  //           : 'Network error. Please check your connection and try again.'
+  //       );
+  //     }
+  //     if (!pdfCaptionClaudeResponse?.ok) {
+  //       let message = '';
+  //       // Add Chinese translations for each error message
+  //       const errorMessages: Record<string, { English: string; Chinese: string }> = {
+  //         '400': {
+  //           English: 'There was an issue with the format or content of your request.',
+  //           Chinese: '您的请求格式或内容有误。',
+  //         },
+  //         '401': {
+  //           English: 'There’s an issue with your API key.',
+  //           Chinese: '您的 API 密钥存在问题。',
+  //         },
+  //         '403': {
+  //           English: 'Your API key does not have permission to use the specified resource.',
+  //           Chinese: '您的 API 密钥无权访问指定资源。',
+  //         },
+  //         '404': {
+  //           English: 'The requested resource was not found.',
+  //           Chinese: '未找到请求的资源。',
+  //         },
+  //         '413': {
+  //           English: 'Request exceeds the maximum allowed number of bytes.',
+  //           Chinese: '请求超出了允许的最大字节数。',
+  //         },
+  //         '429': {
+  //           English: 'Your account has hit a rate limit.',
+  //           Chinese: '您的账户已达到速率限制。',
+  //         },
+  //         '500': {
+  //           English: 'An unexpected error has occurred internal to Anthropic’s systems.',
+  //           Chinese: 'Anthropic 系统内部发生了意外错误。',
+  //         },
+  //         '529': {
+  //           English: 'Anthropic’s API is temporarily overloaded.',
+  //           Chinese: 'Anthropic 的 API 暂时过载。',
+  //         },
+  //         default: {
+  //           English: 'Something went wrong. Please try again.',
+  //           Chinese: '发生错误，请重试。',
+  //         },
+  //       };
+  //       const status = pdfCaptionClaudeResponse?.status;
+  //       const langKey = language === 'Chinese' ? 'Chinese' : 'English';
+  //       const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
+  //       message = errorMessages[statusKey][langKey];
+  //       Alert.alert('Error', message);
+  //       return null;
+  //     }
+  //     const pdfCaptionClaudeResult = await pdfCaptionClaudeResponse.json();
+  //     pdfCaptionClaudeCaption = pdfCaptionClaudeResult.caption;
+  //     console.log('Claude PDF Caption:', pdfCaptionClaudeCaption);
+  //   }
+
+  //   // Send images to imageCaptionClaude if any
+  //   let imageUris: string[] = [];
+  //   if (uploadType === 'image' && uploadedFileName) {
+  //     // Single image from picker/camera
+  //     imageUris = [uploadedFileName];
+  //   } else if (extractedImages.length > 0) {
+  //     imageUris = extractedImages;
+  //   }
+  //   if (imageUris.length > 0) {
+  //     const formData = new FormData();
+  //     for (const uri of imageUris) {
+  //       // Always process before upload
+  //       const processedUri = await prepareImageForUpload(uri);
+  //       // Try to infer type from extension
+  //       let type = 'image/jpeg';
+  //       if (processedUri.endsWith('.png')) type = 'image/png';
+  //       else if (processedUri.endsWith('.jpg') || processedUri.endsWith('.jpeg')) type = 'image/jpeg';
+  //       else if (processedUri.endsWith('.gif')) type = 'image/gif';
+  //       formData.append('images[]', {
+  //         uri: processedUri,
+  //         name: processedUri.split('/').pop() || 'image.jpg',
+  //         type,
+  //       } as any);
+  //     }
+  //     let imageCaptionClaudeResponse;
+  //     try {
+  //       const SUPABASE_IMAGE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/imageCaptionClaude';
+  //       imageCaptionClaudeResponse = await fetch(SUPABASE_IMAGE_FUNCTION_URL, {
+  //         method: 'POST',
+  //         body: formData,
+  //         headers: {
+  //           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+  //         },
+  //       });
+  //     } catch (networkError) {
+  //       Alert.alert(
+  //         language === 'Chinese' ? '错误' : 'Error',
+  //         language === 'Chinese'
+  //           ? '网络错误。请检查您的网络连接，然后重试。'
+  //           : 'Network error. Please check your connection and try again.'
+  //       );
+  //     }
+  //     if (!imageCaptionClaudeResponse?.ok) {
+  //       let message = '';
+  //       // Add Chinese translations for each error message
+  //       const errorMessages: Record<string, { English: string; Chinese: string }> = {
+  //         '400': {
+  //           English: 'There was an issue with the format or content of your request.',
+  //           Chinese: '您的请求格式或内容有误。',
+  //         },
+  //         '401': {
+  //           English: 'There’s an issue with your API key.',
+  //           Chinese: '您的 API 密钥存在问题。',
+  //         },
+  //         '403': {
+  //           English: 'Your API key does not have permission to use the specified resource.',
+  //           Chinese: '您的 API 密钥无权访问指定资源。',
+  //         },
+  //         '404': {
+  //           English: 'The requested resource was not found.',
+  //           Chinese: '未找到请求的资源。',
+  //         },
+  //         '413': {
+  //           English: 'Request exceeds the maximum allowed number of bytes.',
+  //           Chinese: '请求超出了允许的最大字节数。',
+  //         },
+  //         '429': {
+  //           English: 'Your account has hit a rate limit.',
+  //           Chinese: '您的账户已达到速率限制。',
+  //         },
+  //         '500': {
+  //           English: 'An unexpected error has occurred internal to Anthropic’s systems.',
+  //           Chinese: 'Anthropic 系统内部发生了意外错误。',
+  //         },
+  //         '529': {
+  //           English: 'Anthropic’s API is temporarily overloaded.',
+  //           Chinese: 'Anthropic 的 API 暂时过载。',
+  //         },
+  //         default: {
+  //           English: 'Something went wrong. Please try again.',
+  //           Chinese: '发生错误，请重试。',
+  //         },
+  //       };
+  //       const status = imageCaptionClaudeResponse?.status;
+  //       const langKey = language === 'Chinese' ? 'Chinese' : 'English';
+  //       const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
+  //       message = errorMessages[statusKey][langKey];
+  //       Alert.alert('Error', message);
+  //     } else {
+  //       const result = await imageCaptionClaudeResponse.json();
+  //       imageCaptionClaudeCaption = result.caption;
+  //       console.log('Claude Image Caption:', imageCaptionClaudeCaption);
+  //     }
+  //   }
+
+  //   const flashcards = await callGenAIFlashcardsGeneration(
+  //     pdfCaptionClaudeCaption,
+  //     extractedText,
+  //     imageCaptionClaudeCaption
+  //   );
+
+  //   console.log('FLASHCARDS >>>>>>>>>>>>>>>>> \n', flashcards);
+
+  //   if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
+  //     setTimeout(async () => {
+  //       // Use the same logic as before for DB insert, but skip UI updates
+  //       if (isInIndexPage) {
+  //         await createDeckWithGenAIFlashcards({
+  //           deckName,
+  //           mode: mode === 'study' ? 'study' : 'interview',
+  //           formFields: {
+  //             studyEducationLevel: studyMandatoryQuestion1,
+  //             studySubjects: studyMandatoryQuestion2,
+  //             interviewJobRole: interviewMandatoryQuestion1,
+  //             interviewType,
+  //             numberOfQuestions,
+  //           },
+  //           flashcards
+  //         });
+  //       }
+  //       if (isInFavoritesPage) {
+  //         await createDeckWithGenAIFlashcards({
+  //           deckName,
+  //           mode: mode === 'study' ? 'study' : 'interview',
+  //           formFields: {
+  //             studyEducationLevel: studyMandatoryQuestion1,
+  //             studySubjects: studyMandatoryQuestion2,
+  //             interviewJobRole: interviewMandatoryQuestion1,
+  //             interviewType,
+  //             numberOfQuestions,
+  //           },
+  //           flashcards,
+  //           isFavorited: 1
+  //         });
+  //       }
+  //       if (isInViewDecksInFolderPage) {
+  //         await createDeckWithGenAIFlashcards({
+  //           deckName,
+  //           mode: mode === 'study' ? 'study' : 'interview',
+  //           formFields: {
+  //             studyEducationLevel: studyMandatoryQuestion1,
+  //             studySubjects: studyMandatoryQuestion2,
+  //             interviewJobRole: interviewMandatoryQuestion1,
+  //             interviewType,
+  //             numberOfQuestions,
+  //           },
+  //           flashcards,
+  //           folderIDs: `[${folderId}]`
+  //         });
+  //       }
+  //       if (isInViewFlashcardsPage) {
+  //         await createGenAIFlashcardsForDeck({
+  //           deckId: Number(deckId),
+  //           flashcards
+  //         });
+  //       }
+  //     });
+  //   }
+  //   // Animate out first, then navigate
+  //   Animated.parallel([
+  //     Animated.timing(overlayOpacity, {
+  //       toValue: 0,
+  //       duration: 200,
+  //       useNativeDriver: true,
+  //     }),
+  //     Animated.timing(successModalOpacity, {
+  //       toValue: 0,
+  //       duration: 200,
+  //       useNativeDriver: true,
+  //     })
+  //   ]).start(() => {
+  //     setIsSuccessModalOpen(false);
+  //     // Navigate after animation completes
+  //     setTimeout(() => {
+  //       router.back();
+  //     }, 50);
+  //   });
+  // };
+
   const handleSuccessConfirm = async () => {
-    // Save form submission to userFormEntries
-    await saveUserFileUploadFormEntry({
-      deckName,
-      studyEducationLevel: studyMandatoryQuestion1,
-      studySubjects: studyMandatoryQuestion2,
-      numberOfQuestions,
-      interviewJobRole: interviewMandatoryQuestion1,
-      interviewType
-    });
-
-    // If PDF file was uploaded, send to Claude PDF Caption endpoint
-    if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
-      const fileUri = selectedFile.uri;
-      const fileName = selectedFile.name;
-      const mimeType = selectedFile.mimeType || 'application/pdf';
-
-      const formData = new FormData();
-      // @ts-ignore: React Native FormData file object
-      formData.append('file', {
-        uri: fileUri,
-        name: fileName,
-        type: mimeType,
-      });
-      let pdfCaptionClaudeResponse;
-      try {
-        const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
-        pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            // Let fetch set Content-Type
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
-          },
-        });
-      } catch (networkError) {
-        Alert.alert(
-          language === 'Chinese' ? '错误' : 'Error',
-          language === 'Chinese'
-            ? '网络错误。请检查您的网络连接，然后重试。'
-            : 'Network error. Please check your connection and try again.'
-        );
-      }
-      if (!pdfCaptionClaudeResponse?.ok) {
-        let message = '';
-        // Add Chinese translations for each error message
-        const errorMessages: Record<string, { English: string; Chinese: string }> = {
-          '400': {
-            English: 'There was an issue with the format or content of your request.',
-            Chinese: '您的请求格式或内容有误。',
-          },
-          '401': {
-            English: 'There’s an issue with your API key.',
-            Chinese: '您的 API 密钥存在问题。',
-          },
-          '403': {
-            English: 'Your API key does not have permission to use the specified resource.',
-            Chinese: '您的 API 密钥无权访问指定资源。',
-          },
-          '404': {
-            English: 'The requested resource was not found.',
-            Chinese: '未找到请求的资源。',
-          },
-          '413': {
-            English: 'Request exceeds the maximum allowed number of bytes.',
-            Chinese: '请求超出了允许的最大字节数。',
-          },
-          '429': {
-            English: 'Your account has hit a rate limit.',
-            Chinese: '您的账户已达到速率限制。',
-          },
-          '500': {
-            English: 'An unexpected error has occurred internal to Anthropic’s systems.',
-            Chinese: 'Anthropic 系统内部发生了意外错误。',
-          },
-          '529': {
-            English: 'Anthropic’s API is temporarily overloaded.',
-            Chinese: 'Anthropic 的 API 暂时过载。',
-          },
-          default: {
-            English: 'Something went wrong. Please try again.',
-            Chinese: '发生错误，请重试。',
-          },
-        };
-        const status = pdfCaptionClaudeResponse?.status;
-        const langKey = language === 'Chinese' ? 'Chinese' : 'English';
-        const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
-        message = errorMessages[statusKey][langKey];
-        Alert.alert('Error', message);
-        return null;
-      }
-      const pdfCaptionClaudeResult = await pdfCaptionClaudeResponse.json();
-      const pdfCaptionClaudeCaption = pdfCaptionClaudeResult.caption;
-      console.log('Claude PDF Caption:', pdfCaptionClaudeCaption);
-    }
-
     // Animate out first, then navigate
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -846,12 +1254,281 @@ export default function FileUploadPage() {
         duration: 200,
         useNativeDriver: true,
       })
-    ]).start(() => {
+    ]).start(async () => {
       setIsSuccessModalOpen(false);
-      // Navigate after animation completes
-      setTimeout(() => {
-        router.back();
-      }, 50);
+      setShowStatusPage(true);
+      setStatusExtractingInformationFromFiles(false)
+      setStatusGeneratingFlashcards(false);
+      setStatusAddingDeckAndFlashcards(false);
+      // Save form submission to userFormEntries
+      await saveUserFileUploadFormEntry({
+        deckName,
+        studyEducationLevel: studyMandatoryQuestion1,
+        studySubjects: studyMandatoryQuestion2,
+        numberOfQuestions,
+        interviewJobRole: interviewMandatoryQuestion1,
+        interviewType
+      });
+      // 1. Extracting information from files
+      setTimeout(async () => {
+        let pdfCaptionClaudeCaption = null;
+        let imageCaptionClaudeCaption = null;
+          // If PDF file was uploaded, send to Claude PDF Caption endpoint
+        if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
+          const fileUri = selectedFile.uri;
+          const fileName = selectedFile.name;
+          const mimeType = selectedFile.mimeType || 'application/pdf';
+
+          const formData = new FormData();
+          // @ts-ignore: React Native FormData file object
+          formData.append('file', {
+            uri: fileUri,
+            name: fileName,
+            type: mimeType,
+          });
+          let pdfCaptionClaudeResponse;
+          try {
+            const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
+            pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
+              method: 'POST',
+              body: formData,
+              headers: {
+                // Let fetch set Content-Type
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+              },
+            });
+          } catch (networkError) {
+            Alert.alert(
+              language === 'Chinese' ? '错误' : 'Error',
+              language === 'Chinese'
+                ? '网络错误。请检查您的网络连接，然后重试。'
+                : 'Network error. Please check your connection and try again.'
+            );
+          }
+          if (!pdfCaptionClaudeResponse?.ok) {
+            let message = '';
+            // Add Chinese translations for each error message
+            const errorMessages: Record<string, { English: string; Chinese: string }> = {
+              '400': {
+                English: 'There was an issue with the format or content of your request.',
+                Chinese: '您的请求格式或内容有误。',
+              },
+              '401': {
+                English: 'There’s an issue with your API key.',
+                Chinese: '您的 API 密钥存在问题。',
+              },
+              '403': {
+                English: 'Your API key does not have permission to use the specified resource.',
+                Chinese: '您的 API 密钥无权访问指定资源。',
+              },
+              '404': {
+                English: 'The requested resource was not found.',
+                Chinese: '未找到请求的资源。',
+              },
+              '413': {
+                English: 'Request exceeds the maximum allowed number of bytes.',
+                Chinese: '请求超出了允许的最大字节数。',
+              },
+              '429': {
+                English: 'Your account has hit a rate limit.',
+                Chinese: '您的账户已达到速率限制。',
+              },
+              '500': {
+                English: 'An unexpected error has occurred internal to Anthropic’s systems.',
+                Chinese: 'Anthropic 系统内部发生了意外错误。',
+              },
+              '529': {
+                English: 'Anthropic’s API is temporarily overloaded.',
+                Chinese: 'Anthropic 的 API 暂时过载。',
+              },
+              default: {
+                English: 'Something went wrong. Please try again.',
+                Chinese: '发生错误，请重试。',
+              },
+            };
+            const status = pdfCaptionClaudeResponse?.status;
+            const langKey = language === 'Chinese' ? 'Chinese' : 'English';
+            const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
+            message = errorMessages[statusKey][langKey];
+            Alert.alert('Error', message);
+            return null;
+          }
+          const pdfCaptionClaudeResult = await pdfCaptionClaudeResponse.json();
+          pdfCaptionClaudeCaption = pdfCaptionClaudeResult.caption;
+          console.log('Claude PDF Caption:', pdfCaptionClaudeCaption);
+        }
+        // Send images to imageCaptionClaude if any
+        let imageUris: string[] = [];
+        if (uploadType === 'image' && uploadedFileName) {
+          // Single image from picker/camera
+          imageUris = [uploadedFileName];
+        } else if (extractedImages.length > 0) {
+          imageUris = extractedImages;
+        }
+        if (imageUris.length > 0) {
+          const formData = new FormData();
+          for (const uri of imageUris) {
+            // Always process before upload
+            const processedUri = await prepareImageForUpload(uri);
+            // Try to infer type from extension
+            let type = 'image/jpeg';
+            if (processedUri.endsWith('.png')) type = 'image/png';
+            else if (processedUri.endsWith('.jpg') || processedUri.endsWith('.jpeg')) type = 'image/jpeg';
+            else if (processedUri.endsWith('.gif')) type = 'image/gif';
+            formData.append('images[]', {
+              uri: processedUri,
+              name: processedUri.split('/').pop() || 'image.jpg',
+              type,
+            } as any);
+          }
+          let imageCaptionClaudeResponse;
+          try {
+            const SUPABASE_IMAGE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/imageCaptionClaude';
+            imageCaptionClaudeResponse = await fetch(SUPABASE_IMAGE_FUNCTION_URL, {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+              },
+            });
+          } catch (networkError) {
+            Alert.alert(
+              language === 'Chinese' ? '错误' : 'Error',
+              language === 'Chinese'
+                ? '网络错误。请检查您的网络连接，然后重试。'
+                : 'Network error. Please check your connection and try again.'
+            );
+          }
+          if (!imageCaptionClaudeResponse?.ok) {
+            let message = '';
+            // Add Chinese translations for each error message
+            const errorMessages: Record<string, { English: string; Chinese: string }> = {
+              '400': {
+                English: 'There was an issue with the format or content of your request.',
+                Chinese: '您的请求格式或内容有误。',
+              },
+              '401': {
+                English: 'There’s an issue with your API key.',
+                Chinese: '您的 API 密钥存在问题。',
+              },
+              '403': {
+                English: 'Your API key does not have permission to use the specified resource.',
+                Chinese: '您的 API 密钥无权访问指定资源。',
+              },
+              '404': {
+                English: 'The requested resource was not found.',
+                Chinese: '未找到请求的资源。',
+              },
+              '413': {
+                English: 'Request exceeds the maximum allowed number of bytes.',
+                Chinese: '请求超出了允许的最大字节数。',
+              },
+              '429': {
+                English: 'Your account has hit a rate limit.',
+                Chinese: '您的账户已达到速率限制。',
+              },
+              '500': {
+                English: 'An unexpected error has occurred internal to Anthropic’s systems.',
+                Chinese: 'Anthropic 系统内部发生了意外错误。',
+              },
+              '529': {
+                English: 'Anthropic’s API is temporarily overloaded.',
+                Chinese: 'Anthropic 的 API 暂时过载。',
+              },
+              default: {
+                English: 'Something went wrong. Please try again.',
+                Chinese: '发生错误，请重试。',
+              },
+            };
+            const status = imageCaptionClaudeResponse?.status;
+            const langKey = language === 'Chinese' ? 'Chinese' : 'English';
+            const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
+            message = errorMessages[statusKey][langKey];
+            Alert.alert('Error', message);
+          } else {
+            const result = await imageCaptionClaudeResponse.json();
+            imageCaptionClaudeCaption = result.caption;
+            console.log('Claude Image Caption:', imageCaptionClaudeCaption);
+          }
+        }
+        // Done extracting information from files via claude
+        setStatusExtractingInformationFromFiles(true);
+
+        const flashcards = await callGenAIFlashcardsGeneration(
+          pdfCaptionClaudeCaption,
+          extractedText,
+          imageCaptionClaudeCaption
+        );
+        console.log('FLASHCARDS >>>>>>>>>>>>>>>>> \n', flashcards);
+        if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
+          setTimeout(async () => {
+            setStatusGeneratingFlashcards(true);
+            // Use the same logic as before for DB insert, but skip UI updates
+            if (isInIndexPage) {
+              await createDeckWithGenAIFlashcards({
+                deckName,
+                mode: mode === 'study' ? 'study' : 'interview',
+                formFields: {
+                  studyEducationLevel: studyMandatoryQuestion1,
+                  studySubjects: studyMandatoryQuestion2,
+                  interviewJobRole: interviewMandatoryQuestion1,
+                  interviewType,
+                  numberOfQuestions,
+                },
+                flashcards
+              });
+            }
+            if (isInFavoritesPage) {
+              await createDeckWithGenAIFlashcards({
+                deckName,
+                mode: mode === 'study' ? 'study' : 'interview',
+                formFields: {
+                  studyEducationLevel: studyMandatoryQuestion1,
+                  studySubjects: studyMandatoryQuestion2,
+                  interviewJobRole: interviewMandatoryQuestion1,
+                  interviewType,
+                  numberOfQuestions,
+                },
+                flashcards,
+                isFavorited: 1
+              });
+            }
+            if (isInViewDecksInFolderPage) {
+              await createDeckWithGenAIFlashcards({
+                deckName,
+                mode: mode === 'study' ? 'study' : 'interview',
+                formFields: {
+                  studyEducationLevel: studyMandatoryQuestion1,
+                  studySubjects: studyMandatoryQuestion2,
+                  interviewJobRole: interviewMandatoryQuestion1,
+                  interviewType,
+                  numberOfQuestions,
+                },
+                flashcards,
+                folderIDs: `[${folderId}]`
+              });
+            }
+            if (isInViewFlashcardsPage) {
+              await createGenAIFlashcardsForDeck({
+                deckId: Number(deckId),
+                flashcards
+              });
+            }
+            setStatusAddingDeckAndFlashcards(true);
+            // Optionally, add a delay for user to see all ticks
+            setTimeout(() => {
+              setShowStatusPage(false);
+              // Optionally, navigate or show a final success UI
+              router.back();
+            }, 1200);
+          }, 900);
+        } else {
+          setShowStatusPage(false);
+          // setErrorMessage('An error occurred during flashcard generation.');
+          // setIsErrorModalOpen(true);
+          router.back();
+        }
+      }, 900);  
     });
   };
 
@@ -921,12 +1598,15 @@ export default function FileUploadPage() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const selectedImage = result.assets[0];
-        console.log('Image selected:', selectedImage.uri);
+        let selectedImage = result.assets[0];
+        // Resize/compress before upload
+        const processedUri = await prepareImageForUpload(selectedImage.uri);
+        console.log('Image selected:', processedUri);
         // Show success animation and update text permanently
         setUploadType('image');
         setIsUploadSuccess(true);
-        setUploadedFileName(selectedImage.uri);
+        setUploadedFileName(processedUri);
+        setExtractedImages([]); // clear extracted images if picking image
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -953,12 +1633,15 @@ export default function FileUploadPage() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const capturedImage = result.assets[0];
-        console.log('Photo taken:', capturedImage.uri);
+        let capturedImage = result.assets[0];
+        // Resize/compress before upload
+        const processedUri = await prepareImageForUpload(capturedImage.uri);
+        console.log('Photo taken:', processedUri);
         // Show success animation and update text permanently
         setUploadType('image');
         setIsUploadSuccess(true);
-        setUploadedFileName(capturedImage.uri);
+        setUploadedFileName(processedUri);
+        setExtractedImages([]); // clear extracted images if taking photo
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -988,30 +1671,46 @@ export default function FileUploadPage() {
         if (selected.name.endsWith('.docx')) {
           try {
             const { text, images } = await extractDocxTextAndImages(selected.uri);
+            // Resize/compress all extracted images
+            const processedImages = await Promise.all(images.map(uri => prepareImageForUpload(uri)));
+            setExtractedImages(processedImages);
+            setExtractedText(text);
             console.log('Extracted text:', text);
             console.log('Extracted images:', images);
           } catch (err) {
             console.error('Docx extraction failed:', err);
+            setExtractedImages([]);
+            setExtractedText('');
           }
         }
         // If pptx, extract text and images
         else if (selected.name.endsWith('.pptx')) {
           try {
             const { text, images } = await extractPptxTextAndImages(selected.uri);
+            const processedImages = await Promise.all(images.map(uri => prepareImageForUpload(uri)));
+            setExtractedImages(processedImages);
+            setExtractedText(text);
             console.log('Extracted PPTX text:', text);
             console.log('Extracted PPTX images:', images);
           } catch (err) {
             console.error('PPTX extraction failed:', err);
+            setExtractedImages([]);
+            setExtractedText('');
           }
         }
         // If xlsx, extract text and images
         else if (selected.name.endsWith('.xlsx')) {
           try {
             const { text, images } = await extractXlsxTextAndImages(selected.uri);
+            const processedImages = await Promise.all(images.map(uri => prepareImageForUpload(uri)));
+            setExtractedImages(processedImages);
+            setExtractedText(text);
             console.log('Extracted XLSX text:', text);
             console.log('Extracted XLSX images:', images);
           } catch (err) {
             console.error('XLSX extraction failed:', err);
+            setExtractedImages([]);
+            setExtractedText('');
           }
         }
         // Show success animation and update text permanently
@@ -1049,6 +1748,18 @@ export default function FileUploadPage() {
       return 10;
     }
   };
+
+  if (showStatusPage) {
+    return (
+      <DeckCreationStatusPage
+        statusRows={[
+          { done: statusExtractingInformationFromFiles, label: statusExtractingInformationFromFiles ? (language === 'Chinese' ? '成功提取信息' : 'Successfully extracted\ninfo from file') : (language === 'Chinese' ? '正在提取信息' : 'Extracting info\nfrom file') },
+          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated flashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
+          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck') : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck') }
+        ]}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>

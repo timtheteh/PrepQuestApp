@@ -850,9 +850,9 @@ export default function GenAIFormPage() {
       });
       // 1. Generating flashcards
       setTimeout(async () => {
-        setStatusRequestReceived(true);
         // Call the flashcard generation API (simulate delay if needed)
         const flashcards = await callGenAIFlashcardsGeneration();
+        setStatusRequestReceived(true);
         console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
         // 2. Adding deck/flashcards
         if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {

@@ -774,7 +774,12 @@ export default function FileUploadPage() {
           },
         });
       } catch (networkError) {
-        Alert.alert('Error', 'Network error. Please check your connection and try again.');
+        Alert.alert(
+          language === 'Chinese' ? '错误' : 'Error',
+          language === 'Chinese'
+            ? '网络错误。请检查您的网络连接，然后重试。'
+            : 'Network error. Please check your connection and try again.'
+        );
       }
       if (!pdfCaptionClaudeResponse?.ok) {
         let message = '';

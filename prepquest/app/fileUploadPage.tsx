@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
@@ -751,21 +751,21 @@ export default function FileUploadPage() {
 
     // If PDF file was uploaded, send to Claude PDF Caption endpoint
     if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
+      const fileUri = selectedFile.uri;
+      const fileName = selectedFile.name;
+      const mimeType = selectedFile.mimeType || 'application/pdf';
+
+      const formData = new FormData();
+      // @ts-ignore: React Native FormData file object
+      formData.append('file', {
+        uri: fileUri,
+        name: fileName,
+        type: mimeType,
+      });
+      let pdfCaptionClaudeResponse;
       try {
-        const fileUri = selectedFile.uri;
-        const fileName = selectedFile.name;
-        const mimeType = selectedFile.mimeType || 'application/pdf';
-
-        const formData = new FormData();
-        // @ts-ignore: React Native FormData file object
-        formData.append('file', {
-          uri: fileUri,
-          name: fileName,
-          type: mimeType,
-        });
-
         const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
-        const response = await fetch(SUPABASE_FUNCTION_URL, {
+        pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
           method: 'POST',
           body: formData,
           headers: {
@@ -773,17 +773,60 @@ export default function FileUploadPage() {
             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
           },
         });
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Claude PDF Caption API error:', errorText);
-        } else {
-          const result = await response.json();
-          const caption = result.caption;
-          console.log('Claude PDF Caption:', caption);
-        }
-      } catch (err) {
-        console.error('Error sending PDF to Claude PDF Caption function:', err);
+      } catch (networkError) {
+        Alert.alert('Error', 'Network error. Please check your connection and try again.');
       }
+      if (!pdfCaptionClaudeResponse?.ok) {
+        let message = '';
+        // Add Chinese translations for each error message
+        const errorMessages: Record<string, { English: string; Chinese: string }> = {
+          '400': {
+            English: 'There was an issue with the format or content of your request.',
+            Chinese: '您的请求格式或内容有误。',
+          },
+          '401': {
+            English: 'There’s an issue with your API key.',
+            Chinese: '您的 API 密钥存在问题。',
+          },
+          '403': {
+            English: 'Your API key does not have permission to use the specified resource.',
+            Chinese: '您的 API 密钥无权访问指定资源。',
+          },
+          '404': {
+            English: 'The requested resource was not found.',
+            Chinese: '未找到请求的资源。',
+          },
+          '413': {
+            English: 'Request exceeds the maximum allowed number of bytes.',
+            Chinese: '请求超出了允许的最大字节数。',
+          },
+          '429': {
+            English: 'Your account has hit a rate limit.',
+            Chinese: '您的账户已达到速率限制。',
+          },
+          '500': {
+            English: 'An unexpected error has occurred internal to Anthropic’s systems.',
+            Chinese: 'Anthropic 系统内部发生了意外错误。',
+          },
+          '529': {
+            English: 'Anthropic’s API is temporarily overloaded.',
+            Chinese: 'Anthropic 的 API 暂时过载。',
+          },
+          default: {
+            English: 'Something went wrong. Please try again.',
+            Chinese: '发生错误，请重试。',
+          },
+        };
+        const status = pdfCaptionClaudeResponse?.status;
+        const langKey = language === 'Chinese' ? 'Chinese' : 'English';
+        const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
+        message = errorMessages[statusKey][langKey];
+        Alert.alert('Error', message);
+        return null;
+      }
+      const pdfCaptionClaudeResult = await pdfCaptionClaudeResponse.json();
+      const pdfCaptionClaudeCaption = pdfCaptionClaudeResult.caption;
+      console.log('Claude PDF Caption:', pdfCaptionClaudeCaption);
     }
 
     // Animate out first, then navigate

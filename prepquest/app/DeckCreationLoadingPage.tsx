@@ -102,6 +102,7 @@ export default function DeckCreationLoadingPage({
 }
 
 export function DeckCreationStatusPage({ statusRows }: { statusRows: { done: boolean, label: string }[] }) {
+  const { language } = useLanguage();
   return (
     <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
       <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
@@ -120,7 +121,7 @@ export function DeckCreationStatusPage({ statusRows }: { statusRows: { done: boo
         />
       </View>
       <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center', marginTop: 8 }}>
-        <Text style={styles.title}>Creating Deck...</Text>
+        <Text style={styles.title}>{language === 'Chinese' ? '正在创建卡组…' : 'Creating Deck...'}</Text>
         <View style={{ width: '80%', marginTop: 8, marginLeft: '12%'}}>
           {statusRows.map((row, idx) => (
             <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>

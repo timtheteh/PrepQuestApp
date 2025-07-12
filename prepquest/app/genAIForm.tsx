@@ -106,6 +106,70 @@ const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
   return Platform.OS === 'ios' ? 0 : 16;
 };
 
+// Error messages for network/API errors
+const ERROR_MESSAGES = {
+  network: {
+    English: 'Network error. Please check your connection and try again.',
+    Chinese: '网络错误。请检查您的连接并重试。'
+  },
+  400: {
+    English: 'Something went wrong. Please try again.',
+    Chinese: '出现错误，请重试。'
+  },
+  401: {
+    English: "You're not logged in. Please sign in to continue.",
+    Chinese: '您尚未登录。请先登录。'
+  },
+  403: {
+    English: "You don't have permission to perform this action.",
+    Chinese: '您没有权限执行此操作。'
+  },
+  404: {
+    English: 'The requested resource was not found.',
+    Chinese: '未找到请求的资源。'
+  },
+  500: {
+    English: 'Server error. Please try again later.',
+    Chinese: '服务器错误，请稍后再试。'
+  },
+  502: {
+    English: 'Service temporarily unavailable. Please try again shortly.',
+    Chinese: '服务暂时不可用，请稍后再试。'
+  },
+  503: {
+    English: 'Service temporarily unavailable. Please try again shortly.',
+    Chinese: '服务暂时不可用，请稍后再试。'
+  },
+  default: {
+    English: 'Something went wrong. Please try again.',
+    Chinese: '出现错误，请重试。'
+  }
+};
+
+// Toast messages for form validation
+const TOAST_MESSAGES = {
+  deckNameInUse: {
+    English: 'Deckname already in use',
+    Chinese: '卡组名称已被使用'
+  },
+  invalidSubjects: {
+    English: "Invalid form input for 'Subject(s)'",
+    Chinese: '“科目”输入无效'
+  },
+  invalidTopics: {
+    English: "Invalid form input for 'Topic(s)'",
+    Chinese: '“主题”输入无效'
+  },
+  invalidSubtopics: {
+    English: "Invalid form input for 'Subtopic(s)'",
+    Chinese: '“子主题”输入无效'
+  },
+  insufficientQuestions: {
+    English: 'Number of questions insufficient to cover all kinds of questions chosen!',
+    Chinese: '题目数量不足以覆盖所选题型！'
+  }
+};
+
 export default function GenAIFormPage() {
   const { 
     mode, 
@@ -378,7 +442,7 @@ export default function GenAIFormPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage("Deckname already in use");
+        setToastMessage(TOAST_MESSAGES.deckNameInUse[language] || TOAST_MESSAGES.deckNameInUse.English);
         return false;
       }
     }
@@ -398,7 +462,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptySubjects || hasInvalidSubjects) {
         setShowToast(true);
-        setToastMessage("Invalid form input for 'Subject(s)'");
+        setToastMessage(TOAST_MESSAGES.invalidSubjects[language] || TOAST_MESSAGES.invalidSubjects.English);
         return false;
       }
     }
@@ -419,7 +483,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptyTopics || hasInvalidTopics) {
         setShowToast(true);
-        setToastMessage("Invalid form input for 'Topic(s)'");
+        setToastMessage(TOAST_MESSAGES.invalidTopics[language] || TOAST_MESSAGES.invalidTopics.English);
         return false;
       }
     }
@@ -439,7 +503,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptySubtopics || hasInvalidSubtopics) {
         setShowToast(true);
-        setToastMessage("Invalid form input for 'Subtopic(s)'");
+        setToastMessage(TOAST_MESSAGES.invalidSubtopics[language] || TOAST_MESSAGES.invalidSubtopics.English);
         return false;
       }
     }
@@ -459,7 +523,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptyTopics || hasInvalidTopics) {
         setShowToast(true);
-        setToastMessage("Invalid form input for 'Topic(s)'");
+        setToastMessage(TOAST_MESSAGES.invalidTopics[language] || TOAST_MESSAGES.invalidTopics.English);
         return false;
       }
     }
@@ -467,7 +531,7 @@ export default function GenAIFormPage() {
     // Validate that the number of question types does not exceed the number of questions
     if (questionType.length > numberOfQuestions) {
       setShowToast(true);
-      setToastMessage("Number of questions insufficient to cover all kinds of questions chosen!");
+      setToastMessage(TOAST_MESSAGES.insufficientQuestions[language] || TOAST_MESSAGES.insufficientQuestions.English);
       return false;
     }
 
@@ -697,7 +761,7 @@ export default function GenAIFormPage() {
           body: JSON.stringify({prompt}),
         });
       } catch (networkError) {
-        Alert.alert('Error', 'Network error. Please check your connection and try again.');
+        Alert.alert('Error', ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English);
         return null;
       }
       console.log("fetch complete, status:", response.status);
@@ -705,26 +769,28 @@ export default function GenAIFormPage() {
         let message = '';
         switch (response.status) {
           case 400:
-            message = 'Something went wrong. Please try again.';
+            message = ERROR_MESSAGES[400][language] || ERROR_MESSAGES[400].English;
             break;
           case 401:
-            message = "You're not logged in. Please sign in to continue.";
+            message = ERROR_MESSAGES[401][language] || ERROR_MESSAGES[401].English;
             break;
           case 403:
-            message = "You don't have permission to perform this action.";
+            message = ERROR_MESSAGES[403][language] || ERROR_MESSAGES[403].English;
             break;
           case 404:
-            message = 'The requested resource was not found.';
+            message = ERROR_MESSAGES[404][language] || ERROR_MESSAGES[404].English;
             break;
           case 500:
-            message = 'Server error. Please try again later.';
+            message = ERROR_MESSAGES[500][language] || ERROR_MESSAGES[500].English;
             break;
           case 502:
+            message = ERROR_MESSAGES[502][language] || ERROR_MESSAGES[502].English;
+            break;
           case 503:
-            message = 'Service temporarily unavailable. Please try again shortly.';
+            message = ERROR_MESSAGES[503][language] || ERROR_MESSAGES[503].English;
             break;
           default:
-            message = 'Something went wrong. Please try again.';
+            message = ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English;
         }
         Alert.alert('Error', message);
         return null;
@@ -741,7 +807,7 @@ export default function GenAIFormPage() {
       console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
       return flashcards;
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Something went wrong');
+      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : (ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English));
     }
   };
 
@@ -1038,9 +1104,9 @@ export default function GenAIFormPage() {
     return (
       <DeckCreationStatusPage
         statusRows={[
-          { done: statusRequestReceived, label: 'Request received' },
-          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? 'Successfully generated flashcards' : 'Generating flashcards' },
-          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? 'Successfully added\nflashcards and deck' : 'Adding flashcards\nand deck' }
+          { done: statusRequestReceived, label: language === 'Chinese' ? '请求已收到' : 'Request received' },
+          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated flashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
+          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck') : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck') }
         ]}
       />
     );

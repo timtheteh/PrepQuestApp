@@ -53,3 +53,5 @@ app-example
 
 ios/
 android/
+.idea/
+*.iml

@@ -1854,12 +1854,13 @@ export async function createGenAIFlashcardsForDeck({
 }: {
   deckId: number;
   flashcards: Array<{ flashcardType: string; question: string; answer: any }>;
-}): Promise<{ success: boolean; flashcardCount?: number }> {
+}): Promise<{ success: boolean; flashcardCount?: number; flashcardIds?: number[] }> {
   try {
     const userID = await getCurrentUserID();
     await db.execAsync('BEGIN TRANSACTION');
     try {
       let flashcardCount = 0;
+      let flashcardIds: number[] = [];
       for (const card of flashcards) {
         const mapping = (promptAndData as Record<string, any>)[card.flashcardType];
         if (!mapping) continue;
@@ -1885,6 +1886,11 @@ export async function createGenAIFlashcardsForDeck({
             NULL, NULL, NULL, NULL
           )
         `);
+        // Get the last inserted flashcardID
+        const lastIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as id') as { id?: number };
+        if (lastIdResult && typeof lastIdResult.id !== 'undefined') {
+          flashcardIds.push(lastIdResult.id);
+        }
         flashcardCount++;
       }
       // Update user statistics
@@ -1899,7 +1905,7 @@ export async function createGenAIFlashcardsForDeck({
         `);
       }
       await db.execAsync('COMMIT');
-      return { success: true, flashcardCount };
+      return { success: true, flashcardCount, flashcardIds };
     } catch (error) {
       await db.execAsync('ROLLBACK');
       throw error;
@@ -1972,5 +1978,24 @@ export async function getMostRecentFileUploadFormEntry(mode: 'study' | 'intervie
   } catch (error) {
     console.error('Error fetching most recent file upload form entry:', error);
     return null;
+  }
+}
+
+export async function deleteFlashcardsByIds(flashcardIds: number[]): Promise<boolean> {
+  if (!flashcardIds.length) return true;
+  try {
+    const userID = await getCurrentUserID();
+    await db.execAsync('BEGIN TRANSACTION');
+    const idsString = flashcardIds.join(',');
+    await db.execAsync(`
+      DELETE FROM flashcards
+      WHERE flashcardID IN (${idsString}) AND userID = '${userID}'
+    `);
+    await db.execAsync('COMMIT');
+    return true;
+  } catch (error) {
+    await db.execAsync('ROLLBACK');
+    console.error('Error deleting flashcards by IDs:', error);
+    return false;
   }
 }

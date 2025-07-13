@@ -1416,7 +1416,7 @@ export default function ManualAddDeckPage() {
             }
             setTimeout(() => {
               setShowLoadingPage(false);
-              router.back();
+              // router.back();
             }, 800);
             return;
           } else {
@@ -1465,7 +1465,7 @@ export default function ManualAddDeckPage() {
             }
             setTimeout(() => {
               setShowLoadingPage(false);
-              router.back();
+              // router.back();
             }, 800);
             return;
           } else {
@@ -1536,7 +1536,7 @@ export default function ManualAddDeckPage() {
             }
             setTimeout(() => {
               setShowLoadingPage(false);
-              router.back();
+              // router.back();
             }, 800);
             return;
           } else {
@@ -1609,7 +1609,7 @@ export default function ManualAddDeckPage() {
             // }
             setTimeout(() => {
               setShowLoadingPage(false);
-              router.back();
+              // router.back();
             }, 800);
             return;
           } else {

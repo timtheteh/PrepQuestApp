@@ -112,10 +112,19 @@ export default function DeckCreationLoadingPage({
   );
 }
 
-export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = false }: { statusRows: { done: boolean, label: string }[], isInViewFlashcardsPage?: boolean }) {
+export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = false, onCancel }: { statusRows: { done: boolean, label: string }[], isInViewFlashcardsPage?: boolean, onCancel?: () => void }) {
   const { language } = useLanguage();
   return (
     <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      {/* Cancel button at top right */}
+      {onCancel && (
+        <TouchableOpacity
+          style={{ position: 'absolute', top: 50, right: 16, zIndex: 10, padding: 8 }}
+          onPress={onCancel}
+        >
+          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
+        </TouchableOpacity>
+      )}
       <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
         <Image
           source={require('@/assets/images/loadingBackground.png')}

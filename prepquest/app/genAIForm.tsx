@@ -221,6 +221,9 @@ export default function GenAIFormPage() {
   const [statusRequestReceived, setStatusRequestReceived] = useState(false);
   const [statusGeneratingFlashcards, setStatusGeneratingFlashcards] = useState(false);
   const [statusAddingDeckAndFlashcards, setStatusAddingDeckAndFlashcards] = useState(false);
+  const cancelCreationRef = useRef(false);
+  const [createdDeckId, setCreatedDeckId] = useState<number | null>(null);
+  const [createdFlashcardIds, setCreatedFlashcardIds] = useState<number[]>([]);
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -812,7 +815,7 @@ export default function GenAIFormPage() {
   };
 
   const handleSuccessConfirm = async () => {
-    // Animate out modal, then show status page and step through statuses
+    cancelCreationRef.current = false;
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -848,19 +851,19 @@ export default function GenAIFormPage() {
         interviewExperienceLevel: interviewOptionalQuestion2,
         interviewTopics: interviewOptionalQuestion3
       });
-      // 1. Generating flashcards
       setTimeout(async () => {
-        // Call the flashcard generation API (simulate delay if needed)
+        if (cancelCreationRef.current) return;
         const flashcards = await callGenAIFlashcardsGeneration();
+        if (cancelCreationRef.current) return;
         setStatusRequestReceived(true);
-        console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
-        // 2. Adding deck/flashcards
+        if (cancelCreationRef.current) return;
         if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
           setTimeout(async () => {
+            if (cancelCreationRef.current) return;
             setStatusGeneratingFlashcards(true);
-            // Use the same logic as before for DB insert, but skip UI updates
+            let newDeckId: number | null = null;
             if (isInIndexPage) {
-              await createDeckWithGenAIFlashcards({
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -879,9 +882,10 @@ export default function GenAIFormPage() {
                 },
                 flashcards
               });
+              newDeckId = result.deckId || null;
             }
             if (isInFavoritesPage) {
-              await createDeckWithGenAIFlashcards({
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -901,9 +905,10 @@ export default function GenAIFormPage() {
                 flashcards,
                 isFavorited: 1
               });
+              newDeckId = result.deckId || null;
             }
             if (isInViewDecksInFolderPage) {
-              await createDeckWithGenAIFlashcards({
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -923,33 +928,34 @@ export default function GenAIFormPage() {
                 flashcards,
                 folderIDs: `[${folderId}]`
               });
+              newDeckId = result.deckId || null;
             }
+            if (newDeckId) setCreatedDeckId(newDeckId);
             if (isInViewFlashcardsPage) {
-              await createGenAIFlashcardsForDeck({
+              const result = await createGenAIFlashcardsForDeck({
                 deckId: Number(deckId),
                 flashcards
               });
+              // Get the IDs of the newly created flashcards
+              if (result && result.flashcardIds) setCreatedFlashcardIds(result.flashcardIds);
             }
+            if (cancelCreationRef.current) return;
             setStatusAddingDeckAndFlashcards(true);
-            // Optionally, add a delay for user to see all ticks
             setTimeout(() => {
               setShowStatusPage(false);
-              // Optionally, navigate or show a final success UI
-              router.back();
+              // router.back();
             }, 1200);
           }, 900);
         } else {
           setShowStatusPage(false);
-          // setErrorMessage('An error occurred during flashcard generation.');
-          // setIsErrorModalOpen(true);
-          router.back();
+          // router.back();
         }
       }, 900);
     });
   };
 
   const handleOptionalFieldsWarningConfirm = async () => {
-    // Animate out modal, then show status page and step through statuses
+    cancelCreationRef.current = false;
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -985,19 +991,18 @@ export default function GenAIFormPage() {
         interviewExperienceLevel: interviewOptionalQuestion2,
         interviewTopics: interviewOptionalQuestion3
       });
-      // 1. Generating flashcards
       setTimeout(async () => {
+        if (cancelCreationRef.current) return;
         setStatusRequestReceived(true);
-        // Call the flashcard generation API (simulate delay if needed)
         const flashcards = await callGenAIFlashcardsGeneration();
-        console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
-        // 2. Adding deck/flashcards
+        if (cancelCreationRef.current) return;
         if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
           setTimeout(async () => {
+            if (cancelCreationRef.current) return;
             setStatusGeneratingFlashcards(true);
-            // Use the same logic as before for DB insert, but skip UI updates
+            let newDeckId: number | null = null;
             if (isInIndexPage) {
-              await createDeckWithGenAIFlashcards({
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -1016,9 +1021,10 @@ export default function GenAIFormPage() {
                 },
                 flashcards
               });
+              newDeckId = result.deckId || null;
             }
             if (isInFavoritesPage) {
-              await createDeckWithGenAIFlashcards({
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -1038,9 +1044,10 @@ export default function GenAIFormPage() {
                 flashcards,
                 isFavorited: 1
               });
+              newDeckId = result.deckId || null;
             }
             if (isInViewDecksInFolderPage) {
-              await createDeckWithGenAIFlashcards({
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -1060,26 +1067,27 @@ export default function GenAIFormPage() {
                 flashcards,
                 folderIDs: `[${folderId}]`
               });
+              newDeckId = result.deckId || null;
             }
+            if (newDeckId) setCreatedDeckId(newDeckId);
             if (isInViewFlashcardsPage) {
-              await createGenAIFlashcardsForDeck({
+              const result = await createGenAIFlashcardsForDeck({
                 deckId: Number(deckId),
                 flashcards
               });
+              // Get the IDs of the newly created flashcards
+              if (result && result.flashcardIds) setCreatedFlashcardIds(result.flashcardIds);
             }
+            if (cancelCreationRef.current) return;
             setStatusAddingDeckAndFlashcards(true);
-            // Optionally, add a delay for user to see all ticks
             setTimeout(() => {
               setShowStatusPage(false);
-              // Optionally, navigate or show a final success UI
-              router.back();
+              // router.back();
             }, 1200);
           }, 900);
         } else {
           setShowStatusPage(false);
-          // setErrorMessage('An error occurred during flashcard generation.');
-          // setIsErrorModalOpen(true);
-          router.back();
+          // router.back();
         }
       }, 900);
     });
@@ -1106,9 +1114,25 @@ export default function GenAIFormPage() {
         statusRows={[
           { done: statusRequestReceived, label: language === 'Chinese' ? '请求已收到' : 'Request received' },
           { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated flashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
-          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck') : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck') }
+          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards
+              ? (isInViewFlashcardsPage
+                  ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
+                  : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+              : (isInViewFlashcardsPage
+                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards to deck')
+                  : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck')) }
         ]}
         isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
+        onCancel={async () => {
+          cancelCreationRef.current = true;
+          setShowStatusPage(false);
+          if (createdDeckId && !isInViewFlashcardsPage) {
+            await import('../db/decks').then(db => db.deleteDeck(createdDeckId));
+          }
+          if (isInViewFlashcardsPage && createdFlashcardIds.length > 0) {
+            await import('../db/decks').then(db => db.deleteFlashcardsByIds(createdFlashcardIds));
+          }
+        }}
       />
     );
   }

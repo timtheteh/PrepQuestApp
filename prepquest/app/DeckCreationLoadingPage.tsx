@@ -112,7 +112,7 @@ export default function DeckCreationLoadingPage({
   );
 }
 
-export function DeckCreationStatusPage({ statusRows }: { statusRows: { done: boolean, label: string }[] }) {
+export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = false }: { statusRows: { done: boolean, label: string }[], isInViewFlashcardsPage?: boolean }) {
   const { language } = useLanguage();
   return (
     <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -132,7 +132,11 @@ export function DeckCreationStatusPage({ statusRows }: { statusRows: { done: boo
         />
       </View>
       <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center', marginTop: 8 }}>
-        <Text style={styles.title}>{language === 'Chinese' ? '正在创建卡组…' : 'Creating Deck...'}</Text>
+        <Text style={styles.title}>
+          {isInViewFlashcardsPage
+            ? (language === 'Chinese' ? '正在创建卡片…' : 'Creating Flashcards...')
+            : (language === 'Chinese' ? '正在创建卡组…' : 'Creating Deck...')}
+        </Text>
         <View style={{ width: '80%', marginTop: 8, marginLeft: '12%'}}>
           {statusRows.map((row, idx) => (
             <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>

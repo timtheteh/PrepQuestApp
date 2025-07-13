@@ -1108,6 +1108,7 @@ export default function GenAIFormPage() {
           { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated flashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
           { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck') : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck') }
         ]}
+        isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
       />
     );
   }

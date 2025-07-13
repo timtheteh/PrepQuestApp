@@ -167,7 +167,7 @@ const STRINGS = {
   invalidSubjects: { English: "Invalid form input for 'Subject(s)'", Chinese: '“科目"输入无效' },
   fillAllAndAdd: { English: 'Fill up all mandatory fields\nand add your cards before submitting!', Chinese: '请填写所有必填项并添加卡片后再提交！' },
   addBeforeSubmit: { English: 'Add your card(s)\nbefore submitting!', Chinese: '请先添加卡片再提交！' },
-  fillAll: { English: 'Fill up all mandatory fields and all QA pairs for all cards!', Chinese: '请填写所有必填项和所有卡片的问答对！' },
+  fillAll: { English: 'Fill up all mandatory fields and all QA pairs for your cards!', Chinese: '请填写所有必填项和所有卡片的问答对！' },
   missingQA: { English: 'You have missing question/answer\ndata for card', Chinese: '第' },
   helpModal: { English: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.", Chinese: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。' },
   aiHelpModal: { English: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.', Chinese: '勾选此项将让AI生成与上传内容无关的新建议卡片。' },
@@ -194,7 +194,9 @@ export default function ManualAddDeckPage() {
   } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isMandatory, setIsMandatory] = useState(true);
+  // Force manual state if isInViewFlashcardsPage is true
+  const forceManual = isInViewFlashcardsPage === 'true';
+  const [isMandatory, setIsMandatory] = useState(forceManual ? false : true);
   const [deckName, setDeckName] = useState('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
   const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
@@ -497,7 +499,7 @@ export default function ManualAddDeckPage() {
 
   // Save card to cache when content changes
   useEffect(() => {
-    if (!isMandatory && addViewState === 'add' && hasCardContent) {
+    if (!isMandatory && addViewState === 'add') {
       // Debounce the save to avoid too frequent updates
       const timeoutId = setTimeout(() => {
         saveCurrentCardToCache();
@@ -648,53 +650,79 @@ export default function ManualAddDeckPage() {
       }
     }
 
-    // Validate studyMandatoryQuestion2 format for study mode
-    if (mode === 'study' && studyMandatoryQuestion2.trim() !== '') {
-      // Split on any Unicode comma character
-      const subjects = studyMandatoryQuestion2.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
-      
-      // Check if there are any empty subjects after splitting and trimming
-      const hasEmptySubjects = subjects.some(subject => subject === '');
-      
-      // Check if there are any subjects that are just whitespace or special characters
-      const hasInvalidSubjects = subjects.some(subject => 
-        subject === '' ||
-        !/^[\p{L}\p{N} '\u2019]+$/u.test(subject) // Only letters, numbers, spaces, and apostrophes
-      );
-      
-      if (hasEmptySubjects || hasInvalidSubjects) {
-        setShowToast(true);
-        setToastMessage(STRINGS.invalidSubjects[lang]);
+    if (!isInViewFlashcardsPage) {
+      // Validate studyMandatoryQuestion2 format for study mode
+      if (mode === 'study' && studyMandatoryQuestion2.trim() !== '') {
+        // Split on any Unicode comma character
+        const subjects = studyMandatoryQuestion2.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
+        
+        // Check if there are any empty subjects after splitting and trimming
+        const hasEmptySubjects = subjects.some(subject => subject === '');
+        
+        // Check if there are any subjects that are just whitespace or special characters
+        const hasInvalidSubjects = subjects.some(subject => 
+          subject === '' ||
+          !/^[\p{L}\p{N} '\u2019]+$/u.test(subject) // Only letters, numbers, spaces, and apostrophes
+        );
+        
+        if (hasEmptySubjects || hasInvalidSubjects) {
+          setShowToast(true);
+          setToastMessage(STRINGS.invalidSubjects[lang]);
+          return false;
+        }
+      }
+
+      // Error 1: mandatory fields not filled up and no cards
+      if (!mandatoryFieldsFilled && !hasCards) {
+        setErrorMessage(STRINGS.fillAllAndAdd[lang]);
+        setIsErrorModalOpen(true);
         return false;
       }
-    }
 
-    // Error 1: mandatory fields not filled up and no cards
-    if (!mandatoryFieldsFilled && !hasCards) {
-      setErrorMessage(STRINGS.fillAllAndAdd[lang]);
-      setIsErrorModalOpen(true);
-      return false;
-    }
+      // Error 2: mandatory fields filled up but no cards
+      if (mandatoryFieldsFilled && !hasCards) {
+        setErrorMessage(STRINGS.addBeforeSubmit[lang]);
+        setIsErrorModalOpen(true);
+        return false;
+      }
 
-    // Error 2: mandatory fields filled up but no cards
-    if (mandatoryFieldsFilled && !hasCards) {
+      // Error 3: mandatory fields not filled up but has cards
+      if (!mandatoryFieldsFilled && hasCards) {
+        setErrorMessage(STRINGS.fillAll[lang]);
+        setIsErrorModalOpen(true);
+        return false;
+      }
+
+      // Error 4: mandatory fields filled up and has cards BUT not all cards have content
+      if (mandatoryFieldsFilled && hasCards && !allCardsComplete) {
+        // Find the first incomplete card
+        const incompleteCard = submittedCards.find(card => {
+          // Check if both front and back content exist
+          const hasFrontContent = card.frontContent && (
+            card.frontContent.type === 'mic' ? card.frontContent.audioUri : card.frontContent.content
+          );
+          const hasBackContent = card.backContent && (
+            card.backContent.type === 'mic' ? card.backContent.audioUri : card.backContent.content
+          );
+          return !hasFrontContent || !hasBackContent;
+        });
+        if (incompleteCard) {
+          setIncompleteCardNumber(incompleteCard.cardNumber);
+          setErrorMessage(`${STRINGS.missingQA[lang]}${incompleteCard.cardNumber}`);
+          setIsErrorModalOpen(true);
+          return false;
+        }
+      }
+    }
+    // Always check for cards and completeness first
+    if (!hasCards) {
       setErrorMessage(STRINGS.addBeforeSubmit[lang]);
       setIsErrorModalOpen(true);
       return false;
     }
-
-    // Error 3: mandatory fields not filled up but has cards
-    if (!mandatoryFieldsFilled && hasCards) {
-      setErrorMessage(STRINGS.fillAll[lang]);
-      setIsErrorModalOpen(true);
-      return false;
-    }
-
-    // Error 4: mandatory fields filled up and has cards BUT not all cards have content
-    if (mandatoryFieldsFilled && hasCards && !allCardsComplete) {
+    if (!allCardsComplete) {
       // Find the first incomplete card
       const incompleteCard = submittedCards.find(card => {
-        // Check if both front and back content exist
         const hasFrontContent = card.frontContent && (
           card.frontContent.type === 'mic' ? card.frontContent.audioUri : card.frontContent.content
         );
@@ -709,6 +737,13 @@ export default function ManualAddDeckPage() {
         setIsErrorModalOpen(true);
         return false;
       }
+    }
+
+    // If in view flashcards mode, skip mandatory field checks
+    if (isInViewFlashcardsPage === 'true') {
+      // Success: all validations passed
+      setIsSuccessModalOpen(true);
+      return true;
     }
 
     // Success: all validations passed
@@ -1573,6 +1608,13 @@ export default function ManualAddDeckPage() {
     });
   };
 
+  // If isInViewFlashcardsPage is true, always set isMandatory to false
+  useEffect(() => {
+    if (forceManual && isMandatory) {
+      setIsMandatory(false);
+    }
+  }, [forceManual]);
+
   if (showLoadingPage) {
     return (
       <DeckCreationLoadingPage progress={loadingProgress} current={loadingCurrent} total={loadingTotal} isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}/>
@@ -1590,11 +1632,11 @@ export default function ManualAddDeckPage() {
         </TouchableOpacity>
         
       </View>
-      
+      {/* Only show FormHeaderIcons (mandatory header) if not in view flashcards and not in manual state */}
       <Animated.View
         style={[
           styles.headerIconsContainer,
-          { opacity: mandatoryOpacity, display: isMandatory ? 'flex' : 'none' }
+          { opacity: mandatoryOpacity, display: (!forceManual && isMandatory) ? 'flex' : 'none' }
         ]}
       >
         <FormHeaderIcons 
@@ -1602,13 +1644,13 @@ export default function ManualAddDeckPage() {
           onUseMostRecentFormPress={handleUseMostRecentFormPress}
         />
       </Animated.View>
-
+      {/* Always show TopBarManualHeader if in manual state or forceManual */}
       <Animated.View
         style={[
           styles.headerIconsContainer,
           { 
             opacity: manualAddDeckOpacity, 
-            display: !isMandatory && addViewState === 'add' ? 'flex' : 'none' 
+            display: (!isMandatory || forceManual) && addViewState === 'add' ? 'flex' : 'none' 
           }
         ]}
       >
@@ -1617,25 +1659,21 @@ export default function ManualAddDeckPage() {
           onButtonChange={handleButtonChange}
         />
       </Animated.View>
-
-      {/* {!isMandatory && (
-        <View style={styles.headerIconsContainer}>
-          <TopBarManualHeader />
-        </View>
-      )} */}
-
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
-          <RoundedContainer 
-            leftLabel={STRINGS.mandatory[lang]}
-            rightLabel={STRINGS.manual[lang]}
-            onToggle={handleToggle}
-          />
-
+          {/* Only show RoundedContainer if not in view flashcards */}
+          {!forceManual && (
+            <RoundedContainer 
+              leftLabel={STRINGS.mandatory[lang]}
+              rightLabel={STRINGS.manual[lang]}
+              onToggle={handleToggle}
+            />
+          )}
+          {/* Always show AddViewToggle if in manual state or forceManual */}
           <Animated.View
             style={[
               styles.addViewToggle,
-              { opacity: manualAddDeckOpacity, display: !isMandatory ? 'flex' : 'none' }
+              { opacity: manualAddDeckOpacity, display: (!isMandatory || forceManual) ? 'flex' : 'none' }
             ]}
           >
             <AddViewToggle
@@ -1646,7 +1684,8 @@ export default function ManualAddDeckPage() {
             />
           </Animated.View>
         </View>
-        {isMandatory && (
+        {/* Only show mandatory form if not in manual state and not forceManual */}
+        {(!forceManual && isMandatory) && (
           <ScrollView 
           style={[
             styles.scrollView,
@@ -1732,7 +1771,6 @@ export default function ManualAddDeckPage() {
           </Animated.View>
         </ScrollView>
         )}
-
         {/* FlippableCard only in Manual state and Add flashcard(s) state */}
         {!isMandatory && addViewState === 'add' && (
           <View 

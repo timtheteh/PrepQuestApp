@@ -943,7 +943,9 @@ export default function GenAIFormPage() {
             setStatusAddingDeckAndFlashcards(true);
             setTimeout(() => {
               setShowStatusPage(false);
-              // router.back();
+              if (!cancelCreationRef.current) {
+                router.back();
+              }
             }, 1200);
           }, 900);
         } else {
@@ -1082,7 +1084,9 @@ export default function GenAIFormPage() {
             setStatusAddingDeckAndFlashcards(true);
             setTimeout(() => {
               setShowStatusPage(false);
-              // router.back();
+              if (!cancelCreationRef.current) {
+                router.back();
+              }
             }, 1200);
           }, 900);
         } else {

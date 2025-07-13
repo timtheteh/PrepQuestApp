@@ -1553,56 +1553,60 @@ export default function ManualAddDeckPage() {
             setShowLoadingPage(true);
             const deckNameForEntry = await getDeckNameById(currentDeckId);
             let createdCount = 0;
+            let newFlashcardIds: number[] = [];
             for (let i = 0; i < submittedCards.length; i++) {
               if (cancelCreationRef.current) break;
-              await createFlashcardsFromCache(currentDeckId, [submittedCards[i]]);
+              const result = await createFlashcardsFromCache(currentDeckId, [submittedCards[i]]);
+              if (result && result.flashcardIds && result.flashcardIds.length > 0) {
+                newFlashcardIds.push(...result.flashcardIds);
+              }
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
             }
-            // Cleanup if cancelled: only delete flashcards, not deck, since deck is pre-existing
-            if (cancelCreationRef.current && currentDeckId) {
-              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${currentDeckId}`);
+            // Cleanup if cancelled: only delete new flashcards, not all
+            if (cancelCreationRef.current && newFlashcardIds.length > 0) {
+              await db.execAsync(`DELETE FROM flashcards WHERE flashcardID IN (${newFlashcardIds.join(',')})`);
             }
-            if (!cancelCreationRef.current && deckNameForEntry) {
-              const currentDate = new Date().toISOString();
-              let studyEducationLevelForm = null;
-              let studySubjectsForm = null;
-              let studyExamForm = null;
-              let interviewJobRoleForm = null;
-              let interviewTypeForm = null;
-              let interviewExperienceLevelForm = null;
-              if (mode === 'study') {
-                studyEducationLevelForm = studyMandatoryQuestion1 || null;
-                studySubjectsForm = studyMandatoryQuestion2 || null;
-                studyExamForm = studyMandatoryQuestion3 || null;
-              } else {
-                interviewJobRoleForm = interviewMandatoryQuestion1 || null;
-                interviewTypeForm = interviewType || null;
-                interviewExperienceLevelForm = interviewMandatoryQuestion2 || null;
-              }
-              const userID = await getCurrentUserID();
-              await db.execAsync(`
-                INSERT INTO userFormEntries (
-                  userID, formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
-                  youtubeLink, studyEducationLevel, studySubjects, studyTopics, studySubtopics, studyExam,
-                  interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics
-                ) VALUES (
-                  '${userID}', '${mode}', 'manual', '${currentDate}', '${deckNameForEntry.replace(/'/g, "''")}', NULL, NULL,
-                  NULL, 
-                  ${studyEducationLevelForm ? `'${studyEducationLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
-                  ${studySubjectsForm ? `'${studySubjectsForm.replace(/'/g, "''")}'` : 'NULL'}, 
-                  NULL, NULL, 
-                  ${studyExamForm ? `'${studyExamForm.replace(/'/g, "''")}'` : 'NULL'},
-                  ${interviewJobRoleForm ? `'${interviewJobRoleForm.replace(/'/g, "''")}'` : 'NULL'}, 
-                  ${interviewTypeForm ? `'${interviewTypeForm.replace(/'/g, "''")}'` : 'NULL'}, 
-                  NULL, 
-                  ${interviewExperienceLevelForm ? `'${interviewExperienceLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
-                  NULL
-                )
-              `);
-              console.log('User form entry created for adding flashcards to existing deck:', deckNameForEntry);
-            }
+            // if (!cancelCreationRef.current && deckNameForEntry) {
+            //   const currentDate = new Date().toISOString();
+            //   let studyEducationLevelForm = null;
+            //   let studySubjectsForm = null;
+            //   let studyExamForm = null;
+            //   let interviewJobRoleForm = null;
+            //   let interviewTypeForm = null;
+            //   let interviewExperienceLevelForm = null;
+            //   if (mode === 'study') {
+            //     studyEducationLevelForm = studyMandatoryQuestion1 || null;
+            //     studySubjectsForm = studyMandatoryQuestion2 || null;
+            //     studyExamForm = studyMandatoryQuestion3 || null;
+            //   } else {
+            //     interviewJobRoleForm = interviewMandatoryQuestion1 || null;
+            //     interviewTypeForm = interviewType || null;
+            //     interviewExperienceLevelForm = interviewMandatoryQuestion2 || null;
+            //   }
+            //   const userID = await getCurrentUserID();
+            //   await db.execAsync(`
+            //     INSERT INTO userFormEntries (
+            //       userID, formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions, kindsOfQuestions,
+            //       youtubeLink, studyEducationLevel, studySubjects, studyTopics, studySubtopics, studyExam,
+            //       interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics
+            //     ) VALUES (
+            //       '${userID}', '${mode}', 'manual', '${currentDate}', '${deckNameForEntry.replace(/'/g, "''")}', NULL, NULL,
+            //       NULL, 
+            //       ${studyEducationLevelForm ? `'${studyEducationLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
+            //       ${studySubjectsForm ? `'${studySubjectsForm.replace(/'/g, "''")}'` : 'NULL'}, 
+            //       NULL, NULL, 
+            //       ${studyExamForm ? `'${studyExamForm.replace(/'/g, "''")}'` : 'NULL'},
+            //       ${interviewJobRoleForm ? `'${interviewJobRoleForm.replace(/'/g, "''")}'` : 'NULL'}, 
+            //       ${interviewTypeForm ? `'${interviewTypeForm.replace(/'/g, "''")}'` : 'NULL'}, 
+            //       NULL, 
+            //       ${interviewExperienceLevelForm ? `'${interviewExperienceLevelForm.replace(/'/g, "''")}'` : 'NULL'}, 
+            //       NULL
+            //     )
+            //   `);
+            //   console.log('User form entry created for adding flashcards to existing deck:', deckNameForEntry);
+            // }
             setTimeout(() => {
               setShowLoadingPage(false);
               router.back();

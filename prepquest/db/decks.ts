@@ -1310,7 +1310,7 @@ async function uriToBlob(uri: string): Promise<Uint8Array | null> {
   }
 }
 
-export async function createFlashcardsFromCache(deckId: number, cardCache: any[]): Promise<{ success: boolean; flashcardCount?: number }> {
+export async function createFlashcardsFromCache(deckId: number, cardCache: any[]): Promise<{ success: boolean; flashcardCount?: number; flashcardIds?: number[] }> {
   try {
     const userID = await getCurrentUserID();
     // Start a transaction to ensure data consistency
@@ -1318,7 +1318,7 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
     
     try {
       let flashcardCount = 0;
-      
+      let flashcardIds: number[] = [];
       // Process each submitted card in the cache
       for (const card of cardCache) {
         if (card.submitted && card.frontContent && card.backContent) {
@@ -1444,6 +1444,11 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
               NULL, NULL, NULL, NULL
             )
           `);
+          // Get the last inserted flashcardID
+          const lastIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as id') as { id?: number };
+          if (lastIdResult && typeof lastIdResult.id !== 'undefined') {
+            flashcardIds.push(lastIdResult.id);
+          }
           
           console.log(`Inserted flashcard with questionType: ${questionType}, answerType: ${answerType}`);
           
@@ -1467,7 +1472,7 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
       await db.execAsync('COMMIT');
       
       console.log(`Successfully created ${flashcardCount} flashcards for deck ${deckId}`);
-      return { success: true, flashcardCount };
+      return { success: true, flashcardCount, flashcardIds };
       
     } catch (error) {
       // Rollback the transaction on error

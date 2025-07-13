@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { Audio } from 'expo-av';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { prepareImageForUpload } from '../utils/image';
 
 interface CardContent {
   content: React.ReactNode;
@@ -732,11 +733,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
-        
+        const compressedUri = await prepareImageForUpload(selectedImage.uri);
         // Create the image content
         const imageContent = (
           <Image 
-            source={{ uri: selectedImage.uri }} 
+            source={{ uri: compressedUri }} 
             style={styles.selectedImage}
             resizeMode="contain"
           />
@@ -790,11 +791,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const capturedImage = result.assets[0];
-        
+        const compressedUri = await prepareImageForUpload(capturedImage.uri);
         // Create the image content
         const imageContent = (
           <Image 
-            source={{ uri: capturedImage.uri }} 
+            source={{ uri: compressedUri }} 
             style={styles.selectedImage}
             resizeMode="contain"
           />

@@ -9,7 +9,7 @@ import LightSwitch from '@/assets/icons/lightSwitch.svg';
 import DarkSwitch from '@/assets/icons/darkSwitch.svg';
 import GrapeStem from '@/assets/icons/grapeStem.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
+import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
 // import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 
 export default function AccountScreen() {
@@ -21,7 +21,7 @@ export default function AccountScreen() {
   const [sharePressed, setSharePressed] = useState(false);
   const [ratePressed, setRatePressed] = useState(false);
   const [websitePressed, setWebsitePressed] = useState(false);
-  // const [showLoadingPage, setShowLoadingPage] = useState(false);
+  const [showLoadingPage, setShowLoadingPage] = useState(false);
   // const [loadingProgress, setLoadingProgress] = useState(0.4);
   // const [loadingCurrent, setLoadingCurrent] = useState(12);
   // const [loadingTotal, setLoadingTotal] = useState(48);
@@ -70,7 +70,7 @@ export default function AccountScreen() {
   };
 
   const handleSignOut = () => {
-    // setShowLoadingPage(true);
+    setShowLoadingPage(true);
     // // Optionally, you can update loading values here for testing
     // setLoadingProgress(0.4);
     // setLoadingCurrent(12);
@@ -675,6 +675,21 @@ export default function AccountScreen() {
   //         { done: true, label: 'Successfully generated flashcards' },
   //         { done: true, label: 'Successfully added\nflashcards and deck' }
   //       ]}
+  //     />
+  //   );
+  // }
+
+  // if (showLoadingPage) {
+  //   return (
+  //     <DeckCreationLoadingPage 
+  //       progress={50} 
+  //       current={50} 
+  //       total={50} 
+  //       isInViewFlashcardsPage={false}
+  //       onCancel={() => {
+  //         // cancelCreationRef.current = true;
+  //         setShowLoadingPage(false);
+  //       }}
   //     />
   //   );
   // }

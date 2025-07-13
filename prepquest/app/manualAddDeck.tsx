@@ -274,6 +274,8 @@ export default function ManualAddDeckPage() {
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
     30;
 
+  const cancelCreationRef = useRef(false);
+
   useEffect(() => {
     // Ensure the layout is ready after the first render
     const timer = setTimeout(() => setIsReady(true), 0);
@@ -1378,6 +1380,7 @@ export default function ManualAddDeckPage() {
     ]).start(() => {
       setIsSuccessModalOpen(false);
       setTimeout(async () => {        
+        cancelCreationRef.current = false; // Reset cancel flag at start
         if (isInIndexPage === 'true') {
           const formData = {
             deckName,
@@ -1394,14 +1397,22 @@ export default function ManualAddDeckPage() {
           setLoadingCurrent(0);
           setLoadingProgress(0);
           setShowLoadingPage(true);
+          let createdDeckId = null;
           const deckResult = await createManualDeck(formData);
           if (deckResult.success && deckResult.deckId) {
+            createdDeckId = deckResult.deckId;
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
+              if (cancelCreationRef.current) break;
               await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
+            }
+            // Cleanup if cancelled
+            if (cancelCreationRef.current && createdDeckId) {
+              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId}`);
+              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId}`);
             }
             setTimeout(() => {
               setShowLoadingPage(false);
@@ -1413,7 +1424,6 @@ export default function ManualAddDeckPage() {
           }
         }
         if (isInFavoritesPage === 'true') {
-          console.log('🔍 Creating deck for favorites page');
           const formData = {
             deckName,
             mode: mode as 'study' | 'interview',
@@ -1429,8 +1439,10 @@ export default function ManualAddDeckPage() {
           setLoadingCurrent(0);
           setLoadingProgress(0);
           setShowLoadingPage(true);
+          let createdDeckId = null;
           const deckResult = await createManualDeck(formData);
           if (deckResult.success && deckResult.deckId) {
+            createdDeckId = deckResult.deckId;
             // Update the deck to be favorited
             const userID = await getCurrentUserID();
             await db.execAsync(`
@@ -1440,10 +1452,16 @@ export default function ManualAddDeckPage() {
             `);
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
+              if (cancelCreationRef.current) break;
               await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
+            }
+            // Cleanup if cancelled
+            if (cancelCreationRef.current && createdDeckId) {
+              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId}`);
+              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId}`);
             }
             setTimeout(() => {
               setShowLoadingPage(false);
@@ -1470,8 +1488,10 @@ export default function ManualAddDeckPage() {
           setLoadingCurrent(0);
           setLoadingProgress(0);
           setShowLoadingPage(true);
+          let createdDeckId = null;
           const deckResult = await createManualDeck(formData);
           if (deckResult.success && deckResult.deckId) {
+            createdDeckId = deckResult.deckId;
             // Append the folderId to the deck's folderIDs field
             const currentFolderId = parseInt(folderId as string);
             if (currentFolderId) {
@@ -1480,12 +1500,9 @@ export default function ManualAddDeckPage() {
               const currentDeck = await db.getFirstAsync(`
                 SELECT folderIDs FROM decks WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'
               `);
-              
               if (currentDeck) {
                 const deckData = currentDeck as { folderIDs: string | null };
                 let currentFolderIds: number[] = [];
-                
-                // Parse existing folderIDs if they exist
                 if (deckData.folderIDs) {
                   try {
                     currentFolderIds = JSON.parse(deckData.folderIDs);
@@ -1494,27 +1511,28 @@ export default function ManualAddDeckPage() {
                     currentFolderIds = [];
                   }
                 }
-                
-                // Add the new folder ID (avoid duplicates)
                 const newFolderIds = [...new Set([...currentFolderIds, currentFolderId])];
-                
-                // Update the deck's folderIDs in the database
                 const newFolderIdsString = JSON.stringify(newFolderIds);
                 await db.execAsync(`
                   UPDATE decks 
                   SET folderIDs = '${newFolderIdsString}'
                   WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'
                 `);
-                
                 console.log(`Successfully added deck ${deckResult.deckId} to folder: ${currentFolderId}`);
               }
             }
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
+              if (cancelCreationRef.current) break;
               await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
+            }
+            // Cleanup if cancelled
+            if (cancelCreationRef.current && createdDeckId) {
+              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId}`);
+              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId}`);
             }
             setTimeout(() => {
               setShowLoadingPage(false);
@@ -1528,37 +1546,32 @@ export default function ManualAddDeckPage() {
         if (isInViewFlashcardsPage === 'true') {
           const submittedCards = getSubmittedCards();
           const currentDeckId = parseInt(deckId as string);
-          
           if (currentDeckId) {
             setLoadingTotal(submittedCards.length);
             setLoadingCurrent(0);
             setLoadingProgress(0);
             setShowLoadingPage(true);
-            
-            // Get the deck name for the user form entry
             const deckNameForEntry = await getDeckNameById(currentDeckId);
-            
-            // Create flashcards
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
+              if (cancelCreationRef.current) break;
               await createFlashcardsFromCache(currentDeckId, [submittedCards[i]]);
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
             }
-            
-            // Insert user form entry for adding flashcards to existing deck
-            if (deckNameForEntry) {
+            // Cleanup if cancelled: only delete flashcards, not deck, since deck is pre-existing
+            if (cancelCreationRef.current && currentDeckId) {
+              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${currentDeckId}`);
+            }
+            if (!cancelCreationRef.current && deckNameForEntry) {
               const currentDate = new Date().toISOString();
-              
-              // Prepare form data for the entry
               let studyEducationLevelForm = null;
               let studySubjectsForm = null;
               let studyExamForm = null;
               let interviewJobRoleForm = null;
               let interviewTypeForm = null;
               let interviewExperienceLevelForm = null;
-              
               if (mode === 'study') {
                 studyEducationLevelForm = studyMandatoryQuestion1 || null;
                 studySubjectsForm = studyMandatoryQuestion2 || null;
@@ -1568,8 +1581,6 @@ export default function ManualAddDeckPage() {
                 interviewTypeForm = interviewType || null;
                 interviewExperienceLevelForm = interviewMandatoryQuestion2 || null;
               }
-              
-              // Insert into userFormEntries table
               const userID = await getCurrentUserID();
               await db.execAsync(`
                 INSERT INTO userFormEntries (
@@ -1590,10 +1601,8 @@ export default function ManualAddDeckPage() {
                   NULL
                 )
               `);
-              
               console.log('User form entry created for adding flashcards to existing deck:', deckNameForEntry);
             }
-            
             setTimeout(() => {
               setShowLoadingPage(false);
               router.back();
@@ -1617,7 +1626,16 @@ export default function ManualAddDeckPage() {
 
   if (showLoadingPage) {
     return (
-      <DeckCreationLoadingPage progress={loadingProgress} current={loadingCurrent} total={loadingTotal} isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}/>
+      <DeckCreationLoadingPage 
+        progress={loadingProgress} 
+        current={loadingCurrent} 
+        total={loadingTotal} 
+        isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
+        onCancel={() => {
+          cancelCreationRef.current = true;
+          setShowLoadingPage(false);
+        }}
+      />
     );
   }
 

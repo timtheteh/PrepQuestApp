@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, Image, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
@@ -12,6 +12,7 @@ interface DeckCreationLoadingPageProps {
   current: number;
   total: number;
   isInViewFlashcardsPage: boolean;
+  onCancel?: () => void;
 }
 
 interface DeckCreationStatusPageProps {
@@ -32,6 +33,7 @@ export default function DeckCreationLoadingPage({
   current = 0,
   total = 1,
   isInViewFlashcardsPage = false,
+  onCancel,
 }: DeckCreationLoadingPageProps) {
   const { language } = useLanguage();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
@@ -56,6 +58,15 @@ export default function DeckCreationLoadingPage({
 
   return (
     <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      {/* Cancel button at top right */}
+      {onCancel && (
+        <TouchableOpacity
+          style={{ position: 'absolute', top: 50, right: 16, zIndex: 10, padding: 8 }}
+          onPress={onCancel}
+        >
+          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
+        </TouchableOpacity>
+      )}
       {/* Stacked image + Lottie animation */}
       <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
         <Image

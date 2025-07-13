@@ -1755,8 +1755,13 @@ export default function FileUploadPage() {
         statusRows={[
           { done: statusExtractingInformationFromFiles, label: statusExtractingInformationFromFiles ? (language === 'Chinese' ? '成功提取信息' : 'Successfully extracted\ninfo from file') : (language === 'Chinese' ? '正在提取信息' : 'Extracting info\nfrom file') },
           { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated flashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
-          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards ? (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck') : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck') }
-        ]}
+          { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards
+            ? (isInViewFlashcardsPage
+                ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
+                : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+            : (isInViewFlashcardsPage
+                ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards to deck')
+                : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck')) }        ]}
         isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
       />
     );

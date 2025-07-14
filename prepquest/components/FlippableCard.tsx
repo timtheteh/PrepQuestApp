@@ -1248,7 +1248,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                     </Pressable>
                 </ScrollView>
                 {backContent.type === 'camera' && (
-                    <View style={styles.cameraButtonsContainer}>
+                    <View style={[styles.cameraButtonsContainer, { paddingHorizontal: backContent.content ? '15%' : '25%' }]}>
                         <Pressable 
                         style={({ pressed }) => [
                             styles.micButton,

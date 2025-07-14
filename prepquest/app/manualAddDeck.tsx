@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, TextInput, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/FormHeaderIcons';
@@ -31,6 +31,7 @@ import { Toast } from '../components/Toast';
 import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
+import BackgroundService from 'react-native-background-actions';
 
 
 
@@ -1637,6 +1638,127 @@ export default function ManualAddDeckPage() {
       setIsMandatory(false);
     }
   }, [forceManual]);
+
+   // --- Background Task Logic for Deck/Flashcard Creation ---
+   const BG_TASK_PROGRESS_KEY = 'deckCreationBgTaskProgress';
+
+   // Helper to save progress
+   async function saveDeckCreationProgress(progress: any) {
+     try {
+       await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(progress));
+     } catch (e) { console.error('Failed to save deck creation progress', e); }
+   }
+ 
+   // Helper to load progress
+   async function loadDeckCreationProgress(): Promise<any | null> {
+     try {
+       const data = await AsyncStorage.getItem(BG_TASK_PROGRESS_KEY);
+       return data ? JSON.parse(data) : null;
+     } catch (e) { return null; }
+   }
+ 
+   // Helper to clear progress
+   async function clearDeckCreationProgress() {
+     try { await AsyncStorage.removeItem(BG_TASK_PROGRESS_KEY); } catch (e) {}
+   }
+ 
+   // The background task function
+   const deckCreationBackgroundTask = async (taskDataArguments: any) => {
+     const { mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage, formData, submittedCards, startIndex } = taskDataArguments;
+     let createdDeckId: number | null = null;
+     let createdCount = startIndex || 0;
+     let newFlashcardIds: number[] = [];
+     let cancelled = false;
+     try {
+       // Deck creation (if needed)
+       if (!deckId && (isInIndexPage || isInFavoritesPage || isInViewDecksInFolderPage)) {
+         const deckResult = await createManualDeck(formData);
+         if (deckResult.success && deckResult.deckId) {
+           createdDeckId = deckResult.deckId as number;
+           // If favorites, update deck as favorited
+           if (isInFavoritesPage) {
+             const userID = await getCurrentUserID();
+             await db.execAsync(`UPDATE decks SET isFavorited = 1 WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'`);
+           }
+           // If folder, update folderIDs
+           if (isInViewDecksInFolderPage && folderId) {
+             const currentFolderId = parseInt(folderId);
+             if (currentFolderId) {
+               const userID = await getCurrentUserID();
+               const currentDeck = await db.getFirstAsync(`SELECT folderIDs FROM decks WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'`);
+               if (currentDeck) {
+                 let currentFolderIds: number[] = [];
+                 try {
+                   const folderIDsRaw = (currentDeck as any).folderIDs;
+                   currentFolderIds = folderIDsRaw ? JSON.parse(folderIDsRaw) : [];
+                 } catch (e) {}
+                 const newFolderIds = [...new Set([...currentFolderIds, currentFolderId])];
+                 await db.execAsync(`UPDATE decks SET folderIDs = '${JSON.stringify(newFolderIds)}' WHERE deckID = ${deckResult.deckId} AND userID = '${userID}'`);
+               }
+             }
+           }
+         } else {
+           throw new Error('Failed to create deck');
+         }
+       } else if (deckId) {
+         createdDeckId = parseInt(deckId);
+       }
+       // Flashcard creation
+       for (let i = createdCount; i < submittedCards.length; i++) {
+         if (BackgroundService.isRunning() === false) { cancelled = true; break; }
+         let result = await createFlashcardsFromCache(createdDeckId as number, [submittedCards[i]]);
+         if (result && result.flashcardIds && result.flashcardIds.length > 0) {
+           newFlashcardIds.push(...result.flashcardIds);
+         }
+         createdCount++;
+         // Save progress after each card
+         await saveDeckCreationProgress({
+           mode, deckId: createdDeckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+           formData, submittedCards, createdCount, newFlashcardIds, inProgress: true
+         });
+       }
+       // Mark as complete
+       await saveDeckCreationProgress({ inProgress: false });
+     } catch (e: any) {
+       // Save progress on error
+       await saveDeckCreationProgress({
+         mode, deckId: createdDeckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+         formData, submittedCards, createdCount, newFlashcardIds, inProgress: true, error: e.message
+       });
+       throw e;
+     }
+   };
+ 
+   // AppState logic to resume deck/flashcard creation if needed
+   React.useEffect(() => {
+     let appState = AppState.currentState;
+     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+       if (typeof appState === 'string' && appState.match(/inactive|background/) && nextAppState === 'active') {
+         // App is foregrounded
+         const progress = await loadDeckCreationProgress();
+         if (progress && progress.inProgress) {
+           // Resume background task
+           const { mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage, formData, submittedCards, createdCount } = progress;
+           await BackgroundService.start(deckCreationBackgroundTask, {
+             taskName: 'DeckCreation',
+             taskTitle: 'Creating Deck',
+             taskDesc: 'Your deck is being created in the background.',
+             taskIcon: { name: 'ic_launcher', type: 'mipmap' },
+             color: '#44B88A',
+             parameters: {
+               mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+               formData, submittedCards, startIndex: createdCount || 0
+             },
+           });
+         }
+       }
+       appState = nextAppState;
+     };
+     const subscription = AppState.addEventListener('change', handleAppStateChange);
+     return () => subscription.remove();
+   }, []);
+   // --- END Background Task Logic ---
+ 
 
   if (showLoadingPage) {
     return (

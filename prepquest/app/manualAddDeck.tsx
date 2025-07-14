@@ -32,6 +32,8 @@ import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+
+
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
     width={props.width || 31} 

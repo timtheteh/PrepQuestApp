@@ -112,7 +112,7 @@ export default function YouTubeLinkPage() {
   } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isMandatory, setIsMandatory] = useState(true);
+  const [isMandatory, setIsMandatory] = useState(isInViewFlashcardsPage === 'true' ? false : true);
   const [deckName, setDeckName] = useState('');
   const [deckTitle, setDeckTitle] = useState<string>('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
@@ -125,7 +125,7 @@ export default function YouTubeLinkPage() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(isInViewFlashcardsPage === 'true' ? 1 : 0)).current;
   const [isAIGenerate, setIsAIGenerate] = useState(false);
   const [isAIHelpModalOpen, setIsAIHelpModalOpen] = useState(false);
   const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
@@ -573,14 +573,16 @@ export default function YouTubeLinkPage() {
       </View>
 
       <View style={styles.mainContainer}>
-        <View style={styles.toggleContainer}>
-          <RoundedContainer 
-            leftLabel={STRINGS.mandatory[lang]}
-            rightLabel={STRINGS.youtubeLink[lang]}
-            onToggle={handleToggle}
-          />
-        </View>
-        {isMandatory && (
+        {isInViewFlashcardsPage !== 'true' && (
+          <View style={styles.toggleContainer}>
+            <RoundedContainer 
+              leftLabel={STRINGS.mandatory[lang]}
+              rightLabel={STRINGS.youtubeLink[lang]}
+              onToggle={handleToggle}
+            />
+          </View>
+        )}
+        {isMandatory && isInViewFlashcardsPage !== 'true' && (
           <ScrollView 
           style={[
             styles.scrollView,
@@ -666,7 +668,7 @@ export default function YouTubeLinkPage() {
         
        <Animated.View style={[
         styles.youtubeLinkContent,
-        { opacity: youtubeLinkOpacity, display: !isMandatory ? 'flex' : 'none' }
+        { opacity: youtubeLinkOpacity, display: (!isMandatory || isInViewFlashcardsPage === 'true') ? 'flex' : 'none' }
         ]}>
             <ScrollView 
               style={[

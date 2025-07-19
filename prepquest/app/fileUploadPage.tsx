@@ -111,7 +111,7 @@ const FileUploadMainSection = ({
         <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
           {isUploadSuccess 
             ? `${uploadType === 'image' ? (language === 'Chinese' ? '图片' : 'Image') : (language === 'Chinese' ? '文件' : 'File')} ${language === 'Chinese' ? '上传成功！' : 'uploaded successfully!'}\n${uploadType === 'file' ? (language === 'Chinese' ? `文件：${uploadedFileName}` : `File: ${uploadedFileName}`) : ''}`
-            : language === 'Chinese' ? '支持的文件格式：Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' : '.docx, .txt, .pptx, .xlsx, .pdf, Anki Decks (.apkg), images'
+            : language === 'Chinese' ? '支持的文件格式：.docx, .txt, .pptx,\n.xlsx, .pdf, images' : 'Supported file formats: .docx, .txt,\n.pptx, .xlsx, .pdf, images'
           }
         </Text>
         <PrimaryButton 
@@ -1480,6 +1480,17 @@ export default function FileUploadPage() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selected = result.assets[0];
+        
+        // Check if file type is supported
+        const supportedExtensions = ['.docx', '.txt', '.pptx', '.xlsx', '.pdf', '.jpg', '.jpeg', '.png'];
+        const fileExtension = selected.name.toLowerCase().substring(selected.name.lastIndexOf('.'));
+        
+        if (!supportedExtensions.includes(fileExtension)) {
+          setShowToast(true);
+          setToastMessage(language === 'Chinese' ? '不支持的文件类型' : 'Invalid file type');
+          return;
+        }
+        
         setSelectedFile(selected); // <-- Store the file object
         console.log('File selected:', {
           name: selected.name,

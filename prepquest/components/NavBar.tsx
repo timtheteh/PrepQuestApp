@@ -391,69 +391,26 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   }, []);
 
   const getWhiteCircleStyle = useAnimatedStyle(() => {
-    // Calculate offset based on the current tab
-    const offset = (() => {
-      if (slideAnimation.value === 0) {
-        // iphone SE
-        if (SCREEN_WIDTH <= 375) {
-          return -10
-        }
-        else if (SCREEN_WIDTH <= 390) {
-          return -10
-        }
-        // iphone 16, 16 pro, Pixel 9, Pixel 9 Pro, Pixel 8, PIxel 7
-        else if (SCREEN_WIDTH <= 428) {
-          return -10
-        }
-        // iphone 16 Plus, 16 Pro Max, Pixel 9 Pro XL
-        else {
-          return -10
-        }
-      }; // Account tab
-      if (slideAnimation.value === 1) {
-        if (SCREEN_WIDTH <= 375) {
-          return -2
-        }
-        else if (SCREEN_WIDTH <= 390) {
-          return 0
-        }
-        else if (SCREEN_WIDTH <= 428) {
-          return 0
-        }
-        else {
-          return 3
-        }
-      }; // Account tab
-      if (slideAnimation.value === 2) {
-        if (SCREEN_WIDTH <= 375) {
-          return 6
-        }
-        else if (SCREEN_WIDTH <= 390) {
-          return 9
-        }
-        else if (SCREEN_WIDTH <= 428) {
-          return 9
-        }
-        else {
-          return 15
-        }
-      };// Awards tab
-      if (slideAnimation.value === 3) {
-        if (SCREEN_WIDTH <= 375) {
-          return 13
-        }
-        else if (SCREEN_WIDTH <= 390) {
-          return 18
-        }
-        else if (SCREEN_WIDTH <= 428) {
-          return 18
-        }
-        else {
-          return 27.5
-        }
-      };
-      return 0; // Other tabs
-    })();
+    const numTabs = 4;
+    const tabWidth = ICON_SIZE * 2;
+    const horizontalPadding = 28;
+    const availableSpace = SCREEN_WIDTH - (horizontalPadding * 2);
+    const gap = (availableSpace - (tabWidth * numTabs)) / (numTabs - 1);
+
+    // Precompute tab centers
+    const tabCenters = Array.from({ length: numTabs }, (_, i) =>
+      horizontalPadding + (tabWidth / 2) + i * (tabWidth + gap)
+    );
+
+    // Interpolate the center based on slideAnimation.value
+    const currentTabCenter = interpolate(
+      slideAnimation.value,
+      [0, 1, 2, 3],
+      tabCenters
+    );
+
+    const whiteCircleCenterOffset = 133 / 2;
+    const basePosition = currentTabCenter - whiteCircleCenterOffset;
 
     return {
       position: 'absolute',
@@ -467,8 +424,8 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       transform: [
         {
           translateX: Platform.OS === 'ios' 
-            ? withSpring(slideAnimation.value * TAB_WIDTH + offset, SPRING_CONFIG)
-            : withTiming(slideAnimation.value * TAB_WIDTH + offset, {
+            ? withSpring(basePosition, SPRING_CONFIG)
+            : withTiming(basePosition, {
                 duration: 200,
                 easing: Easing.bezier(0.25, 0.1, 0.25, 1),
               })

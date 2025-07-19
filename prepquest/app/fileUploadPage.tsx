@@ -63,6 +63,8 @@ const FileUploadMainSection = ({
   isUploadSuccess, 
   uploadType,
   uploadedFileName,
+  isLoading = false,
+  uploadProgress = 0,
 }: { 
   pickImage: () => void; 
   takePhoto: () => void; 
@@ -71,10 +73,30 @@ const FileUploadMainSection = ({
   uploadType: 'image' | 'file' | null;
   uploadedFileName: string;
   language: 'English' | 'Chinese';
+  isLoading?: boolean;
+  uploadProgress?: number;
 }) => {
   const { language } = useLanguage();
   return (
     <View style={styles.fileUploadMainSection}>
+      {/* Loading Bar */}
+      {isLoading && (
+        <View style={styles.loadingBarContainer}>
+          <View style={styles.progressBarBg}>
+            <View 
+              style={[
+                styles.progressBarFill, 
+                { 
+                  width: `${uploadProgress}%`,
+                  backgroundColor: uploadProgress === 100 ? '#44B88A' : '#4F41D8',
+                }
+              ]} 
+            />
+          </View>
+          <Text style={styles.percentText}>{uploadProgress}%</Text>
+        </View>
+      )}
+      
       <View style={styles.uploadContent}>
         {isUploadSuccess ? (
           <LottieView
@@ -363,6 +385,8 @@ export default function FileUploadPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [createdDeckId, setCreatedDeckId] = useState<number | null>(null);
   const [createdFlashcardIds, setCreatedFlashcardIds] = useState<number[]>([]);
+  const [isFileUploading, setIsFileUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -1367,8 +1391,22 @@ export default function FileUploadPage() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         let selectedImage = result.assets[0];
+        
+        // Start loading state
+        setIsFileUploading(true);
+        setUploadProgress(30);
+        
         // Resize/compress before upload
         const processedUri = await prepareImageForUpload(selectedImage.uri);
+        setUploadProgress(90);
+        
+        // Complete the upload
+        setUploadProgress(100);
+        setTimeout(() => {
+          setIsFileUploading(false);
+          setUploadProgress(0);
+        }, 500);
+        
         console.log('Image selected:', processedUri);
         // Show success animation and update text permanently
         setUploadType('image');
@@ -1402,8 +1440,22 @@ export default function FileUploadPage() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         let capturedImage = result.assets[0];
+        
+        // Start loading state
+        setIsFileUploading(true);
+        setUploadProgress(30);
+        
         // Resize/compress before upload
         const processedUri = await prepareImageForUpload(capturedImage.uri);
+        setUploadProgress(90);
+        
+        // Complete the upload
+        setUploadProgress(100);
+        setTimeout(() => {
+          setIsFileUploading(false);
+          setUploadProgress(0);
+        }, 500);
+        
         console.log('Photo taken:', processedUri);
         // Show success animation and update text permanently
         setUploadType('image');
@@ -1435,12 +1487,20 @@ export default function FileUploadPage() {
           uri: selected.uri,
           mimeType: selected.mimeType,
         });
+        
+        // Start loading state
+        setIsFileUploading(true);
+        setUploadProgress(10);
+        
         // If docx, extract text and images
         if (selected.name.endsWith('.docx')) {
           try {
+            setUploadProgress(20);
             const { text, images } = await extractDocxTextAndImages(selected.uri);
+            setUploadProgress(60);
             // Resize/compress all extracted images
             const processedImages = await Promise.all(images.map(uri => prepareImageForUpload(uri)));
+            setUploadProgress(90);
             setExtractedImages(processedImages);
             setExtractedText(text);
             console.log('Extracted text:', text);
@@ -1454,8 +1514,11 @@ export default function FileUploadPage() {
         // If pptx, extract text and images
         else if (selected.name.endsWith('.pptx')) {
           try {
+            setUploadProgress(20);
             const { text, images } = await extractPptxTextAndImages(selected.uri);
+            setUploadProgress(60);
             const processedImages = await Promise.all(images.map(uri => prepareImageForUpload(uri)));
+            setUploadProgress(90);
             setExtractedImages(processedImages);
             setExtractedText(text);
             console.log('Extracted PPTX text:', text);
@@ -1469,8 +1532,11 @@ export default function FileUploadPage() {
         // If xlsx, extract text and images
         else if (selected.name.endsWith('.xlsx')) {
           try {
+            setUploadProgress(20);
             const { text, images } = await extractXlsxTextAndImages(selected.uri);
+            setUploadProgress(60);
             const processedImages = await Promise.all(images.map(uri => prepareImageForUpload(uri)));
+            setUploadProgress(90);
             setExtractedImages(processedImages);
             setExtractedText(text);
             console.log('Extracted XLSX text:', text);
@@ -1481,6 +1547,21 @@ export default function FileUploadPage() {
             setExtractedText('');
           }
         }
+        // For other file types, just process quickly
+        else {
+          setUploadProgress(50);
+          // Simulate processing time for other file types
+          await new Promise(resolve => setTimeout(resolve, 500));
+          setUploadProgress(90);
+        }
+        
+        // Complete the upload
+        setUploadProgress(100);
+        setTimeout(() => {
+          setIsFileUploading(false);
+          setUploadProgress(0);
+        }, 500);
+        
         // Show success animation and update text permanently
         setUploadType('file');
         setIsUploadSuccess(true);
@@ -1489,6 +1570,8 @@ export default function FileUploadPage() {
     } catch (error) {
       console.error('Error picking document:', error);
       alert('Error selecting file. Please try again.');
+      setIsFileUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -1681,7 +1764,17 @@ export default function FileUploadPage() {
                 <Text style={styles.fileUploadTitle}>
                 {STRINGS.uploadTitle[lang]}
               </Text>
-              <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} language={lang} />
+              <FileUploadMainSection 
+                pickImage={pickImage} 
+                takePhoto={takePhoto} 
+                browseFiles={browseFiles} 
+                isUploadSuccess={isUploadSuccess} 
+                uploadType={uploadType} 
+                uploadedFileName={uploadedFileName} 
+                language={lang}
+                isLoading={isFileUploading}
+                uploadProgress={uploadProgress}
+              />
               <View style={styles.aiGenerateRow}>
                 <SmallCircleSelectButton
                   selected={isAIGenerate}
@@ -1923,5 +2016,37 @@ const styles = StyleSheet.create({
   successAnimation: {
     width: 100,
     height: 100,
+  },
+  loadingBarContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  progressBarBg: {
+    width: '100%',
+    height: 16,
+    backgroundColor: '#D5D4DD',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#4F41D8',
+    borderRadius: 8,
+  },
+  percentText: {
+    fontFamily: 'Satoshi-Variable',
+    fontWeight: '700',
+    fontSize: 24,
+    color: '#4F41D8',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 4,
   },
 }); 

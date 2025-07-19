@@ -26,7 +26,7 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getContentTopHeight, getHeaderIconsTopHeight } from '@/constants/heights';
+import { getContentTopHeight, getHeaderIconsTopHeight, getTopBarAccountHeight } from '@/constants/heights';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -3105,7 +3105,7 @@ export default function FlashcardViewPage() {
         <TouchableOpacity
           style={{
             position: 'absolute',
-            top: Platform.OS === 'android' ? 100 : 46,
+            top: getTopBarAccountHeight(),
             right: 16,
             zIndex: 10,
             padding: 8,

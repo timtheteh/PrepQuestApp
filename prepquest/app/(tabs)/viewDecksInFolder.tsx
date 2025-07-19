@@ -20,6 +20,8 @@ import { Toast } from '@/components/Toast';
 import LottieView from 'lottie-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeightNoRoundedToggle2 } from '@/constants/heights';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -63,6 +65,7 @@ export default function ViewDecksInFolderScreen() {
     setCurrentSourcePage,
   } = useContext(MenuContext);
   const { language } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   // Animation values
   const screenOpacity = useRef(new Animated.Value(0)).current;
@@ -766,7 +769,7 @@ export default function ViewDecksInFolderScreen() {
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
-          <View style={styles.topBar}>
+        <View style={[styles.topBar, { top: getTopBarTopHeight()}]}>
             <TouchableOpacity 
               style={styles.backButton}
               onPress={handleBackPress}
@@ -775,8 +778,8 @@ export default function ViewDecksInFolderScreen() {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.headerIconsContainer}>
-            <FolderDetailsTopBar 
+            <View style={[styles.headerIconsContainer, { top: getHeaderIconsTopHeight()}]}>
+              <FolderDetailsTopBar 
               onEditNamePress={handleEditNamePress}
               editNameSelected={editNameSelected}
               onDeletePress={handleDeleteFolder}
@@ -787,7 +790,7 @@ export default function ViewDecksInFolderScreen() {
             styles.mainContentWrapper,
             { marginBottom: marginAnim }
           ]}>
-            <View style={styles.content}>
+            <View style={[styles.content, { marginTop: getContentTopHeightNoRoundedToggle2()}]}>
               <View style={styles.titleRow}>
                 <Text style={[
                   styles.title,
@@ -939,7 +942,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: Platform.OS === 'android' ? 108 : 56,
   },
   titleRow: {
     flexDirection: 'row',
@@ -969,7 +971,7 @@ const styles = StyleSheet.create({
   },
   actionButtonsRow: {
     position: 'absolute',
-    top: 50,
+    top: 55,
     right: 0,
     left: 0,
     zIndex: 1,
@@ -1021,7 +1023,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15,
+    bottom: 20,
     right: 16,
   },
   fabContainer: {

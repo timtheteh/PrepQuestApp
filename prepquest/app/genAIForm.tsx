@@ -16,13 +16,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
-import { checkDeckNameExists, saveUserGenAIFormEntry, getMostRecentGenAIFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck } from '../db/decks';
+import { checkDeckNameExists, saveUserGenAIFormEntry, getMostRecentGenAIFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck, getDeckNameById } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserQuestionSettings } from '../db/users';
 import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
+import { getTopBarAccountHeight } from '@/constants/heights';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -51,60 +52,6 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
     />
   </Svg>
 );
-
-const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
-  const { width, height } = Dimensions.get('window');
-
-  // If we're in view flashcards page, use smaller gaps since we don't have the deck name field
-  if (isInViewFlashcardsPage) {
-    // iphone 16 pro max
-    if (Platform.OS === 'ios' && height >= 940) {
-      return 35;
-    }
-    
-    // iphone 16 plus
-    if (Platform.OS === 'ios' && height >= 920) {
-      return 32;
-    }
-
-    // Pixel 9 Pro, Pixel 9 Pro XL 
-    if (Platform.OS === 'android' && height >= 935) {
-      return 50;
-    }
-    
-    // Pixel 7, Pixel 8, Pixel 9
-    if (Platform.OS === 'android' && height >= 900) {
-      return 32;
-    }
-    
-    // Default smaller gap for view flashcards page
-    return Platform.OS === 'ios' ? 28 : 30;
-  }
-
-  // Original gap values for other pages (index, favorites, view decks in folder)
-  // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return 25;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return 20;
-  }
-
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return 35;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return 20;
-  }
-  
-  // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
-  return Platform.OS === 'ios' ? 0 : 16;
-};
 
 // Error messages for network/API errors
 const ERROR_MESSAGES = {
@@ -184,6 +131,7 @@ export default function GenAIFormPage() {
   const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
   const [deckName, setDeckName] = useState('');
+  const [deckTitle, setDeckTitle] = useState<string>('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
   const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
   const [studyOptionalQuestion1, setStudyOptionalQuestion1] = useState('');
@@ -222,6 +170,7 @@ export default function GenAIFormPage() {
   const [statusGeneratingFlashcards, setStatusGeneratingFlashcards] = useState(false);
   const [statusAddingDeckAndFlashcards, setStatusAddingDeckAndFlashcards] = useState(false);
   const cancelCreationRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [createdDeckId, setCreatedDeckId] = useState<number | null>(null);
   const [createdFlashcardIds, setCreatedFlashcardIds] = useState<number[]>([]);
 
@@ -230,6 +179,24 @@ export default function GenAIFormPage() {
     const timer = setTimeout(() => setIsReady(true), 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Fetch deck title when in view flashcards page
+  useEffect(() => {
+    const fetchDeckTitle = async () => {
+      if (isInViewFlashcardsPage === 'true' && deckId) {
+        try {
+          const title = await getDeckNameById(Number(deckId));
+          if (title) {
+            setDeckTitle(title);
+          }
+        } catch (error) {
+          console.error('Error fetching deck title:', error);
+        }
+      }
+    };
+
+    fetchDeckTitle();
+  }, [isInViewFlashcardsPage, deckId]);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -755,6 +722,9 @@ export default function GenAIFormPage() {
       console.log("prompt >>>> \n", prompt);
       let response;
       try {
+        // Create a new AbortController for this request
+        abortControllerRef.current = new AbortController();
+        
         response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
           method: 'POST',
           headers: {
@@ -762,8 +732,14 @@ export default function GenAIFormPage() {
             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
           },
           body: JSON.stringify({prompt}),
+          signal: abortControllerRef.current.signal,
         });
       } catch (networkError) {
+        // Check if the error is due to cancellation
+        if (networkError instanceof Error && networkError.name === 'AbortError') {
+          console.log('Request was cancelled');
+          return null;
+        }
         Alert.alert('Error', ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English);
         return null;
       }
@@ -1117,18 +1093,25 @@ export default function GenAIFormPage() {
       <DeckCreationStatusPage
         statusRows={[
           { done: statusRequestReceived, label: language === 'Chinese' ? '请求已收到' : 'Request received' },
-          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated flashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
+          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
           { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards
               ? (isInViewFlashcardsPage
                   ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
                   : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
               : (isInViewFlashcardsPage
-                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards to deck')
+                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
                   : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck')) }
         ]}
         isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
         onCancel={async () => {
           cancelCreationRef.current = true;
+          
+          // Abort any ongoing fetch requests
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+          }
+          
           setShowStatusPage(false);
           if (createdDeckId && !isInViewFlashcardsPage) {
             await import('../db/decks').then(db => db.deleteDeck(createdDeckId));
@@ -1136,6 +1119,8 @@ export default function GenAIFormPage() {
           if (isInViewFlashcardsPage && createdFlashcardIds.length > 0) {
             await import('../db/decks').then(db => db.deleteFlashcardsByIds(createdFlashcardIds));
           }
+
+          router.back();
         }}
       />
     );
@@ -1143,7 +1128,7 @@ export default function GenAIFormPage() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight() }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
@@ -1152,7 +1137,7 @@ export default function GenAIFormPage() {
         </TouchableOpacity>
       </View>
       
-      <View style={styles.headerIconsContainer}>
+      <View style={[styles.headerIconsContainer, {paddingTop: getTopBarAccountHeight()}]}>
         <FormHeaderIcons 
           onUseMostRecentFormPress={handleUseMostRecentFormPress}
           onClearAllPress={handleClearAllPress}
@@ -1179,10 +1164,10 @@ export default function GenAIFormPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={[
-            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex', gap: getFormContentGap(isInViewFlashcardsPage === 'true')}
+            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex', gap: 30}
           ]}>
             {isMandatory && (
-              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
+              <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
                 {!isInViewFlashcardsPage && (                
                   <TitleTextBar
                   title={language === 'Chinese' ? '卡组名称' : ' Deck Name'}
@@ -1191,6 +1176,16 @@ export default function GenAIFormPage() {
                   value={deckName}
                   onChangeText={setDeckName}
                 />)}
+                {isInViewFlashcardsPage === 'true' && (
+                  <TitleTextBar
+                    title={language === 'Chinese' ? '卡组名称' : 'Deck Name'}
+                    highlightedWord={mode === 'study' ? (language === 'Chinese' ? '学习' : 'Study ') : (language === 'Chinese' ? '面试' : 'Interview ')}
+                    placeholder={deckTitle}
+                    value={deckTitle}
+                    onChangeText={() => {}} // Disabled - no-op function
+                    disabled={true}
+                  />
+                )}
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
@@ -1236,10 +1231,10 @@ export default function GenAIFormPage() {
           </Animated.View>
 
           <Animated.View style={[
-            { opacity: optionalOpacity, display: !isMandatory ? 'flex' : 'none', gap: getFormContentGap(isInViewFlashcardsPage === 'true')}
+            { opacity: optionalOpacity, display: !isMandatory ? 'flex' : 'none', gap: 30}
           ]}>
             {!isMandatory && mode === 'study' && (
-              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
+              <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
                 <QuestionTextBar
                   label={language === 'Chinese' ? '1. 主题？' : '1. Topic(s)?'}
                   placeholder={language === 'Chinese' ? '例如：微观经济学，电磁学等' : 'e.g. Microeconomics, Electromagnetism, etc'}
@@ -1270,7 +1265,7 @@ export default function GenAIFormPage() {
               </View>
             )}
             {!isMandatory && mode === 'interview' && (
-              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
+              <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
                 <QuestionTextBarWithDropdown
                   label={language === 'Chinese' ? '1. 公司？' : '1. Company?'}
                   placeholder={language === 'Chinese' ? '例如：谷歌，Meta，微软等' : 'e.g. Google, Meta, Microsoft, etc'}
@@ -1448,7 +1443,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -1456,7 +1450,6 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',

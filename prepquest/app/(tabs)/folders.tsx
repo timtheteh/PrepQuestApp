@@ -17,6 +17,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/CalendarModal';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeightNoRoundedToggle } from '@/constants/heights';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -98,6 +100,7 @@ export default function FoldersScreen() {
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const screenOpacity = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
   // Reset header icons state and selection mode when screen comes into focus
   useEffect(() => {
@@ -1421,8 +1424,8 @@ export default function FoldersScreen() {
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
-          <View style={styles.topBar}>
-            <TouchableOpacity 
+        <View style={[styles.topBar, { paddingTop: getTopBarTopHeight()}]}>
+        <TouchableOpacity 
               style={styles.backButton}
               onPress={handleBackPress}
             >
@@ -1430,7 +1433,7 @@ export default function FoldersScreen() {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.headerIconsContainer}>
+          <View style={[styles.headerIconsContainer, { paddingTop: getHeaderIconsTopHeight()}]}>
             <HeaderIconButtons 
               ref={headerIconsRef}
               onAIPress={handleSparklesPress}
@@ -1449,8 +1452,8 @@ export default function FoldersScreen() {
             styles.mainContentWrapper,
             { marginBottom: marginAnim }
           ]}>
-            <View style={styles.content}>
-              <Animated.View style={[
+            <View style={[styles.content, { marginTop: getContentTopHeightNoRoundedToggle()}]}>
+            <Animated.View style={[
                 styles.actionButtonsRow,
                 {
                   opacity: actionRowOpacity,
@@ -1574,13 +1577,11 @@ const styles = StyleSheet.create({
   },
   topBar: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     left: 16,
     zIndex: 1,
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     right: 16,
     zIndex: 1,
   },
@@ -1594,7 +1595,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: Platform.OS === 'android' ? 108 : 56,
   },
   titleRow: {
     flexDirection: 'row',
@@ -1651,11 +1651,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   card: {
-    marginTop: 26,
+    marginTop: '8%',
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15,
+    bottom: 20,
     right: 16,
   },
   fabContainer: {

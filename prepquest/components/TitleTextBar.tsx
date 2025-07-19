@@ -8,6 +8,7 @@ interface TitleTextBarProps {
   placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
+  disabled?: boolean;
 }
 
 export function TitleTextBar({
@@ -15,14 +16,17 @@ export function TitleTextBar({
   highlightedWord,
   placeholder,
   value,
-  onChangeText
+  onChangeText,
+  disabled = false
 }: TitleTextBarProps) {
   const titleParts = highlightedWord 
     ? title.split(highlightedWord)
     : [title];
   
   const handleClear = () => {
-    onChangeText('');
+    if (!disabled) {
+      onChangeText('');
+    }
   };
 
   return (
@@ -32,14 +36,15 @@ export function TitleTextBar({
         {highlightedWord && <Text style={styles.highlightedText}>{highlightedWord}</Text>}
         {titleParts[0]}
       </Text>
-      <View style={styles.textInputContainer}>
+      <View style={[styles.textInputContainer]}>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, disabled && styles.disabledText]}
           placeholder={placeholder}
           value={value}
           onChangeText={onChangeText}
+          editable={!disabled}
         />
-        {value.length > 0 && (
+        {value.length > 0 && !disabled && (
           <TouchableWithoutFeedback onPress={handleClear}>
             <View style={styles.closeButtonContainer}>
               <Ionicons
@@ -83,6 +88,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Satoshi-Medium',
     paddingVertical: 0,
+  },
+  disabledText: {
+    color: '#D5D4DD',
   },
   closeButtonContainer: {
     padding: 3,

@@ -21,6 +21,8 @@ import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoW
 import { Toast } from '@/components/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeight } from '@/constants/heights';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -87,6 +89,7 @@ export default function DeckDetailsScreen() {
     setDeckDetailsSaveModalType,
   } = useContext(MenuContext);
   const { language } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return '--';
@@ -1229,7 +1232,7 @@ export default function DeckDetailsScreen() {
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <View style={styles.topBar}>
+        <View style={[styles.topBar, { top: getTopBarTopHeight()}]}>
             <TouchableOpacity 
               style={styles.backButton}
               onPress={handleBackPress}
@@ -1238,7 +1241,7 @@ export default function DeckDetailsScreen() {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.headerIconsContainer}>
+          <View style={[styles.headerIconsContainer, { top: getHeaderIconsTopHeight()}]}>
             <DeckDetailsTopBar 
               onStudyPress={handleStudyPress}
               onQuizPress={handleQuizPress}
@@ -1252,8 +1255,8 @@ export default function DeckDetailsScreen() {
             />
           </View>
           
-          <View style={styles.mainContainer}>
-            <ImageBackground 
+          <View style={[styles.mainContainer, { marginTop: getContentTopHeight()}]}>
+          <ImageBackground 
               source={AIDeck || deckInfo?.isAIDeck === 1 ? deckDetailsAICardDesigns[safeBackgroundIndex] : deckDetailsCardDesigns[safeBackgroundIndex]}
               style={styles.backgroundImage}
               imageStyle={styles.backgroundImageStyle}
@@ -1381,13 +1384,9 @@ export default function DeckDetailsScreen() {
                   </View>
                   )}
 
-                <View style={[
-                  styles.cardDetailsContainer,
-                  { marginTop: hasAttemptedFlashcards === false ? -70 : -10 }
-                ]}>
+                  {/* Empty State or Stats Section (stacked below metadata) */}
                   {hasAttemptedFlashcards === false ? (
-                    // Empty state for all deck types when no flashcards have been attempted
-                    <View style={[styles.emptyStateContainer, { marginTop: getEmptyStateContainerMarginTop() }]}>
+                    <View style={[styles.emptyStateContainer]}>
                       <View style={styles.emptyStateAnimationsContainer}>
                         {/* First animation - normal size, rotated 20° right */}
                         <View style={styles.aiDeckAnimation1}>
@@ -1398,7 +1397,6 @@ export default function DeckDetailsScreen() {
                             style={styles.aiDeckAnimation}
                           />
                         </View>
-                        
                         {/* Second animation - 80% smaller, positioned top-left, rotated 30° left */}
                         <View style={styles.aiDeckAnimation2}>
                           <LottieView
@@ -1408,7 +1406,6 @@ export default function DeckDetailsScreen() {
                             style={[styles.aiDeckAnimation,]}
                           />
                         </View>
-                        
                         {/* Third animation - 60% smaller, positioned top-right, rotated 10° right */}
                         <View style={styles.aiDeckAnimation3}>
                           <LottieView
@@ -1426,13 +1423,12 @@ export default function DeckDetailsScreen() {
                     </View>
                   ) : (
                     // Stats for all deck types when flashcards have been attempted
-                    <>
+                    <View style={styles.cardDetailsContainer}>
                       <AverageGradeThermometer score={deckGrade?.score}/>
                       <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
                       <AverageSpeedTotal averageTime={averageTime}/>
-                    </>
+                    </View>
                   )}
-                </View>
 
               </ScrollView>
             </ImageBackground>
@@ -1523,7 +1519,6 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     marginHorizontal: 16,
-    marginTop: Platform.OS === 'android' ? 132 : 78,
     marginBottom: 20, // Space for navbar
   },
   contentContainer: {
@@ -1692,7 +1687,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15,
+    bottom: 20,
     right: 16,
     width: 67,
     height: 67,
@@ -1767,6 +1762,7 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 21,
     marginBottom: 8,
+    marginRight: 5
   },
   aiDeckCardTypeText: {
     fontFamily: 'Satoshi-Medium',

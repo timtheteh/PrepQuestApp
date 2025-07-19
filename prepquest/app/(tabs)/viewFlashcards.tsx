@@ -16,6 +16,8 @@ import Feather from '@expo/vector-icons/Feather';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getContentTopHeight, getContentTopHeightNoRoundedToggle2, getHeaderIconsTopHeight, getTopBarTopHeight } from '@/constants/heights';
 
 // Interface for flashcard data
 interface Flashcard {
@@ -69,6 +71,7 @@ export default function ViewFlashcardsScreen() {
   } = useContext(MenuContext);
 
   const { language } = useLanguage();
+  const insets = useSafeAreaInsets();
   console.log('Current language in viewFlashcards:', language);
 
   // Localized labels
@@ -722,7 +725,7 @@ export default function ViewFlashcardsScreen() {
             style={[styles.cardQnText, language === 'Chinese' && { 
               // fontFamily: 'NotoSansSC-Medium' 
             }]}
-            numberOfLines={2}
+            numberOfLines={1}
             ellipsizeMode="tail"
           >
             {getDisplayText()}
@@ -752,7 +755,7 @@ export default function ViewFlashcardsScreen() {
             <Text style={{ fontSize: 12, color: '#222', textAlign: 'center', 
               // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium' 
               }}>
-              {getCognitiveQnTypeLabel(flashcards[flashcardIdx].cognitiveQnType)} {language === 'Chinese' ? '题' : 'Qn'}
+              {getCognitiveQnTypeLabel(flashcards[flashcardIdx].cognitiveQnType)}
             </Text>
           </View>
         )}
@@ -768,7 +771,7 @@ export default function ViewFlashcardsScreen() {
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <View style={styles.topBar}>
+        <View style={[styles.topBar, { top: getTopBarTopHeight()}]}>
             <TouchableOpacity 
               style={styles.backButton}
               onPress={handleBackPress}
@@ -777,7 +780,7 @@ export default function ViewFlashcardsScreen() {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.headerIconsContainer}>
+          <View style={[styles.headerIconsContainer, { top: getHeaderIconsTopHeight()}]}>
             <ViewFlashcardsTopBar 
               onStudyPress={handleStudyPress}
               onQuizPress={handleQuizPress}
@@ -788,7 +791,7 @@ export default function ViewFlashcardsScreen() {
           </View>
 
           <ScrollView
-            style={styles.mainScrollView}
+            style={[styles.mainScrollView, { marginTop: getContentTopHeight()}]}
             contentContainerStyle={[
               styles.mainScrollViewContent,
               isSelectMode && { paddingBottom: 60 }
@@ -1128,7 +1131,6 @@ const styles = StyleSheet.create({
     flex: 1,
     // borderWidth: 1,
     // borderColor: 'red',
-    marginTop: Platform.OS === 'android' ? 132 : 78,
     marginBottom: 10,
   },
   mainScrollViewContent: {
@@ -1242,7 +1244,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15,
+    bottom: 20,
     right: 16,
   },
   loadingContainer: {

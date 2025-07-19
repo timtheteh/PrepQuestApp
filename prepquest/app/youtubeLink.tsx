@@ -21,6 +21,8 @@ import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import { checkDeckNameExists } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getTopBarAccountHeight } from '@/constants/heights';
+import { getDeckNameById } from '../db/decks';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -52,7 +54,7 @@ const STRINGS = {
   educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
   subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
   subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
-  subjectsHelper: { English: 'What subject(s) would this deck be for?', Chinese: '这个卡组适用于哪些科目？' },
+  subjectsHelper: { English: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.', Chinese: '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。' },
   jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
   jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
   jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
@@ -98,71 +100,21 @@ const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { you
   );
 };
 
-const getFormContentGap = () => {
-    const { width, height } = Dimensions.get('window');
-  
-    // iphone 16 pro max
-    if (Platform.OS === 'ios' && height >= 940) {
-      return 25;
-    }
-    
-    // iphone 16 plus
-    if (Platform.OS === 'ios' && height >= 920) {
-      return 20;
-    }
-  
-     // Pixel 9 Pro, Pixel 9 Pro XL 
-    if (Platform.OS === 'android' && height >= 935) {
-      return 35;
-    }
-    
-    // Pixel 7, Pixel 8, Pixel 9
-    if (Platform.OS === 'android' && height >= 900) {
-      return 20;
-    }
-    
-    // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
-    return Platform.OS === 'ios' ? 0 : 16;
-  };
-
-  const getYoutubeLinkContentPaddingTop = () => {
-    const { width, height } = Dimensions.get('window');
-  
-    // iphone se
-    if (Platform.OS === 'ios' && height <= 670) {
-      return 8;
-    }
-  
-    /// iphone 16 pro max
-    if (Platform.OS === 'ios' && height >= 940) {
-      return 86;
-    }
-    
-    // iphone 16 plus
-    if (Platform.OS === 'ios' && height >= 920) {
-      return 78;
-    }
-     // Pixel 9 Pro, Pixel 9 Pro XL 
-     if (Platform.OS === 'android' && height >= 935) {
-      return 54;
-    }
-    
-    // Pixel 7, Pixel 8, Pixel 9
-    if (Platform.OS === 'android' && height >= 900) {
-      return 32;
-    }
-    
-    // iphone 16, iphone 16 pro, Pixel 7 Pro, 
-    return Platform.OS === 'ios' ? 42 : 24;
-  };
-  
-
 export default function YouTubeLinkPage() {
-  const { mode } = useLocalSearchParams();
+  const { 
+    mode, 
+    deckId, 
+    folderId, 
+    isInFavoritesPage, 
+    isInIndexPage,
+    isInViewFlashcardsPage,
+    isInViewDecksInFolderPage
+  } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
   const [deckName, setDeckName] = useState('');
+  const [deckTitle, setDeckTitle] = useState<string>('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
   const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
   const [interviewMandatoryQuestion1, setInterviewMandatoryQuestion1] = useState('');
@@ -197,6 +149,23 @@ export default function YouTubeLinkPage() {
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
     30;
+  // Fetch deck title when in view flashcards page
+  useEffect(() => {
+    const fetchDeckTitle = async () => {
+      if (isInViewFlashcardsPage === 'true' && deckId) {
+        try {
+          const title = await getDeckNameById(Number(deckId));
+          if (title) {
+            setDeckTitle(title);
+          }
+        } catch (error) {
+          console.error('Error fetching deck title:', error);
+        }
+      }
+    };
+
+    fetchDeckTitle();
+  }, [isInViewFlashcardsPage, deckId]);
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -582,7 +551,7 @@ export default function YouTubeLinkPage() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight() }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
@@ -594,7 +563,7 @@ export default function YouTubeLinkPage() {
       <View
         style={[
           styles.headerIconsContainer,
-          { display: 'flex' }
+          { display: 'flex', paddingTop: getTopBarAccountHeight() }
         ]}
       >
         <FormHeaderIcons 
@@ -627,18 +596,29 @@ export default function YouTubeLinkPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={[
-            styles.formContent,
-            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
+            { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex', 
+            }
           ]}>
             {isMandatory && (
-              <View style={styles.formContent}>
-                <TitleTextBar
+              <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
+                {!isInViewFlashcardsPage && (<TitleTextBar
                   title={STRINGS.deckName[lang]}
                   highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
                   placeholder={STRINGS.typeHere[lang]}
                   value={deckName}
                   onChangeText={setDeckName}
-                />
+                />)
+                }
+                {isInViewFlashcardsPage === 'true' && (
+                  <TitleTextBar
+                    title={STRINGS.deckName[lang]}
+                    highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
+                    placeholder={deckTitle}
+                    value={deckTitle}
+                    onChangeText={() => {}} // Disabled - no-op function
+                    disabled={true}
+                  />
+                )}
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
@@ -688,48 +668,36 @@ export default function YouTubeLinkPage() {
         styles.youtubeLinkContent,
         { opacity: youtubeLinkOpacity, display: !isMandatory ? 'flex' : 'none' }
         ]}>
-            {Dimensions.get('window').height <= 670 && (
-              <ScrollView 
-                style={[
-                    { marginBottom: keyboardHeight > 0 ? keyboardHeight : 50 + bottomOffset }
-                ]}
-                showsVerticalScrollIndicator={false}
-                bounces={true}
-                overScrollMode="always"
-                keyboardShouldPersistTaps="handled"
-              >
+            <ScrollView 
+              style={[
+                { marginBottom: keyboardHeight > 0 ? keyboardHeight : 90 + bottomOffset }
+              ]}
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: 'center',
+              }}
+              showsVerticalScrollIndicator={false}
+              bounces={true}
+              overScrollMode="always"
+              keyboardShouldPersistTaps="handled"
+            >
+              <View>
                 <Text style={styles.youtubeLinkTitle}>
-                    {STRINGS.pasteYoutubeLink[lang]}
-                    </Text>
-                    <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={lang} />
-                    <View style={styles.aiGenerateRow}>
-                        <SmallCircleSelectButton
-                        selected={isAIGenerate}
-                        onPress={() => setIsAIGenerate(!isAIGenerate)}
-                        />
-                        <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
-                        <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-                        <HelpIconOutline width={24} height={24} />
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.bottomSpacingFilUpload} />
-              </ScrollView>
-            )}
-            <Text style={styles.youtubeLinkTitle}>
-            {STRINGS.pasteYoutubeLink[lang]}
-            </Text>
-            <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={lang} />
-            <View style={styles.aiGenerateRow}>
-                <SmallCircleSelectButton
-                selected={isAIGenerate}
-                onPress={() => setIsAIGenerate(!isAIGenerate)}
-                />
-                <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
-                <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-                <HelpIconOutline width={24} height={24} />
-                </TouchableOpacity>
-            </View>
-            <View style={styles.bottomSpacingFilUpload} />
+                  {STRINGS.pasteYoutubeLink[lang]}
+                </Text>
+                <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={lang} />
+                <View style={styles.aiGenerateRow}>
+                  <SmallCircleSelectButton
+                    selected={isAIGenerate}
+                    onPress={() => setIsAIGenerate(!isAIGenerate)}
+                  />
+                  <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
+                  <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
+                    <HelpIconOutline width={24} height={24} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
         </Animated.View>
 
         <View style={[
@@ -858,7 +826,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -866,7 +833,6 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -876,13 +842,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingHorizontal: 16,
   },
-  formContent: {
-    gap: getFormContentGap(),
-  },
   youtubeLinkContent: {
-    gap: Platform.OS === 'ios' ? 0 : 16,
+    flex: 1,
     paddingHorizontal: 16,
-    marginTop: getYoutubeLinkContentPaddingTop(),
+    marginTop: '5%',
+    justifyContent: 'center',
   },
   buttonContainer: {
     position: 'absolute',
@@ -896,7 +860,7 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomSpacingFilUpload: {
-    height: 100,
+    height: 60,
   },
   youtubeLinkTitle: {
     fontFamily: 'Satoshi-Bold',
@@ -904,10 +868,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: 'center',
     paddingHorizontal: 10,
-    marginTop: Platform.OS === 'ios' ? 10 : 40,
+    // marginTop: Platform.OS === 'ios' ? 10 : 40,
   },
   youtubeLinkMainSection: {
-    height: 370,
+    height: Dimensions.get('window').height * 0.5,
     width: '95%',
     alignSelf: 'center',
     borderWidth: 3,
@@ -915,9 +879,8 @@ const styles = StyleSheet.create({
     borderColor: '#4F41D8',
     marginTop: Platform.OS === 'ios' ? 20 : 10,
     borderRadius: 4,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 20,
   },
   youtubeImageContainer: {
     alignItems: 'center',
@@ -930,9 +893,10 @@ const styles = StyleSheet.create({
   },
   textArea: {
     width: '90%',
-    height: 192,
+    height: Dimensions.get('window').height * 0.3,
     backgroundColor: '#F8F8F8',
     borderRadius: 10,
+    marginBottom: 20,
     padding: 16,
     fontFamily: 'Satoshi-Variable',
     fontWeight: '700',

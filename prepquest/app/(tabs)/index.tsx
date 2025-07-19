@@ -21,6 +21,8 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeight } from '@/constants/heights';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -96,6 +98,7 @@ export default function DecksScreen() {
   const calendarOpacity = useRef(new Animated.Value(0)).current;
   const calendarMenuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const { language, reloadLanguage } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   const selectUnselectedDuration = 300;
 
@@ -1052,14 +1055,14 @@ export default function DecksScreen() {
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <View style={styles.topBar}>
+          <View style={[styles.topBar, { paddingTop: getTopBarTopHeight()}]}>
             <MenuButton 
               style={styles.menuButton}
               onPress={handleMenuPress}
             />
           </View>
           
-          <View style={styles.headerIconsContainer}>
+          <View style={[styles.headerIconsContainer, { paddingTop: getHeaderIconsTopHeight()}]}>
             <HeaderIconButtons 
               ref={headerIconsRef}
               onAIPress={handleSparklesPress}
@@ -1077,7 +1080,7 @@ export default function DecksScreen() {
             styles.mainContentWrapper,
             { marginBottom: marginAnim }
           ]}>
-            <View style={styles.content}>
+            <View style={[styles.content, { marginTop: getContentTopHeight()}]}>
               <RoundedContainer 
                 leftLabel={language === 'Chinese' ? `学习 (${studyDeckCount})` : `Study (${studyDeckCount})`}
                 rightLabel={language === 'Chinese' ? `面试 (${interviewDeckCount})` : `Interview (${interviewDeckCount})`}
@@ -1221,13 +1224,11 @@ const styles = StyleSheet.create({
   },
   topBar: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     left: 16,
     zIndex: 1,
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     right: 16,
     zIndex: 1,
   },
@@ -1240,7 +1241,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: Platform.OS === 'android' ? 132 : 78,
   },
   titleRow: {
     flexDirection: 'row',
@@ -1296,7 +1296,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   card: {
-    marginTop: 26,
+    marginTop: '6%',
   },
   shiftableContent: {
     flex: 1,
@@ -1304,7 +1304,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15,
+    bottom: 20,
     right: 16,
   },
   fabContainer: {

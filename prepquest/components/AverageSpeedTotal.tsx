@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import Svg, { Path, G, Text as SvgText } from 'react-native-svg';
 import GaugeIcon from '../assets/icons/gaugeIcon.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const WIDTH = 320;
+const WIDTH = Dimensions.get('window').width * 0.8;
 const HEIGHT = 180;
 const CX = WIDTH / 2;
 const CY = HEIGHT - 20;

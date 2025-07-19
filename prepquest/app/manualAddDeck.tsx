@@ -31,6 +31,7 @@ import { Toast } from '../components/Toast';
 import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getTopBarAccountHeight } from '@/constants/heights';
 // import BackgroundService from 'react-native-background-actions';
 
 
@@ -65,60 +66,6 @@ const ManualAddDeckMainSection = () => {
       </View>
     </View>
   );
-};
-
-const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
-  const { width, height } = Dimensions.get('window');
-
-  // If we're in view flashcards page, use smaller gaps since we don't have the deck name field
-  if (isInViewFlashcardsPage) {
-    // iphone 16 pro max
-    if (Platform.OS === 'ios' && height >= 940) {
-      return 35;
-    }
-    
-    // iphone 16 plus
-    if (Platform.OS === 'ios' && height >= 920) {
-      return 32;
-    }
-
-    // Pixel 9 Pro, Pixel 9 Pro XL 
-    if (Platform.OS === 'android' && height >= 935) {
-      return 50;
-    }
-    
-    // Pixel 7, Pixel 8, Pixel 9
-    if (Platform.OS === 'android' && height >= 900) {
-      return 32;
-    }
-    
-    // Default smaller gap for view flashcards page
-    return Platform.OS === 'ios' ? 28 : 30;
-  }
-
-  // Original gap values for other pages (index, favorites, view decks in folder)
-  // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return 25;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return 20;
-  }
-
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return 35;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return 20;
-  }
-  
-  // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
-  return Platform.OS === 'ios' ? 0 : 16;
 };
 
 // Helper function to get current userID from AsyncStorage
@@ -1776,7 +1723,7 @@ export default function ManualAddDeckPage() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight() }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
@@ -1789,7 +1736,10 @@ export default function ManualAddDeckPage() {
       <Animated.View
         style={[
           styles.headerIconsContainer,
-          { opacity: mandatoryOpacity, display: (!forceManual && isMandatory) ? 'flex' : 'none' }
+          { opacity: mandatoryOpacity, 
+            display: (!forceManual && isMandatory) ? 'flex' : 'none', 
+            paddingTop: getTopBarAccountHeight()
+          }
         ]}
       >
         <FormHeaderIcons 
@@ -1803,7 +1753,8 @@ export default function ManualAddDeckPage() {
           styles.headerIconsContainer,
           { 
             opacity: manualAddDeckOpacity, 
-            display: (!isMandatory || forceManual) && addViewState === 'add' ? 'flex' : 'none' 
+            display: (!isMandatory || forceManual) && addViewState === 'add' ? 'flex' : 'none',
+            paddingTop: getTopBarAccountHeight()
           }
         ]}
       >
@@ -1825,8 +1776,10 @@ export default function ManualAddDeckPage() {
           {/* Always show AddViewToggle if in manual state or forceManual */}
           <Animated.View
             style={[
-              styles.addViewToggle,
-              { opacity: manualAddDeckOpacity, display: (!isMandatory || forceManual) ? 'flex' : 'none' }
+              { opacity: manualAddDeckOpacity, 
+                display: (!isMandatory || forceManual) ? 'flex' : 'none',
+                marginTop: isInViewFlashcardsPage ? 0 : Dimensions.get('window').height * 0.01
+              }
             ]}
           >
             <AddViewToggle
@@ -1854,11 +1807,10 @@ export default function ManualAddDeckPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={[
-            { gap: getFormContentGap(isInViewFlashcardsPage === 'true') },
             { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
           ]}>
-              <View style={{ gap: getFormContentGap(isInViewFlashcardsPage === 'true') }}>
-                {!isInViewFlashcardsPage && (
+              <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
+              {!isInViewFlashcardsPage && (
                   <TitleTextBar
                     title={STRINGS.deckName[lang]}
                     highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
@@ -2320,9 +2272,6 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  addViewToggle:{
-    marginTop: "2%",
-  },
   scrollView: {
     flex: 1,
   },
@@ -2336,7 +2285,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -2344,7 +2292,6 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2423,7 +2370,7 @@ const styles = StyleSheet.create({
   flippableCardContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: Dimensions.get('window').height < 670 ? 8 : 32,
+    paddingTop: Dimensions.get('window').height < 670 ? 16 : 32,
   },
   selectTextButton: {
     position: 'relative',

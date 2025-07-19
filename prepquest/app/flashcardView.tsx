@@ -26,6 +26,7 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getContentTopHeight, getHeaderIconsTopHeight } from '@/constants/heights';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -3239,7 +3240,7 @@ export default function FlashcardViewPage() {
       }}>
         {/* Back button at top left */}
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
           onPress={() => router.back()}
         >
           <AntDesign name="arrowleft" size={32} color="black" />
@@ -3276,7 +3277,7 @@ export default function FlashcardViewPage() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <TouchableOpacity
-            style={styles.backButton}
+          style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
             onPress={async () => {
               await stopSpeech();
               if (isStudyMode && !isCompleted) {
@@ -3315,7 +3316,7 @@ export default function FlashcardViewPage() {
           >
             <AntDesign name="arrowleft" size={32} color="black" />
           </TouchableOpacity>
-          <View style={styles.headerIconsContainer}>
+          <View style={[styles.headerIconsContainer, { top: getHeaderIconsTopHeight()}]}>
             <FlashcardViewTopBar 
               onTrashPress={handleTrashPress} 
               onCopyPress={handleCopyPress}
@@ -3326,7 +3327,7 @@ export default function FlashcardViewPage() {
               isSpeechPaused={isSpeechPaused}
             />
           </View>
-          <View style={styles.middleContentContainer}>
+          <View style={[styles.middleContentContainer, { top: getContentTopHeight()}]}>
             <FlippableFlashcard 
               currentIdx={currentIdx} 
               setCurrentIdx={setCurrentIdx} 
@@ -3564,23 +3565,20 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     left: 16,
     zIndex: 1,
     paddingTop: 8,
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     right: 16,
     zIndex: 1,
   },
   middleContentContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 132 : 78, // headerIconsContainer top + height
     left: 16,
     right: 16,
-    bottom: 108, // height of difficultyPillRowContainer + loading bar
+    bottom: 104, // height of difficultyPillRowContainer + loading bar
     zIndex: 0,
   },
   loadingBarBottomContainer: {

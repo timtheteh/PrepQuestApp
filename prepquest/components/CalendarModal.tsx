@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   container: {
-    width: 350,
-    height: SCREEN_HEIGHT > 900 ? 600 : 504,
+    width: '90%',
+    height: 504,
     backgroundColor: '#FFFFFF',
     borderRadius: 30,
     overflow: 'hidden',

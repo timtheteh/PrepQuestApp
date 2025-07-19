@@ -4,6 +4,8 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import { getContentTopHeightNoRoundedToggle2, getTopBarAccountHeight } from '@/constants/heights';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -39,6 +41,7 @@ export default function DeckCreationLoadingPage({
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Animated.spring(progressAnim, {
@@ -57,56 +60,59 @@ export default function DeckCreationLoadingPage({
   }, [progressAnim]);
 
   return (
-    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
       {/* Cancel button at top right */}
       {onCancel && (
         <TouchableOpacity
-          style={{ position: 'absolute', top: 50, right: 16, zIndex: 10, padding: 8 }}
+          style={{ position: 'absolute', top: insets.top + 10, right: 16, zIndex: 10, padding: 8 }}
           onPress={onCancel}
         >
           <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
         </TouchableOpacity>
       )}
-      {/* Stacked image + Lottie animation */}
-      <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-        <Image
-          source={require('@/assets/images/loadingBackground.png')}
-          style={{ width: '100%', height: '100%', borderRadius: 24 }}
-          resizeMode="contain"
-          fadeDuration={0}
-        />
-        <LottieView
-          source={require('@/assets/animations/LoadingAnimation1.json')}
-          autoPlay
-          loop
-          style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}
-          cacheComposition={true}
-        />
-      </View>
-      {/* Text and progress below */}
-      <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
-        <Text style={styles.title}>
-          {isInViewFlashcardsPage ? STRINGS.flashcardsOnWay[lang] : STRINGS.deckOnWay[lang]}
-        </Text>
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBg}>
-            <Animated.View 
-              style={[
-                styles.progressBarFill, 
-                { 
-                  width: animatedWidth(),
-                  backgroundColor: percent === 100 ? '#44B88A' : '#4F41D8',
-                }
-              ]} 
-            />
-          </View>
+      {/* Wrapper for all content to keep it centered as a unit */}
+      <View style={{ width: '100%', alignItems: 'center', marginTop: 20}}>
+        {/* Stacked image + Lottie animation */}
+        <View style={{ aspectRatio: 1.1, width: '100%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center',}}>
+          <Image
+            source={require('@/assets/images/loadingBackground.png')}
+            style={{ width: '100%', height: '100%', borderRadius: 24 }}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
+          <LottieView
+            source={require('@/assets/animations/LoadingAnimation1.json')}
+            autoPlay
+            loop
+            style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}
+            cacheComposition={true}
+          />
         </View>
-        <Text style={styles.percentText}>{percent}%</Text>
-        <Text style={styles.countText}>{
-          lang === 'Chinese'
-            ? STRINGS.flashcardsGenerated[lang].replace('{current}', String(current)).replace('{total}', String(total))
-            : `${current} out of ${total} Flashcards generated`
-        }</Text>
+        {/* Text and progress below */}
+        <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
+          <Text style={styles.title}>
+            {isInViewFlashcardsPage ? STRINGS.flashcardsOnWay[lang] : STRINGS.deckOnWay[lang]}
+          </Text>
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBarBg}>
+              <Animated.View 
+                style={[
+                  styles.progressBarFill, 
+                  { 
+                    width: animatedWidth(),
+                    backgroundColor: percent === 100 ? '#44B88A' : '#4F41D8',
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+          <Text style={styles.percentText}>{percent}%</Text>
+          <Text style={styles.countText}>{
+            lang === 'Chinese'
+              ? STRINGS.flashcardsGenerated[lang].replace('{current}', String(current)).replace('{total}', String(total))
+              : `${current} out of ${total} Flashcards generated`
+          }</Text>
+        </View>
       </View>
     </View>
   );
@@ -114,49 +120,53 @@ export default function DeckCreationLoadingPage({
 
 export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = false, onCancel }: { statusRows: { done: boolean, label: string }[], isInViewFlashcardsPage?: boolean, onCancel?: () => void }) {
   const { language } = useLanguage();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
       {/* Cancel button at top right */}
       {onCancel && (
         <TouchableOpacity
-          style={{ position: 'absolute', top: 50, right: 16, zIndex: 10, padding: 8 }}
+          style={{ position: 'absolute', top: insets.top + 10, right: 16, zIndex: 10, padding: 8 }}
           onPress={onCancel}
         >
           <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
         </TouchableOpacity>
       )}
-      <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-        <Image
-          source={require('@/assets/images/loadingBackground.png')}
-          style={{ width: '100%', height: '100%', borderRadius: 24 }}
-          resizeMode="contain"
-          fadeDuration={0}
-        />
-        <LottieView
-          source={require('@/assets/animations/LoadingAnimation1.json')}
-          autoPlay
-          loop
-          style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}
-          cacheComposition={true}
-        />
-      </View>
-      <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center', marginTop: 8 }}>
-        <Text style={styles.title}>
-          {isInViewFlashcardsPage
-            ? (language === 'Chinese' ? '正在创建卡片…' : 'Creating Flashcards...')
-            : (language === 'Chinese' ? '正在创建卡组…' : 'Creating Deck...')}
-        </Text>
-        <View style={{ width: '80%', marginTop: 8, marginLeft: '12%'}}>
-          {statusRows.map((row, idx) => (
-            <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
-              {row.done ? (
-                <GreenTickIcon width={28} height={28} style={{ marginRight: 12, marginTop: 5}} />
-              ) : (
-                <DeleteModalIcon width={28} height={28} style={{ marginRight: 12 }} />
-              )}
-              <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 18, color: '#000'}}>{row.label}</Text>
-            </View>
-          ))}
+      <View style={{ width: '100%', alignItems: 'center', marginTop: 20}}>
+        {/* Stacked image + Lottie animation */}
+        <View style={{ aspectRatio: 1.2, width: '100%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+          <Image
+            source={require('@/assets/images/loadingBackground.png')}
+            style={{ width: '100%', height: '100%', borderRadius: 24, transform: [{ rotate: '90deg' }] }}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
+          <LottieView
+            source={require('@/assets/animations/LoadingAnimation1.json')}
+            autoPlay
+            loop
+            style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}
+            cacheComposition={true}
+          />
+        </View>
+        <View style={{ width: '100%', paddingHorizontal: 16, alignItems: 'center', marginTop: 8,}}>
+          <Text style={styles.title}>
+            {isInViewFlashcardsPage
+              ? (language === 'Chinese' ? '正在创建卡片…' : 'Creating Flashcards...')
+              : (language === 'Chinese' ? '正在创建卡组…' : 'Creating Deck...')}
+          </Text>
+          <View style={{ width: '80%', marginTop: 8,  marginLeft: 48}}>
+            {statusRows.map((row, idx) => (
+              <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+                {row.done ? (
+                  <GreenTickIcon width={28} height={28} style={{ marginRight: 12, marginTop: 5}} />
+                ) : (
+                  <DeleteModalIcon width={28} height={28} style={{ marginRight: 12 }} />
+                )}
+                <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 18, color: '#000'}}>{row.label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     </View>

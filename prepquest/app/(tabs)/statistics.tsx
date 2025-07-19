@@ -14,6 +14,8 @@ import { SpeedChart } from '@/components/SpeedChart';
 import AverageSpeedTotal from '@/components/AverageSpeedTotal';
 import { getAverageGradeAllTime, getDifficultyBreakdown, getAverageTimeAllTime } from '@/db/grades';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarAccountHeight, getTopBarStatisticsHeight } from '@/constants/heights';
 
 export default function StatisticsScreen() {
   const { language } = useLanguage();
@@ -40,6 +42,7 @@ export default function StatisticsScreen() {
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
   const loadingScreenAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
+  const insets = useSafeAreaInsets();
 
   // Function to fetch average grade
   const fetchAverageGrade = async () => {
@@ -181,7 +184,7 @@ export default function StatisticsScreen() {
       )}
       
       <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim}}>
-        <View style={{ marginTop: topPadding, paddingHorizontal: 16 }}>
+        <View style={{ marginTop: getTopBarStatisticsHeight(), paddingHorizontal: 16 }}>
           <RoundedContainer
             leftLabel={language === 'Chinese' ? '卡组 / 卡片' : 'Decks / Flashcards'}
             leftLabelStyle={{ fontSize: 16, fontFamily: 'Satoshi-Medium' }}

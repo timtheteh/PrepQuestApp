@@ -165,9 +165,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    width: 350,
-    height: 504,
-    marginLeft: -175, // Half of width
+    width: '85%',
+    height: 488,
+    marginLeft: '-42.5%', // Half of width
     marginTop: -252, // Half of height
     backgroundColor: '#F8F8F8',
     borderRadius: 30,
@@ -187,7 +187,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     flex: 1,
-    gap: 8,
   },
   loadingText: {
     fontSize: 18,

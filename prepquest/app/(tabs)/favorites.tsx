@@ -21,6 +21,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/CalendarModal';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeight } from '@/constants/heights';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -104,6 +106,7 @@ export default function FavoritesScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const { language } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   const selectUnselectedDuration = 300;
 
@@ -1405,7 +1408,7 @@ export default function FavoritesScreen() {
     
     const sortedFolders = sortFolders(foldersToRender);
     return sortedFolders.map((data, index) => {
-      const style = index === 0 ? styles.firstCard : styles.card;
+      const style = index === 0 ? styles.firstCard : styles.favFolderCard;
       return (
         <FolderCard
           key={`favFolder-${data.folderID}`}
@@ -1449,8 +1452,8 @@ export default function FavoritesScreen() {
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <View style={styles.topBar}>
-            <TouchableOpacity 
+        <View style={[styles.topBar, { paddingTop: getTopBarTopHeight()}]}>
+        <TouchableOpacity 
               style={styles.backButton}
               onPress={handleBackPress}
             >
@@ -1458,7 +1461,7 @@ export default function FavoritesScreen() {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.headerIconsContainer}>
+          <View style={[styles.headerIconsContainer, { paddingTop: getHeaderIconsTopHeight()}]}>
             <HeaderIconButtons 
               ref={headerIconsRef}
               pageType="favorites"
@@ -1484,8 +1487,8 @@ export default function FavoritesScreen() {
             styles.mainContentWrapper,
             { marginBottom: marginAnim }
           ]}>
-            <View style={styles.content}>
-              <RoundedContainer 
+            <View style={[styles.content, { marginTop: getContentTopHeight()}]}>
+            <RoundedContainer 
                 leftLabel={language === 'Chinese' ? `收藏卡片组 (${favDeckCount})` : `Fav Decks (${favDeckCount})`}
                 rightLabel={language === 'Chinese' ? `收藏文件夹 (${favFolderCount})` : `Fav Folders (${favFolderCount})`}
                 onToggle={handleToggle}
@@ -1630,13 +1633,11 @@ const styles = StyleSheet.create({
   },
   topBar: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     left: 16,
     zIndex: 1,
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
     right: 16,
     zIndex: 1,
   },
@@ -1649,7 +1650,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: Platform.OS === 'android' ? 132 : 78,
   },
   titleRow: {
     flexDirection: 'row',
@@ -1685,7 +1685,10 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   card: {
-    marginTop: 26,
+    marginTop: '6%',
+  },
+  favFolderCard: {
+    marginTop: '8%',
   },
   shiftableContent: {
     flex: 1,
@@ -1693,7 +1696,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 15,
+    bottom: 20,
     right: 16,
   },
   fabContainer: {

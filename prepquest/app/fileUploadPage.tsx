@@ -24,7 +24,7 @@ import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import LottieView from 'lottie-react-native';
-import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck } from '../db/decks';
+import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck, getDeckNameById } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import * as mammoth from 'mammoth';
@@ -37,6 +37,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { getUserQuestionSettings } from '@/db/users';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
+import { getTopBarAccountHeight } from '@/constants/heights';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -108,91 +109,6 @@ const FileUploadMainSection = ({
   );
 };
 
-const getFormContentGap = (isInViewFlashcardsPage?: boolean) => {
-  const { width, height } = Dimensions.get('window');
-
-  // If we're in view flashcards page, use smaller gaps since we don't have the deck name field
-  if (isInViewFlashcardsPage) {
-    // iphone 16 pro max
-    if (Platform.OS === 'ios' && height >= 940) {
-      return 35;
-    }
-    
-    // iphone 16 plus
-    if (Platform.OS === 'ios' && height >= 920) {
-      return 32;
-    }
-
-    // Pixel 9 Pro, Pixel 9 Pro XL 
-    if (Platform.OS === 'android' && height >= 935) {
-      return 50;
-    }
-    
-    // Pixel 7, Pixel 8, Pixel 9
-    if (Platform.OS === 'android' && height >= 900) {
-      return 32;
-    }
-    
-    // Default smaller gap for view flashcards page
-    return Platform.OS === 'ios' ? 28 : 30;
-  }
-
-  // Original gap values for other pages (index, favorites, view decks in folder)
-  // iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return 25;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return 20;
-  }
-
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-  if (Platform.OS === 'android' && height >= 935) {
-    return 35;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return 20;
-  }
-  
-  // iphone 16, iphone 16 plus, iphone SE, Pixel 7 Pro, 
-  return Platform.OS === 'ios' ? 0 : 16;
-};
-
-const getFileUploadContentPaddingTop = () => {
-  const { width, height } = Dimensions.get('window');
-
-  // iphone se
-  if (Platform.OS === 'ios' && height <= 670) {
-    return 8;
-  }
-
-   /// iphone 16 pro max
-  if (Platform.OS === 'ios' && height >= 940) {
-    return 68;
-  }
-  
-  // iphone 16 plus
-  if (Platform.OS === 'ios' && height >= 920) {
-    return 62;
-  }
-   // Pixel 9 Pro, Pixel 9 Pro XL 
-   if (Platform.OS === 'android' && height >= 935) {
-    return 45;
-  }
-  
-  // Pixel 7, Pixel 8, Pixel 9
-  if (Platform.OS === 'android' && height >= 900) {
-    return 20;
-  }
-  
-  // iphone 16, iphone 16 pro, Pixel 7 Pro, 
-  return Platform.OS === 'ios' ? 34 : 16;
-};
-
 // Add language mappings for all user-facing strings
 const STRINGS = {
   mandatory: { English: 'Mandatory', Chinese: '必填' },
@@ -206,7 +122,7 @@ const STRINGS = {
   educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
   subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
   subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
-  subjectsHelper: { English: 'What subject(s) would this deck be for?', Chinese: '这个卡组适用于哪些科目？' },
+  subjectsHelper: { English: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.', Chinese: '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。' },
   jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
   jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
   jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
@@ -403,6 +319,7 @@ export default function FileUploadPage() {
   const insets = useSafeAreaInsets();
   const [isMandatory, setIsMandatory] = useState(true);
   const [deckName, setDeckName] = useState('');
+  const [deckTitle, setDeckTitle] = useState<string>('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
   const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
   const [interviewMandatoryQuestion1, setInterviewMandatoryQuestion1] = useState('');
@@ -442,6 +359,10 @@ export default function FileUploadPage() {
   const [statusExtractingInformationFromFiles, setStatusExtractingInformationFromFiles] = useState(false);
   const [statusGeneratingFlashcards, setStatusGeneratingFlashcards] = useState(false);
   const [statusAddingDeckAndFlashcards, setStatusAddingDeckAndFlashcards] = useState(false);
+  const cancelCreationRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [createdDeckId, setCreatedDeckId] = useState<number | null>(null);
+  const [createdFlashcardIds, setCreatedFlashcardIds] = useState<number[]>([]);
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -574,6 +495,15 @@ export default function FileUploadPage() {
       console.log("prompt >>>> \n", prompt);
       let response;
       try {
+        // Check if we should cancel before making the request
+        if (cancelCreationRef.current) {
+          console.log('Request cancelled before starting');
+          return null;
+        }
+        
+        // Create a new AbortController for this request
+        abortControllerRef.current = new AbortController();
+        
         response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
           method: 'POST',
           headers: {
@@ -581,10 +511,21 @@ export default function FileUploadPage() {
             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
           },
           body: JSON.stringify({prompt}),
+          signal: abortControllerRef.current.signal,
         });
       } catch (networkError) {
+        // Check if the error is due to cancellation
+        if (networkError instanceof Error && networkError.name === 'AbortError') {
+          console.log('Request was cancelled');
+          return null;
+        }
         Alert.alert('Error', ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English);
         return null;
+      } finally {
+        // Clean up the AbortController after the request completes (success or error)
+        if (abortControllerRef.current) {
+          abortControllerRef.current = null;
+        }
       }
       console.log("fetch complete, status:", response.status);
       if (!response.ok) {
@@ -632,6 +573,24 @@ export default function FileUploadPage() {
       Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : (ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English));
     }
   };
+
+  // Fetch deck title when in view flashcards page
+  useEffect(() => {
+    const fetchDeckTitle = async () => {
+      if (isInViewFlashcardsPage === 'true' && deckId) {
+        try {
+          const title = await getDeckNameById(Number(deckId));
+          if (title) {
+            setDeckTitle(title);
+          }
+        } catch (error) {
+          console.error('Error fetching deck title:', error);
+        }
+      }
+    };
+
+    fetchDeckTitle();
+  }, [isInViewFlashcardsPage, deckId]);
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -761,6 +720,38 @@ export default function FileUploadPage() {
       ]).start();
     }
   }, [isBackConfirmationModalOpen]);
+
+  // Reset state when component mounts or when navigating back
+  useEffect(() => {
+    // Reset abort controller and cancel flag
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    cancelCreationRef.current = false;
+    
+    // Reset status states
+    setStatusExtractingInformationFromFiles(false);
+    setStatusGeneratingFlashcards(false);
+    setStatusAddingDeckAndFlashcards(false);
+    setShowStatusPage(false);
+    
+    // Reset created IDs
+    setCreatedDeckId(null);
+    setCreatedFlashcardIds([]);
+    
+    // Reset RoundedContainer state to "Mandatory" (left side)
+    setIsMandatory(true);
+    
+    // Cleanup function for when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      cancelCreationRef.current = false;
+    };
+  }, []);
 
   const handleBackPress = () => {
     setIsBackConfirmationModalOpen(true);
@@ -963,285 +954,13 @@ export default function FileUploadPage() {
     });
   };
 
-  // const handleSuccessConfirm = async () => {
-  //   // Save form submission to userFormEntries
-  //   await saveUserFileUploadFormEntry({
-  //     deckName,
-  //     studyEducationLevel: studyMandatoryQuestion1,
-  //     studySubjects: studyMandatoryQuestion2,
-  //     numberOfQuestions,
-  //     interviewJobRole: interviewMandatoryQuestion1,
-  //     interviewType
-  //   });
-
-  //   let pdfCaptionClaudeCaption = null;
-  //   let imageCaptionClaudeCaption = null;
-
-  //   // If PDF file was uploaded, send to Claude PDF Caption endpoint
-  //   if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
-  //     const fileUri = selectedFile.uri;
-  //     const fileName = selectedFile.name;
-  //     const mimeType = selectedFile.mimeType || 'application/pdf';
-
-  //     const formData = new FormData();
-  //     // @ts-ignore: React Native FormData file object
-  //     formData.append('file', {
-  //       uri: fileUri,
-  //       name: fileName,
-  //       type: mimeType,
-  //     });
-  //     let pdfCaptionClaudeResponse;
-  //     try {
-  //       const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
-  //       pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
-  //         method: 'POST',
-  //         body: formData,
-  //         headers: {
-  //           // Let fetch set Content-Type
-  //           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
-  //         },
-  //       });
-  //     } catch (networkError) {
-  //       Alert.alert(
-  //         language === 'Chinese' ? '错误' : 'Error',
-  //         language === 'Chinese'
-  //           ? '网络错误。请检查您的网络连接，然后重试。'
-  //           : 'Network error. Please check your connection and try again.'
-  //       );
-  //     }
-  //     if (!pdfCaptionClaudeResponse?.ok) {
-  //       let message = '';
-  //       // Add Chinese translations for each error message
-  //       const errorMessages: Record<string, { English: string; Chinese: string }> = {
-  //         '400': {
-  //           English: 'There was an issue with the format or content of your request.',
-  //           Chinese: '您的请求格式或内容有误。',
-  //         },
-  //         '401': {
-  //           English: 'There’s an issue with your API key.',
-  //           Chinese: '您的 API 密钥存在问题。',
-  //         },
-  //         '403': {
-  //           English: 'Your API key does not have permission to use the specified resource.',
-  //           Chinese: '您的 API 密钥无权访问指定资源。',
-  //         },
-  //         '404': {
-  //           English: 'The requested resource was not found.',
-  //           Chinese: '未找到请求的资源。',
-  //         },
-  //         '413': {
-  //           English: 'Request exceeds the maximum allowed number of bytes.',
-  //           Chinese: '请求超出了允许的最大字节数。',
-  //         },
-  //         '429': {
-  //           English: 'Your account has hit a rate limit.',
-  //           Chinese: '您的账户已达到速率限制。',
-  //         },
-  //         '500': {
-  //           English: 'An unexpected error has occurred internal to Anthropic’s systems.',
-  //           Chinese: 'Anthropic 系统内部发生了意外错误。',
-  //         },
-  //         '529': {
-  //           English: 'Anthropic’s API is temporarily overloaded.',
-  //           Chinese: 'Anthropic 的 API 暂时过载。',
-  //         },
-  //         default: {
-  //           English: 'Something went wrong. Please try again.',
-  //           Chinese: '发生错误，请重试。',
-  //         },
-  //       };
-  //       const status = pdfCaptionClaudeResponse?.status;
-  //       const langKey = language === 'Chinese' ? 'Chinese' : 'English';
-  //       const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
-  //       message = errorMessages[statusKey][langKey];
-  //       Alert.alert('Error', message);
-  //       return null;
-  //     }
-  //     const pdfCaptionClaudeResult = await pdfCaptionClaudeResponse.json();
-  //     pdfCaptionClaudeCaption = pdfCaptionClaudeResult.caption;
-  //     console.log('Claude PDF Caption:', pdfCaptionClaudeCaption);
-  //   }
-
-  //   // Send images to imageCaptionClaude if any
-  //   let imageUris: string[] = [];
-  //   if (uploadType === 'image' && uploadedFileName) {
-  //     // Single image from picker/camera
-  //     imageUris = [uploadedFileName];
-  //   } else if (extractedImages.length > 0) {
-  //     imageUris = extractedImages;
-  //   }
-  //   if (imageUris.length > 0) {
-  //     const formData = new FormData();
-  //     for (const uri of imageUris) {
-  //       // Always process before upload
-  //       const processedUri = await prepareImageForUpload(uri);
-  //       // Try to infer type from extension
-  //       let type = 'image/jpeg';
-  //       if (processedUri.endsWith('.png')) type = 'image/png';
-  //       else if (processedUri.endsWith('.jpg') || processedUri.endsWith('.jpeg')) type = 'image/jpeg';
-  //       else if (processedUri.endsWith('.gif')) type = 'image/gif';
-  //       formData.append('images[]', {
-  //         uri: processedUri,
-  //         name: processedUri.split('/').pop() || 'image.jpg',
-  //         type,
-  //       } as any);
-  //     }
-  //     let imageCaptionClaudeResponse;
-  //     try {
-  //       const SUPABASE_IMAGE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/imageCaptionClaude';
-  //       imageCaptionClaudeResponse = await fetch(SUPABASE_IMAGE_FUNCTION_URL, {
-  //         method: 'POST',
-  //         body: formData,
-  //         headers: {
-  //           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
-  //         },
-  //       });
-  //     } catch (networkError) {
-  //       Alert.alert(
-  //         language === 'Chinese' ? '错误' : 'Error',
-  //         language === 'Chinese'
-  //           ? '网络错误。请检查您的网络连接，然后重试。'
-  //           : 'Network error. Please check your connection and try again.'
-  //       );
-  //     }
-  //     if (!imageCaptionClaudeResponse?.ok) {
-  //       let message = '';
-  //       // Add Chinese translations for each error message
-  //       const errorMessages: Record<string, { English: string; Chinese: string }> = {
-  //         '400': {
-  //           English: 'There was an issue with the format or content of your request.',
-  //           Chinese: '您的请求格式或内容有误。',
-  //         },
-  //         '401': {
-  //           English: 'There’s an issue with your API key.',
-  //           Chinese: '您的 API 密钥存在问题。',
-  //         },
-  //         '403': {
-  //           English: 'Your API key does not have permission to use the specified resource.',
-  //           Chinese: '您的 API 密钥无权访问指定资源。',
-  //         },
-  //         '404': {
-  //           English: 'The requested resource was not found.',
-  //           Chinese: '未找到请求的资源。',
-  //         },
-  //         '413': {
-  //           English: 'Request exceeds the maximum allowed number of bytes.',
-  //           Chinese: '请求超出了允许的最大字节数。',
-  //         },
-  //         '429': {
-  //           English: 'Your account has hit a rate limit.',
-  //           Chinese: '您的账户已达到速率限制。',
-  //         },
-  //         '500': {
-  //           English: 'An unexpected error has occurred internal to Anthropic’s systems.',
-  //           Chinese: 'Anthropic 系统内部发生了意外错误。',
-  //         },
-  //         '529': {
-  //           English: 'Anthropic’s API is temporarily overloaded.',
-  //           Chinese: 'Anthropic 的 API 暂时过载。',
-  //         },
-  //         default: {
-  //           English: 'Something went wrong. Please try again.',
-  //           Chinese: '发生错误，请重试。',
-  //         },
-  //       };
-  //       const status = imageCaptionClaudeResponse?.status;
-  //       const langKey = language === 'Chinese' ? 'Chinese' : 'English';
-  //       const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
-  //       message = errorMessages[statusKey][langKey];
-  //       Alert.alert('Error', message);
-  //     } else {
-  //       const result = await imageCaptionClaudeResponse.json();
-  //       imageCaptionClaudeCaption = result.caption;
-  //       console.log('Claude Image Caption:', imageCaptionClaudeCaption);
-  //     }
-  //   }
-
-  //   const flashcards = await callGenAIFlashcardsGeneration(
-  //     pdfCaptionClaudeCaption,
-  //     extractedText,
-  //     imageCaptionClaudeCaption
-  //   );
-
-  //   console.log('FLASHCARDS >>>>>>>>>>>>>>>>> \n', flashcards);
-
-  //   if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
-  //     setTimeout(async () => {
-  //       // Use the same logic as before for DB insert, but skip UI updates
-  //       if (isInIndexPage) {
-  //         await createDeckWithGenAIFlashcards({
-  //           deckName,
-  //           mode: mode === 'study' ? 'study' : 'interview',
-  //           formFields: {
-  //             studyEducationLevel: studyMandatoryQuestion1,
-  //             studySubjects: studyMandatoryQuestion2,
-  //             interviewJobRole: interviewMandatoryQuestion1,
-  //             interviewType,
-  //             numberOfQuestions,
-  //           },
-  //           flashcards
-  //         });
-  //       }
-  //       if (isInFavoritesPage) {
-  //         await createDeckWithGenAIFlashcards({
-  //           deckName,
-  //           mode: mode === 'study' ? 'study' : 'interview',
-  //           formFields: {
-  //             studyEducationLevel: studyMandatoryQuestion1,
-  //             studySubjects: studyMandatoryQuestion2,
-  //             interviewJobRole: interviewMandatoryQuestion1,
-  //             interviewType,
-  //             numberOfQuestions,
-  //           },
-  //           flashcards,
-  //           isFavorited: 1
-  //         });
-  //       }
-  //       if (isInViewDecksInFolderPage) {
-  //         await createDeckWithGenAIFlashcards({
-  //           deckName,
-  //           mode: mode === 'study' ? 'study' : 'interview',
-  //           formFields: {
-  //             studyEducationLevel: studyMandatoryQuestion1,
-  //             studySubjects: studyMandatoryQuestion2,
-  //             interviewJobRole: interviewMandatoryQuestion1,
-  //             interviewType,
-  //             numberOfQuestions,
-  //           },
-  //           flashcards,
-  //           folderIDs: `[${folderId}]`
-  //         });
-  //       }
-  //       if (isInViewFlashcardsPage) {
-  //         await createGenAIFlashcardsForDeck({
-  //           deckId: Number(deckId),
-  //           flashcards
-  //         });
-  //       }
-  //     });
-  //   }
-  //   // Animate out first, then navigate
-  //   Animated.parallel([
-  //     Animated.timing(overlayOpacity, {
-  //       toValue: 0,
-  //       duration: 200,
-  //       useNativeDriver: true,
-  //     }),
-  //     Animated.timing(successModalOpacity, {
-  //       toValue: 0,
-  //       duration: 200,
-  //       useNativeDriver: true,
-  //     })
-  //   ]).start(() => {
-  //     setIsSuccessModalOpen(false);
-  //     // Navigate after animation completes
-  //     setTimeout(() => {
-  //       router.back();
-  //     }, 50);
-  //   });
-  // };
-
   const handleSuccessConfirm = async () => {
+    // Check if we should cancel before starting
+    if (cancelCreationRef.current) {
+      console.log('Request cancelled before starting handleSuccessConfirm');
+      return;
+    }
+    
     // Animate out first, then navigate
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -1275,6 +994,12 @@ export default function FileUploadPage() {
         let imageCaptionClaudeCaption = null;
           // If PDF file was uploaded, send to Claude PDF Caption endpoint
         if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
+          console.log('Starting PDF caption request...');
+          if (cancelCreationRef.current) {
+            console.log('PDF caption request cancelled before starting');
+            return;
+          }
+          
           const fileUri = selectedFile.uri;
           const fileName = selectedFile.name;
           const mimeType = selectedFile.mimeType || 'application/pdf';
@@ -1288,6 +1013,10 @@ export default function FileUploadPage() {
           });
           let pdfCaptionClaudeResponse;
           try {
+            // Create a new AbortController for this request
+            abortControllerRef.current = new AbortController();
+            console.log('About to make PDF caption fetch request...');
+            
             const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
             pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
               method: 'POST',
@@ -1296,8 +1025,15 @@ export default function FileUploadPage() {
                 // Let fetch set Content-Type
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
               },
+              signal: abortControllerRef.current.signal,
             });
           } catch (networkError) {
+            console.log('PDF caption request caught error:', networkError);
+            // Check if the error is due to cancellation
+            if (networkError instanceof Error && networkError.name === 'AbortError') {
+              console.log('PDF caption request was cancelled');
+              return null;
+            }
             Alert.alert(
               language === 'Chinese' ? '错误' : 'Error',
               language === 'Chinese'
@@ -1358,6 +1094,11 @@ export default function FileUploadPage() {
           console.log('Claude PDF Caption:', pdfCaptionClaudeCaption);
         }
         // Send images to imageCaptionClaude if any
+        if (cancelCreationRef.current) {
+          console.log('Image caption request cancelled before starting');
+          return;
+        }
+        
         let imageUris: string[] = [];
         if (uploadType === 'image' && uploadedFileName) {
           // Single image from picker/camera
@@ -1383,6 +1124,9 @@ export default function FileUploadPage() {
           }
           let imageCaptionClaudeResponse;
           try {
+            // Create a new AbortController for this request
+            abortControllerRef.current = new AbortController();
+            
             const SUPABASE_IMAGE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/imageCaptionClaude';
             imageCaptionClaudeResponse = await fetch(SUPABASE_IMAGE_FUNCTION_URL, {
               method: 'POST',
@@ -1390,8 +1134,14 @@ export default function FileUploadPage() {
               headers: {
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
               },
+              signal: abortControllerRef.current.signal,
             });
           } catch (networkError) {
+            // Check if the error is due to cancellation
+            if (networkError instanceof Error && networkError.name === 'AbortError') {
+              console.log('Image caption request was cancelled');
+              return null;
+            }
             Alert.alert(
               language === 'Chinese' ? '错误' : 'Error',
               language === 'Chinese'
@@ -1452,6 +1202,10 @@ export default function FileUploadPage() {
           }
         }
         // Done extracting information from files via claude
+        if (cancelCreationRef.current) {
+          console.log('Flashcard generation cancelled before starting');
+          return;
+        }
         setStatusExtractingInformationFromFiles(true);
 
         const flashcards = await callGenAIFlashcardsGeneration(
@@ -1462,10 +1216,13 @@ export default function FileUploadPage() {
         console.log('FLASHCARDS >>>>>>>>>>>>>>>>> \n', flashcards);
         if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
           setTimeout(async () => {
+            if (cancelCreationRef.current) return;
             setStatusGeneratingFlashcards(true);
             // Use the same logic as before for DB insert, but skip UI updates
+            let newDeckId: number | null = null;
             if (isInIndexPage) {
-              await createDeckWithGenAIFlashcards({
+              if (cancelCreationRef.current) return;
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -1477,9 +1234,11 @@ export default function FileUploadPage() {
                 },
                 flashcards
               });
+              newDeckId = result.deckId || null;
             }
             if (isInFavoritesPage) {
-              await createDeckWithGenAIFlashcards({
+              if (cancelCreationRef.current) return;
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -1492,9 +1251,11 @@ export default function FileUploadPage() {
                 flashcards,
                 isFavorited: 1
               });
+              newDeckId = result.deckId || null;
             }
             if (isInViewDecksInFolderPage) {
-              await createDeckWithGenAIFlashcards({
+              if (cancelCreationRef.current) return;
+              const result = await createDeckWithGenAIFlashcards({
                 deckName,
                 mode: mode === 'study' ? 'study' : 'interview',
                 formFields: {
@@ -1507,16 +1268,23 @@ export default function FileUploadPage() {
                 flashcards,
                 folderIDs: `[${folderId}]`
               });
+              newDeckId = result.deckId || null;
             }
+            if (newDeckId) setCreatedDeckId(newDeckId);
             if (isInViewFlashcardsPage) {
-              await createGenAIFlashcardsForDeck({
+              if (cancelCreationRef.current) return;
+              const result = await createGenAIFlashcardsForDeck({
                 deckId: Number(deckId),
                 flashcards
               });
+              // Get the IDs of the newly created flashcards
+              if (result && result.flashcardIds) setCreatedFlashcardIds(result.flashcardIds);
             }
+            if (cancelCreationRef.current) return;
             setStatusAddingDeckAndFlashcards(true);
             // Optionally, add a delay for user to see all ticks
             setTimeout(() => {
+              if (cancelCreationRef.current) return;
               setShowStatusPage(false);
               // Optionally, navigate or show a final success UI
               router.back();
@@ -1734,42 +1502,54 @@ export default function FileUploadPage() {
     outputRange: [0, 1],
   });
 
-  const getScrollContentPaddingTop = () => {
-    if (isMandatory) return 16; // default padding for Mandatory state
-
-    const height = Dimensions.get('window').height;
-    if (Platform.OS === 'ios') {
-      if (height > 900) return 55;
-      if (height >= 800) return 23;
-      return 16;
-    } else {
-      if (height > 930) return 35;
-      if (height > 900) return 20;
-      return 10;
-    }
-  };
-
   if (showStatusPage) {
     return (
       <DeckCreationStatusPage
         statusRows={[
           { done: statusExtractingInformationFromFiles, label: statusExtractingInformationFromFiles ? (language === 'Chinese' ? '成功提取信息' : 'Successfully extracted\ninfo from file') : (language === 'Chinese' ? '正在提取信息' : 'Extracting info\nfrom file') },
-          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated flashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
+          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
           { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards
             ? (isInViewFlashcardsPage
                 ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
                 : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
             : (isInViewFlashcardsPage
-                ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards to deck')
+                ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
                 : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck')) }        ]}
         isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
+        onCancel={async () => {
+          cancelCreationRef.current = true;
+          
+          // Abort any ongoing fetch requests
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+          }
+          
+          setShowStatusPage(false);
+          if (createdDeckId && !isInViewFlashcardsPage) {
+            await import('../db/decks').then(db => db.deleteDeck(createdDeckId));
+          }
+          if (isInViewFlashcardsPage && createdFlashcardIds.length > 0) {
+            await import('../db/decks').then(db => db.deleteFlashcardsByIds(createdFlashcardIds));
+          }
+          
+          // Reset all state variables after cancellation
+          setStatusExtractingInformationFromFiles(false);
+          setStatusGeneratingFlashcards(false);
+          setStatusAddingDeckAndFlashcards(false);
+          setCreatedDeckId(null);
+          setCreatedFlashcardIds([]);
+          cancelCreationRef.current = false; // Reset the cancel flag          
+          // Navigate back to the previous page
+          router.back();
+        }}
       />
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
@@ -1781,7 +1561,9 @@ export default function FileUploadPage() {
       <Animated.View
         style={[
           styles.headerIconsContainer,
-          { opacity: mandatoryOpacity, display: isMandatory ? 'flex' : 'none' }
+          { opacity: mandatoryOpacity, display: isMandatory ? 'flex' : 'none', 
+            paddingTop: getTopBarAccountHeight()
+          }
         ]}
       >
         <FormHeaderIcons 
@@ -1806,7 +1588,6 @@ export default function FileUploadPage() {
           ]}
            contentContainerStyle={[
              styles.scrollContent,
-             { paddingTop: getScrollContentPaddingTop() }
            ]}
           showsVerticalScrollIndicator={false}
           bounces={true}
@@ -1816,7 +1597,7 @@ export default function FileUploadPage() {
           <Animated.View style={[
             { opacity: mandatoryOpacity, display: !isMandatory ? 'none' : 'flex' }
           ]}>
-              <View style={[{gap: getFormContentGap(isInViewFlashcardsPage === 'true')}]}>
+              <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
                 {!isInViewFlashcardsPage && (<TitleTextBar
                   title={STRINGS.deckName[lang]}
                   highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
@@ -1825,7 +1606,16 @@ export default function FileUploadPage() {
                   onChangeText={setDeckName}
                 />)
                 }
-                
+                {isInViewFlashcardsPage === 'true' && (
+                  <TitleTextBar
+                    title={STRINGS.deckName[lang]}
+                    highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
+                    placeholder={deckTitle}
+                    value={deckTitle}
+                    onChangeText={() => {}} // Disabled - no-op function
+                    disabled={true}
+                  />
+                )}
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
@@ -1874,62 +1664,51 @@ export default function FileUploadPage() {
           styles.fileUploadContent,
           { opacity: fileUploadOpacity, display: !isMandatory ? 'flex' : 'none' }
           ]}>
-          {Dimensions.get('window').height <= 670 && (
             <ScrollView 
               style={[
-                { marginBottom: 50 + bottomOffset }
+                { marginBottom: 100 + bottomOffset }
               ]}
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: 'center',
+              }}
               showsVerticalScrollIndicator={false}
               bounces={true}
               overScrollMode="always"
               keyboardShouldPersistTaps="handled"
             >
-            <Text style={styles.fileUploadTitle}>
-            {STRINGS.uploadTitle[lang]}
-          </Text>
-          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} language={lang} />
-          <View style={styles.aiGenerateRow}>
-            <SmallCircleSelectButton
-              selected={isAIGenerate}
-              onPress={() => setIsAIGenerate(!isAIGenerate)}
-                />
-            <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
-            <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-              <HelpIconOutline width={24} height={24} />
-            </TouchableOpacity>
+              <View>
+                <Text style={styles.fileUploadTitle}>
+                {STRINGS.uploadTitle[lang]}
+              </Text>
+              <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} language={lang} />
+              <View style={styles.aiGenerateRow}>
+                <SmallCircleSelectButton
+                  selected={isAIGenerate}
+                  onPress={() => setIsAIGenerate(!isAIGenerate)}
+                    />
+                <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
+                <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
+                  <HelpIconOutline width={24} height={24} />
+                </TouchableOpacity>
               </View>
-          <View style={styles.bottomSpacingFilUpload} />
+              </View>
             </ScrollView>
-          )}
-          
-          <Text style={styles.fileUploadTitle}>
-            {STRINGS.uploadTitle[lang]}
-          </Text>
-          <FileUploadMainSection pickImage={pickImage} takePhoto={takePhoto} browseFiles={browseFiles} isUploadSuccess={isUploadSuccess} uploadType={uploadType} uploadedFileName={uploadedFileName} language={lang} />
-          <View style={styles.aiGenerateRow}>
-            <SmallCircleSelectButton
-              selected={isAIGenerate}
-              onPress={() => setIsAIGenerate(!isAIGenerate)}
-                />
-            <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
-            <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-              <HelpIconOutline width={24} height={24} />
-            </TouchableOpacity>
-              </View>
           </Animated.View>
-      </View>
 
-        <View style={[
-          styles.buttonContainer,
-          { bottom: bottomOffset }
-        ]}>
-          <ActionButton
-            text={STRINGS.submit[lang]}
-            backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
-            onPress={handleSubmit}
-            disabled={isSubmitDisabled()}
-            fullWidth
-          />
+
+          <View style={[
+            styles.buttonContainer,
+            { bottom: bottomOffset }
+          ]}>
+            <ActionButton
+              text={STRINGS.submit[lang]}
+              backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+              onPress={handleSubmit}
+              disabled={isSubmitDisabled()}
+              fullWidth
+            />
+          </View>
       </View>
 
       <GreyOverlayBackground 
@@ -2041,7 +1820,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -2049,7 +1827,6 @@ const styles = StyleSheet.create({
   },
   headerIconsContainer: {
     position: 'absolute',
-    top: Dimensions.get('window').height < 670 ? 30 : 60,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2060,9 +1837,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   fileUploadContent: {
+    flex: 1,
     paddingHorizontal: 16,
-    gap: Platform.OS === 'ios' ? 0 : 16,
-    marginTop: getFileUploadContentPaddingTop(),
+    marginTop: '5%',
+    justifyContent: 'center',
+  },
+  fileUploadScrollView: {
+    flex: 1,
+  },
+  fileUploadScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  fileUploadBottomSpacing: {
+    height: 100,
   },
   buttonContainer: {
     position: 'absolute',
@@ -2076,7 +1864,7 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomSpacingFilUpload: {
-    height: 100,
+    height: 0,
   },
   fileUploadTitle: {
     fontFamily: 'Satoshi-Bold',
@@ -2084,10 +1872,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: 'center',
     paddingHorizontal: 10,
-    marginTop: Platform.OS === 'ios' ? 10 : 40,
+    // marginTop: '5%',
   },
   fileUploadMainSection: {
-    height: 370,
+    height: Dimensions.get('window').height * 0.5,
     width: '95%',
     alignSelf: 'center',
     borderWidth: 3,
@@ -2101,8 +1889,7 @@ const styles = StyleSheet.create({
   uploadContent: {
     height: '90%',
     alignItems: 'center',
-    gap: 30,
-    paddingTop: 10,
+    justifyContent: 'space-evenly',
   },
   supportedFilesText: {
     fontFamily: 'Satoshi-Medium',

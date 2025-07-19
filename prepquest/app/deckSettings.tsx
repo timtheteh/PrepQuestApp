@@ -10,6 +10,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarAccountHeight } from '@/constants/heights';
 
 // Local component for title and toggle row
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
@@ -454,6 +456,8 @@ export default function DeckSettingsPage() {
   const modalOpacity = React.useRef(new Animated.Value(0)).current;
   const [pickerOpacity] = React.useState(new Animated.Value(1));
   const [resetCounter, setResetCounter] = React.useState(0);
+  const insets = useSafeAreaInsets();
+
 
   // Load settings when component mounts
   React.useEffect(() => {
@@ -549,7 +553,7 @@ export default function DeckSettingsPage() {
 
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: '#fff' }}>
-      <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
@@ -729,7 +733,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
   },
   backButton: {
@@ -748,8 +751,6 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    // borderWidth: 1,
-    // borderColor: 'red',
   },
   scrollView: {
     flex: 1,
@@ -758,7 +759,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 16,
-    paddingTop: 20,
   },
   titleToggleRow: {
     flexDirection: 'row',

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import Svg, { G, Path, Text as SvgText } from 'react-native-svg';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const SIZE = 300;
+const SIZE = Dimensions.get('window').width * 0.73;
 const RADIUS = SIZE / 2;
 const COLORS = ['#F8696B', '#FA9473', '#FFEB84', '#98CE7F']; // Again, Hard, Good, Easy
 

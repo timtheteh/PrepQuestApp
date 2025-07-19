@@ -381,9 +381,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 180,
     left: '50%',
-    width: 355,
+    width: '85%',
     height: 388,
-    marginLeft: -177.5, // Half of width
+    marginLeft: '-42.5%', // Half of width
     backgroundColor: '#FFFFFF',
     borderRadius: 30,
     borderWidth: 10,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    borderWidth: 1,
   },
   column: {
     flex: 1,
@@ -415,13 +415,13 @@ const styles = StyleSheet.create({
   },
   firstButtonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     marginTop: 16,
     paddingHorizontal: 6
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     marginTop: 24,
     paddingHorizontal: 6
   },

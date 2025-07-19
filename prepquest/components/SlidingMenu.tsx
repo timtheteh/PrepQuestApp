@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SlidingMenuProps {
   visible: boolean;
@@ -20,6 +21,7 @@ export function SlidingMenu({
 }: SlidingMenuProps) {
   const router = useRouter();
   const { language } = useLanguage();
+  const insets = useSafeAreaInsets();
   
   if (!visible) return null;
 
@@ -48,7 +50,8 @@ export function SlidingMenu({
       style={[
         styles.menu,
         {
-          transform: [{ translateX }]
+          transform: [{ translateX }],
+          top: Platform.OS === 'ios' ? insets.top : insets.top,
         }
       ]}
     >
@@ -79,7 +82,6 @@ export function SlidingMenu({
 const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
-    top: SCREEN_HEIGHT <= 670 ? 40 : 70,
     left: 0,
     width: 171,
     height: 152,

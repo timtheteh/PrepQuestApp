@@ -245,7 +245,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.accumulatedDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡组' : 'Accumulated Decks'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡组' : 'Accumulated\nDecks'}</Text>
                     </View>
                   </View>
                 </View>
@@ -257,7 +257,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.localStorageDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片组' : 'Decks in local storage'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片组' : 'Decks in local\nstorage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -266,7 +266,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.totalQuizzedDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡组' : 'Total decks quizzed'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡组' : 'Total decks\nquizzed'}</Text>
                     </View>
                   </View>
                 </View>
@@ -282,7 +282,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.accumulatedFlashcards}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡片' : 'Accumulated Flashcards'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡片' : 'Accumulated\nFlashcards'}</Text>
                     </View>
                   </View>
                 </View>
@@ -294,7 +294,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.localStorageFlashcards}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片' : 'Flashcards in local storage'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片' : 'Flashcards in\nlocal storage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -303,7 +303,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.totalQuizzedFlashcards}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡片' : 'Total Flashcards quizzed'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡片' : 'Total Flashcards\nquizzed'}</Text>
                     </View>
                   </View>
                 </View>
@@ -319,7 +319,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.studyDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计学习卡组' : 'Accumulated Study Decks'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计学习卡组' : 'Accumulated\nStudy Decks'}</Text>
                     </View>
                   </View>
                 </View>
@@ -331,7 +331,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.studyLocalStorage}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的学习卡组' : 'Study decks in local storage'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的学习卡组' : 'Study decks in\nlocal storage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -340,7 +340,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.studyQuizzed}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n学习卡组' : 'Total Study decks quizzed'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n学习卡组' : 'Total Study\ndecks quizzed'}</Text>
                     </View>
                   </View>
                 </View>
@@ -356,7 +356,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.interviewDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计面试卡组' : 'Accumulated Interview Decks'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计面试卡组' : 'Accumulated\nInterview Decks'}</Text>
                     </View>
                   </View>
                 </View>
@@ -368,7 +368,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.interviewLocalStorage}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的面试卡组' : 'Interview decks in local storage'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的面试卡组' : 'Interview decks\nin local storage'}</Text>
                     </View>
                   </View>
                 </View>
@@ -377,7 +377,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={styles.deckNumber}>{statsData.interviewQuizzed}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n面试卡组' : 'Total Interview decks quizzed'}</Text>
+                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n面试卡组' : 'Total Interview\ndecks quizzed'}</Text>
                     </View>
                   </View>
                 </View>

@@ -11,6 +11,8 @@ import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
 import { GenericModal } from '@/components/GenericModal';
 import { db } from '@/db/index';
 import { Picker } from '@react-native-picker/picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTopBarAccountHeight } from '@/constants/heights';
 
 const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
     return (
@@ -39,6 +41,7 @@ export default function AppSettingsScreen() {
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
   const [notificationsAccessEnabled, setNotificationsAccessEnabled] = React.useState(false);
   const [language, setLanguage] = React.useState('English');
+  const insets = useSafeAreaInsets();
 
   // Backup modal state
   const [isBackupModalOpen, setIsBackupModalOpen] = React.useState(false);
@@ -375,7 +378,7 @@ export default function AppSettingsScreen() {
 
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: '#fff' }}>
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
             <TouchableOpacity 
             style={styles.backButton}
             onPress={handleBackPress}
@@ -594,7 +597,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingTop: Dimensions.get('window').height < 670 ? 30 : 60,
     paddingBottom: 8,
     },
     backButton: {
@@ -626,10 +628,7 @@ const styles = StyleSheet.create({
   mainContainer: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 20,
     paddingBottom: 20,
-    // borderWidth: 1,
-    // borderColor: 'red',
   },
   buttonColumn: {
     flexDirection: 'column',

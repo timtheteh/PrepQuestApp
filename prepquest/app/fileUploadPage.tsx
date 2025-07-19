@@ -1547,6 +1547,21 @@ export default function FileUploadPage() {
             setExtractedText('');
           }
         }
+        // If txt, extract text only
+        else if (selected.name.endsWith('.txt')) {
+          try {
+            setUploadProgress(20);
+            const text = await FileSystem.readAsStringAsync(selected.uri, { encoding: FileSystem.EncodingType.UTF8 });
+            setUploadProgress(90);
+            setExtractedText(text);
+            setExtractedImages([]); // No images in txt files
+            console.log('Extracted TXT text:', text);
+          } catch (err) {
+            console.error('TXT extraction failed:', err);
+            setExtractedText('');
+            setExtractedImages([]);
+          }
+        }
         // For other file types, just process quickly
         else {
           setUploadProgress(50);

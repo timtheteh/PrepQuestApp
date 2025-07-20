@@ -16,6 +16,7 @@ import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
 import LottieView from 'lottie-react-native';
 import MicIcon from '@/assets/icons/micIcon.svg';
 import AIChatIcon from '@/assets/icons/AIChatIcon.svg';
+import AIChatIconGrey from '@/assets/icons/AIChatIconGrey.svg';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
@@ -2005,7 +2006,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                     }}
                     disabled={!recordedAudioUri}
                   >
-                    <AIChatIcon width={36} height={36} />
+                    {recordedAudioUri ? <AIChatIcon width={36} height={36}/> : <AIChatIconGrey width={36} height={36} />}
                   </Pressable>
                 </View>
               )}

@@ -17,6 +17,18 @@ export default function RootLayout() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const fadeAnim = useState(new Animated.Value(1))[0];
+
+  // Function to handle authentication completion
+  const handleAuthComplete = () => {
+    // Start fade out animation to transition to main app
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 800, // 800ms fade out
+      useNativeDriver: true,
+    }).start(() => {
+      setShowSplash(false);
+    });
+  };
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -54,29 +66,14 @@ export default function RootLayout() {
         console.log(`✅ Database initialization completed successfully in ${endTime - startTime}ms`);
         setIsDatabaseReady(true);
         
-        // Start fade out animation
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 800, // 800ms fade out
-          useNativeDriver: true,
-        }).start(() => {
-          setShowSplash(false);
-        });
+        // Don't fade out immediately - keep splash screen visible for sign in/signup
+        // The splash screen will handle the transition when user completes authentication
         
       } catch (error) {
         console.error('❌ Failed to initialize database:', error);
         // Even if there's an error, we should still show the app
         // The user can retry or the app can handle the error gracefully
         setIsDatabaseReady(true);
-        
-        // Still fade out even on error
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowSplash(false);
-        });
       } finally {
         setIsInitializing(false);
       }
@@ -89,7 +86,10 @@ export default function RootLayout() {
   if (!loaded || showSplash) {
     return (
       <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-        <SplashScreen />
+        <SplashScreen 
+          isDatabaseReady={isDatabaseReady} 
+          onAuthComplete={handleAuthComplete}
+        />
       </Animated.View>
     );
   }

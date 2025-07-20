@@ -18,7 +18,7 @@ import { QuestionTextBar } from '@/components/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/TypeOfInterviewQn';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
-import { checkDeckNameExists } from '../db/decks';
+import { checkDeckNameExists, saveUserYouTubeLinkFormEntry, getMostRecentYouTubeLinkFormEntry } from '../db/decks';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getTopBarAccountHeight } from '@/constants/heights';
@@ -418,7 +418,7 @@ export default function YouTubeLinkPage() {
     });
   };
 
-  const handleSuccessConfirm = () => {
+  const handleSuccessConfirm = async () => {
     // Animate out first, then navigate
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -431,8 +431,18 @@ export default function YouTubeLinkPage() {
         duration: 200,
         useNativeDriver: true,
       })
-    ]).start(() => {
+    ]).start(async () => {
       setIsSuccessModalOpen(false);
+      // Save form submission to userFormEntries
+      await saveUserYouTubeLinkFormEntry({
+        deckName: isInViewFlashcardsPage === 'true' ? deckTitle : deckName,
+        studyEducationLevel: studyMandatoryQuestion1,
+        studySubjects: studyMandatoryQuestion2,
+        numberOfQuestions,
+        interviewJobRole: interviewMandatoryQuestion1,
+        interviewType,
+        youtubeLink
+      });
       // Navigate after animation completes
       setTimeout(() => {
         router.back();
@@ -506,6 +516,20 @@ export default function YouTubeLinkPage() {
     ]).start(() => {
       setIsRecentFormModalOpen(false);
     });
+  };
+
+  const handleLoadMostRecentForm = async () => {
+    const recent = await getMostRecentYouTubeLinkFormEntry((mode as 'study' | 'interview'));
+    if (recent) {
+      setDeckName(recent.deckName || '');
+      setStudyMandatoryQuestion1(recent.studyEducationLevel || '');
+      setStudyMandatoryQuestion2(recent.studySubjects || '');
+      setNumberOfQuestions(recent.numberOfQuestions || 1);
+      setInterviewMandatoryQuestion1(recent.interviewJobRole || '');
+      setInterviewType(recent.interviewType || '');
+      setYoutubeLink(recent.youtubeLink || '');
+    }
+    setIsRecentFormModalOpen(false);
   };
 
   const handleUseMostRecentFormPress = () => {
@@ -744,11 +768,7 @@ export default function YouTubeLinkPage() {
         opacity={recentFormModalOpacity}
         text={STRINGS.useRecent[lang]}
         buttons='double'
-        onConfirm={() => {
-          handleDismissRecentForm();
-          // TODO: Implement loading most recent form
-          console.log('Load most recent form');
-        }}
+        onConfirm={handleLoadMostRecentForm}
         onCancel={handleDismissRecentForm}
       />
       <GenericModal

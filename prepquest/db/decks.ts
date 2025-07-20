@@ -1959,6 +1959,52 @@ export async function saveUserFileUploadFormEntry({
   }
 }
 
+export async function saveUserYouTubeLinkFormEntry({
+  deckName,
+  studyEducationLevel,
+  studySubjects,
+  numberOfQuestions,
+  interviewJobRole,
+  interviewType,
+  youtubeLink
+}: {
+  deckName: string;
+  studyEducationLevel?: string;
+  studySubjects?: string;
+  numberOfQuestions: number;
+  interviewJobRole?: string;
+  interviewType?: string;
+  youtubeLink: string;
+}): Promise<{ success: boolean }> {
+  console.log("interviewType >>>>>>>>>>>>>>>>> \n", interviewType);
+  try {
+    const userID = await getCurrentUserID();
+    const formSubmissionDate = new Date().toISOString();
+    await db.execAsync(`
+      INSERT INTO userFormEntries (
+        userID, formEntryType, formEntryMethod, formSubmissionDate, deckName, numberOfQuestions,
+        youtubeLink, studyEducationLevel, studySubjects, interviewJobRole, interviewType
+      ) VALUES (
+        '${userID}',
+        ${interviewJobRole || interviewType ? `'interview'` : `'study'`},
+        'youtubeLink',
+        '${formSubmissionDate}',
+        '${deckName.replace(/'/g, "''")}',
+        ${typeof numberOfQuestions === 'number' ? numberOfQuestions : 'NULL'},
+        ${youtubeLink ? `'${youtubeLink.replace(/'/g, "''")}'` : 'NULL'},
+        ${studyEducationLevel ? `'${studyEducationLevel.replace(/'/g, "''")}'` : 'NULL'},
+        ${studySubjects ? `'${studySubjects.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewJobRole ? `'${interviewJobRole.replace(/'/g, "''")}'` : 'NULL'},
+        ${interviewType ? `'${interviewType.toLowerCase().replace(/'/g, "''")}'` : 'NULL'}
+      )
+    `);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving user YouTube link form entry:', error);
+    return { success: false };
+  }
+}
+
 export async function getMostRecentFileUploadFormEntry(mode: 'study' | 'interview'): Promise<any | null> {
   try {
     const userID = await getCurrentUserID();
@@ -1977,6 +2023,28 @@ export async function getMostRecentFileUploadFormEntry(mode: 'study' | 'intervie
     return result;
   } catch (error) {
     console.error('Error fetching most recent file upload form entry:', error);
+    return null;
+  }
+}
+
+export async function getMostRecentYouTubeLinkFormEntry(mode: 'study' | 'interview'): Promise<any | null> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(`
+      SELECT *
+      FROM userFormEntries
+      WHERE formEntryMethod = 'youtubeLink'
+        AND formEntryType = ?
+        AND userID = ?
+      ORDER BY formSubmissionDate DESC
+      LIMIT 1
+    `, [mode, userID]);
+    if (!result) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    console.error('Error fetching most recent YouTube link form entry:', error);
     return null;
   }
 }

@@ -247,14 +247,12 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
                 </TouchableOpacity>
               </View>
               
-              {/* Forgot Password text - only visible in sign in state */}
-              {isSignIn && (
-                <View style={styles.forgotPasswordContainer}>
-                  <TouchableOpacity>
-                    <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              {/* Forgot Password text - visible in both states */}
+              <View style={styles.forgotPasswordContainer}>
+                <TouchableOpacity>
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
               
               {/* Social login section - visible in both states */}
               <View style={styles.forgotPasswordContainer}>

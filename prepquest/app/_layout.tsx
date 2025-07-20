@@ -64,7 +64,14 @@ export default function RootLayout() {
         const endTime = Date.now();
         
         console.log(`✅ Database initialization completed successfully in ${endTime - startTime}ms`);
-        setIsDatabaseReady(true);
+        
+        // Ensure minimum 3 seconds of splash screen
+        const elapsedTime = endTime - startTime;
+        const remainingTime = Math.max(0, 5000 - elapsedTime);
+        
+        setTimeout(() => {
+          setIsDatabaseReady(true);
+        }, remainingTime);
         
         // Don't fade out immediately - keep splash screen visible for sign in/signup
         // The splash screen will handle the transition when user completes authentication
@@ -73,7 +80,9 @@ export default function RootLayout() {
         console.error('❌ Failed to initialize database:', error);
         // Even if there's an error, we should still show the app
         // The user can retry or the app can handle the error gracefully
-        setIsDatabaseReady(true);
+        setTimeout(() => {
+          setIsDatabaseReady(true);
+        }, 3000); // Always show for at least 3 seconds even on error
       } finally {
         setIsInitializing(false);
       }

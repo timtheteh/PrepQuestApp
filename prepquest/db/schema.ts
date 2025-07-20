@@ -187,11 +187,11 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
       )
     `);
 
-    // Insert default user statistics record if it doesn't exist
-    await db.execAsync(`
-      INSERT OR IGNORE INTO users (userID, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated)
-      VALUES ('1', 0, 0, 0, 0)
-    `);
+    // // Insert default user statistics record if it doesn't exist
+    // await db.execAsync(`
+    //   INSERT OR IGNORE INTO users (userID, accumulatedDecksCreated, accumulatedFlashcardsCreated, accumulatedStudyDecksCreated, accumulatedInterviewDecksCreated)
+    //   VALUES ('1', 0, 0, 0, 0)
+    // `);
 
     console.log('Database initialized successfully with new schema');
   } catch (error) {

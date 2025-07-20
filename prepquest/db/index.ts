@@ -9,9 +9,9 @@ export const db = SQLite.openDatabaseSync('prepquest.db');
 // Setup function to initialize the database
 export async function setupDatabase() {
   try {
-    // Initialize AsyncStorage with userID as 1
-    await AsyncStorage.setItem('userID', '1');
-    console.log('✅ AsyncStorage initialized with userID: 1');
+    // // Initialize AsyncStorage with userID as 1
+    // await AsyncStorage.setItem('userID', '1');
+    // console.log('✅ AsyncStorage initialized with userID: 1');
     
     // Wait for schema initialization to complete
     await initializeDatabase(db);
@@ -20,8 +20,8 @@ export async function setupDatabase() {
     // Wait a bit to ensure tables are fully created
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Populate with dummy data for testing
-    await populateDummyData();
+    // // Populate with dummy data for testing
+    // await populateDummyData();
   } catch (error) {
     console.error('Error setting up database:', error);
   }

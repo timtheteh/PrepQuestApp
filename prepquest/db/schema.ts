@@ -159,6 +159,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS users (
         userID TEXT PRIMARY KEY,
+        dateJoined TEXT, 
         accumulatedDecksCreated INTEGER DEFAULT 0,
         accumulatedFlashcardsCreated INTEGER DEFAULT 0,
         accumulatedStudyDecksCreated INTEGER DEFAULT 0,
@@ -176,7 +177,12 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         hardTimer INTEGER DEFAULT 45,
         goodTimer INTEGER DEFAULT 30,
         easyTimer INTEGER DEFAULT 15,
-        language TEXT DEFAULT 'English'
+        language TEXT DEFAULT 'English',
+        currentPlan TEXT DEFAULT 'Free',
+        fileUploadRequests INTEGER DEFAULT 0,
+        genAIFormRequests INTEGER DEFAULT 0,
+        youtubeLinkRequests INTEGER DEFAULT 0,
+        chatWithAIRequests INTEGER DEFAULT 0,
       )
     `);
 

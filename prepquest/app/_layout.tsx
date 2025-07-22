@@ -10,6 +10,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -91,99 +92,101 @@ export default function RootLayout() {
     initDatabase();
   }, [fadeAnim]);
 
-  // Show splash screen while fonts are loading or database is initializing
-  if (!loaded || showSplash) {
-    return (
-      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-        <SplashScreen 
-          isDatabaseReady={isDatabaseReady} 
-          onAuthComplete={handleAuthComplete}
-        />
-      </Animated.View>
-    );
-  }
-
   return (
-    <LanguageProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-        <Stack.Screen 
-          name="genAIForm" 
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_right',
-            headerShown: false
-          }} 
-        />
-        <Stack.Screen 
-          name="fileUploadPage" 
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_right',
-            headerShown: false
-          }} 
-        />
-        <Stack.Screen 
-          name="youtubeLink" 
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_right',
-            headerShown: false
-          }} 
-        />
-        <Stack.Screen 
-          name="manualAddDeck" 
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_right',
-            headerShown: false
-          }} 
-        />
-        <Stack.Screen 
-          name="deckSettings" 
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_right',
-            headerShown: false
-          }} 
-        />
-        <Stack.Screen 
-          name="appSettings" 
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_right',
-            headerShown: false
-          }} 
-        />
-        <Stack.Screen 
-          name="textInputModal" 
-          options={{
-            presentation: 'transparentModal',
-            animation: 'fade_from_bottom',
-            headerShown: false,
-          }} 
-        />
-        <Stack.Screen 
-          name="flashcardView" 
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_right',
-            headerShown: false
-          }} 
-        />
-        <Stack.Screen 
-          name="viewQuizStats" 
-          options={{
-            presentation: 'modal',
-            animation: 'slide_from_right',
-            headerShown: false,
-          }} 
-        />
-      </Stack>
-      <StatusBar style="auto" />
+      <AuthProvider>
+        <LanguageProvider>
+          {/* Show splash screen while fonts are loading or database is initializing */}
+          {(!loaded || showSplash) ? (
+            <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+              <SplashScreen 
+                isDatabaseReady={isDatabaseReady} 
+                onAuthComplete={handleAuthComplete}
+              />
+            </Animated.View>
+          ) : (
+            <>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+                <Stack.Screen 
+                  name="genAIForm" 
+                  options={{
+                    presentation: 'fullScreenModal',
+                    animation: 'slide_from_right',
+                    headerShown: false
+                  }} 
+                />
+                <Stack.Screen 
+                  name="fileUploadPage" 
+                  options={{
+                    presentation: 'fullScreenModal',
+                    animation: 'slide_from_right',
+                    headerShown: false
+                  }} 
+                />
+                <Stack.Screen 
+                  name="youtubeLink" 
+                  options={{
+                    presentation: 'fullScreenModal',
+                    animation: 'slide_from_right',
+                    headerShown: false
+                  }} 
+                />
+                <Stack.Screen 
+                  name="manualAddDeck" 
+                  options={{
+                    presentation: 'fullScreenModal',
+                    animation: 'slide_from_right',
+                    headerShown: false
+                  }} 
+                />
+                <Stack.Screen 
+                  name="deckSettings" 
+                  options={{
+                    presentation: 'fullScreenModal',
+                    animation: 'slide_from_right',
+                    headerShown: false
+                  }} 
+                />
+                <Stack.Screen 
+                  name="appSettings" 
+                  options={{
+                    presentation: 'fullScreenModal',
+                    animation: 'slide_from_right',
+                    headerShown: false
+                  }} 
+                />
+                <Stack.Screen 
+                  name="textInputModal" 
+                  options={{
+                    presentation: 'transparentModal',
+                    animation: 'fade_from_bottom',
+                    headerShown: false,
+                  }} 
+                />
+                <Stack.Screen 
+                  name="flashcardView" 
+                  options={{
+                    presentation: 'fullScreenModal',
+                    animation: 'slide_from_right',
+                    headerShown: false
+                  }} 
+                />
+                <Stack.Screen 
+                  name="viewQuizStats" 
+                  options={{
+                    presentation: 'modal',
+                    animation: 'slide_from_right',
+                    headerShown: false,
+                  }} 
+                />
+              </Stack>
+              <StatusBar style="auto" />
+            </>
+          )}
+        </LanguageProvider>
+      </AuthProvider>
     </ThemeProvider>
-    </LanguageProvider>
   );
 }

@@ -182,7 +182,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         fileUploadRequests INTEGER DEFAULT 0,
         genAIFormRequests INTEGER DEFAULT 0,
         youtubeLinkRequests INTEGER DEFAULT 0,
-        chatWithAIRequests INTEGER DEFAULT 0,
+        chatWithAIRequests INTEGER DEFAULT 0
       )
     `);
 

@@ -106,7 +106,13 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
   function getY(value: number, graphHeight: number) {
     // Invert y for SVG
     const usableHeight = graphHeight - 2 * PADDING;
-    return PADDING + usableHeight - (value / Y_MAX) * usableHeight;
+    // Prevent division by zero or NaN values
+    if (Y_MAX <= 0 || isNaN(Y_MAX) || isNaN(value)) {
+      return PADDING + usableHeight; // Return bottom of graph
+    }
+    const result = PADDING + usableHeight - (value / Y_MAX) * usableHeight;
+    // Final safety check to ensure result is a valid number
+    return isNaN(result) ? PADDING + usableHeight : result;
   }
 
   useEffect(() => {

@@ -528,11 +528,11 @@ export default function FileUploadPage() {
         // Create a new AbortController for this request
         abortControllerRef.current = new AbortController();
         
-        response = await fetch('https://esbkgdyjvysatwdlkegc.functions.supabase.co/genAIFlashcardsGeneration', {
+        response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({prompt}),
           signal: abortControllerRef.current.signal,
@@ -1041,14 +1041,14 @@ export default function FileUploadPage() {
             abortControllerRef.current = new AbortController();
             console.log('About to make PDF caption fetch request...');
             
-            const SUPABASE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/pdfCaptionClaude';
-            pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
-              method: 'POST',
-              body: formData,
-              headers: {
-                // Let fetch set Content-Type
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
-              },
+            const SUPABASE_FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/pdfCaptionClaude`;
+                          pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  // Let fetch set Content-Type
+                  'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+                },
               signal: abortControllerRef.current.signal,
             });
           } catch (networkError) {
@@ -1151,12 +1151,12 @@ export default function FileUploadPage() {
             // Create a new AbortController for this request
             abortControllerRef.current = new AbortController();
             
-            const SUPABASE_IMAGE_FUNCTION_URL = 'https://esbkgdyjvysatwdlkegc.functions.supabase.co/imageCaptionClaude';
+            const SUPABASE_IMAGE_FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/imageCaptionClaude`;
             imageCaptionClaudeResponse = await fetch(SUPABASE_IMAGE_FUNCTION_URL, {
               method: 'POST',
               body: formData,
               headers: {
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmtnZHlqdnlzYXR3ZGxrZWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MTUyNjEsImV4cCI6MjA2NzE5MTI2MX0.nBYgPc1DnmUSmLVGtAlfS84bxgp5k_ETLS0c4vl2mWc',
+                'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
               },
               signal: abortControllerRef.current.signal,
             });

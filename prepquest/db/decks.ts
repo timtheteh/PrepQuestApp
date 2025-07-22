@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import { promptAndData } from '../constants/promptEngineering';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Deck {
   deckID: number;
@@ -37,7 +38,7 @@ async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
+    // console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }

@@ -71,14 +71,20 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
   // Calculate total width needed for all data points
   const totalWidth = Math.max(GRAPH_WIDTH, PADDING + (currentData.length - 1) * X_STEP + PADDING);
 
-  const yMaxRaw = currentData.length > 0 ? Math.max(...currentData.map(d => d.time)) : 0;
-  const Y_MAX = Math.ceil(yMaxRaw / 10) * 10;
+  const yMaxRaw = currentData.length > 0 ? Math.max(...currentData.map(d => isNaN(d.time) ? 0 : d.time)) : 0;
+  const Y_MAX = Math.max(1, Math.ceil(yMaxRaw / 10) * 10); // Ensure minimum value of 1
   const Y_STEP = isMonth ? 10 : 5;
 
   function getY(value: number, graphHeight: number) {
     // Invert y for SVG
     const usableHeight = graphHeight - 2 * PADDING;
-    return PADDING + usableHeight - (value / Y_MAX) * usableHeight;
+    // Prevent division by zero or NaN values
+    if (Y_MAX <= 0 || isNaN(Y_MAX) || isNaN(value)) {
+      return PADDING + usableHeight; // Return bottom of graph
+    }
+    const result = PADDING + usableHeight - (value / Y_MAX) * usableHeight;
+    // Final safety check to ensure result is a valid number
+    return isNaN(result) ? PADDING + usableHeight : result;
   }
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share, Alert } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import LightSwitch from '@/assets/icons/lightSwitch.svg';
 import DarkSwitch from '@/assets/icons/darkSwitch.svg';
 import GrapeStem from '@/assets/icons/grapeStem.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTopBarAccountHeight } from '@/constants/heights';
@@ -30,6 +31,7 @@ export default function AccountScreen() {
   const screenHeight = Dimensions.get('window').height;
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
+  const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
 
   // For button animation
@@ -71,12 +73,31 @@ export default function AccountScreen() {
     router.push('/appSettings');
   };
 
-  const handleSignOut = () => {
-    setShowLoadingPage(true);
-    // // Optionally, you can update loading values here for testing
-    // setLoadingProgress(0.4);
-    // setLoadingCurrent(12);
-    // setLoadingTotal(48);
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            setShowLoadingPage(true);
+            try {
+              await signOut();
+              // The auth context will handle the sign out and redirect
+            } catch (error) {
+              console.error('Error signing out:', error);
+              setShowLoadingPage(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Button position: 0 (left) for dark, 1 (right) for light
@@ -157,7 +178,14 @@ export default function AccountScreen() {
         </View>
         <View style={styles.circleContainer}> 
           <View style={styles.profileCircle}>
-            <Text style={styles.profileInitials}>JA</Text>
+            <Text style={styles.profileInitials}>
+              {user?.user_metadata?.full_name 
+                ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                : user?.email 
+                  ? user.email.substring(0, 2).toUpperCase()
+                  : 'GU'
+              }
+            </Text>
           </View>
         </View>
         <View style={[styles.infoColumn, { marginTop: '10%', marginBottom: '15%' }]}> 
@@ -165,7 +193,11 @@ export default function AccountScreen() {
             <Text style={styles.infoHeading}>{language === 'Chinese' ? '用户名' : 'Username'}</Text>
             <Text style={[styles.infoValue, {
               // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-              }]}>johnappleseed@gmail.com</Text>
+              }]}>{user?.email || user?.user_metadata?.full_name || 'Guest User'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoHeading}>{language === 'Chinese' ? '用户ID' : 'User ID'}</Text>
+            <Text style={styles.infoValue}>{user?.id || 'Not available'}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoHeading}>{language === 'Chinese' ? '当前订阅计划' : 'Current Plan'}</Text>

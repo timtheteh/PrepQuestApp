@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getContentTopHeight, getContentTopHeightNoRoundedToggle2, getHeaderIconsTopHeight, getTopBarTopHeight } from '@/constants/heights';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Interface for flashcard data
 interface Flashcard {
@@ -149,7 +150,7 @@ export default function ViewFlashcardsScreen() {
       const userID = await AsyncStorage.getItem('userID');
       return userID || '1'; // Default to '1' if not found
     } catch (error) {
-      console.error('Error getting userID from AsyncStorage:', error);
+      // console.error('Error getting userID from AsyncStorage:', error);
       return '1'; // Default to '1' on error
     }
   }

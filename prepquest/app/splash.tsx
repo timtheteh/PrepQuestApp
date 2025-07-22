@@ -7,6 +7,7 @@ import AppleLoginIcon from '@/assets/icons/AppleLoginIcon.svg';
 import FacebookLoginIcon from '@/assets/icons/FacebookLoginIcon.svg';
 import { Feather } from '@expo/vector-icons';
 import { Toast } from '@/components/Toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -16,10 +17,12 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }: SplashScreenProps) {
+  const { user, signIn, signUp, signInWithGoogle, signInWithFacebook, signInWithApple, error, clearError } = useAuth();
   const animationRef = useRef<LottieView>(null);
   const logoAnimationRef = useRef<LottieView>(null);
   const [isSignIn, setIsSignIn] = useState(true); // true for Sign In, false for Sign Up
   const [showPassword, setShowPassword] = useState(false); // false = hidden, true = visible
+  const [isLoading, setIsLoading] = useState(false);
   
   // Form state
   const [email, setEmail] = useState('');
@@ -52,15 +55,40 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
     return true;
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (validateSignUp()) {
-      // Proceed with sign up
-      console.log('Sign up validation passed');
-      // Add your sign up logic here
+      setIsLoading(true);
+      clearError();
+      
+      const result = await signUp(email.trim(), password);
+      
+      if (result.success) {
+        setToastMessage('Account created successfully!');
+        setToastVisible(true);
+        // The auth context will handle the user state update
+      } else {
+        setToastMessage(result.error || 'Sign up failed');
+        setToastVisible(true);
+        
+        // If user already exists, suggest switching to sign in
+        if (result.error?.includes('sign in instead')) {
+          // Small delay to show the error message first
+          setTimeout(() => {
+            setToastMessage('Switch to Sign In tab to access your account');
+            setToastVisible(true);
+            // Optionally auto-switch to sign in tab
+            setTimeout(() => {
+              setIsSignIn(true);
+            }, 1000);
+          }, 3000);
+        }
+      }
+      
+      setIsLoading(false);
     }
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     // Check if fields are empty
     if (!email.trim() || !password.trim()) {
       setToastMessage('Fill up both email/username and password');
@@ -68,9 +96,59 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
       return;
     }
     
-    // Proceed with sign in
-    console.log('Sign in validation passed');
-    // Add your sign in logic here
+    setIsLoading(true);
+    clearError();
+    
+    const result = await signIn(email.trim(), password);
+    
+    if (result.success) {
+      setToastMessage('Signed in successfully!');
+      setToastVisible(true);
+      // The auth context will handle the user state update
+    } else {
+      setToastMessage(result.error || 'Sign in failed');
+      setToastVisible(true);
+      
+      // If user doesn't exist, suggest switching to sign up
+      if (result.error?.includes('Sign up first')) {
+        // Small delay to show the error message first
+        setTimeout(() => {
+          setToastMessage('Switch to Sign Up tab to create an account');
+          setToastVisible(true);
+          // Optionally auto-switch to sign up tab
+          setTimeout(() => {
+            setIsSignIn(false);
+          }, 1000);
+        }, 3000);
+      }
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+    setIsLoading(true);
+    clearError();
+    
+    let result;
+    switch (provider) {
+      case 'google':
+        result = await signInWithGoogle();
+        break;
+      case 'facebook':
+        result = await signInWithFacebook();
+        break;
+      case 'apple':
+        result = await signInWithApple();
+        break;
+    }
+    
+    if (!result?.success) {
+      setToastMessage(result?.error || 'Social login failed');
+      setToastVisible(true);
+    }
+    
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -93,6 +171,34 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
       }).start();
     }
   }, [isDatabaseReady, fadeAnim]);
+
+  // Handle successful authentication
+  useEffect(() => {
+    if (user && onAuthComplete) {
+      // Small delay to show success message
+      setTimeout(() => {
+        onAuthComplete();
+      }, 1000);
+    }
+  }, [user, onAuthComplete]);
+
+  // If user is already authenticated, skip the auth screen
+  useEffect(() => {
+    if (user && isDatabaseReady && onAuthComplete) {
+      // User is already logged in, proceed to main app
+      setTimeout(() => {
+        onAuthComplete();
+      }, 500);
+    }
+  }, [user, isDatabaseReady, onAuthComplete]);
+
+  // Show auth error in toast
+  useEffect(() => {
+    if (error) {
+      setToastMessage(error);
+      setToastVisible(true);
+    }
+  }, [error]);
 
   return (
     <View style={styles.container}>
@@ -238,11 +344,12 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
               {/* Sign In/Sign Up button */}
               <View style={styles.buttonContainer}>
                 <TouchableOpacity 
-                  style={styles.signInButton}
+                  style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
                   onPress={isSignIn ? handleSignIn : handleSignUp}
+                  disabled={isLoading}
                 >
                   <Text style={styles.signInButtonText}>
-                    {isSignIn ? 'Sign In' : 'Sign Up'}
+                    {isLoading ? 'Loading...' : (isSignIn ? 'Sign In' : 'Sign Up')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -263,7 +370,11 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
                 {/* Social login buttons */}
                 <View style={styles.socialLoginContainer}>
                   {/* Google login */}
-                  <TouchableOpacity style={styles.socialLoginButton}>
+                  <TouchableOpacity 
+                    style={[styles.socialLoginButton, isLoading && styles.socialLoginButtonDisabled]}
+                    onPress={() => handleSocialLogin('google')}
+                    disabled={isLoading}
+                  >
                     <View style={styles.iconContainer}>
                       <GoogleLoginIcon width={24} height={24} />
                     </View>
@@ -274,7 +385,11 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
                   
                   {/* Apple login - only on iOS */}
                   {Platform.OS === 'ios' && (
-                    <TouchableOpacity style={styles.socialLoginButton}>
+                    <TouchableOpacity 
+                      style={[styles.socialLoginButton, isLoading && styles.socialLoginButtonDisabled]}
+                      onPress={() => handleSocialLogin('apple')}
+                      disabled={isLoading}
+                    >
                       <View style={styles.iconContainer}>
                         <AppleLoginIcon width={24} height={24} />
                       </View>
@@ -285,7 +400,11 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
                   )}
                   
                   {/* Facebook login */}
-                  <TouchableOpacity style={styles.socialLoginButton}>
+                  <TouchableOpacity 
+                    style={[styles.socialLoginButton, isLoading && styles.socialLoginButtonDisabled]}
+                    onPress={() => handleSocialLogin('facebook')}
+                    disabled={isLoading}
+                  >
                     <View style={styles.iconContainer}>
                       <FacebookLoginIcon width={24} height={24} />
                     </View>
@@ -470,6 +589,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 10,
   },
+  signInButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+    opacity: 0.6,
+  },
   signInButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -506,6 +629,10 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  socialLoginButtonDisabled: {
+    opacity: 0.6,
+    borderColor: '#9CA3AF',
   },
   socialLoginText: {
     fontSize: 16,

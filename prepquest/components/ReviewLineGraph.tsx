@@ -7,6 +7,7 @@ import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+
 // Interface for the data structure
 interface DayData {
   day: string;
@@ -50,7 +51,7 @@ async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
+    // console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }
@@ -126,8 +127,8 @@ const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: Month
     
     result.forEach((row: any) => {
       dateCountMap.set(row.activity_date, {
-        decks: row.deck_count || 0,
-        flashcards: row.flashcard_count || 0
+        decks: isNaN(row.deck_count) ? 0 : (row.deck_count || 0),
+        flashcards: isNaN(row.flashcard_count) ? 0 : (row.flashcard_count || 0)
       });
     });
 
@@ -146,8 +147,8 @@ const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: Month
       dayData.push({
         day: getDayName(date),
         date: formatDate(date),
-        flashcards: counts.flashcards,
-        decks: counts.decks,
+        flashcards: isNaN(counts.flashcards) ? 0 : counts.flashcards,
+        decks: isNaN(counts.decks) ? 0 : counts.decks,
       });
     }
 
@@ -174,8 +175,8 @@ const fetchReviewData = async (): Promise<{ dayData: DayData[], monthData: Month
       
       monthData.push({
         month: monthKey,
-        flashcards: monthCount.flashcards,
-        decks: monthCount.decks,
+        flashcards: isNaN(monthCount.flashcards) ? 0 : monthCount.flashcards,
+        decks: isNaN(monthCount.decks) ? 0 : monthCount.decks,
       });
     }
 
@@ -243,8 +244,11 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
     // Calculate total width needed for all data points
     const totalWidth = Math.max(GRAPH_WIDTH, PADDING + (currentData.length - 1) * X_STEP + PADDING);
 
-    const yMaxRaw = Math.max(...currentData.map((d: DayData | MonthData) => Math.max(d.flashcards, d.decks)));
-    const Y_MAX = Math.ceil(yMaxRaw / 10) * 10;
+    const yMaxRaw = Math.max(...currentData.map((d: DayData | MonthData) => Math.max(
+      isNaN(d.flashcards) ? 0 : d.flashcards, 
+      isNaN(d.decks) ? 0 : d.decks
+    )));
+    const Y_MAX = Math.max(1, Math.ceil(yMaxRaw / 10) * 10); // Ensure minimum value of 1
     const Y_STEP = isMonth ? 10 : 5;
 
     return { totalWidth, Y_MAX, Y_STEP };
@@ -255,7 +259,13 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
     return (value: number, graphHeight: number) => {
       // Invert y for SVG
       const usableHeight = graphHeight - 2 * PADDING;
-      return PADDING + usableHeight - (value / Y_MAX) * usableHeight;
+      // Prevent division by zero or NaN values
+      if (Y_MAX <= 0 || isNaN(Y_MAX) || isNaN(value)) {
+        return PADDING + usableHeight; // Return bottom of graph
+      }
+      const result = PADDING + usableHeight - (value / Y_MAX) * usableHeight;
+      // Final safety check to ensure result is a valid number
+      return isNaN(result) ? PADDING + usableHeight : result;
     };
   }, [Y_MAX]);
 

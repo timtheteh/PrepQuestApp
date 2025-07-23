@@ -11,6 +11,7 @@ interface AuthContextType {
   signInWithFacebook: () => Promise<{ success: boolean; error?: string }>;
   signInWithApple: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   getGoogleToken: () => Promise<{ token: string | null; error?: string }>;
   getFacebookToken: () => Promise<{ token: string | null; error?: string }>;
   getAppleToken: () => Promise<{ token: string | null; error?: string }>;
@@ -204,6 +205,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      setError(null);
+      const { error } = await AuthService.resetPassword(email);
+      
+      if (error) {
+        setError(error.message);
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -273,6 +292,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signInWithFacebook,
     signInWithApple,
     signOut,
+    resetPassword,
     getGoogleToken,
     getFacebookToken,
     getAppleToken,

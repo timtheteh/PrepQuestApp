@@ -234,10 +234,31 @@ export class AuthService {
     }
   }
 
-  // Sign out
+    // Sign out
   static async signOut(): Promise<{ error: AuthError | null }> {
     try {
       const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        return {
+          error: { message: error.message, status: error.status }
+        };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return {
+        error: { message: 'An unexpected error occurred' }
+      };
+    }
+  }
+
+  // Reset password
+  static async resetPassword(email: string): Promise<{ error: AuthError | null }> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'prepquest://reset-password',
+      });
 
       if (error) {
         return {

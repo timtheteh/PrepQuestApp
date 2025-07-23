@@ -13,7 +13,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 function AppContent() {
-  const { user, isLoading, signIn, signUp, signInWithGoogle, signInWithFacebook, signInWithApple, error, clearError } = useAuth();
+  const { user, isLoading, signIn, signUp, signInWithGoogle, signInWithFacebook, signInWithApple, resetPassword, error, clearError } = useAuth();
   const colorScheme = useColorScheme();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -114,6 +114,7 @@ function AppContent() {
               signInWithGoogle={signInWithGoogle}
               signInWithFacebook={signInWithFacebook}
               signInWithApple={signInWithApple}
+              resetPassword={resetPassword}
               error={error}
               clearError={clearError}
             />

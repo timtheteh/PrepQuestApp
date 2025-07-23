@@ -24,10 +24,7 @@ export default function AccountScreen() {
   const [sharePressed, setSharePressed] = useState(false);
   const [ratePressed, setRatePressed] = useState(false);
   const [websitePressed, setWebsitePressed] = useState(false);
-  const [showLoadingPage, setShowLoadingPage] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0.4);
-  const [loadingCurrent, setLoadingCurrent] = useState(12);
-  const [loadingTotal, setLoadingTotal] = useState(48);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const screenHeight = Dimensions.get('window').height;
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
@@ -86,13 +83,13 @@ export default function AccountScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            setShowLoadingPage(true);
+            setIsSigningOut(true);
             try {
               await signOut();
-              // The auth context will handle the sign out and redirect
+              // The auth context will handle the sign out and the layout will show the splash screen
             } catch (error) {
               console.error('Error signing out:', error);
-              setShowLoadingPage(false);
+              setIsSigningOut(false);
             }
           },
         },
@@ -341,32 +338,7 @@ export default function AccountScreen() {
     </View>
   );
 
-  if (showLoadingPage) {
-    return (
-      <DeckCreationStatusPage
-        statusRows={[
-          { done: true, label: 'Request received' },
-          { done: true, label: 'Successfully generated\nflashcards' },
-          { done: true, label: 'Successfully added\nflashcards and deck' }
-        ]}
-      />
-    );
-  }
 
-  // if (showLoadingPage) {
-  //   return (
-  //     <DeckCreationLoadingPage 
-  //       progress={50} 
-  //       current={50} 
-  //       total={50} 
-  //       isInViewFlashcardsPage={false}
-  //       onCancel={() => {
-  //         // cancelCreationRef.current = true;
-  //         setShowLoadingPage(false);
-  //       }}
-  //     />
-  //   );
-  // }
 
   return (
     <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim }}>

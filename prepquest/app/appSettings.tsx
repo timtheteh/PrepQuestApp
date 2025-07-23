@@ -14,6 +14,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTopBarAccountHeight } from '@/constants/heights';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage, Language } from '@/contexts/LanguageContext';
 
 const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
     return (
@@ -37,11 +38,11 @@ const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string
 
 export default function AppSettingsScreen() {
   const router = useRouter();
+  const { language, setLanguage } = useLanguage();
   const [cameraAccessEnabled, setCameraAccessEnabled] = React.useState(false);
   const [galleryAccessEnabled, setGalleryAccessEnabled] = React.useState(false);
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
   const [notificationsAccessEnabled, setNotificationsAccessEnabled] = React.useState(false);
-  const [language, setLanguage] = React.useState('English');
   const insets = useSafeAreaInsets();
 
   // Backup modal state
@@ -68,7 +69,6 @@ export default function AppSettingsScreen() {
     checkGalleryPermission();
     checkMicPermission();
     loadNotificationsPreference();
-    loadLanguagePreference();
   }, []);
 
   const loadNotificationsPreference = async () => {
@@ -124,45 +124,14 @@ export default function AppSettingsScreen() {
     setMicAccessEnabled(status === 'granted');
   };
 
-  const loadLanguagePreference = async () => {
-    try {
-      const userID = await AsyncStorage.getItem('userID');
-      if (userID) {
-        const result = await db.getFirstAsync(`
-          SELECT language FROM users WHERE userID = ?
-        `, [userID]);
-        const userData = result as { language?: string } | undefined;
-        if (userData && typeof userData.language === 'string') {
-          setLanguage(userData.language);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading language preference:', error);
-    }
-  };
 
-  const saveLanguagePreference = async (value: string) => {
-    try {
-      const userID = await AsyncStorage.getItem('userID');
-      if (userID) {
-        await db.runAsync(`
-          UPDATE users 
-          SET language = ?
-          WHERE userID = ?
-        `, [value, userID]);
-      }
-    } catch (error) {
-      console.error('Error saving language preference:', error);
-    }
-  };
 
   const handleLanguageRowPress = () => {
     setIsLanguageModalOpen(true);
   };
 
   const handleLanguageSelect = (value: string) => {
-    setLanguage(value);
-    saveLanguagePreference(value);
+    setLanguage(value as Language);
     setIsLanguageModalOpen(false);
   };
 

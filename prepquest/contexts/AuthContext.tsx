@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { user, error } = await AuthService.getCurrentUser();
         
         if (error) {
-          console.error('Error checking current user:', error);
+          // console.error('Error checking current user:', error);
         } else if (user) {
           setUser(user);
           // Store user ID in AsyncStorage for compatibility with existing code

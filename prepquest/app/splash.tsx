@@ -7,17 +7,33 @@ import AppleLoginIcon from '@/assets/icons/AppleLoginIcon.svg';
 import FacebookLoginIcon from '@/assets/icons/FacebookLoginIcon.svg';
 import { Feather } from '@expo/vector-icons';
 import { Toast } from '@/components/Toast';
-import { useAuth } from '@/contexts/AuthContext';
+
 
 const { width, height } = Dimensions.get('window');
 
 interface SplashScreenProps {
   isDatabaseReady?: boolean;
   onAuthComplete?: () => void;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  signInWithFacebook: () => Promise<{ success: boolean; error?: string }>;
+  signInWithApple: () => Promise<{ success: boolean; error?: string }>;
+  error: string | null;
+  clearError: () => void;
 }
 
-export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }: SplashScreenProps) {
-  const { user, signIn, signUp, signInWithGoogle, signInWithFacebook, signInWithApple, error, clearError } = useAuth();
+export default function SplashScreen({ 
+  isDatabaseReady = false, 
+  onAuthComplete,
+  signIn,
+  signUp,
+  signInWithGoogle,
+  signInWithFacebook,
+  signInWithApple,
+  error,
+  clearError
+}: SplashScreenProps) {
   const animationRef = useRef<LottieView>(null);
   const logoAnimationRef = useRef<LottieView>(null);
   const [isSignIn, setIsSignIn] = useState(true); // true for Sign In, false for Sign Up
@@ -65,7 +81,10 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
       if (result.success) {
         setToastMessage('Account created successfully!');
         setToastVisible(true);
-        // The auth context will handle the user state update
+        // Call onAuthComplete after successful sign up
+        setTimeout(() => {
+          onAuthComplete?.();
+        }, 1000);
       } else {
         setToastMessage(result.error || 'Sign up failed');
         setToastVisible(true);
@@ -104,7 +123,10 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
     if (result.success) {
       setToastMessage('Signed in successfully!');
       setToastVisible(true);
-      // The auth context will handle the user state update
+      // Call onAuthComplete after successful sign in
+      setTimeout(() => {
+        onAuthComplete?.();
+      }, 1000);
     } else {
       setToastMessage(result.error || 'Sign in failed');
       setToastVisible(true);
@@ -143,7 +165,14 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
         break;
     }
     
-    if (!result?.success) {
+    if (result?.success) {
+      setToastMessage('Signed in successfully!');
+      setToastVisible(true);
+      // Call onAuthComplete after successful social login
+      setTimeout(() => {
+        onAuthComplete?.();
+      }, 1000);
+    } else {
       setToastMessage(result?.error || 'Social login failed');
       setToastVisible(true);
     }
@@ -172,25 +201,7 @@ export default function SplashScreen({ isDatabaseReady = false, onAuthComplete }
     }
   }, [isDatabaseReady, fadeAnim]);
 
-  // Handle successful authentication
-  useEffect(() => {
-    if (user && onAuthComplete) {
-      // Small delay to show success message
-      setTimeout(() => {
-        onAuthComplete();
-      }, 1000);
-    }
-  }, [user, onAuthComplete]);
 
-  // If user is already authenticated, skip the auth screen
-  useEffect(() => {
-    if (user && isDatabaseReady && onAuthComplete) {
-      // User is already logged in, proceed to main app
-      setTimeout(() => {
-        onAuthComplete();
-      }, 500);
-    }
-  }, [user, isDatabaseReady, onAuthComplete]);
 
   // Show auth error in toast
   useEffect(() => {

@@ -1,2 +1,2 @@
-// Re-export the useAuth hook from the AuthContext
-export { useAuth } from '@/contexts/AuthContext'; 
+// Backward compatibility hook - re-exports the hybrid auth hook
+export { useHybridAuth as useAuth } from '@/contexts/HybridAuthContext'; 

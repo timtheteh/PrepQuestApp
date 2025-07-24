@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Dimensions, Text, ScrollView, TouchableOpacity, TextInput, Platform, Animated, Modal } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
 import PrepQuestLogo from '@/assets/icons/PrepQuestLogo.svg';
 import GoogleLoginIcon from '@/assets/icons/GoogleLoginIcon.svg';
@@ -7,35 +8,34 @@ import AppleLoginIcon from '@/assets/icons/AppleLoginIcon.svg';
 import FacebookLoginIcon from '@/assets/icons/FacebookLoginIcon.svg';
 import { Feather } from '@expo/vector-icons';
 import { Toast } from '@/components/Toast';
-
+import { useHybridAuth } from '@/contexts/HybridAuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 interface SplashScreenProps {
   isDatabaseReady?: boolean;
   onAuthComplete?: () => void;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  signInWithFacebook: () => Promise<{ success: boolean; error?: string }>;
-  signInWithApple: () => Promise<{ success: boolean; error?: string }>;
-  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
-  error: string | null;
-  clearError: () => void;
 }
 
 export default function SplashScreen({ 
   isDatabaseReady = false, 
   onAuthComplete,
-  signIn,
-  signUp,
-  signInWithGoogle,
-  signInWithFacebook,
-  signInWithApple,
-  resetPassword,
-  error,
-  clearError
 }: SplashScreenProps) {
+  const { 
+    isAuthenticated, 
+    user, 
+    isLoading,
+    signInWithEmail,
+    signUpWithEmail,
+    resetPassword,
+    signInWithGoogle,
+    signInWithFacebook,
+    signInWithApple
+  } = useHybridAuth();
+  
+  const insets = useSafeAreaInsets();
+
   const animationRef = useRef<LottieView>(null);
   const logoAnimationRef = useRef<LottieView>(null);
   const [isSignIn, setIsSignIn] = useState(true); // true for Sign In, false for Sign Up
@@ -59,6 +59,34 @@ export default function SplashScreen({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const toggleFadeAnim = useRef(new Animated.Value(1)).current;
 
+  // Check if user is already signed in
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      // User is already signed in, complete auth
+      setTimeout(() => {
+        onAuthComplete?.();
+      }, 1000);
+    }
+  }, [isLoading, isAuthenticated, onAuthComplete]);
+
+  // Handle auth state changes after login/signup
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      // User just signed in, complete auth
+      setTimeout(() => {
+        onAuthComplete?.();
+      }, 1000);
+    }
+  }, [isLoading, isAuthenticated, user, onAuthComplete]);
+
+  // Clear any existing session when component mounts
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      // Ensure AsyncStorage is cleared when not signed in
+      AsyncStorage.removeItem('userID');
+    }
+  }, [isLoading, isAuthenticated]);
+
   // Validation function
   const validateSignUp = () => {
     // Check if fields are empty
@@ -78,35 +106,23 @@ export default function SplashScreen({
     return true;
   };
 
-  const handleSignUp = async () => {
+    const handleSignUp = async () => {
     if (validateSignUp()) {
-      clearError();
-      
-      const result = await signUp(email.trim(), password);
-      
-      if (result.success) {
-        setToastMessage('Account created successfully!');
-        setToastVisible(true);
-        // Call onAuthComplete after successful sign up
-        setTimeout(() => {
-          onAuthComplete?.();
-        }, 1000);
-      } else {
-        setToastMessage(result.error || 'Sign up failed');
-        setToastVisible(true);
+      try {
+        const result = await signUpWithEmail(email.trim(), password);
         
-        // If user already exists, suggest switching to sign in
-        if (result.error?.includes('sign in instead')) {
-          // Small delay to show the error message first
-          setTimeout(() => {
-            // setToastMessage('Switch to Sign In tab to access your account');
-            // setToastVisible(true);
-            // Optionally auto-switch to sign in tab
-            setTimeout(() => {
-              handleToggle(true);
-            }, 500);
-          }, 500);
+        if (result.success) {
+          setToastMessage('Account created successfully!');
+          setToastVisible(true);
+          // Auth state will be updated and trigger the useEffect
+        } else {
+          setToastMessage(result.error || 'Sign up failed');
+          setToastVisible(true);
         }
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Sign up failed';
+        setToastMessage(errorMessage);
+        setToastVisible(true);
       }
     }
   };
@@ -119,61 +135,47 @@ export default function SplashScreen({
       return;
     }
     
-    clearError();
-    
-    const result = await signIn(email.trim(), password);
-    
-    if (result.success) {
-      // setToastMessage('Signed in successfully!');
-      // setToastVisible(true);
-      // Call onAuthComplete after successful sign in
-      setTimeout(() => {
-        onAuthComplete?.();
-      }, 1000);
-    } else {
-      setToastMessage(result.error || 'Sign in failed');
-      setToastVisible(true);
-      
-      // If user doesn't exist, suggest switching to sign up
-      if (result.error?.includes('Sign up first')) {
-        // Small delay to show the error message first
-        setTimeout(() => {
-          // setToastMessage('Switch to Sign Up tab to create an account');
-          // setToastVisible(true);
-          // Optionally auto-switch to sign up tab with fade animation
-          setTimeout(() => {
-            handleToggle(false);
-          }, 500);
-        }, 500);
+    try {
+      const result = await signInWithEmail(email.trim(), password);
+
+      if (result.success) {
+        // Email/password auth automatically sets the session
+        // Auth state will be updated and trigger the useEffect
+      } else {
+        setToastMessage(result.error || 'Sign in failed');
+        setToastVisible(true);
       }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Sign in failed';
+      setToastMessage(errorMessage);
+      setToastVisible(true);
     }
   };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
-    clearError();
+    try {
+      let oauthFunction;
+      switch (provider) {
+        case 'google':
+          oauthFunction = signInWithGoogle;
+          break;
+        case 'facebook':
+          oauthFunction = signInWithFacebook;
+          break;
+        case 'apple':
+          oauthFunction = signInWithApple;
+          break;
+        default:
+          setToastMessage('Provider not supported');
+          setToastVisible(true);
+          return;
+      }
     
-    let result;
-    switch (provider) {
-      case 'google':
-        result = await signInWithGoogle();
-        break;
-      case 'facebook':
-        result = await signInWithFacebook();
-        break;
-      case 'apple':
-        result = await signInWithApple();
-        break;
-    }
-    
-    if (result?.success) {
-      // setToastMessage('Signed in successfully!');
-      // setToastVisible(true);
-      // Call onAuthComplete after successful social login
-      setTimeout(() => {
-        onAuthComplete?.();
-      }, 1000);
-    } else {
-      setToastMessage(result?.error || 'Social login failed');
+      await oauthFunction();
+      // Auth state will be updated and trigger the useEffect
+    } catch (error: any) {
+      const errorMessage = error?.message || `${provider} sign in failed`;
+      setToastMessage(errorMessage);
       setToastVisible(true);
     }
   };
@@ -198,16 +200,6 @@ export default function SplashScreen({
       }).start();
     }
   }, [isDatabaseReady, fadeAnim]);
-
-
-
-  // Show auth error in toast
-  useEffect(() => {
-    if (error) {
-      setToastMessage(error);
-      setToastVisible(true);
-    }
-  }, [error]);
 
   // Handle toggle between sign in and sign up with fade animation
   const handleToggle = (newIsSignIn: boolean) => {
@@ -237,7 +229,7 @@ export default function SplashScreen({
   // Handle forgot password
   const handleForgotPassword = () => {
     setForgotPasswordModalVisible(true);
-    setForgotPasswordEmail('');
+    setForgotPasswordEmail(email.trim()); // Pre-populate with current email
   };
 
   // Handle password reset
@@ -249,17 +241,22 @@ export default function SplashScreen({
     }
 
     setIsResettingPassword(true);
-    clearError();
 
-    const result = await resetPassword(forgotPasswordEmail.trim());
-
-    if (result.success) {
-      setToastMessage('Password reset email sent! Check your inbox.');
-      setToastVisible(true);
-      setForgotPasswordModalVisible(false);
-      setForgotPasswordEmail('');
-    } else {
-      setToastMessage(result.error || 'Failed to send reset email');
+    try {
+      const result = await resetPassword(forgotPasswordEmail.trim());
+      
+      if (result.success) {
+        setToastMessage('Password reset email sent! Check your inbox.');
+        setToastVisible(true);
+        setForgotPasswordModalVisible(false);
+        setForgotPasswordEmail('');
+      } else {
+        setToastMessage(result.error || 'Failed to send reset email');
+        setToastVisible(true);
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to send reset email';
+      setToastMessage(errorMessage);
       setToastVisible(true);
     }
 
@@ -291,7 +288,14 @@ export default function SplashScreen({
       
       {/* Show sign in/signup screen when database is ready */}
       {isDatabaseReady ? (
-        <Animated.View style={[styles.signInContainer, { opacity: fadeAnim }]}>
+        <Animated.View style={[
+          styles.signInContainer, 
+          { 
+            opacity: fadeAnim,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+          }
+        ]}>
           {/* White rectangle container */}
           <View style={styles.whiteContainer}>
             <ScrollView 
@@ -606,10 +610,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    flex: 1,
   },
   whiteContainer: {
     width: '90%', // 90% of screen width
-    height: height * 0.8, // 80% of screen height
+    height: height * 0.85, // 80% of screen height
     backgroundColor: '#fff',
     opacity: 0.95, // 95% opacity
     borderRadius: 30, // 30px corner radius

@@ -1,6 +1,6 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@clerk/clerk-expo';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -8,8 +8,8 @@ async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
+    console.error('Error getting userID:', error);
+    return '1'; // Default to '1' if error
   }
 }
 
@@ -69,42 +69,21 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
     console.log('👤 Current userID:', userID);
     
     // Get all flashcards with study or quiz dates from both tables
-    const result = await db.getAllAsync(`
-      SELECT 
-        difficultyRating,
-        lastStudiedDate,
-        lastQuizzedDate,
-        answerType,
-        isMcqAnswerRight
-      FROM (
-        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
-        FROM flashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-          AND userID = ?
-        UNION ALL
-        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
-        FROM AIFlashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-          AND userID = ?
-      )
-    `, [userID, userID]);
-
-    console.log('📊 Raw flashcard data:', result?.length || 0, 'flashcards found');
-
-    if (!result || result.length === 0) {
-      console.log('❌ No flashcard data found');
-      return [];
-    }
-
-    const flashcards = result as Array<{
+    const result = await db.from('flashcards').select('difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight').eq('userID', userID).or(`lastStudiedDate.is.not.null,lastQuizzedDate.is.not.null`).neq('difficultyRating', 'None');
+    const flashcards = result.data as Array<{
       difficultyRating: string;
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
       answerType: string;
       isMcqAnswerRight: number | null;
     }>;
+
+    console.log('📊 Raw flashcard data:', flashcards?.length || 0, 'flashcards found');
+
+    if (!flashcards || flashcards.length === 0) {
+      console.log('❌ No flashcard data found');
+      return [];
+    }
 
     // Group flashcards by date (both study and quiz dates)
     const dateGroups = new Map<string, Array<{
@@ -355,42 +334,21 @@ export async function getAverageGradeAllTime(): Promise<number> {
     console.log('👤 Current userID:', userID);
     
     // Get all flashcards with study or quiz dates from both tables
-    const result = await db.getAllAsync(`
-      SELECT 
-        difficultyRating,
-        lastStudiedDate,
-        lastQuizzedDate,
-        answerType,
-        isMcqAnswerRight
-      FROM (
-        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
-        FROM flashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-          AND userID = ?
-        UNION ALL
-        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
-        FROM AIFlashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-          AND userID = ?
-      )
-    `, [userID, userID]);
-
-    console.log('📊 Total flashcards for average calculation:', result?.length || 0);
-
-    if (!result || result.length === 0) {
-      console.log('❌ No flashcard data found for average calculation');
-      return 0;
-    }
-
-    const flashcards = result as Array<{
+    const result = await db.from('flashcards').select('difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight').eq('userID', userID).or(`lastStudiedDate.is.not.null,lastQuizzedDate.is.not.null`).neq('difficultyRating', 'None');
+    const flashcards = result.data as Array<{
       difficultyRating: string;
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
       answerType: string;
       isMcqAnswerRight: number | null;
     }>;
+
+    console.log('📊 Total flashcards for average calculation:', flashcards?.length || 0);
+
+    if (!flashcards || flashcards.length === 0) {
+      console.log('❌ No flashcard data found for average calculation');
+      return 0;
+    }
 
     // Calculate weighted score using the same formula as daily grades
     const weights = {
@@ -443,27 +401,13 @@ export async function getDifficultyBreakdown(): Promise<{
     const userID = await getCurrentUserID();
     console.log('👤 Current userID:', userID);
     // Get all flashcards with difficulty ratings from both tables
-    const result = await db.getAllAsync(`
-      SELECT 
-        difficultyRating,
-        COUNT(*) as count
-      FROM (
-        SELECT difficultyRating
-        FROM flashcards
-        WHERE difficultyRating != 'None' AND userID = ?
-        UNION ALL
-        SELECT difficultyRating
-        FROM AIFlashcards
-        WHERE difficultyRating != 'None' AND userID = ?
-      )
-      GROUP BY difficultyRating
-      ORDER BY difficultyRating
-    `, [userID, userID]);
+    const result = await db.from('flashcards').select('difficultyRating, COUNT(*) as count').eq('userID', userID).neq('difficultyRating', 'None').group('difficultyRating');
+    const breakdown = result.data as Array<{ difficultyRating: string; count: number }>;
 
-    console.log('📊 Difficulty breakdown raw data:', result);
+    console.log('📊 Difficulty breakdown raw data:', breakdown);
 
     // Initialize breakdown with zeros
-    const breakdown = {
+    const finalBreakdown = {
       Again: 0,
       Hard: 0,
       Good: 0,
@@ -471,21 +415,21 @@ export async function getDifficultyBreakdown(): Promise<{
     };
 
     // Fill in the counts from the database
-    result.forEach((row: any) => {
+    breakdown.forEach((row: any) => {
       const difficulty = row.difficultyRating;
       const count = row.count;
       
-      if (difficulty in breakdown) {
-        breakdown[difficulty as keyof typeof breakdown] = count;
+      if (difficulty in finalBreakdown) {
+        finalBreakdown[difficulty as keyof typeof finalBreakdown] = count;
       }
     });
 
-    const total = breakdown.Again + breakdown.Hard + breakdown.Good + breakdown.Easy;
+    const total = finalBreakdown.Again + finalBreakdown.Hard + finalBreakdown.Good + finalBreakdown.Easy;
     
-    console.log(`✅ Difficulty breakdown:`, breakdown);
+    console.log(`✅ Difficulty breakdown:`, finalBreakdown);
     console.log(`📊 Total flashcards with difficulty ratings: ${total}`);
     
-    return breakdown;
+    return finalBreakdown;
   } catch (error) {
     console.error('❌ Error calculating difficulty breakdown:', error);
     return {
@@ -516,38 +460,19 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
     const userID = await getCurrentUserID();
     console.log('👤 Current userID:', userID);
     // Get all flashcards with study or quiz dates and timeTaken from both tables
-    const result = await db.getAllAsync(`
-      SELECT 
-        timeTaken,
-        lastStudiedDate,
-        lastQuizzedDate
-      FROM (
-        SELECT timeTaken, lastStudiedDate, lastQuizzedDate
-        FROM flashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND timeTaken IS NOT NULL
-          AND userID = ?
-        UNION ALL
-        SELECT timeTaken, lastStudiedDate, lastQuizzedDate
-        FROM AIFlashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND timeTaken IS NOT NULL
-          AND userID = ?
-      )
-    `, [userID, userID]);
-
-    console.log('📊 Raw flashcard speed data:', result?.length || 0, 'flashcards found');
-
-    if (!result || result.length === 0) {
-      console.log('❌ No flashcard speed data found');
-      return [];
-    }
-
-    const flashcards = result as Array<{
+    const result = await db.from('flashcards').select('timeTaken, lastStudiedDate, lastQuizzedDate').eq('userID', userID).or(`lastStudiedDate.is.not.null,lastQuizzedDate.is.not.null`).is('timeTaken', 'not.null');
+    const flashcards = result.data as Array<{
       timeTaken: number;
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
     }>;
+
+    console.log('📊 Raw flashcard speed data:', flashcards?.length || 0, 'flashcards found');
+
+    if (!flashcards || flashcards.length === 0) {
+      console.log('❌ No flashcard speed data found');
+      return [];
+    }
 
     // Group flashcards by date (both study and quiz dates)
     const dateGroups = new Map<string, number[]>();
@@ -768,36 +693,12 @@ export async function getAverageTimeAllTime(): Promise<number> {
     const userID = await getCurrentUserID();
     console.log('👤 Current userID:', userID);
     // Get all flashcards with study or quiz dates and timeTaken from both tables
-    const result = await db.getFirstAsync(`
-      SELECT 
-        AVG(timeTaken) as averageTime,
-        COUNT(*) as attemptedCount
-      FROM (
-        SELECT timeTaken
-        FROM flashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND timeTaken IS NOT NULL
-          AND userID = ?
-        UNION ALL
-        SELECT timeTaken
-        FROM AIFlashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND timeTaken IS NOT NULL
-          AND userID = ?
-      )
-    `, [userID, userID]);
-
-    console.log('📊 Average time calculation result:', result);
-
-    if (!result) {
-      console.log('❌ No flashcard data found for average time calculation');
-      return 0;
-    }
-
-    const data = result as { averageTime: number | null; attemptedCount: number };
+    const result = await db.from('flashcards').select('AVG(timeTaken) as averageTime, COUNT(*) as attemptedCount').eq('userID', userID).or(`lastStudiedDate.is.not.null,lastQuizzedDate.is.not.null`).is('timeTaken', 'not.null');
+    const data = result.data as { averageTime: number | null; attemptedCount: number };
     
-    // Return 0 if no attempted flashcards or no time data
-    if (data.attemptedCount === 0 || data.averageTime === null) {
+    console.log('📊 Average time calculation result:', data);
+
+    if (!data || data.attemptedCount === 0 || data.averageTime === null) {
       console.log('❌ No attempted flashcards or time data found');
       return 0;
     }
@@ -829,28 +730,17 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
     const userID = await getCurrentUserID();
     console.log('👤 Current userID:', userID);
     // Get all study and quiz dates from both tables
-    const result = await db.getAllAsync(`
-      SELECT 
-        lastStudiedDate,
-        lastQuizzedDate,
-        flashcardID,
-        deckID
-      FROM (
-        SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
-        FROM flashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND userID = ?
-        UNION ALL
-        SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
-        FROM AIFlashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND userID = ?
-      )
-    `, [userID, userID]);
+    const result = await db.from('flashcards').select('lastStudiedDate, lastQuizzedDate, flashcardID, deckID').eq('userID', userID).or(`lastStudiedDate.is.not.null,lastQuizzedDate.is.not.null`);
+    const flashcards = result.data as Array<{
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+      flashcardID: number;
+      deckID: number;
+    }>;
 
-    console.log('📊 Raw streak data:', result?.length || 0, 'flashcards found');
+    console.log('📊 Raw streak data:', flashcards?.length || 0, 'flashcards found');
 
-    if (!result || result.length === 0) {
+    if (!flashcards || flashcards.length === 0) {
       console.log('❌ No streak data found');
       return {
         streakLength: 0,
@@ -860,13 +750,6 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
         streakEndDate: null
       };
     }
-
-    const flashcards = result as Array<{
-      lastStudiedDate: string | null;
-      lastQuizzedDate: string | null;
-      flashcardID: number;
-      deckID: number;
-    }>;
 
     // Collect all unique dates
     const allDates = new Set<string>();
@@ -993,32 +876,16 @@ export async function getAllStudiedDates(): Promise<string[]> {
     const userID = await getCurrentUserID();
     console.log('👤 Current userID:', userID);
     // Get all study and quiz dates from both tables
-    const result = await db.getAllAsync(`
-      SELECT 
-        lastStudiedDate,
-        lastQuizzedDate
-      FROM (
-        SELECT lastStudiedDate, lastQuizzedDate
-        FROM flashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND userID = ?
-        UNION ALL
-        SELECT lastStudiedDate, lastQuizzedDate
-        FROM AIFlashcards
-        WHERE (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND userID = ?
-      )
-    `, [userID, userID]);
-
-    if (!result || result.length === 0) {
-      console.log('❌ No studied dates found');
-      return [];
-    }
-
-    const flashcards = result as Array<{
+    const result = await db.from('flashcards').select('lastStudiedDate, lastQuizzedDate').eq('userID', userID).or(`lastStudiedDate.is.not.null,lastQuizzedDate.is.not.null`);
+    const flashcards = result.data as Array<{
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
     }>;
+
+    if (!flashcards || flashcards.length === 0) {
+      console.log('❌ No studied dates found');
+      return [];
+    }
 
     // Collect all unique dates
     const allDates = new Set<string>();

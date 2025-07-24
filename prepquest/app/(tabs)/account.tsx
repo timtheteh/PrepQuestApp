@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -10,7 +11,7 @@ import LightSwitch from '@/assets/icons/lightSwitch.svg';
 import DarkSwitch from '@/assets/icons/darkSwitch.svg';
 import GrapeStem from '@/assets/icons/grapeStem.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTopBarAccountHeight } from '@/constants/heights';
@@ -28,7 +29,7 @@ export default function AccountScreen() {
   const screenHeight = Dimensions.get('window').height;
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
-  const { user, signOut } = useAuth();
+  const { signOut, user } = useHybridAuth();
   const insets = useSafeAreaInsets();
 
   // For button animation
@@ -85,8 +86,12 @@ export default function AccountScreen() {
           onPress: async () => {
             setIsSigningOut(true);
             try {
+              // Sign out from both Supabase and Clerk
               await signOut();
-              // The auth context will handle the sign out and the layout will show the splash screen
+              // Force a small delay to ensure session is cleared
+              setTimeout(() => {
+                setIsSigningOut(false);
+              }, 500);
             } catch (error) {
               console.error('Error signing out:', error);
               setIsSigningOut(false);
@@ -176,12 +181,7 @@ export default function AccountScreen() {
         <View style={styles.circleContainer}> 
           <View style={styles.profileCircle}>
             <Text style={styles.profileInitials}>
-              {user?.user_metadata?.full_name 
-                ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
-                : user?.email 
-                  ? user.email.substring(0, 2).toUpperCase()
-                  : 'GU'
-              }
+              {user?.id ? user.id.substring(0, 2).toUpperCase() : 'GU'}
             </Text>
           </View>
         </View>
@@ -190,7 +190,7 @@ export default function AccountScreen() {
             <Text style={styles.infoHeading}>{language === 'Chinese' ? '用户名' : 'Username'}</Text>
             <Text style={[styles.infoValue, {
               // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-              }]}>{user?.email || user?.user_metadata?.full_name || 'Guest User'}</Text>
+              }]}>User</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoHeading}>{language === 'Chinese' ? '用户ID' : 'User ID'}</Text>

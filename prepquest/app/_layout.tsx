@@ -5,15 +5,36 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Animated } from 'react-native';
+import { ClerkProvider } from '@clerk/clerk-expo';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext';
+
+// Token cache for Clerk
+const tokenCache = {
+  async getToken(key: string) {
+    try {
+      return SecureStore.getItemAsync(key);
+    } catch (err) {
+      return null;
+    }
+  },
+  async saveToken(key: string, value: string) {
+    try {
+      return SecureStore.setItemAsync(key, value);
+    } catch (err) {
+      return;
+    }
+  },
+};
 
 function AppContent() {
-  const { user, isLoading, signIn, signUp, signInWithGoogle, signInWithFacebook, signInWithApple, resetPassword, error, clearError } = useAuth();
+  const { isAuthenticated, user, isLoading } = useHybridAuth();
   const colorScheme = useColorScheme();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -34,11 +55,17 @@ function AppContent() {
 
   // Show splash screen when user is not authenticated
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !isAuthenticated) {
       setShowSplash(true);
       fadeAnim.setValue(1);
+    } else if (!isLoading && isAuthenticated) {
+      // Store user ID in AsyncStorage for database compatibility
+      if (user?.id) {
+        AsyncStorage.setItem('userID', user.id);
+      }
+      setShowSplash(false);
     }
-  }, [user, isLoading, fadeAnim]);
+  }, [isAuthenticated, isLoading, fadeAnim, user]);
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -52,14 +79,6 @@ function AppContent() {
     'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
     'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
     'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
-    // 'NotoSansSC-Black': require('../assets/fonts/NotoSansSC-Black.ttf'),
-    // 'NotoSansSC-Bold': require('../assets/fonts/NotoSansSC-Bold.ttf'),
-    // 'NotoSansSC-ExtraBold': require('../assets/fonts/NotoSansSC-ExtraBold.ttf'),
-    // 'NotoSansSC-ExtraLight': require('../assets/fonts/NotoSansSC-ExtraLight.ttf'),
-    // 'NotoSansSC-Light': require('../assets/fonts/NotoSansSC-Light.ttf'),
-    // 'NotoSansSC-Medium': require('../assets/fonts/NotoSansSC-Medium.ttf'),
-    // 'NotoSansSC-Regular': require('../assets/fonts/NotoSansSC-Regular.ttf'),
-    // 'NotoSansSC-SemiBold': require('../assets/fonts/NotoSansSC-SemiBold.ttf'),
   });
 
   // Initialize database when app starts
@@ -83,16 +102,11 @@ function AppContent() {
           setIsDatabaseReady(true);
         }, remainingTime);
         
-        // Don't fade out immediately - keep splash screen visible for sign in/signup
-        // The splash screen will handle the transition when user completes authentication
-        
       } catch (error) {
         console.error('❌ Failed to initialize database:', error);
-        // Even if there's an error, we should still show the app
-        // The user can retry or the app can handle the error gracefully
         setTimeout(() => {
           setIsDatabaseReady(true);
-        }, 3000); // Always show for at least 3 seconds even on error
+        }, 3000);
       } finally {
         setIsInitializing(false);
       }
@@ -104,19 +118,11 @@ function AppContent() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       {/* Show splash screen while fonts are loading, database is initializing, or user is not authenticated */}
-              {(!loaded || showSplash || (!isLoading && !user)) ? (
+      {(!loaded || showSplash) ? (
           <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
             <SplashScreen 
               isDatabaseReady={isDatabaseReady} 
               onAuthComplete={handleAuthComplete}
-              signIn={signIn}
-              signUp={signUp}
-              signInWithGoogle={signInWithGoogle}
-              signInWithFacebook={signInWithFacebook}
-              signInWithApple={signInWithApple}
-              resetPassword={resetPassword}
-              error={error}
-              clearError={clearError}
             />
           </Animated.View>
       ) : (
@@ -205,11 +211,20 @@ function AppContent() {
 }
 
 export default function RootLayout() {
+  if (!process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY environment variable is required');
+  }
+
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </LanguageProvider>
+    <ClerkProvider
+      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      tokenCache={tokenCache}
+    >
+      <LanguageProvider>
+        <HybridAuthProvider>
+          <AppContent />
+        </HybridAuthProvider>
+      </LanguageProvider>
+    </ClerkProvider>
   );
 }

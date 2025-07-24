@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import { promptAndData } from '../constants/promptEngineering';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@clerk/clerk-expo';
 
 export interface Deck {
   deckID: number;

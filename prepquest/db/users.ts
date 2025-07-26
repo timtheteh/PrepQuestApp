@@ -64,3 +64,61 @@ export async function getUserQuestionSettings(): Promise<{
     };
   }
 } 
+
+// Create a new user in the database
+export async function createUser(userID: string): Promise<boolean> {
+  try {
+    console.log('🔍 Creating new user in database:', userID);
+    
+    // First check if user already exists
+    const existingUser = await db.getFirstAsync(`
+      SELECT userID FROM users WHERE userID = ?
+    `, [userID]);
+    
+    if (existingUser) {
+      console.log('✅ User already exists in database:', userID);
+      return true;
+    }
+    
+    const currentDate = new Date().toISOString();
+    
+    // Insert new user with default values
+    await db.runAsync(`
+      INSERT INTO users (
+        userID, 
+        dateJoined, 
+        accumulatedDecksCreated, 
+        accumulatedFlashcardsCreated, 
+        accumulatedStudyDecksCreated, 
+        accumulatedInterviewDecksCreated, 
+        lastUpdated, 
+        notificationsEnabled, 
+        autoDecksEnabled, 
+        clozeQuestionsEnabled, 
+        mcqQuestionsEnabled, 
+        voiceRecordedQuestionsEnabled, 
+        voiceRecordedTimer, 
+        halfwayCheckpoint, 
+        defaultTimer, 
+        againTimer, 
+        hardTimer, 
+        goodTimer, 
+        easyTimer, 
+        language, 
+        currentPlan, 
+        fileUploadRequests, 
+        genAIFormRequests, 
+        youtubeLinkRequests, 
+        chatWithAIRequests
+      ) VALUES (
+        ?, ?, 0, 0, 0, 0, ?, 1, 1, 1, 1, 1, 120, 1, 20, 60, 45, 30, 15, 'English', 'Free', 0, 0, 0, 0
+      )
+    `, [userID, currentDate, currentDate]);
+    
+    console.log('✅ User created successfully in database');
+    return true;
+  } catch (error) {
+    console.error('❌ Error creating user in database:', error);
+    return false;
+  }
+} 

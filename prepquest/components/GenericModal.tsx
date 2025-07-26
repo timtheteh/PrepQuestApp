@@ -44,7 +44,7 @@ export function GenericModal({
   textMarginBottom = 0,
 }: GenericModalProps) {
   const { language } = useLanguage();
-  if (!visible) return null;
+  // if (!visible) return null;
 
   // Split text to highlight specific word if needed
   const renderText = () => {
@@ -128,41 +128,43 @@ export function GenericModal({
     : [styles.container, { opacity: 0 }];
 
   return (
-    <Animated.View style={modalStyle}>
-      {Icon && (
-        <View style={styles.iconContainer}>
-          <Icon width={24} height={24} />
-        </View>
-      )}
-      <View style={[
-        styles.content,
-        { paddingVertical: buttons === 'none' ? 0 : 50, marginTop: contentMarginTop }
-      ]}>
+    visible ? (
+      <Animated.View style={modalStyle}>
+        {Icon && (
+          <View style={styles.iconContainer}>
+            <Icon width={24} height={24} />
+          </View>
+        )}
         <View style={[
-          styles.textRow,
-          (!buttons || buttons === 'none') && !hasAnimation && styles.textRowOnly, 
-          {marginBottom: textMarginBottom}
+          styles.content,
+          { paddingVertical: buttons === 'none' ? 0 : 50, marginTop: contentMarginTop }
         ]}>
-          {renderText()}
+          <View style={[
+            styles.textRow,
+            (!buttons || buttons === 'none') && !hasAnimation && styles.textRowOnly, 
+            {marginBottom: textMarginBottom}
+          ]}>
+            {renderText()}
+          </View>
+          {/* Lottie animation below text, above action row */}
+          {animationSource && (
+            <View style={[styles.lottieContainer, { marginTop: lottieMarginTop }] }>
+              <LottieView
+                source={animationSource}
+                autoPlay
+                loop={animationLoop}
+                style={{ width: 100, height: 100 }}
+              />
+            </View>
+          )}
+          {((buttons && buttons !== 'none') || hasAnimation) && (
+            <View style={styles.actionRow}>
+              {renderButtons()}
+            </View>
+          )}
         </View>
-        {/* Lottie animation below text, above action row */}
-        {animationSource && (
-          <View style={[styles.lottieContainer, { marginTop: lottieMarginTop }] }>
-            <LottieView
-              source={animationSource}
-              autoPlay
-              loop={animationLoop}
-              style={{ width: 100, height: 100 }}
-            />
-          </View>
-        )}
-        {((buttons && buttons !== 'none') || hasAnimation) && (
-          <View style={styles.actionRow}>
-            {renderButtons()}
-          </View>
-        )}
-      </View>
-    </Animated.View>
+      </Animated.View>
+    ) : null
   );
 }
 
@@ -238,5 +240,9 @@ const styles = StyleSheet.create({
   lottieContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  lottie: {
+    width: 100,
+    height: 100,
   },
 }); 

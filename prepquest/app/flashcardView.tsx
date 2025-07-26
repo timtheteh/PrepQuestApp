@@ -2170,8 +2170,8 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
   isQuizMode: boolean;
   language: string;
 }) => {
-  if (!visible) return null;
   return (
+    visible ? (
     <Animated.View style={[styles.mcqModalOverlay, { opacity, zIndex: 9999 }]}> 
       {/* Icon at top left */}
       <View style={styles.mcqModalIconAbsolute}>
@@ -2195,6 +2195,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
         <Text style={styles.mcqModalButtonText}>{language === 'Chinese' ? '好的' : 'OK'}</Text>
       </TouchableOpacity>
     </Animated.View>
+  ) : null
   );
 };
 
@@ -3090,8 +3091,191 @@ export default function FlashcardViewPage() {
   };
 
   // 4. In FlashcardViewPage render, show Success UI if isSuccessMode is true
-  if (isSuccessMode) {
-    return (
+  // if (isSuccessMode) {
+  //   return (
+  //     <Animated.View
+  //       style={{
+  //         flex: 1,
+  //         backgroundColor: '#fff',
+  //         alignItems: 'center',
+  //         justifyContent: 'center',
+  //         paddingHorizontal: 16,
+  //         opacity: successFadeAnim,
+  //       }}
+  //     >
+  //       {/* Home icon button at top left */}
+  //       <TouchableOpacity
+  //         style={{
+  //           position: 'absolute',
+  //           top: getTopBarAccountHeight(),
+  //           right: 16,
+  //           zIndex: 10,
+  //           padding: 8,
+  //         }}
+  //         onPress={() => router.replace('/')}
+  //       >
+  //         <MaterialIcons name="home" size={32} color="black" />
+  //       </TouchableOpacity>
+
+  //       {isQuizMode ? (
+  //         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
+  //           <LottieView
+  //             source={require('@/assets/animations/SuccessAnimation3_Confetti.json')}
+  //             autoPlay
+  //             loop
+  //             style={{ width: 120, height: 120, marginRight: 10, transform: [{ scaleX: -1 }] }}
+  //           />
+  //           <View style={{ width: 20 }} />
+  //           <LottieView
+  //             source={require('@/assets/animations/SuccessAnimation3_Confetti.json')}
+  //             autoPlay
+  //             loop
+  //             style={{ width: 120, height: 120, marginLeft: 10 }}
+  //           />
+  //         </View>
+  //       ) : (
+  //         <LottieView
+  //           source={require('@/assets/animations/SuccessAnimation2_Circle.json')}
+  //           autoPlay
+  //           loop={true}
+  //           style={{ width: 220, height: 220, marginBottom: 32 }}
+  //         />
+  //       )}
+  //       <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 40, color: '#222', textAlign: 'center', marginBottom: 48 }}>
+  //         {isQuizMode ? (language === 'Chinese' ? '干得漂亮!' : 'Nicely done!') : (language === 'Chinese' ? '学习得不错!' : 'Nice studying!')}
+  //       </Text>
+  //       {isQuizMode && (
+  //         <>
+  //         <TouchableOpacity
+  //         style={{
+  //           width: 318,
+  //           height: 72,
+  //           borderRadius: 30,
+  //           alignItems: 'center',
+  //           justifyContent: 'center',
+  //               backgroundColor: hasDifficultFlashcards() ? '#4F41D8' : '#D5D4DD',
+  //           marginBottom: 20,
+  //         }}
+  //             onPress={() => {
+  //               if (hasDifficultFlashcards()) {
+  //                 router.replace({
+  //                   pathname: '/flashcardView',
+  //                   params: { 
+  //                     deckID: deckID as string,
+  //                     flashcardIdx: '0',
+  //                     totalNumberOfFlashcards: totalCards.toString(),
+  //                     isStudyMode: 'true',
+  //                     isQuizMode: 'false',
+  //                     isAIDeck: isAIDeckParam as string,
+  //                     retryDifficult: 'true'
+  //                   },
+  //                 });
+  //               }
+  //             }}
+  //             disabled={!hasDifficultFlashcards()}
+  //             activeOpacity={hasDifficultFlashcards() ? 0.8 : 1}
+  //       >
+  //         <Text style={{ 
+  //           color: "#fff", 
+  //           fontFamily: 'Satoshi-Variable', 
+  //           fontWeight: '400', 
+  //           fontSize: 20 
+  //         }}>
+  //               {hasDifficultFlashcards() ? (language === 'Chinese' ? '重做难题' : 'Retry difficult flashcards?') : (language === 'Chinese' ? '没有难题可重做' : 'No difficult flashcards to retry')}
+  //         </Text>
+  //       </TouchableOpacity>
+  //       <TouchableOpacity
+  //         style={{
+  //           width: 318,
+  //           height: 72,
+  //           borderRadius: 30,
+  //           alignItems: 'center',
+  //           justifyContent: 'center',
+  //           backgroundColor: '#44B88A',
+  //           marginBottom: 20,
+  //         }}
+  //         onPress={() => router.push({
+  //           pathname: '/viewQuizStats',
+  //           params: { 
+  //             halfwayCheckpoint: 'false',
+  //             deckID: deckID as string,
+  //             isAIDeck: isAIDeckParam as string,
+  //             attemptedFlashcardIds: JSON.stringify(attemptedFlashcardIds)
+  //           }},
+  //         )}
+  //       >
+  //         <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+  //           {language === 'Chinese' ? '查看测验统计' : 'View Quiz Stats'}
+  //         </Text>
+  //       </TouchableOpacity>
+  //       </>
+  //       )}
+  //       <TouchableOpacity
+  //         style={{
+  //           width: 318,
+  //           height: 72,
+  //           borderRadius: 30,
+  //           alignItems: 'center',
+  //           justifyContent: 'center',
+  //           backgroundColor: '#44B88A',
+  //         }}
+  //         onPress={() => router.back()}
+  //       >
+  //         <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+  //           {language === 'Chinese' ? '返回卡组' : 'Back to Deck'}
+  //         </Text>
+  //       </TouchableOpacity>
+  //     </Animated.View>
+  //   );
+  // }
+
+  // Show countdown screen before quiz starts
+  // if (showQuizCountdown) {
+  //   return (
+  //     <View style={styles.safeArea}>
+  //     <SafeAreaView style={styles.safeArea}>
+  //     <View style={{
+  //       flex: 1,
+  //       backgroundColor: '#fff',
+  //       alignItems: 'center',
+  //       justifyContent: 'center',
+  //     }}>
+  //       {/* Back button at top left */}
+  //       <TouchableOpacity
+  //         style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
+  //         onPress={() => router.back()}
+  //       >
+  //         <AntDesign name="arrowleft" size={32} color="black" />
+  //       </TouchableOpacity>
+  //       {/* Quiz starting text */}
+  //       <Text style={{
+  //         fontFamily: 'Satoshi-Medium',
+  //         fontSize: 28,
+  //         color: '#222',
+  //         marginBottom: 24,
+  //         textAlign: 'center',
+  //       }}>
+  //         {language === 'Chinese' ? '测验即将开始...' : 'Quiz starting in...'}
+  //       </Text>
+  //       <LottieView
+  //         source={require('@/assets/animations/CountdownAnimation.json')}
+  //         autoPlay
+  //         loop={false}
+  //         style={{ width: 200, height: 200 }}
+  //       />
+  //     </View>
+  //     </SafeAreaView>
+  //     </View>
+  //   );
+  // }
+
+  // Show loading screen while flashcards are being loaded
+  // if (isLoadingFlashcards) {
+  //   return <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} language={language} />;
+  // }
+
+  return (
+    isSuccessMode ? (
       <Animated.View
         style={{
           flex: 1,
@@ -3225,55 +3409,44 @@ export default function FlashcardViewPage() {
           </Text>
         </TouchableOpacity>
       </Animated.View>
-    );
-  }
-
-  // Show countdown screen before quiz starts
-  if (showQuizCountdown) {
-    return (
+    ) : showQuizCountdown ? (
       <View style={styles.safeArea}>
-      <SafeAreaView style={styles.safeArea}>
-      <View style={{
-        flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        {/* Back button at top left */}
-        <TouchableOpacity
-          style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
-          onPress={() => router.back()}
-        >
-          <AntDesign name="arrowleft" size={32} color="black" />
-        </TouchableOpacity>
-        {/* Quiz starting text */}
-        <Text style={{
-          fontFamily: 'Satoshi-Medium',
-          fontSize: 28,
-          color: '#222',
-          marginBottom: 24,
-          textAlign: 'center',
-        }}>
-          {language === 'Chinese' ? '测验即将开始...' : 'Quiz starting in...'}
-        </Text>
-        <LottieView
-          source={require('@/assets/animations/CountdownAnimation.json')}
-          autoPlay
-          loop={false}
-          style={{ width: 200, height: 200 }}
-        />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={{
+            flex: 1,
+            backgroundColor: '#fff',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {/* Back button at top left */}
+            <TouchableOpacity
+              style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
+              onPress={() => router.back()}
+            >
+              <AntDesign name="arrowleft" size={32} color="black" />
+            </TouchableOpacity>
+            {/* Quiz starting text */}
+            <Text style={{
+              fontFamily: 'Satoshi-Medium',
+              fontSize: 28,
+              color: '#222',
+              marginBottom: 24,
+              textAlign: 'center',
+            }}>
+              {language === 'Chinese' ? '测验即将开始...' : 'Quiz starting in...'}
+            </Text>
+            <LottieView
+              source={require('@/assets/animations/CountdownAnimation.json')}
+              autoPlay
+              loop={false}
+              style={{ width: 200, height: 200 }}
+            />
+          </View>
+        </SafeAreaView>
       </View>
-      </SafeAreaView>
-      </View>
-    );
-  }
-
-  // Show loading screen while flashcards are being loaded
-  if (isLoadingFlashcards) {
-    return <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} language={language} />;
-  }
-
-  return (
+    ) : isLoadingFlashcards ? (
+      <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} language={language} />
+    ) : (
     <View style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
@@ -3552,6 +3725,7 @@ export default function FlashcardViewPage() {
         }}
       />
     </View>
+  )
   );
 }
 

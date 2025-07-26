@@ -10,6 +10,7 @@ import { Feather } from '@expo/vector-icons';
 import { Toast } from '@/components/Toast';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { createUser } from '@/db/users';
 
 const { width, height } = Dimensions.get('window');
 
@@ -72,7 +73,28 @@ export default function SplashScreen({
   // Handle auth state changes after login/signup
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      // User just signed in, complete auth
+      // User just signed in, handle database user creation if needed
+      const handleUserCreation = async () => {
+        try {
+          if (user.id) {
+            // Store userID in AsyncStorage
+            await AsyncStorage.setItem('userID', user.id);
+            
+            // Check if user exists in database, if not create them
+            // This handles both new sign-ups and social login users
+            const dbSuccess = await createUser(user.id);
+            if (!dbSuccess) {
+              console.warn('Failed to create user in local database, but auth succeeded');
+            }
+          }
+        } catch (error) {
+          console.error('Error handling user creation:', error);
+        }
+      };
+      
+      handleUserCreation();
+      
+      // Complete auth after a short delay
       setTimeout(() => {
         onAuthComplete?.();
       }, 1000);
@@ -172,6 +194,10 @@ export default function SplashScreen({
       }
     
       await oauthFunction();
+      
+      // For social login, the user state will be updated by the context
+      // and we can handle user creation in the useEffect that watches auth state changes
+      
       // Auth state will be updated and trigger the useEffect
     } catch (error: any) {
       const errorMessage = error?.message || `${provider} sign in failed`;

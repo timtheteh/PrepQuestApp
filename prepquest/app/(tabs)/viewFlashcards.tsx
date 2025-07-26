@@ -18,7 +18,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getContentTopHeight, getContentTopHeightNoRoundedToggle2, getHeaderIconsTopHeight, getTopBarTopHeight } from '@/constants/heights';
-import { useAuth } from '@/contexts/AuthContext';
 
 // Interface for flashcard data
 interface Flashcard {

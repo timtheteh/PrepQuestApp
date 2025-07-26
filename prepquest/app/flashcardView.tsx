@@ -28,7 +28,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getContentTopHeight, getHeaderIconsTopHeight, getTopBarAccountHeight } from '@/constants/heights';
-import { useAuth } from '@/contexts/AuthContext';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {

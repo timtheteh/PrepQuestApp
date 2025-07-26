@@ -32,7 +32,6 @@ import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getTopBarAccountHeight } from '@/constants/heights';
-import { useAuth } from '@/contexts/AuthContext';
 // import BackgroundService from 'react-native-background-actions';
 
 

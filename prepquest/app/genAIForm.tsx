@@ -24,7 +24,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserQuestionSettings } from '../db/users';
 import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
 import { getTopBarAccountHeight } from '@/constants/heights';
-import { useAuth } from '@/contexts/AuthContext';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {

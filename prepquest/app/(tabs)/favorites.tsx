@@ -23,7 +23,6 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeight } from '@/constants/heights';
-import { useAuth } from '@/contexts/AuthContext';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';

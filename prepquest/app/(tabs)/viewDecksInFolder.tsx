@@ -22,7 +22,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeightNoRoundedToggle2 } from '@/constants/heights';
-import { useAuth } from '@/contexts/AuthContext';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar

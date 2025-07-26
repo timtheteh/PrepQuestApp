@@ -210,7 +210,6 @@ const styles = StyleSheet.create({
     marginLeft: '-42.5%', // Half of width
     borderRadius: 30,
     borderWidth: 10,
-    borderColor: '#4F41D8',
     zIndex: 1001, // Higher than GreyOverlayBackground
   },
   content: {

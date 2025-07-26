@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { CircleSVGIconButton } from './CircleSVGIconButton';
+import { CircleSVGIconButton } from '../general/CircleSVGIconButton';
 import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
 import CameraIconFilledWhite from '@/assets/icons/cameraIconFilledWhite.svg';
 import MarkerIcon from '@/assets/icons/markerIcon.svg';

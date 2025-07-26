@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
-import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
+import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
 import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';

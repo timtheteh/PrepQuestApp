@@ -1,6 +1,6 @@
 import { createContext, RefObject } from 'react';
 import { Animated } from 'react-native';
-import { NavBarRef } from '@/components/NavBar';
+import { NavBarRef } from '@/components/general/NavBar';
 
 interface MenuContextType {
   isMenuOpen: boolean;

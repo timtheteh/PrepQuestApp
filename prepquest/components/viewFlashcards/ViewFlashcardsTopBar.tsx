@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
-import { CircleIconButton } from './CircleIconButton';
+import { CircleIconButton } from '../general/CircleIconButton';
 import { Entypo , MaterialIcons , Ionicons } from '@expo/vector-icons';
 
 interface ViewFlashcardsTopBarProps {

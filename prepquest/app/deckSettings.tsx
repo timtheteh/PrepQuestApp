@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, ScrollV
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import HelpIconFilled from '@/assets/icons/helpIconFilled.svg';
-import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
-import { GenericModal } from '@/components/GenericModal';
-import { DifficultyToggleRow } from '@/components/DifficultyToggleRow';
+import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
+import { GenericModal } from '@/components/modals/GenericModal';
+import { DifficultyToggleRow } from '@/components/general/DifficultyToggleRow';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
 import { useLanguage } from '@/contexts/LanguageContext';

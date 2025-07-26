@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth as useClerkAuth, useSignIn as useClerkSignIn, useSignUp as useClerkSignUp, useOAuth } from '@clerk/clerk-expo';
-import { AuthService, AuthUser, AuthResult } from '@/lib/supabase';
+import { AuthService, AuthUser, AuthResult } from '@/supabase/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface HybridAuthContextType {

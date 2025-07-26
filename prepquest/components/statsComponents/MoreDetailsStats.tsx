@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Animated } from 'react-native';
-import { SmallGreenToggleMultiple } from './SmallGreenToggleMultiple';
+import { SmallGreenToggleMultiple } from '../general/SmallGreenToggleMultiple';
 import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';
 import { getUserStatistics } from '@/db/users';
@@ -28,10 +28,10 @@ interface StatsData {
   interviewQuizzed: number;
 }
 
-const meshBackground1 = require('../assets/images/meshBackground1.png');
-const meshBackground2 = require('../assets/images/meshBackground2.png');
-const meshBackground3 = require('../assets/images/meshBackground3.png');
-const meshBackground4 = require('../assets/images/meshBackground4.png');
+const meshBackground1 = require('../../assets/images/meshBackground1.png');
+const meshBackground2 = require('../../assets/images/meshBackground2.png');
+const meshBackground3 = require('../../assets/images/meshBackground3.png');
+const meshBackground4 = require('../../assets/images/meshBackground4.png');
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {

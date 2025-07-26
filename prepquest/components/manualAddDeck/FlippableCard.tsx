@@ -6,7 +6,7 @@ import MicIcon from '@/assets/icons/micIcon.svg';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { DrawableOptionsRow } from './DrawableOptionsRow';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { getLastTypedText } from '../app/textInputModal';
+import { getLastTypedText } from '../../app/textInputModal';
 import ImageIconFilled from '@/assets/icons/imageIconFilled.svg';
 import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { Audio } from 'expo-av';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { prepareImageForUpload } from '../utils/image';
+import { prepareImageForUpload } from '../../utils/image';
 
 interface CardContent {
   content: React.ReactNode;
@@ -1064,7 +1064,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                       return effectiveCardType === 'none' && (
                         <View style={styles.animationContainerTop}>
                           <LottieView
-                            source={require('../assets/animations/DownArrowAnimation.json')}
+                            source={require('../../assets/animations/DownArrowAnimation.json')}
                             autoPlay
                             loop
                             style={[styles.downArrowAnimation, { transform: [{ rotate: '180deg' }] }]}
@@ -1083,7 +1083,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                       return effectiveCardType === 'mic';
                     })() ? (
                       <LottieView
-                        source={require('../assets/animations/SoundWaveLoadingAnimation.json')}
+                        source={require('../../assets/animations/SoundWaveLoadingAnimation.json')}
                         autoPlay
                         loop
                         style={styles.soundWaveAnimation}
@@ -1099,7 +1099,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                       return (effectiveCardType === 'camera' || (effectiveCardType === 'mic' && (hasAudioRecording || !isRecording))) && !isRecording && (
                         <View style={styles.animationContainer}>
                           <LottieView
-                            source={require('../assets/animations/DownArrowAnimation.json')}
+                            source={require('../../assets/animations/DownArrowAnimation.json')}
                             autoPlay
                             loop
                             style={styles.downArrowAnimation}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { CircleIconButton } from './CircleIconButton';
+import { CircleIconButton } from '../general/CircleIconButton';
 import { Entypo , MaterialIcons , Ionicons , FontAwesome5 } from '@expo/vector-icons';
 import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
 

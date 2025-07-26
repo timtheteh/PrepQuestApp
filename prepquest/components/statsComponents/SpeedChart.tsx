@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView, Text, Platform } from 'react-native';
 import Svg, { Line, Polyline, Circle, Text as SvgText, G, Rect, Defs, LinearGradient, Stop, Polygon } from 'react-native-svg';
-import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
+import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { getCompleteDailySpeeds, getMonthlySpeeds, DaySpeed, MonthSpeed } from '@/db/grades';
 import { useIsFocused } from '@react-navigation/native';
 import { useLanguage } from '@/contexts/LanguageContext';

@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
+import { ThemedText } from '@/components/general/ThemedText';
 import LightSwitchBody from '@/assets/icons/lightSwitchBody.svg';
 import DarkSwitchBody from '@/assets/icons/darkSwitchBody.svg';
 import LightSwitch from '@/assets/icons/lightSwitch.svg';

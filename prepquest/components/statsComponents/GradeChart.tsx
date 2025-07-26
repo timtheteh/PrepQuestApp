@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, useWindowDimensions, Animated, TouchableOpacity, ScrollView, Text, Platform } from 'react-native';
 import Svg, { Line, Rect as SvgRect, Text as SvgText, G, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { SmallGreenBinaryToggle } from './SmallGreenBinaryToggle';
-import { getCompleteDailyGrades, getMonthlyGrades, DayGrade, MonthGrade } from '../db/grades';
+import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
+import { getCompleteDailyGrades, getMonthlyGrades, DayGrade, MonthGrade } from '../../db/grades';
 import { useIsFocused } from '@react-navigation/native';
 import { useLanguage } from '@/contexts/LanguageContext';
 

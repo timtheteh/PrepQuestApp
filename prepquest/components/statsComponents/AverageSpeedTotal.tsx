@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import Svg, { Path, G, Text as SvgText } from 'react-native-svg';
-import GaugeIcon from '../assets/icons/gaugeIcon.svg';
+import GaugeIcon from '../../assets/icons/gaugeIcon.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const WIDTH = Dimensions.get('window').width * 0.8;

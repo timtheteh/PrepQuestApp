@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated, Dimensions, Text } from 'react-native';
-import { CircleSelectButton } from './CircleSelectButton';
-import { FavoriteButton } from './FavoriteButton';
+import { CircleSelectButton } from '../general/CircleSelectButton';
+import { FavoriteButton } from '../general/FavoriteButton';
 import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';

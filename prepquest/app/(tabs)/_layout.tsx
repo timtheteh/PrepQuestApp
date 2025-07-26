@@ -1,11 +1,11 @@
 import { View, StyleSheet, Platform , Animated } from 'react-native';
 import { Tabs, useRouter, usePathname, useLocalSearchParams } from 'expo-router';
-import { NavBar, NavBarRef } from '@/components/NavBar';
-import { GreyOverlayBackground } from '@/components/GreyOverlayBackground';
-import { SlidingMenu } from '@/components/SlidingMenu';
-import { AIPromptModal } from '@/components/AIPromptModal';
-import { AddDeckModal } from '@/components/AddDeckModal';
-import { GenericModal } from '@/components/GenericModal';
+import { NavBar, NavBarRef } from '@/components/general/NavBar';
+import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
+import { SlidingMenu } from '@/components/general/SlidingMenu';
+import { AIPromptModal } from '@/components/AIDecks/AIPromptModal';
+import { AddDeckModal } from '@/components/addDeckModal/AddDeckModal';
+import { GenericModal } from '@/components/modals/GenericModal';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useState, useRef, useCallback, RefObject, useEffect } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';

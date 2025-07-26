@@ -7,7 +7,7 @@ import GoogleLoginIcon from '@/assets/icons/GoogleLoginIcon.svg';
 import AppleLoginIcon from '@/assets/icons/AppleLoginIcon.svg';
 import FacebookLoginIcon from '@/assets/icons/FacebookLoginIcon.svg';
 import { Feather } from '@expo/vector-icons';
-import { Toast } from '@/components/Toast';
+import { Toast } from '@/components/general/Toast';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createUser } from '@/db/users';

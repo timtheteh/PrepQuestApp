@@ -1,7 +1,7 @@
 import { Animated, Dimensions, View, StyleSheet, Text, ScrollView, TouchableOpacity, Platform, Image as RNImage, ImageSourcePropType , PanResponder } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
+import { ThemedText } from '@/components/general/ThemedText';
 import React, { useEffect, useRef, useState, useContext } from 'react';
-import { RoundedContainer } from '@/components/RoundedContainer';
+import { RoundedContainer } from '@/components/general/RoundedContainer';
 import { useIsFocused } from '@react-navigation/native';
 import Svg, { Path, Defs, ClipPath, Polygon , Image as SvgImage } from 'react-native-svg';
 import { MenuContext } from '@/contexts/MenuContext';

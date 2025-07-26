@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
-import { CircleIconButton } from './CircleIconButton';
+import { CircleIconButton } from '../general/CircleIconButton';
 import { Entypo } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 

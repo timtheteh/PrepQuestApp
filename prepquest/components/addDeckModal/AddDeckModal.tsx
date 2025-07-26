@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useCallback, useMemo, memo } from 'react';
 import { StyleSheet, Animated, View, Text } from 'react-native';
 import { InterviewStudyToggle } from './InterviewStudyToggle';
 import { AddDeckModalButton } from './AddDeckModalButton';
@@ -26,7 +26,7 @@ interface AddDeckModalProps {
   deckType?: string;
 }
 
-export function AddDeckModal({ 
+function AddDeckModalComponent({ 
   visible,
   opacity = new Animated.Value(0),
   currentMode,
@@ -42,134 +42,125 @@ export function AddDeckModal({
   const { language } = useLanguage();
   const colorScheme = useColorScheme();
 
+  // Memoize parameter building logic to avoid duplication
+  const buildNavigationParams = useCallback((pathname: '/genAIForm' | '/fileUploadPage' | '/youtubeLink' | '/manualAddDeck') => {
+    const params: any = { mode: currentMode };
+    
+    if (isInViewFlashcardsPage && deckId) {
+      params.deckId = deckId;
+      params.isInViewFlashcardsPage = true;
+    }
+    if (isInViewFlashcardsPage && deckType) {
+      params.mode = deckType;
+      params.isInViewFlashcardsPage = true;
+    }
+    if (isInViewDecksInFolderPage && folderId) {
+      params.folderId = folderId;
+      params.isInViewDecksInFolderPage = true;
+    }
+    if (isInFavoritesPage) {
+      params.isInFavoritesPage = true;
+    }
+    if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
+      params.isInIndexPage = true;
+    }
+    
+    return { pathname, params };
+  }, [currentMode, isInViewFlashcardsPage, isInViewDecksInFolderPage, isInFavoritesPage, deckId, deckType, folderId]);
+
+  // Memoize handler functions to prevent unnecessary re-renders
+  const handleToggle = useCallback((mode: 'study' | 'interview') => {
+    setCurrentMode(mode);
+  }, [setCurrentMode]);
+
+  const handleGenAIFormPress = useCallback(() => {
+    handleDismissMenu();
+    const { pathname, params } = buildNavigationParams('/genAIForm');
+    router.push({ pathname, params });
+  }, [handleDismissMenu, buildNavigationParams, router]);
+
+  const handleFormUploadPagePress = useCallback(() => {
+    handleDismissMenu();
+    const { pathname, params } = buildNavigationParams('/fileUploadPage');
+    router.push({ pathname, params });
+  }, [handleDismissMenu, buildNavigationParams, router]);
+
+  const handleYoutubeLinkPress = useCallback(() => {
+    handleDismissMenu();
+    const { pathname, params } = buildNavigationParams('/youtubeLink');
+    router.push({ pathname, params });
+  }, [handleDismissMenu, buildNavigationParams, router]);
+
+  const handleManualPress = useCallback(() => {
+    const { pathname, params } = buildNavigationParams('/manualAddDeck');
+    router.push({ pathname, params });
+    handleDismissMenu();
+  }, [buildNavigationParams, router, handleDismissMenu]);
+
+  // Memoize styles to prevent object recreation
+  const containerStyle = useMemo(() => [
+    styles.container,
+    {
+      opacity: opacity,
+      borderColor: isInViewFlashcardsPage 
+        ? Colors[colorScheme ?? 'light'].brandColor1 
+        : Colors[colorScheme ?? 'light'].brandColor2,
+      backgroundColor: Colors[colorScheme ?? 'light'].background,
+    }
+  ], [opacity, isInViewFlashcardsPage, colorScheme]);
+
+  // Memoize conditional rendering logic
+  const titleContent = useMemo(() => {
+    if (isInViewFlashcardsPage) {
+      return (
+        <Text style={[styles.title, { 
+          fontSize: 28, 
+          fontFamily: Fonts.title
+        }]}>{strings[language].addFlashcardsToDeck}</Text>
+      );
+    }
+    
+    return (
+      <Text style={[styles.title, { 
+        fontFamily: Fonts.title, 
+        fontSize: 32 
+      }]}>
+        {isInFavoritesPage
+          ? strings[language].addDeckToFavorites
+          : isInViewDecksInFolderPage
+            ? strings[language].addDeckToFolder
+            : strings[language].addDeck}
+      </Text>
+    );
+  }, [isInViewFlashcardsPage, isInFavoritesPage, isInViewDecksInFolderPage, language]);
+
+  const toggleContent = useMemo(() => {
+    if (isInViewFlashcardsPage) {
+      return <View style={{ height: 35 }} />;
+    }
+    
+    return (
+      <View style={styles.toggleRow}>
+        <InterviewStudyToggle 
+          initialState={currentMode}
+          onToggle={handleToggle}
+          isInViewFlashcardsPage={isInViewFlashcardsPage}
+        />
+      </View>
+    );
+  }, [isInViewFlashcardsPage, currentMode, handleToggle]);
+
+  // Early return after all hooks have been called
   if (!visible) return null;
 
-  const handleToggle = (mode: 'study' | 'interview') => {
-    setCurrentMode(mode);
-  };
-
-  const handleGenAIFormPress = () => {
-    handleDismissMenu();
-    const params: any = { mode: currentMode };
-    if (isInViewFlashcardsPage && deckId) {
-      params.deckId = deckId;
-      params.isInViewFlashcardsPage = true;
-    }
-    if (isInViewFlashcardsPage && deckType) {
-      params.mode = deckType;
-      params.isInViewFlashcardsPage = true;
-    }
-    if (isInViewDecksInFolderPage && folderId) {
-      params.folderId = folderId;
-      params.isInViewDecksInFolderPage = true;
-    }
-    if (isInFavoritesPage) {
-      params.isInFavoritesPage = true;
-    }
-    if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
-      params.isInIndexPage = true;
-    }
-    router.push({
-      pathname: '/genAIForm',
-      params
-    });
-  };
-
-  const handleFormUploadPagePress = () => {
-    handleDismissMenu();
-    const params: any = { mode: currentMode };
-    if (isInViewFlashcardsPage && deckId) {
-      params.deckId = deckId;
-      params.isInViewFlashcardsPage = true;
-    }
-    if (isInViewFlashcardsPage && deckType) {
-      params.mode = deckType;
-      params.isInViewFlashcardsPage = true;
-    }
-    if (isInViewDecksInFolderPage && folderId) {
-      params.folderId = folderId;
-      params.isInViewDecksInFolderPage = true;
-    }
-    if (isInFavoritesPage) {
-      params.isInFavoritesPage = true;
-    }
-    if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
-      params.isInIndexPage = true;
-    }
-    router.push({
-      pathname: '/fileUploadPage',
-      params
-    });
-  };
-
-  const handleYoutubeLinkPress = () => {
-    handleDismissMenu();
-    const params: any = { mode: currentMode };
-    if (isInViewFlashcardsPage && deckId) {
-      params.deckId = deckId;
-      params.isInViewFlashcardsPage = true;
-    }
-    if (isInViewFlashcardsPage && deckType) {
-      params.mode = deckType;
-      params.isInViewFlashcardsPage = true;
-    }
-    if (isInViewDecksInFolderPage && folderId) {
-      params.folderId = folderId;
-      params.isInViewDecksInFolderPage = true;
-    }
-    if (isInFavoritesPage) {
-      params.isInFavoritesPage = true;
-    }
-    if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
-      params.isInIndexPage = true;
-    }
-    router.push({
-      pathname: '/youtubeLink',
-      params
-    });
-  };
-
   return (
-    <Animated.View 
-      style={[
-        styles.container,
-        {
-          opacity: opacity,
-          borderColor: isInViewFlashcardsPage 
-            ? Colors[colorScheme ?? 'light'].brandColor1 
-            : Colors[colorScheme ?? 'light'].brandColor2,
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
-        }
-      ]}
-    >
+    <Animated.View style={containerStyle}>
       <View style={styles.content}>
         <View style={styles.column}>
           <View style={styles.titleRow}>
-            {isInViewFlashcardsPage ? (
-              <Text style={[styles.title, { 
-                fontSize: 28, 
-                fontFamily: Fonts.title
-              }]}>{strings[language].addFlashcardsToDeck}</Text>
-            ) : (
-              <Text style={[styles.title, { 
-                fontFamily: Fonts.title, 
-                fontSize: 32 
-              }]}>
-                {isInFavoritesPage
-                  ? strings[language].addDeckToFavorites
-                  : isInViewDecksInFolderPage
-                    ? strings[language].addDeckToFolder
-                    : strings[language].addDeck}
-              </Text>
-            )}
+            {titleContent}
           </View>
-          {!isInViewFlashcardsPage ? (<View style={styles.toggleRow}>
-            <InterviewStudyToggle 
-              initialState={currentMode}
-              onToggle={handleToggle}
-              isInViewFlashcardsPage={isInViewFlashcardsPage}
-            />
-          </View>): <View style={{ height: 35 }} />}
+          {toggleContent}
           <View style={styles.firstButtonRow}>
             <AddDeckModalButton
               title={strings[language].genAIForm}
@@ -197,32 +188,7 @@ export function AddDeckModal({
               Icon={ManualFormIcon}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
               marginBottom={6}
-              onPress={() => {
-                const params: any = { mode: currentMode };
-                if (isInViewFlashcardsPage && deckId) {
-                  params.deckId = deckId;
-                  params.isInViewFlashcardsPage = true;
-                }
-                if (isInViewFlashcardsPage && deckType) {
-                  params.mode = deckType;
-                  params.isInViewFlashcardsPage = true;
-                }
-                if (isInViewDecksInFolderPage && folderId) {
-                  params.folderId = folderId;
-                  params.isInViewDecksInFolderPage = true;
-                }
-                if (isInFavoritesPage) {
-                  params.isInFavoritesPage = true;
-                }
-                if (!isInViewFlashcardsPage && !isInViewDecksInFolderPage && !isInFavoritesPage) {
-                  params.isInIndexPage = true;
-                }
-                router.push({
-                  pathname: '/manualAddDeck',
-                  params
-                });
-                handleDismissMenu();
-              }}
+              onPress={handleManualPress}
             />
           </View>
         </View>
@@ -230,6 +196,9 @@ export function AddDeckModal({
     </Animated.View>
   );
 }
+
+// Export the component directly (temporarily removing memo to debug)
+export const AddDeckModal = AddDeckModalComponent;
 
 const styles = StyleSheet.create({
   container: {

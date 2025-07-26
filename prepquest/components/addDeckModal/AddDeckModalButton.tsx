@@ -76,6 +76,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'space-evenly',
   },
   titleRow: {
     alignItems: 'center',

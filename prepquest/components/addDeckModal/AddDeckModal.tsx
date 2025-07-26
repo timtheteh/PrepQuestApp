@@ -5,11 +5,14 @@ import { AddDeckModalButton } from './AddDeckModalButton';
 import { useRouter } from 'expo-router';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { GenAIFormIcon, FileUploadIcon, YoutubeIcon, ManualFormIcon } from '@/constants/svgIcons';
+import GenAIFormIcon from '@/assets/icons/addDeckIcons/genAIFormIcon.svg';
+import FileUploadIcon from '@/assets/icons/addDeckIcons/fileUploadIcon.svg';
+import YoutubeIcon from '@/assets/icons/addDeckIcons/youtubeIcon.svg';
+import ManualFormIcon from '@/assets/icons/addDeckIcons/manualFormIcon.svg';
 import { strings } from '@/constants/strings';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
-import { Fonts, getFontByLanguage } from '@/constants/Fonts';
+import { Fonts } from '@/constants/Fonts';
 
 interface AddDeckModalProps {
   visible: boolean;

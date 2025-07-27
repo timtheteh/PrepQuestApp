@@ -20,10 +20,13 @@ export async function setupDatabase() {
     // Wait a bit to ensure tables are fully created
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // // Populate with dummy data for testing
-    // await populateDummyData();
+    // Populate with dummy data for testing
+    await populateDummyData();
+    
+    console.log('✅ Database setup completed - schema and dummy data loaded');
   } catch (error) {
     console.error('Error setting up database:', error);
+    throw error; // Re-throw to handle in the calling function
   }
 }
 

@@ -4,33 +4,26 @@ import { Asset } from 'expo-asset';
 
 export async function populateDummyData() {
   try {
-    console.log('Starting to populate dummy data...');
+    console.log('📊 Starting to populate dummy data...');
+    const startTime = Date.now();
     
     // Get database instance
     const { db } = await import('./index');
 
     // Initialize users table with dummy data
-    console.log('Populating users table...');
+    console.log('📊 Step 1/8: Populating users table...');
     
     // Clear existing users data and insert fresh dummy data
     await db.execAsync('DELETE FROM users');
     
     const userData = [
       {
-        userID: '1',
+        userID: 'user_30PMYkuSIjxOb4NNiYju8mp3uuK',
         accumulatedDecksCreated: 200,
         accumulatedFlashcardsCreated: 1020,
         accumulatedStudyDecksCreated: 120,
         accumulatedInterviewDecksCreated: 80,
         lastUpdated: '2025-01-27T10:30:00.000Z'
-      },
-      {
-        userID: '2',
-        accumulatedDecksCreated: 42,
-        accumulatedFlashcardsCreated: 280,
-        accumulatedStudyDecksCreated: 28,
-        accumulatedInterviewDecksCreated: 14,
-        lastUpdated: '2025-01-27T14:45:00.000Z'
       }
     ];
 
@@ -42,7 +35,7 @@ export async function populateDummyData() {
       `);
     }
 
-    console.log('Users table populated successfully');
+    console.log('✅ Users table populated successfully');
     
     // Helper function to read asset as blob
     async function readAssetAsBlob(asset: Asset): Promise<Uint8Array | null> {
@@ -62,7 +55,7 @@ export async function populateDummyData() {
     }
 
     // Load actual asset files
-    console.log('Loading actual asset files...');
+    console.log('📊 Step 2/8: Loading asset files...');
     const googleIconAsset = Asset.fromModule(require('../assets/companyIcons/GoogleIcon.png'));
     const jpmIconAsset = Asset.fromModule(require('../assets/companyIcons/JPMIcon.png'));
     const metaIconAsset = Asset.fromModule(require('../assets/companyIcons/MetaIcon.png'));
@@ -77,10 +70,10 @@ export async function populateDummyData() {
     const dummyPhotoBlob = await readAssetAsBlob(dummyPhotoAsset);
     const dummyAudioBlob = await readAssetAsBlob(dummyAudioAsset);
 
-    console.log('Assets loaded as blobs!');
+    console.log('✅ Assets loaded as blobs!');
 
     // Populate folders table first
-    console.log('Populating folders table...');
+    console.log('📊 Step 3/8: Populating folders table...');
     
     const folderData = [
       // 3 folders with study decks only
@@ -154,14 +147,14 @@ export async function populateDummyData() {
     for (const folder of folderData) {
       await db.execAsync(`
         INSERT INTO folders (userID, folderName, dateAdded, lastModifiedDate, isFavorited)
-        VALUES ('1', '${folder.folderName}', '${folder.dateAdded}', '${folder.lastModifiedDate}', ${folder.isFavorited})
+        VALUES ('user_30PMYkuSIjxOb4NNiYju8mp3uuK', '${folder.folderName}', '${folder.dateAdded}', '${folder.lastModifiedDate}', ${folder.isFavorited})
       `);
     }
 
-    console.log('Folders table populated successfully');
+    console.log('✅ Folders table populated successfully');
 
     // Populate decks table
-    console.log('Populating decks table...');
+    console.log('📊 Step 4/8: Populating decks table...');
 
     const deckData = [
       // 9 study decks for the 3 study folders (3 each)
@@ -896,7 +889,7 @@ export async function populateDummyData() {
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          '1', ${escapeSqlString(deck.deckName)}, ${escapeSqlString(deck.dateAdded)}, ${escapeSqlString(deck.lastModifiedDate)}, ${deck.isFavorited}, ${escapeSqlString(deck.deckType)}, ${escapeSqlString(deck.creationMethod)},
+          'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${escapeSqlString(deck.deckName)}, ${escapeSqlString(deck.dateAdded)}, ${escapeSqlString(deck.lastModifiedDate)}, ${deck.isFavorited}, ${escapeSqlString(deck.deckType)}, ${escapeSqlString(deck.creationMethod)},
           ${escapeSqlString(deck.lastStudiedDate)}, ${escapeSqlString(deck.lastQuizzedDate)}, ${deck.cardDesignIndex}, ${deck.isAIDeck}, ${escapeSqlString(deck.folderIDs)},
           ${escapeSqlString(deck.studyEducationLevel)}, ${escapeSqlString(deck.studySubjects)}, ${escapeSqlString(deck.studyTopicsSubtopics)}, ${escapeSqlString(deck.studyExamQuiz)},
           ${escapeSqlString(deck.interviewJobRole)}, ${escapeSqlString(deck.interviewType)}, ${escapeSqlString(deck.interviewCompany)}, ${escapeSqlString(deck.interviewExperienceLevel)}, ${escapeSqlString(deck.interviewTopics)}, ${escapeSqlString(deck.interviewCompanyIcon)}
@@ -904,10 +897,10 @@ export async function populateDummyData() {
       `);
     }
 
-    console.log('Decks table populated successfully');
+    console.log('✅ Decks table populated successfully');
     
     // Populate interviewCompanyIcons table
-    console.log('Populating interviewCompanyIcons table...');
+    console.log('📊 Step 5/8: Populating interviewCompanyIcons table...');
     
     // Clear existing company icons data
     await db.execAsync('DELETE FROM interviewCompanyIcons');
@@ -942,10 +935,10 @@ export async function populateDummyData() {
       }
     }
 
-    console.log('InterviewCompanyIcons table populated successfully');
+    console.log('✅ InterviewCompanyIcons table populated successfully');
     
     // Populate flashcards table
-    console.log('Populating flashcards table...');
+    console.log('📊 Step 6/8: Populating flashcards table...');
 
     // Get deck IDs from the deckData array (assuming they are inserted in order)
     const deckIds = Array.from({ length: deckData.length }, (_, i) => i + 1);
@@ -1202,7 +1195,7 @@ export async function populateDummyData() {
             userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            '1', ${flashcard.deckID}, ${escapeSqlString(flashcard.difficultyRating)}, ${escapeSqlString(flashcard.cognitiveQnType)}, ${flashcard.isFavorited}, ${escapeSqlString(flashcard.questionType)}, 
+            'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${flashcard.deckID}, ${escapeSqlString(flashcard.difficultyRating)}, ${escapeSqlString(flashcard.cognitiveQnType)}, ${flashcard.isFavorited}, ${escapeSqlString(flashcard.questionType)}, 
             ${escapeSqlString(flashcard.questionText)}, ${questionBlobHex},
             ${escapeSqlString(flashcard.answerType)}, ${escapeSqlString(flashcard.answerText)}, 
             ${escapeSqlString(flashcard.answerMCQ)}, ${answerBlobHex},
@@ -1214,10 +1207,10 @@ export async function populateDummyData() {
       }
     }
 
-    console.log('Flashcards table populated successfully');
+    console.log('✅ Flashcards table populated successfully');
     
     // Populate AIDecks table
-    console.log('Populating AIDecks table...');
+    console.log('📊 Step 7/8: Populating AIDecks table...');
 
     const aiDeckData = [
       // 1. Study deck - AI suggested
@@ -1303,7 +1296,7 @@ export async function populateDummyData() {
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          '1', ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
+          'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
           ${escapeSqlString(aiDeck.lastStudiedDate)}, ${escapeSqlString(aiDeck.lastQuizzedDate)}, ${aiDeck.cardDesignIndex}, ${aiDeck.isAIDeck}, ${escapeSqlString(aiDeck.folderIDs)},
           ${escapeSqlString(aiDeck.studyEducationLevel)}, ${escapeSqlString(aiDeck.studySubjects)}, ${escapeSqlString(aiDeck.studyTopicsSubtopics)}, ${escapeSqlString(aiDeck.studyExamQuiz)},
           ${escapeSqlString(aiDeck.interviewJobRole)}, ${escapeSqlString(aiDeck.interviewType)}, ${escapeSqlString(aiDeck.interviewCompany)}, ${escapeSqlString(aiDeck.interviewExperienceLevel)}, ${escapeSqlString(aiDeck.interviewTopics)}, ${escapeSqlString(aiDeck.interviewCompanyIcon)}
@@ -1311,10 +1304,10 @@ export async function populateDummyData() {
       `);
     }
 
-    console.log('AIDecks table populated successfully');
+    console.log('✅ AIDecks table populated successfully');
     
     // Populate AIFlashcards table
-    console.log('Populating AIFlashcards table...');
+    console.log('📊 Step 8/8: Populating AIFlashcards table...');
 
     // Get AI deck IDs from the aiDeckData array (assuming they are inserted in order)
     const aiDeckIds = Array.from({ length: aiDeckData.length }, (_, i) => i + 1);
@@ -1582,7 +1575,7 @@ export async function populateDummyData() {
             userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            '1', ${aiFlashcard.deckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
+            'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${aiFlashcard.deckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
             ${escapeSqlString(aiFlashcard.questionText)}, ${questionBlobHex},
             ${escapeSqlString(aiFlashcard.answerType)}, ${escapeSqlString(aiFlashcard.answerText)}, 
             ${escapeSqlString(aiFlashcard.answerMCQ)}, ${answerBlobHex},
@@ -1594,17 +1587,20 @@ export async function populateDummyData() {
       }
     }
 
-    console.log('AIFlashcards table populated successfully');
+    console.log('✅ AIFlashcards table populated successfully');
     
     // TODO: Continue with other tables (userFormEntries, etc.)
-    console.log('Dummy data population completed for AIFlashcards table');
+    console.log('✅ Dummy data population completed for AIFlashcards table');
     
     // Verify that data was loaded correctly
     console.log('\n=== VERIFYING DATA LOAD ===');
     await verifyDataLoad();
     
+    const endTime = Date.now();
+    console.log(`📊 Dummy data population completed in ${endTime - startTime}ms`);
+    
   } catch (error) {
-    console.error('Error populating dummy data:', error);
+    console.error('❌ Error populating dummy data:', error);
     throw error;
   }
 }

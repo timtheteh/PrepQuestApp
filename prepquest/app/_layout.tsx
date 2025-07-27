@@ -39,18 +39,27 @@ function AppContent() {
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
+  const [splashStartTime] = useState(Date.now());
   const fadeAnim = useState(new Animated.Value(1))[0];
 
   // Function to handle authentication completion
   const handleAuthComplete = () => {
-    // Start fade out animation to transition to main app
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 800, // 800ms fade out
-      useNativeDriver: true,
-    }).start(() => {
-      setShowSplash(false);
-    });
+    // Ensure minimum splash screen duration has passed
+    const elapsedTime = Date.now() - splashStartTime;
+    const remainingTime = Math.max(0, 3000 - elapsedTime);
+    
+    console.log(`🕐 Splash screen elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
+    
+    setTimeout(() => {
+      // Start fade out animation to transition to main app
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 800, // 800ms fade out
+        useNativeDriver: true,
+      }).start(() => {
+        setShowSplash(false);
+      });
+    }, remainingTime);
   };
 
   // Show splash screen when user is not authenticated
@@ -63,9 +72,16 @@ function AppContent() {
       if (user?.id) {
         AsyncStorage.setItem('userID', user.id);
       }
-      setShowSplash(false);
+      
+      // Ensure minimum splash duration even for authenticated users
+      const elapsedTime = Date.now() - splashStartTime;
+      const remainingTime = Math.max(0, 3000 - elapsedTime);
+      
+      setTimeout(() => {
+        setShowSplash(false);
+      }, remainingTime);
     }
-  }, [isAuthenticated, isLoading, fadeAnim, user]);
+  }, [isAuthenticated, isLoading, fadeAnim, user, splashStartTime]);
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -85,35 +101,43 @@ function AppContent() {
   useEffect(() => {
     const initDatabase = async () => {
       try {
-        console.log('🚀 Starting database initialization...');
+        console.log('🚀 Starting database initialization and dummy data population...');
         setIsInitializing(true);
         
         const startTime = Date.now();
-        await setupDatabase();
+        await setupDatabase(); // This now includes both schema and dummy data
         const endTime = Date.now();
         
-        console.log(`✅ Database initialization completed successfully in ${endTime - startTime}ms`);
+        console.log(`✅ Database initialization and dummy data population completed successfully in ${endTime - startTime}ms`);
         
         // Ensure minimum 3 seconds of splash screen
         const elapsedTime = endTime - startTime;
-        const remainingTime = Math.max(0, 5000 - elapsedTime);
+        const remainingTime = Math.max(0, 3000 - elapsedTime);
+        
+        console.log(`🕐 Database init + dummy data: elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
         
         setTimeout(() => {
           setIsDatabaseReady(true);
         }, remainingTime);
         
       } catch (error) {
-        console.error('❌ Failed to initialize database:', error);
+        console.error('❌ Failed to initialize database or populate dummy data:', error);
+        // Ensure minimum 3 seconds even on error
+        const elapsedTime = Date.now() - splashStartTime;
+        const remainingTime = Math.max(0, 3000 - elapsedTime);
+        
+        console.log(`🕐 Database error: elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
+        
         setTimeout(() => {
           setIsDatabaseReady(true);
-        }, 3000);
+        }, remainingTime);
       } finally {
         setIsInitializing(false);
       }
     };
     
     initDatabase();
-  }, [fadeAnim]);
+  }, [fadeAnim, splashStartTime]);
 
   return (
     <ThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>

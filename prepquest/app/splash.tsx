@@ -36,6 +36,9 @@ export default function SplashScreen({
   } = useHybridAuth();
   
   const insets = useSafeAreaInsets();
+  
+  // Track splash screen start time
+  const splashStartTime = useRef(Date.now());
 
   const animationRef = useRef<LottieView>(null);
   const logoAnimationRef = useRef<LottieView>(null);
@@ -63,10 +66,15 @@ export default function SplashScreen({
   // Check if user is already signed in
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      // User is already signed in, complete auth
+      // User is already signed in, ensure minimum splash duration
+      const elapsedTime = Date.now() - splashStartTime.current;
+      const remainingTime = Math.max(0, 3000 - elapsedTime);
+      
+      console.log(`🕐 Splash (auth check): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
+      
       setTimeout(() => {
         onAuthComplete?.();
-      }, 1000);
+      }, remainingTime);
     }
   }, [isLoading, isAuthenticated, onAuthComplete]);
 
@@ -94,10 +102,15 @@ export default function SplashScreen({
       
       handleUserCreation();
       
-      // Complete auth after a short delay
+      // Complete auth after ensuring minimum splash duration
+      const elapsedTime = Date.now() - splashStartTime.current;
+      const remainingTime = Math.max(0, 3000 - elapsedTime);
+      
+      console.log(`🕐 Splash (user creation): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
+      
       setTimeout(() => {
         onAuthComplete?.();
-      }, 1000);
+      }, remainingTime);
     }
   }, [isLoading, isAuthenticated, user, onAuthComplete]);
 

@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 type ToggleOption = 'study' | 'interview';
 
@@ -10,7 +14,7 @@ interface InterviewStudyToggleProps {
   isInViewFlashcardsPage?: boolean;
 }
 
-export function InterviewStudyToggle({ 
+export const InterviewStudyToggle = React.memo(function InterviewStudyToggle({ 
   onToggle,
   initialState = 'study',
   isInViewFlashcardsPage = false
@@ -18,30 +22,60 @@ export function InterviewStudyToggle({
   const [selected, setSelected] = useState<ToggleOption>(initialState);
   const translateX = useState(new Animated.Value(initialState === 'study' ? 0 : 93))[0];
   const { language } = useLanguage();
+  const { theme } = useTheme();
+
+  // Memoize animation configuration
+  const animationConfig = useMemo(() => ({
+    duration: 300,
+    easing: Easing.inOut(Easing.ease),
+    useNativeDriver: false, // Reverted to false since transform properties aren't supported with native driver
+  }), []);
+
+  // Memoize translateX values based on language
+  const translateXValues = useMemo(() => ({
+    study: language === 'English' ? 0 : -3,
+    interview: language === 'English' ? 93 : 108,
+  }), [language]);
 
   useEffect(() => {
     setSelected(initialState);
     Animated.timing(translateX, {
-      toValue: language === 'English' ? (initialState === 'study' ? 0 : 93) : (initialState === 'study' ? -3 : 108),
-      duration: 300,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: false,
+      toValue: translateXValues[initialState],
+      ...animationConfig,
     }).start();
-  }, [initialState]);
+  }, [initialState, translateXValues, animationConfig]);
 
-  const handleToggle = (option: ToggleOption) => {
+  const handleToggle = useCallback((option: ToggleOption) => {
     setSelected(option);
     if (onToggle) {
       onToggle(option);
     }
 
     Animated.timing(translateX, {
-      toValue: language === 'English' ? (option === 'study' ? 0 : 93) : (option === 'study' ? -3 : 108),
-      duration: 300,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: false,
+      toValue: translateXValues[option],
+      ...animationConfig,
     }).start();
-  };
+  }, [onToggle, translateXValues, animationConfig]);
+
+  // Memoize text styles to prevent recreation
+  const studyTextStyle = useMemo(() => [
+    styles.text,
+    { color: selected === 'study' ? Colors[theme].text : Colors[theme].unselectedText }
+  ], [selected, theme]);
+
+  const interviewTextStyle = useMemo(() => [
+    styles.text,
+    { color: selected === 'interview' ? Colors[theme].text : Colors[theme].unselectedText }
+  ], [selected, theme]);
+
+  // Memoize underline style
+  const underlineStyle = useMemo(() => [
+    styles.underline,
+    {
+      transform: [{ translateX }],
+      backgroundColor: isInViewFlashcardsPage ? Colors[theme].brandColor1 : Colors[theme].brandColor2
+    }
+  ], [translateX, isInViewFlashcardsPage, theme]);
 
   return (
     <View style={styles.container}>
@@ -50,43 +84,31 @@ export function InterviewStudyToggle({
           onPress={() => handleToggle('study')}
           style={styles.option}
         >
-          <Text style={[
-            styles.text,
-            selected === 'study' ? styles.selectedText : styles.unselectedText
-          ]}>
-            {language === 'Chinese' ? '学习' : 'Study'}
+          <Text style={studyTextStyle}>
+            {strings[language].study}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => handleToggle('interview')}
           style={styles.option}
         >
-          <Text style={[
-            styles.text,
-            selected === 'interview' ? styles.selectedText : styles.unselectedText
-          ]}>
-            {language === 'Chinese' ? '面试' : 'Interview'}
+          <Text style={interviewTextStyle}>
+            {strings[language].interview}
           </Text>
         </TouchableOpacity>
       </View>
-      <Animated.View 
-        style={[
-          styles.underline,
-          {
-            transform: [{ translateX }],
-            backgroundColor: isInViewFlashcardsPage ? '#44B88A' : '#4F41D8'
-          }
-        ]} 
-      />
+      <Animated.View style={underlineStyle} />
     </View>
   );
-}
+});
+
+// Also export as default for compatibility
+export default InterviewStudyToggle;
 
 const styles = StyleSheet.create({
   container: {
     width: 170,
     height: 35,
-    
   },
   row: {
     flex: 1,
@@ -99,14 +121,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 16,
-  },
-  selectedText: {
-    color: '#000000',
-  },
-  unselectedText: {
-    color: '#D5D4DD',
   },
   underline: {
     position: 'absolute',
@@ -114,6 +130,5 @@ const styles = StyleSheet.create({
     left: -3,
     width: 70,
     height: 2,
-    backgroundColor: '#4F41D8',
   },
 }); 

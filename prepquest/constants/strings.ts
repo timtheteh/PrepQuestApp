@@ -9,6 +9,9 @@ export const strings = {
     fileUpload: 'File Upload',
     youtubeLink: 'YouTube Link',
     manual: 'Manual',
+    // InterviewStudyToggle strings
+    study: 'Study',
+    interview: 'Interview',
   },
   Chinese: {
     // AddDeckModal strings
@@ -20,5 +23,8 @@ export const strings = {
     fileUpload: '文件上传',
     youtubeLink: 'YouTube 链接',
     manual: '手动添加',
+    // InterviewStudyToggle strings
+    study: '学习',
+    interview: '面试',
   },
 };

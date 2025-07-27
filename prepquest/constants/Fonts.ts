@@ -3,6 +3,8 @@ export const Fonts = {
   title: 'Neuton-Regular',
   body: 'Satoshi-Variable',
   bodyMedium: 'Satoshi-Medium',
+  bodyItalic: 'Satoshi-Italic',
+  bodyBold: 'Satoshi-Variable',
   cursive: 'CedarvilleCursive-Regular',
 } as const;
 

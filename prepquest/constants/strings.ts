@@ -12,6 +12,16 @@ export const strings = {
     // InterviewStudyToggle strings
     study: 'Study',
     interview: 'Interview',
+    // AIDeckCard strings
+    cardTypes: {
+      behavioral: 'Behavioral',
+      technical: 'Technical',
+      brainteasers: 'Brainteasers',
+      'case study': 'Case Study',
+      others: 'Others',
+      study: 'Study',
+    },
+    cards: 'cards',
   },
   Chinese: {
     // AddDeckModal strings
@@ -26,5 +36,15 @@ export const strings = {
     // InterviewStudyToggle strings
     study: '学习',
     interview: '面试',
+    // AIDeckCard strings
+    cardTypes: {
+      behavioral: '行为面试',
+      technical: '技术面试',
+      brainteasers: '脑筋急转弯',
+      'case study': '案例分析',
+      others: '其他',
+      study: '学习',
+    },
+    cards: '张卡片',
   },
 };

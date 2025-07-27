@@ -2,6 +2,10 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { View, StyleSheet, ImageBackground, Platform, ImageSourcePropType, Pressable, Text, Image, Dimensions } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Fonts } from '@/constants/Fonts';
+import { Colors } from '@/constants/Colors';
 
 interface AIDeckCardProps {
   backgroundImage: ImageSourcePropType;
@@ -20,19 +24,6 @@ interface AIDeckCardProps {
   isStudy?: boolean;
   deckID?: number;
 }
-
-// Add language mappings for all user-facing strings
-const STRINGS = {
-  cardTypes: {
-    behavioral: { English: 'Behavioral', Chinese: '行为面试' },
-    technical: { English: 'Technical', Chinese: '技术面试' },
-    brainteasers: { English: 'Brainteasers', Chinese: '脑筋急转弯' },
-    'case study': { English: 'Case Study', Chinese: '案例分析' },
-    others: { English: 'Others', Chinese: '其他' },
-    study: { English: 'Study', Chinese: '学习' },
-  },
-  cards: { English: 'cards', Chinese: '张卡片' },
-};
 
 export function AIDeckCard({ 
   backgroundImage,
@@ -53,6 +44,7 @@ export function AIDeckCard({
 }: AIDeckCardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
   const handlePressIn = () => {
@@ -83,13 +75,13 @@ export function AIDeckCard({
   };
 
   // Card type color and label logic
-  const cardTypeMap: Record<string, { color: string; label: { English: string; Chinese: string } }> = {
-    behavioral: { color: '#FDAE61', label: STRINGS.cardTypes.behavioral },
-    technical: { color: '#D7191C', label: STRINGS.cardTypes.technical },
-    brainteasers: { color: '#357AF6', label: STRINGS.cardTypes.brainteasers },
-    'case study': { color: '#C3EB79', label: STRINGS.cardTypes['case study'] },
-    others: { color: '#FDAE61', label: STRINGS.cardTypes.others },
-    study: { color: '#5CC8BE', label: STRINGS.cardTypes.study },
+  const cardTypeMap: Record<string, { color: string; label: string }> = {
+    behavioral: { color: '#FDAE61', label: strings[lang].cardTypes.behavioral },
+    technical: { color: '#D7191C', label: strings[lang].cardTypes.technical },
+    brainteasers: { color: '#357AF6', label: strings[lang].cardTypes.brainteasers },
+    'case study': { color: '#C3EB79', label: strings[lang].cardTypes['case study'] },
+    others: { color: '#FDAE61', label: strings[lang].cardTypes.others },
+    study: { color: '#5CC8BE', label: strings[lang].cardTypes.study },
   };
   const typeInfo = cardType && cardTypeMap[cardType];
 
@@ -122,7 +114,7 @@ export function AIDeckCard({
                 {/* Title */}
                 {title && (
                   <Text 
-                    style={styles.cardTitle}
+                    style={[styles.cardTitle, { color: Colors[theme].text }]}
                     numberOfLines={1}
                   >
                     {title}
@@ -138,14 +130,12 @@ export function AIDeckCard({
                           { borderColor: typeInfo.color }
                         ]}
                       >
-                        <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label[lang]}</Text>
+                        <Text style={[styles.cardTypeText, { color: Colors[theme].text }]}>{typeInfo.label}</Text>
                       </View>
                     )}
                     {flashcardCount !== undefined && (
-                      <Text style={styles.flashcardCountText}>
-                        {lang === 'Chinese'
-                          ? `${flashcardCount}${STRINGS.cards[lang]}`
-                          : `${flashcardCount} ${STRINGS.cards[lang]}`}
+                      <Text style={[styles.flashcardCountText, { color: Colors[theme].text }]}>
+                        {`${flashcardCount} ${strings[lang].cards}`}
                       </Text>
                     )}
                   </View>
@@ -209,9 +199,8 @@ const styles = StyleSheet.create({
     top: 20,
     right: 5,
     left: 80,
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 24,
-    color: '#000',
     zIndex: 2,
     lineHeight: Platform.OS === 'ios' ? 24 : 28,
     textAlign: 'right',
@@ -229,9 +218,8 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   flashcardCountText: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
   },
   cardTypePill: {
     width: 84,
@@ -243,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardTypeText: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 14,
     textAlign: 'center',
   },

@@ -8,9 +8,9 @@ export const Colors = {
   },
   dark: {
     text: "#FFFFFF",
-    background: '#FFFFFF',
+    background: '#1A1A1A',
     brandColor1: '#44B88A',
     brandColor2: '#4F41D8',
-    secondaryShade: '#F8F8F8',
+    secondaryShade: '#2A2A2A',
   },
 };

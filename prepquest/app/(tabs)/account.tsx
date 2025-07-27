@@ -12,12 +12,13 @@ import DarkSwitch from '@/assets/icons/darkSwitch.svg';
 import GrapeStem from '@/assets/icons/grapeStem.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
+import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTopBarAccountHeight } from '@/constants/heights';
 
 export default function AccountScreen() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [upgradePressed, setUpgradePressed] = useState(false);
   const [deckSettingsPressed, setDeckSettingsPressed] = useState(false);
   const [appSettingsPressed, setAppSettingsPressed] = useState(false);
@@ -30,10 +31,12 @@ export default function AccountScreen() {
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
   const { signOut, user } = useHybridAuth();
+  const { theme, setThemeMode, isSystemTheme } = useTheme();
   const insets = useSafeAreaInsets();
+  const themeColors = Colors[theme];
 
   // For button animation
-  const buttonAnim = useRef(new Animated.Value(1)).current; // 1 = right (light), 0 = left (dark)
+  const buttonAnim = useRef(new Animated.Value(theme === 'dark' ? 0 : 1)).current; // 1 = right (light), 0 = left (dark)
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const isFocused = useIsFocused();
 
@@ -55,13 +58,35 @@ export default function AccountScreen() {
   );
 
   const handleToggle = () => {
-    setIsDarkMode((prev) => !prev);
+    // Cycle through: system -> light -> dark -> system
+    let newThemeMode: ThemeMode;
+    if (isSystemTheme) {
+      newThemeMode = 'light';
+    } else if (theme === 'light') {
+      newThemeMode = 'dark';
+    } else {
+      newThemeMode = 'system';
+    }
+    
+    setThemeMode(newThemeMode);
+    
+    // Animate to the appropriate position
+    const targetValue = newThemeMode === 'system' ? (theme === 'dark' ? 0 : 1) : (newThemeMode === 'dark' ? 0 : 1);
     Animated.timing(buttonAnim, {
-      toValue: isDarkMode ? 1 : 0,
+      toValue: targetValue,
       duration: 200,
       useNativeDriver: false,
     }).start();
   };
+
+  // Update button animation when theme changes
+  useEffect(() => {
+    Animated.timing(buttonAnim, {
+      toValue: theme === 'dark' ? 0 : 1,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [theme]);
 
   const handleDeckSettingsPress = () => {
     router.push('/deckSettings');
@@ -159,7 +184,7 @@ export default function AccountScreen() {
       <View style={[styles.mainColumnContainer, { paddingTop: getTopBarAccountHeight()}]}> 
         <View style={styles.topBar}> 
           <TouchableOpacity onPress={handleSignOut}>
-            <Text style={styles.signOutText}>{language === 'Chinese' ? '退出登录' : 'Sign Out'}</Text>
+            <Text style={[styles.signOutText, { color: themeColors.text }]}>{language === 'Chinese' ? '退出登录' : 'Sign Out'}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleToggle} activeOpacity={0.8} style={styles.switchContainer}>
             <Animated.View style={[StyleSheet.absoluteFill, { opacity: lightBodyOpacity }]}> 
@@ -180,25 +205,23 @@ export default function AccountScreen() {
         </View>
         <View style={styles.circleContainer}> 
           <View style={styles.profileCircle}>
-            <Text style={styles.profileInitials}>
+            <Text style={[styles.profileInitials, { color: themeColors.text }]}>
               {user?.id ? user.id.substring(0, 2).toUpperCase() : 'GU'}
             </Text>
           </View>
         </View>
         <View style={[styles.infoColumn, { marginTop: '10%', marginBottom: '15%' }]}> 
           <View style={styles.infoRow}>
-            <Text style={styles.infoHeading}>{language === 'Chinese' ? '用户名' : 'Username'}</Text>
-            <Text style={[styles.infoValue, {
-              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-              }]}>User</Text>
+            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{language === 'Chinese' ? '用户名' : 'Username'}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>User</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoHeading}>{language === 'Chinese' ? '用户ID' : 'User ID'}</Text>
-            <Text style={styles.infoValue}>{user?.id || 'Not available'}</Text>
+            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{language === 'Chinese' ? '用户ID' : 'User ID'}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>{user?.id || 'Not available'}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoHeading}>{language === 'Chinese' ? '当前订阅计划' : 'Current Plan'}</Text>
-            <Text style={styles.infoValue}>{language === 'Chinese' ? '基础版' : 'Basic Plan'}</Text>
+            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{language === 'Chinese' ? '当前订阅计划' : 'Current Plan'}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>{language === 'Chinese' ? '基础版' : 'Basic Plan'}</Text>
           </View>
         </View>
       </View>
@@ -341,7 +364,7 @@ export default function AccountScreen() {
 
 
   return (
-    <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim }}>
+    <Animated.View style={{ flex: 1, backgroundColor: themeColors.background, opacity: fadeAnim }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40}}>{MainContent}</ScrollView>
     </Animated.View>
   );
@@ -360,7 +383,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Variable',
     fontWeight: '700',
     fontSize: 20,
-    color: '#000',
+    color: '#000', // This will be overridden by theme
   },
   switchContainer: {
     width: 55,
@@ -414,12 +437,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Variable',
     fontWeight: '700',
     fontSize: 16,
-    color: '#000',
+    color: '#000', // This will be overridden by theme
   },
   infoValue: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 16,
-    color: '#000',
+    color: '#000', // This will be overridden by theme
   },
   grapeBunchContainer: {
     width: 350,

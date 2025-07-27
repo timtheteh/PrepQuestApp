@@ -5,12 +5,12 @@ import { AddDeckModalButton } from './AddDeckModalButton';
 import { useRouter } from 'expo-router';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import GenAIFormIcon from '@/assets/icons/addDeckIcons/genAIFormIcon.svg';
 import FileUploadIcon from '@/assets/icons/addDeckIcons/fileUploadIcon.svg';
 import YoutubeIcon from '@/assets/icons/addDeckIcons/youtubeIcon.svg';
 import ManualFormIcon from '@/assets/icons/addDeckIcons/manualFormIcon.svg';
 import { strings } from '@/constants/strings';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 
@@ -40,7 +40,8 @@ function AddDeckModalComponent({
   const { setCurrentMode, handleDismissMenu } = useContext(MenuContext);
   const router = useRouter();
   const { language } = useLanguage();
-  const colorScheme = useColorScheme();
+  const { theme } = useTheme();
+  const themeColors = Colors[theme];
 
   // Memoize parameter building logic to avoid duplication
   const buildNavigationParams = useCallback((pathname: '/genAIForm' | '/fileUploadPage' | '/youtubeLink' | '/manualAddDeck') => {
@@ -103,16 +104,14 @@ function AddDeckModalComponent({
     {
       opacity: opacity,
       borderColor: isInViewFlashcardsPage 
-        ? Colors[colorScheme ?? 'light'].brandColor1 
-        : Colors[colorScheme ?? 'light'].brandColor2,
-      backgroundColor: Colors[colorScheme ?? 'light'].background,
+        ? themeColors.brandColor1 
+        : themeColors.brandColor2,
+      backgroundColor: themeColors.background,
     }
-  ], [opacity, isInViewFlashcardsPage, colorScheme]);
+  ], [opacity, isInViewFlashcardsPage, themeColors]);
 
   // Memoize conditional rendering logic
   const titleContent = useMemo(() => {
-    const themeColors = Colors[colorScheme ?? 'light'];
-    
     if (isInViewFlashcardsPage) {
       return (
         <Text style={[styles.title, { 
@@ -136,7 +135,7 @@ function AddDeckModalComponent({
             : strings[language].addDeck}
       </Text>
     );
-  }, [isInViewFlashcardsPage, isInFavoritesPage, isInViewDecksInFolderPage, language, colorScheme]);
+  }, [isInViewFlashcardsPage, isInFavoritesPage, isInViewDecksInFolderPage, language, themeColors.text]);
 
   const toggleContent = useMemo(() => {
     if (isInViewFlashcardsPage) {
@@ -219,7 +218,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingVertical: 12,
-    borderWidth: 1,
   },
   column: {
     flex: 1,

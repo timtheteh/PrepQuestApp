@@ -9,11 +9,11 @@ import { ClerkProvider } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext';
+import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
 // Token cache for Clerk
 const tokenCache = {
@@ -35,7 +35,7 @@ const tokenCache = {
 
 function AppContent() {
   const { isAuthenticated, user, isLoading } = useHybridAuth();
-  const colorScheme = useColorScheme();
+  const { theme } = useTheme();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
@@ -116,7 +116,7 @@ function AppContent() {
   }, [fadeAnim]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
       {/* Show splash screen while fonts are loading, database is initializing, or user is not authenticated */}
       {(!loaded || showSplash) ? (
           <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
@@ -222,7 +222,9 @@ export default function RootLayout() {
     >
       <LanguageProvider>
         <HybridAuthProvider>
-          <AppContent />
+          <CustomThemeProvider>
+            <AppContent />
+          </CustomThemeProvider>
         </HybridAuthProvider>
       </LanguageProvider>
     </ClerkProvider>

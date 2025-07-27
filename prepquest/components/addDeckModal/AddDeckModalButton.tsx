@@ -3,7 +3,7 @@ import { StyleSheet, TouchableWithoutFeedback, View, Text } from 'react-native';
 import { SvgProps } from 'react-native-svg';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface AddDeckModalButtonProps {
   onPress?: () => void;
@@ -21,8 +21,8 @@ export const AddDeckModalButton = React.memo(({
   isInViewFlashcardsPage = false
 }: AddDeckModalButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
-  const colorScheme = useColorScheme() ?? 'light';
-  const themeColors = Colors[colorScheme];
+  const { theme } = useTheme();
+  const themeColors = Colors[theme];
 
   // Memoize press handlers to prevent recreation on every render
   const handlePressIn = useCallback(() => {

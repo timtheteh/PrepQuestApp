@@ -29,6 +29,8 @@ export const strings = {
     noDeckSuggestionsSubtitle: 'suggestions for now',
     emptyStateFooter: 'We\'ll generate more',
     emptyStateFooterSubtitle: 'as you practice more!',
+    // FolderCard strings
+    decks: 'decks',
   },
   Chinese: {
     // AddDeckModal strings
@@ -60,5 +62,7 @@ export const strings = {
     noDeckSuggestionsSubtitle: '暂无推荐卡片组',
     emptyStateFooter: '随着你的练习',
     emptyStateFooterSubtitle: '我们会生成更多推荐！',
+    // FolderCard strings
+    decks: '张卡片',
   },
 };

@@ -5,6 +5,7 @@ export const Colors = {
     brandColor1: '#44B88A',
     brandColor2: '#4F41D8',
     secondaryShade: '#F8F8F8',
+    androidSecondaryShade: '#EFEFEF',
     unselectedText: '#D5D4DD',
   },
   dark: {
@@ -13,6 +14,7 @@ export const Colors = {
     brandColor1: '#44B88A',
     brandColor2: '#4F41D8',
     secondaryShade: '#2A2A2A',
+    androidSecondaryShade: '#2A2A2A',
     unselectedText: '#D5D4DD',
   },
 };

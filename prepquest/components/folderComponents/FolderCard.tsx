@@ -3,9 +3,12 @@ import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated, Dimensions,
 import { CircleSelectButton } from '../general/CircleSelectButton';
 import { FavoriteButton } from '../general/FavoriteButton';
 import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
-import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Fonts } from '@/constants/Fonts';
+import { Colors } from '@/constants/Colors';
 
 interface FolderCardProps {
   style?: ViewStyle;
@@ -44,12 +47,29 @@ export function FolderCard({
 }: FolderCardProps) {
   const [isPressed, setIsPressed] = useState(false);
   const { language } = useLanguage();
+  const { theme } = useTheme();
 
   const containerStyle = {
     width: containerWidthPercentage.interpolate({
       inputRange: [85, 100],
       outputRange: ['85%', '100%']
     })
+  };
+
+  // Dynamic styles based on theme
+  const dynamicStyles = {
+    container: {
+      backgroundColor: Platform.OS === 'android' ? Colors[theme].androidSecondaryShade : Colors[theme].secondaryShade,
+    },
+    folderTitle: {
+      color: Colors[theme].text,
+    },
+    dateText: {
+      color: Colors[theme].text,
+    },
+    deckCountText: {
+      color: Colors[theme].text,
+    },
   };
 
   const handlePressIn = () => {
@@ -96,6 +116,7 @@ export function FolderCard({
         >
           <Animated.View style={[
             styles.container, 
+            dynamicStyles.container,
             containerStyle, 
             style,
             isPressed && styles.containerPressed
@@ -117,6 +138,7 @@ export function FolderCard({
                 <Text 
                   style={[
                     styles.folderTitle,
+                    dynamicStyles.folderTitle,
                     isSelectMode && styles.folderTitleSelectMode
                   ]} 
                   numberOfLines={1}
@@ -133,10 +155,10 @@ export function FolderCard({
                   ]}
                 >
                   {dateCreated && (
-                    <Text style={styles.dateText}>{dateCreated}</Text>
+                    <Text style={[styles.dateText, dynamicStyles.dateText]}>{dateCreated}</Text>
                   )}
                   {deckCount !== undefined && (
-                    <Text style={styles.deckCountText}>{deckCount} {language === 'Chinese' ? '张卡片' : 'decks'}</Text>
+                    <Text style={[styles.deckCountText, dynamicStyles.deckCountText]}>{deckCount} {strings[language].decks}</Text>
                   )}
                 </View>
               )}
@@ -244,9 +266,8 @@ const styles = StyleSheet.create({
     top: 10,
     right: 50,
     left: 65,
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 24,
-    color: '#000',
     zIndex: 2,
     lineHeight: Platform.OS === 'ios' ? 24 : 28,
     // borderWidth: 1,
@@ -258,14 +279,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   dateText: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
   },
   deckCountText: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
   },
   dateDeckRow: {
     flexDirection: 'row',
@@ -276,8 +295,6 @@ const styles = StyleSheet.create({
     right: 10,
     left: 65,
     zIndex: 2,
-    // borderWidth: 1,
-    // borderColor: 'red',
   },
   dateDeckRowSelectMode: {
     top: Dimensions.get('window').height < 670 ? '70%' : '70%',

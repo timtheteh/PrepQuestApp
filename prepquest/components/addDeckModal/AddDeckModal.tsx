@@ -111,11 +111,14 @@ function AddDeckModalComponent({
 
   // Memoize conditional rendering logic
   const titleContent = useMemo(() => {
+    const themeColors = Colors[colorScheme ?? 'light'];
+    
     if (isInViewFlashcardsPage) {
       return (
         <Text style={[styles.title, { 
           fontSize: 28, 
-          fontFamily: Fonts.title
+          fontFamily: Fonts.title,
+          color: themeColors.text
         }]}>{strings[language].addFlashcardsToDeck}</Text>
       );
     }
@@ -123,7 +126,8 @@ function AddDeckModalComponent({
     return (
       <Text style={[styles.title, { 
         fontFamily: Fonts.title, 
-        fontSize: 32 
+        fontSize: 32,
+        color: themeColors.text
       }]}>
         {isInFavoritesPage
           ? strings[language].addDeckToFavorites
@@ -132,7 +136,7 @@ function AddDeckModalComponent({
             : strings[language].addDeck}
       </Text>
     );
-  }, [isInViewFlashcardsPage, isInFavoritesPage, isInViewDecksInFolderPage, language]);
+  }, [isInViewFlashcardsPage, isInFavoritesPage, isInViewDecksInFolderPage, language, colorScheme]);
 
   const toggleContent = useMemo(() => {
     if (isInViewFlashcardsPage) {

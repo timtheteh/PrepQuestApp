@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { StyleSheet, TouchableWithoutFeedback, View, Text } from 'react-native';
 import { SvgProps } from 'react-native-svg';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 interface AddDeckModalButtonProps {
   onPress?: () => void;
@@ -10,31 +13,66 @@ interface AddDeckModalButtonProps {
   isInViewFlashcardsPage?: boolean;
 }
 
-export function AddDeckModalButton({ 
+export const AddDeckModalButton = React.memo(({ 
   onPress,
   title,
   Icon,
   marginBottom = 8,
   isInViewFlashcardsPage = false
-}: AddDeckModalButtonProps) {
+}: AddDeckModalButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
+  const colorScheme = useColorScheme() ?? 'light';
+  const themeColors = Colors[colorScheme];
+
+  // Memoize press handlers to prevent recreation on every render
+  const handlePressIn = useCallback(() => {
+    setIsPressed(true);
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    setIsPressed(false);
+    if (onPress) onPress();
+  }, [onPress]);
+
+  // Memoize theme-aware styles
+  const themeStyles = useMemo(() => ({
+    button: {
+      ...styles.button,
+      backgroundColor: themeColors.secondaryShade,
+    },
+    buttonUnpressed: {
+      ...styles.buttonUnpressed,
+      borderColor: themeColors.brandColor2,
+    },
+    buttonPressed: {
+      ...styles.buttonPressed,
+      borderColor: themeColors.brandColor2,
+    },
+    title: {
+      ...styles.title,
+      color: themeColors.text,
+    }
+  }), [themeColors]);
+
+  // Memoize dynamic styles to prevent object recreation
+  const dynamicStyles = useMemo(() => ({
+    titleRowStyle: { marginBottom },
+    buttonStyle: [
+      themeStyles.button,
+      isPressed ? themeStyles.buttonPressed : themeStyles.buttonUnpressed,
+      isInViewFlashcardsPage && { borderColor: themeColors.brandColor1 }
+    ]
+  }), [marginBottom, isPressed, isInViewFlashcardsPage, themeColors.brandColor1, themeStyles]);
 
   return (
     <TouchableWithoutFeedback
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => {
-        setIsPressed(false);
-        if (onPress) onPress();
-      }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
-      <View style={[
-        styles.button,
-        isPressed ? styles.buttonPressed : styles.buttonUnpressed,
-        isInViewFlashcardsPage && { borderColor: '#44B88A' }
-      ]}>
+      <View style={dynamicStyles.buttonStyle}>
         <View style={styles.column}>
-          <View style={[styles.titleRow, { marginBottom }]}>
-            <Text style={styles.title}>{title}</Text>
+          <View style={dynamicStyles.titleRowStyle}>
+            <Text style={themeStyles.title}>{title}</Text>
           </View>
           <View style={styles.iconRow}>
             <Icon />
@@ -43,20 +81,18 @@ export function AddDeckModalButton({
       </View>
     </TouchableWithoutFeedback>
   );
-}
+});
 
 const styles = StyleSheet.create({
   button: {
     width: 118,
     height: 100,
     borderRadius: 30,
-    backgroundColor: '#F8F8F8',
     justifyContent: 'center',
     alignItems: 'center',
   },
   buttonUnpressed: {
     borderWidth: 3,
-    borderColor: '#4F41D8',
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,
@@ -68,7 +104,6 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     borderWidth: 3,
-    borderColor: '#4F41D8',
     transform: [{ scale: 1.02 }], // slight scale effect when pressed
   },
   column: {
@@ -82,7 +117,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 16,
     textAlign: 'center',
   },

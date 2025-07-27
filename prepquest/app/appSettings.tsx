@@ -12,7 +12,7 @@ import { GenericModal } from '@/components/modals/GenericModal';
 import { db } from '@/db/index';
 import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarAccountHeight } from '@/constants/heights';
+import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
 
 const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
@@ -43,6 +43,7 @@ export default function AppSettingsScreen() {
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
   const [notificationsAccessEnabled, setNotificationsAccessEnabled] = React.useState(false);
   const insets = useSafeAreaInsets();
+  const getTopBarAccountHeight = useTopBarAccountHeight();
 
   // Backup modal state
   const [isBackupModalOpen, setIsBackupModalOpen] = React.useState(false);

@@ -11,7 +11,7 @@ import { db } from '@/db/index';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarAccountHeight } from '@/constants/heights';
+import { useTopBarAccountHeight } from '@/hooks/heights';
 
 // Local component for title and toggle row
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
@@ -248,6 +248,7 @@ const timePickerStyles = RNStyleSheet.create({
 export default function DeckSettingsPage() {
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
+  const getTopBarAccountHeight = useTopBarAccountHeight();
   
   useFocusEffect(
     React.useCallback(() => {

@@ -4,7 +4,7 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
 import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
-import { getContentTopHeightNoRoundedToggle2, getTopBarAccountHeight } from '@/constants/heights';
+import { useContentTopHeightNoRoundedToggle2, useTopBarAccountHeight } from '@/hooks/heights';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
@@ -42,6 +42,8 @@ export default function DeckCreationLoadingPage({
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+  const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
+  const getTopBarAccountHeight = useTopBarAccountHeight();
 
   useEffect(() => {
     Animated.spring(progressAnim, {

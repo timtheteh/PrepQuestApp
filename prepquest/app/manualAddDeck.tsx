@@ -31,7 +31,7 @@ import { Toast } from '../components/general/Toast';
 import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getTopBarAccountHeight } from '@/constants/heights';
+import { useTopBarAccountHeight } from '@/hooks/heights';
 // import BackgroundService from 'react-native-background-actions';
 
 
@@ -198,6 +198,7 @@ export default function ManualAddDeckPage() {
   const [showLoadingPage, setShowLoadingPage] = React.useState(false);
   const { language } = useLanguage();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
+  const getTopBarAccountHeight = useTopBarAccountHeight();
 
   // Cache for storing all created cards
   interface CachedCard {

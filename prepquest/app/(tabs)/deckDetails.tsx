@@ -22,7 +22,7 @@ import { Toast } from '@/components/general/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeight } from '@/constants/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -90,6 +90,9 @@ export default function DeckDetailsScreen() {
   } = useContext(MenuContext);
   const { language } = useLanguage();
   const insets = useSafeAreaInsets();
+  const getTopBarTopHeight = useTopBarTopHeight();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getContentTopHeight = useContentTopHeight();
 
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return '--';

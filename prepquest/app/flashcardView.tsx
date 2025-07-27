@@ -27,7 +27,7 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getContentTopHeight, getHeaderIconsTopHeight, getTopBarAccountHeight } from '@/constants/heights';
+import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -3273,6 +3273,10 @@ export default function FlashcardViewPage() {
   // if (isLoadingFlashcards) {
   //   return <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} language={language} />;
   // }
+
+  const getContentTopHeight = useContentTopHeight();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getTopBarAccountHeight = useTopBarAccountHeight();
 
   return (
     isSuccessMode ? (

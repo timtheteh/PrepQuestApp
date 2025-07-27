@@ -21,7 +21,7 @@ import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
 import { checkDeckNameExists, saveUserYouTubeLinkFormEntry, getMostRecentYouTubeLinkFormEntry } from '../db/decks';
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getTopBarAccountHeight } from '@/constants/heights';
+import { useTopBarAccountHeight } from '@/hooks/heights';
 import { getDeckNameById } from '../db/decks';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
@@ -144,6 +144,7 @@ export default function YouTubeLinkPage() {
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
+  const getTopBarAccountHeight = useTopBarAccountHeight();
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 

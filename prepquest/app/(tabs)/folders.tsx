@@ -18,7 +18,7 @@ import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeightNoRoundedToggle } from '@/constants/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle } from '@/hooks/heights';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -102,6 +102,10 @@ export default function FoldersScreen() {
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const screenOpacity = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+
+  const getTopBarTopHeight = useTopBarTopHeight();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getContentTopHeightNoRoundedToggle = useContentTopHeightNoRoundedToggle();
 
   // Reset header icons state and selection mode when screen comes into focus
   useEffect(() => {

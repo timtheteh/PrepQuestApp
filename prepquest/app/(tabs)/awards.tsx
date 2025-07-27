@@ -13,7 +13,7 @@ import { addDays, format, isSameDay, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarStatisticsHeight } from '@/constants/heights';
+import { useTopBarStatisticsHeight } from '@/hooks/heights';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
 const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
 const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
@@ -1498,6 +1498,7 @@ export default function AwardsScreen() {
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const { language } = useLanguage();
   const insets = useSafeAreaInsets();
+  const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
 
   useEffect(() => {
     if (isFocused) {
@@ -1573,7 +1574,7 @@ export default function AwardsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <View style={{ marginTop: getTopBarStatisticsHeight(), paddingHorizontal: 16 }}>
+              <View style={{ marginTop: getTopBarStatisticsHeight(), paddingHorizontal: 16 }}>
         <RoundedContainer
           leftLabel={language === 'Chinese' ? '目标' : 'Goals'}
           rightLabel={language === 'Chinese' ? '成就' : 'Achievements'}

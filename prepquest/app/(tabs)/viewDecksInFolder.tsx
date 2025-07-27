@@ -21,7 +21,7 @@ import LottieView from 'lottie-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeightNoRoundedToggle2 } from '@/constants/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle2 } from '@/hooks/heights';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -66,6 +66,9 @@ export default function ViewDecksInFolderScreen() {
   } = useContext(MenuContext);
   const { language } = useLanguage();
   const insets = useSafeAreaInsets();
+  const getTopBarTopHeight = useTopBarTopHeight();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
 
   // Animation values
   const screenOpacity = useRef(new Animated.Value(0)).current;

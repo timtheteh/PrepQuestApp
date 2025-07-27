@@ -22,7 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeight } from '@/constants/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -100,6 +100,9 @@ export default function DecksScreen() {
   const calendarMenuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const { language, reloadLanguage } = useLanguage();
   const insets = useSafeAreaInsets();
+  const getTopBarTopHeight = useTopBarTopHeight();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getContentTopHeight = useContentTopHeight();
 
   const selectUnselectedDuration = 300;
 

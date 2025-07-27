@@ -37,7 +37,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { getUserQuestionSettings } from '@/db/users';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
-import { getTopBarAccountHeight } from '@/constants/heights';
+import { useTopBarAccountHeight } from '@/hooks/heights';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -392,6 +392,8 @@ export default function FileUploadPage() {
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
     30;
+
+  const getTopBarAccountHeight = useTopBarAccountHeight();
 
     // Error messages for network/API errors
   const ERROR_MESSAGES = {

@@ -16,7 +16,7 @@ import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarAccountHeight } from '@/constants/heights';
+import { useTopBarAccountHeight } from '@/hooks/heights';
 
 export default function AccountScreen() {
   const [upgradePressed, setUpgradePressed] = useState(false);
@@ -34,6 +34,7 @@ export default function AccountScreen() {
   const { theme, setThemeMode, isSystemTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const themeColors = Colors[theme];
+  const getTopBarAccountHeight = useTopBarAccountHeight();
 
   // For button animation
   const buttonAnim = useRef(new Animated.Value(theme === 'dark' ? 0 : 1)).current; // 1 = right (light), 0 = left (dark)

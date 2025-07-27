@@ -17,7 +17,7 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getContentTopHeight, getContentTopHeightNoRoundedToggle2, getHeaderIconsTopHeight, getTopBarTopHeight } from '@/constants/heights';
+import { useContentTopHeight, useContentTopHeightNoRoundedToggle2, useHeaderIconsTopHeight, useTopBarTopHeight } from '@/hooks/heights';
 
 // Interface for flashcard data
 interface Flashcard {
@@ -766,6 +766,11 @@ export default function ViewFlashcardsScreen() {
   const SCREEN_TRANSITION_DURATION = 300;
   const ACTION_ROW_HEIGHT = 60;
   const ACTION_ROW_ANIMATION_DURATION = 300;
+
+  const getContentTopHeight = useContentTopHeight();
+  const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getTopBarTopHeight = useTopBarTopHeight();
 
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>

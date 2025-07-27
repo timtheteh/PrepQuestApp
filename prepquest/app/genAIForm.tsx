@@ -23,7 +23,7 @@ import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDa
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserQuestionSettings } from '../db/users';
 import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
-import { getTopBarAccountHeight } from '@/constants/heights';
+import { useTopBarAccountHeight } from '@/hooks/heights';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -164,6 +164,7 @@ export default function GenAIFormPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
+  const getTopBarAccountHeight = useTopBarAccountHeight();
   // Status page state for GenAI deck creation
   const [showStatusPage, setShowStatusPage] = useState(false);
   const [statusRequestReceived, setStatusRequestReceived] = useState(false);

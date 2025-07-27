@@ -15,7 +15,7 @@ import AverageSpeedTotal from '@/components/statsComponents/AverageSpeedTotal';
 import { getAverageGradeAllTime, getDifficultyBreakdown, getAverageTimeAllTime } from '@/db/grades';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarAccountHeight, getTopBarStatisticsHeight } from '@/constants/heights';
+import { useTopBarAccountHeight, useTopBarStatisticsHeight } from '@/hooks/heights';
 
 export default function StatisticsScreen() {
   const { language } = useLanguage();
@@ -43,6 +43,8 @@ export default function StatisticsScreen() {
   const loadingScreenAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
+  const getTopBarAccountHeight = useTopBarAccountHeight();
+  const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
 
   // Function to fetch average grade
   const fetchAverageGrade = async () => {

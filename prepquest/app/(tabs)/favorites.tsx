@@ -22,7 +22,7 @@ import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTopBarTopHeight, getHeaderIconsTopHeight, getContentTopHeight } from '@/constants/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -107,6 +107,9 @@ export default function FavoritesScreen() {
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const { language } = useLanguage();
   const insets = useSafeAreaInsets();
+  const getTopBarTopHeight = useTopBarTopHeight();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getContentTopHeight = useContentTopHeight();
 
   const selectUnselectedDuration = 300;
 

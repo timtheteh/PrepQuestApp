@@ -22,6 +22,13 @@ export const strings = {
       study: 'Study',
     },
     cards: 'cards',
+    // AIPromptModal strings
+    aiPromptTitle: 'Try these AI Decks created just for you!',
+    loadingAiDecks: 'Loading AI decks...',
+    noDeckSuggestions: 'Oops! No deck',
+    noDeckSuggestionsSubtitle: 'suggestions for now',
+    emptyStateFooter: 'We\'ll generate more',
+    emptyStateFooterSubtitle: 'as you practice more!',
   },
   Chinese: {
     // AddDeckModal strings
@@ -46,5 +53,12 @@ export const strings = {
       study: '学习',
     },
     cards: '张卡片',
+    // AIPromptModal strings
+    aiPromptTitle: '试试为你量身定制的AI卡片组！',
+    loadingAiDecks: '正在加载AI卡片组...',
+    noDeckSuggestions: '哎呀！',
+    noDeckSuggestionsSubtitle: '暂无推荐卡片组',
+    emptyStateFooter: '随着你的练习',
+    emptyStateFooterSubtitle: '我们会生成更多推荐！',
   },
 };

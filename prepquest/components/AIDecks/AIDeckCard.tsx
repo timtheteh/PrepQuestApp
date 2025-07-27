@@ -49,7 +49,6 @@ export const AIDeckCard = React.memo(({
   const [isPressed, setIsPressed] = useState(false);
   const { language } = useLanguage();
   const { theme } = useTheme();
-  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
   const handlePressIn = useCallback(() => {
     setIsPressed(true);
@@ -80,13 +79,13 @@ export const AIDeckCard = React.memo(({
 
   // Memoize card type map since it only depends on lang
   const cardTypeMap = useMemo(() => ({
-    behavioral: { color: '#FDAE61', label: strings[lang].cardTypes.behavioral },
-    technical: { color: '#D7191C', label: strings[lang].cardTypes.technical },
-    brainteasers: { color: '#357AF6', label: strings[lang].cardTypes.brainteasers },
-    'case study': { color: '#C3EB79', label: strings[lang].cardTypes['case study'] },
-    others: { color: '#FDAE61', label: strings[lang].cardTypes.others },
-    study: { color: '#5CC8BE', label: strings[lang].cardTypes.study },
-  } as Record<string, { color: string; label: string }>), [lang]);
+    behavioral: { color: '#FDAE61', label: strings[language].cardTypes.behavioral },
+    technical: { color: '#D7191C', label: strings[language].cardTypes.technical },
+    brainteasers: { color: '#357AF6', label: strings[language].cardTypes.brainteasers },
+    'case study': { color: '#C3EB79', label: strings[language].cardTypes['case study'] },
+    others: { color: '#FDAE61', label: strings[language].cardTypes.others },
+    study: { color: '#5CC8BE', label: strings[language].cardTypes.study },
+  } as Record<string, { color: string; label: string }>), [language]);
 
   const typeInfo = useMemo(() => cardType && cardTypeMap[cardType], [cardType, cardTypeMap]);
 
@@ -98,8 +97,8 @@ export const AIDeckCard = React.memo(({
 
   // Memoize flashcard count text
   const flashcardCountText = useMemo(() => 
-    flashcardCount !== undefined ? `${flashcardCount} ${strings[lang].cards}` : null, 
-    [flashcardCount, lang]
+    flashcardCount !== undefined ? `${flashcardCount} ${strings[language].cards}` : null, 
+    [flashcardCount, language]
   );
 
   return (

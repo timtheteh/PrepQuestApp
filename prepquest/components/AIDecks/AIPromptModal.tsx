@@ -6,6 +6,10 @@ import { AICardDesigns } from '@/constants/cardDesigns';
 import { getAIDecks, getCompanyIconImageSource, AIDeck } from '@/db/decks';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { Fonts } from '@/constants/Fonts';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -32,6 +36,7 @@ export function AIPromptModal({
   const [loading, setLoading] = useState(true);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const { language } = useLanguage();
+  const { theme } = useTheme();
 
   // Load AI decks from database
   useEffect(() => {
@@ -86,7 +91,8 @@ export function AIPromptModal({
       style={[
         styles.container,
         {
-          opacity: opacity
+          opacity: opacity,
+          backgroundColor: Colors[theme].secondaryShade,
         }
       ]}
     >
@@ -95,19 +101,23 @@ export function AIPromptModal({
           <>
             <Text style={[styles.title, {
               // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Variable', 
-              fontSize: language === 'Chinese' ? 24 : 24}]}>
-              {language === 'Chinese' ? '试试为你量身定制的AI卡片组！' : 'Try these AI Decks created just for you!'}
+              fontSize: 24,
+              color: Colors[theme].text,
+            }]}>
+              {strings[language].aiPromptTitle}
             </Text>
             <View style={styles.imageContainer}>
-              <Text style={styles.loadingText}>{language === 'Chinese' ? '正在加载AI卡片组...' : 'Loading AI decks...'}</Text>
+              <Text style={[styles.loadingText, { color: Colors[theme].text }]}>{strings[language].loadingAiDecks}</Text>
             </View>
           </>
         ) : aiDecks.length > 0 ? (
           <>
             <Text style={[styles.title, {
               // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Variable', 
-              fontSize: language === 'Chinese' ? 24 : 24}]}>
-              {language === 'Chinese' ? '试试为你量身定制的AI卡片组！' : 'Try these AI Decks created just for you!'}
+              fontSize: 24,
+              color: Colors[theme].text,
+            }]}>
+              {strings[language].aiPromptTitle}
             </Text>
             <View style={styles.imageContainer}>
               {aiDecks.map((deck, index) => {
@@ -136,8 +146,8 @@ export function AIPromptModal({
         ) : (
           <>
             <View style={styles.emptyStateHeader}>
-              <Text style={styles.emptyStateTitle}>{language === 'Chinese' ? '哎呀！' : 'Oops! No deck'}</Text>
-              <Text style={styles.emptyStateTitle}>{language === 'Chinese' ? '暂无推荐卡片组' : 'suggestions for now'}</Text>
+              <Text style={[styles.emptyStateTitle, { color: Colors[theme].text }]}>{strings[language].noDeckSuggestions}</Text>
+              <Text style={[styles.emptyStateTitle, { color: Colors[theme].text }]}>{strings[language].noDeckSuggestionsSubtitle}</Text>
             </View>
             
             <View style={styles.emptyStateAnimationContainer}>
@@ -150,8 +160,8 @@ export function AIPromptModal({
             </View>
             
             <View style={styles.emptyStateFooter}>
-              <Text style={styles.emptyStateFooterText}>{language === 'Chinese' ? '随着你的练习' : "We'll generate more"}</Text>
-              <Text style={styles.emptyStateFooterText}>{language === 'Chinese' ? '我们会生成更多推荐！' : 'as you practice more!'}</Text>
+              <Text style={[styles.emptyStateFooterText, { color: Colors[theme].unselectedText }]}>{strings[language].emptyStateFooter}</Text>
+              <Text style={[styles.emptyStateFooterText, { color: Colors[theme].unselectedText }]}>{strings[language].emptyStateFooterSubtitle}</Text>
             </View>
           </>
         )}
@@ -169,7 +179,6 @@ const styles = StyleSheet.create({
     height: 488,
     marginLeft: '-42.5%', // Half of width
     marginTop: -252, // Half of height
-    backgroundColor: '#F8F8F8',
     borderRadius: 30,
     zIndex: 1001, // Higher than GreyOverlayBackground
   },
@@ -180,7 +189,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '500',
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     textAlign: 'left',
     marginBottom: 15,
     lineHeight: 32,
@@ -191,14 +200,14 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 18,
     fontWeight: '500',
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     textAlign: 'center',
     marginTop: 20,
   },
   noDecksText: {
     fontSize: 18,
     fontWeight: '500',
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     textAlign: 'center',
     marginTop: 20,
   },
@@ -209,8 +218,7 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 24,
     fontWeight: '500',
-    fontFamily: 'Satoshi-Variable',
-    color: '#000',
+    fontFamily: Fonts.bodyBold,
     lineHeight: 32,
   },
   emptyStateAnimationContainer: {
@@ -230,8 +238,7 @@ const styles = StyleSheet.create({
   emptyStateFooterText: {
     fontSize: 20,
     fontWeight: '500',
-    fontFamily: 'Satoshi-Variable',
-    color: '#666',
+    fontFamily: Fonts.bodyBold,
     textAlign: 'center',
     lineHeight: 22,
   },

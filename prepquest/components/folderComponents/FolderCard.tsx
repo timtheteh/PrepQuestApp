@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated, Dimensions, Text } from 'react-native';
 import { CircleSelectButton } from '../general/CircleSelectButton';
 import { FavoriteButton } from '../general/FavoriteButton';
@@ -28,7 +28,7 @@ interface FolderCardProps {
   onFavoriteToggle?: () => void;
 }
 
-export function FolderCard({ 
+export const FolderCard = React.memo(({ 
   style, 
   children, 
   onPress, 
@@ -44,20 +44,21 @@ export function FolderCard({
   folderId,
   isFavorited = false,
   onFavoriteToggle,
-}: FolderCardProps) {
+}: FolderCardProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const { language } = useLanguage();
   const { theme } = useTheme();
 
-  const containerStyle = {
+  // Memoize container style to prevent recreation on every render
+  const containerStyle = useMemo(() => ({
     width: containerWidthPercentage.interpolate({
       inputRange: [85, 100],
       outputRange: ['85%', '100%']
     })
-  };
+  }), [containerWidthPercentage]);
 
-  // Dynamic styles based on theme
-  const dynamicStyles = {
+  // Memoize dynamic styles based on theme to prevent recreation
+  const dynamicStyles = useMemo(() => ({
     container: {
       backgroundColor: Platform.OS === 'android' ? Colors[theme].androidSecondaryShade : Colors[theme].secondaryShade,
     },
@@ -70,21 +71,22 @@ export function FolderCard({
     deckCountText: {
       color: Colors[theme].text,
     },
-  };
+  }), [theme]);
 
-  const handlePressIn = () => {
+  // Memoize press handlers to prevent recreation
+  const handlePressIn = useCallback(() => {
     if (!isSelectMode) {
       setIsPressed(true);
     }
-  };
+  }, [isSelectMode]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     if (!isSelectMode) {
       setIsPressed(false);
     }
-  };
+  }, [isSelectMode]);
 
-  const handleFolderPress = () => {
+  const handleFolderPress = useCallback(() => {
     if (!isSelectMode) {
       // Navigate to deck details page with card information
       router.push({
@@ -101,46 +103,88 @@ export function FolderCard({
     if (onPress) {
       onPress();
     }
-  };
+  }, [isSelectMode, title, folderId, sourcePage, onPress]);
+
+  // Memoize deck count text to prevent recalculation
+  const deckCountText = useMemo(() => {
+    if (deckCount !== undefined) {
+      return `${deckCount} ${strings[language].decks}`;
+    }
+    return null;
+  }, [deckCount, language]);
+
+  // Memoize shadow container styles
+  const shadowContainerStyle = useMemo(() => [
+    styles.shadowContainer,
+    isPressed && styles.shadowContainerPressed
+  ], [isPressed]);
+
+  // Memoize animated container styles
+  const animatedContainerStyle = useMemo(() => [
+    styles.container, 
+    dynamicStyles.container,
+    containerStyle, 
+    style,
+    isPressed && styles.containerPressed
+  ], [dynamicStyles.container, containerStyle, style, isPressed]);
+
+  // Memoize favorite button container styles
+  const favoriteButtonContainerStyle = useMemo(() => [
+    styles.favoriteButtonContainer,
+    isSelectMode && styles.favoriteButtonContainerSelectMode
+  ], [isSelectMode]);
+
+  // Memoize folder title styles
+  const folderTitleStyle = useMemo(() => [
+    styles.folderTitle,
+    dynamicStyles.folderTitle,
+    isSelectMode && styles.folderTitleSelectMode
+  ], [dynamicStyles.folderTitle, isSelectMode]);
+
+  // Memoize date deck row styles
+  const dateDeckRowStyle = useMemo(() => [
+    styles.dateDeckRow,
+    isSelectMode && styles.dateDeckRowSelectMode
+  ], [isSelectMode]);
+
+  // Memoize date text styles
+  const dateTextStyle = useMemo(() => [
+    styles.dateText, 
+    dynamicStyles.dateText
+  ], [dynamicStyles.dateText]);
+
+  // Memoize deck count text styles
+  const deckCountTextStyle = useMemo(() => [
+    styles.deckCountText, 
+    dynamicStyles.deckCountText
+  ], [dynamicStyles.deckCountText]);
+
+  // Memoize circle select button styles
+  const circleSelectButtonStyle = useMemo(() => ({
+    ...styles.circleSelectButton,
+    ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {})
+  }), [style?.marginTop]);
 
   return (
     <View style={styles.outerContainer}>
-      <View style={[
-        styles.shadowContainer,
-        isPressed && styles.shadowContainerPressed
-      ]}>
+      <View style={shadowContainerStyle}>
         <Pressable 
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           onPress={handleFolderPress}
         >
-          <Animated.View style={[
-            styles.container, 
-            dynamicStyles.container,
-            containerStyle, 
-            style,
-            isPressed && styles.containerPressed
-          ]}>
+          <Animated.View style={animatedContainerStyle}>
             <View style={styles.cardContentContainer}>
               {/* Folder Icon */}
               <FolderCardIcon width={45} height={40} style={styles.folderIcon} />
               {/* Favorite button at top right */}
-              <View 
-                style={[
-                  styles.favoriteButtonContainer,
-                  isSelectMode && styles.favoriteButtonContainerSelectMode
-                ]}
-              >
+              <View style={favoriteButtonContainerStyle}>
                 <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
               </View>
               {/* Title */}
               {title && (
                 <Text 
-                  style={[
-                    styles.folderTitle,
-                    dynamicStyles.folderTitle,
-                    isSelectMode && styles.folderTitleSelectMode
-                  ]} 
+                  style={folderTitleStyle} 
                   numberOfLines={1}
                 >
                   {title}
@@ -148,17 +192,12 @@ export function FolderCard({
               )}
               {/* Date and Deck Count Row */}
               {(dateCreated || deckCount !== undefined) && (
-                <View 
-                  style={[
-                    styles.dateDeckRow,
-                    isSelectMode && styles.dateDeckRowSelectMode
-                  ]}
-                >
+                <View style={dateDeckRowStyle}>
                   {dateCreated && (
-                    <Text style={[styles.dateText, dynamicStyles.dateText]}>{dateCreated}</Text>
+                    <Text style={dateTextStyle}>{dateCreated}</Text>
                   )}
-                  {deckCount !== undefined && (
-                    <Text style={[styles.deckCountText, dynamicStyles.deckCountText]}>{deckCount} {strings[language].decks}</Text>
+                  {deckCountText && (
+                    <Text style={deckCountTextStyle}>{deckCountText}</Text>
                   )}
                 </View>
               )}
@@ -169,10 +208,7 @@ export function FolderCard({
       </View>
       {isSelectMode && (
         <CircleSelectButton
-          style={{
-            ...styles.circleSelectButton,
-            ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {})
-          }}
+          style={circleSelectButtonStyle}
           selected={selected}
           onPress={onSelectPress}
           opacity={circleButtonOpacity}
@@ -180,7 +216,7 @@ export function FolderCard({
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   outerContainer: {

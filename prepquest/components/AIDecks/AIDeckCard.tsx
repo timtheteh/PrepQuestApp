@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, ImageBackground, Platform, ImageSourcePropType, Pressable, Text, Image, Dimensions } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -25,7 +25,11 @@ interface AIDeckCardProps {
   deckID?: number;
 }
 
-export function AIDeckCard({ 
+// Move static assets outside component to prevent recreation
+const STUDY_CARD_ICON = require('@/assets/companyIcons/StudyCardIcon.png');
+const COMPANY_DEFAULT_ICON = require('@/assets/companyIcons/companyDefaultIcon.png');
+
+export const AIDeckCard = React.memo(({ 
   backgroundImage,
   pressedBackgroundImage,
   onPress,
@@ -41,21 +45,21 @@ export function AIDeckCard({
   sourcePage,
   isStudy = false,
   deckID
-}: AIDeckCardProps) {
+}: AIDeckCardProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const { language } = useLanguage();
   const { theme } = useTheme();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     setIsPressed(true);
-  };
+  }, []);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     setIsPressed(false);
-  };
+  }, []);
 
-  const handleCardPress = () => {
+  const handleCardPress = useCallback(() => {
     if (!isSelectMode) {
       // Dismiss the AI prompt modal first
       if (dismissModal) {
@@ -72,18 +76,31 @@ export function AIDeckCard({
         }
       })
     }
-  };
+  }, [isSelectMode, dismissModal, deckID, isAIDeck, sourcePage]);
 
-  // Card type color and label logic
-  const cardTypeMap: Record<string, { color: string; label: string }> = {
+  // Memoize card type map since it only depends on lang
+  const cardTypeMap = useMemo(() => ({
     behavioral: { color: '#FDAE61', label: strings[lang].cardTypes.behavioral },
     technical: { color: '#D7191C', label: strings[lang].cardTypes.technical },
     brainteasers: { color: '#357AF6', label: strings[lang].cardTypes.brainteasers },
     'case study': { color: '#C3EB79', label: strings[lang].cardTypes['case study'] },
     others: { color: '#FDAE61', label: strings[lang].cardTypes.others },
     study: { color: '#5CC8BE', label: strings[lang].cardTypes.study },
-  };
-  const typeInfo = cardType && cardTypeMap[cardType];
+  } as Record<string, { color: string; label: string }>), [lang]);
+
+  const typeInfo = useMemo(() => cardType && cardTypeMap[cardType], [cardType, cardTypeMap]);
+
+  // Memoize theme-dependent styles
+  const themeTextColor = useMemo(() => ({ color: Colors[theme].text }), [theme]);
+  const cardTitleStyle = useMemo(() => [styles.cardTitle, themeTextColor], [themeTextColor]);
+  const cardTypeTextStyle = useMemo(() => [styles.cardTypeText, themeTextColor], [themeTextColor]);
+  const flashcardCountTextStyle = useMemo(() => [styles.flashcardCountText, themeTextColor], [themeTextColor]);
+
+  // Memoize flashcard count text
+  const flashcardCountText = useMemo(() => 
+    flashcardCount !== undefined ? `${flashcardCount} ${strings[lang].cards}` : null, 
+    [flashcardCount, lang]
+  );
 
   return (
     <View style={styles.outerContainer}>
@@ -106,15 +123,15 @@ export function AIDeckCard({
                   <Image source={image} style={styles.cardIconImage} />
                 )}
                 {!image && isStudy && (
-                  <Image source={require('@/assets/companyIcons/StudyCardIcon.png')} style={styles.cardIconImage} />
+                  <Image source={STUDY_CARD_ICON} style={styles.cardIconImage} />
                 )}
                 {!image && !isStudy && (
-                  <Image source={require('@/assets/companyIcons/companyDefaultIcon.png')} style={styles.cardIconImage} />
+                  <Image source={COMPANY_DEFAULT_ICON} style={styles.cardIconImage} />
                 )}
                 {/* Title */}
                 {title && (
                   <Text 
-                    style={[styles.cardTitle, { color: Colors[theme].text }]}
+                    style={cardTitleStyle}
                     numberOfLines={1}
                   >
                     {title}
@@ -130,12 +147,12 @@ export function AIDeckCard({
                           { borderColor: typeInfo.color }
                         ]}
                       >
-                        <Text style={[styles.cardTypeText, { color: Colors[theme].text }]}>{typeInfo.label}</Text>
+                        <Text style={cardTypeTextStyle}>{typeInfo.label}</Text>
                       </View>
                     )}
-                    {flashcardCount !== undefined && (
-                      <Text style={[styles.flashcardCountText, { color: Colors[theme].text }]}>
-                        {`${flashcardCount} ${strings[lang].cards}`}
+                    {flashcardCountText && (
+                      <Text style={flashcardCountTextStyle}>
+                        {flashcardCountText}
                       </Text>
                     )}
                   </View>
@@ -147,7 +164,7 @@ export function AIDeckCard({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   outerContainer: {

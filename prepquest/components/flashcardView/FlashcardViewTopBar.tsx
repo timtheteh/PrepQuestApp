@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -15,7 +15,7 @@ interface FlashcardViewTopBarProps {
   isSpeechPaused?: boolean;
 }
 
-export function FlashcardViewTopBar({
+export const FlashcardViewTopBar = React.memo(({
   onAudioPress,
   onCopyPress,
   onTrashPress,
@@ -23,33 +23,47 @@ export function FlashcardViewTopBar({
   isAudioButtonEnabled = true,
   isSpeechPlaying = false,
   isSpeechPaused = false,
-}: FlashcardViewTopBarProps) {
+}: FlashcardViewTopBarProps) => {
+  // Memoize the render functions to prevent recreation on every render
+  const renderAudioIcon = useCallback((color: string) => {
+    return isSpeechPlaying && !isSpeechPaused ? (
+      <FontAwesome6 name="volume-xmark" size={20} color="#FF3B30" />
+    ) : (
+      <MaterialIcons name="volume-up" size={20} color={color} />
+    );
+  }, [isSpeechPlaying, isSpeechPaused]);
+
+  const renderCopyIcon = useCallback((color: string) => {
+    return <MaterialIcons name="content-copy" size={20} color={color} />;
+  }, []);
+
+  const renderTrashIcon = useCallback((color: string) => {
+    return <Ionicons name="trash" size={20} color={color} />;
+  }, []);
+
+  // Memoize styles to prevent recreation
+  const containerStyle = useMemo(() => styles.container, []);
+
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <CircleIconButton
         onPress={onAudioPress}
         disabled={!isAudioButtonEnabled}
-        renderCustomIcon={(color) =>
-          isSpeechPlaying && !isSpeechPaused ? (
-            <FontAwesome6 name="volume-xmark" size={20} color="#FF3B30" />
-          ) : (
-            <MaterialIcons name="volume-up" size={20} color={color} />
-          )
-        }
+        renderCustomIcon={renderAudioIcon}
       />
       <CircleIconButton
         onPress={isCopyButtonEnabled ? onCopyPress : undefined}
         disabled={!isCopyButtonEnabled}
-        renderCustomIcon={(color) => <MaterialIcons name="content-copy" size={20} color={color} />}
+        renderCustomIcon={renderCopyIcon}
       />
       <CircleIconButton
         color="#FF3B30"
         onPress={onTrashPress}
-        renderCustomIcon={(color) => <Ionicons name="trash" size={20} color={color} />}
+        renderCustomIcon={renderTrashIcon}
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

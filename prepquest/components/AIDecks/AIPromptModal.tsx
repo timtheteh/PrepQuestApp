@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { StyleSheet, Animated, Dimensions, Text, View } from 'react-native';
 import { AIDeckCard } from './AIDeckCard';
 import { MenuContext } from '@/contexts/MenuContext';
@@ -19,15 +19,24 @@ interface AIPromptModalProps {
   sourcePage?: string;
 }
 
-export function AIPromptModal({ 
+// Memoized Lottie animation source
+const EMPTY_STATE_ANIMATION = require('@/assets/animations/EmptyState2.json');
+
+// Memoized animation configuration
+const ANIMATION_CONFIG = {
+  toValue: 0,
+  duration: 300,
+  useNativeDriver: true,
+};
+
+export const AIPromptModal = React.memo(function AIPromptModal({ 
   visible,
   opacity = new Animated.Value(0),
   sourcePage
 }: AIPromptModalProps) {
   const {
-    isMenuOpen,
-    setIsMenuOpen,
     menuOverlayOpacity,
+    setIsMenuOpen,
     setIsAIPromptOpen,
     aiPromptOpacity
   } = useContext(MenuContext);
@@ -37,6 +46,39 @@ export function AIPromptModal({
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const { language } = useLanguage();
   const { theme } = useTheme();
+
+  // Memoize theme-dependent styles
+  const themeStyles = useMemo(() => ({
+    container: {
+      backgroundColor: Colors[theme].secondaryShade,
+    },
+    title: {
+      color: Colors[theme].text,
+    },
+    loadingText: {
+      color: Colors[theme].text,
+    },
+    emptyStateTitle: {
+      color: Colors[theme].text,
+    },
+    emptyStateFooterText: {
+      color: Colors[theme].text,
+    },
+  }), [theme]);
+
+  // Memoize language-dependent strings
+  const currentStrings = useMemo(() => strings[language], [language]);
+
+  // Memoize dismissModal function
+  const dismissModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(menuOverlayOpacity, ANIMATION_CONFIG),
+      Animated.timing(aiPromptOpacity, ANIMATION_CONFIG)
+    ]).start(() => {
+      setIsMenuOpen(false);
+      setIsAIPromptOpen(false);
+    });
+  }, [menuOverlayOpacity, aiPromptOpacity, setIsMenuOpen, setIsAIPromptOpen]);
 
   // Load AI decks from database
   useEffect(() => {
@@ -66,23 +108,30 @@ export function AIPromptModal({
     }
   }, [visible]);
 
-  const dismissModal = () => {
-    Animated.parallel([
-      Animated.timing(menuOverlayOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(aiPromptOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      })
-    ]).start(() => {
-      setIsMenuOpen(false);
-      setIsAIPromptOpen(false);
+  // Memoize deck cards to prevent unnecessary re-renders
+  const deckCards = useMemo(() => {
+    return aiDecks.map((deck) => {
+      const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
+      const imageSource = imageSources.get(deck.deckID);
+      
+      return (
+        <AIDeckCard
+          key={deck.deckID}
+          backgroundImage={cardDesign.background}
+          pressedBackgroundImage={cardDesign.pressed}
+          image={imageSource}
+          cardType={deck.interviewType || 'study'}
+          title={deck.deckName}
+          flashcardCount={deck.flashcardCount || 0}
+          deckDetailsBackgroundIndex={deck.cardDesignIndex}
+          dismissModal={dismissModal}
+          sourcePage={sourcePage}
+          isStudy={deck.deckType === 'study'}
+          deckID={deck.deckID}
+        />
+      );
     });
-  };
+  }, [aiDecks, imageSources, dismissModal, sourcePage]);
 
   if (!visible) return null;
 
@@ -90,69 +139,47 @@ export function AIPromptModal({
     <Animated.View 
       style={[
         styles.container,
+        themeStyles.container,
         {
           opacity: opacity,
-          backgroundColor: Colors[theme].secondaryShade,
         }
       ]}
     >
       <View style={styles.content}>
         {loading ? (
           <>
-            <Text style={[styles.title, {
-              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Variable', 
-              fontSize: 24,
-              color: Colors[theme].text,
-            }]}>
-              {strings[language].aiPromptTitle}
+            <Text style={[styles.title, themeStyles.title]}>
+              {currentStrings.aiPromptTitle}
             </Text>
             <View style={styles.imageContainer}>
-              <Text style={[styles.loadingText, { color: Colors[theme].text }]}>{strings[language].loadingAiDecks}</Text>
+              <Text style={[styles.loadingText, themeStyles.loadingText]}>
+                {currentStrings.loadingAiDecks}
+              </Text>
             </View>
           </>
         ) : aiDecks.length > 0 ? (
           <>
-            <Text style={[styles.title, {
-              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Variable', 
-              fontSize: 24,
-              color: Colors[theme].text,
-            }]}>
-              {strings[language].aiPromptTitle}
+            <Text style={[styles.title, themeStyles.title]}>
+              {currentStrings.aiPromptTitle}
             </Text>
             <View style={styles.imageContainer}>
-              {aiDecks.map((deck, index) => {
-                const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
-                const imageSource = imageSources.get(deck.deckID);
-                
-                return (
-                  <AIDeckCard
-                    key={deck.deckID}
-                    backgroundImage={cardDesign.background}
-                    pressedBackgroundImage={cardDesign.pressed}
-                    image={imageSource}
-                    cardType={deck.interviewType || 'study'}
-                    title={deck.deckName}
-                    flashcardCount={deck.flashcardCount || 0}
-                    deckDetailsBackgroundIndex={deck.cardDesignIndex}
-                    dismissModal={dismissModal}
-                    sourcePage={sourcePage}
-                    isStudy={deck.deckType === 'study'}
-                    deckID={deck.deckID}
-                  />
-                );
-              })}
+              {deckCards}
             </View>
           </>
         ) : (
           <>
             <View style={styles.emptyStateHeader}>
-              <Text style={[styles.emptyStateTitle, { color: Colors[theme].text }]}>{strings[language].noDeckSuggestions}</Text>
-              <Text style={[styles.emptyStateTitle, { color: Colors[theme].text }]}>{strings[language].noDeckSuggestionsSubtitle}</Text>
+              <Text style={[styles.emptyStateTitle, themeStyles.emptyStateTitle]}>
+                {currentStrings.noDeckSuggestions}
+              </Text>
+              <Text style={[styles.emptyStateTitle, themeStyles.emptyStateTitle]}>
+                {currentStrings.noDeckSuggestionsSubtitle}
+              </Text>
             </View>
             
             <View style={styles.emptyStateAnimationContainer}>
               <LottieView
-                source={require('@/assets/animations/EmptyState2.json')}
+                source={EMPTY_STATE_ANIMATION}
                 autoPlay
                 loop
                 style={styles.emptyStateAnimation}
@@ -160,15 +187,19 @@ export function AIPromptModal({
             </View>
             
             <View style={styles.emptyStateFooter}>
-              <Text style={[styles.emptyStateFooterText, { color: Colors[theme].unselectedText }]}>{strings[language].emptyStateFooter}</Text>
-              <Text style={[styles.emptyStateFooterText, { color: Colors[theme].unselectedText }]}>{strings[language].emptyStateFooterSubtitle}</Text>
+              <Text style={[styles.emptyStateFooterText, themeStyles.emptyStateFooterText]}>
+                {currentStrings.emptyStateFooter}
+              </Text>
+              <Text style={[styles.emptyStateFooterText, themeStyles.emptyStateFooterText]}>
+                {currentStrings.emptyStateFooterSubtitle}
+              </Text>
             </View>
           </>
         )}
       </View>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

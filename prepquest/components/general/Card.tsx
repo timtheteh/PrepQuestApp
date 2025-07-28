@@ -1,9 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions, ImageSourcePropType, Animated, Text, Image } from 'react-native';
 import { CircleSelectButton } from './CircleSelectButton';
 import { FavoriteButton } from './FavoriteButton';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
@@ -38,7 +42,7 @@ interface CardProps {
   deckID?: number;
 }
 
-export function Card({ 
+export const Card = React.memo(({ 
   style, 
   children, 
   onPress, 
@@ -58,7 +62,6 @@ export function Card({
   flashcardCount,
   deckDetailsBackgroundIndex,
   company,
-  isAIDeck = false,
   folderTitle,
   folderId,
   sourcePage,
@@ -66,9 +69,12 @@ export function Card({
   isFavorited = false,
   onFavoriteToggle,
   deckID,
-}: CardProps) {
+}: CardProps) => {
   const router = useRouter();
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  const styles = createStyles(colors);
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
   const [showSelectPill, setShowSelectPill] = useState(isSelectMode);
@@ -131,33 +137,33 @@ export function Card({
     }
   }, [showProgress]);
 
-  const containerStyle = {
+  const containerStyle = useMemo(() => ({
     width: containerWidthPercentage.interpolate({
       inputRange: [85, 100],
       outputRange: ['85%', '100%']
     })
-  };
+  }), [containerWidthPercentage]);
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     if (!isSelectMode) {
       setIsPressed(true);
     }
-  };
+  }, [isSelectMode]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     if (!isSelectMode) {
       setIsPressed(false);
     }
-  };
+  }, [isSelectMode]);
 
-  const handleCardPress = () => {
+  const handleCardPress = useCallback(() => {
     if (!isSelectMode) {
       // Navigate to deck details page with card information
       router.push({
         pathname: '/(tabs)/deckDetails',
         params: {
           deckId: deckID?.toString() || 'unknown',
-          deckTitle: title || 'Untitled Deck',
+          deckTitle: title || strings[language].untitledDeck,
           deckType: cardType || 'study',
           deckDetailsBackgroundIndex: deckDetailsBackgroundIndex ? deckDetailsBackgroundIndex.toString() : '0',
           date: date || '',
@@ -177,18 +183,18 @@ export function Card({
     if (onPress) {
       onPress();
     }
-  };
+  }, [isSelectMode, router, deckID, title, language, cardType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, sourcePage, folderTitle, folderId, isFavorited, onPress]);
 
   // Card type color and label logic
-  const cardTypeMap: Record<string, { color: string; label: string }> = {
-    behavioral: { color: '#FDAE61', label: language === 'Chinese' ? '行为面试' : 'Behavioral' },
-    technical: { color: '#D7191C', label: language === 'Chinese' ? '技术面试' : 'Technical' },
-    brainteasers: { color: '#357AF6', label: language === 'Chinese' ? '脑筋急转弯' : 'Brainteasers' },
-    'case study': { color: '#C3EB79', label: language === 'Chinese' ? '案例分析' : 'Case Study' },
-    others: { color: '#FDAE61', label: language === 'Chinese' ? '其他' : 'Others' },
-    study: { color: '#5CC8BE', label: language === 'Chinese' ? '学习' : 'Study' },
-  };
-  const typeInfo = cardType && cardTypeMap[cardType] ;
+  const cardTypeMap = useMemo(() => ({
+    behavioral: { color: '#FDAE61', label: strings[language].cardTypes.behavioral },
+    technical: { color: '#D7191C', label: strings[language].cardTypes.technical },
+    brainteasers: { color: '#357AF6', label: strings[language].cardTypes.brainteasers },
+    'case study': { color: '#C3EB79', label: strings[language].cardTypes['case study'] },
+    others: { color: '#FDAE61', label: strings[language].cardTypes.others },
+    study: { color: '#5CC8BE', label: strings[language].cardTypes.study },
+  } as Record<string, { color: string; label: string }>), [language]);
+  const typeInfo = useMemo(() => cardType && cardTypeMap[cardType], [cardType, cardTypeMap]);
 
   return (
     <View style={styles.outerContainer}>
@@ -254,7 +260,7 @@ export function Card({
                     {flashcardCount !== undefined && (
                       <Text style={[styles.flashcardCountText, {
                         // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-                      }]}>{flashcardCount} {language === 'Chinese' ? '张卡片' : 'cards'}</Text>
+                      }]}>{flashcardCount} {strings[language].cards}</Text>
                     )}
                   </View>
                 )}
@@ -271,7 +277,7 @@ export function Card({
                           { borderColor: typeInfo.color, opacity: unselectPillAnim }
                         ]}
                       >
-                        <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
+                        <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
                       </Animated.View>
                     )}
                     {/* Selected pill - always rendered when in select mode */}
@@ -284,7 +290,7 @@ export function Card({
                           { borderColor: typeInfo.color, opacity: selectPillAnim }
                         ]}
                       >
-                        <Text style={[styles.cardTypeText, { color: '#000' }]}>{typeInfo.label}</Text>
+                        <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
                       </Animated.View>
                     )}
                   </>
@@ -293,9 +299,9 @@ export function Card({
                 {showProgressRow && (
                   <Animated.View style={[styles.progressRow, { opacity: progressAnim }]}> 
                     <View style={styles.loadingBarFlexWrapper}>
-                      <LoadingBar percent={percent} language={language} />
+                      <LoadingBar percent={percent} language={language} colors={colors} />
                     </View>
-                    <Text style={styles.progressLabel}>{percent}% {language === 'Chinese' ? '进度' : 'progress'}</Text>
+                    <Text style={styles.progressLabel}>{percent}% {strings[language].progress}</Text>
                   </Animated.View>
                 )}
               </View>
@@ -316,23 +322,24 @@ export function Card({
       )}
     </View>
   );
-}
+});
 
-function LoadingBar({ percent, language }: { percent: number, language: string }) {
+const LoadingBar = React.memo(({ percent, language, colors }: { percent: number, language: string, colors: any }) => {
   const isComplete = percent === 100;
+  const styles = createStyles(colors);
   return (
     <View style={styles.loadingBarBg}>
-      <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? '#44B88A' : '#4F41D8' }]} />
+      <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? colors.brandColor1 : colors.brandColor2 }]} />
       {isComplete && (
         <View style={styles.loadingBarTextContainer}>
-          <Text style={styles.loadingBarCompleteText}>{language === 'Chinese' ? '已完成！' : 'Completed!'}</Text>
+          <Text style={styles.loadingBarCompleteText}>{strings[language].completed}</Text>
         </View>
       )}
     </View>
   );
-}
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   outerContainer: {
     width: '100%',
     position: 'relative',
@@ -396,7 +403,7 @@ const styles = StyleSheet.create({
   loadingBarBg: {
     height: 11,
     borderRadius: 13,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     overflow: 'hidden',
     justifyContent: 'center',
     width: '100%',
@@ -404,16 +411,16 @@ const styles = StyleSheet.create({
   loadingBarFg: {
     height: 11,
     borderRadius: 13,
-    backgroundColor: '#4F41D8',
+    backgroundColor: colors.brandColor2,
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
   },
   progressLabel: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: 12,
-    color: '#222',
+    color: colors.text,
     textAlign: 'right',
     minWidth: 70,
     marginRight: 8,
@@ -429,9 +436,9 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   loadingBarCompleteText: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: 12,
-    color: '#fff',
+    color: colors.background,
     textAlign: 'center',
   },
   cardIconImage: {
@@ -446,7 +453,7 @@ const styles = StyleSheet.create({
   cardTypePill: {
     position: 'absolute',
     width: 84,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -465,7 +472,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   cardTypeText: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 14,
     textAlign: 'center',
   },
@@ -485,9 +492,9 @@ const styles = StyleSheet.create({
     top: 5,
     right: 90,
     left: 75,
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 24,
-    color: '#000',
+    color: colors.text,
     zIndex: 2,
     lineHeight: Platform.OS === 'ios' ? 24 : 28,
     // borderWidth: 1,
@@ -516,13 +523,13 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   dateText: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
+    color: colors.text,
   },
   flashcardCountText: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
+    color: colors.text,
   },
 });

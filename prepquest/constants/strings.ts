@@ -1,4 +1,4 @@
-export const strings = {
+export const strings: Record<string, any> = {
   English: {
     // AddDeckModal strings
     addFlashcardsToDeck: 'Add Flashcard(s) to Deck',
@@ -22,6 +22,10 @@ export const strings = {
       study: 'Study',
     },
     cards: 'cards',
+    // Card component strings
+    progress: 'progress',
+    completed: 'Completed!',
+    untitledDeck: 'Untitled Deck',
     // AIPromptModal strings
     aiPromptTitle: 'Try these AI Decks created just for you!',
     loadingAiDecks: 'Loading AI decks...',
@@ -88,6 +92,10 @@ export const strings = {
       study: '学习',
     },
     cards: '张卡片',
+    // Card component strings
+    progress: '进度',
+    completed: '已完成！',
+    untitledDeck: '未命名卡片组',
     // AIPromptModal strings
     aiPromptTitle: '试试为你量身定制的AI卡片组！',
     loadingAiDecks: '正在加载AI卡片组...',

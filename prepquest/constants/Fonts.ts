@@ -1,7 +1,6 @@
 export const Fonts = {
   // Semantic font names
   title: 'Neuton-Regular',
-  body: 'Satoshi-Variable',
   bodyMedium: 'Satoshi-Medium',
   bodyItalic: 'Satoshi-MediumItalic',
   bodyBold: 'Satoshi-Variable',

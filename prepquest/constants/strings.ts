@@ -33,6 +33,17 @@ export const strings = {
     decks: 'decks',
     // FormHeaderIcons strings
     clearAll: 'Clear All',
+    // KindsOfQuestions strings
+    kindsOfQuestionsTitle: '4. What kinds of questions do you want to practice more of? (Pick any)',
+    questionTypes: {
+      recall: 'Recall',
+      comprehension: 'Comprehension',
+      application: 'Application',
+      analysis: 'Analysis',
+      synthesis: 'Synthesis',
+      evaluation: 'Evaluation',
+      problemSolving: 'Problem-Solving',
+    },
   },
   Chinese: {
     // AddDeckModal strings
@@ -68,5 +79,16 @@ export const strings = {
     decks: '张卡片',
     // FormHeaderIcons strings
     clearAll: '清空',
+    // KindsOfQuestions strings
+    kindsOfQuestionsTitle: '4. 你想多练习哪些类型的问题？（可多选）',
+    questionTypes: {
+      recall: '回忆问题',
+      comprehension: '理解问题',
+      application: '应用问题',
+      analysis: '分析问题',
+      synthesis: '综合问题',
+      evaluation: '评估问题',
+      problemSolving: '解决问题',
+    },
   },
 };

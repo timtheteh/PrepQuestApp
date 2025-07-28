@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface ActionButtonProps {
   text: string;
@@ -10,25 +13,28 @@ interface ActionButtonProps {
   fullWidth?: boolean;
 }
 
-export function ActionButton({ 
+export const ActionButton = React.memo(({ 
   text,
   backgroundColor,
   onPress,
   style,
   disabled = false,
   fullWidth = false
-}: ActionButtonProps) {
-  // Split text by newlines to handle line breaks
-  const textLines = text.split('\n');
+}: ActionButtonProps) => {
+  // Memoize text processing to prevent recalculation on every render
+  const textLines = useMemo(() => text.split('\n'), [text]);
+
+  // Memoize button style to prevent recreation on every render
+  const buttonStyle = useMemo(() => [
+    styles.button,
+    { backgroundColor },
+    fullWidth && styles.fullWidth,
+    style
+  ], [backgroundColor, fullWidth, style]);
 
   return (
     <TouchableOpacity 
-      style={[
-        styles.button,
-        { backgroundColor },
-        fullWidth && styles.fullWidth,
-        style
-      ]}
+      style={buttonStyle}
       onPress={onPress}
       activeOpacity={disabled ? 1 : 0.8}
       disabled={disabled}
@@ -40,7 +46,9 @@ export function ActionButton({
       ))}
     </TouchableOpacity>
   );
-}
+});
+
+ActionButton.displayName = 'ActionButton';
 
 const styles = StyleSheet.create({
   button: {
@@ -55,8 +63,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 22,
-    fontWeight: 'bold',
-    fontFamily: 'Satoshi-Bold',
+    fontFamily: Fonts.bodyBold,
     color: '#FFFFFF',
     textAlign: 'center',
   },

@@ -31,6 +31,8 @@ export const strings = {
     emptyStateFooterSubtitle: 'as you practice more!',
     // FolderCard strings
     decks: 'decks',
+    // FormHeaderIcons strings
+    clearAll: 'Clear All',
   },
   Chinese: {
     // AddDeckModal strings
@@ -64,5 +66,7 @@ export const strings = {
     emptyStateFooterSubtitle: '我们会生成更多推荐！',
     // FolderCard strings
     decks: '张卡片',
+    // FormHeaderIcons strings
+    clearAll: '清空',
   },
 };

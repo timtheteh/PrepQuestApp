@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
-import { Entypo , MaterialIcons , Ionicons , FontAwesome5 } from '@expo/vector-icons';
-import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
+import { Ionicons , FontAwesome5 } from '@expo/vector-icons';
 
 interface FolderDetailsTopBarProps {
   onDeletePress?: () => void;
@@ -10,26 +9,44 @@ interface FolderDetailsTopBarProps {
   editNameSelected?: boolean;
 }
 
-export function FolderDetailsTopBar({
+export const FolderDetailsTopBar = React.memo(({
   onDeletePress,
   onEditNamePress,
   editNameSelected,
-}: FolderDetailsTopBarProps) {
+}: FolderDetailsTopBarProps) => {
+  // Memoize the delete icon renderer to prevent recreation on every render
+  const renderDeleteIcon = useCallback((color: string) => (
+    <Ionicons name="trash" size={24} color={color} />
+  ), []);
+
+  // Memoize the edit icon renderer to prevent recreation on every render
+  const renderEditIcon = useCallback((color: string) => (
+    <FontAwesome5 name="pen" size={18} color={color} />
+  ), []);
+
+  // Memoize the delete button props to prevent unnecessary re-renders
+  const deleteButtonProps = useMemo(() => ({
+    color: "#FF3B30",
+    onPress: onDeletePress,
+    renderCustomIcon: renderDeleteIcon,
+  }), [onDeletePress, renderDeleteIcon]);
+
+  // Memoize the edit button props to prevent unnecessary re-renders
+  const editButtonProps = useMemo(() => ({
+    onPress: onEditNamePress,
+    selected: editNameSelected,
+    renderCustomIcon: renderEditIcon,
+  }), [onEditNamePress, editNameSelected, renderEditIcon]);
+
   return (
     <View style={styles.container}>
-      <CircleIconButton 
-        color="#FF3B30"
-        onPress={onDeletePress}
-        renderCustomIcon={(color) => <Ionicons name="trash" size={24} color={color} />}
-      />
-      <CircleIconButton 
-        onPress={onEditNamePress}
-        selected={editNameSelected}
-        renderCustomIcon={(color) => <FontAwesome5 name="pen" size={18} color={color} />}
-      />
+      <CircleIconButton {...deleteButtonProps} />
+      <CircleIconButton {...editButtonProps} />
     </View>
   );
-}
+});
+
+FolderDetailsTopBar.displayName = 'FolderDetailsTopBar';
 
 const styles = StyleSheet.create({
   container: {

@@ -7,6 +7,7 @@ export const Colors = {
     secondaryShade: '#F8F8F8',
     androidSecondaryShade: '#EFEFEF',
     unselectedText: '#D5D4DD',
+    normalIconColor: '#000000',
   },
   dark: {
     text: "#FFFFFF",
@@ -16,5 +17,6 @@ export const Colors = {
     secondaryShade: '#2A2A2A',
     androidSecondaryShade: '#2A2A2A',
     unselectedText: '#D5D4DD',
+    normalIconColor: '#FFFFFF',
   },
 };

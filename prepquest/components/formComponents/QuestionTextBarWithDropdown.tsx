@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, Platform, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllCompanyNames, getCompanyIconByName } from '@/db/decks';
@@ -22,14 +22,14 @@ interface CompanyOption {
   icon?: { uri: string };
 }
 
-export function QuestionTextBarWithDropdown({
+export const QuestionTextBarWithDropdown = React.memo(({
   label,
   placeholder,
   value,
   onChangeText,
   helperText,
   showDropdown = false
-}: QuestionTextBarWithDropdownProps) {
+}: QuestionTextBarWithDropdownProps) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ export function QuestionTextBarWithDropdown({
     }
   }, [showDropdown, isDropdownOpen]);
 
-  const loadCompanies = async () => {
+  const loadCompanies = useCallback(async () => {
     if (companies.length > 0) return; // Already loaded
     
     setLoading(true);
@@ -65,57 +65,119 @@ export function QuestionTextBarWithDropdown({
     } finally {
       setLoading(false);
     }
-  };
+  }, [companies.length]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     onChangeText('');
-  };
+  }, [onChangeText]);
 
-  const handleDropdownToggle = () => {
+  const handleDropdownToggle = useCallback(() => {
     if (showDropdown) {
       setIsDropdownOpen(!isDropdownOpen);
     }
-  };
+  }, [showDropdown, isDropdownOpen]);
 
-  const handleCompanySelect = (companyName: string) => {
+  const handleCompanySelect = useCallback((companyName: string) => {
     onChangeText(companyName);
     setIsDropdownOpen(false);
-  };
+  }, [onChangeText]);
 
-  const handleInputChange = (text: string) => {
+  const handleInputChange = useCallback((text: string) => {
     onChangeText(text);
     // Keep dropdown open when typing and show filtered results
     if (showDropdown && !isDropdownOpen) {
       setIsDropdownOpen(true);
     }
-  };
+  }, [onChangeText, showDropdown, isDropdownOpen]);
 
-  const handleInputFocus = () => {
+  const handleInputFocus = useCallback(() => {
     if (showDropdown && !isDropdownOpen) {
       setIsDropdownOpen(true);
     }
-  };
+  }, [showDropdown, isDropdownOpen]);
 
-  // Filter companies based on current input
-  const filteredCompanies = companies.filter(company => {
-    if (!value.trim()) {
-      return true; // Show all companies when input is empty
-    }
-    return company.name.toLowerCase().startsWith(value.toLowerCase());
-  }).sort((a, b) => a.name.localeCompare(b.name)); // Ensure alphabetical order
+  const handleCloseDropdown = useCallback(() => {
+    setIsDropdownOpen(false);
+  }, []);
+
+  // Memoize filtered companies to prevent recalculation on every render
+  const filteredCompanies = useMemo(() => {
+    return companies.filter(company => {
+      if (!value.trim()) {
+        return true; // Show all companies when input is empty
+      }
+      return company.name.toLowerCase().startsWith(value.toLowerCase());
+    }).sort((a, b) => a.name.localeCompare(b.name)); // Ensure alphabetical order
+  }, [companies, value]);
+
+  // Memoize dynamic styles to prevent recreation on every render
+  const dynamicStyles = useMemo(() => ({
+    label: {
+      color: Colors[theme].text,
+    },
+    textInputContainer: {
+      backgroundColor: Colors[theme].secondaryShade,
+    },
+    textInput: {
+      color: Colors[theme].text,
+    },
+    dropdownContainer: {
+      backgroundColor: Colors[theme].background,
+      borderColor: Colors[theme].secondaryShade,
+    },
+    dropdownHeader: {
+      borderBottomColor: Colors[theme].secondaryShade,
+    },
+    dropdownHeaderText: {
+      color: Colors[theme].text,
+    },
+    dropdownItem: {
+      borderBottomColor: Colors[theme].secondaryShade,
+    },
+    dropdownItemText: {
+      color: Colors[theme].text,
+    },
+    loadingText: {
+      color: Colors[theme].unselectedText,
+    },
+    helperText: {
+      color: Colors[theme].text,
+    },
+  }), [theme]);
+
+  // Memoize TextInput props to prevent unnecessary re-renders
+  const textInputProps = useMemo(() => ({
+    style: [styles.textInput, dynamicStyles.textInput],
+    placeholder,
+    placeholderTextColor: Colors[theme].unselectedText,
+    value,
+    onChangeText: handleInputChange,
+    onFocus: handleInputFocus,
+  }), [placeholder, value, handleInputChange, handleInputFocus, dynamicStyles.textInput, theme]);
+
+  // Memoize the company renderer to prevent recreation on every render
+  const renderCompany = useCallback((company: CompanyOption) => (
+    <TouchableOpacity
+      key={company.name}
+      style={[styles.dropdownItem, dynamicStyles.dropdownItem]}
+      onPress={() => handleCompanySelect(company.name)}
+    >
+      <Text style={[styles.dropdownItemText, dynamicStyles.dropdownItemText]}>{company.name}</Text>
+      {company.icon && (
+        <Image 
+          source={company.icon} 
+          style={styles.companyIcon}
+          resizeMode="contain"
+        />
+      )}
+    </TouchableOpacity>
+  ), [handleCompanySelect, dynamicStyles.dropdownItem, dynamicStyles.dropdownItemText]);
 
   return (
     <View style={styles.inputRow}>
-      <Text style={[styles.label, { color: Colors[theme].text }]}>{label}</Text>
-      <View style={[styles.textInputContainer, { backgroundColor: Colors[theme].secondaryShade }]}>
-        <TextInput
-          style={[styles.textInput, { color: Colors[theme].text }]}
-          placeholder={placeholder}
-          placeholderTextColor={Colors[theme].unselectedText}
-          value={value}
-          onChangeText={handleInputChange}
-          onFocus={handleInputFocus}
-        />
+      <Text style={[styles.label, dynamicStyles.label]}>{label}</Text>
+      <View style={[styles.textInputContainer, dynamicStyles.textInputContainer]}>
+        <TextInput {...textInputProps} />
         <View style={styles.rightButtonsContainer}>
           {value.length > 0 && (
             <TouchableWithoutFeedback onPress={handleClear}>
@@ -144,14 +206,14 @@ export function QuestionTextBarWithDropdown({
       </View>
       
       {showDropdown && isDropdownOpen && (
-        <View style={[styles.dropdownContainer, { backgroundColor: Colors[theme].background, borderColor: Colors[theme].secondaryShade }]}>
-          <View style={[styles.dropdownHeader, { borderBottomColor: Colors[theme].secondaryShade }]}>
-            <Text style={[styles.dropdownHeaderText, { color: Colors[theme].text }]}>
+        <View style={[styles.dropdownContainer, dynamicStyles.dropdownContainer]}>
+          <View style={[styles.dropdownHeader, dynamicStyles.dropdownHeader]}>
+            <Text style={[styles.dropdownHeaderText, dynamicStyles.dropdownHeaderText]}>
               {value.trim() ? `${strings[language].companiesStartingWith} "${value}"` : strings[language].selectACompany}
             </Text>
             <TouchableOpacity 
               style={styles.closeDropdownButton}
-              onPress={() => setIsDropdownOpen(false)}
+              onPress={handleCloseDropdown}
             >
               <Ionicons name="close" size={20} color={Colors[theme].unselectedText} />
             </TouchableOpacity>
@@ -162,39 +224,26 @@ export function QuestionTextBarWithDropdown({
             nestedScrollEnabled={true}
           >
             {loading ? (
-              <Text style={[styles.loadingText, { color: Colors[theme].unselectedText }]}>{strings[language].loadingCompanies}</Text>
+              <Text style={[styles.loadingText, dynamicStyles.loadingText]}>{strings[language].loadingCompanies}</Text>
             ) : filteredCompanies.length === 0 ? (
-              <Text style={[styles.loadingText, { color: Colors[theme].unselectedText }]}>
+              <Text style={[styles.loadingText, dynamicStyles.loadingText]}>
                 {value.trim() ? `${strings[language].noCompaniesFoundStartingWith} "${value}"` : strings[language].noCompaniesFound}
               </Text>
             ) : (
-              filteredCompanies.map((company) => (
-                <TouchableOpacity
-                  key={company.name}
-                  style={[styles.dropdownItem, { borderBottomColor: Colors[theme].secondaryShade }]}
-                  onPress={() => handleCompanySelect(company.name)}
-                >
-                  <Text style={[styles.dropdownItemText, { color: Colors[theme].text }]}>{company.name}</Text>
-                  {company.icon && (
-                    <Image 
-                      source={company.icon} 
-                      style={styles.companyIcon}
-                      resizeMode="contain"
-                    />
-                  )}
-                </TouchableOpacity>
-              ))
+              filteredCompanies.map(renderCompany)
             )}
           </ScrollView>
         </View>
       )}
       
       {helperText && (
-        <Text style={[styles.helperText, { color: Colors[theme].text }]}>{helperText}</Text>
+        <Text style={[styles.helperText, dynamicStyles.helperText]}>{helperText}</Text>
       )}
     </View>
   );
-}
+});
+
+QuestionTextBarWithDropdown.displayName = 'QuestionTextBarWithDropdown';
 
 const styles = StyleSheet.create({
   inputRow: {

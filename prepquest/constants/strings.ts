@@ -61,6 +61,9 @@ export const strings = {
     },
     // ActionButtonsRow strings
     cancel: 'Cancel',
+    // BottomTextInputModal strings
+    editDeckName: 'Edit deck name',
+    done: 'Done',
   },
   Chinese: {
     // AddDeckModal strings
@@ -124,5 +127,8 @@ export const strings = {
     },
     // ActionButtonsRow strings
     cancel: '取消',
+    // BottomTextInputModal strings
+    editDeckName: '编辑卡组名称',
+    done: '完成',
   },
 };

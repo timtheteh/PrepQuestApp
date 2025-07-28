@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface BottomTextInputModalProps {
   visible: boolean;
@@ -11,7 +15,7 @@ interface BottomTextInputModalProps {
   autoFocus?: boolean;
 }
 
-export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = ({
+export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = React.memo(({
   visible,
   value,
   onChangeText,
@@ -20,6 +24,23 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = ({
   autoFocus = true,
 }) => {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  
+  // Memoize theme-based styles to prevent object recreation on every render
+  const themeStyles = useMemo(() => ({
+    modalView: { backgroundColor: Colors[theme].background },
+    headerTitle: { color: Colors[theme].text },
+    doneButton: { color: Colors[theme].brandColor1 },
+    input: { color: Colors[theme].text },
+    placeholderTextColor: Colors[theme].unselectedText,
+  }), [theme]);
+
+  // Memoize current strings to prevent recalculation
+  const currentStrings = useMemo(() => 
+    strings[language as keyof typeof strings], 
+    [language]
+  );
+
   if (!visible) return null;
 
   return (
@@ -28,25 +49,21 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <View style={styles.modalView}>
+        <View style={[styles.modalView, themeStyles.modalView]}>
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, 
-              // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
-              ]}>
-              {language === 'Chinese' ? '编辑卡组名称' : 'Edit deck name'}
+            <Text style={[styles.headerTitle, themeStyles.headerTitle]}>
+              {currentStrings.editDeckName}
             </Text>
             <TouchableOpacity onPress={onDone}>
-              <Text style={[styles.doneButton, 
-                // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
-                ]}>
-                {language === 'Chinese' ? '完成' : 'Done'}
+              <Text style={[styles.doneButton, themeStyles.doneButton]}>
+                {currentStrings.done}
               </Text>
             </TouchableOpacity>
           </View>
           <TextInput
-            style={styles.input}
+            style={[styles.input, themeStyles.input]}
             placeholder={placeholder}
-            placeholderTextColor="#999"
+            placeholderTextColor={themeStyles.placeholderTextColor}
             autoFocus={autoFocus}
             multiline
             value={value}
@@ -56,7 +73,7 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = ({
       </KeyboardAvoidingView>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   absoluteFill: {
@@ -68,7 +85,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalView: {
-    backgroundColor: "white",
     padding: 16,
     minHeight: 100,
     maxHeight: 350,
@@ -86,7 +102,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   doneButton: {
-    color: '#44B88A',
     fontSize: 18,
     fontWeight: '600',
     marginTop: 5,
@@ -98,7 +113,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   headerTitle: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 24,
   },
 }); 

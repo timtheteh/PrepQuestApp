@@ -3,6 +3,10 @@ import { View, Text, StyleSheet, TextInput, Platform, TouchableWithoutFeedback, 
 import { Ionicons } from '@expo/vector-icons';
 import { getAllCompanyNames, getCompanyIconByName } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface QuestionTextBarWithDropdownProps {
   label: string;
@@ -30,6 +34,7 @@ export function QuestionTextBarWithDropdown({
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [loading, setLoading] = useState(false);
   const { language } = useLanguage();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (showDropdown && isDropdownOpen) {
@@ -101,11 +106,12 @@ export function QuestionTextBarWithDropdown({
 
   return (
     <View style={styles.inputRow}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.textInputContainer}>
+      <Text style={[styles.label, { color: Colors[theme].text }]}>{label}</Text>
+      <View style={[styles.textInputContainer, { backgroundColor: Colors[theme].secondaryShade }]}>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, { color: Colors[theme].text }]}
           placeholder={placeholder}
+          placeholderTextColor={Colors[theme].unselectedText}
           value={value}
           onChangeText={handleInputChange}
           onFocus={handleInputFocus}
@@ -117,7 +123,7 @@ export function QuestionTextBarWithDropdown({
                 <Ionicons
                   name={Platform.OS === 'ios' ? 'close-circle' : 'close-circle'}
                   size={24}
-                  color="#D5D4DD"
+                  color={Colors[theme].unselectedText}
                 />
               </View>
             </TouchableWithoutFeedback>
@@ -130,7 +136,7 @@ export function QuestionTextBarWithDropdown({
               <Ionicons
                 name={isDropdownOpen ? 'chevron-up' : 'chevron-down'}
                 size={20}
-                color="#666"
+                color={Colors[theme].unselectedText}
               />
             </TouchableOpacity>
           )}
@@ -138,16 +144,16 @@ export function QuestionTextBarWithDropdown({
       </View>
       
       {showDropdown && isDropdownOpen && (
-        <View style={styles.dropdownContainer}>
-          <View style={styles.dropdownHeader}>
-            <Text style={styles.dropdownHeaderText}>
-              {value.trim() ? (language === 'Chinese' ? `以 "${value}" 开头的公司` : `Companies starting with "${value}"`) : (language === 'Chinese' ? '选择一个公司' : 'Select a company')}
+        <View style={[styles.dropdownContainer, { backgroundColor: Colors[theme].background, borderColor: Colors[theme].secondaryShade }]}>
+          <View style={[styles.dropdownHeader, { borderBottomColor: Colors[theme].secondaryShade }]}>
+            <Text style={[styles.dropdownHeaderText, { color: Colors[theme].text }]}>
+              {value.trim() ? `${strings[language].companiesStartingWith} "${value}"` : strings[language].selectACompany}
             </Text>
             <TouchableOpacity 
               style={styles.closeDropdownButton}
               onPress={() => setIsDropdownOpen(false)}
             >
-              <Ionicons name="close" size={20} color="#666" />
+              <Ionicons name="close" size={20} color={Colors[theme].unselectedText} />
             </TouchableOpacity>
           </View>
           <ScrollView 
@@ -156,19 +162,19 @@ export function QuestionTextBarWithDropdown({
             nestedScrollEnabled={true}
           >
             {loading ? (
-              <Text style={styles.loadingText}>Loading companies...</Text>
+              <Text style={[styles.loadingText, { color: Colors[theme].unselectedText }]}>{strings[language].loadingCompanies}</Text>
             ) : filteredCompanies.length === 0 ? (
-              <Text style={styles.loadingText}>
-                {value.trim() ? (language === 'Chinese' ? `没有以 "${value}" 开头的公司` : `No companies found starting with "${value}"`) : (language === 'Chinese' ? '没有公司' : 'No companies found')}
+              <Text style={[styles.loadingText, { color: Colors[theme].unselectedText }]}>
+                {value.trim() ? `${strings[language].noCompaniesFoundStartingWith} "${value}"` : strings[language].noCompaniesFound}
               </Text>
             ) : (
               filteredCompanies.map((company) => (
                 <TouchableOpacity
                   key={company.name}
-                  style={styles.dropdownItem}
+                  style={[styles.dropdownItem, { borderBottomColor: Colors[theme].secondaryShade }]}
                   onPress={() => handleCompanySelect(company.name)}
                 >
-                  <Text style={styles.dropdownItemText}>{company.name}</Text>
+                  <Text style={[styles.dropdownItemText, { color: Colors[theme].text }]}>{company.name}</Text>
                   {company.icon && (
                     <Image 
                       source={company.icon} 
@@ -184,7 +190,7 @@ export function QuestionTextBarWithDropdown({
       )}
       
       {helperText && (
-        <Text style={styles.helperText}>{helperText}</Text>
+        <Text style={[styles.helperText, { color: Colors[theme].text }]}>{helperText}</Text>
       )}
     </View>
   );
@@ -196,14 +202,12 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 24,
-    fontFamily: 'Neuton-Regular',
-    color: '#000000',
+    fontFamily: Fonts.title,
     marginBottom: 16,
     height: 32
   },
   textInputContainer: {
     height: 46,
-    backgroundColor: '#F8F8F8',
     borderRadius: 30,
     justifyContent: 'center',
     paddingHorizontal: 16,
@@ -213,7 +217,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     paddingVertical: 0,
   },
   rightButtonsContainer: {
@@ -233,10 +237,8 @@ const styles = StyleSheet.create({
   },
   dropdownContainer: {
     marginTop: 8,
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     maxHeight: 200,
     shadowColor: '#000',
     shadowOffset: {
@@ -254,12 +256,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   dropdownHeaderText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
-    color: '#000000',
+    fontFamily: Fonts.bodyMedium,
   },
   closeDropdownButton: {
     padding: 3,
@@ -276,12 +276,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   dropdownItemText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
-    color: '#000000',
+    fontFamily: Fonts.bodyMedium,
     flex: 1,
   },
   companyIcon: {
@@ -290,15 +288,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
-    color: '#666',
+    fontFamily: Fonts.bodyMedium,
     textAlign: 'center',
     paddingVertical: 20,
   },
   helperText: {
-    fontFamily: 'Satoshi-MediumItalic',
+    fontFamily: Fonts.bodyItalic,
     fontSize: 16,
-    color: '#000000',
     marginTop: 8,
     opacity: 0.5,   
   },

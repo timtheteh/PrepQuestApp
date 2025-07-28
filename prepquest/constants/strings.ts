@@ -44,6 +44,12 @@ export const strings = {
       evaluation: 'Evaluation',
       problemSolving: 'Problem-Solving',
     },
+    // QuestionTextBarWithDropdown strings
+    companiesStartingWith: 'Companies starting with',
+    selectACompany: 'Select a company',
+    noCompaniesFoundStartingWith: 'No companies found starting with',
+    noCompaniesFound: 'No companies found',
+    loadingCompanies: 'Loading companies...',
   },
   Chinese: {
     // AddDeckModal strings
@@ -90,5 +96,11 @@ export const strings = {
       evaluation: '评估问题',
       problemSolving: '解决问题',
     },
+    // QuestionTextBarWithDropdown strings
+    companiesStartingWith: '以',
+    selectACompany: '选择一个公司',
+    noCompaniesFoundStartingWith: '没有以',
+    noCompaniesFound: '没有公司',
+    loadingCompanies: '正在加载公司...',
   },
 };

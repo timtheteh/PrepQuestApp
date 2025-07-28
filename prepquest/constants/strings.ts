@@ -59,6 +59,8 @@ export const strings = {
       caseStudy: 'Case Study',
       others: 'Others',
     },
+    // ActionButtonsRow strings
+    cancel: 'Cancel',
   },
   Chinese: {
     // AddDeckModal strings
@@ -120,5 +122,7 @@ export const strings = {
       caseStudy: '案例分析',
       others: '其他',
     },
+    // ActionButtonsRow strings
+    cancel: '取消',
   },
 };

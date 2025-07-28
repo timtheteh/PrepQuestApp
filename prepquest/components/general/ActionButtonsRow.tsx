@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { UnfavoriteButton } from './UnfavoriteButton';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { strings } from '@/constants/strings';
 
 interface ActionButtonsRowProps {
   style?: ViewStyle;
@@ -16,7 +20,7 @@ interface ActionButtonsRowProps {
   onUnfavoritePress?: () => void;
 }
 
-export function ActionButtonsRow({ 
+export const ActionButtonsRow = React.memo(({ 
   style,
   iconNames,
   iconLibraries = [],
@@ -25,31 +29,49 @@ export function ActionButtonsRow({
   iconColors = [],
   showUnfavoriteButton = false,
   onUnfavoritePress
-}: ActionButtonsRowProps) {
+}: ActionButtonsRowProps) => {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+
+  // Memoize the icon press handler to prevent recreation on every render
+  const handleIconPress = useCallback((index: number) => {
+    onIconPress?.(index);
+  }, [onIconPress]);
+
+  // Memoize dynamic styles to prevent recreation on every render
+  const dynamicStyles = useMemo(() => ({
+    cancelButton: {
+      color: Colors[theme].text,
+    },
+  }), [theme]);
+
+  // Memoize the icon renderer to prevent recreation on every render
+  const renderIcon = useCallback((iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap, index: number) => {
+    return (
+      <CircleIconButton
+        key={index}
+        iconName={iconName}
+        iconLibrary={iconLibraries[index] || 'ionicons'}
+        onPress={() => handleIconPress(index)}
+        color={iconColors[index] || Colors[theme].normalIconColor}
+      />
+    );
+  }, [iconLibraries, handleIconPress, iconColors, theme]);
 
   return (
     <View style={[styles.container, style]}>
-      {iconNames.map((iconName, index) => (
-        <CircleIconButton
-          key={index}
-          iconName={iconName}
-          iconLibrary={iconLibraries[index] || 'ionicons'}
-          onPress={() => onIconPress?.(index)}
-          color={iconColors[index] || 'black'}
-        />
-      ))}
+      {iconNames.map(renderIcon)}
       {showUnfavoriteButton && (
         <UnfavoriteButton onPress={onUnfavoritePress} />
       )}
       <TouchableOpacity onPress={onCancel}>
-        <Text style={{ fontSize: 14.5, 
-          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium', 
-          color: '#000000' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
+        <Text style={[styles.cancelButton, dynamicStyles.cancelButton]}>{strings[language].cancel}</Text>
       </TouchableOpacity>
     </View>
   );
-}
+});
+
+ActionButtonsRow.displayName = 'ActionButtonsRow';
 
 const styles = StyleSheet.create({
   container: {
@@ -62,7 +84,6 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     fontSize: 14.5,
-    fontFamily: 'Satoshi-Medium',
-    color: '#000000',
+    fontFamily: Fonts.bodyMedium,
   },
 }); 

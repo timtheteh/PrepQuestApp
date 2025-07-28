@@ -50,6 +50,15 @@ export const strings = {
     noCompaniesFoundStartingWith: 'No companies found starting with',
     noCompaniesFound: 'No companies found',
     loadingCompanies: 'Loading companies...',
+    // TypeOfInterviewQn strings
+    typeOfInterviewTitle: '2. Which kind of interview are you preparing for? (Pick One)',
+    interviewTypes: {
+      technical: 'Technical',
+      behavioral: 'Behavioral',
+      brainteasers: 'Brainteasers',
+      caseStudy: 'Case Study',
+      others: 'Others',
+    },
   },
   Chinese: {
     // AddDeckModal strings
@@ -102,5 +111,14 @@ export const strings = {
     noCompaniesFoundStartingWith: '没有以',
     noCompaniesFound: '没有公司',
     loadingCompanies: '正在加载公司...',
+    // TypeOfInterviewQn strings
+    typeOfInterviewTitle: '2. 你正在准备哪种面试？（选一）',
+    interviewTypes: {
+      technical: '技术',
+      behavioral: '行为',
+      brainteasers: '脑筋急转弯',
+      caseStudy: '案例分析',
+      others: '其他',
+    },
   },
 };

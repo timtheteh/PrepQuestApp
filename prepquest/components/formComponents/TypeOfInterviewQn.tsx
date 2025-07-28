@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface TypeOfInterviewQnProps {
   value: string;
@@ -9,45 +13,69 @@ interface TypeOfInterviewQnProps {
 
 const INTERVIEW_TYPES = ['Technical', 'Behavioral', 'Brainteasers', 'Case Study', 'Others'];
 
-const INTERVIEW_TYPE_LABELS: Record<string, { en: string; zh: string }> = {
-  'Technical': { en: 'Technical', zh: '技术' },
-  'Behavioral': { en: 'Behavioral', zh: '行为' },
-  'Brainteasers': { en: 'Brainteasers', zh: '脑筋急转弯' },
-  'Case Study': { en: 'Case Study', zh: '案例分析' },
-  'Others': { en: 'Others', zh: '其他' },
-};
-
-export function TypeOfInterviewQn({
+export const TypeOfInterviewQn = React.memo(({
   value,
   onValueChange,
-}: TypeOfInterviewQnProps) {
+}: TypeOfInterviewQnProps) => {
   const { language } = useLanguage();
-  const handleSelect = (selectedValue: string) => {
+  const { theme } = useTheme();
+
+  // Dynamic function to get interview type label based on current language
+  const getInterviewTypeLabel = useCallback((type: string): string => {
+    const typeKey = type.toLowerCase().replace(/\s+/g, '') as keyof typeof strings.English.interviewTypes;
+    
+    // Get the label from the strings object based on current language
+    const languageStrings = strings[language as keyof typeof strings];
+    if (languageStrings?.interviewTypes?.[typeKey]) {
+      return languageStrings.interviewTypes[typeKey];
+    }
+    
+    // Fallback to English if the language is not found
+    return strings.English.interviewTypes[typeKey] || type;
+  }, [language]);
+
+  // Memoize the select handler to prevent recreation on every render
+  const handleSelect = useCallback((selectedValue: string) => {
     onValueChange(selectedValue);
-  };
+  }, [onValueChange]);
+
+  // Memoize dynamic styles to prevent recreation on every render
+  const dynamicStyles = useMemo(() => ({
+    title: {
+      color: Colors[theme].text,
+    },
+  }), [theme]);
+
+  // Memoize the button renderer to prevent recreation on every render
+  const renderButton = useCallback((type: string) => {
+    const isSelected = value === type;
+    const label = getInterviewTypeLabel(type);
+    
+    return (
+      <TouchableOpacity
+        key={type}
+        style={[
+          styles.button,
+          { backgroundColor: isSelected ? Colors[theme].brandColor2 : Colors[theme].brandColor1 },
+        ]}
+        onPress={() => handleSelect(type)}
+      >
+        <Text style={styles.buttonText}>{label}</Text>
+      </TouchableOpacity>
+    );
+  }, [value, getInterviewTypeLabel, theme, handleSelect]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{language === 'Chinese' ? '2. 你正在准备哪种面试？（选一）' : '2. Which kind of interview are you preparing for? (Pick One)'}</Text>
+      <Text style={[styles.title, dynamicStyles.title]}>{strings[language].typeOfInterviewTitle}</Text>
       <View style={styles.buttonContainer}>
-        {INTERVIEW_TYPES.map((type) => (
-          <TouchableOpacity
-            key={type}
-            style={[
-              styles.button,
-              value === type && styles.buttonSelected
-            ]}
-            onPress={() => handleSelect(type)}
-          >
-            <Text style={styles.buttonText}>
-              {language === 'Chinese' ? INTERVIEW_TYPE_LABELS[type]?.zh || type : INTERVIEW_TYPE_LABELS[type]?.en || type}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {INTERVIEW_TYPES.map(renderButton)}
       </View>
     </View>
   );
-}
+});
+
+TypeOfInterviewQn.displayName = 'TypeOfInterviewQn';
 
 const styles = StyleSheet.create({
   container: {
@@ -55,8 +83,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Neuton-Regular',
-    color: '#000000',
+    fontFamily: Fonts.title,
     marginBottom: 16,
     flexWrap: 'wrap',
   },
@@ -68,17 +95,13 @@ const styles = StyleSheet.create({
   button: {
     width: '19%',
     height: 40,
-    backgroundColor: '#44B88A',
     borderRadius: 10,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonSelected: {
-    backgroundColor: '#4F41D8',
-  },
   buttonText: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: Dimensions.get('window').height < 670 ? 10 : 12,
     color: '#FFFFFF',
   },

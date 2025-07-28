@@ -36,16 +36,19 @@ export const KindsOfQuestions = React.memo(({
   const { language } = useLanguage();
   const { theme } = useTheme();
 
-  // Memoize question type labels to prevent recreation on every render
-  const questionTypeLabels: Record<string, { en: string; zh: string }> = useMemo(() => ({
-    'Recall': { en: strings.English.questionTypes.recall, zh: strings.Chinese.questionTypes.recall },
-    'Comprehension': { en: strings.English.questionTypes.comprehension, zh: strings.Chinese.questionTypes.comprehension },
-    'Application': { en: strings.English.questionTypes.application, zh: strings.Chinese.questionTypes.application },
-    'Analysis': { en: strings.English.questionTypes.analysis, zh: strings.Chinese.questionTypes.analysis },
-    'Synthesis': { en: strings.English.questionTypes.synthesis, zh: strings.Chinese.questionTypes.synthesis },
-    'Evaluation': { en: strings.English.questionTypes.evaluation, zh: strings.Chinese.questionTypes.evaluation },
-    'Problem-Solving': { en: strings.English.questionTypes.problemSolving, zh: strings.Chinese.questionTypes.problemSolving },
-  }), []);
+  // Dynamic function to get question type label based on current language
+  const getQuestionTypeLabel = useCallback((type: string): string => {
+    const typeKey = type.toLowerCase().replace(/\s+/g, '') as keyof typeof strings.English.questionTypes;
+    
+    // Get the label from the strings object based on current language
+    const languageStrings = strings[language as keyof typeof strings];
+    if (languageStrings?.questionTypes?.[typeKey]) {
+      return languageStrings.questionTypes[typeKey];
+    }
+    
+    // Fallback to English if the language is not found
+    return strings.English.questionTypes[typeKey] || type;
+  }, [language]);
 
   // Memoize the select handler to prevent recreation on every render
   const handleSelect = useCallback((selectedValue: string) => {
@@ -79,7 +82,7 @@ export const KindsOfQuestions = React.memo(({
   // Memoize the button renderer to prevent recreation on every render
   const renderButton = useCallback((type: string) => {
     const isSelected = value.includes(type);
-    const label = language === 'Chinese' ? questionTypeLabels[type]?.zh || type : questionTypeLabels[type]?.en || type;
+    const label = getQuestionTypeLabel(type);
     
     return (
       <TouchableOpacity
@@ -93,7 +96,7 @@ export const KindsOfQuestions = React.memo(({
         <Text style={styles.buttonText}>{label}</Text>
       </TouchableOpacity>
     );
-  }, [value, language, questionTypeLabels, theme, handleSelect]);
+  }, [value, getQuestionTypeLabel, theme, handleSelect]);
 
   return (
     <View style={styles.container}>

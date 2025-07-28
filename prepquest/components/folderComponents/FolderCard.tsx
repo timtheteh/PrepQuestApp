@@ -245,7 +245,6 @@ const styles = StyleSheet.create({
   },
   container: {
     height: 96,
-    backgroundColor: Platform.OS === 'android' ? '#EFEFEF' : '#F8F8F8',
     borderRadius: 20,
   },
   containerPressed: {

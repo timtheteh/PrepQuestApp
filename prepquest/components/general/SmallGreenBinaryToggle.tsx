@@ -1,5 +1,8 @@
-import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle } from 'react-native';
+import { StyleSheet, View, ViewProps, Animated, TouchableWithoutFeedback, Easing, StyleProp, TextStyle } from 'react-native';
 import { useState, useRef } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface SmallGreenBinaryToggleProps extends ViewProps {
   leftLabel: string;
@@ -18,6 +21,9 @@ export function SmallGreenBinaryToggle({
   initialPosition = 'left',
   ...props 
 }: SmallGreenBinaryToggleProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  
   const [isRightSide, setIsRightSide] = useState(initialPosition === 'right');
   const positionAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
   const colorAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
@@ -55,22 +61,22 @@ export function SmallGreenBinaryToggle({
 
   const leftTextColor = colorAnim.interpolate({
     inputRange: [0, 0.4, 0.6, 1],
-    outputRange: ['#FFFFFF', '#FFFFFF', '#D5D4DD', '#D5D4DD']
+    outputRange: [colors.background, colors.background, colors.unselectedText, colors.unselectedText]
   });
 
   const rightTextColor = colorAnim.interpolate({
     inputRange: [0, 0.4, 0.6, 1],
-    outputRange: ['#D5D4DD', '#D5D4DD', '#FFFFFF', '#FFFFFF']
+    outputRange: [colors.unselectedText, colors.unselectedText, colors.background, colors.background]
   });
 
   return (
     <TouchableWithoutFeedback onPress={togglePosition}>
-      <View style={[styles.container, style]} {...props}>
+      <View style={[styles.container, { backgroundColor: colors.secondaryShade }, style]} {...props}>
         <View style={styles.innerContainer}>
           <Animated.View 
             style={[
               styles.toggleBackground,
-              { transform: [{ translateX }] }
+              { backgroundColor: colors.brandColor1, transform: [{ translateX }] }
             ]} 
           />
           <View style={styles.labelContainer}>
@@ -95,7 +101,6 @@ const styles = StyleSheet.create({
   container: {
     width: 180,
     height: 26,
-    backgroundColor: '#F8F8F8',
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -106,7 +111,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '50%',
     height: '100%',
-    backgroundColor: '#44B88A',
     borderRadius: 10,
   },
   labelContainer: {
@@ -127,6 +131,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
   },
 }); 

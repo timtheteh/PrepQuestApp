@@ -1,4 +1,4 @@
-import React, { useContext, forwardRef, useImperativeHandle , useState, useRef, useEffect } from 'react';
+import React, { useContext, forwardRef, useImperativeHandle , useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Animated, ViewStyle, Text, TouchableOpacity, Dimensions, TextInput, Platform, TouchableWithoutFeedback } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import Feather from '@expo/vector-icons/Feather';
@@ -83,11 +83,12 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   const colors = Colors[theme];
   const styles = createStyles(colors);
 
-  const sortOptions = [
+  // Memoize sort options to prevent recreation on every render
+  const sortOptions = useMemo(() => [
     { label: strings[language || 'English'].sortOptions.name, value: 'name' },
     { label: strings[language || 'English'].sortOptions.dateAdded, value: 'dateAdded' },
     { label: strings[language || 'English'].sortOptions.lastModified, value: 'lastModified' },
-  ];
+  ], [language]);
 
   // Update sort state when initial props change
   useEffect(() => {
@@ -143,16 +144,16 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     }
   }));
 
-  const collapseFilter = () => {
+  const collapseFilter = useCallback(() => {
     setIsExpanded(false);
     Animated.timing(expandAnim, {
       toValue: 0,
       duration: 300,
       useNativeDriver: false,
     }).start();
-  };
+  }, [expandAnim]);
 
-  const handleFilterPress = () => {
+  const handleFilterPress = useCallback(() => {
     if (isSearchMode) return;
     
     setIsExpanded(!isExpanded);
@@ -165,9 +166,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     if (onFilterPress) {
       onFilterPress();
     }
-  };
+  }, [isExpanded, isSearchMode, expandAnim, onFilterPress]);
 
-  const handleSearchPress = () => {
+  const handleSearchPress = useCallback(() => {
     setIsSearchMode(true);
     setIsSearchVisible(true);
     if (isExpanded) {
@@ -182,9 +183,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     if (onSearchPress) {
       onSearchPress();
     }
-  };
+  }, [isExpanded, collapseFilter, searchFadeAnim, onSearchPress]);
 
-  const handleCloseSearch = () => {
+  const handleCloseSearch = useCallback(() => {
     setSearchText('');
     if (onSearchTextChange) {
       onSearchTextChange('');
@@ -205,18 +206,18 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       setIsSearchMode(false);
       setIsSearchVisible(false);
     });
-  };
+  }, [onSearchTextChange, searchFadeAnim, expandAnim]);
 
-  const handleOtherButtonPress = (callback?: () => void) => {
+  const handleOtherButtonPress = useCallback((callback?: () => void) => {
     if (isExpanded) {
       collapseFilter();
     }
     if (callback) {
       callback();
     }
-  };
+  }, [isExpanded, collapseFilter]);
 
-  const handleSortPress = (field: SortField) => {
+  const handleSortPress = useCallback((field: SortField) => {
     let newDirection: SortDirection;
     
     if (selectedField === field) {
@@ -240,9 +241,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     }
     
     collapseFilter();
-  };
+  }, [selectedField, sortDirections, onSortChange, collapseFilter]);
 
-  const handleAIPress = () => {
+  const handleAIPress = useCallback(() => {
     if (isExpanded) {
       collapseFilter();
     }
@@ -268,9 +269,9 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     if (onAIPress) {
       onAIPress();
     }
-  };
+  }, [isExpanded, isSearchMode, collapseFilter, handleCloseSearch, setIsMenuOpen, setIsAIPromptOpen, aiPromptOpacity, menuOverlayOpacity, onAIPress]);
 
-  const handleCalendarPress = () => {
+  const handleCalendarPress = useCallback(() => {
     if (isExpanded) {
       collapseFilter();
     }
@@ -281,9 +282,10 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     if (onCalendarPress) {
       onCalendarPress();
     }
-  };
+  }, [isExpanded, isSearchMode, collapseFilter, handleCloseSearch, onCalendarPress]);
 
-  const filterStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  // Memoize filter style to prevent recreation on every render
+  const filterStyle: Animated.WithAnimatedObject<ViewStyle> = useMemo(() => ({
     width: expandAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [46, 140]
@@ -298,18 +300,21 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       outputRange: [23, 12]
     }),
     overflow: 'hidden'
-  };
+  }), [expandAnim, colors.secondaryShade]);
+
+  // Memoize search container style
+  const searchContainerStyle = useMemo(() => [
+    styles.searchContainer,
+    {
+      opacity: searchFadeAnim,
+      width: DEVICE_WIDTH * 0.8,
+    }
+  ], [styles.searchContainer, searchFadeAnim]);
 
   if (isSearchVisible) {
     return (
       <Animated.View 
-        style={[
-          styles.searchContainer,
-          {
-            opacity: searchFadeAnim,
-            width: DEVICE_WIDTH * 0.8,
-          }
-        ]}
+        style={searchContainerStyle}
       >
         <View style={styles.searchInputRow}>
           <Feather 
@@ -350,17 +355,20 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     );
   }
 
+  // Memoize main container style
+  const mainContainerStyle = useMemo(() => [
+    styles.container,
+    {
+      opacity: searchFadeAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0],
+      })
+    }
+  ], [styles.container, searchFadeAnim]);
+
   return (
     <Animated.View 
-      style={[
-        styles.container,
-        {
-          opacity: searchFadeAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0],
-          })
-        }
-      ]}
+      style={mainContainerStyle}
     >
       <CircleIconButton 
         iconName="sparkles" 

@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface SmallCircleSelectButtonProps {
   selected: boolean;
@@ -12,6 +14,9 @@ export function SmallCircleSelectButton({
   onPress,
   disabled = false
 }: SmallCircleSelectButtonProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+
   return (
     <TouchableOpacity 
       style={styles.container}
@@ -21,9 +26,10 @@ export function SmallCircleSelectButton({
     >
       <View style={[
         styles.outerCircle,
-        disabled && styles.disabledCircle
+        { borderColor: colors.unselectedText },
+        disabled && { borderColor: colors.secondaryShade, opacity: 0.5 }
       ]}>
-        {selected && <View style={styles.innerCircle} />}
+        {selected && <View style={[styles.innerCircle, { backgroundColor: colors.unselectedText }]} />}
       </View>
     </TouchableOpacity>
   );
@@ -41,18 +47,12 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#D5D4DD',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  disabledCircle: {
-    borderColor: '#F0F0F0',
-    opacity: 0.5,
   },
   innerCircle: {
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#D5D4DD',
   },
 }); 

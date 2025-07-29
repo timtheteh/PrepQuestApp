@@ -12,8 +12,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Svg, Path } from 'react-native-svg';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
-const EllipseForNavBar = () => (
+const EllipseForNavBar = ({ fillColor }: { fillColor: string }) => (
   <Svg 
     width={133} 
     height={38} 
@@ -25,7 +28,7 @@ const EllipseForNavBar = () => (
       left: -0.5
     }}
   >
-    <Path d="M133 0C93.4009 0 103.227 38 66.5 38C29.7731 38 39.5991 0 0 0C39.5991 0 29.7731 0 66.5 0C103.227 0 93.4009 0 133 0Z" fill="white" />
+    <Path d="M133 0C93.4009 0 103.227 38 66.5 38C29.7731 38 39.5991 0 0 0C39.5991 0 29.7731 0 66.5 0C103.227 0 93.4009 0 133 0Z" fill={fillColor} />
   </Svg>
 );
 
@@ -79,10 +82,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { name: 'Account', icon: 'person', route: '/(tabs)/account', iconType: 'ionicons' },
-  { name: 'Decks', icon: 'library-books', route: '/(tabs)', iconType: 'material' },
-  { name: 'Statistics', icon: 'stats-chart', route: '/(tabs)/statistics', iconType: 'ionicons' },
-  { name: 'Awards', icon: 'trophy', route: '/(tabs)/awards', iconType: 'ionicons' },
+  { name: 'account', icon: 'person', route: '/(tabs)/account', iconType: 'ionicons' },
+  { name: 'decks', icon: 'library-books', route: '/(tabs)', iconType: 'material' },
+  { name: 'statistics', icon: 'stats-chart', route: '/(tabs)/statistics', iconType: 'ionicons' },
+  { name: 'awards', icon: 'trophy', route: '/(tabs)/awards', iconType: 'ionicons' },
 ];
 
 export interface NavBarRef {
@@ -95,6 +98,9 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const slideAnimation = useSharedValue(1);
   const isFirstRender = useSharedValue(true);
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  const styles = createStyles(colors);
 
   // Move useAnimatedStyle hooks to top level
   const animatedStyle0 = useAnimatedStyle(() => {
@@ -241,7 +247,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     const isSelected = slideAnimation.value === 0;
     const backgroundColor = isFirstRender.value && !isSelected
       ? 'transparent'
-      : '#4F41D8';
+      : colors.brandColor2;
 
     return {
       transform: [
@@ -262,13 +268,13 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
       zIndex: 4
     };
-  }, []);
+  }, [colors.brandColor2]);
 
   const circleStyle1 = useAnimatedStyle(() => {
     const isSelected = slideAnimation.value === 1;
     const backgroundColor = isFirstRender.value && !isSelected
       ? 'transparent'
-      : '#4F41D8';
+      : colors.brandColor2;
 
     return {
       transform: [
@@ -289,13 +295,13 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
       zIndex: 4
     };
-  }, []);
+  }, [colors.brandColor2]);
 
   const circleStyle2 = useAnimatedStyle(() => {
     const isSelected = slideAnimation.value === 2;
     const backgroundColor = isFirstRender.value && !isSelected
       ? 'transparent'
-      : '#4F41D8';
+      : colors.brandColor2;
 
     return {
       transform: [
@@ -316,13 +322,13 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
       zIndex: 4
     };
-  }, []);
+  }, [colors.brandColor2]);
 
   const circleStyle3 = useAnimatedStyle(() => {
     const isSelected = slideAnimation.value === 3;
     const backgroundColor = isFirstRender.value && !isSelected
       ? 'transparent'
-      : '#4F41D8';
+      : colors.brandColor2;
 
     return {
       transform: [
@@ -343,7 +349,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       opacity: withSpring(isSelected ? 1 : 0, SPRING_CONFIG),
       zIndex: 4
     };
-  }, []);
+  }, [colors.brandColor2]);
 
   const resetAnimation = () => {
     if (Platform.OS === 'ios') {
@@ -449,25 +455,22 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     }
   };
 
-  // Add Chinese labels for nav items
+  // Get tab labels from string constants
   const getTabLabel = (name: string) => {
-    if (language === 'Chinese') {
-      switch (name) {
-        case 'Account': return '账户';
-        case 'Decks': return '卡片组';
-        case 'Statistics': return '统计';
-        case 'Awards': return '奖励';
-        default: return name;
-      }
+    const navItems = strings[language || 'English'].navItems;
+    
+    if (name === 'statistics') {
+      return navItems.stats;
     }
-    return name === 'Statistics' ? 'Stats' : name;
+    
+    return navItems[name as keyof typeof navItems] || name;
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <Animated.View style={getWhiteCircleStyle}>
-          <EllipseForNavBar />
+          <EllipseForNavBar fillColor={colors.background} />
         </Animated.View>
         {NAV_ITEMS.map((item, index) => {
           const IconComponent = getIconComponent(item);
@@ -519,10 +522,10 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
 
 NavBar.displayName = 'NavBar';
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     height: NAV_HEIGHT,
-    backgroundColor: '#4F41D8',
+    backgroundColor: colors.brandColor2,
     justifyContent: 'flex-end',
     paddingBottom: BOTTOM_SPACING,
     zIndex: 0,
@@ -547,7 +550,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   accountLabel: {
-    color: '#FFFFFF',
+    color: colors.background,
     fontSize: 16,
     fontFamily: 'Satoshi-Medium',
   }

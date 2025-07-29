@@ -88,6 +88,14 @@ export const strings: Record<string, any> = {
       dateAdded: 'Date Added',
       lastModified: 'Last Modified',
     },
+    // NavBar strings
+    navItems: {
+      account: 'Account',
+      decks: 'Decks',
+      statistics: 'Statistics',
+      awards: 'Awards',
+      stats: 'Stats',
+    },
   },
   Chinese: {
     // AddDeckModal strings
@@ -177,6 +185,14 @@ export const strings: Record<string, any> = {
       name: '名称',
       dateAdded: '添加日期',
       lastModified: '最近修改',
+    },
+    // NavBar strings
+    navItems: {
+      account: '账户',
+      decks: '卡片组',
+      statistics: '统计',
+      awards: '奖励',
+      stats: '统计',
     },
   },
 };

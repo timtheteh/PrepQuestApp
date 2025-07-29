@@ -15,6 +15,10 @@ import LottieView from 'lottie-react-native';
 import { Audio } from 'expo-av';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { prepareImageForUpload } from '../../utils/image';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { strings } from '@/constants/strings';
 
 interface CardContent {
   content: React.ReactNode;
@@ -57,6 +61,8 @@ const FlippableCardFlipArrowSize = 30;
 
 // Drawing Renderer Component for displaying saved drawings
 const DrawingRenderer = ({ drawingData, style }: { drawingData: { path: string; strokeWidth: number }[]; style?: ViewStyle }) => {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   return (
     <View style={[styles.drawingCanvas, style]}>
       <Svg style={StyleSheet.absoluteFill}>
@@ -64,7 +70,7 @@ const DrawingRenderer = ({ drawingData, style }: { drawingData: { path: string; 
           <Path
             key={index}
             d={pathData.path}
-            stroke="black"
+            stroke={colors.text}
             strokeWidth={pathData.strokeWidth}
             fill="none"
           />
@@ -88,6 +94,8 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   
   // History management for undo/redo
   const [history, setHistory] = useState<{ path: string; strokeWidth: number }[][]>([]);
@@ -304,7 +312,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
     <View style={[styles.drawingCanvas, style]}>
       {!hasDrawn && (
         <View style={styles.overlayTextContainer}>
-          <Text style={styles.overlayText}>{language === 'Chinese' ? '请在此绘图！' : 'Draw here!'}</Text>
+          <Text style={[styles.overlayText, { color: colors.unselectedText }]}>{strings[language].drawHere}</Text>
         </View>
       )}
       <Svg style={StyleSheet.absoluteFill}>
@@ -312,7 +320,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
           <Path
             key={index}
             d={pathData.path}
-            stroke="black"
+            stroke={colors.text}
             strokeWidth={pathData.strokeWidth}
             fill="none"
           />
@@ -320,7 +328,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
         {currentPath && !isEraserMode && (
           <Path
             d={currentPath}
-            stroke="black"
+            stroke={colors.text}
             strokeWidth={strokeWidth}
             fill="none"
           />
@@ -339,15 +347,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
 // Add display name for DrawingCanvas
 DrawingCanvas.displayName = 'DrawingCanvas';
 
-// Add language mappings for all overlay/instructional text
-const STRINGS = {
-  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
-  drawHere: { English: 'Draw here!', Chinese: '请在此绘图！' },
-  pressHoldMic: { English: 'Press & hold mic \nbutton to record', Chinese: '按住麦克风按钮录音' },
-  greatReplay: { English: 'Great! Click the replay\nbutton below to play\nthe recorded audio!', Chinese: '太棒了！点击下方按钮播放录音' },
-  clickToTakeOrUpload: { English: 'Click here to take\nyour picture or\nupload from library!', Chinese: '点击此处拍照或上传图片' },
-  chooseManual: { English: 'Choose your manual \noption above', Chinese: '请选择上方的手动选项' },
-};
+
 
 export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({ 
   style, 
@@ -385,7 +385,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   const [audioPosition, setAudioPosition] = useState(0);
   const audioSoundRef = useRef<Audio.Sound | null>(null);
   const { language } = useLanguage();
-  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
+  const { theme } = useTheme();
+  const colors = Colors[theme];
 
   // Listen for focus events to check if text was typed in modal
   useFocusEffect(
@@ -403,12 +404,12 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
           // Determine which side to update based on current flip state
           if (isFlipped) {
             setBackContent({
-              content: <Text style={[styles.contentText, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
+              content: <Text style={[styles.contentText, { color: colors.text }, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
               type: cardType
             });
           } else {
             setFrontContent({
-              content: <Text style={[styles.contentText, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
+              content: <Text style={[styles.contentText, { color: colors.text }, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
               type: cardType
             });
           }
@@ -673,17 +674,17 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     
     switch (effectiveCardType) {
       case 'text':
-        return STRINGS.typeHere[lang];
+        return strings[language].typeHere;
       case 'mic':
-        return hasAudioRecording ? STRINGS.greatReplay[lang] : STRINGS.pressHoldMic[lang];
+        return hasAudioRecording ? strings[language].greatReplay : strings[language].pressHoldMic;
       case 'marker':
-        return STRINGS.drawHere[lang];
+        return strings[language].drawHere;
       case 'camera':
-        return STRINGS.clickToTakeOrUpload[lang];
+        return strings[language].clickToTakeOrUpload;
       case 'none':
-        return STRINGS.chooseManual[lang];
+        return strings[language].chooseManual;
       default:
-        return STRINGS.chooseManual[lang];
+        return strings[language].chooseManual;
     }
   };
 
@@ -719,7 +720,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!');
+        alert(strings[language].photoLibraryPermissionError);
         return;
       }
 
@@ -758,7 +759,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      alert('Error selecting image. Please try again.');
+      alert(strings[language].imageSelectionError);
     }
   };
 
@@ -777,7 +778,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       
       if (status !== 'granted') {
-        alert('Sorry, we need camera permissions to make this work!');
+        alert(strings[language].cameraPermissionError);
         return;
       }
 
@@ -816,7 +817,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-      alert('Error taking photo. Please try again.');
+      alert(strings[language].photoCaptureError);
     }
   };
 
@@ -1018,7 +1019,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                 {cardType === 'marker' && isDrawingCanvasReady && (
                   <DrawingCanvas 
                     key={drawingCanvasKey}
-                    style={styles.drawingCanvasOverlay} 
+                    style={{
+                      ...styles.drawingCanvasOverlay,
+                      borderTopColor: colors.unselectedText,
+                      borderBottomColor: colors.unselectedText
+                    }}
                     isEraserMode={isEraserMode} 
                     onEraserModeChange={setIsEraserMode} 
                     strokeWidth={markerSize} 
@@ -1089,7 +1094,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                         style={styles.soundWaveAnimation}
                       />
                     ) : (
-                      <Text style={styles.overlayText}>{getOverlayText()}</Text>
+                      <Text style={[styles.overlayText, { color: colors.unselectedText }]}>{getOverlayText()}</Text>
                     )}
                     </View>
                     {(() => {
@@ -1115,7 +1120,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.micButton,
-                                pressed && styles.buttonPressed,
+                                { backgroundColor: colors.background },
+                                pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }],
                                 isRecording && styles.recordingButton
                             ]}
                             onPressIn={startRecording}
@@ -1126,7 +1132,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.replayButton,
-                                pressed && styles.buttonPressed
+                                { backgroundColor: colors.background },
+                                pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                             ]}
                             onPress={() => {
                                 const currentContent = isFlipped ? backContent : frontContent;
@@ -1138,14 +1145,14 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                               <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
                                 <Path 
                                   d="M8 5v14l11-7z" 
-                                  fill="black"
+                                  fill={colors.text}
                                   transform="rotate(0 12 12)"
                                 />
                               </Svg>
                             ) : (
                               <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
-                                <Rect x={7} y={5} width={4} height={14} rx={1.5} fill="black" />
-                                <Rect x={13} y={5} width={4} height={14} rx={1.5} fill="black" />
+                                <Rect x={7} y={5} width={4} height={14} rx={1.5} fill={colors.text} />
+                                <Rect x={13} y={5} width={4} height={14} rx={1.5} fill={colors.text} />
                               </Svg>
                             )}
                             </Pressable>
@@ -1160,7 +1167,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.micButton,
-                                pressed && styles.buttonPressed
+                                { backgroundColor: colors.background },
+                                pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                             ]}
                             onPress={pickImage}
                             >
@@ -1169,7 +1177,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.replayButton,
-                                pressed && styles.buttonPressed
+                                { backgroundColor: colors.background },
+                                pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                             ]}
                             onPress={takePhoto}
                             >
@@ -1202,7 +1211,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.micButton,
-                                pressed && styles.buttonPressed
+                                { backgroundColor: colors.background },
+                                pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                             ]}
                             onPress={pickImage}
                             >
@@ -1211,7 +1221,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.replayButton,
-                                pressed && styles.buttonPressed
+                                { backgroundColor: colors.background },
+                                pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                             ]}
                             onPress={takePhoto}
                             >
@@ -1221,11 +1232,12 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                                     <Pressable 
                                     style={({ pressed }) => [
                                         styles.micButton,
-                                        pressed && styles.buttonPressed
+                                        { backgroundColor: colors.background },
+                                        pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                                     ]}
                                     onPress={clearImage}
                                     >
-                                    <Ionicons name={'trash'} size={30} color={'#FF3B30'} />
+                                    <Ionicons name={'trash'} size={30} color={colors.alertColor} />
                                     </Pressable>
                             )}
                         </View>
@@ -1252,7 +1264,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                         <Pressable 
                         style={({ pressed }) => [
                             styles.micButton,
-                            pressed && styles.buttonPressed
+                            { backgroundColor: colors.background },
+                            pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                         ]}
                         onPress={pickImage}
                         >
@@ -1261,7 +1274,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                         <Pressable 
                         style={({ pressed }) => [
                             styles.replayButton,
-                            pressed && styles.buttonPressed
+                            { backgroundColor: colors.background },
+                            pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                         ]}
                         onPress={takePhoto}
                         >
@@ -1271,11 +1285,12 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             <Pressable 
                             style={({ pressed }) => [
                                 styles.micButton,
-                                pressed && styles.buttonPressed
+                                { backgroundColor: colors.background },
+                                pressed && [styles.buttonPressed, { backgroundColor: colors.secondaryShade }]
                             ]}
                             onPress={clearImage}
                             >
-                            <Ionicons name={'trash'} size={30} color={'#FF3B30'} />
+                            <Ionicons name={'trash'} size={30} color={colors.alertColor} />
                             </Pressable>
                         )}
                     </View>
@@ -1287,27 +1302,27 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       
       <Pressable onPress={handlePress} style={styles.pressableContainer}>
       <View style={styles.cardContainer}>
-        <Animated.View style={[styles.card, styles.frontCard, frontAnimatedStyle]}>
+        <Animated.View style={[styles.card, styles.frontCard, { backgroundColor: colors.secondaryShade }, frontAnimatedStyle]}>
           {/* Top Bar */}
-          <View style={styles.topBar}>
+          <View style={[styles.topBar, { backgroundColor: colors.secondaryShade }]}>
             {frontContentTitle && (
-              <Text style={styles.titleText}>{frontContentTitle}</Text>
+              <Text style={[styles.titleText, { color: colors.text }]}>{frontContentTitle}</Text>
             )}
           </View>
             {/* Empty Area Do not touch this*/}
             <View style={styles.mainContent} />
           
           {/* Bottom Bar */}
-          <View style={styles.bottomBar}>
+          <View style={[styles.bottomBar, { backgroundColor: colors.secondaryShade }]}>
               <FlippableCardFrontFlipArrow width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.frontFlipArrow}/>
           </View>
         </Animated.View>
         
-        <Animated.View style={[styles.card, styles.backCard, backAnimatedStyle]}>
+        <Animated.View style={[styles.card, styles.backCard, { backgroundColor: colors.secondaryShade }, backAnimatedStyle]}>
           {/* Top Bar */}
-          <View style={styles.topBar}>
+          <View style={[styles.topBar, { backgroundColor: colors.secondaryShade }]}>
             {backContentTitle && (
-              <Text style={styles.titleText}>{backContentTitle}</Text>
+              <Text style={[styles.titleText, { color: colors.text }]}>{backContentTitle}</Text>
             )}
           </View>
           
@@ -1315,7 +1330,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
             <View style={styles.mainContent} />
           
           {/* Bottom Bar */}
-          <View style={styles.bottomBar}>
+          <View style={[styles.bottomBar, { backgroundColor: colors.secondaryShade }]}>
               <FlippableCardBackFlipArrow width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.backFlipArrow}/>
           </View>
         </Animated.View>
@@ -1352,10 +1367,10 @@ const styles = StyleSheet.create({
     backfaceVisibility: 'hidden',
   },
   frontCard: {
-    backgroundColor: '#F8F8F8',
+    // Background color will be set dynamically
   },
   backCard: {
-    backgroundColor: '#F8F8F8',
+    // Background color will be set dynamically
   },
   topBar: {
     height: 45,
@@ -1363,7 +1378,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    backgroundColor: '#F8F8F8',
+    // Background color will be set dynamically
   },
   topBar2: {
     height: 70,
@@ -1376,10 +1391,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   titleText: {
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontWeight: '600',
     fontSize: 24,
-    color: '#000',
   },
   mainContent: {
     flex: 1,
@@ -1387,9 +1401,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contentText: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 24,
-    color: '#000',
     lineHeight: 24,
     textAlign: 'center',
   },
@@ -1400,7 +1413,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: 10,
-    backgroundColor: '#F8F8F8',
+    // Background color will be set dynamically
   },
   frontFlipArrow: {
     marginRight: '1%',
@@ -1441,9 +1454,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   overlayText: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 28,
-    color: '#D5D4DD',
     textAlign: 'center',
   },
   micButtonsContainer: {
@@ -1459,7 +1471,6 @@ const styles = StyleSheet.create({
   micButton: {
     width: 60,
     height: 60,
-    backgroundColor: 'white',
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1467,13 +1478,11 @@ const styles = StyleSheet.create({
   replayButton: {
     width: 60,
     height: 60,
-    backgroundColor: 'white',
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
   buttonPressed: {
-    backgroundColor: '#E8E8E8',
     transform: [{ scale: 0.95 }],
   },
   scrollContainer: {
@@ -1509,9 +1518,7 @@ const styles = StyleSheet.create({
   drawingCanvasOverlay: {
     flex: 1,
     borderTopWidth: 3,
-    borderTopColor: '#D5D4DD',
     borderBottomWidth: 3,
-    borderBottomColor: '#D5D4DD',
   },
   animationContainer: {
     position: 'absolute',

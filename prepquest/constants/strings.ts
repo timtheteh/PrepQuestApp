@@ -104,6 +104,17 @@ export const strings: Record<string, any> = {
     viewFlashcards: 'View Flashcard(s)',
     // DrawableOptionsRow strings
     clear: 'Clear',
+    // FlippableCard strings
+    typeHere: 'Type here!',
+    drawHere: 'Draw here!',
+    pressHoldMic: 'Press & hold mic \nbutton to record',
+    greatReplay: 'Great! Click the replay\nbutton below to play\nthe recorded audio!',
+    clickToTakeOrUpload: 'Click here to take\nyour picture or\nupload from library!',
+    chooseManual: 'Choose your manual \noption above',
+    cameraPermissionError: 'Sorry, we need camera permissions to make this work!',
+    photoLibraryPermissionError: 'Sorry, we need camera roll permissions to make this work!',
+    imageSelectionError: 'Error selecting image. Please try again.',
+    photoCaptureError: 'Error taking photo. Please try again.',
   },
   Chinese: {
     // AddDeckModal strings
@@ -210,5 +221,16 @@ export const strings: Record<string, any> = {
     viewFlashcards: '查看卡片',
     // DrawableOptionsRow strings
     clear: '清除',
+    // FlippableCard strings
+    typeHere: '请在此输入！',
+    drawHere: '请在此绘图！',
+    pressHoldMic: '按住麦克风按钮录音',
+    greatReplay: '太棒了！点击下方按钮播放录音',
+    clickToTakeOrUpload: '点击此处拍照或上传图片',
+    chooseManual: '请选择上方的手动选项',
+    cameraPermissionError: '抱歉，我们需要相机权限才能使用此功能！',
+    photoLibraryPermissionError: '抱歉，我们需要相册权限才能使用此功能！',
+    imageSelectionError: '选择图片时出错，请重试。',
+    photoCaptureError: '拍照时出错，请重试。',
   },
 };

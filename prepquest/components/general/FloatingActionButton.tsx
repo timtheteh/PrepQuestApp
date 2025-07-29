@@ -1,5 +1,5 @@
-import React, { ReactNode, useContext, useCallback, useMemo } from 'react';
-import { StyleSheet, TouchableOpacity, ViewProps , Animated } from 'react-native';
+import React, { ReactNode, useContext } from 'react';
+import { StyleSheet, TouchableOpacity, ViewProps, Animated } from 'react-native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
@@ -21,7 +21,6 @@ export const FloatingActionButton = React.memo(({
 }: FloatingActionButtonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const styles = createStyles(colors);
   
   const { 
     setIsMenuOpen, 
@@ -30,7 +29,7 @@ export const FloatingActionButton = React.memo(({
     addDeckOpacity 
   } = useContext(MenuContext);
 
-  const handlePress = useCallback(() => {
+  const handlePress = () => {
     if (disableOverlay) {
       if (onPress) {
         onPress();
@@ -57,18 +56,15 @@ export const FloatingActionButton = React.memo(({
         useNativeDriver: true,
       })
     ]).start();
-  }, [disableOverlay, onPress, setIsMenuOpen, setIsAddDeckOpen, menuOverlayOpacity, addDeckOpacity]);
-
-  // Memoize style object to prevent recreation
-  const buttonStyle = useMemo(() => [
-    styles.button, 
-    { backgroundColor: backgroundColor || colors.brandColor2 }, 
-    style
-  ], [styles.button, backgroundColor, colors.brandColor2, style]);
+  };
 
   return (
     <TouchableOpacity
-      style={buttonStyle}
+      style={[
+        styles.button, 
+        { backgroundColor: backgroundColor || colors.brandColor2 }, 
+        style
+      ]}
       onPress={handlePress}
       activeOpacity={0.8}
       {...props}
@@ -78,12 +74,11 @@ export const FloatingActionButton = React.memo(({
   );
 });
 
-const createStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   button: {
     width: 67,
     height: 67,
     borderRadius: 67 / 2,
-    backgroundColor: colors.brandColor2,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',

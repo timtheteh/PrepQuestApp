@@ -1,6 +1,8 @@
+import React, { ReactNode, useContext, useCallback, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, ViewProps , Animated } from 'react-native';
-import { ReactNode, useContext } from 'react';
 import { MenuContext } from '@/contexts/MenuContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface FloatingActionButtonProps extends ViewProps {
   onPress?: () => void;
@@ -9,14 +11,18 @@ interface FloatingActionButtonProps extends ViewProps {
   backgroundColor?: string;
 }
 
-export function FloatingActionButton({ 
+export const FloatingActionButton = React.memo(({ 
   style, 
   onPress,
   children,
   disableOverlay = false,
-  backgroundColor = '#4F41D8',
+  backgroundColor,
   ...props 
-}: FloatingActionButtonProps) {
+}: FloatingActionButtonProps) => {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  const styles = createStyles(colors);
+  
   const { 
     setIsMenuOpen, 
     setIsAddDeckOpen, 
@@ -24,7 +30,7 @@ export function FloatingActionButton({
     addDeckOpacity 
   } = useContext(MenuContext);
 
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     if (disableOverlay) {
       if (onPress) {
         onPress();
@@ -51,11 +57,18 @@ export function FloatingActionButton({
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, [disableOverlay, onPress, setIsMenuOpen, setIsAddDeckOpen, menuOverlayOpacity, addDeckOpacity]);
+
+  // Memoize style object to prevent recreation
+  const buttonStyle = useMemo(() => [
+    styles.button, 
+    { backgroundColor: backgroundColor || colors.brandColor2 }, 
+    style
+  ], [styles.button, backgroundColor, colors.brandColor2, style]);
 
   return (
     <TouchableOpacity
-      style={[styles.button, { backgroundColor }, style]}
+      style={buttonStyle}
       onPress={handlePress}
       activeOpacity={0.8}
       {...props}
@@ -63,14 +76,14 @@ export function FloatingActionButton({
       {children}
     </TouchableOpacity>
   );
-}
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   button: {
     width: 67,
     height: 67,
     borderRadius: 67 / 2,
-    backgroundColor: '#4F41D8',
+    backgroundColor: colors.brandColor2,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -9,30 +9,37 @@ interface GreyOverlayBackgroundProps {
   onPress?: () => void;
 }
 
-export function GreyOverlayBackground({ 
+export const GreyOverlayBackground = React.memo(({ 
   visible,
   opacity,
   onPress
-}: GreyOverlayBackgroundProps) {
+}: GreyOverlayBackgroundProps) => {
   const handlePress = useCallback(() => {
     if (onPress) {
       onPress();
     }
   }, [onPress]);
 
+  // Memoize style objects to prevent recreation - MUST be before conditional return
+  const baseStyle = useMemo(() => styles.overlay, []);
+  const animatedStyle = useMemo(() => 
+    opacity ? { opacity } : { opacity: 0 }, 
+    [opacity]
+  );
+
+  // Memoize combined style array
+  const combinedStyle = useMemo(() => [baseStyle, animatedStyle], [baseStyle, animatedStyle]);
+
   if (!visible) {
     return null;
   }
 
-  const baseStyle = styles.overlay;
-  const animatedStyle = opacity ? { opacity } : { opacity: 0 };
-
   return (
     <TouchableWithoutFeedback onPress={handlePress}>
-      <Animated.View style={[baseStyle, animatedStyle]} />
+      <Animated.View style={combinedStyle} />
     </TouchableWithoutFeedback>
   );
-}
+});
 
 const styles = StyleSheet.create({
   overlay: {

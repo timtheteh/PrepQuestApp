@@ -88,15 +88,15 @@ export const DifficultyToggleRow = React.memo(({
     colorAnim.interpolate({
       inputRange: [0, 1, 2, 3, 4],
       outputRange: idx === 0
-        ? ['#FFFFFF', '#D5D4DD', '#D5D4DD', '#D5D4DD', '#D5D4DD']
+        ? [colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText]
         : idx === 1
-        ? ['#D5D4DD', '#FFFFFF', '#D5D4DD', '#D5D4DD', '#D5D4DD']
+        ? [colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText]
         : idx === 2
-        ? ['#D5D4DD', '#D5D4DD', '#FFFFFF', '#D5D4DD', '#D5D4DD']
+        ? [colors.unselectedText, colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText]
         : idx === 3
-        ? ['#D5D4DD', '#D5D4DD', '#D5D4DD', '#000000', '#D5D4DD']
-        : ['#D5D4DD', '#D5D4DD', '#D5D4DD', '#D5D4DD', '#FFFFFF']
-    }), [colorAnim]);
+        ? [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.text, colors.unselectedText]
+        : [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.background]
+    }), [colorAnim, colors]);
 
   return (
     <View style={[styles.container, { width: containerWidth }, style]} {...props}>

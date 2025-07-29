@@ -68,6 +68,14 @@ export const strings: Record<string, any> = {
     // BottomTextInputModal strings
     editDeckName: 'Edit deck name',
     done: 'Done',
+    // DifficultyToggleRow strings
+    difficultyOptions: {
+      default: 'Default',
+      again: 'Again',
+      hard: 'Hard',
+      good: 'Good',
+      easy: 'Easy',
+    },
   },
   Chinese: {
     // AddDeckModal strings
@@ -138,5 +146,13 @@ export const strings: Record<string, any> = {
     // BottomTextInputModal strings
     editDeckName: '编辑卡组名称',
     done: '完成',
+    // DifficultyToggleRow strings
+    difficultyOptions: {
+      default: '默认',
+      again: '重来',
+      hard: '困难',
+      good: '良好',
+      easy: '简单',
+    },
   },
 };

@@ -1,5 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle, ViewProps } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { strings } from '@/constants/strings';
 
 interface DifficultyToggleRowProps extends ViewProps {
   onToggle?: (selectedIndex: number) => void;
@@ -8,15 +12,26 @@ interface DifficultyToggleRowProps extends ViewProps {
   language?: string;
 }
 
-export function DifficultyToggleRow({
+export const DifficultyToggleRow = React.memo(({
   onToggle,
   initialIndex = 0,
   optionLabelStyle,
   style,
   language,
   ...props
-}: DifficultyToggleRowProps) {
-  const options = language === 'Chinese' ? ["默认", "重来", "困难", "良好", "简单"] : ["Default", "Again", "Hard", "Good", "Easy"];
+}: DifficultyToggleRowProps) => {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  const styles = createStyles(colors);
+  
+  const options = useMemo(() => [
+    strings[language || 'English'].difficultyOptions.default,
+    strings[language || 'English'].difficultyOptions.again,
+    strings[language || 'English'].difficultyOptions.hard,
+    strings[language || 'English'].difficultyOptions.good,
+    strings[language || 'English'].difficultyOptions.easy,
+  ], [language]);
+  
   const { width: windowWidth } = useWindowDimensions();
   const [selectedIndex, setSelectedIndex] = useState(initialIndex);
   const positionAnim = useRef(new Animated.Value(initialIndex)).current;
@@ -24,8 +39,8 @@ export function DifficultyToggleRow({
 
   // The toggle should fill the width of its container
   // We'll use 92% of the window width minus some padding for the statistics page
-  const containerWidth = windowWidth - 32;
-  const segmentWidth = containerWidth / 5;
+  const containerWidth = useMemo(() => windowWidth - 32, [windowWidth]);
+  const segmentWidth = useMemo(() => containerWidth / 5, [containerWidth]);
 
   useEffect(() => {
     Animated.timing(positionAnim, {
@@ -42,12 +57,12 @@ export function DifficultyToggleRow({
     }).start();
   }, [selectedIndex]);
 
-  const handlePress = (index: number) => {
+  const handlePress = useCallback((index: number) => {
     if (index !== selectedIndex) {
       setSelectedIndex(index);
       onToggle?.(index);
     }
-  };
+  }, [selectedIndex, onToggle]);
 
   // Animated highlight position
   const translateX = positionAnim.interpolate({
@@ -56,20 +71,20 @@ export function DifficultyToggleRow({
   });
 
   // Animated background color for toggleBackground
-  const colorRange = [
+  const colorRange = useMemo(() => [
     '#44B88A', // index 0
     '#F8696B', // index 1
     '#FA9473', // index 2
     '#FFEB84', // index 3
     '#98CE7F', // index 4
-  ];
-  const interpolatedColor = positionAnim.interpolate({
+  ], []);
+  const interpolatedColor = useMemo(() => positionAnim.interpolate({
     inputRange: [0, 1, 2, 3, 4],
     outputRange: colorRange,
-  });
+  }), [positionAnim, colorRange]);
 
   // Animated text color for each option
-  const getTextColor = (idx: number) =>
+  const getTextColor = useCallback((idx: number) =>
     colorAnim.interpolate({
       inputRange: [0, 1, 2, 3, 4],
       outputRange: idx === 0
@@ -81,7 +96,7 @@ export function DifficultyToggleRow({
         : idx === 3
         ? ['#D5D4DD', '#D5D4DD', '#D5D4DD', '#000000', '#D5D4DD']
         : ['#D5D4DD', '#D5D4DD', '#D5D4DD', '#D5D4DD', '#FFFFFF']
-    });
+    }), [colorAnim]);
 
   return (
     <View style={[styles.container, { width: containerWidth }, style]} {...props}>
@@ -110,12 +125,12 @@ export function DifficultyToggleRow({
       </View>
     </View>
   );
-}
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     height: 26,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: colors.secondaryShade,
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -140,6 +155,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
   },
 }); 

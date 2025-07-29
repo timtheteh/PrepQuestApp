@@ -96,6 +96,9 @@ export const strings: Record<string, any> = {
       awards: 'Awards',
       stats: 'Stats',
     },
+    // SlidingMenu strings
+    viewFolders: 'View Folders',
+    viewFavorites: 'View Favorites',
   },
   Chinese: {
     // AddDeckModal strings
@@ -194,5 +197,8 @@ export const strings: Record<string, any> = {
       awards: '奖励',
       stats: '统计',
     },
+    // SlidingMenu strings
+    viewFolders: '查看文件夹',
+    viewFavorites: '查看收藏',
   },
 };

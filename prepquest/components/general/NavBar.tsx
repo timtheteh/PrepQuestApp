@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, forwardRef , useCallback } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef , useCallback, useMemo } from 'react';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Text, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Link, usePathname } from 'expo-router';
@@ -93,7 +93,7 @@ export interface NavBarRef {
   setDecksTab: () => void;
 }
 
-export const NavBar = forwardRef<NavBarRef>((_, ref) => {
+export const NavBar = React.memo(forwardRef<NavBarRef>((_, ref) => {
   const pathname = usePathname();
   const slideAnimation = useSharedValue(1);
   const isFirstRender = useSharedValue(true);
@@ -392,9 +392,21 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     }
   }, []);
 
+  // Memoize icon component mapping to prevent recreation
   const getIconComponent = useCallback((item: NavItem) => {
     return item.iconType === 'material' ? MaterialIcons : Ionicons;
   }, []);
+
+  // Memoize tab label function to prevent recreation
+  const getTabLabel = useCallback((name: string) => {
+    const navItems = strings[language || 'English'].navItems;
+    
+    if (name === 'statistics') {
+      return navItems.stats;
+    }
+    
+    return navItems[name as keyof typeof navItems] || name;
+  }, [language]);
 
   const getWhiteCircleStyle = useAnimatedStyle(() => {
     const numTabs = 4;
@@ -440,7 +452,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     };
   }, []);
 
-  const handleTabPress = (index: number) => {
+  const handleTabPress = useCallback((index: number) => {
     if (isFirstRender.value) {
       isFirstRender.value = false;
     }
@@ -453,18 +465,22 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
     }
-  };
+  }, [isFirstRender, slideAnimation]);
 
-  // Get tab labels from string constants
-  const getTabLabel = (name: string) => {
-    const navItems = strings[language || 'English'].navItems;
-    
-    if (name === 'statistics') {
-      return navItems.stats;
-    }
-    
-    return navItems[name as keyof typeof navItems] || name;
-  };
+
+
+  // Memoize animated styles arrays to prevent recreation
+  const animatedStyles = useMemo(() => [
+    animatedStyle0, animatedStyle1, animatedStyle2, animatedStyle3
+  ], [animatedStyle0, animatedStyle1, animatedStyle2, animatedStyle3]);
+
+  const labelAnimatedStyles = useMemo(() => [
+    labelAnimatedStyle0, labelAnimatedStyle1, labelAnimatedStyle2, labelAnimatedStyle3
+  ], [labelAnimatedStyle0, labelAnimatedStyle1, labelAnimatedStyle2, labelAnimatedStyle3]);
+
+  const circleStyles = useMemo(() => [
+    circleStyle0, circleStyle1, circleStyle2, circleStyle3
+  ], [circleStyle0, circleStyle1, circleStyle2, circleStyle3]);
 
   return (
     <View style={styles.container}>
@@ -477,9 +493,9 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
           const isActive = pathname === item.route;
           
           // Get the correct animated styles based on index
-          const animatedStyle = [animatedStyle0, animatedStyle1, animatedStyle2, animatedStyle3][index];
-          const labelAnimatedStyle = [labelAnimatedStyle0, labelAnimatedStyle1, labelAnimatedStyle2, labelAnimatedStyle3][index];
-          const circleStyle = [circleStyle0, circleStyle1, circleStyle2, circleStyle3][index];
+          const animatedStyle = animatedStyles[index];
+          const labelAnimatedStyle = labelAnimatedStyles[index];
+          const circleStyle = circleStyles[index];
           
           return (
             <Link
@@ -518,7 +534,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       </View>
     </View>
   );
-});
+}));
 
 NavBar.displayName = 'NavBar';
 

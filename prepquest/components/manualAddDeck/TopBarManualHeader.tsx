@@ -9,6 +9,8 @@ import MicIcon from '@/assets/icons/micIcon.svg';
 import MicIconWhite from '@/assets/icons/micIconWhite.svg';
 import TextIcon from '@/assets/icons/textIcon.svg';
 import TextIconWhite from '@/assets/icons/textIconWhite.svg';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 type ButtonType = 'camera' | 'marker' | 'mic' | 'text' | 'none';
 
@@ -29,6 +31,8 @@ export function TopBarManualHeader({
   selectedButton: externalSelectedButton,
   onButtonChange
 }: TopBarManualHeaderProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const [internalSelectedButton, setInternalSelectedButton] = useState<ButtonType>('none');
   
   // Use external state if provided, otherwise use internal state
@@ -64,25 +68,25 @@ export function TopBarManualHeader({
         Icon={renderIcon(CameraIconFilled, CameraIconFilledWhite, 'camera')}
         size={30}
         onPress={() => handlePress('camera', onCameraPress)}
-        style={selectedButton === 'camera' ? styles.selectedButton : undefined}
+        style={selectedButton === 'camera' ? { backgroundColor: colors.brandColor2 } : undefined}
       />
       <CircleSVGIconButton
         Icon={renderIcon(MarkerIcon, MarkerIconWhite, 'marker')}
         size={25}
         onPress={() => handlePress('marker', onMarkerPress)}
-        style={selectedButton === 'marker' ? styles.selectedButton : undefined}
+        style={selectedButton === 'marker' ? { backgroundColor: colors.brandColor2 } : undefined}
       />
       <CircleSVGIconButton
         Icon={renderIcon(MicIcon, MicIconWhite, 'mic')}
         size={25}
         onPress={() => handlePress('mic', onMicPress)}
-        style={selectedButton === 'mic' ? styles.selectedButton : undefined}
+        style={selectedButton === 'mic' ? { backgroundColor: colors.brandColor2 } : undefined}
       />
       <CircleSVGIconButton
         Icon={renderIcon(TextIcon, TextIconWhite, 'text')}
         size={30}
         onPress={() => handlePress('text', onTextPress)}
-        style={selectedButton === 'text' ? styles.selectedButton : undefined}
+        style={selectedButton === 'text' ? { backgroundColor: colors.brandColor2 } : undefined}
       />
     </View>
   );
@@ -95,6 +99,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedButton: {
-    backgroundColor: '#4F41D8',
+    // Background color will be set dynamically
   },
 }); 

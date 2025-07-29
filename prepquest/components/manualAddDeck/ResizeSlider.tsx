@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet, PanResponder, Animated } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 const TRACK_WIDTH = 100;
 const THUMB_SIZE = 18;
@@ -12,6 +14,8 @@ interface ResizeSliderProps {
 }
 
 export function ResizeSlider({ onValueChange, initialValue = 0.5 }: ResizeSliderProps) {
+    const { theme } = useTheme();
+    const colors = Colors[theme];
     const [sliderValue, setSliderValue] = useState(initialValue * (TRACK_WIDTH - THUMB_SIZE));
     const pan = useRef(new Animated.Value(sliderValue)).current;
     
@@ -61,17 +65,17 @@ export function ResizeSlider({ onValueChange, initialValue = 0.5 }: ResizeSlider
 
     return (
         <View style={styles.sliderContainer}>
-            <View style={styles.endCircleSmall} />
-            <View style={styles.track}>
+            <View style={[styles.endCircleSmall, { backgroundColor: colors.text }]} />
+            <View style={[styles.track, { backgroundColor: colors.text }]}>
                 <Animated.View
                     style={[
                         styles.thumb,
-                        { transform: [{ translateX: pan }] },
+                        { backgroundColor: colors.brandColor2, transform: [{ translateX: pan }] },
                     ]}
                     {...panResponder.panHandlers}
                 />
             </View>
-            <View style={styles.endCircleLarge} />
+            <View style={[styles.endCircleLarge, { backgroundColor: colors.text }]} />
         </View>
     );
 }
@@ -85,12 +89,10 @@ const styles = StyleSheet.create({
     track: {
         width: TRACK_WIDTH,
         height: 2.5,
-        backgroundColor: 'black',
     },
     thumb: {
         width: THUMB_SIZE,
         height: THUMB_SIZE,
-        backgroundColor: '#4F41D8',
         position: 'absolute',
         top: -(THUMB_SIZE / 2) + 1.25,
     },
@@ -98,12 +100,10 @@ const styles = StyleSheet.create({
         width: END_CIRCLE_SMALL_SIZE,
         height: END_CIRCLE_SMALL_SIZE,
         borderRadius: END_CIRCLE_SMALL_SIZE / 2,
-        backgroundColor: 'black',
     },
     endCircleLarge: {
         width: END_CIRCLE_LARGE_SIZE,
         height: END_CIRCLE_LARGE_SIZE,
         borderRadius: END_CIRCLE_LARGE_SIZE / 2,
-        backgroundColor: 'black',
     },
 }); 

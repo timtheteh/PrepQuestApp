@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated, Dimensions, ViewStyle } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface AddViewToggleProps {
   onToggle?: (option: 'add' | 'view') => void;
@@ -16,6 +20,8 @@ export function AddViewToggle({
   style
 }: AddViewToggleProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const [internalSelected, setInternalSelected] = useState<'add' | 'view'>(initialState);
   const translateX = useState(new Animated.Value(initialState === 'add' ? 0 : 1))[0];
   const screenWidth = Dimensions.get('window').width;
@@ -73,9 +79,9 @@ export function AddViewToggle({
         <View style={styles.textContainer}>
           <Text style={[
             styles.text,
-            selected === 'add' ? styles.selectedText : styles.unselectedText
+            { color: selected === 'add' ? colors.text : colors.unselectedText }
           ]}>
-            {language === 'Chinese' ? '添加卡片' : 'Add Flashcard(s)'}
+            {strings[language].addFlashcards}
           </Text>
         </View>
       </TouchableOpacity>
@@ -86,9 +92,9 @@ export function AddViewToggle({
         <View style={styles.textContainer}>
           <Text style={[
             styles.text,
-            selected === 'view' ? styles.selectedText : styles.unselectedText
+            { color: selected === 'view' ? colors.text : colors.unselectedText }
           ]}>
-            {language === 'Chinese' ? '查看卡片' : 'View Flashcard(s)'}
+            {strings[language].viewFlashcards}
           </Text>
         </View>
       </TouchableOpacity>
@@ -100,7 +106,7 @@ export function AddViewToggle({
           }
         ]}
       >
-        <View style={styles.staticUnderline} />
+        <View style={[styles.staticUnderline, { backgroundColor: colors.brandColor2 }]} />
       </Animated.View>
     </View>
   );
@@ -122,14 +128,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 20,
-  },
-  selectedText: {
-    color: '#000000',
-  },
-  unselectedText: {
-    color: '#D5D4DD',
   },
   underlineContainer: {
     position: 'absolute',
@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
   },
   staticUnderline: {
     height: 2,
-    backgroundColor: '#4F41D8',
     width: '100%',
   },
 }); 

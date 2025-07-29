@@ -99,6 +99,11 @@ export const strings: Record<string, any> = {
     // SlidingMenu strings
     viewFolders: 'View Folders',
     viewFavorites: 'View Favorites',
+    // AddViewToggle strings
+    addFlashcards: 'Add Flashcard(s)',
+    viewFlashcards: 'View Flashcard(s)',
+    // DrawableOptionsRow strings
+    clear: 'Clear',
   },
   Chinese: {
     // AddDeckModal strings
@@ -200,5 +205,10 @@ export const strings: Record<string, any> = {
     // SlidingMenu strings
     viewFolders: '查看文件夹',
     viewFavorites: '查看收藏',
+    // AddViewToggle strings
+    addFlashcards: '添加卡片',
+    viewFlashcards: '查看卡片',
+    // DrawableOptionsRow strings
+    clear: '清除',
   },
 };

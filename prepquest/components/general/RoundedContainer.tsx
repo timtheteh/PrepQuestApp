@@ -1,5 +1,8 @@
 import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface RoundedContainerProps extends ViewProps {
   leftLabel: string;
@@ -11,7 +14,7 @@ interface RoundedContainerProps extends ViewProps {
   disableAnimation?: boolean;
 }
 
-export function RoundedContainer({ 
+export const RoundedContainer = memo(({ 
   style, 
   leftLabel,
   leftLabelStyle,
@@ -21,14 +24,25 @@ export function RoundedContainer({
   position,
   disableAnimation = false,
   ...props 
-}: RoundedContainerProps) {
+}: RoundedContainerProps) => {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  
   const isControlled = position !== undefined;
   const [isRightSide, setIsRightSide] = useState(initialPosition === 'right');
   const positionAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
   const colorAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
   const { width } = useWindowDimensions();
-  const containerWidth = width - 32; // Accounting for parent padding
-  const slideDistance = containerWidth / 2;
+  
+  // Memoize expensive calculations
+  const containerWidth = useMemo(() => width - 32, [width]);
+  const slideDistance = useMemo(() => containerWidth / 2, [containerWidth]);
+
+  // Memoize animation config to prevent recreation on every render
+  const animationConfig = useMemo(() => ({
+    duration: 300,
+    easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+  }), []);
 
   // Animate when position prop changes (controlled)
   useEffect(() => {
@@ -39,85 +53,98 @@ export function RoundedContainer({
         positionAnim.setValue(toValue);
         colorAnim.setValue(toValue);
       } else {
-        const animationConfig = {
-          toValue,
-          duration: 300,
-          easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        };
         Animated.parallel([
           Animated.timing(positionAnim, {
             ...animationConfig,
+            toValue,
             useNativeDriver: true,
           }),
           Animated.timing(colorAnim, {
             ...animationConfig,
+            toValue,
             useNativeDriver: false,
           })
         ]).start();
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [position, disableAnimation]);
+  }, [position, disableAnimation, animationConfig]);
 
-  const togglePosition = () => {
+  // Memoize the toggle function to prevent unnecessary re-renders
+  const togglePosition = useCallback(() => {
     if (isControlled) {
       onToggle?.(!(position === 'right'));
       return;
     }
     const toValue = isRightSide ? 0 : 1;
     setIsRightSide(!isRightSide);
-    const animationConfig = {
-      toValue,
-      duration: 300,
-      easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-    };
     Animated.parallel([
       Animated.timing(positionAnim, {
         ...animationConfig,
+        toValue,
         useNativeDriver: true,
       }),
       Animated.timing(colorAnim, {
         ...animationConfig,
+        toValue,
         useNativeDriver: false,
       })
     ]).start(() => {
       onToggle?.(!isRightSide);
     });
-  };
+  }, [isControlled, position, onToggle, isRightSide, positionAnim, colorAnim, animationConfig]);
 
-  const translateX = positionAnim.interpolate({
+  // Memoize interpolated values to prevent recalculation on every render
+  const translateX = useMemo(() => positionAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, slideDistance],
-  });
+  }), [positionAnim, slideDistance]);
 
-  const leftTextColor = colorAnim.interpolate({
+  const leftTextColor = useMemo(() => colorAnim.interpolate({
     inputRange: [0, 0.4, 0.6, 1],
-    outputRange: ['#FFFFFF', '#FFFFFF', '#D5D4DD', '#D5D4DD']
-  });
+    outputRange: [colors.background, colors.background, colors.unselectedText, colors.unselectedText]
+  }), [colorAnim, colors.background, colors.unselectedText]);
 
-  const rightTextColor = colorAnim.interpolate({
+  const rightTextColor = useMemo(() => colorAnim.interpolate({
     inputRange: [0, 0.4, 0.6, 1],
-    outputRange: ['#D5D4DD', '#D5D4DD', '#FFFFFF', '#FFFFFF']
-  });
+    outputRange: [colors.unselectedText, colors.unselectedText, colors.background, colors.background]
+  }), [colorAnim, colors.unselectedText, colors.background]);
+
+  // Memoize styles to prevent recreation on every render
+  const containerStyle = useMemo(() => [
+    styles.container, 
+    { backgroundColor: colors.secondaryShade }, 
+    style
+  ], [colors.secondaryShade, style]);
+
+  const toggleBackgroundStyle = useMemo(() => [
+    styles.toggleBackground,
+    { backgroundColor: colors.brandColor2, transform: [{ translateX }] }
+  ], [colors.brandColor2, translateX]);
+
+  const leftTextStyle = useMemo(() => [
+    leftLabelStyle ? leftLabelStyle : styles.label, 
+    { color: leftTextColor }
+  ], [leftLabelStyle, leftTextColor]);
+
+  const rightTextStyle = useMemo(() => [
+    styles.label, 
+    { color: rightTextColor }
+  ], [rightTextColor]);
 
   return (
     <TouchableWithoutFeedback onPress={togglePosition}>
-      <View style={[styles.container, style]} {...props}>
+      <View style={containerStyle} {...props}>
         <View style={styles.innerContainer}>
-          <Animated.View 
-            style={[
-              styles.toggleBackground,
-              { transform: [{ translateX }] }
-            ]} 
-          />
+          <Animated.View style={toggleBackgroundStyle} />
           <View style={styles.labelContainer}>
             <View style={[styles.labelSection, styles.leftSection]}>
-              <Animated.Text style={[leftLabelStyle ? leftLabelStyle : styles.label, { color: leftTextColor }]}>
+              <Animated.Text style={leftTextStyle}>
                 {leftLabel}
               </Animated.Text>
             </View>
             <View style={[styles.labelSection, styles.rightSection]}>
-              <Animated.Text style={[styles.label, { color: rightTextColor }]}>
+              <Animated.Text style={rightTextStyle}>
                 {rightLabel}
               </Animated.Text>
             </View>
@@ -126,13 +153,14 @@ export function RoundedContainer({
       </View>
     </TouchableWithoutFeedback>
   );
-}
+});
+
+RoundedContainer.displayName = 'RoundedContainer';
 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
     height: 46,
-    backgroundColor: '#F8F8F8',
     borderRadius: 30,
     overflow: 'hidden',
   },
@@ -143,7 +171,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '50%',
     height: '100%',
-    backgroundColor: '#4F41D8',
     borderRadius: 30,
   },
   labelContainer: {
@@ -164,6 +191,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
   },
 }); 

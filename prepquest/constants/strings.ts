@@ -76,6 +76,18 @@ export const strings: Record<string, any> = {
       good: 'Good',
       easy: 'Easy',
     },
+    // HeaderIconButtons strings
+    searchPlaceholders: {
+      decks: 'Search for Decks',
+      folders: 'Search for Folders',
+      favorites: 'Search Favorites',
+      default: 'Search',
+    },
+    sortOptions: {
+      name: 'Name',
+      dateAdded: 'Date Added',
+      lastModified: 'Last Modified',
+    },
   },
   Chinese: {
     // AddDeckModal strings
@@ -153,6 +165,18 @@ export const strings: Record<string, any> = {
       hard: '困难',
       good: '良好',
       easy: '简单',
+    },
+    // HeaderIconButtons strings
+    searchPlaceholders: {
+      decks: '搜索卡片组',
+      folders: '搜索文件夹',
+      favorites: '搜索收藏',
+      default: '搜索',
+    },
+    sortOptions: {
+      name: '名称',
+      dateAdded: '添加日期',
+      lastModified: '最近修改',
     },
   },
 };

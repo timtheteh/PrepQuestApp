@@ -2,7 +2,7 @@ import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Anima
 import { ThemedText } from '@/components/general/ThemedText';
 import { ThemedView } from '@/components/general/ThemedView';
 import { Feather } from '@expo/vector-icons';
-import { HeaderIconButtons, HeaderIconButtonsRef, CALENDAR_TITLES } from '@/components/general/HeaderIconButtons';
+import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
 import { Title } from '@/components/general/Title';

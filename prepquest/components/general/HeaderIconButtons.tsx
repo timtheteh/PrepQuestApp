@@ -4,8 +4,11 @@ import { CircleIconButton } from './CircleIconButton';
 import Feather from '@expo/vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuContext } from '@/contexts/MenuContext';
-import { useRouter } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { Fonts } from '@/constants/Fonts';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export type PageType = 'decks' | 'folders' | 'favorites';
 
@@ -29,33 +32,13 @@ export interface HeaderIconButtonsRef {
 type SortDirection = 'asc' | 'desc';
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 
-const FIELD_LABELS: Record<SortField, string> = {
-  name: 'Name',
-  dateAdded: 'Date Added',
-  lastModified: 'Last Modified'
-};
-
-export const CALENDAR_TITLES: Record<PageType, string> = {
-  decks: 'Filter Decks based on\ndate added',
-  folders: 'Filter Folders based on\ndate added',
-  favorites: 'Filter Favorites based on\ndate added'
-};
-
 function getSearchPlaceholder(pageType: PageType, language: string) {
-  if (language === 'Chinese') {
-    switch (pageType) {
-      case 'decks': return '搜索卡片组';
-      case 'folders': return '搜索文件夹';
-      case 'favorites': return '搜索收藏';
-      default: return '搜索';
-    }
-  } else {
-    switch (pageType) {
-      case 'decks': return 'Search for Decks';
-      case 'folders': return 'Search for Folders';
-      case 'favorites': return 'Search Favorites';
-      default: return 'Search';
-    }
+  const searchPlaceholders = strings[language || 'English'].searchPlaceholders;
+  switch (pageType) {
+    case 'decks': return searchPlaceholders.decks;
+    case 'folders': return searchPlaceholders.folders;
+    case 'favorites': return searchPlaceholders.favorites;
+    default: return searchPlaceholders.default;
   }
 }
 
@@ -96,12 +79,14 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   const searchFadeAnim = useRef(new Animated.Value(0)).current;
 
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  const styles = createStyles(colors);
 
-  const searchPlaceholder = language === 'Chinese' ? '搜索卡片组' : 'Search decks';
   const sortOptions = [
-    { label: language === 'Chinese' ? '名称' : 'Name', value: 'name' },
-    { label: language === 'Chinese' ? '添加日期' : 'Date Added', value: 'dateAdded' },
-    { label: language === 'Chinese' ? '最近修改' : 'Last Modified', value: 'lastModified' },
+    { label: strings[language || 'English'].sortOptions.name, value: 'name' },
+    { label: strings[language || 'English'].sortOptions.dateAdded, value: 'dateAdded' },
+    { label: strings[language || 'English'].sortOptions.lastModified, value: 'lastModified' },
   ];
 
   // Update sort state when initial props change
@@ -307,7 +292,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       inputRange: [0, 1],
       outputRange: [46, 184]
     }),
-    backgroundColor: '#F8F8F8',
+    backgroundColor: colors.secondaryShade,
     borderRadius: expandAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [23, 12]
@@ -330,7 +315,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
           <Feather 
             name="search" 
             size={24} 
-            color="#D5D4DD" 
+            color={colors.unselectedText} 
             style={styles.searchIcon}
           />
           <TextInput
@@ -356,7 +341,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
               <Ionicons
                 name={Platform.OS === 'ios' ? 'close-circle' : 'close-circle'}
                 size={24}
-                color="#D5D4DD"
+                color={colors.unselectedText}
               />
             </View>
           </TouchableWithoutFeedback>
@@ -418,7 +403,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             <Feather 
               name={sortDirections[selectedField] === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 
-              color="black" 
+              color={colors.normalIconColor} 
             />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -435,7 +420,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             <Feather 
               name={sortDirections.name === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 
-              color="black" 
+              color={colors.normalIconColor} 
             />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -452,7 +437,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             <Feather 
               name={sortDirections.dateAdded === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 
-              color="black" 
+              color={colors.normalIconColor} 
             />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -469,7 +454,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
             <Feather 
               name={sortDirections.lastModified === 'desc' ? 'arrow-down' : 'arrow-up'} 
               size={24} 
-              color="black" 
+              color={colors.normalIconColor} 
             />
           </TouchableOpacity>
         </Animated.View>
@@ -485,7 +470,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
 // Add display name for HeaderIconButtons
 HeaderIconButtons.displayName = 'HeaderIconButtons';
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     gap: 9,
@@ -506,24 +491,25 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomColor: '#D5D4DD',
+    borderBottomColor: colors.unselectedText,
   },
   summaryRow: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: colors.secondaryShade,
   },
   selectedRow: {
-    backgroundColor: 'white',
+    backgroundColor: colors.background,
   },
   lastRow: {
     borderBottomWidth: 0,
   },
   rowText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
+    color: colors.text,
   },
   searchContainer: {
     height: 46,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: colors.secondaryShade,
     borderRadius: 30,
     justifyContent: 'center',
   },
@@ -540,7 +526,8 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
+    color: colors.text,
     paddingVertical: 0,
   },
   closeButtonContainer: {

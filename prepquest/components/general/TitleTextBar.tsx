@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Platform, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface TitleTextBarProps {
   title: string;
@@ -19,6 +22,9 @@ export function TitleTextBar({
   onChangeText,
   disabled = false
 }: TitleTextBarProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  
   const titleParts = highlightedWord 
     ? title.split(highlightedWord)
     : [title];
@@ -31,15 +37,20 @@ export function TitleTextBar({
 
   return (
     <View style={styles.inputRow}>
-      <Text style={styles.label}>
+      <Text style={[styles.label, { color: colors.text }]}>
         {titleParts[1]}
-        {highlightedWord && <Text style={styles.highlightedText}>{highlightedWord}</Text>}
+        {highlightedWord && <Text style={[styles.highlightedText, { color: colors.brandColor1 }]}>{highlightedWord}</Text>}
         {titleParts[0]}
       </Text>
-      <View style={[styles.textInputContainer]}>
+      <View style={[styles.textInputContainer, { backgroundColor: colors.secondaryShade }]}>
         <TextInput
-          style={[styles.textInput, disabled && styles.disabledText]}
+          style={[
+            styles.textInput, 
+            { color: colors.text },
+            disabled && { color: colors.unselectedText }
+          ]}
           placeholder={placeholder}
+          placeholderTextColor={colors.unselectedText}
           value={value}
           onChangeText={onChangeText}
           editable={!disabled}
@@ -50,7 +61,7 @@ export function TitleTextBar({
               <Ionicons
                 name={Platform.OS === 'ios' ? 'close-circle' : 'close-circle'}
                 size={24}
-                color="#D5D4DD"
+                color={colors.unselectedText}
               />
             </View>
           </TouchableWithoutFeedback>
@@ -66,17 +77,15 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 32,
-    fontFamily: 'Neuton-Regular',
-    color: '#000000',
+    fontFamily: Fonts.title,
     marginBottom: 16,
     height: 40
   },
   highlightedText: {
-    color: '#44B88A',
+    // Color will be set dynamically
   },
   textInputContainer: {
     height: 46,
-    backgroundColor: '#F8F8F8',
     borderRadius: 30,
     justifyContent: 'center',
     paddingHorizontal: 16,
@@ -86,11 +95,11 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     paddingVertical: 0,
   },
   disabledText: {
-    color: '#D5D4DD',
+    // Color will be set dynamically
   },
   closeButtonContainer: {
     padding: 3,

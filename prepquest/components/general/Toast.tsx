@@ -1,5 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, Animated, View, PanResponder } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface ToastProps {
   visible: boolean;
@@ -9,6 +12,8 @@ interface ToastProps {
 }
 
 export function Toast({ visible, message, onHide, duration = 3000 }: ToastProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-100)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,10 +118,10 @@ export function Toast({ visible, message, onHide, duration = 3000 }: ToastProps)
       ]}
     >
       <Animated.View 
-        style={styles.toast}
+        style={[styles.toast, { backgroundColor: colors.alertColor }]}
         {...panResponder.panHandlers}
       >
-        <Text style={styles.message}>{message}</Text>
+        <Text style={[styles.message, { color: colors.background }]}>{message}</Text>
       </Animated.View>
     </Animated.View>
   );
@@ -133,7 +138,6 @@ const styles = StyleSheet.create({
     paddingTop: 50, // Account for status bar
   },
   toast: {
-    backgroundColor: '#FF3B30',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
@@ -148,9 +152,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   message: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     textAlign: 'center',
   },
 }); 

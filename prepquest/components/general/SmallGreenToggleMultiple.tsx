@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle, ViewProps } from 'react-native';
+import { StyleSheet, View, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle, ViewProps } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface SmallGreenToggleMultipleProps extends ViewProps {
   options: string[]; // Must be length 4
@@ -17,6 +20,8 @@ export function SmallGreenToggleMultiple({
   ...props
 }: SmallGreenToggleMultipleProps) {
   const { width: windowWidth } = useWindowDimensions();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const [selectedIndex, setSelectedIndex] = useState(initialIndex);
   const positionAnim = useRef(new Animated.Value(initialIndex)).current;
   const colorAnim = useRef(new Animated.Value(initialIndex)).current;
@@ -59,22 +64,23 @@ export function SmallGreenToggleMultiple({
     colorAnim.interpolate({
       inputRange: [0, 1, 2, 3],
       outputRange: idx === 0
-        ? ['#FFFFFF', '#D5D4DD', '#D5D4DD', '#D5D4DD']
+        ? [colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText]
         : idx === 1
-        ? ['#D5D4DD', '#FFFFFF', '#D5D4DD', '#D5D4DD']
+        ? [colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText]
         : idx === 2
-        ? ['#D5D4DD', '#D5D4DD', '#FFFFFF', '#D5D4DD']
-        : ['#D5D4DD', '#D5D4DD', '#D5D4DD', '#FFFFFF']
+        ? [colors.unselectedText, colors.unselectedText, colors.background, colors.unselectedText]
+        : [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.background]
     });
 
   return (
-    <View style={[styles.container, { width: containerWidth }, style]} {...props}>
+    <View style={[styles.container, { width: containerWidth, backgroundColor: colors.secondaryShade }, style]} {...props}>
       <View style={styles.innerContainer}>
         <Animated.View
           style={[
             styles.toggleBackground,
             {
               width: segmentWidth,
+              backgroundColor: colors.brandColor2,
               transform: [{ translateX }],
             },
           ]}
@@ -98,7 +104,6 @@ export function SmallGreenToggleMultiple({
 const styles = StyleSheet.create({
   container: {
     height: 26,
-    backgroundColor: '#F8F8F8',
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -108,7 +113,6 @@ const styles = StyleSheet.create({
   toggleBackground: {
     position: 'absolute',
     height: '100%',
-    backgroundColor: '#44B88A',
     borderRadius: 10,
     zIndex: 1,
   },
@@ -124,6 +128,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
   },
 }); 

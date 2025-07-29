@@ -1,6 +1,8 @@
 import { StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Line } from 'react-native-svg';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface UnfavoriteButtonProps {
   size?: number;
@@ -13,17 +15,20 @@ export function UnfavoriteButton({
   onPress,
   style
 }: UnfavoriteButtonProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+
   return (
     <TouchableOpacity 
-      style={[styles.circleButton, style]}
+      style={[styles.circleButton, { backgroundColor: colors.secondaryShade }, style]}
       activeOpacity={1}
       pressRetentionOffset={{ top: 0, left: 0, bottom: 0, right: 0 }}
-      onPressIn={(e) => e.currentTarget.setNativeProps({ style: styles.circleButtonPressed })}
-      onPressOut={(e) => e.currentTarget.setNativeProps({ style: styles.circleButton })}
+      onPressIn={(e) => e.currentTarget.setNativeProps({ style: [styles.circleButtonPressed, { backgroundColor: colors.unselectedText }] })}
+      onPressOut={(e) => e.currentTarget.setNativeProps({ style: [styles.circleButton, { backgroundColor: colors.secondaryShade }] })}
       onPress={onPress}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name="star-outline" size={size} color="#D5D4DD" />
+        <Ionicons name="star-outline" size={size} color={colors.unselectedText} />
         <View style={styles.lineContainer}>
           <Svg height="46" width="46" style={styles.svg}>
             <Line
@@ -31,7 +36,7 @@ export function UnfavoriteButton({
               y1="8"
               x2="8"
               y2="40"
-              stroke="#D7191C"
+              stroke={colors.alertColor}
               strokeWidth="2"
             />
           </Svg>
@@ -46,7 +51,6 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#F8F8F8',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -54,7 +58,6 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#D5D4DD',
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -11,7 +11,7 @@ interface FloatingActionButtonProps extends ViewProps {
   backgroundColor?: string;
 }
 
-export const FloatingActionButton = React.memo(({ 
+export const FloatingActionButton = ({ 
   style, 
   onPress,
   children,
@@ -72,7 +72,7 @@ export const FloatingActionButton = React.memo(({
       {children}
     </TouchableOpacity>
   );
-});
+};
 
 const styles = StyleSheet.create({
   button: {

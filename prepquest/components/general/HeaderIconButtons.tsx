@@ -284,37 +284,16 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     }
   }, [isExpanded, isSearchMode, collapseFilter, handleCloseSearch, onCalendarPress]);
 
-  // Memoize filter style to prevent recreation on every render
-  const filterStyle: Animated.WithAnimatedObject<ViewStyle> = useMemo(() => ({
-    width: expandAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [46, 140]
-    }),
-    height: expandAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [46, 184]
-    }),
-    backgroundColor: colors.secondaryShade,
-    borderRadius: expandAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [23, 12]
-    }),
-    overflow: 'hidden'
-  }), [expandAnim, colors.secondaryShade]);
-
-  // Memoize search container style
-  const searchContainerStyle = useMemo(() => [
-    styles.searchContainer,
-    {
-      opacity: searchFadeAnim,
-      width: DEVICE_WIDTH * 0.8,
-    }
-  ], [styles.searchContainer, searchFadeAnim]);
-
   if (isSearchVisible) {
     return (
       <Animated.View 
-        style={searchContainerStyle}
+        style={[
+          styles.searchContainer,
+          {
+            opacity: searchFadeAnim,
+            width: DEVICE_WIDTH * 0.8,
+          }
+        ]}
       >
         <View style={styles.searchInputRow}>
           <Feather 
@@ -355,20 +334,17 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
     );
   }
 
-  // Memoize main container style
-  const mainContainerStyle = useMemo(() => [
-    styles.container,
-    {
-      opacity: searchFadeAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, 0],
-      })
-    }
-  ], [styles.container, searchFadeAnim]);
-
   return (
     <Animated.View 
-      style={mainContainerStyle}
+      style={[
+        styles.container,
+        {
+          opacity: searchFadeAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [1, 0],
+          })
+        }
+      ]}
     >
       <CircleIconButton 
         iconName="sparkles" 
@@ -380,7 +356,25 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
         iconName="calendar" 
         onPress={handleCalendarPress}
       />
-      <Animated.View style={[styles.filterButton, filterStyle]}>
+      <Animated.View style={[
+        styles.filterButton, 
+        {
+          width: expandAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [46, 140]
+          }),
+          height: expandAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [46, 184]
+          }),
+          backgroundColor: colors.secondaryShade,
+          borderRadius: expandAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [23, 12]
+          }),
+          overflow: 'hidden'
+        }
+      ]}>
         {!isExpanded && (
           <CircleIconButton 
             iconName="filter" 

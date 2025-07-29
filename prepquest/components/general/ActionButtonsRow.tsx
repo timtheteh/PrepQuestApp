@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { CircleIconButton } from './CircleIconButton';
 import { UnfavoriteButton } from './UnfavoriteButton';
@@ -33,20 +33,17 @@ export const ActionButtonsRow = React.memo(({
   const { language } = useLanguage();
   const { theme } = useTheme();
 
-  // Memoize the icon press handler to prevent recreation on every render
-  const handleIconPress = useCallback((index: number) => {
+  const handleIconPress = (index: number) => {
     onIconPress?.(index);
-  }, [onIconPress]);
+  };
 
-  // Memoize dynamic styles to prevent recreation on every render
-  const dynamicStyles = useMemo(() => ({
+  const dynamicStyles = {
     cancelButton: {
       color: Colors[theme].text,
     },
-  }), [theme]);
+  };
 
-  // Memoize the icon renderer to prevent recreation on every render
-  const renderIcon = useCallback((iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap, index: number) => {
+  const renderIcon = (iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap, index: number) => {
     return (
       <CircleIconButton
         key={index}
@@ -56,7 +53,7 @@ export const ActionButtonsRow = React.memo(({
         color={iconColors[index] || Colors[theme].normalIconColor}
       />
     );
-  }, [iconLibraries, handleIconPress, iconColors, theme]);
+  };
 
   return (
     <View style={[styles.container, style]}>

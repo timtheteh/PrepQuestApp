@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle, ViewProps } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
@@ -22,7 +22,6 @@ export const DifficultyToggleRow = React.memo(({
 }: DifficultyToggleRowProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const styles = createStyles(colors);
   
   const options = useMemo(() => [
     strings[language || 'English'].difficultyOptions.default,
@@ -57,12 +56,12 @@ export const DifficultyToggleRow = React.memo(({
     }).start();
   }, [selectedIndex]);
 
-  const handlePress = useCallback((index: number) => {
+  const handlePress = (index: number) => {
     if (index !== selectedIndex) {
       setSelectedIndex(index);
       onToggle?.(index);
     }
-  }, [selectedIndex, onToggle]);
+  };
 
   // Animated highlight position
   const translateX = positionAnim.interpolate({
@@ -71,20 +70,20 @@ export const DifficultyToggleRow = React.memo(({
   });
 
   // Animated background color for toggleBackground
-  const colorRange = useMemo(() => [
+  const colorRange = [
     '#44B88A', // index 0
     '#F8696B', // index 1
     '#FA9473', // index 2
     '#FFEB84', // index 3
     '#98CE7F', // index 4
-  ], []);
+  ];
   const interpolatedColor = useMemo(() => positionAnim.interpolate({
     inputRange: [0, 1, 2, 3, 4],
     outputRange: colorRange,
   }), [positionAnim, colorRange]);
 
   // Animated text color for each option
-  const getTextColor = useCallback((idx: number) =>
+  const getTextColor = (idx: number) =>
     colorAnim.interpolate({
       inputRange: [0, 1, 2, 3, 4],
       outputRange: idx === 0
@@ -96,10 +95,10 @@ export const DifficultyToggleRow = React.memo(({
         : idx === 3
         ? [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.text, colors.unselectedText]
         : [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.background]
-    }), [colorAnim, colors]);
+    });
 
   return (
-    <View style={[styles.container, { width: containerWidth }, style]} {...props}>
+    <View style={[styles.container, { width: containerWidth, backgroundColor: colors.secondaryShade }, style]} {...props}>
       <View style={styles.innerContainer}>
         <Animated.View
           style={[
@@ -127,10 +126,9 @@ export const DifficultyToggleRow = React.memo(({
   );
 });
 
-const createStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     height: 26,
-    backgroundColor: colors.secondaryShade,
     borderRadius: 10,
     overflow: 'hidden',
   },

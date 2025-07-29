@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -14,7 +14,7 @@ interface InterviewStudyToggleProps {
   isInViewFlashcardsPage?: boolean;
 }
 
-export const InterviewStudyToggle = React.memo(function InterviewStudyToggle({ 
+export const InterviewStudyToggle = function InterviewStudyToggle({ 
   onToggle,
   initialState = 'study',
   isInViewFlashcardsPage = false
@@ -24,18 +24,16 @@ export const InterviewStudyToggle = React.memo(function InterviewStudyToggle({
   const { language } = useLanguage();
   const { theme } = useTheme();
 
-  // Memoize animation configuration
-  const animationConfig = useMemo(() => ({
+  const animationConfig = {
     duration: 300,
     easing: Easing.inOut(Easing.ease),
     useNativeDriver: false, // Reverted to false since transform properties aren't supported with native driver
-  }), []);
+  };
 
-  // Memoize translateX values based on language
-  const translateXValues = useMemo(() => ({
+  const translateXValues = {
     study: language === 'English' ? 0 : -3,
     interview: language === 'English' ? 93 : 108,
-  }), [language]);
+  };
 
   useEffect(() => {
     setSelected(initialState);
@@ -45,7 +43,7 @@ export const InterviewStudyToggle = React.memo(function InterviewStudyToggle({
     }).start();
   }, [initialState, translateXValues, animationConfig]);
 
-  const handleToggle = useCallback((option: ToggleOption) => {
+  const handleToggle = (option: ToggleOption) => {
     setSelected(option);
     if (onToggle) {
       onToggle(option);
@@ -55,27 +53,7 @@ export const InterviewStudyToggle = React.memo(function InterviewStudyToggle({
       toValue: translateXValues[option],
       ...animationConfig,
     }).start();
-  }, [onToggle, translateXValues, animationConfig]);
-
-  // Memoize text styles to prevent recreation
-  const studyTextStyle = useMemo(() => [
-    styles.text,
-    { color: selected === 'study' ? Colors[theme].text : Colors[theme].unselectedText }
-  ], [selected, theme]);
-
-  const interviewTextStyle = useMemo(() => [
-    styles.text,
-    { color: selected === 'interview' ? Colors[theme].text : Colors[theme].unselectedText }
-  ], [selected, theme]);
-
-  // Memoize underline style
-  const underlineStyle = useMemo(() => [
-    styles.underline,
-    {
-      transform: [{ translateX }],
-      backgroundColor: isInViewFlashcardsPage ? Colors[theme].brandColor1 : Colors[theme].brandColor2
-    }
-  ], [translateX, isInViewFlashcardsPage, theme]);
+  };
 
   return (
     <View style={styles.container}>
@@ -84,7 +62,10 @@ export const InterviewStudyToggle = React.memo(function InterviewStudyToggle({
           onPress={() => handleToggle('study')}
           style={styles.option}
         >
-          <Text style={studyTextStyle}>
+          <Text style={[
+            styles.text,
+            { color: selected === 'study' ? Colors[theme].text : Colors[theme].unselectedText }
+          ]}>
             {strings[language].study}
           </Text>
         </TouchableOpacity>
@@ -92,15 +73,24 @@ export const InterviewStudyToggle = React.memo(function InterviewStudyToggle({
           onPress={() => handleToggle('interview')}
           style={styles.option}
         >
-          <Text style={interviewTextStyle}>
+          <Text style={[
+            styles.text,
+            { color: selected === 'interview' ? Colors[theme].text : Colors[theme].unselectedText }
+          ]}>
             {strings[language].interview}
           </Text>
         </TouchableOpacity>
       </View>
-      <Animated.View style={underlineStyle} />
+      <Animated.View style={[
+        styles.underline,
+        {
+          transform: [{ translateX }],
+          backgroundColor: isInViewFlashcardsPage ? Colors[theme].brandColor1 : Colors[theme].brandColor2
+        }
+      ]} />
     </View>
   );
-});
+};
 
 // Also export as default for compatibility
 export default InterviewStudyToggle;

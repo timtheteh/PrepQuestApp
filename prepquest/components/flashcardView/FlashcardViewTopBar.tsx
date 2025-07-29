@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -15,7 +15,7 @@ interface FlashcardViewTopBarProps {
   isSpeechPaused?: boolean;
 }
 
-export const FlashcardViewTopBar = React.memo(({
+export const FlashcardViewTopBar = ({
   onAudioPress,
   onCopyPress,
   onTrashPress,
@@ -24,28 +24,15 @@ export const FlashcardViewTopBar = React.memo(({
   isSpeechPlaying = false,
   isSpeechPaused = false,
 }: FlashcardViewTopBarProps) => {
-  // Memoize the render functions to prevent recreation on every render
-  const renderAudioIcon = useCallback((color: string) => {
-    return isSpeechPlaying && !isSpeechPaused ? (
-      <FontAwesome6 name="volume-xmark" size={20} color="#FF3B30" />
-    ) : (
-      <MaterialIcons name="volume-up" size={20} color={color} />
-    );
-  }, [isSpeechPlaying, isSpeechPaused]);
-
-  const renderCopyIcon = useCallback((color: string) => {
-    return <MaterialIcons name="content-copy" size={20} color={color} />;
-  }, []);
-
-  const renderTrashIcon = useCallback((color: string) => {
-    return <Ionicons name="trash" size={20} color={color} />;
-  }, []);
-
-  // Memoize styles to prevent recreation
-  const containerStyle = useMemo(() => styles.container, []);
+  const renderAudioIcon = (color: string) => {
+    if (isSpeechPlaying && !isSpeechPaused) {
+      return <FontAwesome6 name="volume-xmark" size={20} color="#FF3B30" />;
+    }
+    return <MaterialIcons name="volume-up" size={20} color={color} />;
+  };
 
   return (
-    <View style={containerStyle}>
+    <View style={styles.container}>
       <CircleIconButton
         onPress={onAudioPress}
         disabled={!isAudioButtonEnabled}
@@ -54,16 +41,16 @@ export const FlashcardViewTopBar = React.memo(({
       <CircleIconButton
         onPress={isCopyButtonEnabled ? onCopyPress : undefined}
         disabled={!isCopyButtonEnabled}
-        renderCustomIcon={renderCopyIcon}
+        renderCustomIcon={(color) => <MaterialIcons name="content-copy" size={20} color={color} />}
       />
       <CircleIconButton
         color="#FF3B30"
         onPress={onTrashPress}
-        renderCustomIcon={renderTrashIcon}
+        renderCustomIcon={(color) => <Ionicons name="trash" size={20} color={color} />}
       />
     </View>
   );
-});
+};
 
 const styles = StyleSheet.create({
   container: {

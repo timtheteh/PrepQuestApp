@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, memo } from 'react';
+import React, { useCallback, memo } from 'react';
 import { StyleSheet, Animated, View, Platform, Dimensions, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -15,8 +15,6 @@ interface SlidingMenuProps {
   translateX: Animated.Value;
   onFolderPress?: () => void;
 }
-
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export const SlidingMenu = memo(({ 
   visible,
@@ -52,37 +50,35 @@ export const SlidingMenu = memo(({
     }, 50);
   }, [onFolderPress, router]);
 
-  // Memoize styles to prevent recreation on every render
-  const menuStyle = useMemo(() => [
-    styles.menu,
-    {
-      transform: [{ translateX }],
-      top: Platform.OS === 'ios' ? insets.top : insets.top,
-      backgroundColor: colors.brandColor2,
-    }
-  ], [translateX, insets.top, colors.brandColor2]);
-
-  const menuTextStyle = useMemo(() => [
-    styles.menuText, 
-    { color: colors.background }
-  ], [colors.background]);
-
   return (
-    <Animated.View style={menuStyle}>
+    <Animated.View style={[
+      styles.menu,
+      {
+        transform: [{ translateX }],
+        top: insets.top,
+        backgroundColor: colors.brandColor2,
+      }
+    ]}>
       <View style={styles.menuContent}>
         <TouchableOpacity 
           style={styles.menuItem}
           onPress={handleFolderPress}
         >
           <FontAwesome name="folder" size={30} color={colors.background} />
-          <Text style={menuTextStyle}>{strings[language].viewFolders}</Text>
+          <Text style={[
+            styles.menuText, 
+            { color: colors.background }
+          ]}>{strings[language].viewFolders}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.menuItem, styles.secondItem]}
           onPress={handleFavoritesPress}
         >
           <FontAwesome name="star" size={30} color={colors.background} />
-          <Text style={menuTextStyle}>{strings[language].viewFavorites}</Text>
+          <Text style={[
+            styles.menuText, 
+            { color: colors.background }
+          ]}>{strings[language].viewFavorites}</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>

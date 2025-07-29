@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -29,10 +29,10 @@ export const CircleIconButton = React.memo(({
 }: CircleIconButtonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const disabledColor = useMemo(() => colors.unselectedText, [colors.unselectedText]);
-  const finalColor = useMemo(() => disabled ? disabledColor : color, [disabled, disabledColor, color]);
+  const disabledColor = colors.unselectedText;
+  const finalColor = disabled ? disabledColor : color;
   
-  const renderIcon = useCallback(() => {
+  const renderIcon = () => {
     if (renderCustomIcon) {
       return renderCustomIcon(finalColor);
     }
@@ -44,34 +44,30 @@ export const CircleIconButton = React.memo(({
     }
     
     return <Ionicons name={iconName as keyof typeof Ionicons.glyphMap} size={size} color={finalColor} />;
-  }, [renderCustomIcon, finalColor, iconName, iconLibrary, size]);
+  };
   
-  const styles = createStyles(colors);
-  
-  const handlePressIn = useCallback((e: any) => {
+  const handlePressIn = (e: any) => {
     if (!disabled && !selected) {
       e.currentTarget.setNativeProps({ style: styles.circleButtonPressed });
     }
-  }, [disabled, selected, styles.circleButtonPressed]);
+  };
   
-  const handlePressOut = useCallback((e: any) => {
+  const handlePressOut = (e: any) => {
     if (!disabled && !selected) {
       e.currentTarget.setNativeProps({ style: styles.circleButton });
     }
-  }, [disabled, selected, styles.circleButton]);
+  };
   
-  const pressRetentionOffset = useMemo(() => ({ top: 0, left: 0, bottom: 0, right: 0 }), []);
-  
-  const buttonStyle = useMemo(() => [
-    styles.circleButton, 
-    selected && styles.selected, 
-    disabled && styles.disabled,
-    style
-  ], [styles.circleButton, selected, styles.selected, disabled, styles.disabled, style]);
+  const pressRetentionOffset = { top: 0, left: 0, bottom: 0, right: 0 };
   
   return (
     <TouchableOpacity 
-      style={buttonStyle}
+      style={[
+        styles.circleButton, 
+        selected && styles.selected, 
+        disabled && styles.disabled,
+        style
+      ]}
       activeOpacity={disabled ? 1 : 0.8}
       pressRetentionOffset={pressRetentionOffset}
       onPressIn={disabled || selected ? undefined : handlePressIn}
@@ -83,12 +79,12 @@ export const CircleIconButton = React.memo(({
   );
 });
 
-const createStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   circleButton: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: colors.secondaryShade,
+    backgroundColor: '#F8F8F8',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -96,14 +92,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: colors.unselectedText,
+    backgroundColor: '#D5D4DD',
     justifyContent: 'center',
     alignItems: 'center',
   },
   selected: {
-    backgroundColor: colors.unselectedText,
+    backgroundColor: '#D5D4DD',
   },
   disabled: {
-    backgroundColor: colors.androidSecondaryShade,
+    backgroundColor: '#EFEFEF',
   },
 }); 

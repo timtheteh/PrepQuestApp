@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, StyleSheet, ViewStyle, ImageBackground, Platform, Pressable, Dimensions, ImageSourcePropType, Animated, Text, Image } from 'react-native';
 import { CircleSelectButton } from './CircleSelectButton';
 import { FavoriteButton } from './FavoriteButton';
@@ -74,7 +74,6 @@ export const Card = React.memo(({
   const { language } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const styles = createStyles(colors);
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
   const [showSelectPill, setShowSelectPill] = useState(isSelectMode);
@@ -144,19 +143,19 @@ export const Card = React.memo(({
     })
   }), [containerWidthPercentage]);
 
-  const handlePressIn = useCallback(() => {
+  const handlePressIn = () => {
     if (!isSelectMode) {
       setIsPressed(true);
     }
-  }, [isSelectMode]);
+  };
 
-  const handlePressOut = useCallback(() => {
+  const handlePressOut = () => {
     if (!isSelectMode) {
       setIsPressed(false);
     }
-  }, [isSelectMode]);
+  };
 
-  const handleCardPress = useCallback(() => {
+  const handleCardPress = () => {
     if (!isSelectMode) {
       // Navigate to deck details page with card information
       router.push({
@@ -183,7 +182,7 @@ export const Card = React.memo(({
     if (onPress) {
       onPress();
     }
-  }, [isSelectMode, router, deckID, title, language, cardType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, sourcePage, folderTitle, folderId, isFavorited, onPress]);
+  };
 
   // Card type color and label logic
   const cardTypeMap = useMemo(() => ({
@@ -326,7 +325,6 @@ export const Card = React.memo(({
 
 const LoadingBar = React.memo(({ percent, language, colors }: { percent: number, language: string, colors: any }) => {
   const isComplete = percent === 100;
-  const styles = createStyles(colors);
   return (
     <View style={styles.loadingBarBg}>
       <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? colors.brandColor1 : colors.brandColor2 }]} />
@@ -339,7 +337,7 @@ const LoadingBar = React.memo(({ percent, language, colors }: { percent: number,
   );
 });
 
-const createStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   outerContainer: {
     width: '100%',
     position: 'relative',
@@ -403,7 +401,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   loadingBarBg: {
     height: 11,
     borderRadius: 13,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     overflow: 'hidden',
     justifyContent: 'center',
     width: '100%',
@@ -411,7 +409,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   loadingBarFg: {
     height: 11,
     borderRadius: 13,
-    backgroundColor: colors.brandColor2,
+    backgroundColor: '#4F41D8',
     position: 'absolute',
     left: 0,
     top: 0,
@@ -420,7 +418,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   progressLabel: {
     fontFamily: Fonts.bodyItalic,
     fontSize: 12,
-    color: colors.text,
+    color: '#000000',
     textAlign: 'right',
     minWidth: 70,
     marginRight: 8,
@@ -438,7 +436,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   loadingBarCompleteText: {
     fontFamily: Fonts.bodyItalic,
     fontSize: 12,
-    color: colors.background,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   cardIconImage: {
@@ -453,7 +451,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   cardTypePill: {
     position: 'absolute',
     width: 84,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -494,7 +492,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     left: 75,
     fontFamily: Fonts.title,
     fontSize: 24,
-    color: colors.text,
+    color: '#000000',
     zIndex: 2,
     lineHeight: Platform.OS === 'ios' ? 24 : 28,
     // borderWidth: 1,
@@ -525,11 +523,11 @@ const createStyles = (colors: any) => StyleSheet.create({
   dateText: {
     fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: colors.text,
+    color: '#000000',
   },
   flashcardCountText: {
     fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: colors.text,
+    color: '#000000',
   },
 });

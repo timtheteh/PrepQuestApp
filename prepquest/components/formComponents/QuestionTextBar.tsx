@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TextInput, Platform, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -22,13 +22,11 @@ export const QuestionTextBar = React.memo(({
 }: QuestionTextBarProps) => {
   const { theme } = useTheme();
   
-  // Memoize the clear handler to prevent recreation on every render
-  const handleClear = useCallback(() => {
+  const handleClear = () => {
     onChangeText('');
-  }, [onChangeText]);
+  };
 
-  // Memoize dynamic styles to prevent recreation on every render
-  const dynamicStyles = useMemo(() => ({
+  const dynamicStyles = {
     label: {
       color: Colors[theme].text,
     },
@@ -41,16 +39,15 @@ export const QuestionTextBar = React.memo(({
     helperText: {
       color: Colors[theme].text,
     },
-  }), [theme]);
+  };
 
-  // Memoize TextInput props to prevent unnecessary re-renders
-  const textInputProps = useMemo(() => ({
+  const textInputProps = {
     style: [styles.textInput, dynamicStyles.textInput],
     placeholder,
     placeholderTextColor: Colors[theme].unselectedText,
     value,
     onChangeText,
-  }), [placeholder, value, onChangeText, dynamicStyles.textInput, theme]);
+  };
 
   return (
     <View style={styles.inputRow}>

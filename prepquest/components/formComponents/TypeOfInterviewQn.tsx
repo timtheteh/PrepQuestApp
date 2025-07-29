@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -21,7 +21,7 @@ export const TypeOfInterviewQn = React.memo(({
   const { theme } = useTheme();
 
   // Dynamic function to get interview type label based on current language
-  const getInterviewTypeLabel = useCallback((type: string): string => {
+  const getInterviewTypeLabel = (type: string): string => {
     const typeKey = type.toLowerCase().replace(/\s+/g, '') as keyof typeof strings.English.interviewTypes;
     
     // Get the label from the strings object based on current language
@@ -32,22 +32,19 @@ export const TypeOfInterviewQn = React.memo(({
     
     // Fallback to English if the language is not found
     return strings.English.interviewTypes[typeKey] || type;
-  }, [language]);
+  };
 
-  // Memoize the select handler to prevent recreation on every render
-  const handleSelect = useCallback((selectedValue: string) => {
+  const handleSelect = (selectedValue: string) => {
     onValueChange(selectedValue);
-  }, [onValueChange]);
+  };
 
-  // Memoize dynamic styles to prevent recreation on every render
-  const dynamicStyles = useMemo(() => ({
+  const dynamicStyles = {
     title: {
       color: Colors[theme].text,
     },
-  }), [theme]);
+  };
 
-  // Memoize the button renderer to prevent recreation on every render
-  const renderButton = useCallback((type: string) => {
+  const renderButton = (type: string) => {
     const isSelected = value === type;
     const label = getInterviewTypeLabel(type);
     
@@ -63,7 +60,7 @@ export const TypeOfInterviewQn = React.memo(({
         <Text style={styles.buttonText}>{label}</Text>
       </TouchableOpacity>
     );
-  }, [value, getInterviewTypeLabel, theme, handleSelect]);
+  };
 
   return (
     <View style={styles.container}>

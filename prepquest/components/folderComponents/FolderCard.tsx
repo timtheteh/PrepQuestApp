@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated, Dimensions, Text } from 'react-native';
 import { CircleSelectButton } from '../general/CircleSelectButton';
 import { FavoriteButton } from '../general/FavoriteButton';
@@ -57,8 +57,7 @@ export const FolderCard = React.memo(({
     })
   }), [containerWidthPercentage]);
 
-  // Memoize dynamic styles based on theme to prevent recreation
-  const dynamicStyles = useMemo(() => ({
+  const dynamicStyles = {
     container: {
       backgroundColor: Platform.OS === 'android' ? Colors[theme].androidSecondaryShade : Colors[theme].secondaryShade,
     },
@@ -71,22 +70,21 @@ export const FolderCard = React.memo(({
     deckCountText: {
       color: Colors[theme].text,
     },
-  }), [theme]);
+  };
 
-  // Memoize press handlers to prevent recreation
-  const handlePressIn = useCallback(() => {
+  const handlePressIn = () => {
     if (!isSelectMode) {
       setIsPressed(true);
     }
-  }, [isSelectMode]);
+  };
 
-  const handlePressOut = useCallback(() => {
+  const handlePressOut = () => {
     if (!isSelectMode) {
       setIsPressed(false);
     }
-  }, [isSelectMode]);
+  };
 
-  const handleFolderPress = useCallback(() => {
+  const handleFolderPress = () => {
     if (!isSelectMode) {
       // Navigate to deck details page with card information
       router.push({
@@ -103,67 +101,53 @@ export const FolderCard = React.memo(({
     if (onPress) {
       onPress();
     }
-  }, [isSelectMode, title, folderId, sourcePage, onPress]);
+  };
 
-  // Memoize deck count text to prevent recalculation
-  const deckCountText = useMemo(() => {
-    if (deckCount !== undefined) {
-      return `${deckCount} ${strings[language].decks}`;
-    }
-    return null;
-  }, [deckCount, language]);
+  const deckCountText = deckCount !== undefined ? `${deckCount} ${strings[language].decks}` : null;
 
-  // Memoize shadow container styles
-  const shadowContainerStyle = useMemo(() => [
+  const shadowContainerStyle = [
     styles.shadowContainer,
     isPressed && styles.shadowContainerPressed
-  ], [isPressed]);
+  ];
 
-  // Memoize animated container styles
-  const animatedContainerStyle = useMemo(() => [
+  const animatedContainerStyle = [
     styles.container, 
     dynamicStyles.container,
     containerStyle, 
     style,
     isPressed && styles.containerPressed
-  ], [dynamicStyles.container, containerStyle, style, isPressed]);
+  ];
 
-  // Memoize favorite button container styles
-  const favoriteButtonContainerStyle = useMemo(() => [
+  const favoriteButtonContainerStyle = [
     styles.favoriteButtonContainer,
     isSelectMode && styles.favoriteButtonContainerSelectMode
-  ], [isSelectMode]);
+  ];
 
-  // Memoize folder title styles
-  const folderTitleStyle = useMemo(() => [
+  const folderTitleStyle = [
     styles.folderTitle,
     dynamicStyles.folderTitle,
     isSelectMode && styles.folderTitleSelectMode
-  ], [dynamicStyles.folderTitle, isSelectMode]);
+  ];
 
-  // Memoize date deck row styles
-  const dateDeckRowStyle = useMemo(() => [
+  const dateDeckRowStyle = [
     styles.dateDeckRow,
     isSelectMode && styles.dateDeckRowSelectMode
-  ], [isSelectMode]);
+  ];
 
-  // Memoize date text styles
-  const dateTextStyle = useMemo(() => [
+  const dateTextStyle = [
     styles.dateText, 
     dynamicStyles.dateText
-  ], [dynamicStyles.dateText]);
+  ];
 
-  // Memoize deck count text styles
-  const deckCountTextStyle = useMemo(() => [
+  const deckCountTextStyle = [
     styles.deckCountText, 
     dynamicStyles.deckCountText
-  ], [dynamicStyles.deckCountText]);
+  ];
 
-  // Memoize circle select button styles
-  const circleSelectButtonStyle = useMemo(() => ({
+  const circleSelectButtonStyle = {
     ...styles.circleSelectButton,
     ...(style?.marginTop === 5 ? styles.firstCardCircleButton : {})
-  }), [style?.marginTop]);
+  };
 
   return (
     <View style={styles.outerContainer}>

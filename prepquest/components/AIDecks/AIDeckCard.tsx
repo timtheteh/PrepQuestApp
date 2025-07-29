@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ImageBackground, Platform, ImageSourcePropType, Pressable, Text, Image, Dimensions } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -25,11 +25,10 @@ interface AIDeckCardProps {
   deckID?: number;
 }
 
-// Move static assets outside component to prevent recreation
 const STUDY_CARD_ICON = require('@/assets/companyIcons/StudyCardIcon.png');
 const COMPANY_DEFAULT_ICON = require('@/assets/companyIcons/companyDefaultIcon.png');
 
-export const AIDeckCard = React.memo(({ 
+export const AIDeckCard = ({ 
   backgroundImage,
   pressedBackgroundImage,
   onPress,
@@ -50,15 +49,15 @@ export const AIDeckCard = React.memo(({
   const { language } = useLanguage();
   const { theme } = useTheme();
 
-  const handlePressIn = useCallback(() => {
+  const handlePressIn = () => {
     setIsPressed(true);
-  }, []);
+  };
 
-  const handlePressOut = useCallback(() => {
+  const handlePressOut = () => {
     setIsPressed(false);
-  }, []);
+  };
 
-  const handleCardPress = useCallback(() => {
+  const handleCardPress = () => {
     if (!isSelectMode) {
       // Dismiss the AI prompt modal first
       if (dismissModal) {
@@ -75,31 +74,20 @@ export const AIDeckCard = React.memo(({
         }
       })
     }
-  }, [isSelectMode, dismissModal, deckID, isAIDeck, sourcePage]);
+  };
 
-  // Memoize card type map since it only depends on lang
-  const cardTypeMap = useMemo(() => ({
+  const cardTypeMap = {
     behavioral: { color: '#FDAE61', label: strings[language].cardTypes.behavioral },
     technical: { color: '#D7191C', label: strings[language].cardTypes.technical },
     brainteasers: { color: '#357AF6', label: strings[language].cardTypes.brainteasers },
     'case study': { color: '#C3EB79', label: strings[language].cardTypes['case study'] },
     others: { color: '#FDAE61', label: strings[language].cardTypes.others },
     study: { color: '#5CC8BE', label: strings[language].cardTypes.study },
-  } as Record<string, { color: string; label: string }>), [language]);
+  } as Record<string, { color: string; label: string }>;
 
-  const typeInfo = useMemo(() => cardType && cardTypeMap[cardType], [cardType, cardTypeMap]);
-
-  // Memoize theme-dependent styles
-  const themeTextColor = useMemo(() => ({ color: Colors[theme].text }), [theme]);
-  const cardTitleStyle = useMemo(() => [styles.cardTitle, themeTextColor], [themeTextColor]);
-  const cardTypeTextStyle = useMemo(() => [styles.cardTypeText, themeTextColor], [themeTextColor]);
-  const flashcardCountTextStyle = useMemo(() => [styles.flashcardCountText, themeTextColor], [themeTextColor]);
-
-  // Memoize flashcard count text
-  const flashcardCountText = useMemo(() => 
-    flashcardCount !== undefined ? `${flashcardCount} ${strings[language].cards}` : null, 
-    [flashcardCount, language]
-  );
+  const typeInfo = cardType && cardTypeMap[cardType];
+  const themeTextColor = { color: Colors[theme].text };
+  const flashcardCountText = flashcardCount !== undefined ? `${flashcardCount} ${strings[language].cards}` : null;
 
   return (
     <View style={styles.outerContainer}>
@@ -130,7 +118,7 @@ export const AIDeckCard = React.memo(({
                 {/* Title */}
                 {title && (
                   <Text 
-                    style={cardTitleStyle}
+                    style={[styles.cardTitle, themeTextColor]}
                     numberOfLines={1}
                   >
                     {title}
@@ -146,11 +134,11 @@ export const AIDeckCard = React.memo(({
                           { borderColor: typeInfo.color }
                         ]}
                       >
-                        <Text style={cardTypeTextStyle}>{typeInfo.label}</Text>
+                        <Text style={[styles.cardTypeText, themeTextColor]}>{typeInfo.label}</Text>
                       </View>
                     )}
                     {flashcardCountText && (
-                      <Text style={flashcardCountTextStyle}>
+                      <Text style={[styles.flashcardCountText, themeTextColor]}>
                         {flashcardCountText}
                       </Text>
                     )}
@@ -163,7 +151,7 @@ export const AIDeckCard = React.memo(({
       </View>
     </View>
   );
-});
+};
 
 const styles = StyleSheet.create({
   outerContainer: {

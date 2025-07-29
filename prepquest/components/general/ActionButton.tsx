@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
@@ -21,20 +21,16 @@ export const ActionButton = React.memo(({
   disabled = false,
   fullWidth = false
 }: ActionButtonProps) => {
-  // Memoize text processing to prevent recalculation on every render
-  const textLines = useMemo(() => text.split('\n'), [text]);
-
-  // Memoize button style to prevent recreation on every render
-  const buttonStyle = useMemo(() => [
-    styles.button,
-    { backgroundColor },
-    fullWidth && styles.fullWidth,
-    style
-  ], [backgroundColor, fullWidth, style]);
+  const textLines = text.split('\n');
 
   return (
     <TouchableOpacity 
-      style={buttonStyle}
+      style={[
+        styles.button,
+        { backgroundColor },
+        fullWidth && styles.fullWidth,
+        style
+      ]}
       onPress={onPress}
       activeOpacity={disabled ? 1 : 0.8}
       disabled={disabled}

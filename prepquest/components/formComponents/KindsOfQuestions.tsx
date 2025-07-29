@@ -1,4 +1,4 @@
-import React, { useContext, useCallback, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
 import { MenuContext } from '@/contexts/MenuContext';
@@ -37,7 +37,7 @@ export const KindsOfQuestions = React.memo(({
   const { theme } = useTheme();
 
   // Dynamic function to get question type label based on current language
-  const getQuestionTypeLabel = useCallback((type: string): string => {
+  const getQuestionTypeLabel = (type: string): string => {
     const typeKey = type.toLowerCase().replace(/\s+/g, '') as keyof typeof strings.English.questionTypes;
     
     // Get the label from the strings object based on current language
@@ -48,10 +48,9 @@ export const KindsOfQuestions = React.memo(({
     
     // Fallback to English if the language is not found
     return strings.English.questionTypes[typeKey] || type;
-  }, [language]);
+  };
 
-  // Memoize the select handler to prevent recreation on every render
-  const handleSelect = useCallback((selectedValue: string) => {
+  const handleSelect = (selectedValue: string) => {
     const newValue = [...value]; // Create a copy of the current array
     
     if (newValue.includes(selectedValue)) {
@@ -64,23 +63,20 @@ export const KindsOfQuestions = React.memo(({
     }
     
     onValueChange(newValue);
-  }, [value, onValueChange]);
+  };
 
-  // Memoize the help press handler to prevent recreation on every render
-  const handleHelpPress = useCallback(() => {
+  const handleHelpPress = () => {
     setIsMenuOpen(true);
     setIsNoSelectionModalOpen(true);
-  }, [setIsMenuOpen, setIsNoSelectionModalOpen]);
+  };
 
-  // Memoize dynamic styles to prevent recreation on every render
-  const dynamicStyles = useMemo(() => ({
+  const dynamicStyles = {
     title: {
       color: Colors[theme].text,
     },
-  }), [theme]);
+  };
 
-  // Memoize the button renderer to prevent recreation on every render
-  const renderButton = useCallback((type: string) => {
+  const renderButton = (type: string) => {
     const isSelected = value.includes(type);
     const label = getQuestionTypeLabel(type);
     
@@ -96,7 +92,7 @@ export const KindsOfQuestions = React.memo(({
         <Text style={styles.buttonText}>{label}</Text>
       </TouchableOpacity>
     );
-  }, [value, getQuestionTypeLabel, theme, handleSelect]);
+  };
 
   return (
     <View style={styles.container}>

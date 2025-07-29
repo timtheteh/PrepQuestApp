@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, TouchableWithoutFeedback, View, Text } from 'react-native';
 import { SvgProps } from 'react-native-svg';
 import { Colors } from '@/constants/Colors';
@@ -13,7 +13,7 @@ interface AddDeckModalButtonProps {
   isInViewFlashcardsPage?: boolean;
 }
 
-export const AddDeckModalButton = React.memo(({ 
+export const AddDeckModalButton = ({ 
   onPress,
   title,
   Icon,
@@ -24,55 +24,38 @@ export const AddDeckModalButton = React.memo(({
   const { theme } = useTheme();
   const themeColors = Colors[theme];
 
-  // Memoize press handlers to prevent recreation on every render
-  const handlePressIn = useCallback(() => {
+  const handlePressIn = () => {
     setIsPressed(true);
-  }, []);
+  };
 
-  const handlePressOut = useCallback(() => {
+  const handlePressOut = () => {
     setIsPressed(false);
     if (onPress) onPress();
-  }, [onPress]);
-
-  // Memoize theme-aware styles
-  const themeStyles = useMemo(() => ({
-    button: {
-      ...styles.button,
-      backgroundColor: themeColors.secondaryShade,
-    },
-    buttonUnpressed: {
-      ...styles.buttonUnpressed,
-      borderColor: themeColors.brandColor2,
-    },
-    buttonPressed: {
-      ...styles.buttonPressed,
-      borderColor: themeColors.brandColor2,
-    },
-    title: {
-      ...styles.title,
-      color: themeColors.text,
-    }
-  }), [themeColors]);
-
-  // Memoize dynamic styles to prevent object recreation
-  const dynamicStyles = useMemo(() => ({
-    titleRowStyle: { marginBottom },
-    buttonStyle: [
-      themeStyles.button,
-      isPressed ? themeStyles.buttonPressed : themeStyles.buttonUnpressed,
-      isInViewFlashcardsPage && { borderColor: themeColors.brandColor1 }
-    ]
-  }), [marginBottom, isPressed, isInViewFlashcardsPage, themeColors.brandColor1, themeStyles]);
+  };
 
   return (
     <TouchableWithoutFeedback
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
-      <View style={dynamicStyles.buttonStyle}>
+      <View style={[
+        styles.button,
+        { backgroundColor: themeColors.secondaryShade },
+        isPressed ? [
+          styles.buttonPressed,
+          { borderColor: themeColors.brandColor2 }
+        ] : [
+          styles.buttonUnpressed,
+          { borderColor: themeColors.brandColor2 }
+        ],
+        isInViewFlashcardsPage && { borderColor: themeColors.brandColor1 }
+      ]}>
         <View style={styles.column}>
-          <View style={dynamicStyles.titleRowStyle}>
-            <Text style={themeStyles.title}>{title}</Text>
+          <View style={{ marginBottom }}>
+            <Text style={[
+              styles.title,
+              { color: themeColors.text }
+            ]}>{title}</Text>
           </View>
           <View style={styles.iconRow}>
             <Icon />
@@ -81,7 +64,7 @@ export const AddDeckModalButton = React.memo(({
       </View>
     </TouchableWithoutFeedback>
   );
-});
+};
 
 const styles = StyleSheet.create({
   button: {

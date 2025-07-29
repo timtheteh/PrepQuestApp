@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
 import { Entypo , MaterialIcons , Ionicons , FontAwesome5 } from '@expo/vector-icons';
@@ -15,7 +15,7 @@ interface DeckDetailsTopBarProps {
   isEditNameDisabled?: boolean;
 }
 
-export const DeckDetailsTopBar = React.memo(({
+export const DeckDetailsTopBar = ({
   onStudyPress,
   onQuizPress,
   onFolderPress,
@@ -26,59 +26,36 @@ export const DeckDetailsTopBar = React.memo(({
   isDeleteDisabled,
   isEditNameDisabled,
 }: DeckDetailsTopBarProps) => {
-  // Memoize icon render functions to prevent unnecessary re-renders
-  const renderStudyIcon = useCallback((color: string) => (
-    <Entypo name="open-book" size={20} color={color} />
-  ), []);
-
-  const renderQuizIcon = useCallback((color: string) => (
-    <MaterialIcons name="quiz" size={20} color={color} />
-  ), []);
-
-  const renderFolderIcon = useCallback((color: string) => (
-    <Ionicons name="folder" size={20} color={color} />
-  ), []);
-
-  const renderDeleteIcon = useCallback((color: string) => (
-    <Ionicons name="trash" size={20} color={color} />
-  ), []);
-
-  const renderEditIcon = useCallback((color: string) => (
-    <FontAwesome5 name="pen" size={16} color={color} />
-  ), []);
-
   return (
     <View style={styles.container}>
       <CircleIconButton 
         onPress={onStudyPress}
-        renderCustomIcon={renderStudyIcon}
+        renderCustomIcon={(color) => <Entypo name="open-book" size={20} color={color} />}
       />
       <CircleIconButton 
         onPress={onQuizPress}
-        renderCustomIcon={renderQuizIcon}
+        renderCustomIcon={(color) => <MaterialIcons name="quiz" size={20} color={color} />}
       />
       <CircleIconButton 
         onPress={onFolderPress}
         disabled={isFolderDisabled}
-        renderCustomIcon={renderFolderIcon}
+        renderCustomIcon={(color) => <Ionicons name="folder" size={20} color={color} />}
       />
       <CircleIconButton 
         color="#FF3B30"
         onPress={onDeletePress}
         disabled={isDeleteDisabled}
-        renderCustomIcon={renderDeleteIcon}
+        renderCustomIcon={(color) => <Ionicons name="trash" size={20} color={color} />}
       />
       <CircleIconButton 
         onPress={onEditNamePress}
         selected={editNameSelected}
         disabled={isEditNameDisabled}
-        renderCustomIcon={renderEditIcon}
+        renderCustomIcon={(color) => <FontAwesome5 name="pen" size={16} color={color} />}
       />
     </View>
   );
-});
-
-DeckDetailsTopBar.displayName = 'DeckDetailsTopBar';
+};
 
 const styles = StyleSheet.create({
   container: {

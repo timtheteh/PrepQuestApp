@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -26,20 +26,15 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = React.m
   const { language } = useLanguage();
   const { theme } = useTheme();
   
-  // Memoize theme-based styles to prevent object recreation on every render
-  const themeStyles = useMemo(() => ({
+  const themeStyles = {
     modalView: { backgroundColor: Colors[theme].background },
     headerTitle: { color: Colors[theme].text },
     doneButton: { color: Colors[theme].brandColor1 },
     input: { color: Colors[theme].text },
     placeholderTextColor: Colors[theme].unselectedText,
-  }), [theme]);
+  };
 
-  // Memoize current strings to prevent recalculation
-  const currentStrings = useMemo(() => 
-    strings[language as keyof typeof strings], 
-    [language]
-  );
+  const currentStrings = strings[language as keyof typeof strings];
 
   if (!visible) return null;
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
 import { Ionicons , FontAwesome5 } from '@expo/vector-icons';
@@ -17,30 +17,27 @@ export const FolderDetailsTopBar = React.memo(({
   editNameSelected,
 }: FolderDetailsTopBarProps) => {
   const { theme } = useTheme();
-  // Memoize the delete icon renderer to prevent recreation on every render
-  const renderDeleteIcon = useCallback((color: string) => (
+  
+  const renderDeleteIcon = (color: string) => (
     <Ionicons name="trash" size={24} color={color} />
-  ), []);
+  );
 
-  // Memoize the edit icon renderer to prevent recreation on every render
-  const renderEditIcon = useCallback((color: string) => (
+  const renderEditIcon = (color: string) => (
     <FontAwesome5 name="pen" size={18} color={color} />
-  ), []);
+  );
 
-  // Memoize the delete button props to prevent unnecessary re-renders
-  const deleteButtonProps = useMemo(() => ({
+  const deleteButtonProps = {
     color: "#FF3B30",
     onPress: onDeletePress,
     renderCustomIcon: renderDeleteIcon,
-  }), [onDeletePress, renderDeleteIcon]);
+  };
 
-  // Memoize the edit button props to prevent unnecessary re-renders
-  const editButtonProps = useMemo(() => ({
+  const editButtonProps = {
     color: Colors[theme].normalIconColor,
     onPress: onEditNamePress,
     selected: editNameSelected,
     renderCustomIcon: renderEditIcon,
-  }), [theme, onEditNamePress, editNameSelected, renderEditIcon]);
+  };
 
   return (
     <View style={styles.container}>

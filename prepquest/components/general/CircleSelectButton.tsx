@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -21,33 +21,28 @@ export const CircleSelectButton = React.memo(({
 }: CircleSelectButtonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const styles = createStyles(colors);
   
-  const animatedViewStyle = useMemo(() => [
-    styles.container,
-    opacity !== undefined && { opacity },
-    style
-  ], [styles.container, opacity, style]);
-  
-  const circleStyle = useMemo(() => [
-    styles.circle,
-    selected && styles.selected
-  ], [styles.circle, selected, styles.selected]);
-  
-  const handlePress = useCallback(() => {
+  const handlePress = () => {
     if (onPress) {
       onPress();
     }
-  }, [onPress]);
+  };
   
   return (
-    <Animated.View style={animatedViewStyle}>
+    <Animated.View style={[
+      styles.container,
+      opacity !== undefined && { opacity },
+      style
+    ]}>
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
         style={styles.button}
       >
-        <View style={circleStyle}>
+        <View style={[
+          styles.circle,
+          selected && styles.selected
+        ]}>
           {selected && (
             <Feather name="check" size={18} color={colors.background} />
           )}
@@ -57,7 +52,7 @@ export const CircleSelectButton = React.memo(({
   );
 });
 
-const createStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     width: 30,
     height: 30,
@@ -70,13 +65,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 15,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     borderWidth: 3,
-    borderColor: colors.brandColor2,
+    borderColor: '#4F41D8',
     alignItems: 'center',
     justifyContent: 'center',
   },
   selected: {
-    backgroundColor: colors.brandColor2,
+    backgroundColor: '#4F41D8',
   },
 }); 

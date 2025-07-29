@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
 import { Entypo } from '@expo/vector-icons';
@@ -20,24 +20,21 @@ export const FormHeaderIcons = React.memo(({
   const { language } = useLanguage();
   const { theme } = useTheme();
 
-  // Memoize the icon renderer to prevent recreation on every render
-  const renderBackInTimeIcon = useCallback((color: string) => (
+  const renderBackInTimeIcon = (color: string) => (
     <Entypo name="back-in-time" size={20} color={color} />
-  ), []);
+  );
 
-  // Memoize dynamic styles to prevent recreation on every render
-  const dynamicStyles = useMemo(() => ({
+  const dynamicStyles = {
     clearAllText: {
       color: Colors[theme].text,
     },
-  }), [theme]);
+  };
 
-  // Memoize the CircleIconButton props to prevent unnecessary re-renders
-  const circleButtonProps = useMemo(() => ({
+  const circleButtonProps = {
     color: Colors[theme].normalIconColor,
     renderCustomIcon: renderBackInTimeIcon,
     onPress: onUseMostRecentFormPress,
-  }), [theme, renderBackInTimeIcon, onUseMostRecentFormPress]);
+  };
 
   return (
     <View style={styles.container}>

@@ -19,17 +19,15 @@ interface AIPromptModalProps {
   sourcePage?: string;
 }
 
-// Memoized Lottie animation source
 const EMPTY_STATE_ANIMATION = require('@/assets/animations/EmptyState2.json');
 
-// Memoized animation configuration
 const ANIMATION_CONFIG = {
   toValue: 0,
   duration: 300,
   useNativeDriver: true,
 };
 
-export const AIPromptModal = React.memo(function AIPromptModal({ 
+export const AIPromptModal = function AIPromptModal({ 
   visible,
   opacity = new Animated.Value(0),
   sourcePage
@@ -108,31 +106,6 @@ export const AIPromptModal = React.memo(function AIPromptModal({
     }
   }, [visible]);
 
-  // Memoize deck cards to prevent unnecessary re-renders
-  const deckCards = useMemo(() => {
-    return aiDecks.map((deck) => {
-      const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
-      const imageSource = imageSources.get(deck.deckID);
-      
-      return (
-        <AIDeckCard
-          key={deck.deckID}
-          backgroundImage={cardDesign.background}
-          pressedBackgroundImage={cardDesign.pressed}
-          image={imageSource}
-          cardType={deck.interviewType || 'study'}
-          title={deck.deckName}
-          flashcardCount={deck.flashcardCount || 0}
-          deckDetailsBackgroundIndex={deck.cardDesignIndex}
-          dismissModal={dismissModal}
-          sourcePage={sourcePage}
-          isStudy={deck.deckType === 'study'}
-          deckID={deck.deckID}
-        />
-      );
-    });
-  }, [aiDecks, imageSources, dismissModal, sourcePage]);
-
   if (!visible) return null;
 
   return (
@@ -163,7 +136,27 @@ export const AIPromptModal = React.memo(function AIPromptModal({
               {currentStrings.aiPromptTitle}
             </Text>
             <View style={styles.imageContainer}>
-              {deckCards}
+              {aiDecks.map((deck) => {
+                const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
+                const imageSource = imageSources.get(deck.deckID);
+                
+                return (
+                  <AIDeckCard
+                    key={deck.deckID}
+                    backgroundImage={cardDesign.background}
+                    pressedBackgroundImage={cardDesign.pressed}
+                    image={imageSource}
+                    cardType={deck.interviewType || 'study'}
+                    title={deck.deckName}
+                    flashcardCount={deck.flashcardCount || 0}
+                    deckDetailsBackgroundIndex={deck.cardDesignIndex}
+                    dismissModal={dismissModal}
+                    sourcePage={sourcePage}
+                    isStudy={deck.deckType === 'study'}
+                    deckID={deck.deckID}
+                  />
+                );
+              })}
             </View>
           </>
         ) : (
@@ -199,7 +192,7 @@ export const AIPromptModal = React.memo(function AIPromptModal({
       </View>
     </Animated.View>
   );
-});
+};
 
 const styles = StyleSheet.create({
   container: {

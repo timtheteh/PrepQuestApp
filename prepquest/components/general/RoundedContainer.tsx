@@ -1,5 +1,5 @@
 import { StyleSheet, View, ViewProps, Text, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle } from 'react-native';
-import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -34,15 +34,9 @@ export const RoundedContainer = memo(({
   const colorAnim = useRef(new Animated.Value(initialPosition === 'right' ? 1 : 0)).current;
   const { width } = useWindowDimensions();
   
-  // Memoize expensive calculations
-  const containerWidth = useMemo(() => width - 32, [width]);
-  const slideDistance = useMemo(() => containerWidth / 2, [containerWidth]);
-
-  // Memoize animation config to prevent recreation on every render
-  const animationConfig = useMemo(() => ({
-    duration: 300,
-    easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-  }), []);
+  // Simple calculations - no need for memoization
+  const containerWidth = width - 32;
+  const slideDistance = containerWidth / 2;
 
   // Animate when position prop changes (controlled)
   useEffect(() => {
@@ -55,12 +49,14 @@ export const RoundedContainer = memo(({
       } else {
         Animated.parallel([
           Animated.timing(positionAnim, {
-            ...animationConfig,
+            duration: 300,
+            easing: Easing.bezier(0.4, 0.0, 0.2, 1),
             toValue,
             useNativeDriver: true,
           }),
           Animated.timing(colorAnim, {
-            ...animationConfig,
+            duration: 300,
+            easing: Easing.bezier(0.4, 0.0, 0.2, 1),
             toValue,
             useNativeDriver: false,
           })
@@ -68,7 +64,7 @@ export const RoundedContainer = memo(({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [position, disableAnimation, animationConfig]);
+  }, [position, disableAnimation]);
 
   // Memoize the toggle function to prevent unnecessary re-renders
   const togglePosition = useCallback(() => {
@@ -80,71 +76,66 @@ export const RoundedContainer = memo(({
     setIsRightSide(!isRightSide);
     Animated.parallel([
       Animated.timing(positionAnim, {
-        ...animationConfig,
+        duration: 300,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
         toValue,
         useNativeDriver: true,
       }),
       Animated.timing(colorAnim, {
-        ...animationConfig,
+        duration: 300,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
         toValue,
         useNativeDriver: false,
       })
     ]).start(() => {
       onToggle?.(!isRightSide);
     });
-  }, [isControlled, position, onToggle, isRightSide, positionAnim, colorAnim, animationConfig]);
-
-  // Memoize interpolated values to prevent recalculation on every render
-  const translateX = useMemo(() => positionAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, slideDistance],
-  }), [positionAnim, slideDistance]);
-
-  const leftTextColor = useMemo(() => colorAnim.interpolate({
-    inputRange: [0, 0.4, 0.6, 1],
-    outputRange: [colors.background, colors.background, colors.unselectedText, colors.unselectedText]
-  }), [colorAnim, colors.background, colors.unselectedText]);
-
-  const rightTextColor = useMemo(() => colorAnim.interpolate({
-    inputRange: [0, 0.4, 0.6, 1],
-    outputRange: [colors.unselectedText, colors.unselectedText, colors.background, colors.background]
-  }), [colorAnim, colors.unselectedText, colors.background]);
-
-  // Memoize styles to prevent recreation on every render
-  const containerStyle = useMemo(() => [
-    styles.container, 
-    { backgroundColor: colors.secondaryShade }, 
-    style
-  ], [colors.secondaryShade, style]);
-
-  const toggleBackgroundStyle = useMemo(() => [
-    styles.toggleBackground,
-    { backgroundColor: colors.brandColor2, transform: [{ translateX }] }
-  ], [colors.brandColor2, translateX]);
-
-  const leftTextStyle = useMemo(() => [
-    leftLabelStyle ? leftLabelStyle : styles.label, 
-    { color: leftTextColor }
-  ], [leftLabelStyle, leftTextColor]);
-
-  const rightTextStyle = useMemo(() => [
-    styles.label, 
-    { color: rightTextColor }
-  ], [rightTextColor]);
+  }, [isControlled, position, onToggle, isRightSide, positionAnim, colorAnim]);
 
   return (
     <TouchableWithoutFeedback onPress={togglePosition}>
-      <View style={containerStyle} {...props}>
+      <View style={[
+        styles.container, 
+        { backgroundColor: colors.secondaryShade }, 
+        style
+      ]} {...props}>
         <View style={styles.innerContainer}>
-          <Animated.View style={toggleBackgroundStyle} />
+          <Animated.View style={[
+            styles.toggleBackground,
+            { 
+              backgroundColor: colors.brandColor2, 
+              transform: [{ 
+                translateX: positionAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, slideDistance],
+                })
+              }] 
+            }
+          ]} />
           <View style={styles.labelContainer}>
             <View style={[styles.labelSection, styles.leftSection]}>
-              <Animated.Text style={leftTextStyle}>
+              <Animated.Text style={[
+                leftLabelStyle ? leftLabelStyle : styles.label, 
+                { 
+                  color: colorAnim.interpolate({
+                    inputRange: [0, 0.4, 0.6, 1],
+                    outputRange: [colors.background, colors.background, colors.unselectedText, colors.unselectedText]
+                  })
+                }
+              ]}>
                 {leftLabel}
               </Animated.Text>
             </View>
             <View style={[styles.labelSection, styles.rightSection]}>
-              <Animated.Text style={rightTextStyle}>
+              <Animated.Text style={[
+                styles.label, 
+                { 
+                  color: colorAnim.interpolate({
+                    inputRange: [0, 0.4, 0.6, 1],
+                    outputRange: [colors.unselectedText, colors.unselectedText, colors.background, colors.background]
+                  })
+                }
+              ]}>
                 {rightLabel}
               </Animated.Text>
             </View>

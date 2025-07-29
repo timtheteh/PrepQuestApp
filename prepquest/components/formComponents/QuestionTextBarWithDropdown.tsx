@@ -67,38 +67,38 @@ export const QuestionTextBarWithDropdown = React.memo(({
     }
   }, [companies.length]);
 
-  const handleClear = useCallback(() => {
+  const handleClear = () => {
     onChangeText('');
-  }, [onChangeText]);
+  };
 
-  const handleDropdownToggle = useCallback(() => {
+  const handleDropdownToggle = () => {
     if (showDropdown) {
       setIsDropdownOpen(!isDropdownOpen);
     }
-  }, [showDropdown, isDropdownOpen]);
+  };
 
-  const handleCompanySelect = useCallback((companyName: string) => {
+  const handleCompanySelect = (companyName: string) => {
     onChangeText(companyName);
     setIsDropdownOpen(false);
-  }, [onChangeText]);
+  };
 
-  const handleInputChange = useCallback((text: string) => {
+  const handleInputChange = (text: string) => {
     onChangeText(text);
     // Keep dropdown open when typing and show filtered results
     if (showDropdown && !isDropdownOpen) {
       setIsDropdownOpen(true);
     }
-  }, [onChangeText, showDropdown, isDropdownOpen]);
+  };
 
-  const handleInputFocus = useCallback(() => {
+  const handleInputFocus = () => {
     if (showDropdown && !isDropdownOpen) {
       setIsDropdownOpen(true);
     }
-  }, [showDropdown, isDropdownOpen]);
+  };
 
-  const handleCloseDropdown = useCallback(() => {
+  const handleCloseDropdown = () => {
     setIsDropdownOpen(false);
-  }, []);
+  };
 
   // Memoize filtered companies to prevent recalculation on every render
   const filteredCompanies = useMemo(() => {
@@ -110,8 +110,7 @@ export const QuestionTextBarWithDropdown = React.memo(({
     }).sort((a, b) => a.name.localeCompare(b.name)); // Ensure alphabetical order
   }, [companies, value]);
 
-  // Memoize dynamic styles to prevent recreation on every render
-  const dynamicStyles = useMemo(() => ({
+  const dynamicStyles = {
     label: {
       color: Colors[theme].text,
     },
@@ -143,20 +142,18 @@ export const QuestionTextBarWithDropdown = React.memo(({
     helperText: {
       color: Colors[theme].text,
     },
-  }), [theme]);
+  };
 
-  // Memoize TextInput props to prevent unnecessary re-renders
-  const textInputProps = useMemo(() => ({
+  const textInputProps = {
     style: [styles.textInput, dynamicStyles.textInput],
     placeholder,
     placeholderTextColor: Colors[theme].unselectedText,
     value,
     onChangeText: handleInputChange,
     onFocus: handleInputFocus,
-  }), [placeholder, value, handleInputChange, handleInputFocus, dynamicStyles.textInput, theme]);
+  };
 
-  // Memoize the company renderer to prevent recreation on every render
-  const renderCompany = useCallback((company: CompanyOption) => (
+  const renderCompany = (company: CompanyOption) => (
     <TouchableOpacity
       key={company.name}
       style={[styles.dropdownItem, dynamicStyles.dropdownItem]}
@@ -171,7 +168,7 @@ export const QuestionTextBarWithDropdown = React.memo(({
         />
       )}
     </TouchableOpacity>
-  ), [handleCompanySelect, dynamicStyles.dropdownItem, dynamicStyles.dropdownItemText]);
+  );
 
   return (
     <View style={styles.inputRow}>

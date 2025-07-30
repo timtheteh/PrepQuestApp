@@ -4,6 +4,10 @@ import type { SvgProps } from 'react-native-svg';
 import { GenericModalButton } from './GenericModalButton';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface GenericModalProps {
   visible: boolean;
@@ -44,7 +48,8 @@ export function GenericModal({
   textMarginBottom = 0,
 }: GenericModalProps) {
   const { language } = useLanguage();
-  // if (!visible) return null;
+  const { theme } = useTheme();
+  const colors = Colors[theme];
 
   // Split text to highlight specific word if needed
   const renderText = () => {
@@ -54,14 +59,16 @@ export function GenericModal({
         <View>
           {textLines.map((line, index) => (
             <Text key={index} style={[styles.text, index > 0 && styles.textLine, {
-              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-              }]}>
+              fontFamily: Fonts.bodyMedium,
+              color: colors.text
+            }]}>
               {line}
             </Text>
           ))}
           {subtitle && <Text style={[styles.subtitle, {
-            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-            }]}>{subtitle}</Text>}
+            fontFamily: Fonts.bodyMedium,
+            color: colors.unselectedText
+          }]}>{subtitle}</Text>}
         </View>
       );
     }
@@ -69,13 +76,11 @@ export function GenericModal({
     const parts = (Array.isArray(text) ? text.join(' ') : text).split(textStyle.highlightWord);
     return (
       <View>
-        <Text style={styles.text}>
+        <Text style={[styles.text, { fontFamily: Fonts.bodyMedium, color: colors.text }]}>
           {parts.map((part, index) => (
             <React.Fragment key={index}>
               {index > 0 && (
-                <Text style={[styles.text, { color: textStyle.highlightColor, 
-                // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-                }]}>
+                <Text style={[styles.text, { color: textStyle.highlightColor, fontFamily: Fonts.bodyMedium }]}>
                   {textStyle.highlightWord}
                 </Text>
               )}
@@ -84,8 +89,9 @@ export function GenericModal({
           ))}
         </Text>
         {subtitle && <Text style={[styles.subtitle, {
-          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-          }]}>{subtitle}</Text>}
+          fontFamily: Fonts.bodyMedium,
+          color: colors.unselectedText
+        }]}>{subtitle}</Text>}
       </View>
     );
   };
@@ -95,15 +101,15 @@ export function GenericModal({
       return (
         <View style={styles.buttonRow}>
           <GenericModalButton
-            text={language === 'Chinese' ? '否' : 'No'}
-            backgroundColor="#F8F8F8"
-            textColor="#000000"
+            text={strings[language].no}
+            backgroundColor={colors.secondaryShade}
+            textColor={colors.text}
             onPress={onCancel || (() => {})}
           />
           <GenericModalButton
-            text={language === 'Chinese' ? '是' : 'Yes'}
-            backgroundColor="#4F41D8"
-            textColor="#FFFFFF"
+            text={strings[language].yes}
+            backgroundColor={colors.brandColor2}
+            textColor={colors.background}
             onPress={onConfirm || (() => {})}
           />
         </View>
@@ -112,9 +118,9 @@ export function GenericModal({
       return (
         <View style={styles.singleButtonRow}>
           <GenericModalButton
-            text={language === 'Chinese' ? '确定' : 'OK'}
-            backgroundColor="#4F41D8"
-            textColor="#FFFFFF"
+            text={strings[language].ok}
+            backgroundColor={colors.brandColor2}
+            textColor={colors.background}
             onPress={onConfirm || (() => {})}
           />
         </View>
@@ -129,7 +135,7 @@ export function GenericModal({
 
   return (
     visible ? (
-      <Animated.View style={modalStyle}>
+      <Animated.View style={[modalStyle, { backgroundColor: colors.background, borderColor: colors.brandColor2 }]}>
         {Icon && (
           <View style={styles.iconContainer}>
             <Icon width={24} height={24} />
@@ -177,10 +183,8 @@ const styles = StyleSheet.create({
     height: 233,
     marginLeft: -152.5, // Half of width
     marginTop: -116.5, // Half of height
-    backgroundColor: '#FFFFFF',
     borderRadius: 30,
     borderWidth: 10,
-    borderColor: '#4F41D8',
     zIndex: 1001, // Higher than GreyOverlayBackground
   },
   iconContainer: {
@@ -208,7 +212,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 20,
     textAlign: 'center',
   },
@@ -216,12 +219,10 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   subtitle: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 16,
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 16,
-    color: '#666666',
   },
   buttonRow: {
     flexDirection: 'row',

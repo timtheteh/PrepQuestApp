@@ -122,6 +122,10 @@ export const strings: Record<string, any> = {
     thisMonth: 'This Month',
     all: 'All',
     chooseDate: 'Choose Date',
+    // GenericModal strings
+    no: 'No',
+    yes: 'Yes',
+    ok: 'OK',
   },
   Chinese: {
     // AddDeckModal strings
@@ -246,5 +250,9 @@ export const strings: Record<string, any> = {
     thisMonth: '本月',
     all: '全部',
     chooseDate: '选择日期',
+    // GenericModal strings
+    no: '否',
+    yes: '是',
+    ok: '确定',
   },
 };

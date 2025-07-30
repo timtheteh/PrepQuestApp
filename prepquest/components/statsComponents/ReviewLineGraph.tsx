@@ -5,6 +5,10 @@ import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { useIsFocused } from '@react-navigation/native';
 import { fetchReviewData, DayData, MonthData } from '@/db/users';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 
 
@@ -22,6 +26,8 @@ type ReviewLineGraphProps = {
 export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   const { width: windowWidth } = useWindowDimensions();
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const GRAPH_WIDTH = Math.round(windowWidth * 0.93);
   const X_STEP = (GRAPH_WIDTH - 2 * PADDING) / 3 - 16;
   const SVG_HEIGHT = GRAPH_HEIGHT + X_AXIS_EXTRA_HEIGHT;
@@ -161,11 +167,11 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   if (isLoading) {
     return (
       <View style={{ marginTop: 0, alignItems: 'center' }}>
-        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
-          {language === 'Chinese' ? '已复习卡组 / 卡片' : 'Decks / Flashcards Reviewed'}
+        <Text style={{ fontFamily: Fonts.title, fontSize: 24, textAlign: 'center', color: colors.text }}>
+          {strings[language].decksFlashcardsReviewed}
         </Text>
-        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
-          {language === 'Chinese' ? '正在加载复习数据...' : 'Loading review data...'}
+        <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 16, textAlign: 'center', marginTop: 20, color: colors.unselectedText }}>
+          {strings[language].loadingReviewData}
         </Text>
       </View>
     );
@@ -174,11 +180,11 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   if (currentData.length === 0) {
     return (
       <View style={{ marginTop: 0, alignItems: 'center' }}>
-        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
-          {language === 'Chinese' ? '已复习卡组 / 卡片' : 'Decks / Flashcards Reviewed'}
+        <Text style={{ fontFamily: Fonts.title, fontSize: 24, textAlign: 'center', color: colors.text }}>
+          {strings[language].decksFlashcardsReviewed}
         </Text>
-        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, textAlign: 'center', marginTop: 20, color: '#666' }}>
-          {language === 'Chinese' ? '暂无复习数据，开始学习以查看进度！' : 'No review data available yet. Start studying to see your progress!'}
+        <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 16, textAlign: 'center', marginTop: 20, color: colors.unselectedText }}>
+          {strings[language].noReviewDataAvailable}
         </Text>
       </View>
     );
@@ -187,12 +193,12 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   return (
     <View>
     <View style={{ marginTop: 0, alignItems: 'center' }}>
-        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center' }}>
-            {language === 'Chinese' ? '已复习卡组 / 卡片' : 'Decks / Flashcards Reviewed'}
+        <Text style={{ fontFamily: Fonts.title, fontSize: 24, textAlign: 'center', color: colors.text }}>
+            {strings[language].decksFlashcardsReviewed}
         </Text>
         <SmallGreenBinaryToggle
-            leftLabel={language === 'Chinese' ? '日' : 'Day'}
-            rightLabel={language === 'Chinese' ? '月' : 'Month'}
+            leftLabel={strings[language].reviewDay}
+            rightLabel={strings[language].reviewMonth}
             style={{ marginTop: 15}}
             onToggle={handleToggle}
         />
@@ -200,15 +206,15 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
         <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginTop: 15, marginLeft: 30 }}>
           {/* Decks Legend */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 18 }}>
-            <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: '#4F41D8' }} />
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#4F41D8', marginLeft: -1 }} />
-            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#4F41D8' }}>{language === 'Chinese' ? '卡组' : 'Decks'}</Text>
+            <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: colors.brandColor2 }} />
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.brandColor2, marginLeft: -1 }} />
+            <Text style={{ marginLeft: 6, fontFamily: Fonts.bodyMedium, fontSize: 16, color: colors.brandColor2 }}>{strings[language].reviewDecks}</Text>
           </View>
           {/* Flashcards Legend */}
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: '#44B88A' }} />
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#44B88A', marginLeft: -1 }} />
-            <Text style={{ marginLeft: 6, fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#44B88A' }}>{language === 'Chinese' ? '卡片' : 'Flashcards'}</Text>
+            <View style={{ width: 20, height: 3, borderRadius: 10, backgroundColor: colors.brandColor1 }} />
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.brandColor1, marginLeft: -1 }} />
+            <Text style={{ marginLeft: 6, fontFamily: Fonts.bodyMedium, fontSize: 16, color: colors.brandColor1 }}>{strings[language].reviewFlashcards}</Text>
           </View>
         </View>
     </View>
@@ -248,16 +254,16 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               strokeWidth={1}
             />
             {y % 10 === 0 && (
-              <SvgText
-                x={GRAPH_WIDTH - PADDING + 8}
-                y={getY(y, GRAPH_HEIGHT) + 5}
-                fontSize={isMonth ? 10 : 12}
-                fill="#D5D4DD"
-                fontFamily="Satoshi-Medium"
-                textAnchor="start"
-              >
-                {y}
-              </SvgText>
+                          <SvgText
+              x={GRAPH_WIDTH - PADDING + 8}
+              y={getY(y, GRAPH_HEIGHT) + 5}
+              fontSize={isMonth ? 10 : 12}
+              fill={colors.unselectedText}
+              fontFamily={Fonts.bodyMedium}
+              textAnchor="start"
+            >
+              {y}
+            </SvgText>
             )}
           </G>
         ))}
@@ -318,44 +324,44 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                 <Polygon points={deckPoly} fill="url(#deckGradient)" stroke="none" />
                 {/* Flashcards value labels */}
                 {currentData.map((d: DayData | MonthData, i: number) => (
-                  <SvgText
-                    key={`fc-label-${i}`}
-                    x={getX(i)}
-                    y={getY(d.flashcards, GRAPH_HEIGHT) - 12}
-                    fontSize={12}
-                    fill="#44B88A"
-                    fontFamily="Satoshi-Bold"
-                    textAnchor="middle"
-                  >
-                    {d.flashcards}
-                  </SvgText>
+                                  <SvgText
+                  key={`fc-label-${i}`}
+                  x={getX(i)}
+                  y={getY(d.flashcards, GRAPH_HEIGHT) - 12}
+                  fontSize={12}
+                  fill={colors.brandColor1}
+                  fontFamily={Fonts.bodyBold}
+                  textAnchor="middle"
+                >
+                  {d.flashcards}
+                </SvgText>
                 ))}
                 {/* Decks value labels */}
                 {currentData.map((d: DayData | MonthData, i: number) => (
-                  <SvgText
-                    key={`deck-label-${i}`}
-                    x={getX(i)}
-                    y={getY(d.decks, GRAPH_HEIGHT) - 12}
-                    fontSize={12}
-                    fill="#4F41D8"
-                    fontFamily="Satoshi-Bold"
-                    textAnchor="middle"
-                  >
-                    {d.decks}
-                  </SvgText>
+                                  <SvgText
+                  key={`deck-label-${i}`}
+                  x={getX(i)}
+                  y={getY(d.decks, GRAPH_HEIGHT) - 12}
+                  fontSize={12}
+                  fill={colors.brandColor2}
+                  fontFamily={Fonts.bodyBold}
+                  textAnchor="middle"
+                >
+                  {d.decks}
+                </SvgText>
                 ))}
                 {/* Flashcards line and area */}
                 <Polyline
                   points={currentData.map((d, i) => `${getX(i)},${getY(d.flashcards, GRAPH_HEIGHT)}`).join(' ')}
                   fill="none"
-                  stroke="#44B88A"
+                  stroke={colors.brandColor1}
                   strokeWidth={2}
                 />
                 {/* Decks line */}
                 <Polyline
                   points={currentData.map((d, i) => `${getX(i)},${getY(d.decks, GRAPH_HEIGHT)}`).join(' ')}
                   fill="none"
-                  stroke="#4F41D8"
+                  stroke={colors.brandColor2}
                   strokeWidth={2}
                 />
                 {/* Flashcards circles */}
@@ -372,7 +378,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                       cx={getX(i)}
                       cy={getY(d.flashcards, GRAPH_HEIGHT)}
                       r={7}
-                      fill="#44B88A"
+                      fill={colors.brandColor1}
                     />
                   </G>
                 ))}
@@ -390,7 +396,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                       cx={getX(i)}
                       cy={getY(d.decks, GRAPH_HEIGHT)}
                       r={7}
-                      fill="#4F41D8"
+                      fill={colors.brandColor2}
                     />
                   </G>
                 ))}
@@ -406,24 +412,24 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                     //   onPressIn={() => handleDataPointClick(i)}
                     />
                     {'month' in d ? (
-                      <SvgText
-                        x={getX(i)}
-                        y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP }
-                        fontSize={16}
-                        fill="#D5D4DD"
-                        fontFamily="Satoshi-Medium"
-                        textAnchor="middle"
-                      >
-                        {d.month}
-                      </SvgText>
+                                              <SvgText
+                          x={getX(i)}
+                          y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP }
+                          fontSize={16}
+                          fill={colors.unselectedText}
+                          fontFamily={Fonts.bodyMedium}
+                          textAnchor="middle"
+                        >
+                          {d.month}
+                        </SvgText>
                     ) : (
                       <>
                         <SvgText
                           x={getX(i)}
                           y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP}
                           fontSize={16}
-                          fill="#D5D4DD"
-                          fontFamily="Satoshi-Medium"
+                          fill={colors.unselectedText}
+                          fontFamily={Fonts.bodyMedium}
                           textAnchor="middle"
                         >
                           {d.day}
@@ -432,8 +438,8 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                           x={getX(i)}
                           y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + X_AXIS_DATE_GAP + 14}
                           fontSize={12}
-                          fill="#D5D4DD"
-                          fontFamily="Satoshi-Medium"
+                          fill={colors.unselectedText}
+                          fontFamily={Fonts.bodyMedium}
                           textAnchor="middle"
                         >
                           {d.date}
@@ -502,8 +508,8 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                 x={PADDING + 10 + i * X_STEP}
                 y={getY(d.flashcards, GRAPH_HEIGHT) - 12}
                 fontSize={12}
-                fill="#44B88A"
-                fontFamily="Satoshi-Bold"
+                fill={colors.brandColor1}
+                fontFamily={Fonts.bodyBold}
                 textAnchor="middle"
               >
                 {d.flashcards}
@@ -516,8 +522,8 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                 x={PADDING + 10 + i * X_STEP}
                 y={getY(d.decks, GRAPH_HEIGHT) - 12}
                 fontSize={12}
-                fill="#4F41D8"
-                fontFamily="Satoshi-Bold"
+                fill={colors.brandColor2}
+                fontFamily={Fonts.bodyBold}
                 textAnchor="middle"
               >
                 {d.decks}
@@ -527,14 +533,14 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
             <Polyline
               points={currentData.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(d.flashcards, GRAPH_HEIGHT)}`).join(' ')}
               fill="none"
-              stroke="#44B88A"
+              stroke={colors.brandColor1}
               strokeWidth={2}
             />
             {/* Decks line */}
             <Polyline
               points={currentData.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(d.decks, GRAPH_HEIGHT)}`).join(' ')}
               fill="none"
-              stroke="#4F41D8"
+              stroke={colors.brandColor2}
               strokeWidth={2}
             />
             {/* Flashcards circles */}
@@ -551,7 +557,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                   cx={PADDING + 10 + i * X_STEP}
                   cy={getY(d.flashcards, GRAPH_HEIGHT)}
                   r={7}
-                  fill="#44B88A"
+                  fill={colors.brandColor1}
                 />
               </G>
             ))}
@@ -569,7 +575,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                   cx={PADDING + 10 + i * X_STEP}
                   cy={getY(d.decks, GRAPH_HEIGHT)}
                   r={7}
-                  fill="#4F41D8"
+                  fill={colors.brandColor2}
                 />
               </G>
             ))}
@@ -589,8 +595,8 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                     x={PADDING + 10 + i * X_STEP}
                     y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + 6}
                     fontSize={16}
-                    fill="#D5D4DD"
-                    fontFamily="Satoshi-Medium"
+                    fill={colors.unselectedText}
+                    fontFamily={Fonts.bodyMedium}
                     textAnchor="middle"
                   >
                     {d.month}
@@ -601,8 +607,8 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                       x={PADDING + 10 + i * X_STEP}
                       y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP}
                       fontSize={16}
-                      fill="#D5D4DD"
-                      fontFamily="Satoshi-Medium"
+                      fill={colors.unselectedText}
+                      fontFamily={Fonts.bodyMedium}
                       textAnchor="middle"
                     >
                       {d.day}
@@ -611,8 +617,8 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
                       x={PADDING + 10 + i * X_STEP}
                       y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + X_AXIS_DATE_GAP + 14}
                       fontSize={12}
-                      fill="#D5D4DD"
-                      fontFamily="Satoshi-Medium"
+                      fill={colors.unselectedText}
+                      fontFamily={Fonts.bodyMedium}
                       textAnchor="middle"
                     >
                       {d.date}

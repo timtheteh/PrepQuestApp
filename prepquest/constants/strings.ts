@@ -181,6 +181,14 @@ export const strings: Record<string, any> = {
     accumulatedInterviewDecks: 'Accumulated\nInterview Decks',
     interviewDecksInLocalStorage: 'Interview decks\nin local storage',
     totalInterviewDecksQuizzed: 'Total Interview\ndecks quizzed',
+    // ReviewLineGraph strings
+    decksFlashcardsReviewed: 'Decks / Flashcards Reviewed',
+    loadingReviewData: 'Loading review data...',
+    noReviewDataAvailable: 'No review data available yet. Start studying to see your progress!',
+    reviewDay: 'Day',
+    reviewMonth: 'Month',
+    reviewDecks: 'Decks',
+    reviewFlashcards: 'Flashcards',
   },
   Chinese: {
     // AddDeckModal strings
@@ -364,5 +372,13 @@ export const strings: Record<string, any> = {
     accumulatedInterviewDecks: '累计\n面试卡组',
     interviewDecksInLocalStorage: '本地\n存储面试卡组',
     totalInterviewDecksQuizzed: '已测\n面试卡组总数',
+    // ReviewLineGraph strings
+    decksFlashcardsReviewed: '已复习卡组 / 卡片',
+    loadingReviewData: '正在加载复习数据...',
+    noReviewDataAvailable: '暂无复习数据，开始学习以查看进度！',
+    reviewDay: '日',
+    reviewMonth: '月',
+    reviewDecks: '卡组',
+    reviewFlashcards: '卡片',
   },
 };

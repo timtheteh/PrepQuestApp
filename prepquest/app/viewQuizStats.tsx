@@ -5,7 +5,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { AverageGradeThermometer } from '@/components/statsComponents/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/statsComponents/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/statsComponents/AverageSpeedTotal';
-import DoubleChevron from '@/assets/icons/DoubleChevron.svg';
+import DoubleChevron from '@/assets/icons/generalIcons/DoubleChevron.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,8 +22,8 @@ async function getCurrentUserID(): Promise<string> {
   }
 }
 
-const ConfettiIcon = require('@/assets/icons/ConfettiIcon.png');
-const FlagIcon = require('@/assets/icons/FlagIcon.png');
+const ConfettiIcon = require('@/assets/icons/generalIcons/ConfettiIcon.png');
+const FlagIcon = require('@/assets/icons/generalIcons/FlagIcon.png');
 
 interface QuizStats {
   currentGrade: number;

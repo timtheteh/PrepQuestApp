@@ -67,7 +67,7 @@ export function GenericModal({
           ))}
           {subtitle && <Text style={[styles.subtitle, {
             fontFamily: Fonts.bodyMedium,
-            color: colors.unselectedText
+            color: colors.text
           }]}>{subtitle}</Text>}
         </View>
       );
@@ -90,7 +90,7 @@ export function GenericModal({
         </Text>
         {subtitle && <Text style={[styles.subtitle, {
           fontFamily: Fonts.bodyMedium,
-          color: colors.unselectedText
+          color: colors.text
         }]}>{subtitle}</Text>}
       </View>
     );

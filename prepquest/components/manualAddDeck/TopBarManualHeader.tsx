@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CircleSVGIconButton } from '../general/CircleSVGIconButton';
-import CameraIconFilled from '@/assets/icons/cameraIconFilled.svg';
-import CameraIconFilledWhite from '@/assets/icons/cameraIconFilledWhite.svg';
-import MarkerIcon from '@/assets/icons/markerIcon.svg';
-import MarkerIconWhite from '@/assets/icons/markerIconWhite.svg';
-import MicIcon from '@/assets/icons/micIcon.svg';
-import MicIconWhite from '@/assets/icons/micIconWhite.svg';
-import TextIcon from '@/assets/icons/textIcon.svg';
-import TextIconWhite from '@/assets/icons/textIconWhite.svg';
+import CameraIconFilled from '@/assets/icons/generalIcons/cameraIconFilled.svg';
+import CameraIconFilledWhite from '@/assets/icons/generalIcons/cameraIconFilledWhite.svg';
+import MarkerIcon from '@/assets/icons/flippableCard/markerIcon.svg';
+import MarkerIconWhite from '@/assets/icons/flippableCard/markerIconWhite.svg';
+import MicIcon from '@/assets/icons/flippableCard/micIcon.svg';
+import MicIconWhite from '@/assets/icons/flippableCard/micIconWhite.svg';
+import TextIcon from '@/assets/icons/flippableCard/textIcon.svg';
+import TextIconWhite from '@/assets/icons/flippableCard/textIconWhite.svg';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 

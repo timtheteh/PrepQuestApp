@@ -7,7 +7,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuContext } from '@/contexts/MenuContext';
 import { ViewFlashcardsTopBar } from '@/components/viewFlashcards/ViewFlashcardsTopBar';
 import { ActionButtonsRow } from '@/components/general/ActionButtonsRow';
-import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
+import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 import { Ionicons } from '@expo/vector-icons';
 import { FavoriteButton } from '@/components/general/FavoriteButton';
 import { CircleSelectButtonGreen } from '@/components/general/CircleSelectButtonGreen';

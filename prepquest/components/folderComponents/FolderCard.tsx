@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated, Dimensions, Text } from 'react-native';
 import { CircleSelectButton } from '../general/CircleSelectButton';
 import { FavoriteButton } from '../general/FavoriteButton';
-import FolderCardIcon from '@/assets/icons/FolderCardIcon.svg';
+import FolderCardIcon from '@/assets/icons/folders/FolderCardIcon.svg';
 import { router } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';

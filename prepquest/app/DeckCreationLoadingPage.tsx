@@ -2,8 +2,8 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
-import GreenTickIcon from '@/assets/icons/GreenTickIcon.svg';
-import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
+import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import { useContentTopHeightNoRoundedToggle2, useTopBarAccountHeight } from '@/hooks/heights';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

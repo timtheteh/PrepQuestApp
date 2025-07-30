@@ -15,7 +15,7 @@ import { GenericModal } from '@/components/modals/GenericModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
-import DeleteModalIcon from '@/assets/icons/deleteModalIcon.svg';
+import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import { checkDeckNameExists, saveUserGenAIFormEntry, getMostRecentGenAIFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck, getDeckNameById } from '../db/decks';
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';

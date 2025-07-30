@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import HelpIconOutline from '@/assets/icons/helpIconOutline.svg';
+import HelpIconOutline from '@/assets/icons/generalIcons/helpIconOutline.svg';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';

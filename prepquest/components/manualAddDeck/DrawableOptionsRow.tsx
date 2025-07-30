@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable, Text, TouchableOpacity } from 'react-native';
-import MarkerIcon from '@/assets/icons/markerIcon.svg';
-import MarkerIconWhite from '@/assets/icons/markerIconWhite.svg';
-import UndoIcon from '@/assets/icons/undoIcon.svg';
-import ForwarddoIcon from '@/assets/icons/forwarddoIcon.svg';
+import MarkerIcon from '@/assets/icons/flippableCard/markerIcon.svg';
+import MarkerIconWhite from '@/assets/icons/flippableCard/markerIconWhite.svg';
+import UndoIcon from '@/assets/icons/flippableCard/undoIcon.svg';
+import ForwarddoIcon from '@/assets/icons/flippableCard/forwarddoIcon.svg';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { ResizeSlider } from './ResizeSlider';
 import { useTheme } from '@/contexts/ThemeContext';

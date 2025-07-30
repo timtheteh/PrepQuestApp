@@ -75,7 +75,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
       isNaN(d.flashcards) ? 0 : d.flashcards, 
       isNaN(d.decks) ? 0 : d.decks
     )));
-    const Y_MAX = Math.max(1, Math.ceil(yMaxRaw / 10) * 10); // Ensure minimum value of 1
+    const Y_MAX = Math.max(30, Math.ceil(yMaxRaw / 10) * 10); // Ensure minimum value of 30
     const Y_STEP = isMonth ? 10 : 5;
 
     return { totalWidth, Y_MAX, Y_STEP };

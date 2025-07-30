@@ -126,6 +126,8 @@ export const strings: Record<string, any> = {
     no: 'No',
     yes: 'Yes',
     ok: 'OK',
+    // AverageGradeThermometer strings
+    averageGrade: 'Average Grade',
   },
   Chinese: {
     // AddDeckModal strings
@@ -254,5 +256,7 @@ export const strings: Record<string, any> = {
     no: '否',
     yes: '是',
     ok: '确定',
+    // AverageGradeThermometer strings
+    averageGrade: '平均分数',
   },
 };

@@ -2,6 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Rect, Text as SvgText, G, Polygon, Defs, ClipPath, Path } from 'react-native-svg';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface AverageGradeThermometerProps {
   score?: number; // 0-100
@@ -24,6 +28,8 @@ const HORIZONTAL_PADDING = 10;
 
 export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   // Calculate segment widths
   const segmentWidths = SEGMENTS.slice(1).map((val, i) => (val - SEGMENTS[i]) / 100 * RECT_WIDTH);
   // Calculate arrow position, clamped to padding
@@ -31,12 +37,16 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, 
-        // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
-        ]}>
-        {language === 'Chinese' ? '平均分数' : 'Average Grade'}
+      <Text style={[styles.title, {
+        fontFamily: Fonts.title,
+        color: colors.text
+      }]}>
+        {strings[language].averageGrade}
       </Text>
-      <Text style={styles.scoreText}>{score}%</Text>
+      <Text style={[styles.scoreText, {
+        fontFamily: Fonts.title,
+        color: colors.text
+      }]}>{score}%</Text>
       <View style={{ marginTop: 10, alignItems: 'center', width: RECT_WIDTH + 2 * HORIZONTAL_PADDING, height: RECT_HEIGHT + 38 }}>
         <Svg width={RECT_WIDTH + 2 * HORIZONTAL_PADDING} height={RECT_HEIGHT + 38}>
           {/* Labels above breakpoints */}
@@ -46,8 +56,8 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
               x={HORIZONTAL_PADDING + (val / 100) * RECT_WIDTH}
               y={10}
               fontSize={10}
-              fill="#111"
-              fontFamily="Satoshi-Medium"
+              fill={colors.text}
+              fontFamily={Fonts.bodyMedium}
               textAnchor={i === 0 ? 'start' : i === SEGMENTS.length - 1 ? 'end' : 'middle'}
             >
               {val}
@@ -127,7 +137,7 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
               ${arrowX + 10},${18 + RECT_HEIGHT + 10}
               ${arrowX},${18 + RECT_HEIGHT - 2}
             `}
-            fill="#111"
+            fill={colors.text}
           />
         </Svg>
       </View>
@@ -143,13 +153,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Neuton-Regular',
     textAlign: 'center',
     lineHeight: 30,
   },
   scoreText: {
     fontSize: 48,
-    fontFamily: 'Neuton-Regular',
     textAlign: 'center',
   },
 }); 

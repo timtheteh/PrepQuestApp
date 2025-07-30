@@ -155,6 +155,13 @@ export const strings: Record<string, any> = {
       brainteasers: 'Brainteasers',
       others: 'Others',
     },
+    // GradeChart strings
+    gradeChart: 'Grade Chart (%)',
+    day: 'Day',
+    month: 'Month',
+    loadingGradeData: 'Loading grade data...',
+    noGradeDataAvailable: 'No grade data available',
+    studyOrQuizToSeeProgress: 'Study or quiz flashcards to see your progress',
   },
   Chinese: {
     // AddDeckModal strings
@@ -312,5 +319,12 @@ export const strings: Record<string, any> = {
       brainteasers: '脑筋急转弯',
       others: '其他',
     },
+    // GradeChart strings
+    gradeChart: '分数图表 (%)',
+    day: '日',
+    month: '月',
+    loadingGradeData: '正在加载分数数据...',
+    noGradeDataAvailable: '暂无分数数据',
+    studyOrQuizToSeeProgress: '完成一些卡片以查看分布',
   },
 };

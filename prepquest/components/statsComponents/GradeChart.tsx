@@ -5,6 +5,10 @@ import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { getCompleteDailyGrades, getMonthlyGrades, DayGrade, MonthGrade } from '../../db/grades';
 import { useIsFocused } from '@react-navigation/native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -22,6 +26,8 @@ type GradeChartProps = {
 export function GradeChart({ onContentReady }: GradeChartProps) {
   const { width: windowWidth } = useWindowDimensions();
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const GRAPH_WIDTH = Math.round(windowWidth * 0.93);
   const X_STEP = (GRAPH_WIDTH - 2 * PADDING) / 3 - 16;
   const SVG_HEIGHT = GRAPH_HEIGHT + X_AXIS_EXTRA_HEIGHT;
@@ -168,8 +174,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
             x={getX(i)-5}
             y={barY - 10}
             fontSize={14}
-            fill="#4F41D8"
-            fontFamily="Satoshi-Variable"
+            fill={colors.brandColor2}
+            fontFamily={Fonts.bodyBold}
             fontWeight="700"
             textAnchor="middle"
           >
@@ -196,12 +202,18 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
     return (
       <View>
         <View style={{ marginTop: 0, alignItems: 'center', zIndex: 2 }}>
-          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            {language === 'Chinese' ? '成绩图表 (%)' : 'Grade Chart (%)'}
+          <Text style={{ 
+            fontFamily: Fonts.title, 
+            fontSize: 24, 
+            textAlign: 'center', 
+            lineHeight: 30,
+            color: colors.text
+          }}>
+            {strings[language].gradeChart}
           </Text>
           <SmallGreenBinaryToggle
-            leftLabel={language === 'Chinese' ? '日' : 'Day'}
-            rightLabel={language === 'Chinese' ? '月' : 'Month'}
+            leftLabel={strings[language].day}
+            rightLabel={strings[language].month}
             style={{ marginTop: 15 }}
             onToggle={handleToggle}
           />
@@ -214,8 +226,12 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
-            {language === 'Chinese' ? '正在加载成绩数据...' : 'Loading grade data...'}
+          <Text style={{ 
+            fontFamily: Fonts.bodyMedium, 
+            fontSize: 16, 
+            color: colors.unselectedText 
+          }}>
+            {strings[language].loadingGradeData}
           </Text>
         </View>
       </View>
@@ -227,12 +243,18 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
     return (
       <View>
         <View style={{ marginTop: 0, alignItems: 'center', zIndex: 2 }}>
-          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            {language === 'Chinese' ? '成绩图表 (%)' : 'Grade Chart (%)'}
+          <Text style={{ 
+            fontFamily: Fonts.title, 
+            fontSize: 24, 
+            textAlign: 'center', 
+            lineHeight: 30,
+            color: colors.text
+          }}>
+            {strings[language].gradeChart}
           </Text>
           <SmallGreenBinaryToggle
-            leftLabel={language === 'Chinese' ? '日' : 'Day'}
-            rightLabel={language === 'Chinese' ? '月' : 'Month'}
+            leftLabel={strings[language].day}
+            rightLabel={strings[language].month}
             style={{ marginTop: 15 }}
             onToggle={handleToggle}
           />
@@ -245,11 +267,20 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
-            {language === 'Chinese' ? '暂无成绩数据' : 'No grade data available'}
+          <Text style={{ 
+            fontFamily: Fonts.bodyMedium, 
+            fontSize: 16, 
+            color: colors.unselectedText 
+          }}>
+            {strings[language].noGradeDataAvailable}
           </Text>
-          <Text style={{ fontFamily: 'Satoshi-Regular', fontSize: 14, color: '#D5D4DD', marginTop: 8 }}>
-            {language === 'Chinese' ? '学习或测验卡片以查看进度' : 'Study or quiz flashcards to see your progress'}
+          <Text style={{ 
+            fontFamily: Fonts.bodyMedium, 
+            fontSize: 14, 
+            color: colors.unselectedText, 
+            marginTop: 8 
+          }}>
+            {strings[language].studyOrQuizToSeeProgress}
           </Text>
         </View>
       </View>
@@ -260,12 +291,18 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
     <View>
       {/* Fixed header with title and toggle */}
       <View style={{ marginTop: 0, alignItems: 'center', zIndex: 2 }}>
-        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-          {language === 'Chinese' ? '成绩图表 (%)' : 'Grade Chart (%)'}
+        <Text style={{ 
+          fontFamily: Fonts.title, 
+          fontSize: 24, 
+          textAlign: 'center', 
+          lineHeight: 30,
+          color: colors.text
+        }}>
+          {strings[language].gradeChart}
         </Text>
         <SmallGreenBinaryToggle
-          leftLabel={language === 'Chinese' ? '日' : 'Day'}
-          rightLabel={language === 'Chinese' ? '月' : 'Month'}
+          leftLabel={strings[language].day}
+          rightLabel={strings[language].month}
           style={{ marginTop: 15 }}
           onToggle={handleToggle}
         />
@@ -289,7 +326,7 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
             x2={GRAPH_WIDTH - 32}
             y1={PADDING - 15}
             y2={GRAPH_HEIGHT - 32}
-            stroke="#E5E4EA"
+            stroke={colors.graphLineColor}
             strokeWidth={1}
           />
           {/* Y axis dashed lines and labels at every 25% */}
@@ -300,7 +337,7 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                 x2={GRAPH_WIDTH - PADDING}
                 y1={getY(y, GRAPH_HEIGHT)}
                 y2={getY(y, GRAPH_HEIGHT)}
-                stroke="#E5E4EA"
+                stroke={colors.graphLineColor}
                 strokeDasharray={y === 0 ? undefined : '4,4'}
                 strokeWidth={1}
               />
@@ -308,8 +345,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                 x={GRAPH_WIDTH - PADDING + 8}
                 y={getY(y, GRAPH_HEIGHT) + 5}
                 fontSize={12}
-                fill="#D5D4DD"
-                fontFamily="Satoshi-Medium"
+                fill={colors.unselectedText}
+                fontFamily={Fonts.bodyMedium}
                 textAnchor="start"
               >
                 {y}%
@@ -362,8 +399,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                           x={getX(i)}
                           y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP}
                           fontSize={16}
-                          fill="#D5D4DD"
-                          fontFamily="Satoshi-Medium"
+                          fill={colors.unselectedText}
+                          fontFamily={Fonts.bodyMedium}
                           textAnchor="middle"
                         >
                           {d.month}
@@ -374,8 +411,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                             x={getX(i)}
                             y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP}
                             fontSize={16}
-                            fill="#D5D4DD"
-                            fontFamily="Satoshi-Medium"
+                            fill={colors.unselectedText}
+                            fontFamily={Fonts.bodyMedium}
                             textAnchor="middle"
                           >
                             {d.day}
@@ -384,8 +421,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                             x={getX(i)}
                             y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + X_AXIS_DATE_GAP + 14}
                             fontSize={12}
-                            fill="#D5D4DD"
-                            fontFamily="Satoshi-Medium"
+                            fill={colors.unselectedText}
+                            fontFamily={Fonts.bodyMedium}
                             textAnchor="middle"
                           >
                             {d.date}
@@ -434,8 +471,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                       x={PADDING + 10 + i * X_STEP}
                       y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + 6}
                       fontSize={16}
-                      fill="#D5D4DD"
-                      fontFamily="Satoshi-Medium"
+                      fill={colors.unselectedText}
+                      fontFamily={Fonts.bodyMedium}
                       textAnchor="middle"
                     >
                       {d.month}
@@ -446,8 +483,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                         x={PADDING + 10 + i * X_STEP}
                         y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP}
                         fontSize={16}
-                        fill="#D5D4DD"
-                        fontFamily="Satoshi-Medium"
+                        fill={colors.unselectedText}
+                        fontFamily={Fonts.bodyMedium}
                         textAnchor="middle"
                       >
                         {d.day}
@@ -456,8 +493,8 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
                         x={PADDING + 10 + i * X_STEP}
                         y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + X_AXIS_DATE_GAP + 14}
                         fontSize={12}
-                        fill="#D5D4DD"
-                        fontFamily="Satoshi-Medium"
+                        fill={colors.unselectedText}
+                        fontFamily={Fonts.bodyMedium}
                         textAnchor="middle"
                       >
                         {d.date}

@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
 import { Entypo , MaterialIcons , Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface ViewFlashcardsTopBarProps {
   onStudyPress?: () => void;
@@ -18,6 +20,8 @@ export function ViewFlashcardsTopBar({
   onListPress,
   viewMode,
 }: ViewFlashcardsTopBarProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   return (
     <View style={styles.container}>
       <CircleIconButton 
@@ -37,7 +41,7 @@ export function ViewFlashcardsTopBar({
         <Ionicons 
           name="grid-outline" 
           size={24} 
-          color={viewMode === 'grid' ? '#D5D4DD' : '#000'} 
+          color={viewMode === 'grid' ? colors.unselectedText : colors.text} 
         />
       </TouchableOpacity>
       <TouchableOpacity 
@@ -49,7 +53,7 @@ export function ViewFlashcardsTopBar({
         <Ionicons 
           name="list" 
           size={28} 
-          color={viewMode === 'list' ? '#D5D4DD' : '#000'} 
+          color={viewMode === 'list' ? colors.unselectedText : colors.text} 
         />
       </TouchableOpacity>
     </View>

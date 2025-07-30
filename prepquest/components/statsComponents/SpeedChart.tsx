@@ -43,20 +43,15 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
   const fetchSpeedData = async () => {
     try {
       setIsLoading(true);
-      console.log('🔍 Fetching speed data for SpeedChart...');
       
       const [dailySpeeds, monthlySpeeds] = await Promise.all([
         getCompleteDailySpeeds(),
         getMonthlySpeeds()
       ]);
       
-      console.log('📊 Daily speeds fetched:', dailySpeeds.length, 'entries');
-      console.log('📊 Monthly speeds fetched:', monthlySpeeds.length, 'entries');
-      
       setData(dailySpeeds);
       setMonthData(monthlySpeeds);
     } catch (error) {
-      console.error('❌ Error fetching speed data:', error);
       setData([]);
       setMonthData([]);
     } finally {

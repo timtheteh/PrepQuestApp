@@ -63,7 +63,6 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
       const data = await fetchStatsData();
       setStatsData(data);
     } catch (error) {
-      console.error('Error loading stats data:', error);
     } finally {
       setIsLoading(false);
     }

@@ -52,15 +52,10 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
       const [dailyGrades, monthlyGrades] = await Promise.all([
         getCompleteDailyGrades(),
         getMonthlyGrades()
-      ]);
-      
-      console.log('📊 GradeChart: Daily grades received:', dailyGrades.length);
-      console.log('📊 GradeChart: Monthly grades received:', monthlyGrades.length);
-      
+      ]);      
       setDayData(dailyGrades);
       setMonthData(monthlyGrades);
     } catch (error) {
-      console.error('❌ GradeChart: Error fetching grade data:', error);
       // Fallback to empty arrays if there's an error
       setDayData([]);
       setMonthData([]);

@@ -19,7 +19,6 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
   try {
     return await getBreakdownData();
   } catch (error) {
-    console.error('Error fetching breakdown data:', error);
     // Return empty data if there's an error
     return { decksData: [], flashcardsData: [] };
   }
@@ -84,7 +83,6 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       setDecksData(fetchedDecksData);
       setFlashcardsData(fetchedFlashcardsData);
     } catch (error) {
-      console.error('Error loading breakdown data:', error);
     } finally {
       setIsLoading(false);
     }

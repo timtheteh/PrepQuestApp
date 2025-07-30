@@ -10,9 +10,6 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 
-
-
-
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
 const X_AXIS_LABEL_GAP = -5; // gap from bottom of graph to day label
@@ -52,7 +49,6 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
       setDayData(fetchedDayData);
       setMonthData(fetchedMonthData);
     } catch (error) {
-      console.error('Error loading review data:', error);
     } finally {
       setIsLoading(false);
     }

@@ -3,6 +3,10 @@ import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import Svg, { Path, G, Text as SvgText } from 'react-native-svg';
 import GaugeIcon from '../../assets/icons/gaugeIcon.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const WIDTH = Dimensions.get('window').width * 0.8;
 const HEIGHT = 180;
@@ -50,6 +54,8 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
 
 export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   // Use provided averageTime or default to 0 if no data
   const value = averageTime ?? 0;
   
@@ -73,15 +79,18 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
   // Label positions (slightly outside arc)
   const labelPositions = LABELS.map(v => polarToCartesian(CX-7, CY -8, R+8, valueToAngle(v)));
   // Localized title and label
-  const title = language === 'Chinese' ? '平均每张卡片用时' : 'Average time per flashcard';
-  const secondsLabel = language === 'Chinese' ? '秒' : 's';
+  const title = strings[language].averageTimePerFlashcard;
+  const secondsLabel = strings[language].seconds;
 
   // For gaugeIcon.svg: its tip (0,0) should be at the arc center (CX,CY), so translate and rotate accordingly
   // The SVG is 12x80, tip at (6,0), so offset x by -6, y by -10 (to move tip to center)
 
   return (
     <View style={styles.wrapper}>
-      <Text style={[styles.title, language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }]}>{title}</Text>
+      <Text style={[styles.title, {
+        fontFamily: Fonts.title,
+        color: colors.text
+      }]}>{title}</Text>
       <View style={styles.svgWrap}>
         <Svg width={WIDTH} height={HEIGHT}>
           <G>
@@ -100,8 +109,8 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
                 x={labelPositions[i].x}
                 y={labelPositions[i].y + 8}
                 fontSize={22}
-                fontFamily={language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'}
-                fill="#000"
+                fontFamily={Fonts.bodyMedium}
+                fill={colors.text}
                 textAnchor={i === 0 ? 'end' : i === LABELS.length - 1 ? 'start' : 'middle'}
               >
                 {v + secondsLabel}
@@ -139,7 +148,10 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
           </View>
         </View>
         {/* Value at bottom center - show actual value, not capped */}
-        <Text style={[styles.valueText, language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }]}>{value}{secondsLabel}</Text>
+        <Text style={[styles.valueText, {
+          fontFamily: Fonts.bodyBold,
+          color: colors.text
+        }]}>{value}{secondsLabel}</Text>
       </View>
     </View>
   );
@@ -153,10 +165,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   title: {
-    fontFamily: 'Neuton-Regular',
     fontSize: 24,
     textAlign: 'center',
-    color: '#000',
     includeFontPadding: false,
   },
   svgWrap: {
@@ -173,9 +183,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: -2,
     textAlign: 'center',
-    fontFamily: 'Satoshi-Variable',
-    fontWeight: '700',
     fontSize: 24,
-    color: '#111',
   },
 }); 

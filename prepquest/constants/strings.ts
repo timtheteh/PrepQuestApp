@@ -128,6 +128,9 @@ export const strings: Record<string, any> = {
     ok: 'OK',
     // AverageGradeThermometer strings
     averageGrade: 'Average Grade',
+    // AverageSpeedTotal strings
+    averageTimePerFlashcard: 'Average time per flashcard',
+    seconds: 's',
   },
   Chinese: {
     // AddDeckModal strings
@@ -258,5 +261,8 @@ export const strings: Record<string, any> = {
     ok: '确定',
     // AverageGradeThermometer strings
     averageGrade: '平均分数',
+    // AverageSpeedTotal strings
+    averageTimePerFlashcard: '平均每张卡片用时',
+    seconds: '秒',
   },
 };

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ViewStyle, Pressable, Animated, Text, Dimensions, ScrollView, Image } from 'react-native';
 import FlippableCardFrontFlipArrow from '@/assets/icons/flippableCardFrontFlipArrow.svg';
 import FlippableCardBackFlipArrow from '@/assets/icons/flippableCardBackFlipArrow.svg';
@@ -60,25 +60,31 @@ export interface FlippableCardRef {
 const FlippableCardFlipArrowSize = 30;
 
 // Drawing Renderer Component for displaying saved drawings
-const DrawingRenderer = ({ drawingData, style }: { drawingData: { path: string; strokeWidth: number }[]; style?: ViewStyle }) => {
+const DrawingRenderer = React.memo(({ drawingData, style }: { drawingData: { path: string; strokeWidth: number }[]; style?: ViewStyle }) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
+  
+  // Memoize the SVG paths to prevent recreation on every render
+  const svgPaths = useMemo(() => 
+    drawingData.map((pathData, index) => (
+      <Path
+        key={index}
+        d={pathData.path}
+        stroke={colors.text}
+        strokeWidth={pathData.strokeWidth}
+        fill="none"
+      />
+    )), [drawingData, colors.text]
+  );
+  
   return (
     <View style={[styles.drawingCanvas, style]}>
       <Svg style={StyleSheet.absoluteFill}>
-        {drawingData.map((pathData, index) => (
-          <Path
-            key={index}
-            d={pathData.path}
-            stroke={colors.text}
-            strokeWidth={pathData.strokeWidth}
-            fill="none"
-          />
-        ))}
+        {svgPaths}
       </Svg>
     </View>
   );
-};
+});
 
 // Simple Drawing Canvas Component
 const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasContent: () => boolean; clearContent: () => void; getDrawingData: () => { path: string; strokeWidth: number }[]; loadDrawingData: (data: { path: string; strokeWidth: number }[]) => void }, { 
@@ -217,7 +223,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
     return { segments, hasIntersection };
   };
 
-  const handleTouchStart = (event: any) => {
+  const handleTouchStart = useCallback((event: any) => {
     const { locationX, locationY } = event.nativeEvent;
     setIsDrawing(true);
     setHasDrawn(true);
@@ -244,9 +250,9 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
       // Drawing mode - start new path
       setCurrentPath(`M ${locationX} ${locationY}`);
     }
-  };
+  }, [isEraserMode]);
 
-  const handleTouchMove = (event: any) => {
+  const handleTouchMove = useCallback((event: any) => {
     if (!isDrawing) return;
     const { locationX, locationY } = event.nativeEvent;
     
@@ -272,9 +278,9 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
       // Drawing mode - continue current path
       setCurrentPath(prev => `${prev} L ${locationX} ${locationY}`);
     }
-  };
+  }, [isDrawing, isEraserMode]);
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     if (isDrawing) {
       if (!isEraserMode) {
         // Only add to paths if in drawing mode
@@ -294,7 +300,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
       }
       setIsDrawing(false);
     }
-  };
+  }, [isDrawing, isEraserMode, paths, currentPath, strokeWidth, onDrawingChange]);
 
   // Function to toggle eraser mode (will be called from parent)
   const toggleEraserMode = () => {
@@ -316,7 +322,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
         </View>
       )}
       <Svg style={StyleSheet.absoluteFill}>
-        {paths.map((pathData, index) => (
+        {useMemo(() => paths.map((pathData, index) => (
           <Path
             key={index}
             d={pathData.path}
@@ -324,7 +330,7 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
             strokeWidth={pathData.strokeWidth}
             fill="none"
           />
-        ))}
+        )), [paths, colors.text])}
         {currentPath && !isEraserMode && (
           <Path
             d={currentPath}
@@ -346,8 +352,6 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
 
 // Add display name for DrawingCanvas
 DrawingCanvas.displayName = 'DrawingCanvas';
-
-
 
 export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({ 
   style, 
@@ -371,7 +375,6 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   const [isInitialRender, setIsInitialRender] = useState(true);
   const [isEraserMode, setIsEraserMode] = useState(false);
   const [markerSize, setMarkerSize] = useState(3); // Default stroke width
-  const [paths, setPaths] = useState<{ path: string; strokeWidth: number }[]>([]);
   const [selectedTool, setSelectedTool] = useState<'marker' | 'eraser'>('marker');
   const [isFlipping, setIsFlipping] = useState(false);
   const [drawingCanvasKey, setDrawingCanvasKey] = useState(0);
@@ -447,7 +450,6 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
           (async () => {
             const { status } = await Audio.requestPermissionsAsync();
             if (status !== 'granted') {
-              console.log('Microphone permission not granted');
             }
           })();
         }
@@ -526,11 +528,9 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       return isFlipped ? backContent : frontContent;
     },
     getFrontContent: () => {
-      console.log('getFrontContent called, frontContent:', frontContent);
       return frontContent;
     },
     getBackContent: () => {
-      console.log('getBackContent called, backContent:', backContent);
       return backContent;
     },
     clearFrontContent: () => {
@@ -561,7 +561,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       
       // Notify parent of drawing change with empty paths
       const drawingContent = {
-        content: <DrawingRenderer drawingData={[]} style={styles.drawingCanvasOverlay} />,
+        content: <DrawingRenderer drawingData={[]} />,
         type: 'marker' as const
       };
       
@@ -574,15 +574,13 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     saveDrawingAsContent: () => {
       return new Promise<void>((resolve) => {
         if (drawingCanvasRef.current?.hasContent()) {
-          console.log('saving drawing as content');
           // Get the drawing data from the canvas
           const drawingData = drawingCanvasRef.current.getDrawingData();
-          const drawingContent = {
-            content: <DrawingRenderer drawingData={drawingData} style={styles.drawingCanvasOverlay} />,
-            type: 'marker' as const
-          };
+                const drawingContent = {
+        content: <DrawingRenderer drawingData={drawingData} />,
+        type: 'marker' as const
+      };
           
-          console.log('Setting content for side:', isFlipped ? 'back' : 'front');
           
           if (isFlipped) {
             setBackContent(drawingContent);
@@ -610,66 +608,29 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     }
   }));
 
-  const handlePress = () => {
-    const toValue = isFlipped ? 0 : 1;
-    
-    // Set flipping state to true
-    setIsFlipping(true);
-    
-    // Fade out overlay area before flip
-    Animated.timing(overlayOpacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      // Start flip animation
-      Animated.timing(flipAnim, {
-        toValue,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        // Set flip state first
-      setIsFlipped(!isFlipped);
-        
-        // Call the callback to notify parent component
-        onCardFlip?.();
-        
-        // Fade in overlay area after flip is complete
-        Animated.timing(overlayOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start(() => {
-          // Set flipping state to false after all animations complete
-          setIsFlipping(false);
-        });
-      });
-    });
-  };
-
-  const frontInterpolate = flipAnim.interpolate({
+  // Memoize expensive calculations
+  const frontInterpolate = useMemo(() => flipAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
-  });
+  }), [flipAnim]);
 
-  const backInterpolate = flipAnim.interpolate({
+  const backInterpolate = useMemo(() => flipAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['180deg', '360deg'],
-  });
+  }), [flipAnim]);
 
-  const frontAnimatedStyle = {
+  const frontAnimatedStyle = useMemo(() => ({
     transform: [{ rotateY: frontInterpolate }],
-  };
+  }), [frontInterpolate]);
 
-  const backAnimatedStyle = {
+  const backAnimatedStyle = useMemo(() => ({
     transform: [{ rotateY: backInterpolate }],
-  };
+  }), [backInterpolate]);
 
-  const getOverlayText = () => {
+  // Memoize overlay text calculation
+  const overlayText = useMemo(() => {
     const currentContent = isFlipped ? backContent : frontContent;
     const hasAudioRecording = currentContent?.type === 'mic' && currentContent?.audioUri;
-    
-    // If there's content, use the content type instead of displayedCardType
     const effectiveCardType = currentContent ? currentContent.type : displayedCardType;
     
     switch (effectiveCardType) {
@@ -686,160 +647,96 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       default:
         return strings[language].chooseManual;
     }
-  };
+  }, [isFlipped, backContent, frontContent, displayedCardType, language]);
 
-  const handleOverlayPress = () => {
-    if (cardType === 'text') {
-        // Extract existing text from the current side
-        let existingText = '';
-        if (isFlipped && backContent) {
-            // If we're on the back side and there's content, extract the text
-            if (React.isValidElement(backContent.content) && backContent.content.type === Text) {
-                const textElement = backContent.content as React.ReactElement<{ children?: string }>;
-                existingText = textElement.props.children || '';
-            }
-        } else if (!isFlipped && frontContent) {
-            // If we're on the front side and there's content, extract the text
-            if (React.isValidElement(frontContent.content) && frontContent.content.type === Text) {
-                const textElement = frontContent.content as React.ReactElement<{ children?: string }>;
-                existingText = textElement.props.children || '';
-            }
+  // Memoize container style to prevent recreation
+  const containerStyle = useMemo(() => [
+    styles.container, 
+    style, 
+    { 
+      opacity: fadeOpacity,
+      transform: slideOpacity ? [
+        {
+          translateX: slideOpacity.interpolate({
+            inputRange: [-1, 0, 1],
+            outputRange: [-Dimensions.get('window').width, 0, Dimensions.get('window').width],
+          })
         }
+      ] : []
+    }
+  ], [style, fadeOpacity, slideOpacity]);
+
+  // Memoize callback functions to prevent child re-renders
+  const handlePress = useCallback(() => {
+    const toValue = isFlipped ? 0 : 1;
+    
+    setIsFlipping(true);
+    
+    Animated.timing(overlayOpacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      Animated.timing(flipAnim, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsFlipped(!isFlipped);
+        onCardFlip?.();
         
-        // Navigate to modal with existing text as parameter
-        router.push({
-            pathname: '/textInputModal',
-            params: { existingText }
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsFlipping(false);
         });
-    }
-  };
-
-  const pickImage = async () => {
-    try {
-      // Request permission to access the photo library
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (status !== 'granted') {
-        alert(strings[language].photoLibraryPermissionError);
-        return;
-      }
-
-      // Launch the image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
       });
+    });
+  }, [isFlipped, overlayOpacity, flipAnim, onCardFlip]);
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const selectedImage = result.assets[0];
-        const compressedUri = await prepareImageForUpload(selectedImage.uri);
-        // Create the image content
-        const imageContent = (
-          <Image 
-            source={{ uri: compressedUri }} 
-            style={styles.selectedImage}
-            resizeMode="contain"
-          />
-        );
-
-        // Update the appropriate side based on current flip state
-        if (isFlipped) {
-          setBackContent({
-            content: imageContent,
-            type: 'camera'
-          });
-        } else {
-          setFrontContent({
-            content: imageContent,
-            type: 'camera'
-          });
+  const handleOverlayPress = useCallback(() => {
+    if (cardType === 'text') {
+      let existingText = '';
+      if (isFlipped && backContent) {
+        if (React.isValidElement(backContent.content) && backContent.content.type === Text) {
+          const textElement = backContent.content as React.ReactElement<{ children?: string }>;
+          existingText = textElement.props.children || '';
+        }
+      } else if (!isFlipped && frontContent) {
+        if (React.isValidElement(frontContent.content) && frontContent.content.type === Text) {
+          const textElement = frontContent.content as React.ReactElement<{ children?: string }>;
+          existingText = textElement.props.children || '';
         }
       }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      alert(strings[language].imageSelectionError);
-    }
-  };
-
-  const clearImage = () => {
-    // Clear the content based on current flip state
-    if (isFlipped) {
-      setBackContent(null);
-    } else {
-      setFrontContent(null);
-    }
-  };
-
-  const takePhoto = async () => {
-    try {
-      // Request permission to access the camera
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
       
-      if (status !== 'granted') {
-        alert(strings[language].cameraPermissionError);
-        return;
-      }
-
-      // Launch the camera
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
+      router.push({
+        pathname: '/textInputModal',
+        params: { existingText }
       });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const capturedImage = result.assets[0];
-        const compressedUri = await prepareImageForUpload(capturedImage.uri);
-        // Create the image content
-        const imageContent = (
-          <Image 
-            source={{ uri: compressedUri }} 
-            style={styles.selectedImage}
-            resizeMode="contain"
-          />
-        );
-
-        // Update the appropriate side based on current flip state
-        if (isFlipped) {
-          setBackContent({
-            content: imageContent,
-            type: 'camera'
-          });
-        } else {
-          setFrontContent({
-            content: imageContent,
-            type: 'camera'
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      alert(strings[language].photoCaptureError);
     }
-  };
+  }, [cardType, isFlipped, backContent, frontContent, router]);
 
   // Handler for marker size changes
-  const handleMarkerSizeChange = (value: number) => {
+  const handleMarkerSizeChange = useCallback((value: number) => {
     // Convert slider value (0-1) to stroke width (1-10)
     const newSize = Math.max(1, Math.round(value * 10));
     setMarkerSize(newSize);
-  };
+  }, []);
 
   // Handler for undo action
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     drawingCanvasRef.current?.undo();
-  };
+  }, []);
 
   // Handler for redo action
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
     drawingCanvasRef.current?.redo();
-  };
+  }, []);
 
   // Handler for clear action
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     // Clear the drawing canvas
     drawingCanvasRef.current?.clearContent();
     
@@ -852,7 +749,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     
     // Notify parent of drawing change with empty paths
     const drawingContent = {
-      content: <DrawingRenderer drawingData={[]} style={styles.drawingCanvasOverlay} />,
+      content: <DrawingRenderer drawingData={[]} />,
       type: 'marker' as const
     };
     
@@ -861,44 +758,158 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
     } else {
       setFrontContent(null);
     }
+  }, [isFlipped]);
+
+  // Memoize drawing change handler
+  const handleDrawingChange = useCallback((newPaths: { path: string; strokeWidth: number }[]) => {
+    if (newPaths.length === 0) {
+      if (isFlipped) {
+        setBackContent(null);
+      } else {
+        setFrontContent(null);
+      }
+    } else {
+      const drawingContent = {
+        content: <DrawingRenderer drawingData={newPaths} />,
+        type: 'marker' as const
+      };
+      
+      if (isFlipped) {
+        setBackContent(drawingContent);
+      } else {
+        setFrontContent(drawingContent);
+      }
+    }
+    
+    onDrawingChange?.();
+  }, [isFlipped, onDrawingChange]);
+
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert(strings[language].photoLibraryPermissionError);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+        const compressedUri = await prepareImageForUpload(selectedImage.uri);
+        const imageContent = (
+          <Image 
+            source={{ uri: compressedUri }} 
+            style={styles.selectedImage}
+            resizeMode="contain"
+          />
+        );
+
+        if (isFlipped) {
+          setBackContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        } else {
+          setFrontContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        }
+      }
+    } catch (error) {
+      alert(strings[language].imageSelectionError);
+    }
+  };
+
+  const clearImage = () => {
+    if (isFlipped) {
+      setBackContent(null);
+    } else {
+      setFrontContent(null);
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        alert(strings[language].cameraPermissionError);
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const capturedImage = result.assets[0];
+        const compressedUri = await prepareImageForUpload(capturedImage.uri);
+        const imageContent = (
+          <Image 
+            source={{ uri: compressedUri }} 
+            style={styles.selectedImage}
+            resizeMode="contain"
+          />
+        );
+
+        if (isFlipped) {
+          setBackContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        } else {
+          setFrontContent({
+            content: imageContent,
+            type: 'camera'
+          });
+        }
+      }
+    } catch (error) {
+      alert(strings[language].photoCaptureError);
+    }
   };
 
   // Start recording function
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
-      console.log('Requesting permissions..');
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
-      console.log('Starting recording..');
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       setRecording(recording);
       setIsRecording(true);
-      console.log('Recording started');
     } catch (err) {
     }
-  };
+  }, []);
 
   // Stop recording function
-  const stopRecording = async () => {
+  const stopRecording = useCallback(async () => {
     if (!recording) return;
 
-    console.log('Stopping recording..');
     setIsRecording(false);
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     setRecordingUri(uri);
     setRecording(null);
-    console.log('Recording stopped and stored at', uri);
 
     // Store the audio recording as content
     if (uri) {
-      console.log('uri', uri);
       const audioContent = {
         content: null, // We'll use the transparent overlay area for mic content
         type: 'mic' as const,
@@ -911,10 +922,10 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
         setFrontContent(audioContent);
       }
     }
-  };
+  }, [recording, isFlipped]);
 
   // Play or pause audio logic
-  async function handleAudioButtonPress(audioUri: string | null) {
+  const handleAudioButtonPress = useCallback(async (audioUri: string | null) => {
     try {
       if (!audioUri) return;
       await Audio.setAudioModeAsync({
@@ -954,9 +965,8 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
       }
     } catch (e) {
       setIsAudioPlaying(false);
-      console.log('Audio playback error:', e);
     }
-  }
+  }, [isAudioPlaying, audioPosition]);
 
   // Clean up audio on unmount or card flip
   useEffect(() => {
@@ -975,21 +985,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
   }, [frontContent, backContent, onContentChange]);
 
   return (
-    <Animated.View style={[
-      styles.container, 
-      style, 
-      { 
-        opacity: fadeOpacity,
-        transform: slideOpacity ? [
-          {
-            translateX: slideOpacity.interpolate({
-              inputRange: [-1, 0, 1],
-              outputRange: [-Dimensions.get('window').width, 0, Dimensions.get('window').width],
-            })
-          }
-        ] : []
-      }
-    ]}>
+    <Animated.View style={containerStyle}>
         <Animated.View style={[styles.transparentOverlayArea, { opacity: overlayOpacity }]} >
             {((!isFlipped && !frontContent) || (isFlipped && !backContent) || (cardType === 'marker' && ((!isFlipped && frontContent?.type === 'marker') || (isFlipped && backContent?.type === 'marker'))) || ((!isFlipped && frontContent?.type === 'mic') || (isFlipped && backContent?.type === 'mic'))) && !isFlipping && (
             <>
@@ -1028,34 +1024,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                     onEraserModeChange={setIsEraserMode} 
                     strokeWidth={markerSize} 
                     ref={drawingCanvasRef}
-                    onDrawingChange={(newPaths) => {
-                      // Save drawing as content whenever drawing changes
-                      console.log('drawing changed')
-                      
-                      if (newPaths.length === 0) {
-                        // If no paths, clear the content
-                        if (isFlipped) {
-                          setBackContent(null);
-                        } else {
-                          setFrontContent(null);
-                        }
-                      } else {
-                        // If there are paths, create drawing content
-                        const drawingContent = {
-                          content: <DrawingRenderer drawingData={newPaths} style={styles.drawingCanvasOverlay} />,
-                          type: 'marker' as const
-                        };
-                        
-                        if (isFlipped) {
-                          setBackContent(drawingContent);
-                        } else {
-                          setFrontContent(drawingContent);
-                        }
-                      }
-                      
-                      // Notify parent of drawing change for cache saving
-                      onDrawingChange?.();
-                    }}
+                    onDrawingChange={handleDrawingChange}
                     initialData={initialDrawingData}
                   />
                 )}
@@ -1094,7 +1063,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                         style={styles.soundWaveAnimation}
                       />
                     ) : (
-                      <Text style={[styles.overlayText, { color: colors.unselectedText }]}>{getOverlayText()}</Text>
+                      <Text style={[styles.overlayText, { color: colors.unselectedText }]}>{overlayText}</Text>
                     )}
                     </View>
                     {(() => {

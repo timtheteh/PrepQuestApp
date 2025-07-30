@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Animated } from 'react-native';
 import { SmallGreenToggleMultiple } from '../general/SmallGreenToggleMultiple';
-import { db } from '@/db/index';
 import { useIsFocused } from '@react-navigation/native';
-import { getUserStatistics } from '@/db/users';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchStatsData, StatsData } from '@/db/users';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 
@@ -13,137 +11,12 @@ interface MoreDetailsStatsProps {
   onSelectedIndexChange?: (index: number) => void;
 }
 
-interface StatsData {
-  accumulatedDecks: number;
-  localStorageDecks: number;
-  totalQuizzedDecks: number;
-  accumulatedFlashcards: number;
-  localStorageFlashcards: number;
-  totalQuizzedFlashcards: number;
-  studyDecks: number;
-  studyLocalStorage: number;
-  studyQuizzed: number;
-  interviewDecks: number;
-  interviewLocalStorage: number;
-  interviewQuizzed: number;
-}
-
 const meshBackground1 = require('../../assets/images/meshBackground1.png');
 const meshBackground2 = require('../../assets/images/meshBackground2.png');
 const meshBackground3 = require('../../assets/images/meshBackground3.png');
 const meshBackground4 = require('../../assets/images/meshBackground4.png');
 
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-}
 
-// Function to fetch real statistics from database
-const fetchStatsData = async (): Promise<StatsData> => {
-  try {
-    const userID = await getCurrentUserID();
-    
-    // Get accumulated statistics from userStatistics table (lifetime counters that never decrease)
-    const userStats = await getUserStatistics();
-    
-    // Get current decks in local storage
-    const localStorageDecksResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM (
-        SELECT deckID FROM decks WHERE userID = ?
-        UNION ALL
-        SELECT deckID FROM AIDecks WHERE userID = ?
-      )
-    `, [userID, userID]);
-    
-    // Get total decks quizzed (have lastQuizzedDate)
-    const quizzedDecksResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM (
-        SELECT deckID FROM decks WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT deckID FROM AIDecks WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-      )
-    `, [userID, userID]);
-    
-    // Get current flashcards in local storage
-    const localStorageFlashcardsResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM (
-        SELECT flashcardID FROM flashcards WHERE userID = ?
-        UNION ALL
-        SELECT flashcardID FROM AIFlashcards WHERE userID = ?
-      )
-    `, [userID, userID]);
-    
-    // Get total flashcards quizzed
-    const quizzedFlashcardsResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM (
-        SELECT flashcardID FROM flashcards WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT flashcardID FROM AIFlashcards WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-      )
-    `, [userID, userID]);
-    
-    // Get study deck statistics
-    const studyStatsResult = await db.getFirstAsync(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN lastQuizzedDate IS NOT NULL THEN 1 ELSE 0 END) as quizzed
-      FROM (
-        SELECT deckID, lastQuizzedDate FROM decks WHERE deckType = 'study' AND userID = ?
-        UNION ALL
-        SELECT deckID, lastQuizzedDate FROM AIDecks WHERE deckType = 'study' AND userID = ?
-      )
-    `, [userID, userID]);
-    
-    // Get interview deck statistics
-    const interviewStatsResult = await db.getFirstAsync(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN lastQuizzedDate IS NOT NULL THEN 1 ELSE 0 END) as quizzed
-      FROM (
-        SELECT deckID, lastQuizzedDate FROM decks WHERE deckType = 'interview' AND userID = ?
-        UNION ALL
-        SELECT deckID, lastQuizzedDate FROM AIDecks WHERE deckType = 'interview' AND userID = ?
-      )
-    `, [userID, userID]);
-
-    return {
-      accumulatedDecks: userStats?.accumulatedDecksCreated || 0,
-      localStorageDecks: (localStorageDecksResult as any)?.count || 0,
-      totalQuizzedDecks: (quizzedDecksResult as any)?.count || 0,
-      accumulatedFlashcards: userStats?.accumulatedFlashcardsCreated || 0,
-      localStorageFlashcards: (localStorageFlashcardsResult as any)?.count || 0,
-      totalQuizzedFlashcards: (quizzedFlashcardsResult as any)?.count || 0,
-      studyDecks: userStats?.accumulatedStudyDecksCreated || 0,
-      studyLocalStorage: (studyStatsResult as any)?.total || 0,
-      studyQuizzed: (studyStatsResult as any)?.quizzed || 0,
-      interviewDecks: userStats?.accumulatedInterviewDecksCreated || 0,
-      interviewLocalStorage: (interviewStatsResult as any)?.total || 0,
-      interviewQuizzed: (interviewStatsResult as any)?.quizzed || 0,
-    };
-  } catch (error) {
-    console.error('Error fetching stats data:', error);
-    return {
-      accumulatedDecks: 0,
-      localStorageDecks: 0,
-      totalQuizzedDecks: 0,
-      accumulatedFlashcards: 0,
-      localStorageFlashcards: 0,
-      totalQuizzedFlashcards: 0,
-      studyDecks: 0,
-      studyLocalStorage: 0,
-      studyQuizzed: 0,
-      interviewDecks: 0,
-      interviewLocalStorage: 0,
-      interviewQuizzed: 0,
-    };
-  }
-};
 
 export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedIndexChange }: MoreDetailsStatsProps) {
   const { language } = useLanguage();

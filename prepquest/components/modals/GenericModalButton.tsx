@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Fonts } from '@/constants/Fonts';
 
 interface GenericModalButtonProps {
   text: string;
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 20,
     textAlign: 'center',
   },

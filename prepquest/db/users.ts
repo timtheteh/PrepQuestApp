@@ -238,3 +238,172 @@ export async function fetchStatsData(): Promise<StatsData> {
     };
   }
 } 
+
+// Interface for the review data structure
+export interface DayData {
+  day: string;
+  date: string;
+  flashcards: number;
+  decks: number;
+}
+
+export interface MonthData {
+  month: string;
+  flashcards: number;
+  decks: number;
+}
+
+// Function to get day name from date
+const getDayName = (date: Date): string => {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return days[date.getDay()];
+};
+
+// Function to format date as "DD MMM YYYY"
+const formatDate = (date: Date): string => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = date.getDate();
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
+
+// Function to format month as "MMM YYYY"
+const formatMonth = (date: Date): string => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${month} ${year}`;
+};
+
+// Function to fetch real review data from database
+export async function fetchReviewData(): Promise<{ dayData: DayData[], monthData: MonthData[] }> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Single optimized query with SQL aggregation - fixed to handle ISO date format
+    const result = await db.getAllAsync(`
+      WITH all_dates AS (
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'deck' as type
+        FROM decks 
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'deck' as type
+        FROM decks 
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'deck' as type
+        FROM AIDecks 
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'deck' as type
+        FROM AIDecks 
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'flashcard' as type
+        FROM flashcards 
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'flashcard' as type
+        FROM flashcards 
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
+          'flashcard' as type
+        FROM AIFlashcards 
+        WHERE lastStudiedDate IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
+          'flashcard' as type
+        FROM AIFlashcards 
+        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
+      )
+      SELECT 
+        activity_date,
+        SUM(CASE WHEN type = 'deck' THEN 1 ELSE 0 END) as deck_count,
+        SUM(CASE WHEN type = 'flashcard' THEN 1 ELSE 0 END) as flashcard_count
+      FROM all_dates
+      WHERE activity_date IS NOT NULL
+      GROUP BY activity_date
+      ORDER BY activity_date
+    `, [userID, userID, userID, userID, userID, userID, userID, userID]);
+
+    // Create maps for quick lookup
+    const dateCountMap = new Map<string, { decks: number; flashcards: number }>();
+    
+    result.forEach((row: any) => {
+      dateCountMap.set(row.activity_date, {
+        decks: isNaN(row.deck_count) ? 0 : (row.deck_count || 0),
+        flashcards: isNaN(row.flashcard_count) ? 0 : (row.flashcard_count || 0)
+      });
+    });
+
+    // Pre-calculate today and date ranges
+    const today = new Date();
+    const todayKey = today.toISOString().split('T')[0];
+    
+    // Generate day data for the last 30 days
+    const dayData: DayData[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      const counts = dateCountMap.get(dateKey) || { decks: 0, flashcards: 0 };
+      
+      dayData.push({
+        day: getDayName(date),
+        date: formatDate(date),
+        flashcards: isNaN(counts.flashcards) ? 0 : counts.flashcards,
+        decks: isNaN(counts.decks) ? 0 : counts.decks,
+      });
+    }
+
+    // Generate month data for the last 12 months
+    const monthData: MonthData[] = [];
+    const monthCountMap = new Map<string, { flashcards: number; decks: number }>();
+
+    // Aggregate data by month using the existing dateCountMap
+    for (const [dateKey, counts] of dateCountMap) {
+      const date = new Date(dateKey);
+      const monthKey = formatMonth(date);
+      const current = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
+      current.decks += counts.decks;
+      current.flashcards += counts.flashcards;
+      monthCountMap.set(monthKey, current);
+    }
+
+    // Generate month data for the last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(today);
+      date.setMonth(today.getMonth() - i);
+      const monthKey = formatMonth(date);
+      const monthCount = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
+      
+      monthData.push({
+        month: monthKey,
+        flashcards: isNaN(monthCount.flashcards) ? 0 : monthCount.flashcards,
+        decks: isNaN(monthCount.decks) ? 0 : monthCount.decks,
+      });
+    }
+
+    return { dayData, monthData };
+  } catch (error) {
+    console.error('Error fetching review data:', error);
+    // Return empty data if there's an error
+    return { dayData: [], monthData: [] };
+  }
+} 

@@ -5,6 +5,10 @@ import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { getCompleteDailySpeeds, getMonthlySpeeds, DaySpeed, MonthSpeed } from '@/db/grades';
 import { useIsFocused } from '@react-navigation/native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -19,6 +23,8 @@ type SpeedChartProps = {
 export function SpeedChart({ onContentReady }: SpeedChartProps) {
   const { width: windowWidth } = useWindowDimensions();
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const GRAPH_WIDTH = Math.round(windowWidth * 0.93);
   const X_STEP = (GRAPH_WIDTH - 2 * PADDING) / 3 - 16;
   const SVG_HEIGHT = GRAPH_HEIGHT + X_AXIS_EXTRA_HEIGHT;
@@ -155,12 +161,12 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
     return (
       <View>
         <View style={{ marginTop: 30, alignItems: 'center' }}>
-          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            {language === 'Chinese' ? '速度图表（每张卡片的平均速度）' : 'Speed Chart (average speed per flashcard)'}
+          <Text style={{ fontFamily: Fonts.title, fontSize: 24, textAlign: 'center', lineHeight: 30, color: colors.text }}>
+            {strings[language].speedChart}
           </Text>
           <SmallGreenBinaryToggle
-            leftLabel={language === 'Chinese' ? '日' : 'Day'}
-            rightLabel={language === 'Chinese' ? '月' : 'Month'}
+            leftLabel={strings[language].reviewDay}
+            rightLabel={strings[language].reviewMonth}
             style={{ marginTop: 15 }}
             onToggle={handleToggle}
           />
@@ -174,8 +180,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
-            {language === 'Chinese' ? '正在加载速度数据...' : 'Loading speed data...'}
+          <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 16, color: colors.unselectedText }}>
+            {strings[language].loadingSpeedData}
           </Text>
         </View>
       </View>
@@ -187,12 +193,12 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
     return (
       <View>
         <View style={{ marginTop: 30, alignItems: 'center' }}>
-          <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            {language === 'Chinese' ? '速度图表（每张卡片的平均速度）' : 'Speed Chart (average speed per flashcard)'}
+          <Text style={{ fontFamily: Fonts.title, fontSize: 24, textAlign: 'center', lineHeight: 30, color: colors.text }}>
+            {strings[language].speedChart}
           </Text>
           <SmallGreenBinaryToggle
-            leftLabel={language === 'Chinese' ? '日' : 'Day'}
-            rightLabel={language === 'Chinese' ? '月' : 'Month'}
+            leftLabel={strings[language].reviewDay}
+            rightLabel={strings[language].reviewMonth}
             style={{ marginTop: 15 }}
             onToggle={handleToggle}
           />
@@ -206,11 +212,11 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 16, color: '#D5D4DD' }}>
-            {language === 'Chinese' ? '暂无速度数据' : 'No speed data available'}
+          <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 16, color: colors.unselectedText }}>
+            {strings[language].noSpeedDataAvailable}
           </Text>
-          <Text style={{ fontFamily: 'Satoshi-Regular', fontSize: 14, color: '#D5D4DD', marginTop: 8 }}>
-            {language === 'Chinese' ? '学习或测验卡片以查看速度趋势' : 'Study or quiz flashcards to see your speed trends'}
+          <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 14, color: colors.unselectedText, marginTop: 8 }}>
+            {strings[language].studyOrQuizToSeeSpeedTrends}
           </Text>
         </View>
       </View>
@@ -220,12 +226,12 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
   return (
     <View>
     <View style={{ marginTop: 30, alignItems: 'center' }}>
-        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 24, textAlign: 'center', lineHeight: 30 }}>
-            {language === 'Chinese' ? '速度图表（每张卡片的平均速度）' : 'Speed Chart (average speed per flashcard)'}
+        <Text style={{ fontFamily: Fonts.title, fontSize: 24, textAlign: 'center', lineHeight: 30, color: colors.text }}>
+            {strings[language].speedChart}
         </Text>
         <SmallGreenBinaryToggle
-            leftLabel={language === 'Chinese' ? '日' : 'Day'}
-            rightLabel={language === 'Chinese' ? '月' : 'Month'}
+            leftLabel={strings[language].reviewDay}
+            rightLabel={strings[language].reviewMonth}
             style={{ marginTop: 15}}
             onToggle={handleToggle}
         />
@@ -250,7 +256,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
           x2={GRAPH_WIDTH - 32}
           y1={PADDING - 15}
           y2={GRAPH_HEIGHT - 32}
-          stroke="#E5E4EA"
+          stroke={colors.graphLineColor}
           strokeWidth={1}
         />
         {/* Y axis dashed lines and labels */}
@@ -261,7 +267,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
               x2={GRAPH_WIDTH - PADDING}
               y1={getY(y, GRAPH_HEIGHT)}
               y2={getY(y, GRAPH_HEIGHT)}
-              stroke="#E5E4EA"
+              stroke={colors.graphLineColor}
               strokeDasharray={y === 0 ? undefined : y % Y_STEP === 0 ? '4,4' : undefined}
               strokeWidth={1}
             />
@@ -270,8 +276,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                 x={GRAPH_WIDTH - PADDING + 8}
                 y={getY(y, GRAPH_HEIGHT) + 5}
                 fontSize={12}
-                fill="#D5D4DD"
-                fontFamily="Satoshi-Medium"
+                fill={colors.unselectedText}
+                fontFamily={Fonts.bodyMedium}
                 textAnchor="start"
               >
                 {y + 's'}
@@ -341,8 +347,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                     x={getX(i)}
                     y={getY(d.time, GRAPH_HEIGHT) - 12}
                     fontSize={12}
-                    fill="#44B88A"
-                    fontFamily="Satoshi-Bold"
+                    fill={colors.brandColor1}
+                    fontFamily={Fonts.bodyBold}
                     textAnchor="middle"
                   >
                     {d.time + 's'}
@@ -355,8 +361,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                     x={getX(i)}
                     y={getY(d.time, GRAPH_HEIGHT) - 12}
                     fontSize={12}
-                    fill="#4F41D8"
-                    fontFamily="Satoshi-Bold"
+                    fill={colors.brandColor2}
+                    fontFamily={Fonts.bodyBold}
                     textAnchor="middle"
                   >
                     {d.time + 's'}
@@ -366,14 +372,14 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                 <Polyline
                   points={currentData.map((d, i) => `${getX(i)},${getY(d.time, GRAPH_HEIGHT)}`).join(' ')}
                   fill="none"
-                  stroke="#44B88A"
+                  stroke={colors.brandColor1}
                   strokeWidth={2}
                 />
                 {/* Decks line */}
                 <Polyline
                   points={currentData.map((d, i) => `${getX(i)},${getY(d.time, GRAPH_HEIGHT)}`).join(' ')}
                   fill="none"
-                  stroke="#4F41D8"
+                  stroke={colors.brandColor2}
                   strokeWidth={2}
                 />
                 {/* Flashcards circles */}
@@ -390,7 +396,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                       cx={getX(i)}
                       cy={getY(d.time, GRAPH_HEIGHT)}
                       r={7}
-                      fill="#44B88A"
+                      fill={colors.brandColor1}
                     />
                   </G>
                 ))}
@@ -408,7 +414,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                       cx={getX(i)}
                       cy={getY(d.time, GRAPH_HEIGHT)}
                       r={7}
-                      fill="#4F41D8"
+                      fill={colors.brandColor2}
                     />
                   </G>
                 ))}
@@ -424,24 +430,24 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                     //   onPressIn={() => handleDataPointClick(i)}
                     />
                     {'month' in d ? (
-                      <SvgText
-                        x={getX(i)}
-                        y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP }
-                        fontSize={16}
-                        fill="#D5D4DD"
-                        fontFamily="Satoshi-Medium"
-                        textAnchor="middle"
-                      >
-                        {d.month}
-                      </SvgText>
+                                              <SvgText
+                          x={getX(i)}
+                          y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP }
+                          fontSize={16}
+                          fill={colors.unselectedText}
+                          fontFamily={Fonts.bodyMedium}
+                          textAnchor="middle"
+                        >
+                          {d.month}
+                        </SvgText>
                     ) : (
                       <>
                         <SvgText
                           x={getX(i)}
                           y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP}
                           fontSize={16}
-                          fill="#D5D4DD"
-                          fontFamily="Satoshi-Medium"
+                          fill={colors.unselectedText}
+                          fontFamily={Fonts.bodyMedium}
                           textAnchor="middle"
                         >
                           {d.day}
@@ -450,8 +456,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                           x={getX(i)}
                           y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + X_AXIS_DATE_GAP + 14}
                           fontSize={12}
-                          fill="#D5D4DD"
-                          fontFamily="Satoshi-Medium"
+                          fill={colors.unselectedText}
+                          fontFamily={Fonts.bodyMedium}
                           textAnchor="middle"
                         >
                           {d.date}
@@ -520,8 +526,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                 x={PADDING + 10 + i * X_STEP}
                 y={getY(d.time, GRAPH_HEIGHT) - 12}
                 fontSize={12}
-                fill="#44B88A"
-                fontFamily="Satoshi-Bold"
+                fill={colors.brandColor1}
+                fontFamily={Fonts.bodyBold}
                 textAnchor="middle"
               >
                 {d.time + 's'}
@@ -534,8 +540,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                 x={PADDING + 10 + i * X_STEP}
                 y={getY(d.time, GRAPH_HEIGHT) - 12}
                 fontSize={12}
-                fill="#4F41D8"
-                fontFamily="Satoshi-Bold"
+                fill={colors.brandColor2}
+                fontFamily={Fonts.bodyBold}
                 textAnchor="middle"
               >
                 {d.time + 's'}
@@ -545,14 +551,14 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
             <Polyline
               points={currentData.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(d.time, GRAPH_HEIGHT)}`).join(' ')}
               fill="none"
-              stroke="#44B88A"
+              stroke={colors.brandColor1}
               strokeWidth={2}
             />
             {/* Decks line */}
             <Polyline
               points={currentData.map((d, i) => `${PADDING + 10 + i * X_STEP},${getY(d.time, GRAPH_HEIGHT)}`).join(' ')}
               fill="none"
-              stroke="#4F41D8"
+              stroke={colors.brandColor2}
               strokeWidth={2}
             />
             {/* Flashcards circles */}
@@ -569,7 +575,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                   cx={PADDING + 10 + i * X_STEP}
                   cy={getY(d.time, GRAPH_HEIGHT)}
                   r={7}
-                  fill="#44B88A"
+                  fill={colors.brandColor1}
                 />
               </G>
             ))}
@@ -587,7 +593,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                   cx={PADDING + 10 + i * X_STEP}
                   cy={getY(d.time, GRAPH_HEIGHT)}
                   r={7}
-                  fill="#4F41D8"
+                  fill={colors.brandColor2}
                 />
               </G>
             ))}
@@ -607,8 +613,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                     x={PADDING + 10 + i * X_STEP}
                     y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + 6}
                     fontSize={16}
-                    fill="#D5D4DD"
-                    fontFamily="Satoshi-Medium"
+                    fill={colors.unselectedText}
+                    fontFamily={Fonts.bodyMedium}
                     textAnchor="middle"
                   >
                     {d.month}
@@ -619,8 +625,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                       x={PADDING + 10 + i * X_STEP}
                       y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP}
                       fontSize={16}
-                      fill="#D5D4DD"
-                      fontFamily="Satoshi-Medium"
+                      fill={colors.unselectedText}
+                      fontFamily={Fonts.bodyMedium}
                       textAnchor="middle"
                     >
                       {d.day}
@@ -629,8 +635,8 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                       x={PADDING + 10 + i * X_STEP}
                       y={GRAPH_HEIGHT + X_AXIS_LABEL_GAP + X_AXIS_DATE_GAP + 14}
                       fontSize={12}
-                      fill="#D5D4DD"
-                      fontFamily="Satoshi-Medium"
+                      fill={colors.unselectedText}
+                      fontFamily={Fonts.bodyMedium}
                       textAnchor="middle"
                     >
                       {d.date}

@@ -189,6 +189,11 @@ export const strings: Record<string, any> = {
     reviewMonth: 'Month',
     reviewDecks: 'Decks',
     reviewFlashcards: 'Flashcards',
+    // SpeedChart strings
+    speedChart: 'Speed Chart (average speed per flashcard)',
+    loadingSpeedData: 'Loading speed data...',
+    noSpeedDataAvailable: 'No speed data available',
+    studyOrQuizToSeeSpeedTrends: 'Study or quiz flashcards to see your speed trends',
   },
   Chinese: {
     // AddDeckModal strings
@@ -380,5 +385,10 @@ export const strings: Record<string, any> = {
     reviewMonth: '月',
     reviewDecks: '卡组',
     reviewFlashcards: '卡片',
+    // SpeedChart strings
+    speedChart: '速度图表（每张卡片的平均速度）',
+    loadingSpeedData: '正在加载速度数据...',
+    noSpeedDataAvailable: '暂无速度数据',
+    studyOrQuizToSeeSpeedTrends: '学习或测验卡片以查看速度趋势',
   },
 };

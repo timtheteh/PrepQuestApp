@@ -2,6 +2,10 @@ import React from 'react';
 import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import Svg, { G, Path, Text as SvgText } from 'react-native-svg';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const SIZE = Dimensions.get('window').width * 0.73;
 const RADIUS = SIZE / 2;
@@ -54,13 +58,18 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
 
 export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPieProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   // Localized labels
-  const LABELS = language === 'Chinese'
-    ? ['再来', '困难', '良好', '简单']
-    : ['Again', 'Hard', 'Good', 'Easy'];
-  const title = language === 'Chinese' ? '按难度分布的卡片' : 'Breakdown of Flashcards by Difficulty';
-  const emptyText = language === 'Chinese' ? '暂无难度数据' : 'No difficulty data available';
-  const emptySubtext = language === 'Chinese' ? '完成一些卡片以查看分布' : 'Complete some flashcards to see your breakdown';
+  const LABELS = [
+    strings[language].difficultyLabels.again,
+    strings[language].difficultyLabels.hard,
+    strings[language].difficultyLabels.good,
+    strings[language].difficultyLabels.easy
+  ];
+  const title = strings[language].breakdownByDifficulty;
+  const emptyText = strings[language].noDifficultyData;
+  const emptySubtext = strings[language].completeSomeFlashcards;
   // Use breakdown data if provided, otherwise use default values
   const values = breakdown ? [
     breakdown.Again,
@@ -75,12 +84,19 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
   if (total === 0) {
     return (
       <View style={styles.wrapper}>
-        <Text style={[styles.title, 
-          // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
-          ]}>{title}</Text>
+        <Text style={[styles.title, {
+          fontFamily: Fonts.title,
+          color: colors.text
+        }]}>{title}</Text>
         <View style={styles.container}>
-          <Text style={styles.emptyText}>{emptyText}</Text>
-          <Text style={styles.emptySubtext}>{emptySubtext}</Text>
+          <Text style={[styles.emptyText, {
+            fontFamily: Fonts.title,
+            color: colors.text
+          }]}>{emptyText}</Text>
+          <Text style={[styles.emptySubtext, {
+            fontFamily: Fonts.title,
+            color: colors.text
+          }]}>{emptySubtext}</Text>
         </View>
       </View>
     );
@@ -103,9 +119,10 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
 
   return (
     <View style={styles.wrapper}>
-      <Text style={[styles.title, 
-        // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
-        ]}>{title}</Text>
+      <Text style={[styles.title, {
+        fontFamily: Fonts.title,
+        color: colors.text
+      }]}>{title}</Text>
       <View style={styles.container}>
         <Svg width={SIZE} height={SIZE}>
           <G>
@@ -120,8 +137,8 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
                     x={slice.labelPos.x}
                     y={slice.labelPos.y - 10}
                     fontSize={16}
-                    // fontFamily={language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'}
-                    fill="#111"
+                    fontFamily={Fonts.bodyMedium}
+                    fill={colors.text}
                     textAnchor="middle"
                     alignmentBaseline="middle"
                   >
@@ -131,8 +148,8 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
                     x={slice.labelPos.x}
                     y={slice.labelPos.y + 10}
                     fontSize={16}
-                    // fontFamily={language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'}
-                    fill="#111"
+                    fontFamily={Fonts.bodyMedium}
+                    fill={colors.text}
                     textAnchor="middle"
                     alignmentBaseline="middle"
                   >
@@ -156,11 +173,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   title: {
-    fontFamily: 'Neuton-Regular',
     fontSize: 24,
     textAlign: 'center',
     marginBottom: 30,
-    color: '#111',
     lineHeight: 30,
   },
   container: {
@@ -170,16 +185,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: {
-    fontFamily: 'Satoshi-Regular',
     fontSize: 18,
     textAlign: 'center',
-    color: '#111',
   },
   emptySubtext: {
-    fontFamily: 'Satoshi-Regular',
     fontSize: 16,
     textAlign: 'center',
-    color: '#111',
   },
 });
 

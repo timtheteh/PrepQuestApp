@@ -131,6 +131,16 @@ export const strings: Record<string, any> = {
     // AverageSpeedTotal strings
     averageTimePerFlashcard: 'Average time per flashcard',
     seconds: 's',
+    // BreakdownByDifficultyPie strings
+    breakdownByDifficulty: 'Breakdown of Flashcards by Difficulty',
+    noDifficultyData: 'No difficulty data available',
+    completeSomeFlashcards: 'Complete some flashcards to see your breakdown',
+    difficultyLabels: {
+      again: 'Again',
+      hard: 'Hard',
+      good: 'Good',
+      easy: 'Easy',
+    },
   },
   Chinese: {
     // AddDeckModal strings
@@ -264,5 +274,15 @@ export const strings: Record<string, any> = {
     // AverageSpeedTotal strings
     averageTimePerFlashcard: '平均每张卡片用时',
     seconds: '秒',
+    // BreakdownByDifficultyPie strings
+    breakdownByDifficulty: '按难度分布的卡片',
+    noDifficultyData: '暂无难度数据',
+    completeSomeFlashcards: '完成一些卡片以查看分布',
+    difficultyLabels: {
+      again: '再来',
+      hard: '困难',
+      good: '良好',
+      easy: '简单',
+    },
   },
 };

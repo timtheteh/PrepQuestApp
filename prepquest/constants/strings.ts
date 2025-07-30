@@ -141,6 +141,20 @@ export const strings: Record<string, any> = {
       good: 'Good',
       easy: 'Easy',
     },
+    // BreakdownOfDecksFlashcards strings
+    breakdownOfDecksFlashcards: 'Breakdown of Number of Decks / Flashcards',
+    loading: 'Loading...',
+    noDataAvailable: 'No data available',
+    breakdownDecks: 'Decks',
+    breakdownFlashcards: 'Flashcards',
+    breakdownCategoryLabels: {
+      study: 'Study',
+      technical: 'Technical',
+      caseStudy: 'Case study',
+      behavioral: 'Behavioral',
+      brainteasers: 'Brainteasers',
+      others: 'Others',
+    },
   },
   Chinese: {
     // AddDeckModal strings
@@ -283,6 +297,20 @@ export const strings: Record<string, any> = {
       hard: '困难',
       good: '良好',
       easy: '简单',
+    },
+    // BreakdownOfDecksFlashcards strings
+    breakdownOfDecksFlashcards: '卡组 / 卡片数量分析',
+    loading: '正在加载...',
+    noDataAvailable: '暂无数据',
+    breakdownDecks: '卡组',
+    breakdownFlashcards: '卡片',
+    breakdownCategoryLabels: {
+      study: '学习',
+      technical: '技术',
+      caseStudy: '案例分析',
+      behavioral: '行为',
+      brainteasers: '脑筋急转弯',
+      others: '其他',
     },
   },
 };

@@ -2068,3 +2068,111 @@ export async function deleteFlashcardsByIds(flashcardIds: number[]): Promise<boo
     return false;
   }
 }
+
+export interface BreakdownDatum {
+  label: string;
+  value: number;
+  percent: number;
+  color: string;
+}
+
+export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[], flashcardsData: BreakdownDatum[] }> {
+  try {
+    const userID = await getCurrentUserID();
+    // Single optimized query with JOINs to get both deck counts and flashcard counts
+    const result = await db.getAllAsync(`
+      WITH deck_categories AS (
+        SELECT 
+          CASE 
+            WHEN deckType = 'interview' THEN interviewType 
+            ELSE deckType 
+          END as categoryType,
+          deckID 
+        FROM decks 
+        WHERE deckType IS NOT NULL AND userID = ?
+        UNION ALL
+        SELECT 
+          CASE 
+            WHEN deckType = 'interview' THEN interviewType 
+            ELSE deckType 
+          END as categoryType,
+          deckID 
+        FROM AIDecks 
+        WHERE deckType IS NOT NULL AND userID = ?
+      ),
+      category_counts AS (
+        SELECT 
+          categoryType,
+          COUNT(*) as deck_count,
+          GROUP_CONCAT(deckID) as deck_ids
+        FROM deck_categories
+        GROUP BY categoryType
+      ),
+      flashcard_counts AS (
+        SELECT 
+          cc.categoryType,
+          cc.deck_count,
+          COALESCE(SUM(flashcard_count), 0) as total_flashcards
+        FROM category_counts cc
+        LEFT JOIN (
+          SELECT 
+            dc.categoryType,
+            COUNT(*) as flashcard_count
+          FROM deck_categories dc
+          LEFT JOIN flashcards f ON dc.deckID = f.deckID AND f.userID = ?
+          GROUP BY dc.categoryType
+          UNION ALL
+          SELECT 
+            dc.categoryType,
+            COUNT(*) as flashcard_count
+          FROM deck_categories dc
+          LEFT JOIN AIFlashcards af ON dc.deckID = af.deckID AND af.userID = ?
+          GROUP BY dc.categoryType
+        ) fc ON cc.categoryType = fc.categoryType
+        GROUP BY cc.categoryType
+      )
+      SELECT 
+        categoryType,
+        deck_count,
+        total_flashcards
+      FROM flashcard_counts
+      ORDER BY deck_count DESC
+    `, [userID, userID, userID, userID]);
+
+    // Define colors for each type
+    const typeColors = {
+      'study': '#5CC8BE',
+      'technical': '#D7191C',
+      'case study': '#C3EB79',
+      'behavioral': '#FDAE61',
+      'brainteasers': '#357AF6',
+      'others': '#AF52DE'
+    };
+
+    // Calculate totals
+    const totalDecks = result.reduce((sum: number, row: any) => sum + row.deck_count, 0);
+    const totalFlashcards = result.reduce((sum: number, row: any) => sum + row.total_flashcards, 0);
+
+    // Create decks data
+    const decksData: BreakdownDatum[] = result.map((row: any) => ({
+      label: row.categoryType.charAt(0).toUpperCase() + row.categoryType.slice(1),
+      value: row.deck_count,
+      percent: totalDecks > 0 ? Math.round((row.deck_count / totalDecks) * 100) : 0,
+      color: typeColors[row.categoryType as keyof typeof typeColors] || '#98CE7F'
+    }));
+
+    // Create flashcards data
+    const flashcardsData: BreakdownDatum[] = result.map((row: any) => ({
+      label: row.categoryType.charAt(0).toUpperCase() + row.categoryType.slice(1),
+      value: row.total_flashcards,
+      percent: totalFlashcards > 0 ? Math.round((row.total_flashcards / totalFlashcards) * 100) : 0,
+      color: typeColors[row.categoryType as keyof typeof typeColors] || '#98CE7F'
+    }));
+
+    return { decksData, flashcardsData };
+  } catch (error) {
+    console.error('Error fetching breakdown data:', error);
+    // Return empty data if there's an error
+    return { decksData: [], flashcardsData: [] };
+  }
+}

@@ -115,6 +115,13 @@ export const strings: Record<string, any> = {
     photoLibraryPermissionError: 'Sorry, we need camera roll permissions to make this work!',
     imageSelectionError: 'Error selecting image. Please try again.',
     photoCaptureError: 'Error taking photo. Please try again.',
+    // CalendarModal strings
+    calendarSubtitle: 'Press "Done" or "Choose Date" to apply your selection.',
+    today: 'Today',
+    thisWeek: 'This Week',
+    thisMonth: 'This Month',
+    all: 'All',
+    chooseDate: 'Choose Date',
   },
   Chinese: {
     // AddDeckModal strings
@@ -232,5 +239,12 @@ export const strings: Record<string, any> = {
     photoLibraryPermissionError: '抱歉，我们需要相册权限才能使用此功能！',
     imageSelectionError: '选择图片时出错，请重试。',
     photoCaptureError: '拍照时出错，请重试。',
+    // CalendarModal strings
+    calendarSubtitle: '点击"确定"或"选择日期"应用您的选择。',
+    today: '今天',
+    thisWeek: '本周',
+    thisMonth: '本月',
+    all: '全部',
+    chooseDate: '选择日期',
   },
 };

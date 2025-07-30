@@ -3,8 +3,11 @@ import { Modal, View, Text, TouchableOpacity, ScrollView, Pressable, StyleSheet,
 import { Calendar } from 'react-native-calendars';
 import { ModalButton } from './ModalButton';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'custom' | null;
 
@@ -26,6 +29,8 @@ export function CalendarModal({
   const [confirmedDate, setConfirmedDate] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
 
   // Reset to last confirmed selection when modal opens
   React.useEffect(() => {
@@ -73,49 +78,55 @@ export function CalendarModal({
         />
         {/* Modal content */}
         <View style={styles.centeredContent} pointerEvents="box-none">
-          <View style={styles.container} pointerEvents="auto">
+          <View style={[styles.container, { backgroundColor: colors.background }]} pointerEvents="auto">
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
               <View style={styles.content}>
                 <View style={styles.subtitleRow}>
                   <Text style={[styles.subtitle, {
-                    // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
-                    fontSize: language === 'Chinese' ? 14 : 16}]}>
-                    {language === 'Chinese' ? '点击"确定"或"选择日期"应用您的选择。' : 'Press "Done" or "Choose Date" to apply your selection.'}
+                    fontFamily: Fonts.title,
+                    fontSize: language === 'Chinese' ? 14 : 16,
+                    color: colors.text
+                  }]}>
+                    {strings[language].calendarSubtitle}
                   </Text>
                 </View>
                 <View style={styles.headerRow}>
                   <Text style={[styles.title, {
-                    // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
-                    fontSize: language === 'Chinese' ? 20 : 24}]}>
+                    fontFamily: Fonts.title,
+                    fontSize: language === 'Chinese' ? 20 : 24,
+                    color: colors.text
+                  }]}>
                     {title}
                   </Text>
                   <TouchableOpacity onPress={handleDone}>
                     <Text style={[styles.doneButton, {
-                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium', 
-                      fontSize: language === 'Chinese' ? 18 : 20}]}>{language === 'Chinese' ? '确定' : 'Done'}</Text>
+                      fontFamily: Fonts.bodyMedium,
+                      fontSize: language === 'Chinese' ? 18 : 20,
+                      color: colors.brandColor1
+                    }]}>{strings[language].done}</Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.buttonRow}>
                   <ModalButton 
-                    text={language === 'Chinese' ? '今天' : 'Today'}
+                    text={strings[language].today}
                     selected={currentFilter === 'today'}
                     onPress={() => handleButtonPress('today')}
                     language={language}
                   />
                   <ModalButton 
-                    text={language === 'Chinese' ? '本周' : 'This Week'}
+                    text={strings[language].thisWeek}
                     selected={currentFilter === 'week'}
                     onPress={() => handleButtonPress('week')}
                   />
                 </View>
                 <View style={styles.buttonRow}>
                   <ModalButton 
-                    text={language === 'Chinese' ? '本月' : 'This Month'}
+                    text={strings[language].thisMonth}
                     selected={currentFilter === 'month'}
                     onPress={() => handleButtonPress('month')}
                   />
                   <ModalButton 
-                    text={language === 'Chinese' ? '全部' : 'All'}
+                    text={strings[language].all}
                     selected={currentFilter === 'all'}
                     onPress={() => handleButtonPress('all')}
                   />
@@ -127,41 +138,42 @@ export function CalendarModal({
                     markedDates={{
                       [selectedDate]: {
                         selected: true,
-                        selectedColor: '#4F41D8'
+                        selectedColor: colors.brandColor2
                       }
                     }}
                     theme={{
-                      backgroundColor: '#ffffff',
-                      calendarBackground: '#ffffff',
-                      textSectionTitleColor: '#b6c1cd',
-                      selectedDayBackgroundColor: '#4F41D8',
-                      selectedDayTextColor: '#ffffff',
-                      todayTextColor: '#4F41D8',
-                      dayTextColor: '#2d4150',
-                      textDisabledColor: '#d9e1e8',
-                      dotColor: '#4F41D8',
-                      monthTextColor: '#000000',
-                      textMonthFontFamily: 'Satoshi-Medium',
-                      textDayHeaderFontFamily: 'Satoshi-Regular',
-                      textDayFontFamily: 'Satoshi-Regular',
+                      backgroundColor: colors.background,
+                      calendarBackground: colors.background,
+                      textSectionTitleColor: colors.unselectedText,
+                      selectedDayBackgroundColor: colors.brandColor2,
+                      selectedDayTextColor: colors.background,
+                      todayTextColor: colors.brandColor2,
+                      dayTextColor: colors.text,
+                      textDisabledColor: colors.unselectedText,
+                      dotColor: colors.brandColor2,
+                      monthTextColor: colors.text,
+                      textMonthFontFamily: Fonts.bodyMedium,
+                      textDayHeaderFontFamily: Fonts.bodyMedium,
+                      textDayFontFamily: Fonts.bodyMedium,
                       textDayHeaderFontSize: 14,
                       textMonthFontSize: 20,
-                      arrowColor: '#000000',
+                      arrowColor: colors.text,
                     }}
                   />
                 </View>
                 {selectedDate && (
                   <View style={styles.dateDisplay}>
-                    <Text style={styles.dateText}>
+                    <Text style={[styles.dateText, { color: colors.text }]}>
                       {selectedDate.split('-').reverse().join(' / ')}
                     </Text>
                     <TouchableOpacity 
-                      style={styles.chooseDateButton}
+                      style={[styles.chooseDateButton, { backgroundColor: colors.brandColor2 }]}
                       onPress={handleDone}
                     >
                       <Text style={[styles.chooseDateButtonText, {
-                        // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-                        }]}>{language === 'Chinese' ? '选择日期' : 'Choose Date'}</Text>
+                        fontFamily: Fonts.bodyMedium,
+                        color: colors.background
+                      }]}>{strings[language].chooseDate}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -190,7 +202,6 @@ const styles = StyleSheet.create({
   container: {
     width: '90%',
     height: 504,
-    backgroundColor: '#FFFFFF',
     borderRadius: 30,
     overflow: 'hidden',
   },
@@ -211,20 +222,16 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    fontFamily: 'Neuton-Regular',
     flex: 1,
     lineHeight: 24,
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Neuton-Regular',
     flex: 1,
     lineHeight: 28,
   },
   doneButton: {
     fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#44B88A',
     paddingTop: 2
   },
   buttonRow: {
@@ -236,7 +243,6 @@ const styles = StyleSheet.create({
     marginTop: 0,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#ffffff',
   },
   dateDisplay: {
     marginTop: 16,
@@ -248,17 +254,13 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     fontFamily: 'Satoshi-Regular',
-    color: '#000000',
   },
   chooseDateButton: {
-    backgroundColor: '#4F41D8',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 30,
   },
   chooseDateButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
   },
 }); 

@@ -1,6 +1,9 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, Text, ViewStyle, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface ModalButtonProps {
   text: string;
@@ -15,24 +18,30 @@ export function ModalButton({
   onPress,
   style,
   selected = false,
-  language = 'English'
 }: ModalButtonProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   // const fontFamily = language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium';
   return (
     <TouchableOpacity 
       style={[
         styles.button, 
-        selected && styles.selectedButton,
+        { backgroundColor: colors.secondaryShade },
+        selected && { backgroundColor: colors.brandColor2 },
         style
       ]} 
       onPress={onPress}
     >
-      <Text style={[styles.text, selected && styles.selectedText]}>
+      <Text style={[
+        styles.text, 
+        { fontFamily: Fonts.bodyMedium, color: colors.text },
+        selected && { color: colors.background }
+      ]}>
         {text}
       </Text>
       {selected && (
         <View style={styles.checkContainer}>
-          <Feather name="check" size={20} color="white" />
+          <Feather name="check" size={20} color={colors.background} />
         </View>
       )}
     </TouchableOpacity>
@@ -43,21 +52,12 @@ const styles = StyleSheet.create({
   button: {
     width: 141,
     height: 46,
-    backgroundColor: '#F8F8F8',
     borderRadius: 30,
     justifyContent: 'center',
     paddingLeft: 20,
   },
-  selectedButton: {
-    backgroundColor: '#4F41D8',
-  },
   text: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
-    
-  },
-  selectedText: {
-    color: 'white',
   },
   checkContainer: {
     position: 'absolute',

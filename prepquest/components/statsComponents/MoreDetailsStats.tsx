@@ -4,6 +4,10 @@ import { SmallGreenToggleMultiple } from '../general/SmallGreenToggleMultiple';
 import { useIsFocused } from '@react-navigation/native';
 import { fetchStatsData, StatsData } from '@/db/users';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 
 interface MoreDetailsStatsProps {
@@ -20,6 +24,8 @@ const meshBackground4 = require('../../assets/images/meshBackground4.png');
 
 export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedIndexChange }: MoreDetailsStatsProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const isControlled = controlledIndex !== undefined && onSelectedIndexChange !== undefined;
   const [uncontrolledIndex, setUncontrolledIndex] = useState(0);
   const selectedIndex = isControlled ? controlledIndex : uncontrolledIndex;
@@ -44,10 +50,10 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
   const isFocused = useIsFocused();
 
   const localizedOptions = [
-    language === 'Chinese' ? '卡组' : 'Decks',
-    language === 'Chinese' ? '卡片' : 'Flashcards',
-    language === 'Chinese' ? '学习' : 'Study',
-    language === 'Chinese' ? '面试' : 'Interview',
+    strings[language].moreDetailsDecks,
+    strings[language].moreDetailsFlashcards,
+    strings[language].moreDetailsStudy,
+    strings[language].moreDetailsInterview,
   ];
 
   // Function to load data
@@ -94,7 +100,7 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
       <Image source={meshBackground3} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} />
       <Image source={meshBackground4} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} />
       <View style={styles.container}>
-        <Text style={styles.title}>{language === 'Chinese' ? '更多统计数据' : 'More Details'}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{strings[language].moreDetails}</Text>
         <View style={{ marginTop: 15, marginBottom: 18 }}>
           <SmallGreenToggleMultiple
             options={localizedOptions}
@@ -105,8 +111,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
         <Animated.View style={{ width: '100%', opacity: fadeAnim }}>
           {/* Loading State */}
           {isLoading && (
-            <View style={styles.placeholder}>
-              <Text style={styles.placeholderText}>{language === 'Chinese' ? '正在加载统计数据...' : 'Loading statistics...'}</Text>
+            <View style={[styles.placeholder, { backgroundColor: colors.secondaryShade }]}>
+              <Text style={[styles.placeholderText, { color: colors.unselectedText }]}>{strings[language].loadingStatistics}</Text>
             </View>
           )}
           
@@ -118,8 +124,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.accumulatedDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡组' : 'Accumulated\nDecks'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.accumulatedDecks}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].accumulatedDecks}</Text>
                     </View>
                   </View>
                 </View>
@@ -130,8 +136,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.localStorageDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片组' : 'Decks in local\nstorage'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.localStorageDecks}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].decksInLocalStorage}</Text>
                     </View>
                   </View>
                 </View>
@@ -139,8 +145,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.totalQuizzedDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡组' : 'Total decks\nquizzed'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.totalQuizzedDecks}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].totalDecksQuizzed}</Text>
                     </View>
                   </View>
                 </View>
@@ -155,8 +161,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.accumulatedFlashcards}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计卡片' : 'Accumulated\nFlashcards'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.accumulatedFlashcards}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].accumulatedFlashcards}</Text>
                     </View>
                   </View>
                 </View>
@@ -167,8 +173,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.localStorageFlashcards}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的卡片' : 'Flashcards in\nlocal storage'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.localStorageFlashcards}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].flashcardsInLocalStorage}</Text>
                     </View>
                   </View>
                 </View>
@@ -176,8 +182,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.totalQuizzedFlashcards}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验卡片' : 'Total Flashcards\nquizzed'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.totalQuizzedFlashcards}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].totalFlashcardsQuizzed}</Text>
                     </View>
                   </View>
                 </View>
@@ -192,8 +198,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.studyDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计学习卡组' : 'Accumulated\nStudy Decks'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.studyDecks}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].accumulatedStudyDecks}</Text>
                     </View>
                   </View>
                 </View>
@@ -204,8 +210,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.studyLocalStorage}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的学习卡组' : 'Study decks in\nlocal storage'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.studyLocalStorage}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].studyDecksInLocalStorage}</Text>
                     </View>
                   </View>
                 </View>
@@ -213,8 +219,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.studyQuizzed}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n学习卡组' : 'Total Study\ndecks quizzed'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.studyQuizzed}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].totalStudyDecksQuizzed}</Text>
                     </View>
                   </View>
                 </View>
@@ -229,8 +235,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.interviewDecks}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '累计面试卡组' : 'Accumulated\nInterview Decks'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.interviewDecks}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].accumulatedInterviewDecks}</Text>
                     </View>
                   </View>
                 </View>
@@ -241,8 +247,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.interviewLocalStorage}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '本地存储\n的面试卡组' : 'Interview decks\nin local storage'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.interviewLocalStorage}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].interviewDecksInLocalStorage}</Text>
                     </View>
                   </View>
                 </View>
@@ -250,8 +256,8 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
-                      <Text style={styles.deckNumber}>{statsData.interviewQuizzed}</Text>
-                      <Text style={styles.deckLabel}>{language === 'Chinese' ? '已测验\n面试卡组' : 'Total Interview\ndecks quizzed'}</Text>
+                      <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.interviewQuizzed}</Text>
+                      <Text style={[styles.deckLabel, { color: colors.text }]}>{strings[language].totalInterviewDecksQuizzed}</Text>
                     </View>
                   </View>
                 </View>
@@ -273,7 +279,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     textAlign: 'center',
   },
   decksColumn: {
@@ -314,16 +320,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   deckNumber: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 64,
-    color: '#222',
     textAlign: 'center',
     marginTop: -15,
   },
   deckLabel: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 20,
-    color: '#222',
     textAlign: 'center',
     marginTop: 5,
   },
@@ -333,13 +337,11 @@ const styles = StyleSheet.create({
     minHeight: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8F8F8',
     borderRadius: 12,
   },
   placeholderText: {
-    color: '#D5D4DD',
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
   },
   imageRowTwoUp: {
     width: '100%',

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ImageBackground, ScrollView, Image, Dimensions } from 'react-native';
-import { ThemedText } from '@/components/general/ThemedText';
 import { ThemedView } from '@/components/general/ThemedView';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -17,12 +16,15 @@ import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
 import { db } from '@/db/index';
-import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfo, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists, getCompanyIconImageSource } from '@/db/decks';
+import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists, getCompanyIconImageSource } from '@/db/decks';
 import { Toast } from '@/components/general/Toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -30,41 +32,9 @@ async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }
-
-const getEmptyStateContainerMarginTop = () => {
-    const { width, height } = Dimensions.get('window');
-  
-    // iphone se
-    if (Platform.OS === 'ios' && height <= 670) {
-      return '0%';
-    }
-  
-     /// iphone 16 pro max
-    if (Platform.OS === 'ios' && height >= 940) {
-      return '25%';
-    }
-    
-    // iphone 16 plus
-    if (Platform.OS === 'ios' && height >= 920) {
-      return '24%';
-    }
-     // Pixel 9 Pro, Pixel 9 Pro XL 
-     if (Platform.OS === 'android' && height >= 935) {
-      return '30%';
-    }
-    
-    // Pixel 7, Pixel 8, Pixel 9
-    if (Platform.OS === 'android' && height >= 900) {
-      return '23%';
-    }
-    
-    // iphone 16, iphone 16 pro, Pixel 7 Pro, 
-    return Platform.OS === 'ios' ? '18%' : '22%';
-  };
 
 const SCREEN_TRANSITION_DURATION = 300;
 
@@ -89,7 +59,7 @@ export default function DeckDetailsScreen() {
     setDeckDetailsSaveModalType,
   } = useContext(MenuContext);
   const { language } = useLanguage();
-  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
@@ -117,12 +87,12 @@ export default function DeckDetailsScreen() {
 
   // Card type color and label logic
   const cardTypeMap: Record<string, { color: string; label: string }> = {
-    behavioral: { color: '#FDAE61', label: language === 'Chinese' ? '行为面试' : 'Behavioral' },
-    technical: { color: '#D7191C', label: language === 'Chinese' ? '技术面试' : 'Technical' },
-    brainteasers: { color: '#357AF6', label: language === 'Chinese' ? '脑筋急转弯' : 'Brainteasers' },
-    'case study': { color: '#C3EB79', label: language === 'Chinese' ? '案例分析' : 'Case Study' },
-    others: { color: '#FDAE61', label: language === 'Chinese' ? '其他' : 'Others' },
-    study: { color: '#5CC8BE', label: language === 'Chinese' ? '学习' : 'Study' },
+    behavioral: { color: Colors[theme].brandColor1, label: strings[language].cardTypes.behavioral },
+    technical: { color: Colors[theme].alertColor, label: strings[language].cardTypes.technical },
+    brainteasers: { color: Colors[theme].brandColor2, label: strings[language].cardTypes.brainteasers },
+    'case study': { color: Colors[theme].brandColor1, label: strings[language].cardTypes['case study'] },
+    others: { color: Colors[theme].brandColor1, label: strings[language].cardTypes.others },
+    study: { color: Colors[theme].brandColor1, label: strings[language].cardTypes.study },
   };
 
   // State for favorite status
@@ -204,7 +174,6 @@ export default function DeckDetailsScreen() {
       // Update local state immediately
       setFavoriteStatus(!favoriteStatus);
     } catch (error) {
-      console.error('Error updating favorite status:', error);
     }
   };
 
@@ -405,7 +374,7 @@ export default function DeckDetailsScreen() {
     
     // Check if the text is empty
     if (!trimmedText) {
-      setToastMessage('Deck name cannot be empty!');
+      setToastMessage(strings[language].deckDetails.deckNameCannotBeEmpty);
       setShowToast(true);
       return;
     }
@@ -423,7 +392,7 @@ export default function DeckDetailsScreen() {
     const deckExists = await checkDeckNameExists(trimmedText, parseInt(deckId as string));
     
     if (deckExists) {
-      setToastMessage('Deck name already exists!');
+      setToastMessage(strings[language].deckDetails.deckNameAlreadyExists);
       setShowToast(true);
       return;
     }
@@ -436,9 +405,7 @@ export default function DeckDetailsScreen() {
         SET deckName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
         WHERE deckID = ${parseInt(deckId as string)} AND userID = '${userID}'
       `);
-      
-      console.log('Updated deck title to:', trimmedText);
-      
+            
       // Update local state to reflect the change immediately
       setEditText(trimmedText);
       setDeckInfo((prev: any) => prev ? { ...prev, deckName: trimmedText, lastModifiedDate: new Date().toISOString() } : prev);
@@ -452,8 +419,7 @@ export default function DeckDetailsScreen() {
       router.setParams({ deckTitle: trimmedText });
       
     } catch (error) {
-      console.error('Error updating deck name:', error);
-      setToastMessage('Error updating deck name!');
+      setToastMessage(strings[language].deckDetails.errorUpdatingDeckName);
       setShowToast(true);
     }
   };
@@ -521,7 +487,6 @@ export default function DeckDetailsScreen() {
       }
     });
 
-    console.log('isAIDeck', isAIDeck);
   };
 
   // Function to handle deck deletion
@@ -531,7 +496,6 @@ export default function DeckDetailsScreen() {
       const success = await deleteDeck(parseInt(deckId as string));
       
       if (success) {
-        console.log('Successfully deleted deck:', deckId);
         
         // Navigate back based on source page
         if (folderTitle && folderId) {
@@ -558,11 +522,9 @@ export default function DeckDetailsScreen() {
           });
         }
       } else {
-        console.error('Failed to delete deck');
         // You could show an error message to the user here
       }
     } catch (error) {
-      console.error('Error deleting deck:', error);
       // You could show an error message to the user here
     }
   };
@@ -585,20 +547,7 @@ export default function DeckDetailsScreen() {
         setDeckGrade(grade);
       }
       
-      // Test logging to verify the data
-      if (deckGrade) {
-        console.log('Deck Grade loaded:', {
-          score: deckGrade.score,
-          masteryLevel: deckGrade.masteryLevel,
-          breakdown: deckGrade.breakdown,
-          totalAttempted: deckGrade.totalAttempted,
-          totalFlashcards: deckGrade.totalFlashcards
-        });
-      } else {
-        console.log('No deck grade available - no attempted flashcards found');
-      }
     } catch (error) {
-      console.error('Error loading deck grade:', error);
       setDeckGrade(null);
     } finally {
       setIsLoadingGrade(false);
@@ -623,14 +572,7 @@ export default function DeckDetailsScreen() {
         setAverageTime(time);
       }
       
-      // Test logging to verify the data
-      if (averageTime !== null) {
-        console.log('Average time loaded:', averageTime, 'seconds');
-      } else {
-        console.log('No average time available - no attempted flashcards with time data found');
-      }
     } catch (error) {
-      console.error('Error loading average time:', error);
       setAverageTime(null);
     } finally {
       setIsLoadingAverageTime(false);
@@ -693,11 +635,11 @@ export default function DeckDetailsScreen() {
       const score = (totalWeight / ratings.length) * 100;
       
       const getMasteryLevel = (score: number): string => {
-        if (score >= 90) return 'Expert';
-        if (score >= 75) return 'Proficient';
-        if (score >= 60) return 'Developing';
-        if (score >= 40) return 'Beginner';
-        return 'Needs Practice';
+        if (score >= 90) return strings[language].deckDetails.masteryLevels.expert;
+        if (score >= 75) return strings[language].deckDetails.masteryLevels.proficient;
+        if (score >= 60) return strings[language].deckDetails.masteryLevels.developing;
+        if (score >= 40) return strings[language].deckDetails.masteryLevels.beginner;
+        return strings[language].deckDetails.masteryLevels.needsPractice;
       };
 
       const getBreakdown = (ratings: string[]) => {
@@ -724,7 +666,6 @@ export default function DeckDetailsScreen() {
 
       return grade;
     } catch (error) {
-      console.error('Error calculating AI deck grade:', error);
       return null;
     }
   };
@@ -760,7 +701,6 @@ export default function DeckDetailsScreen() {
       // Return the average time rounded to the nearest integer
       return Math.round(data.averageTime);
     } catch (error) {
-      console.error('Error calculating AI deck average time:', error);
       return null;
     }
   };
@@ -794,9 +734,7 @@ export default function DeckDetailsScreen() {
       const data = result as { attemptedCount: number };
       setHasAttemptedFlashcards(data.attemptedCount > 0);
       
-      console.log('Flashcard attempt status:', data.attemptedCount > 0 ? 'Has attempted flashcards' : 'No attempted flashcards');
     } catch (error) {
-      console.error('Error checking flashcard attempt status:', error);
       setHasAttemptedFlashcards(false);
     } finally {
       setIsLoadingAttemptStatus(false);
@@ -843,9 +781,7 @@ export default function DeckDetailsScreen() {
 
       setIsAIDeckSaved(!!savedDeckResult);
       
-      console.log('AI deck saved status:', savedDeckResult ? 'Saved to regular decks table' : 'Not saved yet');
     } catch (error) {
-      console.error('Error checking AI deck saved status:', error);
       setIsAIDeckSaved(false);
     } finally {
       setIsLoadingSavedStatus(false);
@@ -897,7 +833,6 @@ export default function DeckDetailsScreen() {
       const result = await saveAIDeck(parseInt(deckId as string));
       
       if (result.success && result.newDeckId) {
-        console.log('Successfully saved AI deck to regular deck:', result.newDeckId);
         
         // Show save confirmation modal first
         setIsMenuOpen(true);
@@ -957,11 +892,9 @@ export default function DeckDetailsScreen() {
         ]).start();
         
       } else {
-        console.error('Failed to save AI deck');
         // You could show an error message to the user here
       }
     } catch (error) {
-      console.error('Error saving AI deck:', error);
       // You could show an error message to the user here
     }
   };
@@ -1111,7 +1044,6 @@ export default function DeckDetailsScreen() {
       }
       
     } catch (error) {
-      console.error('Error loading deck info:', error);
       setDeckInfo(null);
     } finally {
       setIsLoadingDeckInfo(false);
@@ -1161,7 +1093,6 @@ export default function DeckDetailsScreen() {
 
       return Math.round((progress.completedFlashcards / progress.totalFlashcards) * 100);
     } catch (error) {
-      console.error('Error calculating AI deck progress:', error);
       return 0;
     }
   };
@@ -1174,16 +1105,16 @@ export default function DeckDetailsScreen() {
   function MetadataRow({ label, value }: MetadataRowProps) {
     // Map English label to Chinese if needed
     const labelMap: Record<string, string> = {
-      'Created via': '创建方式',
-      'Subject(s)': '科目',
-      'Topics/Subtopics': '主题/子主题',
-      'Education Level': '教育水平',
-      'Exam/Quiz': '考试/测验',
-      'Last Reviewed date': '上次复习日期',
-      'Job/Role': '职位',
-      'Company': '公司',
-      'Topics': '主题',
-      'Experience Level': '经验水平',
+      'Created via': strings[language].deckDetails.createdVia,
+      'Subject(s)': strings[language].deckDetails.subjects,
+      'Topics/Subtopics': strings[language].deckDetails.topicsSubtopics,
+      'Education Level': strings[language].deckDetails.educationLevel,
+      'Exam/Quiz': strings[language].deckDetails.examQuiz,
+      'Last Reviewed date': strings[language].deckDetails.lastReviewedDate,
+      'Job/Role': strings[language].deckDetails.jobRole,
+      'Company': strings[language].deckDetails.company,
+      'Topics': strings[language].deckDetails.topics,
+      'Experience Level': strings[language].deckDetails.experienceLevel,
     };
     const localizedLabel = language === 'Chinese' && labelMap[label] ? labelMap[label] : label;
     return (
@@ -1208,16 +1139,16 @@ export default function DeckDetailsScreen() {
       paddingHorizontal: 8,
     },
     label: {
-      fontFamily: 'Satoshi-Variable',
+      fontFamily: Fonts.bodyBold,
       fontSize: 16,
-      color: '#111',
+      color: Colors[theme].text,
       flex: 0,
       marginRight: 16,
     },
     value: {
-      fontFamily: 'Satoshi-Medium',
+      fontFamily: Fonts.bodyMedium,
       fontSize: 16,
-      color: '#111',
+      color: Colors[theme].text,
       textAlign: 'right',
       flex: 1,
       flexWrap: 'wrap',
@@ -1228,8 +1159,363 @@ export default function DeckDetailsScreen() {
     return cardTypeMap[cardType]?.color || '#FDAE61';
   };
   const getCardTypeLabel = (cardType: string) => {
-    return cardTypeMap[cardType]?.label || (language === 'Chinese' ? '其他' : 'Others');
+    return cardTypeMap[cardType]?.label || strings[language].cardTypes.others;
   };
+
+  function LoadingBar({ percent }: { percent: number }) {
+    const { language } = useLanguage();
+    const { theme } = useTheme();
+    const isComplete = percent === 100;
+    return (
+      <View style={styles.loadingBarBg}>
+        <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? Colors[theme].brandColor1 : Colors[theme].brandColor2 }]} />
+        {isComplete && (
+          <View style={styles.loadingBarTextContainer}>
+            <Text style={styles.loadingBarCompleteText}>{strings[language].completed}</Text>
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  const styles = StyleSheet.create({
+    animatedContainer: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    topBar: {
+      position: 'absolute',
+      left: 16,
+      zIndex: 1,
+    },
+    backButton: {
+      paddingTop: 8,
+    },
+    headerIconsContainer: {
+      position: 'absolute',
+      right: 16,
+      zIndex: 1,
+    },
+    mainContainer: {
+      flex: 1,
+      marginHorizontal: 16,
+      marginBottom: 20, // Space for navbar
+    },
+    contentContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    backgroundImage: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
+    },
+    backgroundImageStyle: {
+      borderRadius: 20,
+      resizeMode: 'stretch',
+    },
+    title: {
+      fontSize: 24,
+      fontFamily: Fonts.bodyBold,
+      color: Colors[theme].text,
+      marginBottom: 16,
+    },
+    subtitle: {
+      fontSize: 18,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].unselectedText,
+    },
+    scrollView: {
+      flex: 1,
+      marginVertical: 20,
+      marginHorizontal: 15,
+    },
+    scrollViewContent: {
+      padding: 0,
+    },
+    cardContentContainer: {
+      flex: 1,
+      marginTop: 10,
+      justifyContent: 'flex-end',
+    },
+    progressRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      position: 'absolute',
+      top: 100,
+      left: 0,
+      right: 0,
+      marginBottom: 0,
+      paddingBottom: 0,
+    },
+    loadingBarFlexWrapper: {
+      flex: 1,
+      marginRight: 12,
+      marginLeft: 8,
+    },
+    loadingBarBg: {
+      height: 11,
+      borderRadius: 13,
+      backgroundColor: Colors[theme].background,
+      overflow: 'hidden',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    loadingBarFg: {
+      height: 11,
+      borderRadius: 13,
+      backgroundColor: Colors[theme].brandColor2,
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+    },
+    progressLabel: {
+      fontFamily: Fonts.bodyItalic,
+      fontSize: 12,
+      color: Colors[theme].text,
+      textAlign: 'right',
+      minWidth: 70,
+      marginRight: 8,
+    },
+    loadingBarTextContainer: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: -2.5,
+      bottom: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2,
+    },
+    loadingBarCompleteText: {
+      fontFamily: Fonts.bodyItalic,
+      fontSize: 12,
+      color: Colors[theme].background,
+      textAlign: 'center',
+    },
+    cardIconImage: {
+      position: 'absolute',
+      top: 15,
+      left: 7,
+      width: 54,
+      height: 54,
+      resizeMode: 'contain',
+      zIndex: 2,
+    },
+    cardTypePill: {
+      position: 'absolute',
+      width: 84,
+      backgroundColor: Colors[theme].background,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2,
+      top: 42,
+      right: 2,
+      height: 38,
+      borderRadius: 21,
+    },
+    cardTypeText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    favoriteButtonContainer: {
+      position: 'absolute',
+      top: 5,
+      right: 2,
+      zIndex: 3,
+    },
+    cardTitle: {
+      position: 'absolute',
+      top: 5,
+      right: 90,
+      left: 75,
+      fontFamily: Fonts.title,
+      fontSize: 24,
+      color: Colors[theme].text,
+      zIndex: 2,
+      lineHeight: Platform.OS === 'ios' ? 24 : 28,
+    },
+    dateFlashcardRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      position: 'absolute',
+      top: 65,
+      right: 100,
+      left: 80,
+      zIndex: 2,
+    },
+    dateText: {
+      fontFamily: Fonts.bodyItalic,
+      fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
+      color: Colors[theme].text,
+    },
+    flashcardCountText: {
+      fontFamily: Fonts.bodyItalic,
+      fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
+      color: Colors[theme].text,
+    },
+    cardDetailsContainer: {
+      flex: 1,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 20,
+      right: 16,
+      width: 67,
+      height: 67,
+      borderRadius: 67 / 2,
+      backgroundColor: Colors[theme].brandColor2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 8, // for Android shadow
+    },
+    fabContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 100, // Make sure this is tall enough to contain the FAB
+      zIndex: 1,
+    },
+    actionButtonsRow: {
+      position: 'absolute',
+      top: 62,
+      right: 0,
+      left: 0,
+      zIndex: 1,
+    },
+    aiDeckLayout: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginLeft: 10,
+    },
+    aiDeckColumn1: {
+      flex: 0.7,
+      alignItems: 'flex-start',
+    },
+    aiDeckColumn2: {
+      flex: 2,
+      alignItems: 'center',
+      height: '100%',
+      justifyContent: 'center',
+      marginLeft: 10
+    },
+    aiDeckColumn3: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    aiDeckCompanyLogo: {
+      width: 54,
+      height: 54,
+      resizeMode: 'contain',
+      marginTop: 8,
+    },
+    aiDeckTitle: {
+      fontFamily: Fonts.title,
+      fontSize: 24,
+      color: Colors[theme].text,
+      lineHeight: Platform.OS === 'ios' ? 24 : 28,
+      textAlign: 'left',
+    },
+    aiDeckCardTypePill: {
+      width: 84,
+      backgroundColor: Colors[theme].background,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 38,
+      borderRadius: 21,
+      marginBottom: 8,
+      marginRight: 5
+    },
+    aiDeckCardTypeText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    aiDeckFlashcardCount: {
+      fontFamily: Fonts.bodyItalic,
+      fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
+      color: Colors[theme].text,
+      textAlign: 'center',
+    },
+    emptyStateContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyStateAnimationsContainer: {
+      position: 'relative',
+      width: '100%',
+      height: 300,
+    },
+    aiDeckAnimation1: {
+      position: 'absolute',
+      top: "25%",
+      left: '-5%',
+      width: 280,
+      height: 280,
+      transform: [{ rotate: '2deg' }],
+    },
+    aiDeckAnimation2: {
+      position: 'absolute',
+      top: '2%',
+      left: '7%',
+      width: 180,
+      height: 180,
+      transform: [{ rotate: '-25deg' }],
+    },
+    aiDeckAnimation3: {
+      position: 'absolute',
+      top: '10%',
+      right: "-5%",
+      width: 240,
+      height: 240,
+      transform: [{ rotate: '15deg' }],
+    },
+    aiDeckAnimation: {
+      width: '100%',
+      height: '100%',
+    },
+    aiDeckStatsMessage: {
+      fontFamily: Fonts.bodyItalic,
+      fontSize: 20,
+      color: Colors[theme].text,
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    metadataContainer: {
+      backgroundColor: 'transparent',
+    },
+    metadataTitle: {
+      fontFamily: Fonts.bodyBold,
+      fontSize: 18,
+      color: Colors[theme].text,
+      marginBottom: 16,
+      paddingHorizontal: 16,
+    },
+  });
 
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
@@ -1305,7 +1591,7 @@ export default function DeckDetailsScreen() {
                         {cardFlashcardCount !== undefined && (
                           <Text style={[styles.aiDeckFlashcardCount, {
                             // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-                          }]}>{cardFlashcardCount} {language === 'Chinese' ? '张卡片' : 'cards'}</Text>
+                          }]}>{cardFlashcardCount} {strings[language].cards}</Text>
                         )}
                       </View>
                     </View>
@@ -1352,7 +1638,7 @@ export default function DeckDetailsScreen() {
                             <Text style={styles.dateText}>{cardDate}</Text>
                           )}
                           {cardFlashcardCount !== undefined && (
-                            <Text style={styles.flashcardCountText}>{cardFlashcardCount} {language === 'Chinese' ? '张卡片' : 'cards'}</Text>
+                            <Text style={styles.flashcardCountText}>{cardFlashcardCount} {strings[language].cards}</Text>
                           )}
                         </View>
                       )}
@@ -1372,7 +1658,7 @@ export default function DeckDetailsScreen() {
                       <View style={styles.loadingBarFlexWrapper}>
                         <LoadingBar percent={cardPercent} />
                       </View>
-                      <Text style={styles.progressLabel}>{cardPercent}% {language === 'Chinese' ? '进度' : 'progress'}</Text>
+                      <Text style={styles.progressLabel}>{cardPercent}% {strings[language].progress}</Text>
                     </View>
                   )}
                 </View>
@@ -1421,7 +1707,7 @@ export default function DeckDetailsScreen() {
                       </View>
                       {/* Stats message for all deck types */}
                       <Text style={styles.aiDeckStatsMessage}>
-                        {language === 'Chinese' ? '暂无统计数据！你可以先浏览、学习或测验此卡组。' : 'No stats yet! View, study or quiz yourself on this deck in the meantime!'}
+                        {strings[language].deckDetails.noStatsYet}
                       </Text>
                     </View>
                   ) : (
@@ -1476,363 +1762,6 @@ export default function DeckDetailsScreen() {
   );
 }
 
-function LoadingBar({ percent }: { percent: number }) {
-  const { language } = useLanguage();
-  const isComplete = percent === 100;
-  return (
-    <View style={styles.loadingBarBg}>
-      <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? '#44B88A' : '#4F41D8' }]} />
-      {isComplete && (
-        <View style={styles.loadingBarTextContainer}>
-          <Text style={styles.loadingBarCompleteText}>{language === 'Chinese' ? '已完成！' : 'Completed!'}</Text>
-        </View>
-      )}
-    </View>
-  );
-}
 
-const styles = StyleSheet.create({
-  animatedContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
-    left: 16,
-    zIndex: 1,
-  },
-  backButton: {
-    paddingTop: 8,
-  },
-  headerIconsContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
-    right: 16,
-    zIndex: 1,
-  },
-  mainContainer: {
-    flex: 1,
-    marginHorizontal: 16,
-    marginBottom: 20, // Space for navbar
-  },
-  contentContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  backgroundImageStyle: {
-    borderRadius: 20,
-    resizeMode: 'stretch',
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Satoshi-Bold',
-    color: '#000000',
-    marginBottom: 16,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontFamily: 'Satoshi-Medium',
-    color: '#666666',
-  },
-  scrollView: {
-    flex: 1,
-    marginVertical: 20,
-    marginHorizontal: 15,
-    // borderWidth: 2,
-    // borderColor: 'blue', // Visible border to see the ScrollView
-    // borderStyle: 'solid',
-  },
-  scrollViewContent: {
-    padding: 0,
-  },
-  cardContentContainer: {
-    flex: 1,
-    marginTop: 10,
-    justifyContent: 'flex-end',
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'absolute',
-    top: 100,
-    left: 0,
-    right: 0,
-    marginBottom: 0,
-    paddingBottom: 0,
-  },
-  loadingBarFlexWrapper: {
-    flex: 1,
-    marginRight: 12,
-    marginLeft: 8,
-  },
-  loadingBarBg: {
-    height: 11,
-    borderRadius: 13,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  loadingBarFg: {
-    height: 11,
-    borderRadius: 13,
-    backgroundColor: '#4F41D8',
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-  },
-  progressLabel: {
-    fontFamily: 'Satoshi-Italic',
-    fontSize: 12,
-    color: '#222',
-    textAlign: 'right',
-    minWidth: 70,
-    marginRight: 8,
-  },
-  loadingBarTextContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: -2.5,
-    bottom: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  loadingBarCompleteText: {
-    fontFamily: 'Satoshi-Italic',
-    fontSize: 12,
-    color: '#fff',
-    textAlign: 'center',
-  },
-  cardIconImage: {
-    position: 'absolute',
-    top: 15,
-    left: 7,
-    width: 54,
-    height: 54,
-    resizeMode: 'contain',
-    zIndex: 2,
-  },
-  cardTypePill: {
-    position: 'absolute',
-    width: 84,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-    top: 42,
-    right: 2,
-    height: 38,
-    borderRadius: 21,
-  },
-  cardTypeText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  favoriteButtonContainer: {
-    position: 'absolute',
-    top: 5,
-    right: 2,
-    zIndex: 3,
-  },
-  cardTitle: {
-    position: 'absolute',
-    top: 5,
-    right: 90,
-    left: 75,
-    fontFamily: 'Neuton-Regular',
-    fontSize: 24,
-    color: '#000',
-    zIndex: 2,
-    lineHeight: Platform.OS === 'ios' ? 24 : 28,
-  },
-  dateFlashcardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    position: 'absolute',
-    top: 65,
-    right: 100,
-    left: 80,
-    zIndex: 2,
-  },
-  dateText: {
-    fontFamily: 'Satoshi-Italic',
-    fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
-  },
-  flashcardCountText: {
-    fontFamily: 'Satoshi-Italic',
-    fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
-  },
-  cardDetailsContainer: {
-    flex: 1,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 16,
-    width: 67,
-    height: 67,
-    borderRadius: 67 / 2,
-    backgroundColor: '#4F41D8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 8, // for Android shadow
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100, // Make sure this is tall enough to contain the FAB
-    zIndex: 1,
-  },
-  actionButtonsRow: {
-    position: 'absolute',
-    top: 62,
-    right: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  aiDeckLayout: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginLeft: 10,
-  },
-  aiDeckColumn1: {
-    flex: 0.7,
-    alignItems: 'flex-start',
-  },
-  aiDeckColumn2: {
-    flex: 2,
-    alignItems: 'center',
-    height: '100%',
-    justifyContent: 'center',
-    marginLeft: 10
-  },
-  aiDeckColumn3: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  aiDeckCompanyLogo: {
-    width: 54,
-    height: 54,
-    resizeMode: 'contain',
-    marginTop: 8,
-  },
-  aiDeckTitle: {
-    fontFamily: 'Neuton-Regular',
-    fontSize: 24,
-    color: '#000',
-    lineHeight: Platform.OS === 'ios' ? 24 : 28,
-    textAlign: 'left',
-  },
-  aiDeckCardTypePill: {
-    width: 84,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 38,
-    borderRadius: 21,
-    marginBottom: 8,
-    marginRight: 5
-  },
-  aiDeckCardTypeText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  aiDeckFlashcardCount: {
-    fontFamily: 'Satoshi-Italic',
-    fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#222',
-    textAlign: 'center',
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyStateAnimationsContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 300,
-  },
-  aiDeckAnimation1: {
-    position: 'absolute',
-    top: "25%",
-    left: '-5%',
-    width: 280,
-    height: 280,
-    transform: [{ rotate: '2deg' }],
-  },
-  aiDeckAnimation2: {
-    position: 'absolute',
-    top: '2%',
-    left: '7%',
-    width: 180,
-    height: 180,
-    transform: [{ rotate: '-25deg' }],
-  },
-  aiDeckAnimation3: {
-    position: 'absolute',
-    top: '10%',
-    right: "-5%",
-    width: 240,
-    height: 240,
-    transform: [{ rotate: '15deg' }],
-  },
-  aiDeckAnimation: {
-    width: '100%',
-    height: '100%',
-    // borderWidth: 1,
-    // borderColor: 'blue',
-  },
-  aiDeckStatsMessage: {
-    fontFamily: 'Satoshi-Italic',
-    fontSize: 20,
-    color: '#222',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  metadataContainer: {
-    backgroundColor: 'transparent',
-  },
-  metadataTitle: {
-    fontFamily: 'Satoshi-Bold',
-    fontSize: 18,
-    color: '#111',
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
-}); 
+
+ 

@@ -1,5 +1,4 @@
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
-import { ThemedText } from '@/components/general/ThemedText';
 import { ThemedView } from '@/components/general/ThemedView';
 import { Feather } from '@expo/vector-icons';
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
@@ -15,8 +14,12 @@ import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders, getCompanyIconImageSource } from '@/db/decks';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
 import { db } from '@/db/index';
-import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
+import { getDeckCardDesign } from '@/constants/cardDesigns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
@@ -30,7 +33,6 @@ type SortDirection = 'asc' | 'desc';
 const FAVORITES_SORT_FIELD_KEY = 'favorites_sort_field';
 const FAVORITES_SORT_DIRECTION_KEY = 'favorites_sort_direction';
 
-const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
@@ -106,7 +108,7 @@ export default function FavoritesScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const { language } = useLanguage();
-  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
@@ -468,8 +470,8 @@ export default function FavoritesScreen() {
       setIsNoSelectionModalOpen(true);
       setNoSelectionModalSubtitle(
         isFavFoldersMode
-          ? "Please choose at least one folder if you want to delete or unfavorite."
-          : "Please choose at least one deck if you want to delete, add to folder or unfavorite."
+          ? strings[language].favorites.pleaseChooseAtLeastOneFolder
+          : strings[language].favorites.pleaseChooseAtLeastOneDeck
       );
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -493,7 +495,7 @@ export default function FavoritesScreen() {
       if (index === 0) {
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
-        setDeleteModalText('Are you sure you want to delete these folder(s)?');
+        setDeleteModalText(strings[language].favorites.areYouSureYouWantToDeleteTheseFolders);
         setHandleDeletion(() => handleDeleteSelectedFavoritedFolders);
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
@@ -556,7 +558,7 @@ export default function FavoritesScreen() {
         case 1: // Trash
           setIsMenuOpen(true);
           setIsTrashModalOpenInDecksPage(true);
-          setDeleteModalText('Are you sure you want to delete these deck(s)?');
+          setDeleteModalText(strings[language].favorites.areYouSureYouWantToDeleteTheseDecks);
           setHandleDeletion(() => handleDeleteSelectedFavoritedDecks);
           Animated.parallel([
             Animated.timing(menuOverlayOpacity, {
@@ -585,8 +587,8 @@ export default function FavoritesScreen() {
       setIsNoSelectionModalOpen(true);
       setNoSelectionModalSubtitle(
         isFavFoldersMode
-          ? "Please choose at least one folder if you want to delete or unfavorite."
-          : "Please choose at least one deck if you want to delete, add to folder or unfavorite."
+          ? strings[language].favorites.pleaseChooseAtLeastOneFolder
+          : strings[language].favorites.pleaseChooseAtLeastOneDeck
       );
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -615,8 +617,8 @@ export default function FavoritesScreen() {
     setIsUnfavoriteModalOpen(true);
     setUnfavoriteModalText(
       isFavFoldersMode
-        ? 'Are you sure you want to unfavorite these folder(s)?'
-        : 'Are you sure you want to unfavorite these deck(s)?'
+        ? strings[language].favorites.areYouSureYouWantToUnfavoriteTheseFolders
+        : strings[language].favorites.areYouSureYouWantToUnfavoriteTheseDecks
     );
     Animated.parallel([
       Animated.timing(menuOverlayOpacity, {
@@ -1331,7 +1333,7 @@ export default function FavoritesScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            {language === 'Chinese' ? '哎呀！你所有收藏的卡片组都去哪了？' : "Whoops! Where did\nall your favorite decks go"}
+            {strings[language].favorites.whoopsWhereDidAllYourFavoriteDecksGo}
           </Text>
         </View>
       );
@@ -1403,7 +1405,7 @@ export default function FavoritesScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            {language === 'Chinese' ? '哎呀！你所有收藏的文件夹都去哪了？' : "Whoops! Where did\nall your favorite folders go"}
+            {strings[language].favorites.whoopsWhereDidAllYourFavoriteFoldersGo}
           </Text>
         </View>
       );
@@ -1451,16 +1453,150 @@ export default function FavoritesScreen() {
     setIsCalendarOpen(false);
   };
 
+  const styles = StyleSheet.create({
+    animatedContainer: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    topBar: {
+      position: 'absolute',
+      left: 16,
+      zIndex: 1,
+    },
+    headerIconsContainer: {
+      position: 'absolute',
+      right: 16,
+      zIndex: 1,
+    },
+    backButton: {
+      paddingTop: 8,
+    },
+    mainContentWrapper: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    titleContainer: {
+      position: 'relative',
+      height: Platform.OS === 'android' ? 32 : 24,
+    },
+    titleAbsolute: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+    },
+    scrollWrapper: {
+      flex: 1,
+      marginTop: 10,
+    },
+    scrollViewContainer: {
+      flex: 1,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      paddingBottom: BOTTOM_SPACING,
+    },
+    firstCard: {
+      marginTop: 5,
+    },
+    card: {
+      marginTop: '6%',
+    },
+    favFolderCard: {
+      marginTop: '8%',
+    },
+    shiftableContent: {
+      flex: 1,
+      marginTop: 16,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 20,
+      right: 16,
+    },
+    fabContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 100,
+      zIndex: 1,
+    },
+    selectButtonContainer: {
+      position: 'relative',
+      width: 85,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+    },
+    selectButton: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].brandColor1,
+    },
+    selectButtonAbsolute: {
+      position: 'absolute',
+    },
+    actionButtonsRow: {
+      position: 'absolute',
+      top: 62,
+      right: 0,
+      left: 0,
+      zIndex: 1,
+    },
+    emptyStateContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyStateAnimation: {
+      width: 200,
+      height: 200,
+    },
+    emptyStateText: {
+      fontSize: 18,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].text,
+      textAlign: 'center',
+      marginTop: 20,
+    },
+    selectButtonDisabled: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].unselectedText,
+    },
+  });
+
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
         <View style={[styles.topBar, { paddingTop: getTopBarTopHeight()}]}>
-        <TouchableOpacity 
+                    <TouchableOpacity 
               style={styles.backButton}
               onPress={handleBackPress}
             >
-              <AntDesign name="arrowleft" size={32} color="black" />
+              <AntDesign name="arrowleft" size={32} color={Colors[theme].normalIconColor} />
             </TouchableOpacity>
           </View>
           
@@ -1492,8 +1628,8 @@ export default function FavoritesScreen() {
           ]}>
             <View style={[styles.content, { marginTop: getContentTopHeight()}]}>
             <RoundedContainer 
-                leftLabel={language === 'Chinese' ? `收藏卡片组 (${favDeckCount})` : `Fav Decks (${favDeckCount})`}
-                rightLabel={language === 'Chinese' ? `收藏文件夹 (${favFolderCount})` : `Fav Folders (${favFolderCount})`}
+                leftLabel={`${strings[language].favorites.favDecks} (${favDeckCount})`}
+                rightLabel={`${strings[language].favorites.favFolders} (${favFolderCount})`}
                 onToggle={handleToggle}
               />
 
@@ -1513,7 +1649,7 @@ export default function FavoritesScreen() {
                   iconNames={isFavFoldersMode ? ['trash'] : ['folder', 'trash']}
                   onCancel={handleCancel}
                   onIconPress={handleActionIconPress}
-                  iconColors={isFavFoldersMode ? ['#FF3B30'] : ['black', '#FF3B30']}
+                  iconColors={isFavFoldersMode ? [Colors[theme].alertColor] : [Colors[theme].normalIconColor, Colors[theme].alertColor]}
                   showUnfavoriteButton={true}
                   onUnfavoritePress={handleUnfavoritePress}
                 />
@@ -1530,12 +1666,12 @@ export default function FavoritesScreen() {
                     <Title style={[styles.titleAbsolute, {fontSize: language === 'Chinese' ? 20 : 24, 
                       // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular'
                       }]} animatedOpacity={studyOpacity}>
-                      {language === 'Chinese' ? `收藏卡片组 (${favDeckCount})` : `Favorite Decks (${favDeckCount})`}
+                      {`${strings[language].favorites.favoriteDecks} (${favDeckCount})`}
                     </Title>
                     <Title style={[styles.titleAbsolute, {fontSize: language === 'Chinese' ? 20 : 24, 
                       // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular'
                       }]} animatedOpacity={interviewOpacity}>
-                      {language === 'Chinese' ? `收藏文件夹 (${favFolderCount})` : `Favorite Folders (${favFolderCount})`}
+                      {`${strings[language].favorites.favoriteFolders} (${favFolderCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1548,14 +1684,14 @@ export default function FavoritesScreen() {
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
-                      {language === 'Chinese' ? '选择' : 'Select'}
+                      {strings[language].favorites.select}
                     </Animated.Text>
                     <Animated.Text style={[
                       styles.selectButton,
                       styles.selectButtonAbsolute,
                       { opacity: selectAllOpacity }
                     ]}>
-                      {language === 'Chinese' ? '全选' : 'Select All'}
+                      {strings[language].favorites.selectAll}
                     </Animated.Text>
                   </TouchableOpacity>
                 </View>
@@ -1610,7 +1746,7 @@ export default function FavoritesScreen() {
       <CalendarModal
         visible={isCalendarOpen}
         onDismiss={handleCalendarDismiss}
-        title={language === 'Chinese' ? '按添加日期筛选收藏' : 'Filter favorites based on\ndate added'}
+        title={strings[language].favorites.filterFavoritesBasedOnDateAdded}
         onDone={(selectedFilter, customDate) => {
           setCalendarFilter(selectedFilter);
           setCalendarCustomDate(customDate || null);
@@ -1621,136 +1757,3 @@ export default function FavoritesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  animatedContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 1,
-  },
-  headerIconsContainer: {
-    position: 'absolute',
-    right: 16,
-    zIndex: 1,
-  },
-  backButton: {
-    paddingTop: 8,
-  },
-  mainContentWrapper: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  titleContainer: {
-    position: 'relative',
-    height: Platform.OS === 'android' ? 32 : 24,
-  },
-  titleAbsolute: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  scrollWrapper: {
-    flex: 1,
-    marginTop: 10,
-  },
-  scrollViewContainer: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingBottom: BOTTOM_SPACING,
-  },
-  firstCard: {
-    marginTop: 5,
-  },
-  card: {
-    marginTop: '6%',
-  },
-  favFolderCard: {
-    marginTop: '8%',
-  },
-  shiftableContent: {
-    flex: 1,
-    marginTop: 16,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 16,
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    zIndex: 1,
-  },
-  selectButtonContainer: {
-    position: 'relative',
-    width: 85,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  selectButton: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#44B88A',
-  },
-  selectButtonAbsolute: {
-    position: 'absolute',
-  },
-  actionButtonsRow: {
-    position: 'absolute',
-    top: 62,
-    right: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyStateAnimation: {
-    width: 200,
-    height: 200,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontFamily: 'Satoshi-Medium',
-    color: '#333333',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  selectButtonDisabled: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#CCCCCC',
-  },
-});

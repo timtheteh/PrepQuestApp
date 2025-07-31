@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Platform, Image, Share, Alert } from 'react-native';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Image, Share, Alert } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,6 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { strings } from '@/constants/strings';
 import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 
 export default function AccountScreen() {
@@ -32,7 +31,6 @@ export default function AccountScreen() {
   const { language, reloadLanguage } = useLanguage();
   const { signOut, user } = useHybridAuth();
   const { theme, setThemeMode, isSystemTheme } = useTheme();
-  const insets = useSafeAreaInsets();
   const themeColors = Colors[theme];
   const getTopBarAccountHeight = useTopBarAccountHeight();
 
@@ -53,9 +51,9 @@ export default function AccountScreen() {
   }, [isFocused]);
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       reloadLanguage();
-    }, [])
+    }, [reloadLanguage])
   );
 
   const handleToggle = () => {
@@ -89,13 +87,13 @@ export default function AccountScreen() {
     }).start();
   }, [theme]);
 
-  const handleDeckSettingsPress = () => {
+  const handleDeckSettingsPress = useCallback(() => {
     router.push('/deckSettings');
-  };
+  }, [router]);
 
-  const handleAppSettingsPress = () => {
+  const handleAppSettingsPress = useCallback(() => {
     router.push('/appSettings');
-  };
+  }, [router]);
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -139,8 +137,8 @@ export default function AccountScreen() {
   const lightButtonOpacity = buttonAnim;
   const darkButtonOpacity = buttonAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
 
-  // Grape bunch positions as a dictionary
-  const grapePositions = {
+  // Grape bunch positions as a dictionary - memoized to prevent recreation
+  const grapePositions = useMemo(() => ({
     stem:      { top: '-6%',  left: '10%' },
     website:   { top: '35%', left: '23%' },
     rate:      { top: '40%', left: '75%' },
@@ -149,14 +147,14 @@ export default function AccountScreen() {
     app:       { top: '75%', left: '50%' },
     deck:      { top: '25%', left: '50%' },
     upgrade:   { top: '50%', left: '50%' },
-  };
+  }), []);
 
   // --- BEGIN GRAPE BUNCH POSITIONING REFACTOR ---
   // Remove all getXTopPosition/getXLeftPosition functions
 
   // --- END GRAPE BUNCH POSITIONING REFACTOR ---
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     try {
       await Share.share({
         message: strings[language].shareMessage,
@@ -164,31 +162,33 @@ export default function AccountScreen() {
     } catch (error) {
       // Optionally handle error
     }
-  };
+  }, [language]);
 
-  const stylesConditional = StyleSheet.create({
+  // Memoized conditional styles to prevent recreation
+  const stylesConditional = useMemo(() => StyleSheet.create({
     grapeBunchFlexWrapper: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       width: '100%',
     } as ViewStyle,
-  });
+  }), []);
 
-  const grapeBunchWrapperStyle = screenHeight > 670
-    ? stylesConditional.grapeBunchFlexWrapper
-    : undefined;
+  const grapeBunchWrapperStyle = useMemo(() => 
+    screenHeight > 670 ? stylesConditional.grapeBunchFlexWrapper : undefined,
+    [screenHeight, stylesConditional.grapeBunchFlexWrapper]
+  );
 
-  // Theme-dependent styles
-  const themeStyles = {
+  // Theme-dependent styles - memoized to prevent recreation
+  const themeStyles = useMemo(() => ({
     profileCircle: {
       ...styles.profileCircle,
       borderColor: themeColors.brandColor1,
       backgroundColor: themeColors.background,
     },
-  };
+  }), [themeColors.brandColor1, themeColors.background]);
 
-  const MainContent = (
+  const MainContent = useMemo(() => (
     <View style={{ flex: 1, width: '100%' }}> 
       <View style={[styles.mainColumnContainer, { paddingTop: getTopBarAccountHeight()}]}> 
         <View style={styles.topBar}> 
@@ -368,7 +368,39 @@ export default function AccountScreen() {
         </View>
       </View>
     </View>
-  );
+  ), [
+    getTopBarAccountHeight,
+    handleSignOut,
+    handleToggle,
+    lightBodyOpacity,
+    darkBodyOpacity,
+    translateX,
+    lightButtonOpacity,
+    darkButtonOpacity,
+    themeStyles.profileCircle,
+    themeColors.text,
+    user?.id,
+    strings,
+    language,
+    grapePositions,
+    websitePressed,
+    setWebsitePressed,
+    ratePressed,
+    setRatePressed,
+    sharePressed,
+    setSharePressed,
+    handleShare,
+    tcPressed,
+    setTCPressed,
+    appSettingsPressed,
+    setAppSettingsPressed,
+    handleAppSettingsPress,
+    deckSettingsPressed,
+    setDeckSettingsPressed,
+    handleDeckSettingsPress,
+    upgradePressed,
+    setUpgradePressed
+  ]);
 
 
 

@@ -9,6 +9,7 @@ import { GenericModal } from '@/components/modals/GenericModal';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useState, useRef, useCallback, RefObject, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import ModalExclamationMarkIcon from '@/assets/icons/generalIcons/modalExclamationMarkIcon.svg';
 
@@ -28,7 +29,6 @@ export default function TabLayout() {
   const [isInFoldersPage, setIsInFoldersPage] = useState(false);
   const [isInViewFlashcardsPage, setIsInViewFlashcardsPage] = useState(false);
   const [isInViewDecksInFolderPage, setIsInViewDecksInFolderPage] = useState(false);
-  const [noSelectionModalSubtitle, setNoSelectionModalSubtitle] = useState('Please choose at least one deck if you want to delete or add to folder.');
   const menuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const menuTranslateX = useRef(new Animated.Value(-171)).current;
   const aiPromptOpacity = useRef(new Animated.Value(0)).current;
@@ -38,7 +38,6 @@ export default function TabLayout() {
   const addToFoldersModalOpacity = useRef(new Animated.Value(0)).current;
   const moveToFoldersModalOpacity = useRef(new Animated.Value(0)).current;
   const router = useRouter();
-  const pathname = usePathname();
   const [sourcePageForFolders, setSourcePageForFolders] = useState('');
   const [currentDeckId, setCurrentDeckId] = useState<string | undefined>();
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>();
@@ -320,34 +319,7 @@ export default function TabLayout() {
     navbarRef.current?.resetAnimation();
   }, [handleDismissMenu]);
 
-  // Debug logging to verify parameter passing
-  useEffect(() => {
-    console.log('🔍 Debug - Page states:', {
-      isInViewFlashcardsPage,
-      isInViewDecksInFolderPage,
-      currentDeckId,
-      currentFolderId
-    });
-    
-    if (isInViewFlashcardsPage) {
-      console.log('✅ viewFlashcards page focused');
-      if (currentDeckId) {
-        console.log('✅ deckId received:', currentDeckId);
-      } else {
-        console.log('❌ No deckId found');
-      }
-    }
-    
-    if (isInViewDecksInFolderPage) {
-      console.log('✅ viewDecksInFolder page focused');
-      if (currentFolderId) {
-        console.log('✅ folderId received:', currentFolderId);
-      } else {
-        console.log('❌ No folderId found');
-      }
-    }
-  }, [isInViewFlashcardsPage, isInViewDecksInFolderPage]);
-
+  
   return (
     <MenuContext.Provider value={{ 
       isMenuOpen, 
@@ -374,9 +346,7 @@ export default function TabLayout() {
       handleDeletion,
       setHandleDeletion,
       navbarRef,
-      deleteModalText: language === 'Chinese'
-        ? '你确定要删除这些卡片组吗？'
-        : 'Are you sure you want to delete these deck(s)?',
+      deleteModalText: strings[language].deleteDecksConfirmation,
       setDeleteModalText: () => {},
       isAddToFoldersModalOpen,
       setIsAddToFoldersModalOpen,
@@ -392,9 +362,7 @@ export default function TabLayout() {
       setIsInViewFlashcardsPage,
       isInViewDecksInFolderPage,
       setIsInViewDecksInFolderPage,
-      noSelectionModalSubtitle: language === 'Chinese'
-        ? '如果你想删除或添加到文件夹，请至少选择一个卡片组。'
-        : 'Please choose at least one deck if you want to delete or add to folder.',
+      noSelectionModalSubtitle: strings[language].noSelectionSubtitle,
       setNoSelectionModalSubtitle: () => {},
       sourcePageForFolders,
       setSourcePageForFolders,
@@ -538,7 +506,7 @@ export default function TabLayout() {
           visible={isTrashModalOpenInDecksPage}
           opacity={trashModalOpacity}
           Icon={DeleteModalIcon}
-          text={language === 'Chinese' ? '你确定要删除这些卡片组吗？' : 'Are you sure you want to delete these deck(s)?'}
+          text={strings[language].deleteDecksConfirmation}
           textStyle={{
             highlightWord: language === 'Chinese' ? '删除' : 'delete',
             highlightColor: '#D7191C'
@@ -555,16 +523,14 @@ export default function TabLayout() {
         <GenericModal
           visible={isNoSelectionModalOpen}
           opacity={noSelectionModalOpacity}
-          text={language === 'Chinese' ? '未选择任何内容！' : 'No selection made!'}
-          subtitle={language === 'Chinese'
-            ? '如果你想删除或添加到文件夹，请至少选择一个卡片组。'
-            : 'Please choose at least one deck if you want to delete or add to folder.'}
+          text={strings[language].noSelectionMade}
+          subtitle={strings[language].noSelectionSubtitle}
         />
         <GenericModal
           visible={isAddToFoldersModalOpen}
           opacity={addToFoldersModalOpacity}
           Icon={ModalExclamationMarkIcon}
-          text={language === 'Chinese' ? '确认添加到文件夹？' : 'Confirm adding to\nfolder(s)?'}
+          text={strings[language].confirmAddToFolders}
           buttons="double"
           onCancel={handleDismissMenu}
           onConfirm={() => {
@@ -609,7 +575,7 @@ export default function TabLayout() {
           visible={isMoveToFoldersModalOpen}
           opacity={moveToFoldersModalOpacity}
           Icon={ModalExclamationMarkIcon}
-          text={language === 'Chinese' ? '确认移动到文件夹？' : 'Confirm moving to\nfolder(s)?'}
+          text={strings[language].confirmMoveToFolders}
           buttons="double"
           onCancel={handleDismissMenu}
           onConfirm={() => {
@@ -666,7 +632,7 @@ export default function TabLayout() {
           visible={isUnfavoriteModalOpen}
           opacity={unfavoriteModalOpacity}
           Icon={DeleteModalIcon}
-          text={language === 'Chinese' ? '你确定要取消收藏吗？' : unfavoriteModalText}
+          text={strings[language].unfavoriteConfirmation}
           textStyle={{
             highlightWord: language === 'Chinese' ? '取消收藏' : 'unfavorite',
             highlightColor: '#D7191C'
@@ -683,7 +649,7 @@ export default function TabLayout() {
         <GenericModal
           visible={isSubmitCustomFormModalOpen}
           opacity={submitCustomFormModalOpacity}
-          text={language === 'Chinese' ? ["自定义目标表单", "已提交！"] : ["Custom Goal Form", "Submitted!"]}
+          text={strings[language].customGoalFormSubmitted}
           hasAnimation={true}
           animationSource={require('../../assets/animations/SuccessAnimation1_Tick.json')}
           animationLoop={true}
@@ -694,7 +660,7 @@ export default function TabLayout() {
           visible={isDeckDetailsDeleteModalOpen}
           opacity={deckDetailsDeleteModalOpacity}
           Icon={DeleteModalIcon}
-          text={language === 'Chinese' ? '你确定要删除这个卡片组吗？' : 'Are you sure you want to delete this deck?'}
+          text={strings[language].deleteDeckConfirmation}
           textStyle={{
             highlightWord: language === 'Chinese' ? '删除' : 'delete',
             highlightColor: '#D7191C'
@@ -711,17 +677,11 @@ export default function TabLayout() {
          <GenericModal
           visible={isDeckDetailsSaveModalOpen}
           opacity={deckDetailsSaveModalOpacity}
-          text={language === 'Chinese'
-            ? deckDetailsSaveModalType === 'move'
-              ? ['卡片组已移动', '到文件夹！']
-              : deckDetailsSaveModalType === 'ai'
-                ? ['AI卡片组', '保存成功！']
-                : ['卡片组已保存', '到文件夹！']
-            : deckDetailsSaveModalType === 'move'
-              ? ["Deck(s) moved", "into folder(s)!"]
-              : deckDetailsSaveModalType === 'ai'
-                ? ["AI Deck", "saved successfully!"]
-                : ["Deck(s) saved", "into folder(s)!"]}
+          text={deckDetailsSaveModalType === 'move'
+            ? strings[language].deckMovedToFolder
+            : deckDetailsSaveModalType === 'ai'
+              ? strings[language].aiDeckSavedSuccessfully
+              : strings[language].deckSavedToFolder}
           hasAnimation={true}
           animationSource={require('../../assets/animations/SuccessAnimation1_Tick.json')}
           animationLoop={true}
@@ -732,7 +692,7 @@ export default function TabLayout() {
           visible={isDeleteFolderModalOpen}
           opacity={deleteFolderModalOpacity}
           Icon={DeleteModalIcon}
-          text={language === 'Chinese' ? '你确定要删除这个文件夹吗？' : 'Are you sure you want to delete this folder?'}
+          text={strings[language].deleteFolderConfirmation}
           textStyle={{
             highlightWord: language === 'Chinese' ? '删除' : 'delete',
             highlightColor: '#D7191C'
@@ -750,7 +710,7 @@ export default function TabLayout() {
           visible={isDecksAlreadyInFoldersModalOpen}
           opacity={decksAlreadyInFoldersModalOpacity}
           Icon={DeleteModalIcon}
-          text={language === 'Chinese' ? ['你选择的一个或多个卡片组', '已在所选文件夹中！'] : ["One or more decks you", "have selected are already", "in the selected folder(s)!"]}
+          text={strings[language].decksAlreadyInFolders}
           buttons="single"
           onConfirm={handleDismissMenu}
         />

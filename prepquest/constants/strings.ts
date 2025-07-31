@@ -126,6 +126,20 @@ export const strings: Record<string, any> = {
     no: 'No',
     yes: 'Yes',
     ok: 'OK',
+    // TabLayout strings
+    deleteDecksConfirmation: 'Are you sure you want to delete these deck(s)?',
+    noSelectionMade: 'No selection made!',
+    noSelectionSubtitle: 'Please choose at least one deck if you want to delete or add to folder.',
+    confirmAddToFolders: 'Confirm adding to\nfolder(s)?',
+    confirmMoveToFolders: 'Confirm moving to\nfolder(s)?',
+    unfavoriteConfirmation: 'Are you sure you want to unfavorite?',
+    customGoalFormSubmitted: ['Custom Goal Form', 'Submitted!'],
+    deleteDeckConfirmation: 'Are you sure you want to delete this deck?',
+    deckMovedToFolder: ['Deck(s) moved', 'into folder(s)!'],
+    aiDeckSavedSuccessfully: ['AI Deck', 'saved successfully!'],
+    deckSavedToFolder: ['Deck(s) saved', 'into folder(s)!'],
+    deleteFolderConfirmation: 'Are you sure you want to delete this folder?',
+    decksAlreadyInFolders: ['One or more decks you', 'have selected are already', 'in the selected folder(s)!'],
     // AverageGradeThermometer strings
     averageGrade: 'Average Grade',
     // AverageSpeedTotal strings
@@ -322,6 +336,20 @@ export const strings: Record<string, any> = {
     no: '否',
     yes: '是',
     ok: '确定',
+    // TabLayout strings
+    deleteDecksConfirmation: '你确定要删除这些卡片组吗？',
+    noSelectionMade: '未选择任何内容！',
+    noSelectionSubtitle: '如果你想删除或添加到文件夹，请至少选择一个卡片组。',
+    confirmAddToFolders: '确认添加到文件夹？',
+    confirmMoveToFolders: '确认移动到文件夹？',
+    unfavoriteConfirmation: '你确定要取消收藏吗？',
+    customGoalFormSubmitted: ['自定义目标表单', '已提交！'],
+    deleteDeckConfirmation: '你确定要删除这个卡片组吗？',
+    deckMovedToFolder: ['卡片组已移动', '到文件夹！'],
+    aiDeckSavedSuccessfully: ['AI卡片组', '保存成功！'],
+    deckSavedToFolder: ['卡片组已保存', '到文件夹！'],
+    deleteFolderConfirmation: '你确定要删除这个文件夹吗？',
+    decksAlreadyInFolders: ['你选择的一个或多个卡片组', '已在所选文件夹中！'],
     // AverageGradeThermometer strings
     averageGrade: '平均分数',
     // AverageSpeedTotal strings

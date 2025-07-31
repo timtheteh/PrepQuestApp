@@ -15,10 +15,27 @@ import { BottomTextInputModal } from '@/components/general/BottomTextInputModal'
 import LottieView from 'lottie-react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/cardDesigns';
-import { db } from '@/db/index';
-import { deleteDeck, getDeckGrade, getDeckAverageTime, getDeckInfoWithProgress, DeckGrade, saveAIDeck, checkDeckNameExists, getCompanyIconImageSource } from '@/db/decks';
+
+import { 
+  deleteDeck, 
+  getDeckGrade, 
+  getDeckAverageTime, 
+  getDeckInfoWithProgress, 
+  DeckGrade, 
+  saveAIDeck, 
+  checkDeckNameExists, 
+  getCompanyIconImageSource,
+  updateDeckName,
+  updateDeckFavoriteStatus,
+  getAIDeckInfo,
+  getAIDeckGrade,
+  getAIDeckAverageTime,
+  checkFlashcardAttemptStatus,
+  checkAIDeckSavedStatus,
+  getAIDeckProgress
+} from '@/db/decks';
 import { Toast } from '@/components/general/Toast';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
 import { strings } from '@/constants/strings';
@@ -26,15 +43,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    return '1'; // Default to '1' on error
-  }
-}
+
 
 const SCREEN_TRANSITION_DURATION = 300;
 
@@ -161,19 +170,14 @@ export default function DeckDetailsScreen() {
   // Function to handle favorite/unfavorite deck
   const handleFavoriteToggle = async () => {
     try {
-      const newFavoritedValue = favoriteStatus ? 0 : 1;
-      const userID = await getCurrentUserID();
+      const success = await updateDeckFavoriteStatus(parseInt(deckId as string), !favoriteStatus);
       
-      // Update database
-      await db.execAsync(`
-        UPDATE decks 
-        SET isFavorited = ${newFavoritedValue}
-        WHERE deckID = ${deckId} AND userID = '${userID}'
-      `);
-      
-      // Update local state immediately
-      setFavoriteStatus(!favoriteStatus);
+      if (success) {
+        // Update local state immediately
+        setFavoriteStatus(!favoriteStatus);
+      }
     } catch (error) {
+      // Handle error silently
     }
   };
 
@@ -399,24 +403,24 @@ export default function DeckDetailsScreen() {
     
     // If validation passes, update the deck name
     try {
-      const userID = await getCurrentUserID();
-      await db.execAsync(`
-        UPDATE decks 
-        SET deckName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
-        WHERE deckID = ${parseInt(deckId as string)} AND userID = '${userID}'
-      `);
-            
-      // Update local state to reflect the change immediately
-      setEditText(trimmedText);
-      setDeckInfo((prev: any) => prev ? { ...prev, deckName: trimmedText, lastModifiedDate: new Date().toISOString() } : prev);
+      const success = await updateDeckName(parseInt(deckId as string), trimmedText);
       
-      // Close the modal
-      setShowEditModal(false);
-      setEditNameSelected(false);
-      
-      // Force a re-render by updating the deck title in the route params
-      // This will make the new name appear in the UI immediately
-      router.setParams({ deckTitle: trimmedText });
+      if (success) {
+        // Update local state to reflect the change immediately
+        setEditText(trimmedText);
+        setDeckInfo((prev: any) => prev ? { ...prev, deckName: trimmedText, lastModifiedDate: new Date().toISOString() } : prev);
+        
+        // Close the modal
+        setShowEditModal(false);
+        setEditNameSelected(false);
+        
+        // Force a re-render by updating the deck title in the route params
+        // This will make the new name appear in the UI immediately
+        router.setParams({ deckTitle: trimmedText });
+      } else {
+        setToastMessage(strings[language].deckDetails.errorUpdatingDeckName);
+        setShowToast(true);
+      }
       
     } catch (error) {
       setToastMessage(strings[language].deckDetails.errorUpdatingDeckName);
@@ -579,160 +583,20 @@ export default function DeckDetailsScreen() {
     }
   };
 
-  // Function to get AI deck grade
-  const getAIDeckGrade = async (deckId: number): Promise<DeckGrade | null> => {
-    try {
-      const userID = await getCurrentUserID();
-      // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
-      // and their difficulty ratings
-      const result = await db.getAllAsync(`
-        SELECT 
-          difficultyRating,
-          lastStudiedDate,
-          lastQuizzedDate
-        FROM AIFlashcards
-        WHERE deckID = ?
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-          AND userID = ?
-      `, [deckId, userID]);
 
-      if (!result || result.length === 0) {
-        // No attempted flashcards, return null
-        return null;
-      }
 
-      const flashcards = result as Array<{
-        difficultyRating: string;
-        lastStudiedDate: string | null;
-        lastQuizzedDate: string | null;
-      }>;
 
-      // Extract difficulty ratings from attempted flashcards
-      const ratings = flashcards.map(flashcard => flashcard.difficultyRating);
-
-      // Get total number of AI flashcards for this deck
-      const totalResult = await db.getFirstAsync(`
-        SELECT COUNT(*) as total
-        FROM AIFlashcards
-        WHERE deckID = ? AND userID = ?
-      `, [deckId, userID]);
-
-      const totalFlashcards = (totalResult as { total: number }).total;
-
-      // Calculate weighted score using the same logic as regular decks
-      const weights = {
-        'Again': 0,     // 0% - needs to learn
-        'Hard': 0.4,    // 40% - partially learned
-        'Good': 0.8,    // 80% - well learned
-        'Easy': 1.0     // 100% - mastered
-      };
-      
-      const totalWeight = ratings.reduce((sum, rating) => {
-        return sum + (weights[rating as keyof typeof weights] || 0);
-      }, 0);
-      
-      const score = (totalWeight / ratings.length) * 100;
-      
-      const getMasteryLevel = (score: number): string => {
-        if (score >= 90) return strings[language].deckDetails.masteryLevels.expert;
-        if (score >= 75) return strings[language].deckDetails.masteryLevels.proficient;
-        if (score >= 60) return strings[language].deckDetails.masteryLevels.developing;
-        if (score >= 40) return strings[language].deckDetails.masteryLevels.beginner;
-        return strings[language].deckDetails.masteryLevels.needsPractice;
-      };
-
-      const getBreakdown = (ratings: string[]) => {
-        const counts = {
-          'Again': 0, 'Hard': 0, 'Good': 0, 'Easy': 0
-        };
-        
-        ratings.forEach(rating => {
-          if (rating in counts) {
-            counts[rating as keyof typeof counts]++;
-          }
-        });
-        
-        return counts;
-      };
-
-      const grade = {
-        score: Math.round(score),
-        masteryLevel: getMasteryLevel(score),
-        breakdown: getBreakdown(ratings),
-        totalAttempted: ratings.length,
-        totalFlashcards: totalFlashcards
-      };
-
-      return grade;
-    } catch (error) {
-      return null;
-    }
-  };
-
-  // Function to get AI deck average time
-  const getAIDeckAverageTime = async (deckId: number): Promise<number | null> => {
-    try {
-      const userID = await getCurrentUserID();
-      // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
-      // and their timeTaken values
-      const result = await db.getFirstAsync(`
-        SELECT 
-          AVG(timeTaken) as averageTime,
-          COUNT(*) as attemptedCount
-        FROM AIFlashcards
-        WHERE deckID = ?
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND timeTaken IS NOT NULL
-          AND userID = ?
-      `, [deckId, userID]);
-
-      if (!result) {
-        return null;
-      }
-
-      const data = result as { averageTime: number | null; attemptedCount: number };
-      
-      // Return null if no attempted flashcards or no time data
-      if (data.attemptedCount === 0 || data.averageTime === null) {
-        return null;
-      }
-
-      // Return the average time rounded to the nearest integer
-      return Math.round(data.averageTime);
-    } catch (error) {
-      return null;
-    }
-  };
 
   // Function to check if any flashcards have been attempted
-  const checkFlashcardAttemptStatus = async () => {
+  const loadFlashcardAttemptStatus = async () => {
     try {
       setIsLoadingAttemptStatus(true);
       
       // Use the isAIDeck parameter instead of querying the database
       const isAIDeckFromParams = isAIDeck as string === 'true';
-      const userID = await getCurrentUserID();
-
-      // Check if any flashcards have been attempted
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      const idColumn = isAIDeckFromParams ? 'deckID' : 'deckID';
-
-      const result = await db.getFirstAsync(`
-        SELECT COUNT(*) as attemptedCount
-        FROM ${tableName}
-        WHERE ${idColumn} = ?
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND userID = ?
-      `, [parseInt(deckId as string), userID]);
-
-      if (!result) {
-        setHasAttemptedFlashcards(false);
-        return;
-      }
-
-      const data = result as { attemptedCount: number };
-      setHasAttemptedFlashcards(data.attemptedCount > 0);
+      
+      const hasAttempted = await checkFlashcardAttemptStatus(parseInt(deckId as string), isAIDeckFromParams);
+      setHasAttemptedFlashcards(hasAttempted);
       
     } catch (error) {
       setHasAttemptedFlashcards(false);
@@ -742,7 +606,7 @@ export default function DeckDetailsScreen() {
   };
 
   // Function to check if AI deck has been saved to regular decks table
-  const checkAIDeckSavedStatus = async () => {
+  const loadAIDeckSavedStatus = async () => {
     try {
       setIsLoadingSavedStatus(true);
       
@@ -754,32 +618,8 @@ export default function DeckDetailsScreen() {
         return;
       }
 
-      const userID = await getCurrentUserID();
-
-      // Get the AI deck name
-      const aiDeckResult = await db.getFirstAsync(`
-        SELECT deckName
-        FROM AIDecks
-        WHERE deckID = ? AND userID = ?
-      `, [parseInt(deckId as string), userID]);
-
-      if (!aiDeckResult) {
-        setIsAIDeckSaved(false);
-        return;
-      }
-
-      const aiDeck = aiDeckResult as { deckName: string };
-
-      // Check if there's a matching deck in the regular decks table
-      const savedDeckResult = await db.getFirstAsync(`
-        SELECT deckID
-        FROM decks
-        WHERE deckName = ?
-          AND isAIDeck = 1
-          AND userID = ?
-      `, [aiDeck.deckName, userID]);
-
-      setIsAIDeckSaved(!!savedDeckResult);
+      const isSaved = await checkAIDeckSavedStatus(parseInt(deckId as string));
+      setIsAIDeckSaved(isSaved);
       
     } catch (error) {
       setIsAIDeckSaved(false);
@@ -794,8 +634,8 @@ export default function DeckDetailsScreen() {
       loadDeckGrade();
       loadAverageTime();
       loadDeckInfo();
-      checkFlashcardAttemptStatus();
-      checkAIDeckSavedStatus();
+      loadFlashcardAttemptStatus();
+      loadAIDeckSavedStatus();
     }
   }, [isFocused, deckId]);
 
@@ -983,47 +823,14 @@ export default function DeckDetailsScreen() {
       const isAIDeckFromParams = isAIDeck as string === 'true';
       
       if (isAIDeckFromParams) {
-        const userID = await getCurrentUserID();
         // Query AIDecks table for AI deck info
-        const result = await db.getFirstAsync(`
-          SELECT 
-            d.deckID,
-            d.deckName,
-            d.dateAdded,
-            d.lastModifiedDate,
-            d.isFavorited,
-            d.deckType,
-            d.creationMethod,
-            d.lastStudiedDate,
-            d.lastQuizzedDate,
-            d.cardDesignIndex,
-            d.isAIDeck,
-            d.folderIDs,
-            d.studyEducationLevel,
-            d.studySubjects,
-            d.studyTopicsSubtopics,
-            d.studyExamQuiz,
-            d.interviewJobRole,
-            d.interviewType,
-            d.interviewCompany,
-            d.interviewExperienceLevel,
-            d.interviewTopics,
-            d.interviewCompanyIcon,
-            COUNT(f.flashcardID) as flashcardCount
-          FROM AIDecks d
-          LEFT JOIN AIFlashcards f ON d.deckID = f.deckID AND f.userID = d.userID
-          WHERE d.deckID = ? AND d.userID = ?
-          GROUP BY d.deckID
-        `, [parseInt(deckId as string), userID]);
-
-        if (!result) {
+        const deckData = await getAIDeckInfo(parseInt(deckId as string));
+        
+        if (!deckData) {
           setDeckInfo(null);
           return;
         }
 
-        // Calculate progress for AI deck
-        const progress = await getAIDeckProgress(parseInt(deckId as string));
-        const deckData = { ...result, progress, flashcardCount: (result as any).flashcardCount } as any;
         setDeckInfo(deckData);
 
         // Load company logo image source if it's an interview deck
@@ -1050,52 +857,7 @@ export default function DeckDetailsScreen() {
     }
   };
 
-  // Function to get AI deck progress
-  const getAIDeckProgress = async (deckId: number): Promise<number> => {
-    try {
-      const userID = await getCurrentUserID();
-      // First, check if the AI deck itself has lastStudiedDate or lastQuizzedDate
-      const deckResult = await db.getFirstAsync(`
-        SELECT lastStudiedDate, lastQuizzedDate
-        FROM AIDecks
-        WHERE deckID = ? AND userID = ?
-      `, [deckId, userID]);
 
-      if (!deckResult) {
-        return 0;
-      }
-
-      const deck = deckResult as { lastStudiedDate: string | null; lastQuizzedDate: string | null };
-      
-      // If either lastStudiedDate or lastQuizzedDate is not null, return 100%
-      if (deck.lastStudiedDate !== null || deck.lastQuizzedDate !== null) {
-        return 100;
-      }
-
-      // If both are null, calculate percentage based on AI flashcards
-      const progressResult = await db.getFirstAsync(`
-        SELECT 
-          COUNT(*) as totalFlashcards,
-          COUNT(CASE WHEN lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL THEN 1 END) as completedFlashcards
-        FROM AIFlashcards
-        WHERE deckID = ? AND userID = ?
-      `, [deckId, userID]);
-
-      if (!progressResult) {
-        return 0;
-      }
-
-      const progress = progressResult as { totalFlashcards: number; completedFlashcards: number };
-      
-      if (progress.totalFlashcards === 0) {
-        return 0;
-      }
-
-      return Math.round((progress.completedFlashcards / progress.totalFlashcards) * 100);
-    } catch (error) {
-      return 0;
-    }
-  };
 
   // Local MetadataRow component
   interface MetadataRowProps {

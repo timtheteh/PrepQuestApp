@@ -2176,3 +2176,316 @@ export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[],
     return { decksData: [], flashcardsData: [] };
   }
 }
+
+export async function updateDeckName(deckId: number, newDeckName: string): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.execAsync(`
+      UPDATE decks 
+      SET deckName = '${newDeckName.replace(/'/g, "''")}', lastModifiedDate = '${new Date().toISOString()}'
+      WHERE deckID = ${deckId} AND userID = '${userID}'
+    `);
+    return true;
+  } catch (error) {
+    console.error('Error updating deck name:', error);
+    return false;
+  }
+}
+
+export async function updateDeckFavoriteStatus(deckId: number, isFavorited: boolean): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    const newFavoritedValue = isFavorited ? 1 : 0;
+    
+    await db.execAsync(`
+      UPDATE decks 
+      SET isFavorited = ${newFavoritedValue}
+      WHERE deckID = ${deckId} AND userID = '${userID}'
+    `);
+    return true;
+  } catch (error) {
+    console.error('Error updating deck favorite status:', error);
+    return false;
+  }
+}
+
+export async function getAIDeckInfo(deckId: number): Promise<any | null> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(`
+      SELECT 
+        d.deckID,
+        d.deckName,
+        d.dateAdded,
+        d.lastModifiedDate,
+        d.isFavorited,
+        d.deckType,
+        d.creationMethod,
+        d.lastStudiedDate,
+        d.lastQuizzedDate,
+        d.cardDesignIndex,
+        d.isAIDeck,
+        d.folderIDs,
+        d.studyEducationLevel,
+        d.studySubjects,
+        d.studyTopicsSubtopics,
+        d.studyExamQuiz,
+        d.interviewJobRole,
+        d.interviewType,
+        d.interviewCompany,
+        d.interviewExperienceLevel,
+        d.interviewTopics,
+        d.interviewCompanyIcon,
+        COUNT(f.flashcardID) as flashcardCount
+      FROM AIDecks d
+      LEFT JOIN AIFlashcards f ON d.deckID = f.deckID AND f.userID = d.userID
+      WHERE d.deckID = ? AND d.userID = ?
+      GROUP BY d.deckID
+    `, [deckId, userID]);
+
+    if (!result) {
+      return null;
+    }
+
+    // Calculate progress for AI deck
+    const progress = await getAIDeckProgress(deckId);
+    return { ...result, progress, flashcardCount: (result as any).flashcardCount };
+  } catch (error) {
+    console.error('Error fetching AI deck info:', error);
+    return null;
+  }
+}
+
+export async function getAIDeckProgress(deckId: number): Promise<number> {
+  try {
+    const userID = await getCurrentUserID();
+    // First, check if the AI deck itself has lastStudiedDate or lastQuizzedDate
+    const deckResult = await db.getFirstAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM AIDecks
+      WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
+
+    if (!deckResult) {
+      return 0;
+    }
+
+    const deck = deckResult as { lastStudiedDate: string | null; lastQuizzedDate: string | null };
+    
+    // If either lastStudiedDate or lastQuizzedDate is not null, return 100%
+    if (deck.lastStudiedDate !== null || deck.lastQuizzedDate !== null) {
+      return 100;
+    }
+
+    // If both are null, calculate percentage based on AI flashcards
+    const progressResult = await db.getFirstAsync(`
+      SELECT 
+        COUNT(*) as totalFlashcards,
+        COUNT(CASE WHEN lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL THEN 1 END) as completedFlashcards
+      FROM AIFlashcards
+      WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
+
+    if (!progressResult) {
+      return 0;
+    }
+
+    const progress = progressResult as { totalFlashcards: number; completedFlashcards: number };
+    
+    if (progress.totalFlashcards === 0) {
+      return 0;
+    }
+
+    return Math.round((progress.completedFlashcards / progress.totalFlashcards) * 100);
+  } catch (error) {
+    console.error('Error calculating AI deck progress:', error);
+    return 0;
+  }
+}
+
+export async function getAIDeckGrade(deckId: number): Promise<DeckGrade | null> {
+  try {
+    const userID = await getCurrentUserID();
+    // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+    // and their difficulty ratings
+    const result = await db.getAllAsync(`
+      SELECT 
+        difficultyRating,
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM AIFlashcards
+      WHERE deckID = ?
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND difficultyRating != 'None'
+        AND userID = ?
+    `, [deckId, userID]);
+
+    if (!result || result.length === 0) {
+      // No attempted flashcards, return null
+      return null;
+    }
+
+    const flashcards = result as Array<{
+      difficultyRating: string;
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+    }>;
+
+    // Extract difficulty ratings from attempted flashcards
+    const ratings = flashcards.map(flashcard => flashcard.difficultyRating);
+
+    // Get total number of AI flashcards for this deck
+    const totalResult = await db.getFirstAsync(`
+      SELECT COUNT(*) as total
+      FROM AIFlashcards
+      WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
+
+    const totalFlashcards = (totalResult as { total: number }).total;
+
+    // Calculate weighted score using the same logic as regular decks
+    const weights = {
+      'Again': 0,     // 0% - needs to learn
+      'Hard': 0.4,    // 40% - partially learned
+      'Good': 0.8,    // 80% - well learned
+      'Easy': 1.0     // 100% - mastered
+    };
+    
+    const totalWeight = ratings.reduce((sum, rating) => {
+      return sum + (weights[rating as keyof typeof weights] || 0);
+    }, 0);
+    
+    const score = (totalWeight / ratings.length) * 100;
+    
+    const getMasteryLevel = (score: number): string => {
+      if (score >= 90) return 'Expert';
+      if (score >= 75) return 'Proficient';
+      if (score >= 60) return 'Developing';
+      if (score >= 40) return 'Beginner';
+      return 'Needs Practice';
+    };
+
+    const getBreakdown = (ratings: string[]) => {
+      const counts = {
+        'Again': 0, 'Hard': 0, 'Good': 0, 'Easy': 0
+      };
+      
+      ratings.forEach(rating => {
+        if (rating in counts) {
+          counts[rating as keyof typeof counts]++;
+        }
+      });
+      
+      return counts;
+    };
+
+    const grade = {
+      score: Math.round(score),
+      masteryLevel: getMasteryLevel(score),
+      breakdown: getBreakdown(ratings),
+      totalAttempted: ratings.length,
+      totalFlashcards: totalFlashcards
+    };
+
+    return grade;
+  } catch (error) {
+    console.error('Error calculating AI deck grade:', error);
+    return null;
+  }
+}
+
+export async function getAIDeckAverageTime(deckId: number): Promise<number | null> {
+  try {
+    const userID = await getCurrentUserID();
+    // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+    // and their timeTaken values
+    const result = await db.getFirstAsync(`
+      SELECT 
+        AVG(timeTaken) as averageTime,
+        COUNT(*) as attemptedCount
+      FROM AIFlashcards
+      WHERE deckID = ?
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND timeTaken IS NOT NULL
+        AND userID = ?
+    `, [deckId, userID]);
+
+    if (!result) {
+      return null;
+    }
+
+    const data = result as { averageTime: number | null; attemptedCount: number };
+    
+    // Return null if no attempted flashcards or no time data
+    if (data.attemptedCount === 0 || data.averageTime === null) {
+      return null;
+    }
+
+    // Return the average time rounded to the nearest integer
+    return Math.round(data.averageTime);
+  } catch (error) {
+    console.error('Error calculating AI deck average time:', error);
+    return null;
+  }
+}
+
+export async function checkFlashcardAttemptStatus(deckId: number, isAIDeck: boolean): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+
+    // Check if any flashcards have been attempted
+    const tableName = isAIDeck ? 'AIFlashcards' : 'flashcards';
+    const idColumn = isAIDeck ? 'deckID' : 'deckID';
+
+    const result = await db.getFirstAsync(`
+      SELECT COUNT(*) as attemptedCount
+      FROM ${tableName}
+      WHERE ${idColumn} = ?
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND userID = ?
+    `, [deckId, userID]);
+
+    if (!result) {
+      return false;
+    }
+
+    const data = result as { attemptedCount: number };
+    return data.attemptedCount > 0;
+  } catch (error) {
+    console.error('Error checking flashcard attempt status:', error);
+    return false;
+  }
+}
+
+export async function checkAIDeckSavedStatus(deckId: number): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+
+    // Get the AI deck name
+    const aiDeckResult = await db.getFirstAsync(`
+      SELECT deckName
+      FROM AIDecks
+      WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
+
+    if (!aiDeckResult) {
+      return false;
+    }
+
+    const aiDeck = aiDeckResult as { deckName: string };
+
+    // Check if there's a matching deck in the regular decks table
+    const savedDeckResult = await db.getFirstAsync(`
+      SELECT deckID
+      FROM decks
+      WHERE deckName = ?
+        AND isAIDeck = 1
+        AND userID = ?
+    `, [aiDeck.deckName, userID]);
+
+    return !!savedDeckResult;
+  } catch (error) {
+    console.error('Error checking AI deck saved status:', error);
+    return false;
+  }
+}

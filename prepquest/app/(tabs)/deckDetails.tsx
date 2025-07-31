@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ImageBackground, ScrollView, Image, Dimensions } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
@@ -86,14 +86,14 @@ export default function DeckDetailsScreen() {
   };
 
   // Card type color and label logic
-  const cardTypeMap: Record<string, { color: string; label: string }> = {
+  const cardTypeMap: Record<string, { color: string; label: string }> = useMemo(() => ({
     behavioral: { color: Colors[theme].brandColor1, label: strings[language].cardTypes.behavioral },
     technical: { color: Colors[theme].alertColor, label: strings[language].cardTypes.technical },
     brainteasers: { color: Colors[theme].brandColor2, label: strings[language].cardTypes.brainteasers },
     'case study': { color: Colors[theme].brandColor1, label: strings[language].cardTypes['case study'] },
     others: { color: Colors[theme].brandColor1, label: strings[language].cardTypes.others },
     study: { color: Colors[theme].brandColor1, label: strings[language].cardTypes.study },
-  };
+  }), [theme, language]);
 
   // State for favorite status
   const [favoriteStatus, setFavoriteStatus] = useState(isFavorited === '1');
@@ -122,17 +122,17 @@ export default function DeckDetailsScreen() {
   const [companyLogoImageSource, setCompanyLogoImageSource] = useState<any>(null);
 
   // Get deck information from database
-  const deckTitle = deckInfo?.deckName || '';
-  const deckType = deckInfo?.deckType || '';
-  const cardType = deckInfo?.deckType === 'interview' ? deckInfo?.interviewType : deckInfo?.deckType;
-  const backgroundIndex = deckInfo?.AICardDesignIndex || deckInfo?.cardDesignIndex || 0;
-  const cardDate = deckInfo?.dateAdded ? formatDate(deckInfo.dateAdded) : '';
-  const cardFlashcardCount = deckInfo?.flashcardCount || 0;
-  const cardPercent = deckInfo?.progress || 0;
-  const AIDeck = isAIDeck as string === 'true'
+  const deckTitle = useMemo(() => deckInfo?.deckName || '', [deckInfo?.deckName]);
+  const deckType = useMemo(() => deckInfo?.deckType || '', [deckInfo?.deckType]);
+  const cardType = useMemo(() => deckInfo?.deckType === 'interview' ? deckInfo?.interviewType : deckInfo?.deckType, [deckInfo?.deckType, deckInfo?.interviewType]);
+  const backgroundIndex = useMemo(() => deckInfo?.AICardDesignIndex || deckInfo?.cardDesignIndex || 0, [deckInfo?.AICardDesignIndex, deckInfo?.cardDesignIndex]);
+  const cardDate = useMemo(() => deckInfo?.dateAdded ? formatDate(deckInfo.dateAdded) : '', [deckInfo?.dateAdded]);
+  const cardFlashcardCount = useMemo(() => deckInfo?.flashcardCount || 0, [deckInfo?.flashcardCount]);
+  const cardPercent = useMemo(() => deckInfo?.progress || 0, [deckInfo?.progress]);
+  const AIDeck = useMemo(() => isAIDeck as string === 'true', [isAIDeck]);
   
   // Helper function to get company logo based on deck info
-  const getCompanyLogo = () => {
+  const getCompanyLogo = useCallback(() => {
     if (!deckInfo) {
       return require('@/assets/companyIcons/StudyCardIcon.png');
     }
@@ -151,12 +151,12 @@ export default function DeckDetailsScreen() {
     
     // Fallback to study icon
     return require('@/assets/companyIcons/StudyCardIcon.png');
-  };
+  }, [deckInfo, companyLogoImageSource]);
   
-  const cardCompanyLogo = getCompanyLogo();
+  const cardCompanyLogo = useMemo(() => getCompanyLogo(), [getCompanyLogo]);
 
   // Ensure backgroundIndex is within bounds for AI card designs (which has 3 elements)
-  const safeBackgroundIndex = AIDeck ? Math.min(backgroundIndex, deckDetailsAICardDesigns.length - 1) : backgroundIndex;
+  const safeBackgroundIndex = useMemo(() => AIDeck ? Math.min(backgroundIndex, deckDetailsAICardDesigns.length - 1) : backgroundIndex, [AIDeck, backgroundIndex]);
 
   // Function to handle favorite/unfavorite deck
   const handleFavoriteToggle = async () => {
@@ -1155,12 +1155,12 @@ export default function DeckDetailsScreen() {
     },
   });
 
-  const getCardTypeColor = (cardType: string) => {
+  const getCardTypeColor = useCallback((cardType: string) => {
     return cardTypeMap[cardType]?.color || '#FDAE61';
-  };
-  const getCardTypeLabel = (cardType: string) => {
+  }, [cardTypeMap]);
+  const getCardTypeLabel = useCallback((cardType: string) => {
     return cardTypeMap[cardType]?.label || strings[language].cardTypes.others;
-  };
+  }, [cardTypeMap, language]);
 
   function LoadingBar({ percent }: { percent: number }) {
     const { language } = useLanguage();

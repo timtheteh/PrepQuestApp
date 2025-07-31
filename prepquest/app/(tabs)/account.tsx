@@ -12,6 +12,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { strings } from '@/constants/strings';
 import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
@@ -97,15 +99,15 @@ export default function AccountScreen() {
 
   const handleSignOut = async () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      strings[language].signOutConfirmation,
+      strings[language].signOutMessage,
       [
         {
-          text: 'Cancel',
+          text: strings[language].cancel,
           style: 'cancel',
         },
         {
-          text: 'Sign Out',
+          text: strings[language].signOut,
           style: 'destructive',
           onPress: async () => {
             setIsSigningOut(true);
@@ -117,7 +119,6 @@ export default function AccountScreen() {
                 setIsSigningOut(false);
               }, 500);
             } catch (error) {
-              console.error('Error signing out:', error);
               setIsSigningOut(false);
             }
           },
@@ -158,7 +159,7 @@ export default function AccountScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: 'Check out PrepQuest! https://prepquest.app',
+        message: strings[language].shareMessage,
       });
     } catch (error) {
       // Optionally handle error
@@ -178,12 +179,21 @@ export default function AccountScreen() {
     ? stylesConditional.grapeBunchFlexWrapper
     : undefined;
 
+  // Theme-dependent styles
+  const themeStyles = {
+    profileCircle: {
+      ...styles.profileCircle,
+      borderColor: themeColors.brandColor1,
+      backgroundColor: themeColors.background,
+    },
+  };
+
   const MainContent = (
     <View style={{ flex: 1, width: '100%' }}> 
       <View style={[styles.mainColumnContainer, { paddingTop: getTopBarAccountHeight()}]}> 
         <View style={styles.topBar}> 
           <TouchableOpacity onPress={handleSignOut}>
-            <Text style={[styles.signOutText, { color: themeColors.text }]}>{language === 'Chinese' ? '退出登录' : 'Sign Out'}</Text>
+            <Text style={[styles.signOutText, { color: themeColors.text }]}>{strings[language].signOut}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleToggle} activeOpacity={0.8} style={styles.switchContainer}>
             <Animated.View style={[StyleSheet.absoluteFill, { opacity: lightBodyOpacity }]}> 
@@ -203,7 +213,7 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.circleContainer}> 
-          <View style={styles.profileCircle}>
+          <View style={themeStyles.profileCircle}>
             <Text style={[styles.profileInitials, { color: themeColors.text }]}>
               {user?.id ? user.id.substring(0, 2).toUpperCase() : 'GU'}
             </Text>
@@ -211,16 +221,16 @@ export default function AccountScreen() {
         </View>
         <View style={[styles.infoColumn, { marginTop: '10%', marginBottom: '15%' }]}> 
           <View style={styles.infoRow}>
-            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{language === 'Chinese' ? '用户名' : 'Username'}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>User</Text>
+            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].username}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>{strings[language].user}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{language === 'Chinese' ? '用户ID' : 'User ID'}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>{user?.id || 'Not available'}</Text>
+            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].userId}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>{user?.id || strings[language].notAvailable}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{language === 'Chinese' ? '当前订阅计划' : 'Current Plan'}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>{language === 'Chinese' ? '基础版' : 'Basic Plan'}</Text>
+            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].currentPlan}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>{strings[language].basicPlan}</Text>
           </View>
         </View>
       </View>
@@ -250,7 +260,7 @@ export default function AccountScreen() {
               } as any
             ]}
           >
-            <Text style={[styles.grapeMenuText, {marginLeft: -48, marginBottom: 15, textAlign: 'center'}]}>{language === 'Chinese' ? '官网' : 'Website'}</Text>
+            <Text style={[styles.grapeMenuText, {marginLeft: -48, marginBottom: 15, textAlign: 'center'}]}>{strings[language].website}</Text>
           </TouchableOpacity>
           {/* Rate & Review button (behind) */}
           <TouchableOpacity
@@ -267,7 +277,7 @@ export default function AccountScreen() {
               } as any
             ]}
           >
-            <Text style={[styles.grapeMenuText, {marginLeft: 25, marginBottom: 15, textAlign: 'center'}]}>{language === 'Chinese' ? '评分' + '\n' + '与评价' : 'Rate &\nReview'}</Text>
+            <Text style={[styles.grapeMenuText, {marginLeft: 25, marginBottom: 15, textAlign: 'center'}]}>{strings[language].rateAndReview}</Text>
           </TouchableOpacity>
           {/* Share button (behind) */}
           <TouchableOpacity
@@ -283,7 +293,7 @@ export default function AccountScreen() {
                 transform: [{ translateX: -70 }, { translateY: -70 }]} as any
             ]}
           >
-            <Text style={[styles.grapeMenuText, {marginLeft: 15, marginTop: 5, textAlign: 'center'}]}>{language === 'Chinese' ? '分享' : 'Share'}</Text>
+            <Text style={[styles.grapeMenuText, {marginLeft: 15, marginTop: 5, textAlign: 'center'}]}>{strings[language].share}</Text>
           </TouchableOpacity>
           {/* T&C button (behind) */}
           <TouchableOpacity
@@ -298,7 +308,7 @@ export default function AccountScreen() {
                 transform: [{ translateX: -70 }, { translateY: -70 }]} as any
             ]}
           >
-            <Text style={[styles.grapeMenuText, {marginRight: 22, textAlign: 'center'}]}>{language === 'Chinese' ? '条款' + '\n' + '与协议' : 'Terms &\nConditions'}</Text>
+            <Text style={[styles.grapeMenuText, {marginRight: 22, textAlign: 'center'}]}>{strings[language].termsAndConditions}</Text>
           </TouchableOpacity>
           {/* App Settings button (behind) */}
           <TouchableOpacity
@@ -316,7 +326,7 @@ export default function AccountScreen() {
               } as any
             ]}
           >
-            <Text style={[styles.grapeMenuText, {marginTop: 50, textAlign: 'center'}]}>{language === 'Chinese' ? '应用' + '\n' + '设置' : 'App\nSettings'}</Text>
+            <Text style={[styles.grapeMenuText, {marginTop: 50, textAlign: 'center'}]}>{strings[language].appSettings}</Text>
           </TouchableOpacity>
           {/* Deck Settings button (behind) */}
           <TouchableOpacity
@@ -334,7 +344,7 @@ export default function AccountScreen() {
               } as any
             ]}
           >
-            <Text style={[styles.grapeMenuText, {marginBottom: 48, textAlign: 'center'}]}>{language === 'Chinese' ? '卡片组' + '\n' + '设置' : 'Deck\nSettings'}</Text>
+            <Text style={[styles.grapeMenuText, {marginBottom: 48, textAlign: 'center'}]}>{strings[language].deckSettings}</Text>
           </TouchableOpacity>
           {/* Upgrade button (on top) */}
           <TouchableOpacity
@@ -348,7 +358,7 @@ export default function AccountScreen() {
                 zIndex: 10, 
                 transform: [{ translateX: -70 }, { translateY: -70 }] } as any]}
           >
-            <Text style={styles.grapeMenuText}>{language === 'Chinese' ? '升级' : 'Upgrade'}</Text>
+            <Text style={styles.grapeMenuText}>{strings[language].upgrade}</Text>
             <Image 
               source={require('@/assets/images/Diamond.png')} 
               style={styles.diamondImage}
@@ -379,10 +389,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   signOutText: {
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontWeight: '700',
     fontSize: 20,
-    color: '#000', // This will be overridden by theme
   },
   switchContainer: {
     width: 55,
@@ -408,14 +417,11 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: '#44B88A',
-    backgroundColor: 'white',
   },
   profileInitials: {
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontWeight: '700',
     fontSize: 36,
-    color: '#000',
     textAlign: 'center',
     lineHeight: 95,
     paddingRight: 2
@@ -433,15 +439,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   infoHeading: {
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontWeight: '700',
     fontSize: 16,
-    color: '#000', // This will be overridden by theme
   },
   infoValue: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 16,
-    color: '#000', // This will be overridden by theme
   },
   grapeBunchContainer: {
     width: 350,
@@ -465,7 +469,7 @@ const styles = StyleSheet.create({
   },
   grapeMenuText: {
     color: 'white',
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontWeight: '700',
     fontSize: 16,
   },

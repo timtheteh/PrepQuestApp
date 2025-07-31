@@ -7,13 +7,16 @@ import { Feather } from '@expo/vector-icons';
 import { useState, useRef, useContext, useEffect } from 'react';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { NavBarRef } from '@/components/general/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useIsFocused } from '@react-navigation/native';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
 import { getAllFolders, Folder, deleteMultipleFolders } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
 import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -27,7 +30,6 @@ type SortDirection = 'asc' | 'desc';
 const FOLDERS_SORT_FIELD_KEY = 'folders_sort_field';
 const FOLDERS_SORT_DIRECTION_KEY = 'folders_sort_direction';
 
-const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 48; // Distance to shift content down
 const selectUnselectedDuration = 300;
@@ -91,6 +93,7 @@ export default function FoldersScreen() {
   const [calendarFilter, setCalendarFilter] = useState<'today' | 'week' | 'month' | 'all' | 'custom' | null>('all');
   const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
   const { language } = useLanguage();
+  const { theme } = useTheme();
 
   // Animation values
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -107,6 +110,147 @@ export default function FoldersScreen() {
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeightNoRoundedToggle = useContentTopHeightNoRoundedToggle();
 
+  const styles = StyleSheet.create({
+    animatedContainer: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    topBar: {
+      position: 'absolute',
+      left: 16,
+      zIndex: 1,
+    },
+    headerIconsContainer: {
+      position: 'absolute',
+      right: 16,
+      zIndex: 1,
+    },
+    backButton: {
+      paddingTop: 10,
+      paddingRight: 8,
+    },
+    mainContentWrapper: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    titleContainer: {
+      position: 'relative',
+      height: Platform.OS === 'android' ? 32 : 24,
+    },
+    selectButtonContainer: {
+      position: 'relative',
+      width: 85,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+    },
+    selectButton: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].brandColor1,
+    },
+    selectButtonAbsolute: {
+      position: 'absolute',
+    },
+    scrollWrapper: {
+      flex: 1,
+      marginTop: 10,
+    },
+    scrollViewContainer: {
+      flex: 1,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      paddingBottom: BOTTOM_SPACING,
+    },
+    shiftableContent: {
+      flex: 1,
+      marginTop: 16,
+    },
+    actionButtonsRow: {
+      position: 'absolute',
+      top: 18,
+      right: 0,
+      left: 0,
+      zIndex: 1,
+    },
+    firstCard: {
+      marginTop: 5,
+    },
+    card: {
+      marginTop: '8%',
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 20,
+      right: 16,
+    },
+    fabContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 100,
+      zIndex: 1,
+    },
+    doneButtonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      paddingRight: 16,
+      height: 48,
+    },
+    doneButton: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].brandColor1,
+    },
+    emptyStateContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 40, // Add some top padding to center it better in the scrollview
+    },
+    emptyStateAnimation: {
+      width: 200,
+      height: 200,
+    },
+    emptyStateText: {
+      fontSize: 18,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].text,
+      textAlign: 'center',
+      marginTop: 0,
+      lineHeight: 20,
+    },
+    selectButtonDisabled: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].unselectedText,
+    },
+  });
+
   // Reset header icons state and selection mode when screen comes into focus
   useEffect(() => {
     if (isFocused) {
@@ -114,7 +258,7 @@ export default function FoldersScreen() {
       headerIconsRef.current?.reset();
 
       // Set the delete modal text for folders
-      setDeleteModalText('Are you sure you want to delete these folder(s)?');
+      setDeleteModalText(strings[language].folders.areYouSureYouWantToDeleteTheseFolders);
 
       // Check if we should enter AddToFolders mode
       if (isAddToFolders === 'true') {
@@ -476,7 +620,7 @@ export default function FoldersScreen() {
     if (!hasSelection) {
       setIsMenuOpen(true);
       setIsNoSelectionModalOpen(true);
-      setNoSelectionModalSubtitle('Please choose at least one folder if you want to delete.');
+      setNoSelectionModalSubtitle(strings[language].folders.pleaseChooseAtLeastOneFolder);
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0.4,
@@ -496,7 +640,7 @@ export default function FoldersScreen() {
     if (index === 0) {
       setIsMenuOpen(true);
       setIsTrashModalOpenInDecksPage(true);
-      setDeleteModalText('Are you sure you want to delete these folder(s)?');
+      setDeleteModalText(strings[language].folders.areYouSureYouWantToDeleteTheseFolders);
       setHandleDeletion(() => handleDeleteSelectedFolders);
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
@@ -1368,7 +1512,7 @@ export default function FoldersScreen() {
             />
           )}
           <Text style={styles.emptyStateText}>
-            {language === 'Chinese' ? '所有文件夹都去哪了？' : "Where have all the\nfolders gone"}
+            {strings[language].folders.whereHaveAllTheFoldersGone}
           </Text>
         </View>
       );
@@ -1434,7 +1578,7 @@ export default function FoldersScreen() {
               style={styles.backButton}
               onPress={handleBackPress}
             >
-              <AntDesign name="arrowleft" size={32} color="black" />
+              <AntDesign name="arrowleft" size={32} color={Colors[theme].normalIconColor} />
             </TouchableOpacity>
           </View>
           
@@ -1473,7 +1617,7 @@ export default function FoldersScreen() {
                 {(isAddToFoldersMode || isMoveToFoldersMode) ? (
                   <View style={styles.doneButtonContainer}>
                     <TouchableOpacity onPress={handleDone}>
-                      <Text style={styles.doneButton}>{language === 'Chinese' ? '完成' : 'Done'}</Text>
+                      <Text style={styles.doneButton}>{strings[language].folders.done}</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -1498,10 +1642,10 @@ export default function FoldersScreen() {
                       // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular'
                       }}>
                       {isAddToFoldersMode
-                        ? language === 'Chinese' ? '添加到文件夹' : 'Add to Folder(s)'
+                        ? strings[language].folders.addToFolders
                         : isMoveToFoldersMode
-                          ? language === 'Chinese' ? '移动到文件夹' : 'Move to Folder(s)'
-                          : language === 'Chinese' ? `文件夹 (${foldersCountToShow})` : `Folders (${foldersCountToShow})`}
+                          ? strings[language].folders.moveToFolders
+                          : `${strings[language].folders.foldersCount} (${foldersCountToShow})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1514,14 +1658,14 @@ export default function FoldersScreen() {
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
-                      {language === 'Chinese' ? '选择' : 'Select'}
+                      {strings[language].folders.select}
                     </Animated.Text>
                     <Animated.Text style={[
                       styles.selectButton,
                       styles.selectButtonAbsolute,
                       { opacity: selectAllOpacity }
                     ]}>
-                      {language === 'Chinese' ? '全选' : 'Select All'}
+                      {strings[language].folders.selectAll}
                     </Animated.Text>
                   </TouchableOpacity>
                 </View>
@@ -1556,154 +1700,13 @@ export default function FoldersScreen() {
       <CalendarModal
         visible={isCalendarOpen}
         onDismiss={handleCalendarDismiss}
-        title={language === 'Chinese' ? '按添加日期筛选文件夹' : 'Filter folders based on\ndate added'}
+        title={strings[language].folders.filterFoldersBasedOnDateAdded}
         onDone={(selectedFilter, customDate) => {
           setCalendarFilter(selectedFilter);
           setCalendarCustomDate(customDate || null);
           handleCalendarDismiss();
         }}
-      />
+            />
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  animatedContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 1,
-  },
-  headerIconsContainer: {
-    position: 'absolute',
-    right: 16,
-    zIndex: 1,
-  },
-  backButton: {
-    paddingTop: 10,
-    paddingRight: 8,
-  },
-  mainContentWrapper: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  titleContainer: {
-    position: 'relative',
-    height: Platform.OS === 'android' ? 32 : 24,
-  },
-  selectButtonContainer: {
-    position: 'relative',
-    width: 85,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  selectButton: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#44B88A',
-  },
-  selectButtonAbsolute: {
-    position: 'absolute',
-  },
-  scrollWrapper: {
-    flex: 1,
-    marginTop: 10,
-  },
-  scrollViewContainer: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingBottom: BOTTOM_SPACING,
-  },
-  shiftableContent: {
-    flex: 1,
-    marginTop: 16,
-  },
-  actionButtonsRow: {
-    position: 'absolute',
-    top: 18,
-    right: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  firstCard: {
-    marginTop: 5,
-  },
-  card: {
-    marginTop: '8%',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 16,
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    zIndex: 1,
-  },
-  doneButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingRight: 16,
-    height: 48,
-  },
-  doneButton: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#44B88A',
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40, // Add some top padding to center it better in the scrollview
-  },
-  emptyStateAnimation: {
-    width: 200,
-    height: 200,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontFamily: 'Satoshi-Medium',
-    color: '#333333',
-    textAlign: 'center',
-    marginTop: 0,
-    lineHeight: 20,
-  },
-  selectButtonDisabled: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#CCCCCC',
-  },
-}); 

@@ -98,6 +98,20 @@ export const strings: Record<string, any> = {
     },
     // SlidingMenu strings
     viewFolders: 'View Folders',
+    // Folders strings
+    folders: {
+      folders: 'Folders',
+      addToFolders: 'Add to Folder(s)',
+      moveToFolders: 'Move to Folder(s)',
+      foldersCount: 'Folders',
+      select: 'Select',
+      selectAll: 'Select All',
+      done: 'Done',
+      whereHaveAllTheFoldersGone: "Where have all the\nfolders gone",
+      pleaseChooseAtLeastOneFolder: 'Please choose at least one folder if you want to delete.',
+      areYouSureYouWantToDeleteTheseFolders: 'Are you sure you want to delete these folder(s)?',
+      filterFoldersBasedOnDateAdded: 'Filter folders based on\ndate added',
+    },
     viewFavorites: 'View Favorites',
     // AddViewToggle strings
     addFlashcards: 'Add Flashcard(s)',
@@ -386,11 +400,26 @@ export const strings: Record<string, any> = {
       account: '账户',
       decks: '卡片组',
       statistics: '统计',
-      awards: '奖励',
+      awards: '奖项',
       stats: '统计',
     },
     // SlidingMenu strings
     viewFolders: '查看文件夹',
+    // Folders strings
+    folders: {
+      folders: '文件夹',
+      addToFolders: '添加到文件夹',
+      moveToFolders: '移动到文件夹',
+      foldersCount: '文件夹',
+      select: '选择',
+      selectAll: '全选',
+      done: '完成',
+      whereHaveAllTheFoldersGone: '所有文件夹都去哪了？',
+      pleaseChooseAtLeastOneFolder: '如果要删除，请至少选择一个文件夹。',
+      areYouSureYouWantToDeleteTheseFolders: '你确定要删除这些文件夹吗？',
+      filterFoldersBasedOnDateAdded: '按添加日期筛选文件夹',
+    },
+    // SlidingMenu strings
     viewFavorites: '查看收藏',
     // AddViewToggle strings
     addFlashcards: '添加卡片',

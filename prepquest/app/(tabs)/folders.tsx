@@ -10,8 +10,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useIsFocused } from '@react-navigation/native';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
-import { getAllFolders, Folder, deleteMultipleFolders } from '@/db/decks';
-import { db } from '@/db/index';
+import { getAllFolders, Folder, deleteMultipleFolders, checkFoldersDatabaseReady, updateFolderFavoriteStatus, createNewFolder, checkDecksAlreadyInFolders, addDecksToFolders, moveDecksToFolders } from '@/db/decks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
@@ -41,7 +40,6 @@ async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }
@@ -366,15 +364,15 @@ export default function FoldersScreen() {
   useEffect(() => {
     const checkDatabaseReady = async () => {
       try {
-        console.log('Checking if database is ready...');
-        const userID = await getCurrentUserID();
-        // Try a simple query to check if database is ready
-        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM folders WHERE userID = ?', [userID]);
-        console.log('Database is ready, folders count:', (result[0] as any)?.count);
-        setIsDatabaseReady(true);
-        setFoldersCount((result[0] as any)?.count);
+        const { isReady, foldersCount } = await checkFoldersDatabaseReady();
+        if (isReady) {
+          setIsDatabaseReady(true);
+          setFoldersCount(foldersCount);
+        } else {
+          // Retry after a short delay
+          setTimeout(checkDatabaseReady, 500);
+        }
       } catch (error) {
-        console.log('Database not ready yet, waiting...', error);
         // Retry after a short delay
         setTimeout(checkDatabaseReady, 500);
       }
@@ -387,19 +385,15 @@ export default function FoldersScreen() {
   useEffect(() => {
     const loadFoldersData = async () => {
       if (!isDatabaseReady) {
-        console.log('Database not ready, skipping data load');
         return;
       }
       
-      console.log('Loading folders data from database...');
       try {
         const foldersData = await getAllFolders();
-        console.log('Folders loaded:', foldersData.length);
         setFolders(foldersData);
         setFilteredFolders(foldersData);
         setFoldersCount(foldersData.length);
       } catch (error) {
-        console.error('Error loading folders data:', error);
       }
     };
 
@@ -446,7 +440,6 @@ export default function FoldersScreen() {
         return `${month} ${day}, ${year}`;
       }
     } catch (error) {
-      console.error('Error formatting date:', error);
       return dateString; // Return original string if parsing fails
     }
   };
@@ -502,7 +495,6 @@ export default function FoldersScreen() {
         [userSpecificDirectionKey, direction]
       ]);
     } catch (error) {
-      console.error('Error saving folders sort preferences:', error);
     }
   };
 
@@ -525,7 +517,6 @@ export default function FoldersScreen() {
         setSortDirection(savedDirection[1] as SortDirection);
       }
     } catch (error) {
-      console.error('Error loading folders sort preferences:', error);
     }
   };
 
@@ -659,67 +650,12 @@ export default function FoldersScreen() {
 
   const handleFabPress = async () => {
     try {
-      console.log("Folders FAB clicked!");
       
-      // Check for existing folders that start with "New Folder"
-      const existingNewFolders = folders.filter(folder => 
-        folder.folderName.startsWith('New Folder')
-      );
+      const { success, newFolder } = await createNewFolder();
       
-      let newFolderName: string;
-      
-      if (existingNewFolders.length === 0) {
-        // No existing "New Folder" folders, use just "New Folder"
-        newFolderName = 'New Folder';
-      } else {
-        // Find the highest number used in existing "New Folder" names
-        const numbers = existingNewFolders.map(folder => {
-          const match = folder.folderName.match(/New Folder(?: (\d+))?$/);
-          if (match) {
-            // If there's a number, use it; otherwise, it's "New Folder" (no number)
-            return match[1] ? parseInt(match[1]) : 0;
-          }
-          return 0;
-        });
-        
-        const maxNumber = Math.max(...numbers);
-        const nextNumber = maxNumber + 1;
-        newFolderName = `New Folder ${nextNumber}`;
-      }
-      
-      // Insert the new folder into the database
-      const userID = await getCurrentUserID();
-      const result = await db.execAsync(`
-        INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited, userID)
-        VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 0, '${userID}')
-      `);
-      
-      // Get the ID of the newly inserted folder
-      const newFolderResult = await db.getFirstAsync(`
-        SELECT folderID, folderName, dateAdded, lastModifiedDate, isFavorited
-        FROM folders 
-        WHERE folderName = '${newFolderName}' AND userID = ?
-        ORDER BY folderID DESC
-        LIMIT 1
-      `, [userID]);
-      
-      if (newFolderResult) {
-        const newFolder = newFolderResult as {
-          folderID: number;
-          folderName: string;
-          dateAdded: string;
-          lastModifiedDate: string;
-          isFavorited: number;
-        };
-        
-        // Create the new folder object with deckCount set to 0
-        const newFolderObject: Folder = {
-          ...newFolder,
-          deckCount: 0
-        };
-        
+      if (success && newFolder) {
         // Add the new folder to the local state
-        const updatedFolders = [...folders, newFolderObject];
+        const updatedFolders = [...folders, newFolder];
         setFolders(updatedFolders);
         
         // Update filtered folders if not searching
@@ -731,12 +667,9 @@ export default function FoldersScreen() {
         // Update the folders count
         setFoldersCount(updatedFolders.length);
         
-        console.log('Successfully created new folder:', newFolderName);
       } else {
-        console.error('Failed to retrieve the newly created folder');
       }
     } catch (error) {
-      console.error('Error creating new folder:', error);
     }
   };
 
@@ -839,7 +772,6 @@ export default function FoldersScreen() {
         const selectedFolderIds = Array.from(selectedFolders).map(index => foldersToUse[index].folderID);
 
         if (selectedFolderIds.length === 0) {
-          console.log('No folders selected for adding deck');
           // Navigate back to source page when no folders are selected
           handleBackPress();
           return;
@@ -853,57 +785,20 @@ export default function FoldersScreen() {
           try {
             targetDeckIds = JSON.parse(selectedDeckIds as string);
           } catch (error) {
-            console.error('Error parsing selectedDeckIds:', error);
             return;
           }
         } else if (deckId) {
           targetDeckIds = [parseInt(deckId as string)];
         } else {
-          console.error('No deck IDs provided for adding to folders');
           return;
         }
 
         if (targetDeckIds.length === 0) {
-          console.error('No valid deck IDs found');
           return;
         }
 
         // Check if any decks are already in the selected folders
-        let hasExistingDecks = false;
-        
-        for (const targetDeckId of targetDeckIds) {
-          // Get the current folderIDs for the deck
-          const userID = await getCurrentUserID();
-          const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
-          `, [userID]);
-
-          if (!currentDeck) {
-            console.error(`Deck ${targetDeckId} not found`);
-            continue;
-          }
-
-          const deckData = currentDeck as { folderIDs: string | null };
-          let currentFolderIds: number[] = [];
-
-          // Parse existing folderIDs if they exist
-          if (deckData.folderIDs) {
-            try {
-              currentFolderIds = JSON.parse(deckData.folderIDs);
-            } catch (error) {
-              console.error('Error parsing existing folderIDs:', error);
-              currentFolderIds = [];
-            }
-          }
-
-          // Check if any of the selected folders are already in the deck's folders
-          const hasOverlap = selectedFolderIds.some(folderId => currentFolderIds.includes(folderId));
-          
-          if (hasOverlap) {
-            hasExistingDecks = true;
-            break;
-          }
-        }
+        const hasExistingDecks = await checkDecksAlreadyInFolders(targetDeckIds, selectedFolderIds);
 
         // If any decks are already in the selected folders, show warning modal
         if (hasExistingDecks) {
@@ -926,55 +821,10 @@ export default function FoldersScreen() {
         }
 
         // Process each deck (only if no existing decks found)
-        for (const targetDeckId of targetDeckIds) {
-          // Get the current folderIDs for the deck
-          const userID = await getCurrentUserID();
-          const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
-          `, [userID]);
-
-          if (!currentDeck) {
-            console.error(`Deck ${targetDeckId} not found`);
-            continue;
-          }
-
-          const deckData = currentDeck as { folderIDs: string | null };
-          let currentFolderIds: number[] = [];
-
-          // Parse existing folderIDs if they exist
-          if (deckData.folderIDs) {
-            try {
-              currentFolderIds = JSON.parse(deckData.folderIDs);
-            } catch (error) {
-              console.error('Error parsing existing folderIDs:', error);
-              currentFolderIds = [];
-            }
-          }
-
-          // Add new folder IDs (avoid duplicates)
-          const newFolderIds = [...new Set([...currentFolderIds, ...selectedFolderIds])];
-
-          // Update the deck's folderIDs in the database
-          const newFolderIdsString = JSON.stringify(newFolderIds);
-          await db.execAsync(`
-            UPDATE decks 
-            SET folderIDs = '${newFolderIdsString}'
-            WHERE deckID = ${targetDeckId} AND userID = '${userID}'
-          `);
-
-          console.log(`Successfully added deck ${targetDeckId} to folders: ${selectedFolderIds.join(', ')}`);
-        }
+        const success = await addDecksToFolders(targetDeckIds, selectedFolderIds);
         
-        // Update lastModifiedDate for folders that received new decks
-        for (const folderId of selectedFolderIds) {
-          const folderUserID = await getCurrentUserID();
-          await db.execAsync(`
-            UPDATE folders 
-            SET lastModifiedDate = '${new Date().toISOString()}'
-            WHERE folderID = ${folderId} AND userID = '${folderUserID}'
-          `);
-          console.log(`Updated lastModifiedDate for folder ${folderId}`);
-          console.log(`lastModifiedDate: ${new Date().toISOString()}`);
+        if (!success) {
+          return;
         }
         
         // Reload folder data to update deck counts
@@ -1005,7 +855,6 @@ export default function FoldersScreen() {
           handleBackPress();
         }, 100); // Short delay to ensure modal is visible before navigation
       } catch (error) {
-        console.error('Error adding deck to folders:', error);
       }
     } else if (isMoveToFoldersMode) {
       try {
@@ -1014,7 +863,6 @@ export default function FoldersScreen() {
         const selectedFolderIds = Array.from(selectedFolders).map(index => foldersToUse[index].folderID);
 
         if (selectedFolderIds.length === 0) {
-          console.log('No folders selected for moving deck');
           // Navigate back to source page when no folders are selected
           handleBackPress();
           return;
@@ -1027,62 +875,24 @@ export default function FoldersScreen() {
           try {
             targetDeckIds = JSON.parse(selectedDeckIds as string);
           } catch (error) {
-            console.error('Error parsing selectedDeckIds:', error);
             return;
           }
         } else {
-          console.error('No deck IDs provided for moving to folders');
           return;
         }
 
         if (targetDeckIds.length === 0) {
-          console.error('No valid deck IDs found');
           return;
         }
 
         // Get the current folder ID (the folder we're moving from)
         const currentFolderId = parseInt(folderId as string);
         if (!currentFolderId) {
-          console.error('No current folder ID provided');
           return;
         }
 
         // Check if any decks are already in the selected folders
-        let hasExistingDecks = false;
-        
-        for (const targetDeckId of targetDeckIds) {
-          // Get the current folderIDs for the deck
-          const userID = await getCurrentUserID();
-          const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
-          `, [userID]);
-
-          if (!currentDeck) {
-            console.error(`Deck ${targetDeckId} not found`);
-            continue;
-          }
-
-          const deckData = currentDeck as { folderIDs: string | null };
-          let currentFolderIds: number[] = [];
-
-          // Parse existing folderIDs if they exist
-          if (deckData.folderIDs) {
-            try {
-              currentFolderIds = JSON.parse(deckData.folderIDs);
-            } catch (error) {
-              console.error('Error parsing existing folderIDs:', error);
-              currentFolderIds = [];
-            }
-          }
-
-          // Check if any of the selected folders are already in the deck's folders
-          const hasOverlap = selectedFolderIds.some(folderId => currentFolderIds.includes(folderId));
-          
-          if (hasOverlap) {
-            hasExistingDecks = true;
-            break;
-          }
-        }
+        const hasExistingDecks = await checkDecksAlreadyInFolders(targetDeckIds, selectedFolderIds);
 
         // If any decks are already in the selected folders, show warning modal
         if (hasExistingDecks) {
@@ -1105,57 +915,10 @@ export default function FoldersScreen() {
         }
 
         // Process each deck (only if no existing decks found)
-        for (const targetDeckId of targetDeckIds) {
-          // Get the current folderIDs for the deck
-          const userID = await getCurrentUserID();
-          const currentDeck = await db.getFirstAsync(`
-            SELECT folderIDs FROM decks WHERE deckID = ${targetDeckId} AND userID = ?
-          `, [userID]);
-
-          if (!currentDeck) {
-            console.error(`Deck ${targetDeckId} not found`);
-            continue;
-          }
-
-          const deckData = currentDeck as { folderIDs: string | null };
-          let currentFolderIds: number[] = [];
-
-          // Parse existing folderIDs if they exist
-          if (deckData.folderIDs) {
-            try {
-              currentFolderIds = JSON.parse(deckData.folderIDs);
-            } catch (error) {
-              console.error('Error parsing existing folderIDs:', error);
-              currentFolderIds = [];
-            }
-          }
-
-          // Remove the current folder ID from the deck's folders
-          const filteredFolderIds = currentFolderIds.filter(id => id !== currentFolderId);
-          
-          // Add the selected folder IDs (avoid duplicates)
-          const newFolderIds = [...new Set([...filteredFolderIds, ...selectedFolderIds])];
-
-          // Update the deck's folderIDs in the database
-          const newFolderIdsString = JSON.stringify(newFolderIds);
-          await db.execAsync(`
-            UPDATE decks 
-            SET folderIDs = '${newFolderIdsString}'
-            WHERE deckID = ${targetDeckId} AND userID = '${userID}'
-          `);
-
-          console.log(`Successfully moved deck ${targetDeckId} from folder ${currentFolderId} to folders: ${selectedFolderIds.join(', ')}`);
-        }
+        const success = await moveDecksToFolders(targetDeckIds, selectedFolderIds, currentFolderId);
         
-        // Update lastModifiedDate for folders that received moved decks
-        for (const folderId of selectedFolderIds) {
-          const folderUserID = await getCurrentUserID();
-          await db.execAsync(`
-            UPDATE folders 
-            SET lastModifiedDate = '${new Date().toISOString()}'
-            WHERE folderID = ${folderId} AND userID = '${folderUserID}'
-          `);
-          console.log(`Updated lastModifiedDate for destination folder ${folderId}`);
+        if (!success) {
+          return;
         }
         
         // Reload folder data to update deck counts
@@ -1186,7 +949,6 @@ export default function FoldersScreen() {
           handleBackPress();
         }, 0); // Short delay to ensure modal is visible before navigation
       } catch (error) {
-        console.error('Error moving deck to folders:', error);
       }
     }
     
@@ -1201,7 +963,6 @@ export default function FoldersScreen() {
       const selectedFolderIds = Array.from(selectedFolders).map(index => foldersToUse[index].folderID);
 
       if (selectedFolderIds.length === 0) {
-        console.log('No folders selected for deletion');
         return;
       }
 
@@ -1230,49 +991,42 @@ export default function FoldersScreen() {
           handleCancel();
         }, 0);
         
-        console.log(`Successfully deleted ${selectedFolderIds.length} folder(s)`);
       } else {
-        console.error('Failed to delete folders');
       }
     } catch (error) {
-      console.error('Error deleting folders:', error);
     }
   };
 
   // Function to handle favorite/unfavorite folder
   const handleFolderFavoriteToggle = async (folderId: number, currentFavorited: boolean) => {
     try {
-      const newFavoritedValue = currentFavorited ? 0 : 1;
-      const userID = await getCurrentUserID();
+      const newFavoritedValue = !currentFavorited;
       
       // Update database
-      await db.execAsync(`
-        UPDATE folders 
-        SET isFavorited = ${newFavoritedValue}
-        WHERE folderID = ${folderId} AND userID = '${userID}'
-      `);
+      const success = await updateFolderFavoriteStatus(folderId, newFavoritedValue);
       
-      // Update local state immediately
-      setFolders(prev => 
-        prev.map(folder => 
-          folder.folderID === folderId 
-            ? { ...folder, isFavorited: newFavoritedValue }
-            : folder
-        )
-      );
-      
-      // Update filtered folders if searching
-      if (isSearching) {
-        setFilteredFolders(prev => 
+      if (success) {
+        // Update local state immediately
+        setFolders(prev => 
           prev.map(folder => 
             folder.folderID === folderId 
-              ? { ...folder, isFavorited: newFavoritedValue }
+              ? { ...folder, isFavorited: newFavoritedValue ? 1 : 0 }
               : folder
           )
         );
+        
+        // Update filtered folders if searching
+        if (isSearching) {
+          setFilteredFolders(prev => 
+            prev.map(folder => 
+              folder.folderID === folderId 
+                ? { ...folder, isFavorited: newFavoritedValue ? 1 : 0 }
+                : folder
+            )
+          );
+        }
       }
     } catch (error) {
-      console.error('Error updating folder favorite status:', error);
     }
   };
 

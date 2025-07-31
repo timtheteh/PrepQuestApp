@@ -2642,3 +2642,227 @@ export async function checkDatabaseReady(): Promise<boolean> {
     return false;
   }
 }
+
+export async function checkFoldersDatabaseReady(): Promise<{ isReady: boolean; foldersCount: number }> {
+  try {
+    const userID = await getCurrentUserID();
+    // Try a simple query to check if database is ready
+    const result = await db.getAllAsync('SELECT COUNT(*) as count FROM folders WHERE userID = ?', [userID]);
+    const foldersCount = (result[0] as any)?.count || 0;
+    console.log('Database is ready, folders count:', foldersCount);
+    return { isReady: true, foldersCount };
+  } catch (error) {
+    console.log('Database not ready yet:', error);
+    return { isReady: false, foldersCount: 0 };
+  }
+}
+
+export async function createNewFolder(): Promise<{ success: boolean; newFolder?: Folder }> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Check for existing folders that start with "New Folder"
+    const existingNewFoldersResult = await db.getAllAsync(`
+      SELECT folderName
+      FROM folders
+      WHERE folderName LIKE 'New Folder%' AND userID = ?
+      ORDER BY folderName
+    `, [userID]);
+    
+    const existingNewFolders = existingNewFoldersResult as Array<{ folderName: string }>;
+    
+    let newFolderName: string;
+    
+    if (existingNewFolders.length === 0) {
+      // No existing "New Folder" folders, use just "New Folder"
+      newFolderName = 'New Folder';
+    } else {
+      // Find the highest number used in existing "New Folder" names
+      const numbers = existingNewFolders.map(folder => {
+        const match = folder.folderName.match(/New Folder(?: (\d+))?$/);
+        if (match) {
+          // If there's a number, use it; otherwise, it's "New Folder" (no number)
+          return match[1] ? parseInt(match[1]) : 0;
+        }
+        return 0;
+      });
+      
+      const maxNumber = Math.max(...numbers);
+      const nextNumber = maxNumber + 1;
+      newFolderName = `New Folder ${nextNumber}`;
+    }
+    
+    // Insert the new folder into the database
+    await db.execAsync(`
+      INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited, userID)
+      VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 0, '${userID}')
+    `);
+    
+    // Get the ID of the newly inserted folder
+    const newFolderResult = await db.getFirstAsync(`
+      SELECT folderID, folderName, dateAdded, lastModifiedDate, isFavorited
+      FROM folders 
+      WHERE folderName = '${newFolderName}' AND userID = ?
+      ORDER BY folderID DESC
+      LIMIT 1
+    `, [userID]);
+    
+    if (newFolderResult) {
+      const newFolder = newFolderResult as {
+        folderID: number;
+        folderName: string;
+        dateAdded: string;
+        lastModifiedDate: string;
+        isFavorited: number;
+      };
+      
+      // Create the new folder object with deckCount set to 0
+      const newFolderObject: Folder = {
+        ...newFolder,
+        deckCount: 0
+      };
+      
+      console.log('Successfully created new folder:', newFolderName);
+      return { success: true, newFolder: newFolderObject };
+    } else {
+      console.error('Failed to retrieve the newly created folder');
+      return { success: false };
+    }
+  } catch (error) {
+    console.error('Error creating new folder:', error);
+    return { success: false };
+  }
+}
+
+export async function getDeckFolderIds(deckId: number): Promise<number[]> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(`
+      SELECT folderIDs FROM decks WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
+
+    if (!result) {
+      return [];
+    }
+
+    const deckData = result as { folderIDs: string | null };
+    
+    if (!deckData.folderIDs) {
+      return [];
+    }
+
+    try {
+      return JSON.parse(deckData.folderIDs);
+    } catch (error) {
+      console.error('Error parsing folderIDs:', error);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error getting deck folder IDs:', error);
+    return [];
+  }
+}
+
+export async function updateDeckFolderIds(deckId: number, folderIds: number[]): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    const folderIdsString = JSON.stringify(folderIds);
+    
+    await db.execAsync(`
+      UPDATE decks 
+      SET folderIDs = '${folderIdsString}'
+      WHERE deckID = ${deckId} AND userID = '${userID}'
+    `);
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating deck folder IDs:', error);
+    return false;
+  }
+}
+
+export async function updateFolderLastModifiedDate(folderId: number): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    const currentDate = new Date().toISOString();
+    
+    await db.execAsync(`
+      UPDATE folders 
+      SET lastModifiedDate = '${currentDate}'
+      WHERE folderID = ${folderId} AND userID = '${userID}'
+    `);
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating folder last modified date:', error);
+    return false;
+  }
+}
+
+export async function checkDecksAlreadyInFolders(deckIds: number[], folderIds: number[]): Promise<boolean> {
+  try {
+    for (const deckId of deckIds) {
+      const currentFolderIds = await getDeckFolderIds(deckId);
+      const hasOverlap = folderIds.some(folderId => currentFolderIds.includes(folderId));
+      if (hasOverlap) {
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking if decks are already in folders:', error);
+    return false;
+  }
+}
+
+export async function addDecksToFolders(deckIds: number[], folderIds: number[]): Promise<boolean> {
+  try {
+    for (const deckId of deckIds) {
+      const currentFolderIds = await getDeckFolderIds(deckId);
+      const newFolderIds = [...new Set([...currentFolderIds, ...folderIds])];
+      const success = await updateDeckFolderIds(deckId, newFolderIds);
+      if (!success) {
+        return false;
+      }
+    }
+    
+    // Update lastModifiedDate for folders that received new decks
+    for (const folderId of folderIds) {
+      await updateFolderLastModifiedDate(folderId);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error adding decks to folders:', error);
+    return false;
+  }
+}
+
+export async function moveDecksToFolders(deckIds: number[], targetFolderIds: number[], sourceFolderId: number): Promise<boolean> {
+  try {
+    for (const deckId of deckIds) {
+      const currentFolderIds = await getDeckFolderIds(deckId);
+      
+      // Remove the source folder ID from the deck's folders
+      const filteredFolderIds = currentFolderIds.filter(id => id !== sourceFolderId);
+      
+      // Add the target folder IDs (avoid duplicates)
+      const newFolderIds = [...new Set([...filteredFolderIds, ...targetFolderIds])];
+      
+      const success = await updateDeckFolderIds(deckId, newFolderIds);
+      if (!success) {
+        return false;
+      }
+    }
+    
+    // Update lastModifiedDate for folders that received moved decks
+    for (const folderId of targetFolderIds) {
+      await updateFolderLastModifiedDate(folderId);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error moving decks to folders:', error);
+    return false;
+  }
+}

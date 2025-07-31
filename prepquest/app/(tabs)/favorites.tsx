@@ -206,7 +206,7 @@ export default function FavoritesScreen() {
     }
   }, [isFocused]);
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     // Reset header icons state
     headerIconsRef.current?.reset();
     
@@ -232,9 +232,9 @@ export default function FavoritesScreen() {
         navbarRef?.current?.setDecksTab();
       }, 50);
     }
-  };
+  }, [headerIconsRef, navbarRef, router, previousMode]);
 
-  const handleToggle = (isRightSide: boolean) => {
+  const handleToggle = useCallback((isRightSide: boolean) => {
     // If in select mode, cancel it before switching
     if (isSelectMode) {
       handleCancel();
@@ -253,7 +253,7 @@ export default function FavoritesScreen() {
       duration: selectUnselectedDuration,
       useNativeDriver: true,
     }).start();
-  };
+  }, [isSelectMode, setIsFavFoldersMode, setCurrentMode, setSelectedFavDeckCards, setSelectedFavFolderCards, fadeAnim, selectUnselectedDuration]);
 
   const handleFabPress = async () => {
     if (isFavFoldersMode) {
@@ -298,7 +298,7 @@ export default function FavoritesScreen() {
     }
   };
 
-  const handleSelect = () => {
+  const handleSelect = useCallback(() => {
     setIsSelectMode(true);
     
     Animated.parallel([
@@ -338,9 +338,9 @@ export default function FavoritesScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, [setIsSelectMode, shiftAnim, marginAnim, actionRowOpacity, selectTextAnim, fabOpacity, cardWidthPercentage, circleButtonOpacity, selectUnselectedDuration]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
@@ -385,9 +385,9 @@ export default function FavoritesScreen() {
         setSelectedFavFolderCards(new Set());
       });
     });
-  };
+  }, [shiftAnim, marginAnim, actionRowOpacity, selectTextAnim, fabOpacity, cardWidthPercentage, circleButtonOpacity, selectUnselectedDuration, setIsSelectMode, setSelectedFavDeckCards, setSelectedFavFolderCards]);
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (isFavFoldersMode) {
       // Use the same arrays that are being rendered in the UI
       const foldersToUse = isSearching ? searchedFavoritedFolders : filteredFavoritedFoldersByDate;
@@ -399,7 +399,7 @@ export default function FavoritesScreen() {
       const allDeckIndices = new Set(Array.from({ length: decksToUse.length }, (_, i) => i));
       setSelectedFavDeckCards(allDeckIndices);
     }
-  };
+  }, [isFavFoldersMode, isSearching, setSelectedFavFolderCards, setSelectedFavDeckCards]);
 
   const handleActionIconPress = (index: number) => {
     const hasSelection = isFavFoldersMode 
@@ -652,7 +652,7 @@ export default function FavoritesScreen() {
   };
 
   // Helper function to format date
-  const formatDate = (dateString: string): string => {
+  const formatDate = useCallback((dateString: string): string => {
     try {
       const date = new Date(dateString);
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -664,12 +664,12 @@ export default function FavoritesScreen() {
       console.error('Error formatting date:', error);
       return dateString; // Return original string if parsing fails
     }
-  };
+  }, []);
 
   // Helper function to convert null to undefined
-  const nullToUndefined = (value: string | null): string | undefined => {
+  const nullToUndefined = useCallback((value: string | null): string | undefined => {
     return value === null ? undefined : value;
-  };
+  }, []);
 
   // Sort function for decks
   const sortDecks = useCallback((decks: (Deck & { progress: number })[]) => {
@@ -737,11 +737,11 @@ export default function FavoritesScreen() {
     });
   }, [sortField, sortDirection]);
 
-  const handleSortChange = (field: SortField, direction: SortDirection) => {
+  const handleSortChange = useCallback((field: SortField, direction: SortDirection) => {
     setSortField(field);
     setSortDirection(direction);
     saveSortPreferences(field, direction);
-  };
+  }, []);
 
   // Save sort preferences to AsyncStorage with userID
   const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
@@ -1083,10 +1083,10 @@ export default function FavoritesScreen() {
     }
   }, [isSearching, isSelectMode]);
 
-  const handleSearchPress = () => {
+  const handleSearchPress = useCallback(() => {
     // This will be called when the search button is pressed
     // The actual search logic will be handled by the HeaderIconButtons component
-  };
+  }, []);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -1234,7 +1234,7 @@ export default function FavoritesScreen() {
   };
 
   // Update render functions to use filtered arrays
-  const renderFavDeckCards = () => {
+  const renderFavDeckCards = useCallback(() => {
     let decksToRender;
     if (isSearching) {
       decksToRender = searchedFavoritedDecks;
@@ -1304,9 +1304,9 @@ export default function FavoritesScreen() {
         />
       );
     });
-  };
+  }, [isSearching, searchedFavoritedDecks, filteredFavoritedDecksByDate, shouldShowDeckAnimation, sortDecks, isSelectMode, selectedFavDeckCards, cardWidthPercentage, circleButtonOpacity, imageSources, formatDate, handleFavoriteToggle, language]);
 
-  const renderFavFolderCards = () => {
+  const renderFavFolderCards = useCallback(() => {
     let foldersToRender;
     if (isSearching) {
       foldersToRender = searchedFavoritedFolders;
@@ -1366,15 +1366,15 @@ export default function FavoritesScreen() {
         />
       );
     });
-  };
+  }, [isSearching, searchedFavoritedFolders, filteredFavoritedFoldersByDate, shouldShowFolderAnimation, sortFolders, isSelectMode, selectedFavFolderCards, cardWidthPercentage, circleButtonOpacity, formatDate, handleFolderFavoriteToggle, language]);
 
-  const handleCalendarPress = () => {
+  const handleCalendarPress = useCallback(() => {
     setIsCalendarOpen(true);
-  };
+  }, []);
 
-  const handleCalendarDismiss = () => {
+  const handleCalendarDismiss = useCallback(() => {
     setIsCalendarOpen(false);
-  };
+  }, []);
 
   const styles = StyleSheet.create({
     animatedContainer: {

@@ -579,7 +579,7 @@ const StreakCalendar = () => {
               <Text
                 style={{
                   color: isToday ? '#4F41D8' : (state === 'disabled' ? '#d9e1e8' : '#2d4150'),
-                  fontFamily: 'Satoshi-Medium',
+                  fontFamily: Fonts.bodyMedium,
                   fontSize: 16,
                   zIndex: 3,
                   fontWeight: isToday ? 'bold' : 'normal',
@@ -611,9 +611,9 @@ const StreakCalendar = () => {
           textDisabledColor: '#d9e1e8',
           dotColor: '#FFCE51',
           monthTextColor: '#000000',
-          textMonthFontFamily: 'Satoshi-Medium',
-          textDayHeaderFontFamily: 'Satoshi-Regular',
-          textDayFontFamily: 'Satoshi-Regular',
+          textMonthFontFamily: Fonts.bodyMedium,
+          textDayHeaderFontFamily: Fonts.bodyMedium,
+          textDayFontFamily: Fonts.bodyMedium,
           textDayHeaderFontSize: 14,
           textMonthFontSize: 20,
           arrowColor: '#000000',

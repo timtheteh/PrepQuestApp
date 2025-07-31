@@ -1,5 +1,5 @@
 import { Animated, Dimensions, View, StyleSheet, Text, ScrollView, TouchableOpacity, Platform, Image as RNImage, ImageSourcePropType , PanResponder } from 'react-native';
-import React, { useEffect, useRef, useState, useContext } from 'react';
+import React, { useEffect, useRef, useState, useContext, useMemo, useCallback } from 'react';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
 import { useIsFocused } from '@react-navigation/native';
 import Svg, { Path, Defs, ClipPath, Polygon , Image as SvgImage } from 'react-native-svg';
@@ -15,14 +15,11 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarStatisticsHeight } from '@/hooks/heights';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
 const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
 const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
 const LargeMeshBackground4 = require('@/assets/awardsBackgrounds/LargeMeshBackground4.png');
-
-const SatoshiMedium = 'Satoshi-Medium';
 
 const CELL_HEIGHT = 90; // or any value you prefer
 const ICON_SIZE = 70;   // make icons larger to match cell size
@@ -81,13 +78,14 @@ const NumberPicker = ({ value, setValue, min, max, themeColors }: { value: numbe
       >
         {numbers.map((num, idx) => {
           // Calculate animated distance from center
-          const inputRange = [
+          const inputRange = useMemo(() => [
             (idx - 2) * ITEM_WIDTH,
             (idx - 1) * ITEM_WIDTH,
             idx * ITEM_WIDTH,
             (idx + 1) * ITEM_WIDTH,
             (idx + 2) * ITEM_WIDTH,
-          ];
+          ], [idx, ITEM_WIDTH]);
+          
           const fontSize = scrollX.interpolate({
             inputRange,
             outputRange: [16, 18, 24, 18, 16],
@@ -153,12 +151,12 @@ const CustomGoalForm = ({ setScrollEnabled, themeColors }: { setScrollEnabled?: 
   } = useContext(MenuContext);
 
   // Reset form callback
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setDecks(3);
     setDays(5);
     setSignature(null);
     setCurrentPoints([]);
-  };
+  }, []);
 
   // Register reset callback when modal opens
   useEffect(() => {
@@ -168,7 +166,7 @@ const CustomGoalForm = ({ setScrollEnabled, themeColors }: { setScrollEnabled?: 
   }, [isSubmitCustomFormModalOpen]);
 
   // Handle submit
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (!signature) return;
     setIsMenuOpen(true);
     setIsSubmitCustomFormModalOpen(true);
@@ -184,25 +182,25 @@ const CustomGoalForm = ({ setScrollEnabled, themeColors }: { setScrollEnabled?: 
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, [signature, setIsMenuOpen, setIsSubmitCustomFormModalOpen, menuOverlayOpacity, submitCustomFormModalOpacity]);
 
   // PanResponder for drawing
   const panResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponderCapture: () => true,
       onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
+      onPanResponderGrant: useCallback((evt: any, gestureState: any) => {
         // Start new stroke, clear previous signature
         setSignature(null);
         setCurrentPoints([]);
         setIsSigning(true);
         if (setScrollEnabled) setScrollEnabled(false);
-      },
-      onPanResponderMove: (evt, gestureState) => {
+      }, [setScrollEnabled]),
+      onPanResponderMove: useCallback((evt: any, gestureState: any) => {
         const { locationX, locationY } = evt.nativeEvent;
         setCurrentPoints(points => [...points, { x: locationX, y: locationY }]);
-      },
-      onPanResponderRelease: () => {
+      }, []),
+      onPanResponderRelease: useCallback(() => {
         setCurrentPoints(points => {
           if (points.length > 1) {
             setSignature(pointsToSvgPath(points));
@@ -211,12 +209,12 @@ const CustomGoalForm = ({ setScrollEnabled, themeColors }: { setScrollEnabled?: 
         });
         setIsSigning(false);
         if (setScrollEnabled) setScrollEnabled(true);
-      },
-      onPanResponderTerminate: () => {
+      }, [setScrollEnabled]),
+      onPanResponderTerminate: useCallback(() => {
         setCurrentPoints([]);
         setIsSigning(false);
         if (setScrollEnabled) setScrollEnabled(true);
-      },
+      }, [setScrollEnabled]),
     })
   ).current;
 
@@ -327,16 +325,19 @@ const StreakCalendarStats = ({ themeColors }: { themeColors: any }) => {
     streakEndDate: null
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const isFocused = useIsFocused();
+  
+  // Cache duration: 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000;
 
   // Fetch streak data
-  const fetchStreakData = async () => {
+  const fetchStreakData = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await getLongestStreakData();
       setStreakData(data);
     } catch (error) {
-      console.error('Error fetching streak data:', error);
       setStreakData({
         streakLength: 0,
         uniqueFlashcards: 0,
@@ -347,14 +348,19 @@ const StreakCalendarStats = ({ themeColors }: { themeColors: any }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Fetch data when screen comes into focus
   useEffect(() => {
     if (isFocused) {
-      fetchStreakData();
+      const now = Date.now();
+      // Only fetch if cache is expired or no data exists
+      if (now - lastFetchTime > CACHE_DURATION || streakData.streakLength === 0) {
+        fetchStreakData();
+        setLastFetchTime(now);
+      }
     }
-  }, [isFocused]);
+  }, [isFocused, fetchStreakData, lastFetchTime, CACHE_DURATION, streakData.streakLength]);
 
   return (
     <View style={{ marginHorizontal: 16, marginTop: 20,}}>
@@ -413,15 +419,31 @@ const StreakCalendarStats = ({ themeColors }: { themeColors: any }) => {
 };
 
 // Utility to get streak info for each studied date
-function getStreakInfo(studiedArr: string[]): { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' } {
+const getStreakInfo = (studiedArr: string[]): { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' } => {
   const studiedSet = new Set(studiedArr);
   const streakInfo: { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' } = {};
+  
+  // Pre-calculate date mappings to avoid repeated parsing and formatting
+  const dateMappings = new Map<string, { prev: string; next: string }>();
+  
   for (let i = 0; i < studiedArr.length; i++) {
     const date = studiedArr[i];
-    const prev = format(subDays(parseISO(date), 1), 'yyyy-MM-dd');
-    const next = format(addDays(parseISO(date), 1), 'yyyy-MM-dd');
+    if (!dateMappings.has(date)) {
+      const parsedDate = parseISO(date);
+      dateMappings.set(date, {
+        prev: format(subDays(parsedDate, 1), 'yyyy-MM-dd'),
+        next: format(addDays(parsedDate, 1), 'yyyy-MM-dd')
+      });
+    }
+  }
+  
+  // First pass: determine streak positions
+  for (let i = 0; i < studiedArr.length; i++) {
+    const date = studiedArr[i];
+    const { prev, next } = dateMappings.get(date)!;
     const isPrev = studiedSet.has(prev);
     const isNext = studiedSet.has(next);
+    
     if (isPrev && isNext) {
       streakInfo[date] = 'middle';
     } else if (!isPrev && isNext) {
@@ -432,47 +454,65 @@ function getStreakInfo(studiedArr: string[]): { [date: string]: 'start' | 'middl
       streakInfo[date] = 'single';
     }
   }
-  // Only mark as streak if part of 2+ consecutive days
+  
+  // Second pass: mark single days as 'studied' if not part of streaks
   for (let i = 0; i < studiedArr.length; i++) {
     const date = studiedArr[i];
     if (streakInfo[date] === 'single') {
-      const prev = format(subDays(parseISO(date), 1), 'yyyy-MM-dd');
-      const next = format(addDays(parseISO(date), 1), 'yyyy-MM-dd');
+      const { prev, next } = dateMappings.get(date)!;
       if (!(studiedSet.has(prev) || studiedSet.has(next))) {
         streakInfo[date] = 'studied';
       }
     }
   }
+  
   return streakInfo;
-}
+};
+
+// Memoized version of getStreakInfo to prevent recalculation when input hasn't changed
+const memoizedGetStreakInfo = (studiedArr: string[]) => {
+  return useMemo(() => getStreakInfo(studiedArr), [studiedArr]);
+};
 
 const StreakCalendar = () => {
   const [studiedDates, setStudiedDates] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const isFocused = useIsFocused();
+  
+  // Cache duration: 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000;
 
   // Fetch studied dates
-  const fetchStudiedDates = async () => {
+  const fetchStudiedDates = useCallback(async () => {
     try {
       setIsLoading(true);
       const dates = await getAllStudiedDates();
       setStudiedDates(dates);
     } catch (error) {
-      console.error('Error fetching studied dates:', error);
       setStudiedDates([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Fetch data when screen comes into focus
   useEffect(() => {
     if (isFocused) {
-      fetchStudiedDates();
+      const now = Date.now();
+      // Only fetch if cache is expired or no data exists
+      if (now - lastFetchTime > CACHE_DURATION || studiedDates.length === 0) {
+        fetchStudiedDates();
+        setLastFetchTime(now);
+      }
     }
-  }, [isFocused]);
+  }, [isFocused, fetchStudiedDates, lastFetchTime, CACHE_DURATION, studiedDates.length]);
 
-  const streakInfo = getStreakInfo(studiedDates);
+  // Use memoized streak info calculation
+  const streakInfo = memoizedGetStreakInfo(studiedDates);
+  
+  // Memoize today's date to prevent recalculation for every calendar day
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   return (
     <View style={{ marginTop: 30, width: '100%', paddingHorizontal: 16 }}>
@@ -483,15 +523,27 @@ const StreakCalendar = () => {
           if (!date) return null;
           const dateStr = date.dateString;
           const info = streakInfo[dateStr];
-          const isStreak = info === 'start' || info === 'middle' || info === 'end';
-          const isStreakStart = info === 'start';
-          const isStreakEnd = info === 'end';
-          const isStreakMiddle = info === 'middle';
-          const isStudiedOnly = info === 'studied';
           
-          // Check if this is today's date
-          const today = new Date().toISOString().split('T')[0];
-          const isToday = dateStr === today;
+          // Memoize expensive calculations for each day
+          const dayCalculations = useMemo(() => {
+            const isStreak = info === 'start' || info === 'middle' || info === 'end';
+            const isStreakStart = info === 'start';
+            const isStreakEnd = info === 'end';
+            const isStreakMiddle = info === 'middle';
+            const isStudiedOnly = info === 'studied';
+            const isToday = dateStr === today;
+            
+            return {
+              isStreak,
+              isStreakStart,
+              isStreakEnd,
+              isStreakMiddle,
+              isStudiedOnly,
+              isToday
+            };
+          }, [info, dateStr, today]);
+          
+          const { isStreak, isStreakStart, isStreakEnd, isStreakMiddle, isStudiedOnly, isToday } = dayCalculations;
           
           return (
             <View style={{ alignItems: 'center', justifyContent: 'center', width: 36, height: 36, position: 'relative' }}>
@@ -584,20 +636,29 @@ const Badge = ({ title, image, achieved, themeColors }: { title: string, image?:
   const borderWidth = 3; // visually thick border
   const padding = borderWidth; // padding to prevent clipping
   const svgSize = size + 2 * padding;
-  // Hexagon math
-  const getHexPoints = (radius: number, cx: number, cy: number) =>
-    Array.from({ length: 6 }, (_, i) => {
-      const angle = Math.PI / 3 * i - Math.PI / 2;
-      return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
-    });
-  // Outer (border) hexagon
-  const outerRadius = size / 2;
-  const outerPoints = getHexPoints(outerRadius, svgSize / 2, svgSize / 2);
-  // Inner (fill) hexagon
-  const innerRadius = outerRadius - borderWidth;
-  const innerPoints = getHexPoints(innerRadius, svgSize / 2, svgSize / 2);
-  const outerPointsStr = outerPoints.map(p => p.join(",")).join(" ");
-  const innerPointsStr = innerPoints.map(p => p.join(",")).join(" ");
+  
+  // Memoize hexagon calculations
+  const { outerPointsStr, innerPointsStr } = useMemo(() => {
+    // Hexagon math
+    const getHexPoints = (radius: number, cx: number, cy: number) =>
+      Array.from({ length: 6 }, (_, i) => {
+        const angle = Math.PI / 3 * i - Math.PI / 2;
+        return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
+      });
+    
+    // Outer (border) hexagon
+    const outerRadius = size / 2;
+    const outerPoints = getHexPoints(outerRadius, svgSize / 2, svgSize / 2);
+    
+    // Inner (fill) hexagon
+    const innerRadius = outerRadius - borderWidth;
+    const innerPoints = getHexPoints(innerRadius, svgSize / 2, svgSize / 2);
+    
+    const outerStr = outerPoints.map(p => p.join(",")).join(" ");
+    const innerStr = innerPoints.map(p => p.join(",")).join(" ");
+    
+    return { outerPointsStr: outerStr, innerPointsStr: innerStr };
+  }, [size, borderWidth, svgSize]);
   return (
     <View style={{ alignItems: 'center', width: svgSize }}>
       <Svg width={svgSize} height={svgSize} style={{ transform: [{ rotate: '90deg' }] }}>
@@ -659,22 +720,30 @@ type BadgeWallProps = {
 const BadgeWall = ({ badges, backgroundImage, title, themeColors }: BadgeWallProps & { themeColors: any }) => {
   const { language } = useLanguage();
   const [viewAll, setViewAll] = useState(false);
-  // Sort badges: non-achieved first (desc by createdDate), then achieved (desc by createdDate)
-  const sortedBadges = [
-    ...badges.filter(b => !b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
-    ...badges.filter(b => b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
-  ];
-  // Group into rows of 2
-  const badgeRows = [];
-  for (let i = 0; i < sortedBadges.length; i += 2) {
-    badgeRows.push([
-      sortedBadges[i],
-      sortedBadges[i + 1] || null,
-    ]);
-  }
-  const rowHeight = 120 + 20; // badge size + marginBottom
-  const collapsedHeight = rowHeight * 2 + 40; // 2 rows + extra margin
-  const expandedHeight = rowHeight * badgeRows.length + badgeRows.length * 25;
+  
+  // Memoize expensive calculations
+  const { sortedBadges, badgeRows, collapsedHeight, expandedHeight } = useMemo(() => {
+    // Sort badges: non-achieved first (desc by createdDate), then achieved (desc by createdDate)
+    const sorted = [
+      ...badges.filter(b => !b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+      ...badges.filter(b => b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+    ];
+    
+    // Group into rows of 2
+    const rows = [];
+    for (let i = 0; i < sorted.length; i += 2) {
+      rows.push([
+        sorted[i],
+        sorted[i + 1] || null,
+      ]);
+    }
+    
+    const rowHeight = 120 + 20; // badge size + marginBottom
+    const collapsed = rowHeight * 2 + 40; // 2 rows + extra margin
+    const expanded = rowHeight * rows.length + rows.length * 25;
+    
+    return { sortedBadges: sorted, badgeRows: rows, collapsedHeight: collapsed, expandedHeight: expanded };
+  }, [badges]);
   const anim = useRef(new Animated.Value(collapsedHeight)).current;
   useEffect(() => {
     Animated.timing(anim, {
@@ -740,7 +809,7 @@ const BadgeWall = ({ badges, backgroundImage, title, themeColors }: BadgeWallPro
       {/* Toggle Button at the bottom */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <TouchableOpacity
-          onPress={() => setViewAll(v => !v)}
+          onPress={useCallback(() => setViewAll(v => !v), [])}
           style={{
             width: 100,
             height: 48,
@@ -1496,14 +1565,12 @@ const dummyBadges5 = [
 export default function AwardsScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const achievementsContentAnim = useRef(new Animated.Value(0)).current;
-  const screenHeight = Dimensions.get('window').height;
   const [isAchievements, setIsAchievements] = useState(false);
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
   const isFocused = useIsFocused();
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const { language } = useLanguage();
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
   const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
   
   const themeColors = Colors[theme];
@@ -1530,7 +1597,7 @@ export default function AwardsScreen() {
     }
   }, [isFocused]);
 
-  const handleToggle = (val: boolean) => {
+  const handleToggle = useCallback((val: boolean) => {
     if (val) {
       // Switching to Achievements
       Animated.sequence([
@@ -1578,7 +1645,7 @@ export default function AwardsScreen() {
       }).start();
       });
     }
-  };
+  }, [fadeAnim, achievementsContentAnim]);
 
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>

@@ -11,6 +11,10 @@ import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarStatisticsHeight } from '@/hooks/heights';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
@@ -23,7 +27,7 @@ const SatoshiMedium = 'Satoshi-Medium';
 const CELL_HEIGHT = 90; // or any value you prefer
 const ICON_SIZE = 70;   // make icons larger to match cell size
 
-const NumberPicker = ({ value, setValue, min, max }: { value: number, setValue: (v: number) => void, min: number, max: number }) => {
+const NumberPicker = ({ value, setValue, min, max, themeColors }: { value: number, setValue: (v: number) => void, min: number, max: number, themeColors: any }) => {
   const numbers = Array.from({ length: max - min + 1 }, (_, i) => min + i);
   const ITEM_WIDTH = 40;
   const scrollRef = React.useRef<ScrollView>(null);
@@ -96,7 +100,7 @@ const NumberPicker = ({ value, setValue, min, max }: { value: number, setValue: 
           });
           const color = scrollX.interpolate({
             inputRange,
-            outputRange: ['#bbb', '#888', '#222', '#888', '#bbb'],
+            outputRange: [themeColors.unselectedText, '#888', themeColors.text, '#888', themeColors.unselectedText],
             extrapolate: 'clamp',
           });
           const fontWeight = scrollX.interpolate({
@@ -111,7 +115,7 @@ const NumberPicker = ({ value, setValue, min, max }: { value: number, setValue: 
             >
               <Animated.Text
                 style={{
-                  fontFamily: SatoshiMedium,
+                  fontFamily: Fonts.bodyMedium,
                   fontSize,
                   color,
                   opacity,
@@ -128,7 +132,7 @@ const NumberPicker = ({ value, setValue, min, max }: { value: number, setValue: 
   );
 };
 
-const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boolean) => void }) => {
+const CustomGoalForm = ({ setScrollEnabled, themeColors }: { setScrollEnabled?: (enabled: boolean) => void, themeColors: any }) => {
   const { language } = useLanguage();
   const [decks, setDecks] = useState(3);
   const [days, setDays] = useState(5);
@@ -227,10 +231,10 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
       style={{
         width: '90%',
         height: 250,
-        backgroundColor: '#F8F8F8',
+        backgroundColor: themeColors.secondaryShade,
         marginTop: 15,
         borderRadius: 30,
-        borderColor: '#4F41D8',
+        borderColor: themeColors.brandColor2,
         borderWidth: 3,
         justifyContent: 'center',
         alignItems: 'center',
@@ -239,27 +243,27 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
       <View style={{ flex: 1, width: '100%', flexDirection: 'column', paddingHorizontal: 10, paddingVertical: 20, justifyContent: 'center' }}>
         <View style={{ paddingLeft: 20}}>
           {/* First line: intro text */}
-          <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222', textAlign: 'justify', lineHeight: 30, }}>
-            {language === 'Chinese' ? '为了实现我的目标，我承诺' : 'To achieve my goals, I pledge to'}
+          <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 20, color: themeColors.text, textAlign: 'justify', lineHeight: 30, }}>
+            {strings[language].toAchieveGoals}
           </Text>
-          <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222', textAlign: 'justify', lineHeight: 30}}>
-            {language === 'Chinese' ? '努力学习，通过学习' : 'study diligently by studying'}
+          <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 20, color: themeColors.text, textAlign: 'justify', lineHeight: 30}}>
+            {strings[language].studyDiligently}
           </Text>
           {/* Second line: decks number picker */}
           <View style={{ flexDirection: 'row', alignItems: 'center', }}>
-            <NumberPicker value={decks} setValue={setDecks} min={1} max={30} />
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222', lineHeight: 30}}>
-              {language === 'Chinese' ? '天连续的卡组' : 'decks continuously'}
+            <NumberPicker value={decks} setValue={setDecks} min={1} max={30} themeColors={themeColors} />
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 20, color: themeColors.text, lineHeight: 30}}>
+              {strings[language].decksContinuously}
             </Text>
           </View>
           {/* Fourth line: days number picker and 'days.' */}
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222',}}>
-              {language === 'Chinese' ? '持续' : 'for '}
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 20, color: themeColors.text,}}>
+              {strings[language].forDays}
             </Text>
-            <NumberPicker value={days} setValue={setDays} min={1} max={100} />
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#222',}}>
-              {language === 'Chinese' ? '天。' : 'days.'}
+            <NumberPicker value={days} setValue={setDays} min={1} max={100} themeColors={themeColors} />
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 20, color: themeColors.text,}}>
+              {strings[language].daysPeriod}
             </Text>
           </View>
         </View>
@@ -270,10 +274,10 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
         <TouchableOpacity disabled={!signature || isSubmitCustomFormModalOpen} onPress={handleSubmit}>
           <Text style={{
             fontSize: 20,
-            fontFamily: 'Satoshi-Medium',
-            color: signature && !isSubmitCustomFormModalOpen ? '#44B88A' : '#D5D4DD',
+            fontFamily: Fonts.bodyMedium,
+            color: signature && !isSubmitCustomFormModalOpen ? themeColors.brandColor1 : themeColors.unselectedText,
             marginTop: 50
-          }}>{language === 'Chinese' ? '提交' : 'Submit'}</Text>
+          }}>{strings[language].submit}</Text>
         </TouchableOpacity>
         {/* Signature area */}
         <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'flex-end', marginLeft: 30, height: 75}}>
@@ -295,14 +299,14 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
             </View>
             {/* Placeholder text */}
             {!signature && !isSigning && (
-              <Text style={{ fontFamily: 'CedarvilleCursive-Regular', fontSize: 28, color: '#111', marginBottom: -8, position: "absolute",bottom: 0, textAlign: 'center', width: signatureWidth, zIndex: 1 }}>
-                sign here
+              <Text style={{ fontFamily: Fonts.cursive, fontSize: 28, color: themeColors.text, marginBottom: -8, position: "absolute",bottom: 0, textAlign: 'center', width: signatureWidth, zIndex: 1 }}>
+                {strings[language].signHere}
               </Text>
             )}
-            <View style={{ height: 2, backgroundColor: '#111', width: '100%', marginTop: signatureHeight - 2, zIndex: 0 }} />
+            <View style={{ height: 2, backgroundColor: themeColors.text, width: '100%', marginTop: signatureHeight - 2, zIndex: 0 }} />
           </View>
-          <Text style={{ fontFamily: 'Satoshi-Italic', fontSize: 12, color: '#222', textAlign: 'center', position: 'absolute', left: 0, right: 0, bottom:-13}}>
-            {language === 'Chinese' ? '（单指签名）' : '(single finger stroke)'}
+          <Text style={{ fontFamily: Fonts.bodyItalic, fontSize: 12, color: themeColors.text, textAlign: 'center', position: 'absolute', left: 0, right: 0, bottom:-13}}>
+            {strings[language].singleFingerStroke}
           </Text>
         </View>
       </View>
@@ -313,7 +317,7 @@ const CustomGoalForm = ({ setScrollEnabled }: { setScrollEnabled?: (enabled: boo
   );
 }
 
-const StreakCalendarStats = () => {
+const StreakCalendarStats = ({ themeColors }: { themeColors: any }) => {
   const { language } = useLanguage();
   const [streakData, setStreakData] = useState<LongestStreakData>({
     streakLength: 0,
@@ -356,7 +360,7 @@ const StreakCalendarStats = () => {
     <View style={{ marginHorizontal: 16, marginTop: 20,}}>
       {/* First row - Title */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={styles.title}>{language === 'Chinese' ? '最长连续天数' : 'Longest Streak'}</Text>
+        <Text style={styles.title}>{strings[language].longestStreak}</Text>
       </View>
 
       {/* 3x3 Grid */}
@@ -367,12 +371,12 @@ const StreakCalendarStats = () => {
             <FireIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}} />
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center", }}>
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 48, color: themeColors.text, width:150, textAlign: "center", }}>
               {isLoading ? '...' : streakData.streakLength}
             </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: language === 'Chinese' ? 30 : 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>{language === 'Chinese' ? '天' : 'days'}</Text>
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: language === 'Chinese' ? 30 : 20, color: themeColors.text, marginLeft: 150, width: 100, textAlign: "left"}}>{strings[language].days}</Text>
           </View>
         </View>
         {/* Row 2 */}
@@ -381,12 +385,12 @@ const StreakCalendarStats = () => {
             <DecksStudiedIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}}/>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000',width:150, textAlign: "center"}}>
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 48, color: themeColors.text,width:150, textAlign: "center"}}>
               {isLoading ? '...' : streakData.uniqueDecks}
             </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>{language === 'Chinese' ? '已学习' : 'decks'}{'\n'}{language === 'Chinese' ? '卡片组' : 'studied'}</Text>
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 20, color: themeColors.text, marginLeft: 150, width: 100, textAlign: "left"}}>{strings[language].decksStudied}</Text>
           </View>
         </View>
         {/* Row 3 */}
@@ -395,12 +399,12 @@ const StreakCalendarStats = () => {
             <FlashcardsStudiedIcon width={60} height={60} style={{marginRight: 110}}/>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 48, color: '#000', width:150, textAlign: "center"}}>
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 48, color: themeColors.text, width:150, textAlign: "center"}}>
               {isLoading ? '...' : streakData.uniqueFlashcards}
             </Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: SatoshiMedium, fontSize: 20, color: '#000', marginLeft: 150, width: 100, textAlign: "left"}}>{language === 'Chinese' ? '已学习' : 'flashcards'}{'\n'}{language === 'Chinese' ? '卡片' : 'studied'}</Text>
+            <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 20, color: themeColors.text, marginLeft: 150, width: 100, textAlign: "left"}}>{strings[language].flashcardsStudied}</Text>
           </View>
         </View>
       </View>
@@ -575,7 +579,7 @@ interface BadgeData {
   badgeExpiryDate?: string;
 }
 
-const Badge = ({ title, image, achieved }: { title: string, image?: ImageSourcePropType, achieved: boolean }) => {
+const Badge = ({ title, image, achieved, themeColors }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any }) => {
   const size = 120;
   const borderWidth = 3; // visually thick border
   const padding = borderWidth; // padding to prevent clipping
@@ -600,7 +604,7 @@ const Badge = ({ title, image, achieved }: { title: string, image?: ImageSourceP
         {/* Border hexagon (no stroke, just fill) */}
         <Polygon
           points={outerPointsStr}
-          fill={achieved ? '#000' : '#D5D4DD'}
+          fill={achieved ? themeColors.text : themeColors.unselectedText}
         />
         {/* Fill hexagon (image or white) */}
         {image ? (
@@ -619,22 +623,22 @@ const Badge = ({ title, image, achieved }: { title: string, image?: ImageSourceP
             />
           </>
         ) : (
-          <Polygon points={innerPointsStr} fill="#fff" />
+          <Polygon points={innerPointsStr} fill={themeColors.background} />
         )}
         {/* Grey overlay for pending state */}
         {!achieved && (
           <Polygon
             points={innerPointsStr}
-            fill="rgba(213, 212, 221, 0.2)"
+            fill={`${themeColors.unselectedText}33`}
             pointerEvents="none"
           />
         )}
       </Svg>
       <Text
         style={{
-          fontFamily: SatoshiMedium,
+          fontFamily: Fonts.bodyMedium,
           fontSize: 16,
-          color: achieved ? '#000' : 'rgba(0, 0, 0, 0.5)',
+          color: achieved ? themeColors.text : `${themeColors.text}80`,
           marginTop: 0,
           textAlign: 'center',
         }}
@@ -652,7 +656,7 @@ type BadgeWallProps = {
   title: string,
 };
 
-const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
+const BadgeWall = ({ badges, backgroundImage, title, themeColors }: BadgeWallProps & { themeColors: any }) => {
   const { language } = useLanguage();
   const [viewAll, setViewAll] = useState(false);
   // Sort badges: non-achieved first (desc by createdDate), then achieved (desc by createdDate)
@@ -702,7 +706,7 @@ const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
       />
       {/* Content column */}
       <View style={{ margin: 10, flex: 1 }}>
-        <Text style={{ fontFamily: 'Neuton-Regular', fontSize: 36, color: '#000', marginBottom: 10, textAlign: 'center' }}>
+        <Text style={{ fontFamily: Fonts.title, fontSize: 36, color: themeColors.text, marginBottom: 10, textAlign: 'center' }}>
           {title}
         </Text>
         {/* Animated badge grid */}
@@ -715,6 +719,7 @@ const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
                     title={row[0].badgeTitle}
                     achieved={row[0].achieved}
                     image={row[0].badgeImage}
+                    themeColors={themeColors}
                   />
                 )}
               </View>
@@ -724,6 +729,7 @@ const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
                     title={row[1].badgeTitle}
                     achieved={row[1].achieved}
                     image={row[1].badgeImage}
+                    themeColors={themeColors}
                   />
                 )}
               </View>
@@ -738,7 +744,7 @@ const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
           style={{
             width: 100,
             height: 48,
-            backgroundColor: '#4F41D8',
+            backgroundColor: themeColors.brandColor2,
             borderRadius: 10,
             alignItems: 'center',
             justifyContent: 'center',
@@ -747,9 +753,9 @@ const BadgeWall = ({ badges, backgroundImage, title }: BadgeWallProps) => {
           <Text style={{
             color: '#fff',
             fontSize: 16,
-            fontFamily: 'Satoshi-Medium',
+            fontFamily: Fonts.bodyMedium,
             textAlign: 'center',
-          }}>{viewAll ? (language === 'Chinese' ? '收起' : 'Collapse') : (language === 'Chinese' ? '查看所有' : 'View All')}</Text>
+          }}>{viewAll ? strings[language].collapse : strings[language].viewAll}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -1496,8 +1502,11 @@ export default function AwardsScreen() {
   const isFocused = useIsFocused();
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
+  
+  const themeColors = Colors[theme];
 
   useEffect(() => {
     if (isFocused) {
@@ -1572,11 +1581,11 @@ export default function AwardsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <View style={{ flex: 1, backgroundColor: themeColors.background }}>
               <View style={{ marginTop: getTopBarStatisticsHeight(), paddingHorizontal: 16 }}>
         <RoundedContainer
-          leftLabel={language === 'Chinese' ? '目标' : 'Goals'}
-          rightLabel={language === 'Chinese' ? '成就' : 'Achievements'}
+          leftLabel={strings[language].goals}
+          rightLabel={strings[language].achievements}
           onToggle={handleToggle}
           position={isAchievements ? 'right' : 'left'}
           disableAnimation={disableToggleAnimation}
@@ -1591,9 +1600,9 @@ export default function AwardsScreen() {
             style={{ marginBottom: 40, marginTop: 20 }}
           >
         <View style={styles.wrapper}>
-          <Text style={[styles.title, language === 'Chinese' && {marginTop: 20}]}>{language === 'Chinese' ? '在这里填写你\n的自定义目标!' : 'Fill in your custom goal here!'}</Text>
-              <CustomGoalForm setScrollEnabled={setScrollEnabled} />
-              <StreakCalendarStats />
+                      <Text style={[styles.title, language === 'Chinese' && {marginTop: 20}, { color: themeColors.text }]}>{strings[language].fillInCustomGoal}</Text>
+                            <CustomGoalForm setScrollEnabled={setScrollEnabled} themeColors={themeColors} />
+                <StreakCalendarStats themeColors={themeColors} />
               <StreakCalendar />
         </View>
             <View style={{ height: 20 }}></View>
@@ -1618,11 +1627,11 @@ export default function AwardsScreen() {
             style={{ marginBottom: 40, marginTop: 20, marginHorizontal: 16 }}
           >
             <View style={{ flexDirection: 'column', gap: 30 }}>
-              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={language === 'Chinese' ? '自定义徽章' : 'Custom Badges'} />
-              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title={language === 'Chinese' ? '每日连续天数徽章' : 'Daily Streak Badges'} />
-              <BadgeWall badges={dummyBadges3} backgroundImage={LargeMeshBackground3} title={language === 'Chinese' ? '每周连续天数徽章' : 'Weekly Streak Badges'} />
-              <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title={language === 'Chinese' ? '欢迎徽章' : 'Welcome Badges'} />
-              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={language === 'Chinese' ? '终身徽章' : 'Lifetime Badges'} />
+              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />
+              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title={strings[language].dailyStreakBadges} themeColors={themeColors} />
+              <BadgeWall badges={dummyBadges3} backgroundImage={LargeMeshBackground3} title={strings[language].weeklyStreakBadges} themeColors={themeColors} />
+              <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title={strings[language].welcomeBadges} themeColors={themeColors} />
+              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].lifetimeBadges} themeColors={themeColors} />
             </View>
           </ScrollView>
     </Animated.View>
@@ -1639,10 +1648,9 @@ const styles = StyleSheet.create({
     marginTop: -10
   },
   title: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 32,
     textAlign: 'center',
-    color: '#000',
     includeFontPadding: false,
   },
 });

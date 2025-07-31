@@ -4,7 +4,7 @@ import { Title } from '@/components/general/Title';
 import { FolderCard } from '@/components/folderComponents/FolderCard';
 import { ActionButtonsRow } from '@/components/general/ActionButtonsRow';
 import { Feather } from '@expo/vector-icons';
-import { useState, useRef, useContext, useEffect } from 'react';
+import { useState, useRef, useContext, useEffect, useCallback, useMemo } from 'react';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -424,7 +424,7 @@ export default function FoldersScreen() {
   }, [isSearching, isSelectMode]);
 
   // Helper function to format date
-  const formatDate = (dateString: string): string => {
+  const formatDate = useCallback((dateString: string): string => {
     try {
       const date = new Date(dateString);
       if (language === 'Chinese') {
@@ -442,10 +442,10 @@ export default function FoldersScreen() {
     } catch (error) {
       return dateString; // Return original string if parsing fails
     }
-  };
+  }, [language]);
 
   // Sort function for folders
-  const sortFolders = (folders: Folder[]) => {
+  const sortFolders = useCallback((folders: Folder[]) => {
     return [...folders].sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -475,16 +475,16 @@ export default function FoldersScreen() {
       }
       return 0;
     });
-  };
+  }, [sortField, sortDirection]);
 
-  const handleSortChange = (field: SortField, direction: SortDirection) => {
+  const handleSortChange = useCallback((field: SortField, direction: SortDirection) => {
     setSortField(field);
     setSortDirection(direction);
     saveSortPreferences(field, direction);
-  };
+  }, []);
 
   // Save sort preferences to AsyncStorage with userID
-  const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
+  const saveSortPreferences = useCallback(async (field: SortField, direction: SortDirection) => {
     try {
       const userID = await getCurrentUserID();
       const userSpecificFieldKey = `${FOLDERS_SORT_FIELD_KEY}_${userID}`;
@@ -496,10 +496,10 @@ export default function FoldersScreen() {
       ]);
     } catch (error) {
     }
-  };
+  }, []);
 
   // Load sort preferences from AsyncStorage with userID
-  const loadSortPreferences = async () => {
+  const loadSortPreferences = useCallback(async () => {
     try {
       const userID = await getCurrentUserID();
       const userSpecificFieldKey = `${FOLDERS_SORT_FIELD_KEY}_${userID}`;
@@ -518,9 +518,9 @@ export default function FoldersScreen() {
       }
     } catch (error) {
     }
-  };
+  }, []);
 
-  const handleSelect = () => {
+  const handleSelect = useCallback(() => {
     setIsSelectMode(true);
     
     Animated.parallel([
@@ -560,9 +560,9 @@ export default function FoldersScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
@@ -603,9 +603,9 @@ export default function FoldersScreen() {
       setIsSelectMode(false);
       setSelectedFolders(new Set());
     });
-  };
+  }, []);
 
-  const handleActionIconPress = (index: number) => {
+  const handleActionIconPress = useCallback((index: number) => {
     const hasSelection = selectedFolders.size > 0;
 
     if (!hasSelection) {
@@ -646,9 +646,9 @@ export default function FoldersScreen() {
         })
       ]).start();
     }
-  };
+  }, [selectedFolders.size, strings, language]);
 
-  const handleFabPress = async () => {
+  const handleFabPress = useCallback(async () => {
     try {
       
       const { success, newFolder } = await createNewFolder();
@@ -671,9 +671,9 @@ export default function FoldersScreen() {
       }
     } catch (error) {
     }
-  };
+  }, [folders, isSearching, sortFolders]);
 
-  const handleMenuPress = () => {
+  const handleMenuPress = useCallback(() => {
     setIsMenuOpen(true);
     setShowSlidingMenu(true);
     Animated.parallel([
@@ -688,31 +688,31 @@ export default function FoldersScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, []);
 
-  const handleSparklesPress = () => {
+  const handleSparklesPress = useCallback(() => {
     setIsMenuOpen(true);
     Animated.timing(menuOverlayOpacity, {
       toValue: 0.4,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  };
+  }, []);
 
-  const handleCalendarPress = () => {
+  const handleCalendarPress = useCallback(() => {
     setIsCalendarOpen(true);
-  };
+  }, []);
 
-  const handleCalendarDismiss = () => {
+  const handleCalendarDismiss = useCallback(() => {
     setIsCalendarOpen(false);
-  };
+  }, []);
 
-  const handleSearchPress = () => {
+  const handleSearchPress = useCallback(() => {
     // This will be called when the search button is pressed
     // The actual search logic will be handled by the HeaderIconButtons component
-  };
+  }, []);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setIsSearching(query.length > 0);
     
@@ -732,9 +732,9 @@ export default function FoldersScreen() {
       const sortedFilteredFolders = sortFolders(filtered);
       setFilteredFolders(sortedFilteredFolders);
     }
-  };
+  }, [folders, sortFolders]);
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     // Clear selections first to prevent render issues
     setSelectedFolders(new Set());
     
@@ -745,7 +745,7 @@ export default function FoldersScreen() {
     // Reset filtered data with sorting applied
     const sortedFolders = sortFolders(folders);
     setFilteredFolders(sortedFolders);
-  };
+  }, [folders, sortFolders]);
 
   const selectOpacity = selectTextAnim.interpolate({
     inputRange: [0, 1],
@@ -757,11 +757,11 @@ export default function FoldersScreen() {
     outputRange: [0, 1],
   });
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     const foldersToUse = isSearching ? filteredFolders : folders;
     const allFolderIndices = new Set(Array.from({ length: foldersToUse.length }, (_, i) => i));
     setSelectedFolders(allFolderIndices);
-  };
+  }, [isSearching, filteredFolders, folders]);
 
   const handleDone = async () => {
     // Handle the done action for AddToFolders or MoveToFolders mode
@@ -1179,7 +1179,7 @@ export default function FoldersScreen() {
   };
 
   // Filter folders by dateAdded according to calendarFilter
-  function filterFoldersByDate(folders: Folder[]): Folder[] {
+  const filterFoldersByDate = useCallback((folders: Folder[]): Folder[] => {
     if (calendarFilter === 'all' || !calendarFilter) return folders;
     const now = new Date();
     return folders.filter((folder: Folder) => {
@@ -1219,16 +1219,23 @@ export default function FoldersScreen() {
       }
       return true;
     });
-  }
+  }, [calendarFilter, calendarCustomDate]);
 
   // Calculate filtered folders for counts and rendering
-  const filteredFoldersByDate = filterFoldersByDate(folders);
+  const filteredFoldersByDate = useMemo(() => filterFoldersByDate(folders), [folders, filterFoldersByDate]);
+  
   // Calculate search results (search always searches all folders, ignoring calendar filter)
-  const searchedFolders = folders.filter(folder =>
-    folder.folderName.toLowerCase().includes(searchQuery.toLowerCase())
+  const searchedFolders = useMemo(() => 
+    folders.filter(folder =>
+      folder.folderName.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [folders, searchQuery]
   );
+  
   // For counts in UI:
-  const foldersCountToShow = isSearching ? searchedFolders.length : filteredFoldersByDate.length;
+  const foldersCountToShow = useMemo(() => 
+    isSearching ? searchedFolders.length : filteredFoldersByDate.length, 
+    [isSearching, searchedFolders.length, filteredFoldersByDate.length]
+  );
 
   // Manage animation states and ensure FAB button visibility
   useEffect(() => {
@@ -1249,7 +1256,7 @@ export default function FoldersScreen() {
     }
   }, [filteredFoldersByDate.length, searchedFolders.length, isSearching, isSelectMode]);
 
-  const renderFolderCards = () => {
+  const renderFolderCards = useCallback(() => {
     const foldersToRender = isSearching ? searchedFolders : filteredFoldersByDate;
     
     // If no folders to render, show empty state
@@ -1321,7 +1328,7 @@ export default function FoldersScreen() {
       );
     });
     return cards;
-  };
+  }, [isSearching, searchedFolders, filteredFoldersByDate, shouldShowAnimation, strings, language, sortFolders, isSelectMode, selectedFolders, cardWidthPercentage, circleButtonOpacity, formatDate, handleFolderFavoriteToggle, router]);
 
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>

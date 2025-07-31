@@ -2489,3 +2489,156 @@ export async function checkAIDeckSavedStatus(deckId: number): Promise<boolean> {
     return false;
   }
 }
+
+export async function createNewFavoritedFolder(): Promise<{ success: boolean; newFolder?: Folder }> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Check for existing folders that start with "New Folder"
+    const existingNewFoldersResult = await db.getAllAsync(`
+      SELECT folderName
+      FROM folders
+      WHERE folderName LIKE 'New Folder%' AND userID = ?
+      ORDER BY folderName
+    `, [userID]);
+    
+    const existingNewFolders = existingNewFoldersResult as Array<{ folderName: string }>;
+    
+    let newFolderName: string;
+    
+    if (existingNewFolders.length === 0) {
+      // No existing "New Folder" folders, use just "New Folder"
+      newFolderName = 'New Folder';
+    } else {
+      // Find the highest number used in existing "New Folder" names
+      const numbers = existingNewFolders.map(folder => {
+        const match = folder.folderName.match(/New Folder(?: (\d+))?$/);
+        if (match) {
+          // If there's a number, use it; otherwise, it's "New Folder" (no number)
+          return match[1] ? parseInt(match[1]) : 0;
+        }
+        return 0;
+      });
+      
+      const maxNumber = Math.max(...numbers);
+      const nextNumber = maxNumber + 1;
+      newFolderName = `New Folder ${nextNumber}`;
+    }
+    
+    // Insert the new folder into the database with isFavorited = 1
+    await db.execAsync(`
+      INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited, userID)
+      VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 1, '${userID}')
+    `);
+    
+    // Get the ID of the newly inserted folder
+    const newFolderResult = await db.getFirstAsync(`
+      SELECT folderID, folderName, dateAdded, lastModifiedDate, isFavorited
+      FROM folders 
+      WHERE folderName = '${newFolderName}' AND userID = ?
+      ORDER BY folderID DESC
+      LIMIT 1
+    `, [userID]);
+    
+    if (newFolderResult) {
+      const newFolder = newFolderResult as {
+        folderID: number;
+        folderName: string;
+        dateAdded: string;
+        lastModifiedDate: string;
+        isFavorited: number;
+      };
+      
+      // Create the new folder object with deckCount set to 0
+      const newFolderObject: Folder = {
+        ...newFolder,
+        deckCount: 0
+      };
+      
+      console.log('Successfully created new favorited folder:', newFolderName);
+      return { success: true, newFolder: newFolderObject };
+    } else {
+      console.error('Failed to retrieve the newly created folder');
+      return { success: false };
+    }
+  } catch (error) {
+    console.error('Error creating new favorited folder:', error);
+    return { success: false };
+  }
+}
+
+export async function unfavoriteMultipleDecks(deckIds: number[]): Promise<boolean> {
+  try {
+    if (deckIds.length === 0) {
+      return true;
+    }
+    
+    const userID = await getCurrentUserID();
+    const deckIdsString = deckIds.join(',');
+    
+    await db.execAsync(`
+      UPDATE decks 
+      SET isFavorited = 0
+      WHERE deckID IN (${deckIdsString}) AND userID = '${userID}'
+    `);
+    
+    console.log(`Successfully unfavorited ${deckIds.length} deck(s)`);
+    return true;
+  } catch (error) {
+    console.error('Error unfavoriting decks:', error);
+    return false;
+  }
+}
+
+export async function unfavoriteMultipleFolders(folderIds: number[]): Promise<boolean> {
+  try {
+    if (folderIds.length === 0) {
+      return true;
+    }
+    
+    const userID = await getCurrentUserID();
+    const folderIdsString = folderIds.join(',');
+    
+    await db.execAsync(`
+      UPDATE folders 
+      SET isFavorited = 0
+      WHERE folderID IN (${folderIdsString}) AND userID = '${userID}'
+    `);
+    
+    console.log(`Successfully unfavorited ${folderIds.length} folder(s)`);
+    return true;
+  } catch (error) {
+    console.error('Error unfavoriting folders:', error);
+    return false;
+  }
+}
+
+export async function updateFolderFavoriteStatus(folderId: number, isFavorited: boolean): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    const newFavoritedValue = isFavorited ? 1 : 0;
+    
+    await db.execAsync(`
+      UPDATE folders 
+      SET isFavorited = ${newFavoritedValue}
+      WHERE folderID = ${folderId} AND userID = '${userID}'
+    `);
+    return true;
+  } catch (error) {
+    console.error('Error updating folder favorite status:', error);
+    return false;
+  }
+}
+
+export async function checkDatabaseReady(): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    // Try a simple query to check if database is ready
+    const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
+    console.log('Database is ready, decks count:', (result[0] as any)?.count);
+    return true;
+  } catch (error) {
+    console.log('Database not ready yet:', error);
+    return false;
+  }
+}

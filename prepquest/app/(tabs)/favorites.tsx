@@ -13,7 +13,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders, getCompanyIconImageSource } from '@/db/decks';
+import { getFavoritedDecks, getFavoritedFolders, Deck, Folder, deleteMultipleDecks, deleteMultipleFolders, getCompanyIconImageSource, createNewFavoritedFolder, unfavoriteMultipleDecks, unfavoriteMultipleFolders, updateFolderFavoriteStatus, updateDeckFavoriteStatus, checkDatabaseReady } from '@/db/decks';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -37,16 +37,16 @@ const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
+// Helper function to get current userID from AsyncStorage for sort preferences
+async function getCurrentUserIDForPreferences(): Promise<string> {
   try {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }
+
 
 export default function FavoritesScreen() {
   const [isFavFoldersMode, setIsFavFoldersMode] = useState(false);
@@ -260,70 +260,11 @@ export default function FavoritesScreen() {
       try {
         console.log("Favorite Folders FAB clicked!");
         
-        const userID = await getCurrentUserID();
-        // Check for existing folders that start with "New Folder" from the entire folders table
-        const existingNewFoldersResult = await db.getAllAsync(`
-          SELECT folderName
-          FROM folders
-          WHERE folderName LIKE 'New Folder%' AND userID = ?
-          ORDER BY folderName
-        `, [userID]);
+        const result = await createNewFavoritedFolder();
         
-        const existingNewFolders = existingNewFoldersResult as Array<{ folderName: string }>;
-        
-        let newFolderName: string;
-        
-        if (existingNewFolders.length === 0) {
-          // No existing "New Folder" folders, use just "New Folder"
-          newFolderName = 'New Folder';
-        } else {
-          // Find the highest number used in existing "New Folder" names
-          const numbers = existingNewFolders.map(folder => {
-            const match = folder.folderName.match(/New Folder(?: (\d+))?$/);
-            if (match) {
-              // If there's a number, use it; otherwise, it's "New Folder" (no number)
-              return match[1] ? parseInt(match[1]) : 0;
-            }
-            return 0;
-          });
-          
-          const maxNumber = Math.max(...numbers);
-          const nextNumber = maxNumber + 1;
-          newFolderName = `New Folder ${nextNumber}`;
-        }
-        
-        // Insert the new folder into the database with isFavorited = 1
-        const result = await db.execAsync(`
-          INSERT INTO folders (folderName, dateAdded, lastModifiedDate, isFavorited, userID)
-          VALUES ('${newFolderName}', '${new Date().toISOString()}', '${new Date().toISOString()}', 1, '${userID}')
-        `);
-        
-        // Get the ID of the newly inserted folder
-        const newFolderResult = await db.getFirstAsync(`
-          SELECT folderID, folderName, dateAdded, lastModifiedDate, isFavorited
-          FROM folders 
-          WHERE folderName = '${newFolderName}' AND userID = ?
-          ORDER BY folderID DESC
-          LIMIT 1
-        `, [userID]);
-        
-        if (newFolderResult) {
-          const newFolder = newFolderResult as {
-            folderID: number;
-            folderName: string;
-            dateAdded: string;
-            lastModifiedDate: string;
-            isFavorited: number;
-          };
-          
-          // Create the new folder object with deckCount set to 0
-          const newFolderObject: Folder = {
-            ...newFolder,
-            deckCount: 0
-          };
-          
+        if (result.success && result.newFolder) {
           // Add the new folder to the local state
-          const updatedFolders = [...favoritedFolders, newFolderObject];
+          const updatedFolders = [...favoritedFolders, result.newFolder];
           setFavoritedFolders(updatedFolders);
           
           // Update filtered folders if not searching
@@ -332,9 +273,9 @@ export default function FavoritesScreen() {
             setFilteredFavoritedFolders(sortedUpdatedFolders);
           }
           
-          console.log('Successfully created new favorited folder:', newFolderName);
+          console.log('Successfully created new favorited folder:', result.newFolder.folderName);
         } else {
-          console.error('Failed to retrieve the newly created folder');
+          console.error('Failed to create new favorited folder');
         }
       } catch (error) {
         console.error('Error creating new favorited folder:', error);
@@ -646,33 +587,27 @@ export default function FavoritesScreen() {
       }
 
       // Update database to unfavorite the selected decks
-      const deckIdsString = selectedDeckIds.join(',');
-      const userID = await getCurrentUserID();
-      await db.execAsync(`
-        UPDATE decks 
-        SET isFavorited = 0
-        WHERE deckID IN (${deckIdsString}) AND userID = '${userID}'
-      `);
+      const success = await unfavoriteMultipleDecks(selectedDeckIds);
 
-      // Remove from local state
-      const remainingDecks = favoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
-      setFavoritedDecks(remainingDecks);
-      
-      // Update filtered decks if searching
-      if (isSearching) {
-        const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
-        setFilteredFavoritedDecks(remainingFilteredDecks);
+      if (success) {
+        // Remove from local state
+        const remainingDecks = favoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+        setFavoritedDecks(remainingDecks);
+        
+        // Update filtered decks if searching
+        if (isSearching) {
+          const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+          setFilteredFavoritedDecks(remainingFilteredDecks);
+        }
+        
+        // Clear selections
+        setSelectedFavDeckCards(new Set());
+
+        // Exit selection mode
+        setTimeout(() => {
+          handleCancel();
+        }, 0);
       }
-      
-      // Clear selections
-      setSelectedFavDeckCards(new Set());
-
-      // Exit selection mode
-      setTimeout(() => {
-        handleCancel();
-      }, 0);
-      
-      console.log(`Successfully unfavorited ${selectedDeckIds.length} deck(s)`);
     } catch (error) {
       console.error('Error unfavoriting decks:', error);
     }
@@ -690,33 +625,27 @@ export default function FavoritesScreen() {
       }
 
       // Update database to unfavorite the selected folders
-      const folderIdsString = selectedFolderIds.join(',');
-      const userID = await getCurrentUserID();
-      await db.execAsync(`
-        UPDATE folders 
-        SET isFavorited = 0
-        WHERE folderID IN (${folderIdsString}) AND userID = '${userID}'
-      `);
+      const success = await unfavoriteMultipleFolders(selectedFolderIds);
 
-      // Remove from local state
-      const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
-      setFavoritedFolders(remainingFolders);
-      
-      // Update filtered folders if searching
-      if (isSearching) {
-        const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
-        setFilteredFavoritedFolders(remainingFilteredFolders);
+      if (success) {
+        // Remove from local state
+        const remainingFolders = favoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+        setFavoritedFolders(remainingFolders);
+        
+        // Update filtered folders if searching
+        if (isSearching) {
+          const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => !selectedFolderIds.includes(folder.folderID));
+          setFilteredFavoritedFolders(remainingFilteredFolders);
+        }
+        
+        // Clear selections
+        setSelectedFavFolderCards(new Set());
+
+        // Exit selection mode
+        setTimeout(() => {
+          handleCancel();
+        }, 0);
       }
-      
-      // Clear selections
-      setSelectedFavFolderCards(new Set());
-
-      // Exit selection mode
-      setTimeout(() => {
-        handleCancel();
-      }, 0);
-      
-      console.log(`Successfully unfavorited ${selectedFolderIds.length} folder(s)`);
     } catch (error) {
       console.error('Error unfavoriting folders:', error);
     }
@@ -817,7 +746,7 @@ export default function FavoritesScreen() {
   // Save sort preferences to AsyncStorage with userID
   const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
     try {
-      const userID = await getCurrentUserID();
+      const userID = await getCurrentUserIDForPreferences();
       const userSpecificFieldKey = `${FAVORITES_SORT_FIELD_KEY}_${userID}`;
       const userSpecificDirectionKey = `${FAVORITES_SORT_DIRECTION_KEY}_${userID}`;
       
@@ -833,7 +762,7 @@ export default function FavoritesScreen() {
   // Load sort preferences from AsyncStorage with userID
   const loadSortPreferences = async () => {
     try {
-      const userID = await getCurrentUserID();
+      const userID = await getCurrentUserIDForPreferences();
       const userSpecificFieldKey = `${FAVORITES_SORT_FIELD_KEY}_${userID}`;
       const userSpecificDirectionKey = `${FAVORITES_SORT_DIRECTION_KEY}_${userID}`;
       
@@ -856,56 +785,52 @@ export default function FavoritesScreen() {
   // Function to handle favorite/unfavorite deck
   const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean) => {
     try {
-      const newFavoritedValue = currentFavorited ? 0 : 1;
-      const userID = await getCurrentUserID();
+      const success = await updateDeckFavoriteStatus(deckId, !currentFavorited);
       
-      // Update database
-      await db.execAsync(`
-        UPDATE decks 
-        SET isFavorited = ${newFavoritedValue}
-        WHERE deckID = ${deckId} AND userID = '${userID}'
-      `);
-      
-      // If unfavoriting, remove from local state
-      if (newFavoritedValue === 0) {
-        // Remove from favorited decks
-        const remainingDecks = favoritedDecks.filter(deck => deck.deckID !== deckId);
-        setFavoritedDecks(remainingDecks);
+      if (success) {
+        const newFavoritedValue = currentFavorited ? 0 : 1;
         
-        // Remove from filtered decks if searching
-        if (isSearching) {
-          const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => deck.deckID !== deckId);
-          setFilteredFavoritedDecks(remainingFilteredDecks);
-        }
-        
-        // Clear selection if this deck was selected
-        setSelectedFavDeckCards(prev => {
-          const newSet = new Set(prev);
-          // Find the index of the deck being unfavorited
-          const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
-          const deckIndex = decksToUse.findIndex(deck => deck.deckID === deckId);
-          if (deckIndex !== -1) {
-            newSet.delete(deckIndex);
+        // If unfavoriting, remove from local state
+        if (newFavoritedValue === 0) {
+          // Remove from favorited decks
+          const remainingDecks = favoritedDecks.filter(deck => deck.deckID !== deckId);
+          setFavoritedDecks(remainingDecks);
+          
+          // Remove from filtered decks if searching
+          if (isSearching) {
+            const remainingFilteredDecks = filteredFavoritedDecks.filter(deck => deck.deckID !== deckId);
+            setFilteredFavoritedDecks(remainingFilteredDecks);
           }
-          return newSet;
-        });
-      } else {
-        // If favoriting, update the isFavorited value in local state
-        setFavoritedDecks(prev => 
-          prev.map(deck => 
-            deck.deckID === deckId 
-              ? { ...deck, isFavorited: newFavoritedValue }
-              : deck
-          )
-        );
-        if (isSearching) {
-          setFilteredFavoritedDecks(prev => 
+          
+          // Clear selection if this deck was selected
+          setSelectedFavDeckCards(prev => {
+            const newSet = new Set(prev);
+            // Find the index of the deck being unfavorited
+            const decksToUse = isSearching ? filteredFavoritedDecks : favoritedDecks;
+            const deckIndex = decksToUse.findIndex(deck => deck.deckID === deckId);
+            if (deckIndex !== -1) {
+              newSet.delete(deckIndex);
+            }
+            return newSet;
+          });
+        } else {
+          // If favoriting, update the isFavorited value in local state
+          setFavoritedDecks(prev => 
             prev.map(deck => 
               deck.deckID === deckId 
                 ? { ...deck, isFavorited: newFavoritedValue }
                 : deck
             )
           );
+          if (isSearching) {
+            setFilteredFavoritedDecks(prev => 
+              prev.map(deck => 
+                deck.deckID === deckId 
+                  ? { ...deck, isFavorited: newFavoritedValue }
+                  : deck
+              )
+            );
+          }
         }
       }
     } catch (error) {
@@ -916,56 +841,52 @@ export default function FavoritesScreen() {
   // Function to handle favorite/unfavorite folder
   const handleFolderFavoriteToggle = async (folderId: number, currentFavorited: boolean) => {
     try {
-      const newFavoritedValue = currentFavorited ? 0 : 1;
-      const userID = await getCurrentUserID();
+      const success = await updateFolderFavoriteStatus(folderId, !currentFavorited);
       
-      // Update database
-      await db.execAsync(`
-        UPDATE folders 
-        SET isFavorited = ${newFavoritedValue}
-        WHERE folderID = ${folderId} AND userID = '${userID}'
-      `);
-      
-      // If unfavoriting, remove from local state
-      if (newFavoritedValue === 0) {
-        // Remove from favorited folders
-        const remainingFolders = favoritedFolders.filter(folder => folder.folderID !== folderId);
-        setFavoritedFolders(remainingFolders);
+      if (success) {
+        const newFavoritedValue = currentFavorited ? 0 : 1;
         
-        // Remove from filtered folders if searching
-        if (isSearching) {
-          const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => folder.folderID !== folderId);
-          setFilteredFavoritedFolders(remainingFilteredFolders);
-        }
-        
-        // Clear selection if this folder was selected
-        setSelectedFavFolderCards(prev => {
-          const newSet = new Set(prev);
-          // Find the index of the folder being unfavorited
-          const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
-          const folderIndex = foldersToUse.findIndex(folder => folder.folderID === folderId);
-          if (folderIndex !== -1) {
-            newSet.delete(folderIndex);
+        // If unfavoriting, remove from local state
+        if (newFavoritedValue === 0) {
+          // Remove from favorited folders
+          const remainingFolders = favoritedFolders.filter(folder => folder.folderID !== folderId);
+          setFavoritedFolders(remainingFolders);
+          
+          // Remove from filtered folders if searching
+          if (isSearching) {
+            const remainingFilteredFolders = filteredFavoritedFolders.filter(folder => folder.folderID !== folderId);
+            setFilteredFavoritedFolders(remainingFilteredFolders);
           }
-          return newSet;
-        });
-      } else {
-        // If favoriting, update the isFavorited value in local state
-        setFavoritedFolders(prev => 
-          prev.map(folder => 
-            folder.folderID === folderId 
-              ? { ...folder, isFavorited: newFavoritedValue }
-              : folder
-          )
-        );
-        if (isSearching) {
-          setFilteredFavoritedFolders(prev => 
+          
+          // Clear selection if this folder was selected
+          setSelectedFavFolderCards(prev => {
+            const newSet = new Set(prev);
+            // Find the index of the folder being unfavorited
+            const foldersToUse = isSearching ? filteredFavoritedFolders : favoritedFolders;
+            const folderIndex = foldersToUse.findIndex(folder => folder.folderID === folderId);
+            if (folderIndex !== -1) {
+              newSet.delete(folderIndex);
+            }
+            return newSet;
+          });
+        } else {
+          // If favoriting, update the isFavorited value in local state
+          setFavoritedFolders(prev => 
             prev.map(folder => 
               folder.folderID === folderId 
                 ? { ...folder, isFavorited: newFavoritedValue }
                 : folder
             )
           );
+          if (isSearching) {
+            setFilteredFavoritedFolders(prev => 
+              prev.map(folder => 
+                folder.folderID === folderId 
+                  ? { ...folder, isFavorited: newFavoritedValue }
+                  : folder
+              )
+            );
+          }
         }
       }
     } catch (error) {
@@ -975,22 +896,24 @@ export default function FavoritesScreen() {
 
   // Check if database is ready
   useEffect(() => {
-    const checkDatabaseReady = async () => {
+    const checkDatabaseReadyStatus = async () => {
       try {
         console.log('Checking if database is ready...');
-        const userID = await getCurrentUserID();
-        // Try a simple query to check if database is ready
-        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
-        console.log('Database is ready, decks count:', (result[0] as any)?.count);
-        setIsDatabaseReady(true);
+        const isReady = await checkDatabaseReady();
+        if (isReady) {
+          setIsDatabaseReady(true);
+        } else {
+          // Retry after a short delay
+          setTimeout(checkDatabaseReadyStatus, 500);
+        }
       } catch (error) {
         console.log('Database not ready yet, waiting...', error);
         // Retry after a short delay
-        setTimeout(checkDatabaseReady, 500);
+        setTimeout(checkDatabaseReadyStatus, 500);
       }
     };
     
-    checkDatabaseReady();
+    checkDatabaseReadyStatus();
   }, []);
 
   // Load favorited data from database

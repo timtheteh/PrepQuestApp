@@ -1,8 +1,6 @@
-import { Dimensions, Platform, View, ScrollView, Text, Animated } from 'react-native';
-import { ThemedText } from '@/components/general/ThemedText';
+import { Dimensions, View, ScrollView, Animated } from 'react-native';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { SmallGreenBinaryToggle } from '@/components/general/SmallGreenBinaryToggle';
+import { useState, useRef, useEffect } from 'react';
 import { ReviewLineGraph } from '@/components/statsComponents/ReviewLineGraph';
 import { BreakdownOfDecksFlashcards } from '@/components/statsComponents/BreakdownOfDecksFlashcards';
 import { useIsFocused } from '@react-navigation/native';
@@ -14,11 +12,15 @@ import { SpeedChart } from '@/components/statsComponents/SpeedChart';
 import AverageSpeedTotal from '@/components/statsComponents/AverageSpeedTotal';
 import { getAverageGradeAllTime, getDifficultyBreakdown, getAverageTimeAllTime } from '@/db/grades';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTopBarAccountHeight, useTopBarStatisticsHeight } from '@/hooks/heights';
+import { useTopBarStatisticsHeight } from '@/hooks/heights';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function StatisticsScreen() {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const [isPerformance, setIsPerformance] = useState(false);
   const [pendingDecksFadeIn, setPendingDecksFadeIn] = useState(false);
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
@@ -36,14 +38,10 @@ export default function StatisticsScreen() {
   const [averageTime, setAverageTime] = useState(0);
   const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
   const [isLoadingScreen, setIsLoadingScreen] = useState(false);
-  const screenHeight = Dimensions.get('window').height;
-  const topPadding = screenHeight < 670 ? 40 : 65;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
   const loadingScreenAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
-  const insets = useSafeAreaInsets();
-  const getTopBarAccountHeight = useTopBarAccountHeight();
   const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
 
   // Function to fetch average grade
@@ -168,7 +166,7 @@ export default function StatisticsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <View style={{ flex: 1, backgroundColor: Colors[theme].background }}>
       {/* Loading screen overlay */}
       {isLoadingScreen && (
         <Animated.View 
@@ -178,25 +176,25 @@ export default function StatisticsScreen() {
             left: 0, 
             right: 0, 
             bottom: 0, 
-            backgroundColor: '#FFFFFF', 
+            backgroundColor: Colors[theme].background, 
             zIndex: 1000,
             opacity: loadingScreenAnim
           }} 
         />
       )}
       
-      <Animated.View style={{ flex: 1, backgroundColor: '#FFFFFF', opacity: fadeAnim}}>
+      <Animated.View style={{ flex: 1, backgroundColor: Colors[theme].background, opacity: fadeAnim}}>
         <View style={{ marginTop: getTopBarStatisticsHeight(), paddingHorizontal: 16 }}>
           <RoundedContainer
-            leftLabel={language === 'Chinese' ? '卡组 / 卡片' : 'Decks / Flashcards'}
-            leftLabelStyle={{ fontSize: 16, fontFamily: 'Satoshi-Medium' }}
-            rightLabel={language === 'Chinese' ? '表现' : 'Performance'}
+            leftLabel={strings[language].statistics.decksFlashcards}
+            leftLabelStyle={{ fontSize: 16, fontFamily: Fonts.bodyMedium }}
+            rightLabel={strings[language].statistics.performance}
             onToggle={handleToggle}
             position={isPerformance ? 'right' : 'left'}
             disableAnimation={disableToggleAnimation}
           />
       </View>
-        <View style={{ height: 10, backgroundColor: '#FFFFFF'}} />
+        <View style={{ height: 10, backgroundColor: Colors[theme].background}} />
         <Animated.View style={{ flex: 1, opacity: contentFadeAnim }}>
           {!isPerformance && (
             <ScrollView 
@@ -227,7 +225,7 @@ export default function StatisticsScreen() {
           </ScrollView>
           )}
         </Animated.View>
-        <View style={{ height: 40, backgroundColor: '#FFFFFF'}} />
+        <View style={{ height: 40, backgroundColor: Colors[theme].background}} />
       </Animated.View>
     </View>
   );

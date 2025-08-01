@@ -1,5 +1,10 @@
 export const strings: Record<string, any> = {
   English: {
+    // Statistics page strings
+    statistics: {
+      decksFlashcards: 'Decks / Flashcards',
+      performance: 'Performance',
+    },
     // Index page (Decks screen) strings
     index: {
       myStudyDecks: 'My Study Decks',
@@ -316,6 +321,11 @@ export const strings: Record<string, any> = {
     },
   },
   Chinese: {
+    // Statistics page strings
+    statistics: {
+      decksFlashcards: '卡片组 / 卡片',
+      performance: '表现',
+    },
     // Index page (Decks screen) strings
     index: {
       myStudyDecks: '我的学习卡片组',

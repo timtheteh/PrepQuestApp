@@ -1,6 +1,6 @@
 import { Dimensions, View, ScrollView, Animated } from 'react-native';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ReviewLineGraph } from '@/components/statsComponents/ReviewLineGraph';
 import { BreakdownOfDecksFlashcards } from '@/components/statsComponents/BreakdownOfDecksFlashcards';
 import { useIsFocused } from '@react-navigation/native';
@@ -131,7 +131,7 @@ export default function StatisticsScreen() {
   }, [isFocused]);
 
   // Fade animation for Decks/Performance toggle
-  const handleToggle = (val: boolean) => {
+  const handleToggle = useCallback((val: boolean) => {
     Animated.timing(contentFadeAnim, {
       toValue: 0,
       duration: 150,
@@ -151,10 +151,10 @@ export default function StatisticsScreen() {
         }).start();
       }
     });
-  };
+  }, [contentFadeAnim]);
 
   // Callback for ReviewLineGraph to trigger fade-in after content is ready
-  const handleDecksContentReady = () => {
+  const handleDecksContentReady = useCallback(() => {
     if (pendingDecksFadeIn) {
       Animated.timing(contentFadeAnim, {
         toValue: 1,
@@ -163,7 +163,7 @@ export default function StatisticsScreen() {
       }).start();
       setPendingDecksFadeIn(false);
     }
-  };
+  }, [pendingDecksFadeIn, contentFadeAnim]);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors[theme].background }}>

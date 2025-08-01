@@ -27,6 +27,7 @@ import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
 
 // Helper function to get current userID from AsyncStorage
@@ -1568,24 +1569,24 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     }
   }, [currentIdx, isStudyMode, isQuizMode, flashcards]);
 
-  // Mapping for cognitiveQnType to Chinese/English
-  const COGNITIVE_QN_TYPE_LABELS: Record<string, { en: string; zh: string }> = {
-    'Recall': { en: 'Recall', zh: '回忆' },
-    'Application': { en: 'Application', zh: '应用' },
-    'Analysis': { en: 'Analysis', zh: '分析' },
-    'Synthesis': { en: 'Synthesis', zh: '综合' },
-    'Evaluation': { en: 'Evaluation', zh: '评估' },
-    'Comprehension': { en: 'Comprehension', zh: '理解' },
-    'Problem-Solving': { en: 'Problem-Solving', zh: '解决' },
-    'None': { en: 'None', zh: '无' },
-    // Add more as needed
-  };
-
   // Helper to get localized cognitiveQnType label
   const getCognitiveQnTypeLabel = (type: string, language: string) => {
-    const entry = COGNITIVE_QN_TYPE_LABELS[type];
-    if (!entry) return type;
-    return language === 'Chinese' ? entry.zh : entry.en;
+    const cognitiveQnTypes = strings[language].viewFlashcardsPage.cognitiveQnTypes;
+    
+    // Map the type to the corresponding key in strings
+    const typeMapping: Record<string, keyof typeof cognitiveQnTypes> = {
+      'Recall': 'recall',
+      'Application': 'application',
+      'Analysis': 'analysis',
+      'Synthesis': 'synthesis',
+      'Evaluation': 'evaluation',
+      'Comprehension': 'comprehension',
+      'Problem-Solving': 'problemSolving',
+      'None': 'none',
+    };
+    
+    const key = typeMapping[type];
+    return key ? cognitiveQnTypes[key] : type;
   };
 
   return (

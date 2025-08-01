@@ -44,6 +44,17 @@ export const strings: Record<string, any> = {
                   audioPlaceholder: '<Audio>',
                   // Delete confirmation
                   deleteFlashcardsConfirmation: 'Are you sure you want to delete these flashcard(s)?',
+                  // Cognitive question type labels
+                  cognitiveQnTypes: {
+                    recall: 'Recall',
+                    application: 'Application',
+                    analysis: 'Analysis',
+                    synthesis: 'Synthesis',
+                    evaluation: 'Evaluation',
+                    comprehension: 'Comprehension',
+                    problemSolving: 'Problem-Solving',
+                    none: 'None',
+                  },
                 },
     // Index page (Decks screen) strings
     index: {
@@ -405,6 +416,17 @@ export const strings: Record<string, any> = {
                   audioPlaceholder: '<音频>',
                   // Delete confirmation
                   deleteFlashcardsConfirmation: '确定要删除这些卡片吗？',
+                  // Cognitive question type labels
+                  cognitiveQnTypes: {
+                    recall: '回忆',
+                    application: '应用',
+                    analysis: '分析',
+                    synthesis: '综合',
+                    evaluation: '评估',
+                    comprehension: '理解',
+                    problemSolving: '解决',
+                    none: '无',
+                  },
                 },
     // Index page (Decks screen) strings
     index: {

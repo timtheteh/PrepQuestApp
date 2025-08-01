@@ -89,24 +89,24 @@ export default function ViewFlashcardsScreen() {
     None: strings[language].viewFlashcardsPage.none,
   };
 
-  // Mapping for cognitiveQnType to Chinese/English
-  const COGNITIVE_QN_TYPE_LABELS: Record<string, { en: string; zh: string }> = {
-    'Recall': { en: 'Recall', zh: '回忆' },
-    'Application': { en: 'Application', zh: '应用' },
-    'Analysis': { en: 'Analysis', zh: '分析' },
-    'Synthesis': { en: 'Synthesis', zh: '综合' },
-    'Evaluation': { en: 'Evaluation', zh: '评估' },
-    'Comprehension': { en: 'Comprehension', zh: '理解' },
-    'Problem-Solving': { en: 'Problem-Solving', zh: '解决' },
-    'None': { en: 'None', zh: '无' },
-    // Add more as needed
-  };
-
   // Helper to get localized cognitiveQnType label
   const getCognitiveQnTypeLabel = (type: string) => {
-    const entry = COGNITIVE_QN_TYPE_LABELS[type];
-    if (!entry) return type;
-    return language === 'Chinese' ? entry.zh : entry.en;
+    const cognitiveQnTypes = strings[language].viewFlashcardsPage.cognitiveQnTypes;
+    
+    // Map the type to the corresponding key in strings
+    const typeMapping: Record<string, keyof typeof cognitiveQnTypes> = {
+      'Recall': 'recall',
+      'Application': 'application',
+      'Analysis': 'analysis',
+      'Synthesis': 'synthesis',
+      'Evaluation': 'evaluation',
+      'Comprehension': 'comprehension',
+      'Problem-Solving': 'problemSolving',
+      'None': 'none',
+    };
+    
+    const key = typeMapping[type];
+    return key ? cognitiveQnTypes[key] : type;
   };
 
   // View state management - always start in "grid" state
@@ -457,9 +457,7 @@ export default function ViewFlashcardsScreen() {
   const TopicPill = useCallback(({ text }: { text: string }) => {
     return (
       <View style={styles.topicPill}>
-        <Text style={[styles.topicPillText, language === 'Chinese' && { 
-          // fontFamily: 'NotoSansSC-Medium' 
-          }]} numberOfLines={1}>
+        <Text style={[styles.topicPillText]} numberOfLines={1}>
           {text}
         </Text>
       </View>
@@ -469,12 +467,8 @@ export default function ViewFlashcardsScreen() {
   // Local QuestionTypeCountRow component
   const QuestionTypeCountRow = useCallback(({ title, count }: { title: string; count: number }) => (
     <View style={styles.questionTypeCountRow}>
-      <Text style={[styles.questionTypeCountText, language === 'Chinese' && {
-        //  fontFamily: 'NotoSansSC-Medium' 
-         }]}>{getCognitiveQnTypeLabel(title)}</Text>
-      <Text style={[styles.questionTypeCountText, language === 'Chinese' && { 
-        // fontFamily: 'NotoSansSC-Medium' 
-        }]}>{count}</Text>
+      <Text style={[styles.questionTypeCountText]}>{getCognitiveQnTypeLabel(title)}</Text>
+      <Text style={[styles.questionTypeCountText]}>{count}</Text>
     </View>
   ), [language, getCognitiveQnTypeLabel]);
 
@@ -539,18 +533,14 @@ export default function ViewFlashcardsScreen() {
             <Ionicons name="eye" size={20} color="#444" />
           </TouchableOpacity>
           <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
-            <Text style={[styles.difficultyPillText, language === 'Chinese' && { 
-              // fontFamily: 'NotoSansSC-Medium' 
-              }]}>{DIFFICULTY_LABELS[flashcardDifficulty]}</Text>
+            <Text style={[styles.difficultyPillText]}>{DIFFICULTY_LABELS[flashcardDifficulty]}</Text>
           </View>
           <FavoriteButton size={20} favorited={isFavorited} onPress={onToggleFavorite} />
         </View>
         {/* Centered question */}
         <View style={styles.cardQnContainer}>
           <Text
-            style={[styles.cardQnText, language === 'Chinese' && { 
-              // fontFamily: 'NotoSansSC-Medium' 
-            }]}
+            style={[styles.cardQnText]}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -579,7 +569,6 @@ export default function ViewFlashcardsScreen() {
             flexDirection: 'row',
           }}>
             <Text style={{ fontSize: 12, color: '#222', textAlign: 'center', 
-              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium' 
               }}>
               {getCognitiveQnTypeLabel(flashcards[flashcardIdx].cognitiveQnType)}
             </Text>

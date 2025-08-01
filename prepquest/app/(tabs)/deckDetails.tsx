@@ -178,6 +178,7 @@ export default function DeckDetailsScreen() {
       }
     } catch (error) {
       // Handle error silently
+      console.error('Error updating deck favorite status:', error);
     }
   };
 
@@ -526,10 +527,10 @@ export default function DeckDetailsScreen() {
           });
         }
       } else {
-        // You could show an error message to the user here
+        console.error('Error deleting deck');
       }
     } catch (error) {
-      // You could show an error message to the user here
+      console.error('Error deleting deck:', error);
     }
   };
 
@@ -733,10 +734,12 @@ export default function DeckDetailsScreen() {
         
       } else {
         // You could show an error message to the user here
+        console.error('Error saving AI deck');
       }
     } catch (error) {
       // You could show an error message to the user here
-    }
+      console.error('Error saving AI deck:', error);
+    } 
   };
 
   useFocusEffect(

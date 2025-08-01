@@ -161,6 +161,7 @@ export default function AccountScreen() {
       });
     } catch (error) {
       // Optionally handle error
+      console.error('Error sharing:', error);
     }
   }, [language]);
 

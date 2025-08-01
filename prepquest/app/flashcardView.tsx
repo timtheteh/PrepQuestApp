@@ -35,7 +35,7 @@ async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
+    console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }

@@ -306,7 +306,6 @@ export default function DecksScreen() {
   useEffect(() => {
     const checkDBReady = async () => {
       try {
-        console.log('Checking if database is ready...');
         const isReady = await checkDatabaseReady();
         if (isReady) {
           setIsDatabaseReady(true);
@@ -315,7 +314,7 @@ export default function DecksScreen() {
           setTimeout(checkDBReady, 500);
         }
       } catch (error) {
-        console.log('Database not ready yet, waiting...', error);
+        console.error('Database not ready yet, waiting...', error);
         // Retry after a short delay
         setTimeout(checkDBReady, 500);
       }
@@ -328,18 +327,14 @@ export default function DecksScreen() {
   useEffect(() => {
     const loadDeckData = async () => {
       if (!isDatabaseReady) {
-        console.log('Database not ready, skipping data load');
         return;
       }
       
-      console.log('Loading deck data from database...');
       try {
         const [studyData, interviewData] = await Promise.all([
           getStudyDecksWithProgress(),
           getInterviewDecksWithProgress()
         ]);
-        console.log('Study decks loaded:', studyData.length);
-        console.log('Interview decks loaded:', interviewData.length);
         setStudyDecks(studyData);
         setInterviewDecks(interviewData);
         setFilteredStudyDecks(studyData);
@@ -744,14 +739,6 @@ export default function DecksScreen() {
     }
   };
 
-  const handleFabPress = () => {
-    if (isInterviewMode) {
-      console.log("Interview state FAB clicked!");
-    } else {
-      console.log("Study state FAB clicked!");
-    }
-  };
-
   const studyOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 0],
@@ -826,7 +813,6 @@ export default function DecksScreen() {
       }
 
       if (selectedDeckIds.length === 0) {
-        console.log('No decks selected for deletion');
         return;
       }
 
@@ -864,7 +850,6 @@ export default function DecksScreen() {
           }, 0);
         });
         
-        console.log(`Successfully deleted ${selectedDeckIds.length} deck(s)`);
       } else {
         console.error('Failed to delete decks');
       }
@@ -1294,7 +1279,7 @@ export default function DecksScreen() {
           ]}>
             <FloatingActionButton
               style={styles.fab}
-              onPress={handleFabPress}
+              onPress={() => {}}
             >
               <Feather name="plus" size={38} color="white" />
             </FloatingActionButton>

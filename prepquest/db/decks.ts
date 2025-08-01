@@ -36,7 +36,7 @@ export async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
+    console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }
@@ -1842,7 +1842,7 @@ export async function createDeckWithGenAIFlashcards({
       throw error;
     }
   } catch (error) {
-    // console.error('Error creating GenAI deck:', error);
+    console.error('Error creating GenAI deck:', error);
     return { success: false };
   }
 }
@@ -1910,7 +1910,7 @@ export async function createGenAIFlashcardsForDeck({
       throw error;
     }
   } catch (error) {
-    // console.error('Error creating GenAI flashcards for deck:', error);
+    console.error('Error creating GenAI flashcards for deck:', error);
     return { success: false };
   }
 }

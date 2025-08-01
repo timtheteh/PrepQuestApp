@@ -46,7 +46,7 @@ export class AuthService {
       }
       return user;
     } catch (error) {
-    //   console.error('Error getting current user:', error);
+      console.error('Error getting current user:', error);
       return null;
     }
   }

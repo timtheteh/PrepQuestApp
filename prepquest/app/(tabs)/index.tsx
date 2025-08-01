@@ -1,5 +1,4 @@
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, Dimensions } from 'react-native';
-import { ThemedText } from '@/components/general/ThemedText';
 import { ThemedView } from '@/components/general/ThemedView';
 import { Feather } from '@expo/vector-icons';
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
@@ -10,12 +9,11 @@ import { Card } from '@/components/general/Card';
 import { ActionButtonsRow } from '@/components/general/ActionButtonsRow';
 import { MenuButton } from '@/components/general/MenuButton';
 import { CalendarModal } from '@/components/modals/CalendarModal';
-import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
+import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks, getCompanyIconImageSource } from '@/db/decks';
 import { db } from '@/db/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -41,7 +39,7 @@ const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
 // Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
+const getCurrentUserID = async (): Promise<string> => {
   try {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
@@ -49,7 +47,7 @@ async function getCurrentUserID(): Promise<string> {
     // console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
-}
+};
 
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
@@ -252,7 +250,7 @@ export default function DecksScreen() {
   );
 
   // Helper function to format date
-  const formatDate = (dateString: string): string => {
+  const formatDate = useCallback((dateString: string): string => {
     try {
       const date = new Date(dateString);
       if (language === 'Chinese') {
@@ -271,7 +269,7 @@ export default function DecksScreen() {
       console.error('Error formatting date:', error);
       return dateString; // Return original string if parsing fails
     }
-  };
+  }, [language]);
 
   // Function to handle favorite/unfavorite deck
   const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean, isStudyDeck: boolean) => {
@@ -1073,7 +1071,7 @@ export default function DecksScreen() {
     // The actual search logic will be handled by the HeaderIconButtons component
   };
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setIsSearching(query.length > 0);
     
@@ -1102,9 +1100,9 @@ export default function DecksScreen() {
       setFilteredStudyDecks(sortedFilteredStudy);
       setFilteredInterviewDecks(sortedFilteredInterview);
     }
-  };
+  }, [studyDecks, interviewDecks]);
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchQuery('');
     setIsSearching(false);
     // Re-sort the original decks according to current sort preferences
@@ -1115,7 +1113,7 @@ export default function DecksScreen() {
     // Clear selected cards when clearing search
     setSelectedStudyCards(new Set());
     setSelectedInterviewCards(new Set());
-  };
+  }, [studyDecks, interviewDecks]);
 
   const sortDecks = useCallback((decks: (Deck & { progress: number })[]) => {
     return [...decks].sort((a, b) => {

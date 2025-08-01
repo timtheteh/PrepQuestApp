@@ -14,21 +14,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
+    const { theme } = useTheme();
+    const colors = Colors[theme];
+    
     return (
       <View style={styles.titleToggleRow}>
         <Text style={[
           styles.titleToggleText,
+          { color: colors.text, fontFamily: Fonts.bodyBold }
         ]}>
           {text}
         </Text>
         <Switch
           value={value}
           onValueChange={onValueChange}
-          trackColor={{ false: '#D5D4DD', true: '#44B88A' }}
+          trackColor={{ false: colors.unselectedText, true: colors.brandColor1 }}
           thumbColor={value ? '#FFFFFF' : '#FFFFFF'}
-          ios_backgroundColor="#D5D4DD"
+          ios_backgroundColor={colors.unselectedText}
         />
       </View>
     );
@@ -37,6 +44,8 @@ const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string
 export default function AppSettingsScreen() {
   const router = useRouter();
   const { language, setLanguage } = useLanguage();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const [cameraAccessEnabled, setCameraAccessEnabled] = React.useState(false);
   const [galleryAccessEnabled, setGalleryAccessEnabled] = React.useState(false);
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
@@ -346,34 +355,37 @@ export default function AppSettingsScreen() {
   };    
 
   return (
-    <View style={{ flex: 1, position: 'relative', backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
         <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
             <TouchableOpacity 
             style={styles.backButton}
             onPress={handleBackPress}
             >
-            <AntDesign name="arrowleft" size={32} color="black" />
+            <AntDesign name="arrowleft" size={32} color={colors.text} />
             </TouchableOpacity>
             <Text style={[styles.title, { 
-              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Regular' : 'Neuton-Regular',
+              fontFamily: Fonts.title,
+              color: colors.text,
               marginLeft: 16,
               marginBottom: Platform.OS === 'ios' ? 5 : 10,
               }]}>{strings[language].appSettingsPage.title}</Text>
         </View>
-        <View style={styles.mainContainer}>
+        <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
             <ScrollView 
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 140 }}
             >
                 <View style={styles.titleToggleRow}>
                   <Text style={[styles.titleToggleText, { 
-                    }]}>{strings[language].appSettingsPage.language}</Text>
+                    color: colors.text,
+                    fontFamily: Fonts.bodyBold,
+                  }]}>{strings[language].appSettingsPage.language}</Text>
                   <TouchableOpacity
                     style={{
                       width: 170,
                       height: 35,
                       borderRadius: 10,
-                      backgroundColor: '#F8F8F8',
+                      backgroundColor: colors.secondaryShade,
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -382,10 +394,10 @@ export default function AppSettingsScreen() {
                     activeOpacity={0.7}
                     onPress={handleLanguageRowPress}
                   >
-                    <Text style={{ color: '#757575', fontSize: 18, fontFamily: 'Satoshi-Variable' }}>
+                    <Text style={{ color: colors.unselectedText, fontSize: 18, fontFamily: Fonts.bodyBold }}>
                       {strings[language].appSettingsPage.languages[language.toLowerCase()]}
                     </Text>
-                    <AntDesign name="right" size={20} color="#757575" />
+                    <AntDesign name="right" size={20} color={colors.unselectedText} />
                   </TouchableOpacity>
                 </View>
                 <Modal
@@ -395,7 +407,7 @@ export default function AppSettingsScreen() {
                   onRequestClose={() => setIsLanguageModalOpen(false)}
                 >
                   <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} activeOpacity={1} onPressOut={() => setIsLanguageModalOpen(false)}>
-                    <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
+                    <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
                       {Object.entries(strings[language].appSettingsPage.languages).map(([langKey, langName]) => (
                         <TouchableOpacity 
                           key={langKey}
@@ -403,9 +415,9 @@ export default function AppSettingsScreen() {
                           onPress={() => handleLanguageSelect(langKey.charAt(0).toUpperCase() + langKey.slice(1))}
                         >
                           <Text style={{ 
-                            fontFamily: 'Satoshi-Variable', 
+                            fontFamily: Fonts.bodyBold, 
                             fontSize: 24, 
-                            color: language.toLowerCase() === langKey ? '#44B88A' : '#222', 
+                            color: language.toLowerCase() === langKey ? colors.brandColor1 : colors.text, 
                             textAlign: 'center' 
                           }}>
                             {langName as string}
@@ -415,8 +427,8 @@ export default function AppSettingsScreen() {
                       <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
                       </TouchableOpacity>
                       <TouchableOpacity style={{ marginBottom: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
-                        <Text style={{ color: '#8684FF', fontSize: 20, 
-                          // fontFamily: 'Satoshi-Medium' 
+                        <Text style={{ color: colors.brandColor2, fontSize: 20, 
+                          fontFamily: Fonts.bodyMedium 
                           }}>
                           {strings[language].cancel}
                         </Text>
@@ -449,43 +461,51 @@ export default function AppSettingsScreen() {
                     language={language}
                 />
 
-                <TouchableOpacity style={[styles.cloudButton,]}
+                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor2 }]}
                   onPress={handleBackupPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-upload" size={30} color="#fff" />
-                    <Text style={styles.cloudButtonText}>{strings[language].appSettingsPage.backupDataToCloud}</Text>
+                    <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>{strings[language].appSettingsPage.backupDataToCloud}</Text>
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.descriptionText, { 
-                  }]}>
+                  color: colors.text,
+                  fontFamily: Fonts.bodyItalicLight,
+                }]}>
                   {strings[language].appSettingsPage.backupDescription}
-                  <Text style={[styles.descriptionText, { color: '#44B88A' }]}>{strings[language].appSettingsPage.website}</Text>
-                  <Text style={styles.descriptionText}>.</Text>
+                  <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
+                  <Text style={[styles.descriptionText, { color: colors.text, fontFamily: Fonts.bodyItalicLight }]}>.</Text>
                 </Text>
-                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#8684FF', marginTop: 20 }]}
+                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor3, marginTop: 20 }]}
                   onPress={handleLoadDataPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-download" size={30} color="#fff" />
                     <Text style={[styles.cloudButtonText, { 
-                      }]}>{strings[language].appSettingsPage.loadDataFromCloud}</Text>
+                      fontFamily: Fonts.bodyMedium,
+                    }]}>{strings[language].appSettingsPage.loadDataFromCloud}</Text>
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.descriptionText, { 
-                  }]}>
+                  color: colors.text,
+                  fontFamily: Fonts.bodyItalicLight,
+                }]}>
                   {strings[language].appSettingsPage.loadDataDescription}
-                  <Text style={[styles.descriptionText, { color: '#44B88A'}]}>{strings[language].appSettingsPage.website}</Text>
-                  <Text style={styles.descriptionText}>.</Text>
+                  <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
+                  <Text style={[styles.descriptionText, { color: colors.text, fontFamily: Fonts.bodyItalicLight }]}>.</Text>
                 </Text>
-                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#FF3B30', marginTop: 20 }]}
+                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.alertColor, marginTop: 20 }]}
                   onPress={handleDeleteLocalStoragePress}>
                   <View style={styles.buttonContent}>
                     <Ionicons name="trash" size={30} color="#fff" />
                     <Text style={[styles.cloudButtonText, { 
-                      }]}>{strings[language].appSettingsPage.clearLocalStorageData}</Text>
+                      fontFamily: Fonts.bodyMedium,
+                    }]}>{strings[language].appSettingsPage.clearLocalStorageData}</Text>
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.descriptionText, { 
-                   }]}>
+                   color: colors.text,
+                   fontFamily: Fonts.bodyItalicLight,
+                 }]}>
                   {strings[language].appSettingsPage.clearLocalStorageDescription}
                 </Text>
             </ScrollView>
@@ -536,7 +556,6 @@ export default function AppSettingsScreen() {
 const styles = StyleSheet.create({
     container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     },
     topBar: {
     flexDirection: 'row',
@@ -548,9 +567,8 @@ const styles = StyleSheet.create({
     padding: 8,
     },
   title: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 32,
-    color: '#000',
     marginLeft: 16,
     marginBottom: Platform.OS === 'ios' ? 5 : 10,
     justifyContent: 'center',
@@ -566,12 +584,10 @@ const styles = StyleSheet.create({
     // borderColor: 'blue',
   },
   titleToggleText: {
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontSize: 16,
-    color: '#000',
   },
   mainContainer: {
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingBottom: 20,
   },
@@ -583,14 +599,13 @@ const styles = StyleSheet.create({
   },
   cloudButton: {
     flex: 1,
-    backgroundColor: '#4F41D8',
     borderRadius: 30,
     height: 60,
     justifyContent: 'center',
   },
   cloudButtonText: {
     color: '#fff',
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 24,
     textAlign: 'center',
   },
@@ -600,8 +615,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   descriptionText: {
-    color: '#000',
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalicLight,
     fontSize: 18,
     textAlign: 'center',
     marginTop: 8,

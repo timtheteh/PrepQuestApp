@@ -10,6 +10,7 @@ export const Colors = {
     normalIconColor: '#000000',
     alertColor: '#FF3B30',
     graphLineColor: '#E5E4EA',
+    brandColor3: '#8684FF',
   },
   dark: {
     text: "#FFFFFF",
@@ -22,5 +23,6 @@ export const Colors = {
     normalIconColor: '#FFFFFF',
     alertColor: '#FF3B30',
     graphLineColor: '#E5E4EA',
+    brandColor3: '#8684FF',
   },
 };

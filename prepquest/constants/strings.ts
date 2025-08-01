@@ -17,6 +17,34 @@ export const strings: Record<string, any> = {
                   errorUpdatingFolderName: 'Error updating folder name!',
                   deleteFromFolderConfirmation: 'Are you sure you want to delete from this folder?',
                 },
+                // ViewFlashcards page strings
+                viewFlashcardsPage: {
+                  // Column titles
+                  topics: 'Topics',
+                  qnTypes: 'Qn Types',
+                  flashcards: 'Flashcards',
+                  select: 'Select',
+                  selectAll: 'Select All',
+                  // Loading messages
+                  loadingTopics: 'Loading topics...',
+                  loadingQnTypes: 'Loading question types...',
+                  loadingFlashcards: 'Loading flashcards...',
+                  // Empty state messages
+                  noTopicsSpecified: 'No topics specified',
+                  noQuestionTypesFound: 'No question types found',
+                  noFlashcardsFound: 'No flashcards found',
+                  // Difficulty labels
+                  again: 'Again',
+                  hard: 'Hard',
+                  good: 'Good',
+                  easy: 'Easy',
+                  none: 'None',
+                  // Media placeholders
+                  imagePlaceholder: '<Image>',
+                  audioPlaceholder: '<Audio>',
+                  // Delete confirmation
+                  deleteFlashcardsConfirmation: 'Are you sure you want to delete these flashcard(s)?',
+                },
     // Index page (Decks screen) strings
     index: {
       myStudyDecks: 'My Study Decks',
@@ -349,6 +377,34 @@ export const strings: Record<string, any> = {
                   folderNameExists: '文件夹名称已存在！',
                   errorUpdatingFolderName: '更新文件夹名称时出错！',
                   deleteFromFolderConfirmation: '确定要从此文件夹中删除吗？',
+                },
+                // ViewFlashcards page strings
+                viewFlashcardsPage: {
+                  // Column titles
+                  topics: '主题',
+                  qnTypes: '题型',
+                  flashcards: '卡片',
+                  select: '选择',
+                  selectAll: '全选',
+                  // Loading messages
+                  loadingTopics: '正在加载主题...',
+                  loadingQnTypes: '正在加载题型...',
+                  loadingFlashcards: '正在加载卡片...',
+                  // Empty state messages
+                  noTopicsSpecified: '未指定主题',
+                  noQuestionTypesFound: '未找到题型',
+                  noFlashcardsFound: '未找到卡片',
+                  // Difficulty labels
+                  again: '重来',
+                  hard: '困难',
+                  good: '良好',
+                  easy: '简单',
+                  none: '无',
+                  // Media placeholders
+                  imagePlaceholder: '<图片>',
+                  audioPlaceholder: '<音频>',
+                  // Delete confirmation
+                  deleteFlashcardsConfirmation: '确定要删除这些卡片吗？',
                 },
     // Index page (Decks screen) strings
     index: {

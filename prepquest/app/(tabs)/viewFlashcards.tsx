@@ -18,6 +18,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useContentTopHeight, useContentTopHeightNoRoundedToggle2, useHeaderIconsTopHeight, useTopBarTopHeight } from '@/hooks/heights';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Interface for flashcard data
 interface Flashcard {
@@ -53,6 +57,7 @@ function safeParseJSON(val: any, fallback: any[] = []): any[] {
 export default function ViewFlashcardsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
+  const { theme } = useTheme();
   const screenOpacity = useRef(new Animated.Value(0)).current;
   const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, mode, sourcePage, folderTitle, folderId } = useLocalSearchParams();
   const { 
@@ -76,28 +81,28 @@ export default function ViewFlashcardsScreen() {
 
   // Localized labels
   const COLUMN_TITLES = {
-    topics: language === 'Chinese' ? '主题' : 'Topics',
-    qnTypes: language === 'Chinese' ? '题型' : 'Qn Types',
-    flashcards: language === 'Chinese' ? '卡片' : 'Flashcards',
-    select: language === 'Chinese' ? '选择' : 'Select',
-    selectAll: language === 'Chinese' ? '全选' : 'Select All',
+    topics: strings[language].viewFlashcardsPage.topics,
+    qnTypes: strings[language].viewFlashcardsPage.qnTypes,
+    flashcards: strings[language].viewFlashcardsPage.flashcards,
+    select: strings[language].viewFlashcardsPage.select,
+    selectAll: strings[language].viewFlashcardsPage.selectAll,
   };
   const LOADING = {
-    topics: language === 'Chinese' ? '正在加载主题...' : 'Loading topics...',
-    qnTypes: language === 'Chinese' ? '正在加载题型...' : 'Loading question types...',
-    flashcards: language === 'Chinese' ? '正在加载卡片...' : 'Loading flashcards...'
+    topics: strings[language].viewFlashcardsPage.loadingTopics,
+    qnTypes: strings[language].viewFlashcardsPage.loadingQnTypes,
+    flashcards: strings[language].viewFlashcardsPage.loadingFlashcards
   };
   const EMPTY = {
-    topics: language === 'Chinese' ? '未指定主题' : 'No topics specified',
-    qnTypes: language === 'Chinese' ? '未找到题型' : 'No question types found',
-    flashcards: language === 'Chinese' ? '未找到卡片' : 'No flashcards found',
+    topics: strings[language].viewFlashcardsPage.noTopicsSpecified,
+    qnTypes: strings[language].viewFlashcardsPage.noQuestionTypesFound,
+    flashcards: strings[language].viewFlashcardsPage.noFlashcardsFound,
   };
   const DIFFICULTY_LABELS: Record<string, string> = {
-    Again: language === 'Chinese' ? '重来' : 'Again',
-    Hard: language === 'Chinese' ? '困难' : 'Hard',
-    Good: language === 'Chinese' ? '良好' : 'Good',
-    Easy: language === 'Chinese' ? '简单' : 'Easy',
-    None: language === 'Chinese' ? '无' : 'None',
+    Again: strings[language].viewFlashcardsPage.again,
+    Hard: strings[language].viewFlashcardsPage.hard,
+    Good: strings[language].viewFlashcardsPage.good,
+    Easy: strings[language].viewFlashcardsPage.easy,
+    None: strings[language].viewFlashcardsPage.none,
   };
 
   // Mapping for cognitiveQnType to Chinese/English
@@ -538,7 +543,7 @@ export default function ViewFlashcardsScreen() {
       }).start();
       setIsMenuOpen(true);
       setIsTrashModalOpenInDecksPage(true);
-      setDeleteModalText('Are you sure you want to delete these flashcard(s)?');
+      setDeleteModalText(strings[language].viewFlashcardsPage.deleteFlashcardsConfirmation);
       Animated.timing(trashModalOpacity, {
         toValue: 1,
         duration: 200,
@@ -691,9 +696,9 @@ export default function ViewFlashcardsScreen() {
       if (flashcardQnType === 'text') {
         return flashcardQn;
       } else if (flashcardQnType === 'image') {
-        return language === 'Chinese' ? '<图片>' : '<Image>';
+        return strings[language].viewFlashcardsPage.imagePlaceholder;
       } else if (flashcardQnType === 'audio') {
-        return language === 'Chinese' ? '<音频>' : '<Audio>';
+        return strings[language].viewFlashcardsPage.audioPlaceholder;
       }
       return flashcardQn; // fallback
     };
@@ -771,6 +776,287 @@ export default function ViewFlashcardsScreen() {
   const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getTopBarTopHeight = useTopBarTopHeight();
+
+  const styles = StyleSheet.create({
+    animatedContainer: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    topBar: {
+      position: 'absolute',
+      top: Platform.OS === 'android' ? 70 : 16,
+      left: 16,
+      zIndex: 1,
+    },
+    backButton: {
+      paddingTop: 8,
+    },
+    headerIconsContainer: {
+      position: 'absolute',
+      top: Platform.OS === 'android' ? 70 : 16,
+      right: 16,
+      zIndex: 1,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      minHeight: 150,
+      maxHeight: 250,
+      width: '100%',
+      borderBottomWidth: 3,
+      // borderWidth: 1, 
+      // borderColor: 'blue',
+    },
+    column: {
+      flex: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    columnTitle: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 24,
+      marginBottom: 8,
+      textAlign: 'left',
+    },
+    componentContainer: {
+      flex: 1,
+      height: '100%',
+    },
+    placeholderText: {
+      color: Colors[theme].unselectedText,
+    },
+    mainContainer: {
+      flex: 1,
+      marginHorizontal: 8,
+      // marginBottom: 20,
+      // borderWidth: 1,
+      // borderColor: 'green',
+    },
+    flashcardsHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    flashcardsTitle: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 24,
+      color: Colors[theme].text,
+    },
+    selectButtonContainer: {
+      position: 'relative',
+      width: 85,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+    },
+    selectButton: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors.light.brandColor1,
+    },
+  //   selectButtonAbsolute: {
+  //     position: 'relative',
+  //     right: 0,
+  //     top: 0,
+  //   },
+    topicsScrollView: {
+      flex: 1,
+    },
+    topicsScrollViewContent: {
+      paddingVertical: 8,
+    },
+    topicsPillsWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'flex-start',
+    },
+    topicPill: {
+      backgroundColor: Colors.light.brandColor1,
+      borderRadius: 30,
+      height: 30,
+      minWidth: 50,
+      maxWidth: 120,
+      paddingHorizontal: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 6,
+      marginBottom: 6,
+    },
+    topicPillText: {
+      fontFamily: Fonts.bodyBold,
+      fontWeight: '700',
+      fontSize: 14,
+      color: '#FFFFFF',
+      textAlign: 'center',
+    },
+    questionTypeCountRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    questionTypeCountText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 16,
+      color: Colors[theme].text,
+    },
+    qnTypesScrollView: {
+      flex: 1,
+    },
+    qnTypesScrollViewContent: {
+      paddingVertical: 8,
+    },
+    mainScrollView: {
+      flex: 1,
+      // borderWidth: 1,
+      // borderColor: 'red',
+      marginBottom: 10,
+    },
+    mainScrollViewContent: {
+      flexGrow: 1,
+      // alignItems: 'center',
+      // borderWidth: 1,
+      // borderColor: 'blue',
+    },
+    actionButtonsRow: {
+      position: 'absolute',
+      top: 18,
+      right: 0,
+      left: 0,
+      zIndex: 1,
+    },
+    cardForFlashcard: {
+      borderRadius: 10,
+      height: 105,
+      backgroundColor: Colors[theme].secondaryShade,
+      width: '100%',
+      marginVertical: 8,
+      padding: 16,
+      justifyContent: 'flex-start',
+      alignItems: 'stretch',
+      position: 'relative',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    cardTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+      marginTop: -5
+    },
+    difficultyPill: {
+      width: 41,
+      height: 23,
+      borderRadius: 21,
+      borderWidth: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+    },
+    difficultyPillText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 13,
+    },
+    cardQnContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    cardQnText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 14,
+      color: Colors[theme].text,
+      textAlign: 'center',
+    },
+    flashcardsGridContainer: {
+      marginTop: 0,
+    },
+    flashcardsGridRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    flashcardCol: {
+      flex: 1,
+      marginHorizontal: 4,
+    },
+    cardForFlashcardSelected: {
+      backgroundColor: Colors[theme].unselectedText,
+    },
+    greenTickContainer: {
+      position: 'absolute',
+      right: 5,
+      bottom: 5,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    flashcardsListContainer: {
+      marginTop: 8,
+    },
+    flashcardListRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: 60,
+      width: '100%',
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: Colors[theme].graphLineColor,
+      backgroundColor: 'transparent',
+    },
+    flashcardListRowLeft: {
+      width: 25,
+      marginLeft: -15
+    },
+    flashcardListQn: {
+      flex: 1,
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 20,
+      color: Colors[theme].text,
+      marginHorizontal: 12,
+    },
+    flashcardListEyeIcon: {
+      marginLeft: 8,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 20,
+      right: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 16,
+      color: Colors[theme].text,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 25,
+    },
+    emptyText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 16,
+      color: Colors[theme].text,
+    },
+  });
 
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
@@ -948,9 +1234,9 @@ export default function ViewFlashcardsScreen() {
                       if (card.questionType === 'text') {
                         return card.questionText || '';
                       } else if (card.questionType === 'image') {
-                        return language === 'Chinese' ? '<图片>' : '<Image>';
+                        return strings[language].viewFlashcardsPage.imagePlaceholder;
                       } else if (card.questionType === 'audio') {
-                        return language === 'Chinese' ? '<音频>' : '<Audio>';
+                        return strings[language].viewFlashcardsPage.audioPlaceholder;
                       }
                       return card.questionText || ''; // fallback
                     };
@@ -993,284 +1279,3 @@ export default function ViewFlashcardsScreen() {
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  animatedContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
-    left: 16,
-    zIndex: 1,
-  },
-  backButton: {
-    paddingTop: 8,
-  },
-  headerIconsContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
-    right: 16,
-    zIndex: 1,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    minHeight: 150,
-    maxHeight: 250,
-    width: '100%',
-    borderBottomWidth: 3,
-    // borderWidth: 1, 
-    // borderColor: 'blue',
-  },
-  column: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  columnTitle: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 24,
-    marginBottom: 8,
-    textAlign: 'left',
-  },
-  componentContainer: {
-    flex: 1,
-    height: '100%',
-  },
-  placeholderText: {
-    color: '#808080',
-  },
-  mainContainer: {
-    flex: 1,
-    marginHorizontal: 8,
-    // marginBottom: 20,
-    // borderWidth: 1,
-    // borderColor: 'green',
-  },
-  flashcardsHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  flashcardsTitle: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 24,
-    color: '#222',
-  },
-  selectButtonContainer: {
-    position: 'relative',
-    width: 85,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  selectButton: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#44B88A',
-  },
-//   selectButtonAbsolute: {
-//     position: 'relative',
-//     right: 0,
-//     top: 0,
-//   },
-  topicsScrollView: {
-    flex: 1,
-  },
-  topicsScrollViewContent: {
-    paddingVertical: 8,
-  },
-  topicsPillsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'flex-start',
-  },
-  topicPill: {
-    backgroundColor: '#44B88A',
-    borderRadius: 30,
-    height: 30,
-    minWidth: 50,
-    maxWidth: 120,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  topicPillText: {
-    fontFamily: 'Satoshi-Variable',
-    fontWeight: '700',
-    fontSize: 14,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  questionTypeCountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  questionTypeCountText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 16,
-    color: '#222',
-  },
-  qnTypesScrollView: {
-    flex: 1,
-  },
-  qnTypesScrollViewContent: {
-    paddingVertical: 8,
-  },
-  mainScrollView: {
-    flex: 1,
-    // borderWidth: 1,
-    // borderColor: 'red',
-    marginBottom: 10,
-  },
-  mainScrollViewContent: {
-    flexGrow: 1,
-    // alignItems: 'center',
-    // borderWidth: 1,
-    // borderColor: 'blue',
-  },
-  actionButtonsRow: {
-    position: 'absolute',
-    top: 18,
-    right: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  cardForFlashcard: {
-    borderRadius: 10,
-    height: 105,
-    backgroundColor: '#F8F8F8',
-    width: '100%',
-    marginVertical: 8,
-    padding: 16,
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    marginTop: -5
-  },
-  difficultyPill: {
-    width: 41,
-    height: 23,
-    borderRadius: 21,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  difficultyPillText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 13,
-  },
-  cardQnContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardQnText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 14,
-    color: '#111',
-    textAlign: 'center',
-  },
-  flashcardsGridContainer: {
-    marginTop: 0,
-  },
-  flashcardsGridRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  flashcardCol: {
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  cardForFlashcardSelected: {
-    backgroundColor: '#D5D4DD',
-  },
-  greenTickContainer: {
-    position: 'absolute',
-    right: 5,
-    bottom: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  flashcardsListContainer: {
-    marginTop: 8,
-  },
-  flashcardListRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 60,
-    width: '100%',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ECECEC',
-    backgroundColor: 'transparent',
-  },
-  flashcardListRowLeft: {
-    width: 25,
-    marginLeft: -15
-  },
-  flashcardListQn: {
-    flex: 1,
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 20,
-    color: '#222',
-    marginHorizontal: 12,
-  },
-  flashcardListEyeIcon: {
-    marginLeft: 8,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 16,
-    color: '#222',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 25,
-  },
-  emptyText: {
-    fontFamily: 'Satoshi-Medium',
-    fontSize: 16,
-    color: '#222',
-  },
-});

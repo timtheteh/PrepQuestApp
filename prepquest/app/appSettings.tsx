@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, SafeAreaView, Platform, Dimensions, Switch, Alert, Linking, ScrollView , Animated, Modal } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, Platform, Switch, Alert, Linking, ScrollView , Animated, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -10,17 +10,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { db } from '@/db/index';
-import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 
 const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
     return (
       <View style={styles.titleToggleRow}>
         <Text style={[
           styles.titleToggleText,
-          // { fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' }
         ]}>
           {text}
         </Text>
@@ -143,11 +142,11 @@ export default function AppSettingsScreen() {
         setCameraAccessEnabled(true);
       } else {
         Alert.alert(
-          'Camera Permission Required',
-          'Camera access is required to take photos. Please enable it in your device settings.',
+          strings[language].appSettingsPage.cameraPermissionRequired,
+          strings[language].appSettingsPage.cameraPermissionMessage,
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => Linking.openSettings() }
+            { text: strings[language].cancel, style: 'cancel' },
+            { text: strings[language].appSettingsPage.settings, onPress: () => Linking.openSettings() }
           ]
         );
       }
@@ -155,11 +154,11 @@ export default function AppSettingsScreen() {
       // Note: We cannot programmatically revoke permissions on iOS/Android
       // The user would need to manually disable it in device settings
       Alert.alert(
-        'Camera Permission',
-        'To disable camera access, please go to your device settings and disable camera permissions for this app.',
+        strings[language].appSettingsPage.cameraPermission,
+        strings[language].appSettingsPage.cameraPermissionDisableMessage,
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Settings', onPress: () => Linking.openSettings() }
+          { text: strings[language].cancel, style: 'cancel' },
+          { text: strings[language].appSettingsPage.settings, onPress: () => Linking.openSettings() }
         ]
       );
     }
@@ -173,11 +172,11 @@ export default function AppSettingsScreen() {
         setGalleryAccessEnabled(true);
       } else {
         Alert.alert(
-          'Gallery Permission Required',
-          'Gallery access is required to upload images. Please enable it in your device settings.',
+          strings[language].appSettingsPage.galleryPermissionRequired,
+          strings[language].appSettingsPage.galleryPermissionMessage,
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => Linking.openSettings() }
+            { text: strings[language].cancel, style: 'cancel' },
+            { text: strings[language].appSettingsPage.settings, onPress: () => Linking.openSettings() }
           ]
         );
       }
@@ -185,11 +184,11 @@ export default function AppSettingsScreen() {
       // Note: We cannot programmatically revoke permissions on iOS/Android
       // The user would need to manually disable it in device settings
       Alert.alert(
-        'Gallery Permission',
-        'To disable gallery access, please go to your device settings and disable gallery permissions for this app.',
+        strings[language].appSettingsPage.galleryPermission,
+        strings[language].appSettingsPage.galleryPermissionDisableMessage,
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Settings', onPress: () => Linking.openSettings() }
+          { text: strings[language].cancel, style: 'cancel' },
+          { text: strings[language].appSettingsPage.settings, onPress: () => Linking.openSettings() }
         ]
       );
     }
@@ -203,22 +202,22 @@ export default function AppSettingsScreen() {
         setMicAccessEnabled(true);
       } else {
         Alert.alert(
-          'Microphone Permission Required',
-          'Microphone access is required to record audio. Please enable it in your device settings.',
+          strings[language].appSettingsPage.microphonePermissionRequired,
+          strings[language].appSettingsPage.microphonePermissionMessage,
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => Linking.openSettings() }
+            { text: strings[language].cancel, style: 'cancel' },
+            { text: strings[language].appSettingsPage.settings, onPress: () => Linking.openSettings() }
           ]
         );
       }
     } else {
       // Cannot programmatically revoke mic permissions
       Alert.alert(
-        'Microphone Permission',
-        'To disable microphone access, please go to your device settings and disable microphone permissions for this app.',
+        strings[language].appSettingsPage.microphonePermission,
+        strings[language].appSettingsPage.microphonePermissionDisableMessage,
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Settings', onPress: () => Linking.openSettings() }
+          { text: strings[language].cancel, style: 'cancel' },
+          { text: strings[language].appSettingsPage.settings, onPress: () => Linking.openSettings() }
         ]
       );
     }
@@ -357,9 +356,9 @@ export default function AppSettingsScreen() {
             </TouchableOpacity>
             <Text style={[styles.title, { 
               // fontFamily: language === 'Chinese' ? 'NotoSansSC-Regular' : 'Neuton-Regular',
-              marginLeft: language === 'Chinese' ? 0 : 16,
-              marginBottom: language === 'Chinese' ? Platform.OS === 'ios' ? 0 : 5 : Platform.OS === 'ios' ? 5 : 10,
-              }]}>{language === 'Chinese' ? '应用设置' : 'App Settings'}</Text>
+              marginLeft: 16,
+              marginBottom: Platform.OS === 'ios' ? 5 : 10,
+              }]}>{strings[language].appSettingsPage.title}</Text>
         </View>
         <View style={styles.mainContainer}>
             <ScrollView 
@@ -368,8 +367,7 @@ export default function AppSettingsScreen() {
             >
                 <View style={styles.titleToggleRow}>
                   <Text style={[styles.titleToggleText, { 
-                    // fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' 
-                    }]}>{language === 'Chinese' ? '语言' : 'Language'}</Text>
+                    }]}>{strings[language].appSettingsPage.language}</Text>
                   <TouchableOpacity
                     style={{
                       width: 170,
@@ -385,7 +383,7 @@ export default function AppSettingsScreen() {
                     onPress={handleLanguageRowPress}
                   >
                     <Text style={{ color: '#757575', fontSize: 18, fontFamily: 'Satoshi-Variable' }}>
-                      {language === 'Chinese' ? '中文' : 'English'}
+                      {strings[language].appSettingsPage.languages[language.toLowerCase()]}
                     </Text>
                     <AntDesign name="right" size={20} color="#757575" />
                   </TouchableOpacity>
@@ -398,46 +396,54 @@ export default function AppSettingsScreen() {
                 >
                   <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} activeOpacity={1} onPressOut={() => setIsLanguageModalOpen(false)}>
                     <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
-                      <TouchableOpacity style={{ paddingVertical: 18 }} onPress={() => handleLanguageSelect('English')}>
-                        <Text style={{ fontFamily: 'Satoshi-Variable', fontSize: 24, color: language === 'English' ? '#44B88A' : '#222', textAlign: 'center' }}>English</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={{ paddingVertical: 18 }} onPress={() => handleLanguageSelect('Chinese')}>
-                        <Text style={{ 
-                          // fontFamily: 'NotoSansSC-ExtraBold', 
-                          fontSize: 24, color: language === 'Chinese' ? '#44B88A' : '#222', textAlign: 'center' }}>中文</Text>
-                      </TouchableOpacity>
+                      {Object.entries(strings[language].appSettingsPage.languages).map(([langKey, langName]) => (
+                        <TouchableOpacity 
+                          key={langKey}
+                          style={{ paddingVertical: 18 }} 
+                          onPress={() => handleLanguageSelect(langKey.charAt(0).toUpperCase() + langKey.slice(1))}
+                        >
+                          <Text style={{ 
+                            fontFamily: 'Satoshi-Variable', 
+                            fontSize: 24, 
+                            color: language.toLowerCase() === langKey ? '#44B88A' : '#222', 
+                            textAlign: 'center' 
+                          }}>
+                            {langName as string}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
                       <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
                       </TouchableOpacity>
                       <TouchableOpacity style={{ marginBottom: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
                         <Text style={{ color: '#8684FF', fontSize: 20, 
-                          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Regular' : 'Satoshi-Medium' 
+                          // fontFamily: 'Satoshi-Medium' 
                           }}>
-                          {language === 'Chinese' ? '取消' : 'Cancel'}
+                          {strings[language].cancel}
                         </Text>
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
                 </Modal>
                 <TitleToggleRow 
-                    text={language === 'Chinese' ? '允许访问相机' : 'Camera Access'}
+                    text={strings[language].appSettingsPage.cameraAccess}
                     value={cameraAccessEnabled}
                     onValueChange={handleCameraToggle}
                     language={language}
                 />
                 <TitleToggleRow 
-                    text={language === 'Chinese' ? '允许访问相册' : 'Gallery Access'}
+                    text={strings[language].appSettingsPage.galleryAccess}
                     value={galleryAccessEnabled}
                     onValueChange={handleGalleryToggle}
                     language={language}
                 />
                 <TitleToggleRow 
-                    text={language === 'Chinese' ? '允许访问麦克风' : 'Microphone Access'}
+                    text={strings[language].appSettingsPage.microphoneAccess}
                     value={micAccessEnabled}
                     onValueChange={handleMicToggle}
                     language={language}
                 />
                 <TitleToggleRow 
-                    text={language === 'Chinese' ? '允许发送通知' : 'Notifications'}
+                    text={strings[language].appSettingsPage.notifications}
                     value={notificationsAccessEnabled}
                     onValueChange={handleNotificationsToggle}
                     language={language}
@@ -447,71 +453,40 @@ export default function AppSettingsScreen() {
                   onPress={handleBackupPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-upload" size={30} color="#fff" />
-                    <Text style={styles.cloudButtonText}>{language === 'Chinese' ? '备份数据到云端' : 'Backup data to cloud'}</Text>
+                    <Text style={styles.cloudButtonText}>{strings[language].appSettingsPage.backupDataToCloud}</Text>
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.descriptionText, { 
-                  // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Italic' 
                   }]}>
-                  { language === "English" ? 
-                  <>
-                  {"Backup your local storage to cloud regularly so that you can access your data on other devices.\n\nEach backup will replace the previous one. For more clarification, please refer to the FAQ in our "}
-                  <Text style={[styles.descriptionText, { color: '#44B88A' }]}>website</Text>
-                  <Text style={styles.descriptionText}>.</Text> </>:
-                  <>
-                  {"请定期将本地存储备份至云端，以便在其他设备上访问数据。\n\n每次备份将覆盖之前的记录。如需进一步了解，请参考"}
-                  <Text style={[styles.descriptionText, { 
-                    color: '#44B88A', 
-                    // fontFamily: 'NotoSansSC-Medium'
-                    }]}>官网FAQ</Text>
-                  <Text style={[styles.descriptionText, { fontFamily: 'NotoSansSC-Medium'}]}>帮助文档。</Text>
-                  </>
-                  }
-                  
-                  
+                  {strings[language].appSettingsPage.backupDescription}
+                  <Text style={[styles.descriptionText, { color: '#44B88A' }]}>{strings[language].appSettingsPage.website}</Text>
+                  <Text style={styles.descriptionText}>.</Text>
                 </Text>
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#8684FF', marginTop: 20 }]}
                   onPress={handleLoadDataPress}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-download" size={30} color="#fff" />
                     <Text style={[styles.cloudButtonText, { 
-                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' 
-                      }]}>{language === 'Chinese' ? '导入云端备份' : 'Load data from cloud'}</Text>
+                      }]}>{strings[language].appSettingsPage.loadDataFromCloud}</Text>
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.descriptionText, { 
-                  // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Italic' 
                   }]}>
-                  {language === "English" ? 
-                  <>
-                  {"Import your existing data and progress from cloud if you logging in from another phone.\n\nEach import will replace your existing local storage. For more clarification, please refer to the FAQ in our "}
-                  <Text style={[styles.descriptionText, { color: '#44B88A'}]}>website</Text>
-                  <Text style={styles.descriptionText}>.</Text> </> :
-                  <>
-                  {"若从其他手机登录，可从云端导入现有数据和进度。\n\n每次导入将覆盖本地现有存储。如需进一步了解，请参阅"}
-                  <Text style={[styles.descriptionText, { 
-                    color: '#44B88A', 
-                    // fontFamily: 'NotoSansSC-Medium'
-                    }]}>官网FAQ</Text>
-                  <Text style={[styles.descriptionText, { 
-                    // fontFamily: 'NotoSansSC-Medium'
-                    }]}>帮助文档。</Text>
-                  </>
-                  }
+                  {strings[language].appSettingsPage.loadDataDescription}
+                  <Text style={[styles.descriptionText, { color: '#44B88A'}]}>{strings[language].appSettingsPage.website}</Text>
+                  <Text style={styles.descriptionText}>.</Text>
                 </Text>
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#FF3B30', marginTop: 20 }]}
                   onPress={handleDeleteLocalStoragePress}>
                   <View style={styles.buttonContent}>
                     <Ionicons name="trash" size={30} color="#fff" />
                     <Text style={[styles.cloudButtonText, { 
-                      // fontFamily: language === 'Chinese' ? 'NotoSansSC-ExtraBold' : 'Satoshi-Variable' 
-                      }]}>{language === 'Chinese' ? '删除本地文件' : 'Clear local storage data'}</Text>
+                      }]}>{strings[language].appSettingsPage.clearLocalStorageData}</Text>
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.descriptionText, { 
-                  // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Italic'
                    }]}>
-                  {language === "English" ? "This will delete all your local storage data and you will not be able to recover it. Please backup your data to cloud before clearing." : "此操作将删除所有本地存储数据且无法恢复。请在清除前将数据备份至云端。"}
+                  {strings[language].appSettingsPage.clearLocalStorageDescription}
                 </Text>
             </ScrollView>
         </View>
@@ -523,7 +498,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isBackupModalOpen}
           opacity={modalOpacity}
-          text="Proceed with cloud backup?"
+          text={strings[language].appSettingsPage.proceedWithCloudBackup}
           buttons="double"
           onCancel={handleDismissBackup}
           onConfirm={handleConfirmBackup}
@@ -536,7 +511,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isLoadDataModalOpen}
           opacity={loadDataModalOpacity}
-          text="Proceed with cloud import?"
+          text={strings[language].appSettingsPage.proceedWithCloudImport}
           buttons="double"
           onCancel={handleDismissLoadData}
           onConfirm={handleConfirmLoadData}
@@ -549,7 +524,7 @@ export default function AppSettingsScreen() {
         <GenericModal 
           visible={isDeleteLocalStorageModalOpen}
           opacity={deleteLocalStorageModalOpacity}
-          text="Proceed with clearing local storage?"
+          text={strings[language].appSettingsPage.proceedWithClearingLocalStorage}
           buttons="double"
           onCancel={handleDismissDeleteLocalStorage}
           onConfirm={handleConfirmDeleteLocalStorage}

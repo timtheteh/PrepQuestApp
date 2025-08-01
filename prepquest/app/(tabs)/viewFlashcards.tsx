@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useContext, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Animated, Text, ScrollView } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
-import { useIsFocused, useFocusEffect } from '@react-navigation/native';
+import { useIsFocused } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuContext } from '@/contexts/MenuContext';
@@ -21,6 +21,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCallback } from 'react';
 import { 
   loadFlashcardsFromDatabase, 
   loadTopicsFromDatabase, 
@@ -28,10 +29,7 @@ import {
   toggleFlashcardFavorite, 
   deleteSelectedFlashcards as deleteSelectedFlashcardsFromDB,
   Flashcard,
-  getCurrentUserID
 } from '@/db/decks';
-
-
 
 // Safe JSON parse helper
 function safeParseJSON(val: any, fallback: any[] = []): any[] {
@@ -52,7 +50,6 @@ export default function ViewFlashcardsScreen() {
   const { deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, mode, sourcePage, folderTitle, folderId } = useLocalSearchParams();
   const { 
     navbarRef,
-    currentMode,
     setIsMenuOpen,
     setIsTrashModalOpenInDecksPage,
     setIsNoSelectionModalOpen,
@@ -66,9 +63,6 @@ export default function ViewFlashcardsScreen() {
   } = useContext(MenuContext);
 
   const { language } = useLanguage();
-  const insets = useSafeAreaInsets();
-  console.log('Current language in viewFlashcards:', language);
-
   // Localized labels
   const COLUMN_TITLES = {
     topics: strings[language].viewFlashcardsPage.topics,
@@ -146,10 +140,8 @@ export default function ViewFlashcardsScreen() {
       setIsLoadingFlashcards(true);
       const loadedFlashcards = await loadFlashcardsFromDatabase(deckId as string, isAIDeck as string);
       setFlashcards(loadedFlashcards);
-      console.log('Loaded flashcards:', loadedFlashcards.length);
       const questionTypeCounts = calculateQuestionTypeCounts(loadedFlashcards);
       setQuestionTypes(questionTypeCounts);
-      console.log('Loaded question types:', questionTypeCounts);
     } catch (error) {
       console.error('Error loading flashcards:', error);
       setFlashcards([]);
@@ -164,7 +156,6 @@ export default function ViewFlashcardsScreen() {
       setIsLoadingTopics(true);
       const loadedTopics = await loadTopicsFromDatabase(deckId as string, isAIDeck as string);
       setTopics(loadedTopics);
-      console.log('Loaded topics:', loadedTopics);
     } catch (error) {
       console.error('Error loading topics:', error);
       setTopics([]);
@@ -294,15 +285,13 @@ export default function ViewFlashcardsScreen() {
   useEffect(() => {
     if (deckId) {
       setCurrentDeckId(deckId as string);
-      console.log('✅ viewFlashcards: Setting deckId in context:', deckId);
     }
     if (deckType) {
       setCurrentDeckType(deckType as string);
-      console.log('✅ viewFlashcards: Setting deckType in context:', deckType);
     }
   }, [deckId, deckType, setCurrentDeckId, setCurrentDeckType]);
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     // Navigate back to deck details page with all preserved parameters
     router.push({
       pathname: '/(tabs)/deckDetails',
@@ -322,9 +311,9 @@ export default function ViewFlashcardsScreen() {
         folderId: folderId as string
       }
     });
-  };
+  }, [router, deckId, deckTitle, deckType, deckDetailsBackgroundIndex, date, flashcardCount, percent, company, isAIDeck, mode, sourcePage, folderTitle, folderId]);
 
-  const handleStudyPress = () => {
+  const handleStudyPress = useCallback(() => {
     // Navigate to flashcardView with the first flashcard for study mode
     router.push({
       pathname: '/flashcardView',
@@ -336,9 +325,9 @@ export default function ViewFlashcardsScreen() {
         deckID: deckId as string,
       }
     });
-  };
+  }, [router, flashcards.length, isAIDeck, deckId]);
 
-  const handleQuizPress = () => {
+  const handleQuizPress = useCallback(() => {
     // TODO: Implement quiz functionality
     router.push({
       pathname: '/flashcardView',
@@ -350,21 +339,19 @@ export default function ViewFlashcardsScreen() {
         deckID: deckId as string,
       }
     });
-  };
+  }, [router, flashcards.length, isAIDeck, deckId]);
 
-  const handleGridPress = () => {
+  const handleGridPress = useCallback(() => {
     setViewMode('grid');
-    console.log('Grid view activated');
-  };
+  }, [setViewMode]);
 
-  const handleListPress = () => {
+  const handleListPress = useCallback(() => {
     setViewMode('list');
-    console.log('List view activated');
-  };
+  }, [setViewMode]);
 
   // Action row handlers
-  const handleSelect = () => setIsSelectMode(true);
-  const handleSelectAll = () => {
+  const handleSelect = useCallback(() => setIsSelectMode(true), [setIsSelectMode]);
+  const handleSelectAll = useCallback(() => {
     if (selectedCardIndexes.length === flashcards.length) {
       // If all are selected, deselect all
       setSelectedCardIndexes([]);
@@ -372,12 +359,12 @@ export default function ViewFlashcardsScreen() {
       // Otherwise, select all
       setSelectedCardIndexes(flashcards.map((_, idx) => idx));
     }
-  };
-  const handleCancel = () => {
+  }, [selectedCardIndexes.length, flashcards.length, setSelectedCardIndexes]);
+  const handleCancel = useCallback(() => {
     setIsSelectMode(false);
     setSelectedCardIndexes([]);
-  };
-  const handleActionIconPress = (index: number) => {
+  }, [setIsSelectMode, setSelectedCardIndexes]);
+  const handleActionIconPress = useCallback((index: number) => {
     if (selectedCardIndexes.length === 0) {
       // No selection - show no selection modal
       Animated.timing(menuOverlayOpacity, {
@@ -408,7 +395,7 @@ export default function ViewFlashcardsScreen() {
         useNativeDriver: true,
       }).start();
     }
-  };
+  }, [selectedCardIndexes.length, menuOverlayOpacity, setIsMenuOpen, setIsNoSelectionModalOpen, noSelectionModalOpacity, setIsTrashModalOpenInDecksPage, setDeleteModalText, language, trashModalOpacity]);
 
   // Function to delete selected flashcards
   const deleteSelectedFlashcards = async () => {
@@ -433,7 +420,7 @@ export default function ViewFlashcardsScreen() {
   };
 
   // Handler to navigate to flashcard view
-  const handleNavigateToFlashcardView = (flashcardIdx: number) => {
+  const handleNavigateToFlashcardView = useCallback((flashcardIdx: number) => {
     // Save current view mode and mark that we're going to flashcardView
     previousViewMode.current = viewMode;
     comingFromFlashcardView.current = true;
@@ -446,28 +433,28 @@ export default function ViewFlashcardsScreen() {
         deckID: deckId as string,
       }
     });
-  };
+  }, [router, viewMode, flashcards.length, isAIDeck, deckId]);
 
   // Handler to toggle card selection
-  const handleCardPress = (cardIdx: number) => {
+  const handleCardPress = useCallback((cardIdx: number) => {
     if (!isSelectMode) return;
     setSelectedCardIndexes((prev) =>
       prev.includes(cardIdx)
         ? prev.filter((idx) => idx !== cardIdx)
         : [...prev, cardIdx]
     );
-  };
+  }, [isSelectMode, setSelectedCardIndexes]);
 
-  function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunkArray = useCallback(<T,>(arr: T[], size: number): T[][] => {
     const res: T[][] = [];
     for (let i = 0; i < arr.length; i += size) {
       res.push(arr.slice(i, i + size));
     }
     return res;
-  }
+  }, []);
 
   // Local TopicPill component
-  const TopicPill = ({ text }: { text: string }) => {
+  const TopicPill = useCallback(({ text }: { text: string }) => {
     return (
       <View style={styles.topicPill}>
         <Text style={[styles.topicPillText, language === 'Chinese' && { 
@@ -477,10 +464,10 @@ export default function ViewFlashcardsScreen() {
         </Text>
       </View>
     );
-  };
+  }, [language]);
 
   // Local QuestionTypeCountRow component
-  const QuestionTypeCountRow = ({ title, count }: { title: string; count: number }) => (
+  const QuestionTypeCountRow = useCallback(({ title, count }: { title: string; count: number }) => (
     <View style={styles.questionTypeCountRow}>
       <Text style={[styles.questionTypeCountText, language === 'Chinese' && {
         //  fontFamily: 'NotoSansSC-Medium' 
@@ -489,7 +476,7 @@ export default function ViewFlashcardsScreen() {
         // fontFamily: 'NotoSansSC-Medium' 
         }]}>{count}</Text>
     </View>
-  );
+  ), [language, getCognitiveQnTypeLabel]);
 
   const difficultyColors: Record<string, string> = {
     Again: '#F8696B',

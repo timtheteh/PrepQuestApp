@@ -1,7 +1,7 @@
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
 import { HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
 import { Title } from '@/components/general/Title';
-import { useState, useRef, useContext, useEffect } from 'react';
+import { useState, useRef, useContext, useEffect, useCallback } from 'react';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -226,7 +226,7 @@ export default function ViewDecksInFolderScreen() {
   }, [folderId, folderTitle, sourcePage, setCurrentFolderId, setCurrentFolderTitle, setCurrentSourcePage]);
 
   // Helper function to format date
-  const formatDate = (dateString: string): string => {
+  const formatDate = useCallback((dateString: string): string => {
     try {
       const date = new Date(dateString);
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -238,10 +238,10 @@ export default function ViewDecksInFolderScreen() {
       console.error('Error formatting date:', error);
       return dateString; // Return original string if parsing fails
     }
-  };
+  }, []);
 
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     // Reset header icons state
     headerIconsRef.current?.reset();
     
@@ -283,16 +283,16 @@ export default function ViewDecksInFolderScreen() {
         }, 50);
       }
     }
-  };
+  }, [sourcePage, router, navbarRef]);
 
   const slidingMenuDuration = 300;
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
       const allDeckIndices = new Set(Array.from({ length: decks.length }, (_, i) => i));
       setSelectedDecks(allDeckIndices);
-  };
+  }, [decks.length]);
 
-  const handleSelect = () => {
+  const handleSelect = useCallback(() => {
     setIsSelectMode(true);
     
     Animated.parallel([
@@ -332,9 +332,9 @@ export default function ViewDecksInFolderScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, [shiftAnim, marginAnim, actionRowOpacity, selectTextAnim, fabOpacity, cardWidthPercentage, circleButtonOpacity]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
@@ -375,18 +375,18 @@ export default function ViewDecksInFolderScreen() {
       setIsSelectMode(false);
       setSelectedDecks(new Set());
     });
-  };
+  }, [shiftAnim, marginAnim, actionRowOpacity, selectTextAnim, fabOpacity, cardWidthPercentage, circleButtonOpacity]);
 
-  const handleFabPress = () => {
+  const handleFabPress = useCallback(() => {
     console.log("FAB clicked!");
-  };
+  }, []);
 
-  const handleEditNamePress = () => {
+  const handleEditNamePress = useCallback(() => {
     if (editNameSelected) return;
     setEditText(folderTitle as string || '');
     setShowEditModal(true);
     setEditNameSelected(true);
-  };
+  }, [editNameSelected, folderTitle]);
 
   const handleDoneEdit = async () => {
     const trimmedText = editText.trim();
@@ -445,12 +445,12 @@ export default function ViewDecksInFolderScreen() {
     }
   };
 
-  const handleOtherButtonPress = () => {
+  const handleOtherButtonPress = useCallback(() => {
     setShowEditModal(false);
     setEditNameSelected(false);
-  };
+  }, []);
 
-  const handleDeleteFolder = () => {
+  const handleDeleteFolder = useCallback(() => {
     // Show delete folder confirmation modal
     setIsMenuOpen(true);
     setIsDeleteFolderModalOpen(true);
@@ -497,9 +497,9 @@ export default function ViewDecksInFolderScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, [folderId, folderTitle, sourcePage, router, menuOverlayOpacity, deleteFolderModalOpacity]);
 
-  const handleDeckSelection = (index: number, selected: boolean) => {
+  const handleDeckSelection = useCallback((index: number, selected: boolean) => {
     setSelectedDecks(prev => {
       const newSet = new Set(prev);
       if (selected) {
@@ -509,10 +509,10 @@ export default function ViewDecksInFolderScreen() {
       }
       return newSet;
     });
-  };
+  }, []);
 
   // Function to handle favorite/unfavorite deck
-  const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean) => {
+  const handleFavoriteToggle = useCallback(async (deckId: number, currentFavorited: boolean) => {
     try {
       const newFavoritedValue = currentFavorited ? 0 : 1;
       const userID = await getCurrentUserID();
@@ -535,7 +535,7 @@ export default function ViewDecksInFolderScreen() {
     } catch (error) {
       console.error('Error updating favorite status:', error);
     }
-  };
+  }, []);
 
   const handleDeleteSelectedDecks = async () => {
     try {
@@ -613,7 +613,7 @@ export default function ViewDecksInFolderScreen() {
     }
   };
 
-  const handleActionIconPress = (index: number) => {
+  const handleActionIconPress = useCallback((index: number) => {
     const hasSelection = selectedDecks.size > 0;
 
     if (!hasSelection) {
@@ -697,7 +697,7 @@ export default function ViewDecksInFolderScreen() {
         ]).start();
         break;
     }
-  };
+  }, [selectedDecks, decks, sourcePage, folderTitle, folderId, language, router, navbarRef, menuOverlayOpacity, noSelectionModalOpacity, trashModalOpacity, slidingMenuDuration]);
 
   const selectOpacity = selectTextAnim.interpolate({
     inputRange: [0, 1],
@@ -893,7 +893,7 @@ export default function ViewDecksInFolderScreen() {
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedDecks.has(index)}
-          onSelectPress={() => handleDeckSelection(index, !selectedDecks.has(index))}
+          onSelectPress={useCallback(() => handleDeckSelection(index, !selectedDecks.has(index)), [index, selectedDecks, handleDeckSelection])}
           circleButtonOpacity={circleButtonOpacity}
           percent={data.progress}
           showProgress={!isSelectMode}
@@ -909,7 +909,7 @@ export default function ViewDecksInFolderScreen() {
           sourcePage={sourcePage as string}
           isStudy={data.deckType === 'study'}
           isFavorited={data.isFavorited === 1}
-          onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1)}
+          onFavoriteToggle={useCallback(() => handleFavoriteToggle(data.deckID, data.isFavorited === 1), [data.deckID, data.isFavorited, handleFavoriteToggle])}
           deckID={data.deckID}
         />
       );

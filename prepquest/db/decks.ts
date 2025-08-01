@@ -2905,3 +2905,90 @@ export async function loadSortPreferences(): Promise<{ field: 'name' | 'dateAdde
     return null;
   }
 }
+
+// Function to update folder name
+export async function updateFolderName(folderId: number, newFolderName: string): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.execAsync(`
+      UPDATE folders 
+      SET folderName = '${newFolderName}', lastModifiedDate = '${new Date().toISOString()}'
+      WHERE folderID = ${folderId} AND userID = '${userID}'
+    `);
+    return true;
+  } catch (error) {
+    console.error('Error updating folder name:', error);
+    return false;
+  }
+}
+
+// Function to remove decks from folder
+export async function removeDecksFromFolder(deckIds: number[], folderId: number): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    for (const deckId of deckIds) {
+      // Get the current deck's folderIDs
+      const deckResult = await db.getFirstAsync(`
+        SELECT folderIDs FROM decks WHERE deckID = ? AND userID = ?
+      `, [deckId, userID]);
+      
+      if (deckResult) {
+        const deck = deckResult as { folderIDs: string | null };
+        let folderIds: number[] = [];
+        
+        // Parse existing folderIDs if they exist
+        if (deck.folderIDs) {
+          try {
+            folderIds = JSON.parse(deck.folderIDs);
+          } catch (error) {
+            console.error('Error parsing folderIDs for deck', deckId, error);
+            folderIds = [];
+          }
+        }
+        
+        // Remove the current folderID from the array
+        const updatedFolderIds = folderIds.filter(id => id !== folderId);
+        
+        // Update the deck with the new folderIDs
+        await db.runAsync(`
+          UPDATE decks 
+          SET folderIDs = ?, lastModifiedDate = '${new Date().toISOString()}'
+          WHERE deckID = ? AND userID = ?
+        `, [JSON.stringify(updatedFolderIds), deckId, userID]);
+      }
+    }
+    
+    // Update the folder's lastModifiedDate since decks were removed
+    await db.execAsync(`
+      UPDATE folders 
+      SET lastModifiedDate = '${new Date().toISOString()}'
+      WHERE folderID = ${folderId} AND userID = '${userID}'
+    `);
+    
+    return true;
+  } catch (error) {
+    console.error('Error removing decks from folder:', error);
+    return false;
+  }
+}
+
+// Function to update deck favorite status
+export async function updateDeckFavoriteStatusInFolder(deckId: number, isFavorited: boolean): Promise<boolean> {
+  try {
+    const newFavoritedValue = isFavorited ? 1 : 0;
+    const userID = await getCurrentUserID();
+    
+    // Update database
+    await db.execAsync(`
+      UPDATE decks 
+      SET isFavorited = ${newFavoritedValue}
+      WHERE deckID = ${deckId} AND userID = '${userID}'
+    `);
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating favorite status:', error);
+    return false;
+  }
+}

@@ -12,12 +12,20 @@ import { Card } from '@/components/general/Card';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
 import { Feather } from '@expo/vector-icons';
 import { BottomTextInputModal } from '@/components/general/BottomTextInputModal';
-import { getDecksInFolder, Deck, deleteFolder, checkFolderNameExists, getCompanyIconImageSource } from '@/db/decks';
-import { db } from '@/db/index';
+import { 
+  getDecksInFolder, 
+  Deck, 
+  deleteFolder, 
+  checkFolderNameExists, 
+  getCompanyIconImageSource,
+  updateFolderName,
+  removeDecksFromFolder,
+  updateDeckFavoriteStatusInFolder,
+  checkDatabaseReady
+} from '@/db/decks';
 import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/general/Toast';
 import LottieView from 'lottie-react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle2 } from '@/hooks/heights';
 import { strings } from '@/constants/strings';
@@ -29,16 +37,7 @@ const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-}
+
 
 export default function ViewDecksInFolderScreen() {
   const router = useRouter();
@@ -102,20 +101,18 @@ export default function ViewDecksInFolderScreen() {
 
   // Check if database is ready
   useEffect(() => {
-    const checkDatabaseReady = async () => {
+    const checkDatabaseReadyLocal = async () => {
       try {
-        const userID = await getCurrentUserID();
-        // Try a simple query to check if database is ready
-        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
-        setIsDatabaseReady(true);
+        const isReady = await checkDatabaseReady();
+        setIsDatabaseReady(isReady);
       } catch (error) {
         console.error('Database not ready yet, waiting...', error);
         // Retry after a short delay
-        setTimeout(checkDatabaseReady, 500);
+        setTimeout(checkDatabaseReadyLocal, 500);
       }
     };
     
-    checkDatabaseReady();
+    checkDatabaseReadyLocal();
   }, []);
 
   // Load decks data from database
@@ -404,25 +401,25 @@ export default function ViewDecksInFolderScreen() {
       return;
     }
     
-    // If validation passes, update the folder name
+        // If validation passes, update the folder name
     try {
-      const userID = await getCurrentUserID();
-      await db.execAsync(`
-        UPDATE folders 
-        SET folderName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
-        WHERE folderID = ${parseInt(folderId as string)} AND userID = '${userID}'
-      `);
-            
-      // Update local state to reflect the change immediately
-      setEditText(trimmedText);
+      const success = await updateFolderName(parseInt(folderId as string), trimmedText);
       
-      // Close the modal
-      setShowEditModal(false);
-      setEditNameSelected(false);
-      
-      // Force a re-render by updating the folder title in the route params
-      // This will make the new name appear in the UI immediately
-      router.setParams({ folderTitle: trimmedText });
+      if (success) {
+        // Update local state to reflect the change immediately
+        setEditText(trimmedText);
+        
+        // Close the modal
+        setShowEditModal(false);
+        setEditNameSelected(false);
+        
+        // Force a re-render by updating the folder title in the route params
+        // This will make the new name appear in the UI immediately
+        router.setParams({ folderTitle: trimmedText });
+      } else {
+        setToastMessage(strings[language].viewDecksInFolder.errorUpdatingFolderName);
+        setShowToast(true);
+      }
       
     } catch (error) {
       console.error('Error updating folder name:', error);
@@ -493,24 +490,19 @@ export default function ViewDecksInFolderScreen() {
   // Function to handle favorite/unfavorite deck
   const handleFavoriteToggle = useCallback(async (deckId: number, currentFavorited: boolean) => {
     try {
-      const newFavoritedValue = currentFavorited ? 0 : 1;
-      const userID = await getCurrentUserID();
+      const success = await updateDeckFavoriteStatusInFolder(deckId, !currentFavorited);
       
-      // Update database
-      await db.execAsync(`
-        UPDATE decks 
-        SET isFavorited = ${newFavoritedValue}
-        WHERE deckID = ${deckId} AND userID = '${userID}'
-      `);
-      
-      // Update local state immediately
-      setDecks(prev => 
-        prev.map(deck => 
-          deck.deckID === deckId 
-            ? { ...deck, isFavorited: newFavoritedValue }
-            : deck
-        )
-      );
+      if (success) {
+        // Update local state immediately
+        const newFavoritedValue = currentFavorited ? 0 : 1;
+        setDecks(prev => 
+          prev.map(deck => 
+            deck.deckID === deckId 
+              ? { ...deck, isFavorited: newFavoritedValue }
+              : deck
+          )
+        );
+      }
     } catch (error) {
       console.error('Error updating favorite status:', error);
     }
@@ -528,58 +520,22 @@ export default function ViewDecksInFolderScreen() {
       // Remove the folderID from each selected deck's folderIDs field
       const currentFolderId = parseInt(folderId as string);
       
-      for (const deckId of selectedDeckIds) {
-        // Get the current deck's folderIDs
-        const userID = await getCurrentUserID();
-        const deckResult = await db.getFirstAsync(`
-          SELECT folderIDs FROM decks WHERE deckID = ? AND userID = ?
-        `, [deckId, userID]);
+      const success = await removeDecksFromFolder(selectedDeckIds, currentFolderId);
+      
+      if (success) {
+        // Clear selections first to prevent render issues
+        setSelectedDecks(new Set());
         
-        if (deckResult) {
-          const deck = deckResult as { folderIDs: string | null };
-          let folderIds: number[] = [];
-          
-          // Parse existing folderIDs if they exist
-          if (deck.folderIDs) {
-            try {
-              folderIds = JSON.parse(deck.folderIDs);
-            } catch (error) {
-              console.error('Error parsing folderIDs for deck', deckId, error);
-              folderIds = [];
-            }
-          }
-          
-          // Remove the current folderID from the array
-          const updatedFolderIds = folderIds.filter(id => id !== currentFolderId);
-          
-          // Update the deck with the new folderIDs
-          await db.runAsync(`
-            UPDATE decks 
-            SET folderIDs = ?, lastModifiedDate = '${new Date().toISOString()}'
-            WHERE deckID = ? AND userID = ?
-          `, [JSON.stringify(updatedFolderIds), deckId, userID]);
-        }
-      }
-      
-      // Update the folder's lastModifiedDate since decks were removed
-      const folderUserID = await getCurrentUserID();
-      await db.execAsync(`
-        UPDATE folders 
-        SET lastModifiedDate = '${new Date().toISOString()}'
-        WHERE folderID = ${currentFolderId} AND userID = '${folderUserID}'
-      `);      
-      // Clear selections first to prevent render issues
-      setSelectedDecks(new Set());
-      
-      // Update local state by removing the decks from the current folder view
-      const remainingDecks = decks.filter(deck => !selectedDeckIds.includes(deck.deckID));
-      setDecks(remainingDecks);
-      setDecksCount(remainingDecks.length);
+        // Update local state by removing the decks from the current folder view
+        const remainingDecks = decks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+        setDecks(remainingDecks);
+        setDecksCount(remainingDecks.length);
 
-      // Exit selection mode after state updates
-      setTimeout(() => {
-        handleCancel();
-      }, 0);
+        // Exit selection mode after state updates
+        setTimeout(() => {
+          handleCancel();
+        }, 0);
+      }
     } catch (error) {
       console.error('Error removing decks from folder:', error);
     }
@@ -865,7 +821,7 @@ export default function ViewDecksInFolderScreen() {
           containerWidthPercentage={cardWidthPercentage}
           isSelectMode={isSelectMode}
           selected={selectedDecks.has(index)}
-          onSelectPress={useCallback(() => handleDeckSelection(index, !selectedDecks.has(index)), [index, selectedDecks, handleDeckSelection])}
+          onSelectPress={() => handleDeckSelection(index, !selectedDecks.has(index))}
           circleButtonOpacity={circleButtonOpacity}
           percent={data.progress}
           showProgress={!isSelectMode}
@@ -881,7 +837,7 @@ export default function ViewDecksInFolderScreen() {
           sourcePage={sourcePage as string}
           isStudy={data.deckType === 'study'}
           isFavorited={data.isFavorited === 1}
-          onFavoriteToggle={useCallback(() => handleFavoriteToggle(data.deckID, data.isFavorited === 1), [data.deckID, data.isFavorited, handleFavoriteToggle])}
+          onFavoriteToggle={() => handleFavoriteToggle(data.deckID, data.isFavorited === 1)}
           deckID={data.deckID}
         />
       );

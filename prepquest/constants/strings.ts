@@ -1,10 +1,22 @@
 export const strings: Record<string, any> = {
   English: {
-    // Statistics page strings
-    statistics: {
-      decksFlashcards: 'Decks / Flashcards',
-      performance: 'Performance',
-    },
+                    // Statistics page strings
+                statistics: {
+                  decksFlashcards: 'Decks / Flashcards',
+                  performance: 'Performance',
+                },
+                // ViewDecksInFolder page strings
+                viewDecksInFolder: {
+                  noDecksInFolder: "Whoops! No more\ndecks in this folder",
+                  select: 'Select',
+                  selectAll: 'Select All',
+                  decksCount: 'Decks',
+                  editFolderNamePlaceholder: 'Edit folder name...',
+                  folderNameEmpty: 'Folder name cannot be empty!',
+                  folderNameExists: 'Folder name already exists!',
+                  errorUpdatingFolderName: 'Error updating folder name!',
+                  deleteFromFolderConfirmation: 'Are you sure you want to delete from this folder?',
+                },
     // Index page (Decks screen) strings
     index: {
       myStudyDecks: 'My Study Decks',
@@ -321,11 +333,23 @@ export const strings: Record<string, any> = {
     },
   },
   Chinese: {
-    // Statistics page strings
-    statistics: {
-      decksFlashcards: '卡片组 / 卡片',
-      performance: '表现',
-    },
+                    // Statistics page strings
+                statistics: {
+                  decksFlashcards: '卡片组 / 卡片',
+                  performance: '表现',
+                },
+                // ViewDecksInFolder page strings
+                viewDecksInFolder: {
+                  noDecksInFolder: '此文件夹中没有卡组',
+                  select: '选择',
+                  selectAll: '全选',
+                  decksCount: '卡组',
+                  editFolderNamePlaceholder: '编辑文件夹名称...',
+                  folderNameEmpty: '文件夹名称不能为空！',
+                  folderNameExists: '文件夹名称已存在！',
+                  errorUpdatingFolderName: '更新文件夹名称时出错！',
+                  deleteFromFolderConfirmation: '确定要从此文件夹中删除吗？',
+                },
     // Index page (Decks screen) strings
     index: {
       myStudyDecks: '我的学习卡片组',

@@ -1,10 +1,9 @@
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
-import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
+import { HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
 import { Title } from '@/components/general/Title';
 import { useState, useRef, useContext, useEffect } from 'react';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { NavBarRef } from '@/components/general/NavBar';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useIsFocused } from '@react-navigation/native';
 import { FolderDetailsTopBar } from '@/components/folderComponents/FolderDetailsTopBar';
@@ -13,15 +12,18 @@ import { Card } from '@/components/general/Card';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
 import { Feather } from '@expo/vector-icons';
 import { BottomTextInputModal } from '@/components/general/BottomTextInputModal';
-import { getDecksInFolder, Deck, deleteMultipleDecks, deleteFolder, checkFolderNameExists, getCompanyIconImageSource } from '@/db/decks';
+import { getDecksInFolder, Deck, deleteFolder, checkFolderNameExists, getCompanyIconImageSource } from '@/db/decks';
 import { db } from '@/db/index';
-import { cardDesigns, getDeckCardDesign } from '@/constants/cardDesigns';
+import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/general/Toast';
 import LottieView from 'lottie-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle2 } from '@/hooks/heights';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -41,16 +43,14 @@ async function getCurrentUserID(): Promise<string> {
 export default function ViewDecksInFolderScreen() {
   const router = useRouter();
   const { folderTitle, folderId, sourcePage } = useLocalSearchParams();
+  const { theme } = useTheme();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const isFocused = useIsFocused();
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
-    menuTranslateX,
-    setShowSlidingMenu,
     navbarRef,
     setIsNoSelectionModalOpen,
-    noSelectionModalSubtitle,
     noSelectionModalOpacity,
     setSourcePageForFolders,
     setIsTrashModalOpenInDecksPage,
@@ -65,7 +65,6 @@ export default function ViewDecksInFolderScreen() {
     setCurrentSourcePage,
   } = useContext(MenuContext);
   const { language } = useLanguage();
-  const insets = useSafeAreaInsets();
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
@@ -160,7 +159,7 @@ export default function ViewDecksInFolderScreen() {
       headerIconsRef.current?.reset();
       
       // Set the delete modal text for viewDecksInFolder
-      setDeleteModalText('Are you sure you want to delete from this folder?');
+      setDeleteModalText(strings[language].viewDecksInFolder.deleteFromFolderConfirmation);
       
       // Set up the deletion handler for viewDecksInFolder
       setHandleDeletion(() => handleCancel);
@@ -394,7 +393,7 @@ export default function ViewDecksInFolderScreen() {
     
     // Check if the text is empty
     if (!trimmedText) {
-      setToastMessage('Folder name cannot be empty!');
+      setToastMessage(strings[language].viewDecksInFolder.folderNameEmpty);
       setShowToast(true);
       return;
     }
@@ -412,7 +411,7 @@ export default function ViewDecksInFolderScreen() {
     const folderExists = await checkFolderNameExists(trimmedText, parseInt(folderId as string));
     
     if (folderExists) {
-      setToastMessage('Folder name already exists!');
+      setToastMessage(strings[language].viewDecksInFolder.folderNameExists);
       setShowToast(true);
       return;
     }
@@ -441,7 +440,7 @@ export default function ViewDecksInFolderScreen() {
       
     } catch (error) {
       console.error('Error updating folder name:', error);
-      setToastMessage('Error updating folder name!');
+      setToastMessage(strings[language].viewDecksInFolder.errorUpdatingFolderName);
       setShowToast(true);
     }
   };
@@ -682,7 +681,7 @@ export default function ViewDecksInFolderScreen() {
       case 1: // Trash
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
-        setDeleteModalText('Are you sure you want to delete from this folder?');
+        setDeleteModalText(strings[language].viewDecksInFolder.deleteFromFolderConfirmation);
         setHandleDeletion(() => handleDeleteSelectedDecks);
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
@@ -710,6 +709,156 @@ export default function ViewDecksInFolderScreen() {
     outputRange: [0, 1],
   });
 
+  const styles = StyleSheet.create({
+    animatedContainer: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    topBar: {
+      position: 'absolute',
+      top: Platform.OS === 'android' ? 70 : 16,
+      left: 16,
+      zIndex: 1,
+    },
+    headerIconsContainer: {
+      position: 'absolute',
+      top: Platform.OS === 'android' ? 70 : 16,
+      right: 16,
+      zIndex: 1,
+    },
+    backButton: {
+      paddingTop: 10,
+      paddingRight: 8,
+    },
+    mainContentWrapper: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    titleContainer: {
+      position: 'relative',
+      height: Platform.OS === 'android' ? 32 : 24,
+    },
+    title: {
+      fontSize: 32,
+      fontFamily: Fonts.title,
+      color: Colors[theme].text,
+      lineHeight: 36,
+    },
+    decksContainer: {
+      flex: 1,
+      marginTop: 16,
+    },
+    decksCount: {
+      fontSize: 24,
+      fontFamily: Fonts.title,
+      color: Colors[theme].text,
+      marginBottom: 16,
+    },
+    actionButtonsRow: {
+      position: 'absolute',
+      top: 55,
+      right: 0,
+      left: 0,
+      zIndex: 1,
+    },
+    shiftableContent: {
+      flex: 1,
+      marginTop: 16,
+    },
+    titleAbsolute: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+    },
+    selectButtonContainer: {
+      position: 'relative',
+      width: 85,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+    },
+    selectButton: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors.light.brandColor1,
+    },
+    selectButtonAbsolute: {
+      position: 'absolute',
+    },
+    scrollWrapper: {
+      flex: 1,
+      marginTop: 10,
+    },
+    scrollViewContainer: {
+      flex: 1,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      paddingBottom: BOTTOM_SPACING,
+    },
+    firstCard: {
+      marginTop: 5,
+    },
+    card: {
+      marginTop: 26,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 20,
+      right: 16,
+    },
+    fabContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 100,
+      zIndex: 1,
+    },
+    emptyStateContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyStateAnimation: {
+      width: 200,
+      height: 200,
+    },
+    emptyStateText: {
+      fontSize: 18,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].text,
+      textAlign: 'center',
+      marginTop: 20,
+    },
+    selectButtonDisabled: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].unselectedText,
+    },
+  });
+
   const renderDecks = () => {
     // Show empty state if no decks
     if (!decks || decks.length === 0) {
@@ -725,7 +874,7 @@ export default function ViewDecksInFolderScreen() {
           <Text style={[styles.emptyStateText, 
             // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
             ]}>
-            {language === 'Chinese' ? '此文件夹中没有卡组' : "Whoops! No more\ndecks in this folder"}
+            {strings[language].viewDecksInFolder.noDecksInFolder}
           </Text>
         </View>
       );
@@ -835,7 +984,7 @@ export default function ViewDecksInFolderScreen() {
                         styles.titleAbsolute,
                         // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium', fontSize: 20 }
                       ]}>
-                          {language === 'Chinese' ? `卡组 (${decksCount})` : `Decks (${decksCount})`}
+                          {`${strings[language].viewDecksInFolder.decksCount} (${decksCount})`}
                       </Title>
                     </View>
                         
@@ -850,7 +999,7 @@ export default function ViewDecksInFolderScreen() {
                             { opacity: selectOpacity },
                             // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
                         ]}>
-                            {language === 'Chinese' ? '选择' : 'Select'}
+                            {strings[language].viewDecksInFolder.select}
                         </Animated.Text>
                         <Animated.Text style={[
                             styles.selectButton,
@@ -858,7 +1007,7 @@ export default function ViewDecksInFolderScreen() {
                             { opacity: selectAllOpacity },
                             // language === 'Chinese' && { fontFamily: 'NotoSansSC-Medium' }
                         ]}>
-                            {language === 'Chinese' ? '全选' : 'Select All'}
+                            {strings[language].viewDecksInFolder.selectAll}
                         </Animated.Text>
                     </TouchableOpacity>
                   </View>
@@ -898,7 +1047,7 @@ export default function ViewDecksInFolderScreen() {
         value={editText}
         onChangeText={setEditText}
         onDone={handleDoneEdit}
-        placeholder={language === 'Chinese' ? '编辑文件夹名称...' : 'Edit folder name...'}
+        placeholder={strings[language].viewDecksInFolder.editFolderNamePlaceholder}
       />
       <Toast
         visible={showToast}
@@ -909,153 +1058,3 @@ export default function ViewDecksInFolderScreen() {
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  animatedContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
-    left: 16,
-    zIndex: 1,
-  },
-  headerIconsContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 70 : 16,
-    right: 16,
-    zIndex: 1,
-  },
-  backButton: {
-    paddingTop: 10,
-    paddingRight: 8,
-  },
-  mainContentWrapper: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  titleContainer: {
-    position: 'relative',
-    height: Platform.OS === 'android' ? 32 : 24,
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: 'Neuton-Regular',
-    color: '#000',
-    lineHeight: 36,
-  },
-  decksContainer: {
-    flex: 1,
-    marginTop: 16,
-  },
-  decksCount: {
-    fontSize: 24,
-    fontFamily: 'Neuton-Regular',
-    color: '#000',
-    marginBottom: 16,
-  },
-  actionButtonsRow: {
-    position: 'absolute',
-    top: 55,
-    right: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  shiftableContent: {
-    flex: 1,
-    marginTop: 16,
-  },
-  titleAbsolute: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  selectButtonContainer: {
-    position: 'relative',
-    width: 85,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  selectButton: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#44B88A',
-  },
-  selectButtonAbsolute: {
-    position: 'absolute',
-  },
-  scrollWrapper: {
-    flex: 1,
-    marginTop: 10,
-  },
-  scrollViewContainer: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingBottom: BOTTOM_SPACING,
-  },
-  firstCard: {
-    marginTop: 5,
-  },
-  card: {
-    marginTop: 26,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 16,
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    zIndex: 1,
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyStateAnimation: {
-    width: 200,
-    height: 200,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontFamily: 'Satoshi-Medium',
-    color: '#333333',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  selectButtonDisabled: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#CCCCCC',
-  },
-});

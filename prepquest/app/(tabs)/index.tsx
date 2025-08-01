@@ -23,6 +23,10 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
+import { strings } from '@/constants/strings';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -103,8 +107,143 @@ export default function DecksScreen() {
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
+  const { theme } = useTheme();
 
   const selectUnselectedDuration = 300;
+
+  // Create dynamic styles based on theme
+  const styles = StyleSheet.create({
+    animatedContainer: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: Colors[theme].background,
+    },
+    topBar: {
+      position: 'absolute',
+      left: 16,
+      zIndex: 1,
+    },
+    headerIconsContainer: {
+      position: 'absolute',
+      right: 16,
+      zIndex: 1,
+    },
+    menuButton: {
+      paddingTop: 8,
+    },
+    mainContentWrapper: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    titleContainer: {
+      position: 'relative',
+      height: Platform.OS === 'android' ? 32 : 24,
+    },
+    titleAbsolute: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+    },
+    selectButtonContainer: {
+      position: 'relative',
+      width: 85,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+    },
+    selectButton: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].brandColor1,
+    },
+    selectButtonDisabled: {
+      fontSize: 20,
+      fontFamily: Fonts.bodyMedium,
+      color: '#CCCCCC',
+    },
+    selectButtonAbsolute: {
+      position: 'absolute',
+    },
+    scrollWrapper: {
+      flex: 1,
+      marginTop: 10,
+    },
+    scrollViewContainer: {
+      flex: 1,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      paddingBottom: BOTTOM_SPACING,
+    },
+    firstCard: {
+      marginTop: 5,
+    },
+    card: {
+      marginTop: '6%',
+    },
+    shiftableContent: {
+      flex: 1,
+      marginTop: 16,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 20,
+      right: 16,
+    },
+    fabContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 100, // Make sure this is tall enough to contain the FAB
+      zIndex: 1,
+    },
+    actionButtonsRow: {
+      position: 'absolute',
+      top: 62,
+      right: 0,
+      left: 0,
+      zIndex: 1,
+    },
+    emptyStateContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 40, // Add some top padding to center it better in the scrollview
+    },
+    emptyStateAnimation: {
+      width: 200,
+      height: 200,
+    },
+    emptyStateText: {
+      fontSize: 18,
+      fontFamily: Fonts.bodyMedium,
+      color: Colors[theme].text,
+      textAlign: 'center',
+      marginTop: 0,
+      lineHeight: 20,
+    },
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -775,7 +914,7 @@ export default function DecksScreen() {
           />
           )}
           <Text style={styles.emptyStateText}>
-            {language === 'Chinese' ? '所有卡片组都去哪了？' : 'Where have all the\ndecks gone'}
+            {strings[language].index.whereHaveAllTheDecksGone}
           </Text>
         </View>
       );
@@ -837,7 +976,7 @@ export default function DecksScreen() {
           />
           )}
           <Text style={styles.emptyStateText}>
-            {language === 'Chinese' ? '所有卡片组都去哪了？' : 'Where have all the\ndecks gone'}
+            {strings[language].index.whereHaveAllTheDecksGone}
           </Text>
         </View>
       );
@@ -1086,8 +1225,8 @@ export default function DecksScreen() {
           ]}>
             <View style={[styles.content, { marginTop: getContentTopHeight()}]}>
               <RoundedContainer 
-                leftLabel={language === 'Chinese' ? `学习 (${studyDeckCount})` : `Study (${studyDeckCount})`}
-                rightLabel={language === 'Chinese' ? `面试 (${interviewDeckCount})` : `Interview (${interviewDeckCount})`}
+                leftLabel={`${strings[language].study} (${studyDeckCount})`}
+                rightLabel={`${strings[language].interview} (${interviewDeckCount})`}
                 onToggle={handleToggle}
               />
 
@@ -1122,12 +1261,12 @@ export default function DecksScreen() {
                     <Title style={[styles.titleAbsolute, {
                       // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
                       fontSize: language === 'Chinese' ? 20 : 24}]} animatedOpacity={studyOpacity}>
-                      {language === 'Chinese' ? `我的学习卡片组 (${studyDeckCount})` : `My Study Decks (${studyDeckCount})`}
+                      {`${strings[language].index.myStudyDecks} (${studyDeckCount})`}
                     </Title>
                     <Title style={[styles.titleAbsolute, {
                       // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Neuton-Regular', 
                       fontSize: language === 'Chinese' ? 20 : 24}]} animatedOpacity={interviewOpacity}>
-                      {language === 'Chinese' ? `我的面试卡片组 (${interviewDeckCount})` : `My Interview Decks (${interviewDeckCount})`}
+                      {`${strings[language].index.myInterviewDecks} (${interviewDeckCount})`}
                     </Title>
                   </View>
                   <TouchableOpacity 
@@ -1140,14 +1279,14 @@ export default function DecksScreen() {
                       styles.selectButtonAbsolute,
                       { opacity: selectOpacity }
                     ]}>
-                      {language === 'Chinese' ? '选择' : 'Select'}
+                      {strings[language].index.select}
                     </Animated.Text>
                     <Animated.Text style={[
                       styles.selectButton,
                       styles.selectButtonAbsolute,
                       { opacity: selectAllOpacity }
                     ]}>
-                      {language === 'Chinese' ? '全选' : 'Select All'}
+                      {strings[language].index.selectAll}
                     </Animated.Text>
                   </TouchableOpacity>
                 </View>
@@ -1201,7 +1340,7 @@ export default function DecksScreen() {
 
       <CalendarModal
         visible={isCalendarOpen}
-        title={language === 'Chinese' ? '按添加日期筛选卡片组' : 'Filter decks based on\ndate added'}
+        title={strings[language].index.filterDecksBasedOnDateAdded}
         onDone={(selectedFilter, customDate) => {
           setCalendarFilter(selectedFilter);
           setCalendarCustomDate(customDate || null);
@@ -1212,136 +1351,3 @@ export default function DecksScreen() {
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  animatedContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 1,
-  },
-  headerIconsContainer: {
-    position: 'absolute',
-    right: 16,
-    zIndex: 1,
-  },
-  menuButton: {
-    paddingTop: 8,
-  },
-  mainContentWrapper: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  titleContainer: {
-    position: 'relative',
-    height: Platform.OS === 'android' ? 32 : 24,
-  },
-  titleAbsolute: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  selectButtonContainer: {
-    position: 'relative',
-    width: 85,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  selectButton: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#44B88A',
-  },
-  selectButtonDisabled: {
-    fontSize: 20,
-    fontFamily: 'Satoshi-Medium',
-    color: '#CCCCCC',
-  },
-  selectButtonAbsolute: {
-    position: 'absolute',
-  },
-  scrollWrapper: {
-    flex: 1,
-    marginTop: 10,
-  },
-  scrollViewContainer: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingBottom: BOTTOM_SPACING,
-  },
-  firstCard: {
-    marginTop: 5,
-  },
-  card: {
-    marginTop: '6%',
-  },
-  shiftableContent: {
-    flex: 1,
-    marginTop: 16,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 16,
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100, // Make sure this is tall enough to contain the FAB
-    zIndex: 1,
-  },
-  actionButtonsRow: {
-    position: 'absolute',
-    top: 62,
-    right: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40, // Add some top padding to center it better in the scrollview
-  },
-  emptyStateAnimation: {
-    width: 200,
-    height: 200,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontFamily: 'Satoshi-Medium',
-    color: '#333333',
-    textAlign: 'center',
-    marginTop: 0,
-    lineHeight: 20,
-  },
-});

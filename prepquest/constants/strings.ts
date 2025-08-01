@@ -1,5 +1,14 @@
 export const strings: Record<string, any> = {
   English: {
+    // Index page (Decks screen) strings
+    index: {
+      myStudyDecks: 'My Study Decks',
+      myInterviewDecks: 'My Interview Decks',
+      select: 'Select',
+      selectAll: 'Select All',
+      whereHaveAllTheDecksGone: 'Where have all the\ndecks gone',
+      filterDecksBasedOnDateAdded: 'Filter decks based on\ndate added',
+    },
     // AddDeckModal strings
     addFlashcardsToDeck: 'Add Flashcard(s) to Deck',
     addDeckToFavorites: 'Add Deck to Favorites',
@@ -307,6 +316,15 @@ export const strings: Record<string, any> = {
     },
   },
   Chinese: {
+    // Index page (Decks screen) strings
+    index: {
+      myStudyDecks: '我的学习卡片组',
+      myInterviewDecks: '我的面试卡片组',
+      select: '选择',
+      selectAll: '全选',
+      whereHaveAllTheDecksGone: '所有卡片组都去哪了？',
+      filterDecksBasedOnDateAdded: '按添加日期筛选卡片组',
+    },
     // AddDeckModal strings
     addFlashcardsToDeck: '添加卡片到卡片组',
     addDeckToFavorites: '添加卡片组到收藏夹',

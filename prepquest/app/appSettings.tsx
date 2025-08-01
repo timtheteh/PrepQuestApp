@@ -18,7 +18,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 
-const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
+const TitleToggleRow = React.memo(({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
     const { theme } = useTheme();
     const colors = Colors[theme];
     
@@ -39,7 +39,7 @@ const TitleToggleRow = ({ text, value, onValueChange, language }: { text: string
         />
       </View>
     );
-  };
+  });
 
 export default function AppSettingsScreen() {
   const router = useRouter();
@@ -112,10 +112,10 @@ export default function AppSettingsScreen() {
     }
   };
 
-  const handleNotificationsToggle = (value: boolean) => {
+  const handleNotificationsToggle = React.useCallback((value: boolean) => {
     setNotificationsAccessEnabled(value);
     saveNotificationsPreference(value);
-  };
+  }, []);
 
   const checkCameraPermission = async () => {
     const { status } = await ImagePicker.getCameraPermissionsAsync();
@@ -134,16 +134,16 @@ export default function AppSettingsScreen() {
 
 
 
-  const handleLanguageRowPress = () => {
+  const handleLanguageRowPress = React.useCallback(() => {
     setIsLanguageModalOpen(true);
-  };
+  }, []);
 
-  const handleLanguageSelect = (value: string) => {
+  const handleLanguageSelect = React.useCallback((value: string) => {
     setLanguage(value as Language);
     setIsLanguageModalOpen(false);
-  };
+  }, [setLanguage]);
 
-  const handleCameraToggle = async (value: boolean) => {
+  const handleCameraToggle = React.useCallback(async (value: boolean) => {
     if (value) {
       // Request camera permission
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -171,9 +171,9 @@ export default function AppSettingsScreen() {
         ]
       );
     }
-  };
+  }, [language]);
 
-  const handleGalleryToggle = async (value: boolean) => {
+  const handleGalleryToggle = React.useCallback(async (value: boolean) => {
     if (value) {
       // Request camera permission
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -201,9 +201,9 @@ export default function AppSettingsScreen() {
         ]
       );
     }
-  };
+  }, [language]);
 
-  const handleMicToggle = async (value: boolean) => {
+  const handleMicToggle = React.useCallback(async (value: boolean) => {
     if (value) {
       // Request microphone permission
       const { status } = await Audio.requestPermissionsAsync();
@@ -230,14 +230,14 @@ export default function AppSettingsScreen() {
         ]
       );
     }
-  };
+  }, [language]);
 
 
-  const handleBackPress = () => {
+  const handleBackPress = React.useCallback(() => {
     router.back();
-  };
+  }, [router]);
 
-  const handleBackupPress = () => {
+  const handleBackupPress = React.useCallback(() => {
     setIsBackupModalOpen(true);
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -251,9 +251,9 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  };
+  }, [overlayOpacity, modalOpacity]);
 
-  const handleDismissBackup = () => {
+  const handleDismissBackup = React.useCallback(() => {
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -268,15 +268,14 @@ export default function AppSettingsScreen() {
     ]).start(() => {
       setIsBackupModalOpen(false);
     });
-  };
+  }, [overlayOpacity, modalOpacity]);
 
-  const handleConfirmBackup = () => {
+  const handleConfirmBackup = React.useCallback(() => {
     // TODO: Implement actual backup logic here
-    console.log('Backing up data to cloud...');
     handleDismissBackup();
-  };
+  }, [handleDismissBackup]);
 
-  const handleLoadDataPress = () => {
+  const handleLoadDataPress = React.useCallback(() => {
     setIsLoadDataModalOpen(true);
     Animated.parallel([
       Animated.timing(loadDataOverlayOpacity, {
@@ -290,9 +289,9 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       })    
     ]).start();
-  };
+  }, [loadDataOverlayOpacity, loadDataModalOpacity]);
   
-  const handleDismissLoadData = () => {
+  const handleDismissLoadData = React.useCallback(() => {
     Animated.parallel([
       Animated.timing(loadDataOverlayOpacity, {
         toValue: 0,
@@ -307,15 +306,14 @@ export default function AppSettingsScreen() {
     ]).start(() => {
       setIsLoadDataModalOpen(false);
     });
-  };
+  }, [loadDataOverlayOpacity, loadDataModalOpacity]);
 
-  const handleConfirmLoadData = () => {
+  const handleConfirmLoadData = React.useCallback(() => {
     // TODO: Implement actual load data logic here
-    console.log('Loading data from cloud...');
     handleDismissLoadData();
-  };
+  }, [handleDismissLoadData]);
 
-  const handleDeleteLocalStoragePress = () => {
+  const handleDeleteLocalStoragePress = React.useCallback(() => {
     setIsDeleteLocalStorageModalOpen(true);
     Animated.parallel([
       Animated.timing(deleteLocalStorageOverlayOpacity, {
@@ -329,9 +327,9 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       })  
     ]).start();
-  };
+  }, [deleteLocalStorageOverlayOpacity, deleteLocalStorageModalOpacity]);
   
-  const handleDismissDeleteLocalStorage = () => {
+  const handleDismissDeleteLocalStorage = React.useCallback(() => {
     Animated.parallel([
       Animated.timing(deleteLocalStorageOverlayOpacity, {
         toValue: 0,
@@ -346,13 +344,12 @@ export default function AppSettingsScreen() {
     ]).start(() => {
       setIsDeleteLocalStorageModalOpen(false);
     });
-  };    
+  }, [deleteLocalStorageOverlayOpacity, deleteLocalStorageModalOpacity]);    
 
-  const handleConfirmDeleteLocalStorage = () => {
+  const handleConfirmDeleteLocalStorage = React.useCallback(() => {
     // TODO: Implement actual delete local storage logic here
-    console.log('Deleting local storage data...');
     handleDismissDeleteLocalStorage();
-  };    
+  }, [handleDismissDeleteLocalStorage]);    
 
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
@@ -408,22 +405,24 @@ export default function AppSettingsScreen() {
                 >
                   <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} activeOpacity={1} onPressOut={() => setIsLanguageModalOpen(false)}>
                     <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
-                      {Object.entries(strings[language].appSettingsPage.languages).map(([langKey, langName]) => (
-                        <TouchableOpacity 
-                          key={langKey}
-                          style={{ paddingVertical: 18 }} 
-                          onPress={() => handleLanguageSelect(langKey.charAt(0).toUpperCase() + langKey.slice(1))}
-                        >
-                          <Text style={{ 
-                            fontFamily: Fonts.bodyBold, 
-                            fontSize: 24, 
-                            color: language.toLowerCase() === langKey ? colors.brandColor1 : colors.text, 
-                            textAlign: 'center' 
-                          }}>
-                            {langName as string}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                      {React.useMemo(() => 
+                        Object.entries(strings[language].appSettingsPage.languages).map(([langKey, langName]) => (
+                          <TouchableOpacity 
+                            key={langKey}
+                            style={{ paddingVertical: 18 }} 
+                            onPress={() => handleLanguageSelect(langKey.charAt(0).toUpperCase() + langKey.slice(1))}
+                          >
+                            <Text style={{ 
+                              fontFamily: Fonts.bodyBold, 
+                              fontSize: 24, 
+                              color: language.toLowerCase() === langKey ? colors.brandColor1 : colors.text, 
+                              textAlign: 'center' 
+                            }}>
+                              {langName as string}
+                            </Text>
+                          </TouchableOpacity>
+                        )), [language, colors.brandColor1, colors.text, handleLanguageSelect]
+                      )}
                       <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
                       </TouchableOpacity>
                       <TouchableOpacity style={{ marginBottom: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>

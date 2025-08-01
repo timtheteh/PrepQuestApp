@@ -1,9 +1,7 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import { Asset } from 'expo-asset';
 import { promptAndData } from '../constants/promptEngineering';
-import { useAuth } from '@clerk/clerk-expo';
 
 export interface Deck {
   deckID: number;
@@ -33,7 +31,7 @@ export interface Deck {
 }
 
 // Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
+export async function getCurrentUserID(): Promise<string> {
   try {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
@@ -2864,5 +2862,46 @@ export async function moveDecksToFolders(deckIds: number[], targetFolderIds: num
   } catch (error) {
     console.error('Error moving decks to folders:', error);
     return false;
+  }
+}
+
+// Sort preferences functions
+export async function saveSortPreferences(field: 'name' | 'dateAdded' | 'lastModified', direction: 'asc' | 'desc'): Promise<void> {
+  try {
+    const userID = await getCurrentUserID();
+    const userSpecificFieldKey = `decks_sort_field_${userID}`;
+    const userSpecificDirectionKey = `decks_sort_direction_${userID}`;
+    
+    await AsyncStorage.multiSet([
+      [userSpecificFieldKey, field],
+      [userSpecificDirectionKey, direction]
+    ]);
+  } catch (error) {
+    console.error('Error saving sort preferences:', error);
+  }
+}
+
+export async function loadSortPreferences(): Promise<{ field: 'name' | 'dateAdded' | 'lastModified'; direction: 'asc' | 'desc' } | null> {
+  try {
+    const userID = await getCurrentUserID();
+    const userSpecificFieldKey = `decks_sort_field_${userID}`;
+    const userSpecificDirectionKey = `decks_sort_direction_${userID}`;
+    
+    const [savedField, savedDirection] = await AsyncStorage.multiGet([
+      userSpecificFieldKey,
+      userSpecificDirectionKey
+    ]);
+    
+    if (savedField[1] && savedDirection[1]) {
+      return {
+        field: savedField[1] as 'name' | 'dateAdded' | 'lastModified',
+        direction: savedDirection[1] as 'asc' | 'desc'
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error loading sort preferences:', error);
+    return null;
   }
 }

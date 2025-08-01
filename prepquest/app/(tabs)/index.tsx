@@ -14,12 +14,9 @@ import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getDeckCardDesign } from '@/constants/cardDesigns';
-import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks, getCompanyIconImageSource } from '@/db/decks';
-import { db } from '@/db/index';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks, getCompanyIconImageSource, updateDeckFavoriteStatus, saveSortPreferences, loadSortPreferences, checkDatabaseReady } from '@/db/decks';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
@@ -30,24 +27,14 @@ import { useTheme } from '@/contexts/ThemeContext';
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
 
-const SORT_FIELD_KEY = 'decks_sort_field';
-const SORT_DIRECTION_KEY = 'decks_sort_direction';
+
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const BOTTOM_SPACING = 40; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
-// Helper function to get current userID from AsyncStorage
-const getCurrentUserID = async (): Promise<string> => {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-};
+
 
 export default function DecksScreen() {
   const [isInterviewMode, setIsInterviewMode] = useState(false);
@@ -98,10 +85,7 @@ export default function DecksScreen() {
   const router = useRouter();
   const navbarRef = useRef<any>(null);
   const { mode, selected } = useLocalSearchParams();
-  const calendarOpacity = useRef(new Animated.Value(0)).current;
-  const calendarMenuOverlayOpacity = useRef(new Animated.Value(0)).current;
   const { language, reloadLanguage } = useLanguage();
-  const insets = useSafeAreaInsets();
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
@@ -173,7 +157,7 @@ export default function DecksScreen() {
     selectButtonDisabled: {
       fontSize: 20,
       fontFamily: Fonts.bodyMedium,
-      color: '#CCCCCC',
+      color: Colors[theme].unselectedText,
     },
     selectButtonAbsolute: {
       position: 'absolute',
@@ -274,47 +258,44 @@ export default function DecksScreen() {
   // Function to handle favorite/unfavorite deck
   const handleFavoriteToggle = async (deckId: number, currentFavorited: boolean, isStudyDeck: boolean) => {
     try {
-      const newFavoritedValue = currentFavorited ? 0 : 1;
-      const userID = await getCurrentUserID();
+      const newFavoritedValue = !currentFavorited;
       
       // Update database
-      await db.execAsync(`
-        UPDATE decks 
-        SET isFavorited = ${newFavoritedValue}
-        WHERE deckID = ${deckId} AND userID = '${userID}'
-      `);
+      const success = await updateDeckFavoriteStatus(deckId, newFavoritedValue);
       
-      // Update local state immediately
-      if (isStudyDeck) {
-        setStudyDecks(prev => 
-          prev.map(deck => 
-            deck.deckID === deckId 
-              ? { ...deck, isFavorited: newFavoritedValue }
-              : deck
-          )
-        );
-        setFilteredStudyDecks(prev => 
-          prev.map(deck => 
-            deck.deckID === deckId 
-              ? { ...deck, isFavorited: newFavoritedValue }
-              : deck
-          )
-        );
-      } else {
-        setInterviewDecks(prev => 
-          prev.map(deck => 
-            deck.deckID === deckId 
-              ? { ...deck, isFavorited: newFavoritedValue }
-              : deck
-          )
-        );
-        setFilteredInterviewDecks(prev => 
-          prev.map(deck => 
-            deck.deckID === deckId 
-              ? { ...deck, isFavorited: newFavoritedValue }
-              : deck
-          )
-        );
+      if (success) {
+        // Update local state immediately
+        if (isStudyDeck) {
+          setStudyDecks(prev => 
+            prev.map(deck => 
+              deck.deckID === deckId 
+                ? { ...deck, isFavorited: newFavoritedValue ? 1 : 0 }
+                : deck
+            )
+          );
+          setFilteredStudyDecks(prev => 
+            prev.map(deck => 
+              deck.deckID === deckId 
+                ? { ...deck, isFavorited: newFavoritedValue ? 1 : 0 }
+                : deck
+            )
+          );
+        } else {
+          setInterviewDecks(prev => 
+            prev.map(deck => 
+              deck.deckID === deckId 
+                ? { ...deck, isFavorited: newFavoritedValue ? 1 : 0 }
+                : deck
+            )
+          );
+          setFilteredInterviewDecks(prev => 
+            prev.map(deck => 
+              deck.deckID === deckId 
+                ? { ...deck, isFavorited: newFavoritedValue ? 1 : 0 }
+                : deck
+            )
+          );
+        }
       }
     } catch (error) {
       console.error('Error updating favorite status:', error);
@@ -323,22 +304,24 @@ export default function DecksScreen() {
 
   // Check if database is ready
   useEffect(() => {
-    const checkDatabaseReady = async () => {
+    const checkDBReady = async () => {
       try {
         console.log('Checking if database is ready...');
-        const userID = await getCurrentUserID();
-        // Try a simple query to check if database is ready
-        const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
-        console.log('Database is ready, decks count:', (result[0] as any)?.count);
-        setIsDatabaseReady(true);
+        const isReady = await checkDatabaseReady();
+        if (isReady) {
+          setIsDatabaseReady(true);
+        } else {
+          // Retry after a short delay
+          setTimeout(checkDBReady, 500);
+        }
       } catch (error) {
         console.log('Database not ready yet, waiting...', error);
         // Retry after a short delay
-        setTimeout(checkDatabaseReady, 500);
+        setTimeout(checkDBReady, 500);
       }
     };
     
-    checkDatabaseReady();
+    checkDBReady();
   }, []);
 
   // Load deck data from database
@@ -463,7 +446,7 @@ export default function DecksScreen() {
 
   // Load sort preferences when component mounts
   useEffect(() => {
-    loadSortPreferences();
+    loadSortPreferencesLocal();
   }, []);
 
   // Apply sort preferences when decks are loaded and preferences are available
@@ -1150,42 +1133,25 @@ export default function DecksScreen() {
   const handleSortChange = (field: SortField, direction: SortDirection) => {
     setSortField(field);
     setSortDirection(direction);
-    saveSortPreferences(field, direction);
+    saveSortPreferencesLocal(field, direction);
   };
 
   // Save sort preferences to AsyncStorage with userID
-  const saveSortPreferences = async (field: SortField, direction: SortDirection) => {
+  const saveSortPreferencesLocal = async (field: SortField, direction: SortDirection) => {
     try {
-      const userID = await getCurrentUserID();
-      const userSpecificFieldKey = `${SORT_FIELD_KEY}_${userID}`;
-      const userSpecificDirectionKey = `${SORT_DIRECTION_KEY}_${userID}`;
-      
-      await AsyncStorage.multiSet([
-        [userSpecificFieldKey, field],
-        [userSpecificDirectionKey, direction]
-      ]);
+      await saveSortPreferences(field, direction);
     } catch (error) {
       console.error('Error saving sort preferences:', error);
     }
   };
 
   // Load sort preferences from AsyncStorage with userID
-  const loadSortPreferences = async () => {
+  const loadSortPreferencesLocal = async () => {
     try {
-      const userID = await getCurrentUserID();
-      const userSpecificFieldKey = `${SORT_FIELD_KEY}_${userID}`;
-      const userSpecificDirectionKey = `${SORT_DIRECTION_KEY}_${userID}`;
-      
-      const [savedField, savedDirection] = await AsyncStorage.multiGet([
-        userSpecificFieldKey,
-        userSpecificDirectionKey
-      ]);
-      
-      if (savedField[1]) {
-        setSortField(savedField[1] as SortField);
-      }
-      if (savedDirection[1]) {
-        setSortDirection(savedDirection[1] as SortDirection);
+      const preferences = await loadSortPreferences();
+      if (preferences) {
+        setSortField(preferences.field);
+        setSortDirection(preferences.direction);
       }
     } catch (error) {
       console.error('Error loading sort preferences:', error);

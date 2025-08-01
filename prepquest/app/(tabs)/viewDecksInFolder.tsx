@@ -35,7 +35,7 @@ async function getCurrentUserID(): Promise<string> {
     const userID = await AsyncStorage.getItem('userID');
     return userID || '1'; // Default to '1' if not found
   } catch (error) {
-    // console.error('Error getting userID from AsyncStorage:', error);
+    console.error('Error getting userID from AsyncStorage:', error);
     return '1'; // Default to '1' on error
   }
 }
@@ -104,14 +104,12 @@ export default function ViewDecksInFolderScreen() {
   useEffect(() => {
     const checkDatabaseReady = async () => {
       try {
-        console.log('Checking if database is ready...');
         const userID = await getCurrentUserID();
         // Try a simple query to check if database is ready
         const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
-        console.log('Database is ready, decks count:', (result[0] as any)?.count);
         setIsDatabaseReady(true);
       } catch (error) {
-        console.log('Database not ready yet, waiting...', error);
+        console.error('Database not ready yet, waiting...', error);
         // Retry after a short delay
         setTimeout(checkDatabaseReady, 500);
       }
@@ -124,14 +122,11 @@ export default function ViewDecksInFolderScreen() {
   useEffect(() => {
     const loadDecksData = async () => {
       if (!isDatabaseReady || !folderId) {
-        console.log('Database not ready or no folderId, skipping data load');
         return;
       }
       
-      console.log('Loading decks data for folder:', folderId);
       try {
         const decksData = await getDecksInFolder(parseInt(folderId as string));
-        console.log('Decks loaded for folder:', decksData.length);
         setDecks(decksData);
         setDecksCount(decksData.length);
         
@@ -213,15 +208,12 @@ export default function ViewDecksInFolderScreen() {
   useEffect(() => {
     if (folderId) {
       setCurrentFolderId(folderId as string);
-      console.log('✅ viewDecksInFolder: Setting folderId in context:', folderId);
     }
     if (folderTitle) {
       setCurrentFolderTitle(folderTitle as string);
-      console.log('✅ viewDecksInFolder: Setting folderTitle in context:', folderTitle);
     }
     if (sourcePage) {
       setCurrentSourcePage(sourcePage as string);
-      console.log('✅ viewDecksInFolder: Setting sourcePage in context:', sourcePage);
     }
   }, [folderId, folderTitle, sourcePage, setCurrentFolderId, setCurrentFolderTitle, setCurrentSourcePage]);
 
@@ -377,10 +369,6 @@ export default function ViewDecksInFolderScreen() {
     });
   }, [shiftAnim, marginAnim, actionRowOpacity, selectTextAnim, fabOpacity, cardWidthPercentage, circleButtonOpacity]);
 
-  const handleFabPress = useCallback(() => {
-    console.log("FAB clicked!");
-  }, []);
-
   const handleEditNamePress = useCallback(() => {
     if (editNameSelected) return;
     setEditText(folderTitle as string || '');
@@ -424,9 +412,7 @@ export default function ViewDecksInFolderScreen() {
         SET folderName = '${trimmedText}', lastModifiedDate = '${new Date().toISOString()}'
         WHERE folderID = ${parseInt(folderId as string)} AND userID = '${userID}'
       `);
-      
-      console.log('Updated folder title to:', trimmedText);
-      
+            
       // Update local state to reflect the change immediately
       setEditText(trimmedText);
       
@@ -445,11 +431,6 @@ export default function ViewDecksInFolderScreen() {
     }
   };
 
-  const handleOtherButtonPress = useCallback(() => {
-    setShowEditModal(false);
-    setEditNameSelected(false);
-  }, []);
-
   const handleDeleteFolder = useCallback(() => {
     // Show delete folder confirmation modal
     setIsMenuOpen(true);
@@ -459,9 +440,7 @@ export default function ViewDecksInFolderScreen() {
         // Delete the folder from database
         const success = await deleteFolder(parseInt(folderId as string));
         
-        if (success) {
-          console.log('Successfully deleted folder:', folderTitle);
-          
+        if (success) {          
           // Navigate back based on source page
           if (sourcePage === 'favorites') {
             // Navigate back to favorites page in folders state
@@ -543,7 +522,6 @@ export default function ViewDecksInFolderScreen() {
       const selectedDeckIds = Array.from(selectedDecks).map(index => decks[index].deckID);
 
       if (selectedDeckIds.length === 0) {
-        console.log('No decks selected for deletion');
         return;
       }
 
@@ -580,8 +558,6 @@ export default function ViewDecksInFolderScreen() {
             SET folderIDs = ?, lastModifiedDate = '${new Date().toISOString()}'
             WHERE deckID = ? AND userID = ?
           `, [JSON.stringify(updatedFolderIds), deckId, userID]);
-          
-          console.log(`Removed folder ${currentFolderId} from deck ${deckId}`);
         }
       }
       
@@ -591,9 +567,7 @@ export default function ViewDecksInFolderScreen() {
         UPDATE folders 
         SET lastModifiedDate = '${new Date().toISOString()}'
         WHERE folderID = ${currentFolderId} AND userID = '${folderUserID}'
-      `);
-      console.log(`Updated lastModifiedDate for folder ${currentFolderId} after deck removal`);
-      
+      `);      
       // Clear selections first to prevent render issues
       setSelectedDecks(new Set());
       
@@ -606,8 +580,6 @@ export default function ViewDecksInFolderScreen() {
       setTimeout(() => {
         handleCancel();
       }, 0);
-      
-      console.log(`Successfully removed ${selectedDeckIds.length} deck(s) from folder ${currentFolderId}`);
     } catch (error) {
       console.error('Error removing decks from folder:', error);
     }
@@ -1035,7 +1007,7 @@ export default function ViewDecksInFolderScreen() {
           ]}>
             <FloatingActionButton
               style={styles.fab}
-              onPress={handleFabPress}
+              onPress={() => {}}
             >
               <Feather name="plus" size={38} color="white" />
             </FloatingActionButton>

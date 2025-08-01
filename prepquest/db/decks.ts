@@ -3,6 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { promptAndData } from '../constants/promptEngineering';
 
+// Helper function to safely parse JSON
+function safeParseJSON(val: any, fallback: any[] = []): any[] {
+  if (!val) return fallback;
+  try {
+    return JSON.parse(val);
+  } catch (error) {
+    console.error('Error parsing JSON:', error);
+    return fallback;
+  }
+}
+
 export interface Deck {
   deckID: number;
   deckName: string;
@@ -28,6 +39,25 @@ export interface Deck {
   interviewCompanyIcon: string | null;
   AICardDesignIndex: number | null;
   flashcardCount: number;
+}
+
+export interface Flashcard {
+  flashcardID: number;
+  deckID: number;
+  difficultyRating: string;
+  cognitiveQnType: string;
+  isFavorited: number;
+  questionType: string;
+  questionText: string | null;
+  questionBlob: Uint8Array | null;
+  answerType: string;
+  answerText: string | null;
+  answerMCQ: string | null;
+  answerBlob: Uint8Array | null;
+  timeTaken: number | null;
+  isMcqAnswerRight: number | null;
+  lastStudiedDate: string | null;
+  lastQuizzedDate: string | null;
 }
 
 // Helper function to get current userID from AsyncStorage
@@ -2990,5 +3020,185 @@ export async function updateDeckFavoriteStatusInFolder(deckId: number, isFavorit
   } catch (error) {
     console.error('Error updating favorite status:', error);
     return false;
+  }
+}
+
+// Function to load flashcards from database
+export async function loadFlashcardsFromDatabase(deckId: string, isAIDeck: string): Promise<Flashcard[]> {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    const result = await db.getAllAsync(`
+      SELECT 
+        flashcardID,
+        deckID,
+        difficultyRating,
+        cognitiveQnType,
+        isFavorited,
+        questionType,
+        questionText,
+        questionBlob,
+        answerType,
+        answerText,
+        answerMCQ,
+        answerBlob,
+        timeTaken,
+        isMcqAnswerRight,
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM ${tableName}
+      WHERE deckID = ? AND userID = ?
+      ORDER BY 
+        CASE difficultyRating
+          WHEN 'None' THEN 1
+          WHEN 'Easy' THEN 2
+          WHEN 'Good' THEN 3
+          WHEN 'Hard' THEN 4
+          WHEN 'Again' THEN 5
+          ELSE 6
+        END,
+        flashcardID ASC
+    `, [parseInt(deckId), userID]);
+
+    if (!result) {
+      return [];
+    }
+
+    return result as Flashcard[];
+  } catch (error) {
+    console.error('Error loading flashcards from database:', error);
+    return [];
+  }
+}
+
+// Function to load topics from database
+export async function loadTopicsFromDatabase(deckId: string, isAIDeck: string): Promise<string[]> {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+    
+    const result = await db.getFirstAsync(`
+      SELECT deckType, studyTopicsSubtopics, interviewTopics
+      FROM ${tableName}
+      WHERE deckID = ? AND userID = ?
+    `, [parseInt(deckId), userID]);
+
+    if (!result) {
+      return [];
+    }
+
+    const deck = result as { deckType: string; studyTopicsSubtopics: string | null; interviewTopics: string | null };
+    
+    let topicsField: string | null = null;
+    
+    if (deck.deckType === 'study') {
+      topicsField = deck.studyTopicsSubtopics;
+    } else if (deck.deckType === 'interview') {
+      topicsField = deck.interviewTopics;
+    }
+    
+    if (!topicsField) {
+      return [];
+    }
+    
+    // Parse the JSON string to get the topics array safely
+    return safeParseJSON(topicsField, []);
+  } catch (error) {
+    console.error('Error loading topics from database:', error);
+    return [];
+  }
+}
+
+// Function to calculate question type counts from flashcards data
+export function calculateQuestionTypeCounts(flashcards: Flashcard[]): { title: string; count: number }[] {
+  const counts: { [key: string]: number } = {};
+  
+  flashcards.forEach(flashcard => {
+    const cognitiveQnType = flashcard.cognitiveQnType;
+    counts[cognitiveQnType] = (counts[cognitiveQnType] || 0) + 1;
+  });
+  
+  // Convert to array and sort by count (descending)
+  return Object.entries(counts)
+    .map(([title, count]) => ({ title, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+// Function to toggle favorite status of a flashcard
+export async function toggleFlashcardFavorite(flashcardIdx: number, flashcards: Flashcard[], isAIDeck: string): Promise<{ success: boolean; updatedFlashcards: Flashcard[] }> {
+  try {
+    const flashcard = flashcards[flashcardIdx];
+    if (!flashcard) {
+      return { success: false, updatedFlashcards: flashcards };
+    }
+
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    const newFavoriteStatus = flashcard.isFavorited === 1 ? 0 : 1;
+
+    // Update database
+    await db.runAsync(`
+      UPDATE ${tableName}
+      SET isFavorited = ?
+      WHERE flashcardID = ? AND userID = ?
+    `, [newFavoriteStatus, flashcard.flashcardID, userID]);
+
+    // Update local state
+    const updatedFlashcards = flashcards.map((card, idx) => 
+      idx === flashcardIdx 
+        ? { ...card, isFavorited: newFavoriteStatus }
+        : card
+    );
+
+    return { success: true, updatedFlashcards };
+  } catch (error) {
+    console.error('Error toggling flashcard favorite status:', error);
+    return { success: false, updatedFlashcards: flashcards };
+  }
+}
+
+// Function to delete selected flashcards
+export async function deleteSelectedFlashcards(selectedCardIndexes: number[], flashcards: Flashcard[], deckId: string, isAIDeck: string): Promise<{ success: boolean; updatedFlashcards: Flashcard[] }> {
+  try {
+    if (selectedCardIndexes.length === 0) {
+      return { success: true, updatedFlashcards: flashcards };
+    }
+
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+    
+    // Get the flashcard IDs to delete
+    const flashcardIdsToDelete = selectedCardIndexes.map(idx => flashcards[idx].flashcardID);
+    
+    // Delete from database
+    const placeholders = flashcardIdsToDelete.map(() => '?').join(',');
+    await db.runAsync(`
+      DELETE FROM ${tableName}
+      WHERE flashcardID IN (${placeholders}) AND userID = ?
+    `, [...flashcardIdsToDelete, userID]);
+
+    // Update the deck's lastModifiedDate since flashcards were deleted
+    await db.runAsync(`
+      UPDATE ${deckTableName}
+      SET lastModifiedDate = '${new Date().toISOString()}'
+      WHERE deckID = ? AND userID = ?
+    `, [parseInt(deckId), userID]);
+    console.log(`Updated lastModifiedDate for deck ${deckId} after flashcard deletion`);
+
+    // Update local state by removing deleted flashcards
+    const updatedFlashcards = flashcards.filter((_, idx) => !selectedCardIndexes.includes(idx));
+
+    console.log(`Deleted ${selectedCardIndexes.length} flashcards from ${tableName}`);
+    
+    return { success: true, updatedFlashcards };
+  } catch (error) {
+    console.error('Error deleting flashcards:', error);
+    return { success: false, updatedFlashcards: flashcards };
   }
 }

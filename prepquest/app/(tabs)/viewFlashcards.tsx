@@ -13,8 +13,7 @@ import { FavoriteButton } from '@/components/general/FavoriteButton';
 import { CircleSelectButtonGreen } from '@/components/general/CircleSelectButtonGreen';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
 import Feather from '@expo/vector-icons/Feather';
-import { db } from '@/db/index';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useContentTopHeight, useContentTopHeightNoRoundedToggle2, useHeaderIconsTopHeight, useTopBarTopHeight } from '@/hooks/heights';
@@ -22,26 +21,17 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
+import { 
+  loadFlashcardsFromDatabase, 
+  loadTopicsFromDatabase, 
+  calculateQuestionTypeCounts, 
+  toggleFlashcardFavorite, 
+  deleteSelectedFlashcards as deleteSelectedFlashcardsFromDB,
+  Flashcard,
+  getCurrentUserID
+} from '@/db/decks';
 
-// Interface for flashcard data
-interface Flashcard {
-  flashcardID: number;
-  deckID: number;
-  difficultyRating: string;
-  cognitiveQnType: string;
-  isFavorited: number;
-  questionType: string;
-  questionText: string | null;
-  questionBlob: Uint8Array | null;
-  answerType: string;
-  answerText: string | null;
-  answerMCQ: string | null;
-  answerBlob: Uint8Array | null;
-  timeTaken: number | null;
-  isMcqAnswerRight: number | null;
-  lastStudiedDate: string | null;
-  lastQuizzedDate: string | null;
-}
+
 
 // Safe JSON parse helper
 function safeParseJSON(val: any, fallback: any[] = []): any[] {
@@ -148,120 +138,7 @@ export default function ViewFlashcardsScreen() {
   // State for question types
   const [questionTypes, setQuestionTypes] = useState<{ title: string; count: number }[]>([]);
 
-  // Helper function to get current userID from AsyncStorage
-  async function getCurrentUserID(): Promise<string> {
-    try {
-      const userID = await AsyncStorage.getItem('userID');
-      return userID || '1'; // Default to '1' if not found
-    } catch (error) {
-      // console.error('Error getting userID from AsyncStorage:', error);
-      return '1'; // Default to '1' on error
-    }
-  }
 
-  // Function to load flashcards from database
-  const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string): Promise<Flashcard[]> => {
-    try {
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeck === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      
-      const result = await db.getAllAsync(`
-        SELECT 
-          flashcardID,
-          deckID,
-          difficultyRating,
-          cognitiveQnType,
-          isFavorited,
-          questionType,
-          questionText,
-          questionBlob,
-          answerType,
-          answerText,
-          answerMCQ,
-          answerBlob,
-          timeTaken,
-          isMcqAnswerRight,
-          lastStudiedDate,
-          lastQuizzedDate
-        FROM ${tableName}
-        WHERE deckID = ? AND userID = ?
-        ORDER BY 
-          CASE difficultyRating
-            WHEN 'None' THEN 1
-            WHEN 'Easy' THEN 2
-            WHEN 'Good' THEN 3
-            WHEN 'Hard' THEN 4
-            WHEN 'Again' THEN 5
-            ELSE 6
-          END,
-          flashcardID ASC
-      `, [parseInt(deckId), userID]);
-  
-      if (!result) {
-        return [];
-      }
-  
-      return result as Flashcard[];
-    } catch (error) {
-      console.error('Error loading flashcards from database:', error);
-      return [];
-    }
-  };
-
-  // Function to load topics from database
-  const loadTopicsFromDatabase = async (deckId: string, isAIDeck: string): Promise<string[]> => {
-    try {
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeck === 'true';
-      const tableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
-      
-      const result = await db.getFirstAsync(`
-        SELECT deckType, studyTopicsSubtopics, interviewTopics
-        FROM ${tableName}
-        WHERE deckID = ? AND userID = ?
-      `, [parseInt(deckId), userID]);
-  
-      if (!result) {
-        return [];
-      }
-  
-      const deck = result as { deckType: string; studyTopicsSubtopics: string | null; interviewTopics: string | null };
-      
-      let topicsField: string | null = null;
-      
-      if (deck.deckType === 'study') {
-        topicsField = deck.studyTopicsSubtopics;
-      } else if (deck.deckType === 'interview') {
-        topicsField = deck.interviewTopics;
-      }
-      
-      if (!topicsField) {
-        return [];
-      }
-      
-      // Parse the JSON string to get the topics array safely
-      return safeParseJSON(topicsField, []);
-    } catch (error) {
-      console.error('Error loading topics from database:', error);
-      return [];
-    }
-  };
-
-  // Function to calculate question type counts from flashcards data
-  const calculateQuestionTypeCounts = (flashcards: Flashcard[]): { title: string; count: number }[] => {
-    const counts: { [key: string]: number } = {};
-    
-    flashcards.forEach(flashcard => {
-      const cognitiveQnType = flashcard.cognitiveQnType;
-      counts[cognitiveQnType] = (counts[cognitiveQnType] || 0) + 1;
-    });
-    
-    // Convert to array and sort by count (descending)
-    return Object.entries(counts)
-      .map(([title, count]) => ({ title, count }))
-      .sort((a, b) => b.count - a.count);
-  };
 
   // Function to load flashcards
   const loadFlashcards = async () => {
@@ -299,29 +176,10 @@ export default function ViewFlashcardsScreen() {
   // Function to toggle favorite status
   const toggleFavorite = async (flashcardIdx: number) => {
     try {
-      const flashcard = flashcards[flashcardIdx];
-      if (!flashcard) return;
-
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeck === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      const newFavoriteStatus = flashcard.isFavorited === 1 ? 0 : 1;
-
-      // Update database
-      await db.runAsync(`
-        UPDATE ${tableName}
-        SET isFavorited = ?
-        WHERE flashcardID = ? AND userID = ?
-      `, [newFavoriteStatus, flashcard.flashcardID, userID]);
-
-      // Update local state
-      setFlashcards(prev => prev.map((card, idx) => 
-        idx === flashcardIdx 
-          ? { ...card, isFavorited: newFavoriteStatus }
-          : card
-      ));
-
-      console.log(`Flashcard ${flashcard.flashcardID} favorite status updated to ${newFavoriteStatus}`);
+      const result = await toggleFlashcardFavorite(flashcardIdx, flashcards, isAIDeck as string);
+      if (result.success) {
+        setFlashcards(result.updatedFlashcards);
+      }
     } catch (error) {
       console.error('Error toggling favorite status:', error);
     }
@@ -557,42 +415,18 @@ export default function ViewFlashcardsScreen() {
     try {
       if (selectedCardIndexes.length === 0) return;
 
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeck === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
-      
-      // Get the flashcard IDs to delete
-      const flashcardIdsToDelete = selectedCardIndexes.map(idx => flashcards[idx].flashcardID);
-      
-      // Delete from database
-      const placeholders = flashcardIdsToDelete.map(() => '?').join(',');
-      await db.runAsync(`
-        DELETE FROM ${tableName}
-        WHERE flashcardID IN (${placeholders}) AND userID = ?
-      `, [...flashcardIdsToDelete, userID]);
-
-      // Update the deck's lastModifiedDate since flashcards were deleted
-      await db.runAsync(`
-        UPDATE ${deckTableName}
-        SET lastModifiedDate = '${new Date().toISOString()}'
-        WHERE deckID = ? AND userID = ?
-      `, [parseInt(deckId as string), userID]);
-      console.log(`Updated lastModifiedDate for deck ${deckId} after flashcard deletion`);
-
-      // Update local state by removing deleted flashcards
-      setFlashcards(prev => prev.filter((_, idx) => !selectedCardIndexes.includes(idx)));
-      
-      // Recalculate question types after deletion
-      const updatedFlashcards = flashcards.filter((_, idx) => !selectedCardIndexes.includes(idx));
-      const questionTypeCounts = calculateQuestionTypeCounts(updatedFlashcards);
-      setQuestionTypes(questionTypeCounts);
-
-      console.log(`Deleted ${selectedCardIndexes.length} flashcards from ${tableName}`);
-      
-      // Reset selection mode
-      setSelectedCardIndexes([]);
-      setIsSelectMode(false);
+      const result = await deleteSelectedFlashcardsFromDB(selectedCardIndexes, flashcards, deckId as string, isAIDeck as string);
+      if (result.success) {
+        setFlashcards(result.updatedFlashcards);
+        
+        // Recalculate question types after deletion
+        const questionTypeCounts = calculateQuestionTypeCounts(result.updatedFlashcards);
+        setQuestionTypes(questionTypeCounts);
+        
+        // Reset selection mode
+        setSelectedCardIndexes([]);
+        setIsSelectMode(false);
+      }
     } catch (error) {
       console.error('Error deleting flashcards:', error);
     }

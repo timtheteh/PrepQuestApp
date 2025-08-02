@@ -18,7 +18,7 @@ import { Fonts } from '@/constants/Fonts';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Local component for title and toggle row
-const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
+const TitleToggleRow = React.memo(({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
   const unselectedText = useThemeColor({}, 'unselectedText');
   const brandColor1 = useThemeColor({}, 'brandColor1');
   
@@ -34,10 +34,10 @@ const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: b
       />
     </View>
   );
-};
+});
 
 // Local component for list paragraph with help icon
-const ListParagraph = ({ listItems, onHelpPress }: { listItems: string[]; onHelpPress: () => void }) => {
+const ListParagraph = React.memo(({ listItems, onHelpPress }: { listItems: string[]; onHelpPress: () => void }) => {
   return (
     <View style={styles.listParagraphContainer}>
       <View style={styles.listColumn}>
@@ -55,7 +55,7 @@ const ListParagraph = ({ listItems, onHelpPress }: { listItems: string[]; onHelp
       </View>
     </View>
   );
-};
+});
 
 // Local TimePicker component
 const ITEM_HEIGHT = 44;
@@ -66,12 +66,16 @@ function pad(num: number) {
   return num.toString().padStart(2, '0');
 }
 
+// Default ranges as constants to prevent recreation
+const DEFAULT_MINUTES_RANGE = Array.from({ length: 3 }, (_, i) => i);
+const DEFAULT_SECONDS_RANGE = Array.from({ length: 60 }, (_, i) => i);
+
 const TimePicker = ({
   initialMinutes = 0,
   initialSeconds = 0,
   onChange,
-  minutesRange = Array.from({ length: 3 }, (_, i) => i),
-  secondsRange = Array.from({ length: 60 }, (_, i) => i ),
+  minutesRange = DEFAULT_MINUTES_RANGE,
+  secondsRange = DEFAULT_SECONDS_RANGE,
   language = 'English',
 }: {
   initialMinutes?: number;
@@ -103,8 +107,8 @@ const TimePicker = ({
     onChange && onChange(selectedMin, selectedSec);
   }, [selectedMin, selectedSec]);
 
-  // Animated getItemStyle
-  const getAnimatedStyle = (index: number, scrollY: Animated.Value, range: number[]) => {
+  // Animated getItemStyle - memoized to prevent recreation
+  const getAnimatedStyle = React.useCallback((index: number, scrollY: Animated.Value, range: number[]) => {
     const inputRange = [
       (index - 2) * ITEM_HEIGHT,
       (index - 1) * ITEM_HEIGHT,
@@ -133,7 +137,7 @@ const TimePicker = ({
       lineHeight: ITEM_HEIGHT,
       fontFamily: Fonts.bodyMedium,
     } as TextStyle;
-  };
+  }, []);
 
   const pickerProps = Platform.OS === 'android' ? { nestedScrollEnabled: true } : {};
 
@@ -490,23 +494,23 @@ export default function DeckSettingsPage() {
     difficultyTimes,
   ]);
 
-  // When difficulty changes, update picker values
-  const pickerMinutes = difficultyTimes[selectedDifficultyIndex].min;
-  const pickerSeconds = difficultyTimes[selectedDifficultyIndex].sec;
+  // When difficulty changes, update picker values - memoized to prevent recalculation
+  const pickerMinutes = React.useMemo(() => difficultyTimes[selectedDifficultyIndex].min, [difficultyTimes, selectedDifficultyIndex]);
+  const pickerSeconds = React.useMemo(() => difficultyTimes[selectedDifficultyIndex].sec, [difficultyTimes, selectedDifficultyIndex]);
 
-  const handleTimeChange = (min: number, sec: number) => {
+  const handleTimeChange = React.useCallback((min: number, sec: number) => {
     setDifficultyTimes(prev => {
       const updated = [...prev];
       updated[selectedDifficultyIndex] = { min, sec };
       return updated;
     });
-  };
+  }, [selectedDifficultyIndex]);
 
-  const handleVoiceRecordedTimerChange = (min: number, sec: number) => {
+  const handleVoiceRecordedTimerChange = React.useCallback((min: number, sec: number) => {
     setVoiceRecordedTimer({ min, sec });
-  };
+  }, []);
 
-  const handleDifficultyChange = (idx: number) => {
+  const handleDifficultyChange = React.useCallback((idx: number) => {
     Animated.timing(pickerOpacity, {
       toValue: 0,
       duration: 300,
@@ -519,17 +523,17 @@ export default function DeckSettingsPage() {
         useNativeDriver: true,
       }).start();
     });
-  };
+  }, [pickerOpacity]);
 
-  const handleBackPress = () => {
+  const handleBackPress = React.useCallback(() => {
     router.back();
-  };
+  }, [router]);
 
-  const handleHelpPress = () => {
+  const handleHelpPress = React.useCallback(() => {
     setIsHelpModalOpen(true);
-  };
+  }, []);
 
-  const handleDismissHelp = () => {
+  const handleDismissHelp = React.useCallback(() => {
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -544,7 +548,7 @@ export default function DeckSettingsPage() {
     ]).start(() => {
       setIsHelpModalOpen(false);
     });
-  };
+  }, [overlayOpacity, modalOpacity]);
 
   React.useEffect(() => {
     if (isHelpModalOpen) {
@@ -563,22 +567,31 @@ export default function DeckSettingsPage() {
     }
   }, [isHelpModalOpen]);
 
+  // Memoize style objects to prevent recreation
+  const containerStyle = React.useMemo(() => ({ flex: 1, position: 'relative' as const, backgroundColor: background }), [background]);
+  const topBarStyle = React.useMemo(() => [styles.topBar, { paddingTop: getTopBarAccountHeight() }], [getTopBarAccountHeight]);
+  const titleStyle = React.useMemo(() => [
+    styles.title, 
+    { 
+      color: text,
+      marginLeft: language === 'Chinese' ? 0 : 16,
+      marginBottom: language === 'Chinese' ? Platform.OS === 'ios' ? 0 : 5 : Platform.OS === 'ios' ? 5 : 10, 
+    }
+  ], [text, language]);
+  const mainContainerStyle = React.useMemo(() => [styles.mainContainer, { backgroundColor: background }], [background]);
+
   return (
-    <View style={{ flex: 1, position: 'relative', backgroundColor: background }}>
-        <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
+    <View style={containerStyle}>
+        <View style={topBarStyle}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
         >
           <AntDesign name="arrowleft" size={32} color={text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { 
-          color: text,
-          marginLeft: language === 'Chinese' ? 0 : 16,
-          marginBottom: language === 'Chinese' ? Platform.OS === 'ios' ? 0 : 5 : Platform.OS === 'ios' ? 5 : 10, 
-          }]}>{strings[language].deckSettingsPage.title}</Text>
+        <Text style={titleStyle}>{strings[language].deckSettingsPage.title}</Text>
       </View>
-      <View style={[styles.mainContainer, { backgroundColor: background }]}>
+      <View style={mainContainerStyle}>
         <ScrollView 
           style={styles.scrollView}
           contentContainerStyle={[styles.scrollContent]}

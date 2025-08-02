@@ -3,12 +3,16 @@ import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableO
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 // Global variable to store the typed text
 let lastTypedText = '';
 
 export default function TextInputModal() {
     const { language } = useLanguage();
+    const { theme } = useTheme();
     const router = useRouter();
     const { existingText } = useLocalSearchParams();
     const [typedText, setTypedText] = useState(
@@ -33,16 +37,16 @@ export default function TextInputModal() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.container}
         >
-            <View style={styles.modalView}>
+            <View style={[styles.modalView, { backgroundColor: Colors[theme].background, borderTopColor: Colors[theme].unselectedText }]}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={handleDone}>
-                        <Text style={styles.doneButton}>{strings[language].done}</Text>
+                        <Text style={[styles.doneButton, { color: Colors[theme].brandColor1, fontFamily: Fonts.bodyMedium }]}>{strings[language].done}</Text>
                     </TouchableOpacity>
                 </View>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}
                     placeholder={strings[language].typeHere}
-                    placeholderTextColor="#999"
+                    placeholderTextColor={Colors[theme].unselectedText}
                     autoFocus={true}
                     multiline
                     value={typedText}
@@ -66,10 +70,8 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalView: {
-        backgroundColor: "white",
         padding: 10,
         borderTopWidth: 2,
-        borderTopColor: '#ddd',
     },
     header: {
         flexDirection: 'row',
@@ -77,8 +79,6 @@ const styles = StyleSheet.create({
         paddingBottom: 5,
     },
     doneButton: {
-        color: '#44B88A',
-        fontFamily: 'Satoshi-Medium',
         fontSize: 20,
         paddingRight: 5,
     },

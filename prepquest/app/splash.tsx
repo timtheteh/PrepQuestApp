@@ -13,6 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createUser } from '@/db/users';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,6 +29,7 @@ export default function SplashScreen({
   onAuthComplete,
 }: SplashScreenProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const { 
     isAuthenticated, 
     user, 
@@ -319,7 +323,7 @@ export default function SplashScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
       {/* Background animation that fills the screen */}
       <LottieView
         ref={animationRef}
@@ -352,7 +356,7 @@ export default function SplashScreen({
           }
         ]}>
           {/* White rectangle container */}
-          <View style={styles.whiteContainer}>
+          <View style={[styles.whiteContainer, { backgroundColor: Colors[theme].background }]}>
             <ScrollView 
               style={styles.scrollView}
               contentContainerStyle={styles.scrollViewContent}
@@ -374,11 +378,13 @@ export default function SplashScreen({
                 >
                   <Text style={[
                     styles.toggleText,
-                    isSignIn ? styles.toggleTextActive : styles.toggleTextInactive
-                  ]}>
+                                        { 
+                      color: isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
+                      fontFamily: Fonts.bodyMedium
+                    }                  ]}>
                     {strings[language].splash.signIn}
                   </Text>
-                  {isSignIn && <View style={styles.underline} />}
+                  {isSignIn && <View style={[styles.underline, { backgroundColor: Colors[theme].brandColor2 }]} />}
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
@@ -387,11 +393,14 @@ export default function SplashScreen({
                 >
                   <Text style={[
                     styles.toggleText,
-                    !isSignIn ? styles.toggleTextActive : styles.toggleTextInactive
+                    { 
+                      color: !isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
+                      fontFamily: Fonts.bodyMedium
+                    }
                   ]}>
                     {strings[language].splash.signUp}
                   </Text>
-                  {!isSignIn && <View style={styles.underline} />}
+                  {!isSignIn && <View style={[styles.underline, { backgroundColor: Colors[theme].brandColor2 }]} />}
                 </TouchableOpacity>
               </View>
               
@@ -400,11 +409,11 @@ export default function SplashScreen({
                 {/* Welcome text for sign in/sign up state */}
                 {isSignIn ? (
                   <View style={styles.welcomeContainer}>
-                    <Text style={styles.welcomeText}>{strings[language].splash.welcomeBack}</Text>
+                    <Text style={[styles.welcomeText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.welcomeBack}</Text>
                   </View>
                 ) : (
                   <View style={styles.welcomeContainer}>
-                    <Text style={styles.welcomeText}>{strings[language].splash.welcomeAboard}</Text>
+                    <Text style={[styles.welcomeText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.welcomeAboard}</Text>
                   </View>
                 )}
                 
@@ -413,9 +422,13 @@ export default function SplashScreen({
                   {/* Email/Username input */}
                   <View style={styles.inputWrapper}>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { 
+                        borderColor: Colors[theme].unselectedText,
+                        color: Colors[theme].text,
+                        fontFamily: Fonts.bodyBold
+                      }]}
                       placeholder={strings[language].splash.email}
-                      placeholderTextColor="#D5D4DD"
+                      placeholderTextColor={Colors[theme].unselectedText}
                       value={email}
                       onChangeText={setEmail}
                     />
@@ -424,9 +437,13 @@ export default function SplashScreen({
                   {/* Password input */}
                   <View style={styles.inputWrapper}>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { 
+                        borderColor: Colors[theme].unselectedText,
+                        color: Colors[theme].text,
+                        fontFamily: Fonts.bodyBold
+                      }]}
                       placeholder={strings[language].splash.password}
-                      placeholderTextColor="#D5D4DD"
+                      placeholderTextColor={Colors[theme].unselectedText}
                       secureTextEntry={!showPassword}
                       value={password}
                       onChangeText={setPassword}
@@ -438,7 +455,7 @@ export default function SplashScreen({
                       <Feather 
                         name={showPassword ? 'eye' : 'eye-off'} 
                         size={20} 
-                        color="#000"
+                        color={Colors[theme].normalIconColor}
                       />
                     </TouchableOpacity>
                   </View>
@@ -446,24 +463,28 @@ export default function SplashScreen({
                   {/* Confirm Password input - only in sign up state */}
                   {!isSignIn && (
                     <View style={styles.inputWrapper}>
-                                          <TextInput
-                      style={styles.textInput}
-                      placeholder={strings[language].splash.confirmPassword}
-                      placeholderTextColor="#D5D4DD"
-                      secureTextEntry={!showPassword}
-                      value={confirmPassword}
-                      onChangeText={setConfirmPassword}
-                    />
-                      <TouchableOpacity 
-                        style={styles.passwordToggle}
-                        onPress={() => setShowPassword(!showPassword)}
-                      >
-                        <Feather 
-                          name={showPassword ? 'eye' : 'eye-off'} 
-                          size={20} 
-                          color="#000"
-                        />
-                      </TouchableOpacity>
+                                                                <TextInput
+                        style={[styles.textInput, { 
+                          borderColor: Colors[theme].unselectedText,
+                          color: Colors[theme].text,
+                          fontFamily: Fonts.bodyBold
+                        }]}
+                        placeholder={strings[language].splash.confirmPassword}
+                        placeholderTextColor={Colors[theme].unselectedText}
+                        secureTextEntry={!showPassword}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                      />
+                                              <TouchableOpacity 
+                          style={styles.passwordToggle}
+                          onPress={() => setShowPassword(!showPassword)}
+                        >
+                          <Feather 
+                            name={showPassword ? 'eye' : 'eye-off'} 
+                            size={20} 
+                            color={Colors[theme].normalIconColor}
+                          />
+                        </TouchableOpacity>
                     </View>
                   )}
                 </View>
@@ -471,10 +492,10 @@ export default function SplashScreen({
                 {/* Sign In/Sign Up button */}
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity 
-                    style={styles.signInButton}
+                    style={[styles.signInButton, { backgroundColor: Colors[theme].brandColor2 }]}
                     onPress={isSignIn ? handleSignIn : handleSignUp}
                   >
-                    <Text style={styles.signInButtonText}>
+                    <Text style={[styles.signInButtonText, { color: Colors[theme].background, fontFamily: Fonts.bodyBold }]}>
                       {isSignIn ? strings[language].splash.signIn : strings[language].splash.signUp}
                     </Text>
                   </TouchableOpacity>
@@ -484,7 +505,7 @@ export default function SplashScreen({
                 {isSignIn && (
                 <View style={styles.forgotPasswordContainer}>
                   <TouchableOpacity onPress={handleForgotPassword}>
-                    <Text style={styles.forgotPasswordText}>{strings[language].splash.forgotPassword}</Text>
+                    <Text style={[styles.forgotPasswordText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.forgotPassword}</Text>
                   </TouchableOpacity>
                 </View>
                 )}
@@ -492,7 +513,7 @@ export default function SplashScreen({
               
               {/* Social login section - visible in both states */}
               <View style={styles.forgotPasswordContainer}>
-                <Text style={styles.signInWithText}>
+                <Text style={[styles.signInWithText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>
                   {isSignIn ? strings[language].splash.orSignInWith : strings[language].splash.orSignUpWith}
                 </Text>
                 
@@ -500,42 +521,42 @@ export default function SplashScreen({
                 <View style={styles.socialLoginContainer}>
                   {/* Google login */}
                   <TouchableOpacity 
-                    style={styles.socialLoginButton}
+                    style={[styles.socialLoginButton, { borderColor: Colors[theme].unselectedText }]}
                     onPress={() => handleSocialLogin('google')}
                   >
                     <View style={styles.iconContainer}>
                       <GoogleLoginIcon width={24} height={24} />
                     </View>
                     <View style={styles.textContainer}>
-                      <Text style={styles.socialLoginText}>{strings[language].splash.continueWithGoogle}</Text>
+                      <Text style={[styles.socialLoginText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.continueWithGoogle}</Text>
                     </View>
                   </TouchableOpacity>
                   
                   {/* Apple login - only on iOS */}
                   {Platform.OS === 'ios' && (
                     <TouchableOpacity 
-                      style={styles.socialLoginButton}
+                      style={[styles.socialLoginButton, { borderColor: Colors[theme].unselectedText }]}
                       onPress={() => handleSocialLogin('apple')}
                     >
                       <View style={styles.iconContainer}>
                         <AppleLoginIcon width={24} height={24} />
                       </View>
-                                          <View style={styles.textContainer}>
-                      <Text style={styles.socialLoginText}>{strings[language].splash.continueWithApple}</Text>
-                    </View>
+                                                                <View style={styles.textContainer}>
+                        <Text style={[styles.socialLoginText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.continueWithApple}</Text>
+                      </View>
                     </TouchableOpacity>
                   )}
                   
                   {/* Facebook login */}
                   <TouchableOpacity 
-                    style={styles.socialLoginButton}
+                    style={[styles.socialLoginButton, { borderColor: Colors[theme].unselectedText }]}
                     onPress={() => handleSocialLogin('facebook')}
                   >
                     <View style={styles.iconContainer}>
                       <FacebookLoginIcon width={24} height={24} />
                     </View>
                     <View style={styles.textContainer}>
-                      <Text style={styles.socialLoginText}>{strings[language].splash.continueWithFacebook}</Text>
+                      <Text style={[styles.socialLoginText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.continueWithFacebook}</Text>
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -564,7 +585,7 @@ export default function SplashScreen({
 
           {/* Optional: Add a loading text in case animation fails */}
           <View style={styles.loadingTextContainer}>
-            <Text style={styles.loadingText}>{strings[language].splash.loading}</Text>
+            <Text style={[styles.loadingText, { color: Colors[theme].text }]}>{strings[language].splash.loading}</Text>
           </View>
         </>
       )}
@@ -577,16 +598,20 @@ export default function SplashScreen({
         onRequestClose={() => setForgotPasswordModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{strings[language].splash.resetPassword}</Text>
-            <Text style={styles.modalSubtitle}>
+          <View style={[styles.modalContent, { backgroundColor: Colors[theme].background }]}>
+            <Text style={[styles.modalTitle, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.resetPassword}</Text>
+            <Text style={[styles.modalSubtitle, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
               {strings[language].splash.resetPasswordSubtitle}
             </Text>
             
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, { 
+                borderColor: Colors[theme].unselectedText,
+                color: Colors[theme].text,
+                fontFamily: Fonts.bodyBold
+              }]}
               placeholder={strings[language].splash.enterYourEmail}
-              placeholderTextColor="#D5D4DD"
+              placeholderTextColor={Colors[theme].unselectedText}
               value={forgotPasswordEmail}
               onChangeText={setForgotPasswordEmail}
               keyboardType="email-address"
@@ -596,18 +621,22 @@ export default function SplashScreen({
             
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity 
-                style={styles.modalCancelButton}
+                style={[styles.modalCancelButton, { borderColor: Colors[theme].unselectedText }]}
                 onPress={() => setForgotPasswordModalVisible(false)}
               >
-                <Text style={styles.modalCancelButtonText}>{strings[language].splash.cancel}</Text>
+                <Text style={[styles.modalCancelButtonText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.cancel}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.modalConfirmButton, isResettingPassword && styles.modalConfirmButtonDisabled]}
+                style={[
+                  styles.modalConfirmButton, 
+                  { backgroundColor: Colors[theme].brandColor2 },
+                  isResettingPassword && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }
+                ]}
                 onPress={handlePasswordReset}
                 disabled={isResettingPassword}
               >
-                <Text style={styles.modalConfirmButtonText}>
+                <Text style={[styles.modalConfirmButtonText, { color: Colors[theme].background, fontFamily: Fonts.bodyMedium }]}>
                   {isResettingPassword ? strings[language].splash.sending : strings[language].splash.sendEmail}
                 </Text>
               </TouchableOpacity>
@@ -622,7 +651,6 @@ export default function SplashScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000', // Black background to match the animation
     width: '100%',
     height: '100%',
   },
@@ -652,7 +680,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '500',
     opacity: 0.8,
@@ -670,7 +697,6 @@ const styles = StyleSheet.create({
   whiteContainer: {
     width: '90%', // 90% of screen width
     height: height * 0.85, // 80% of screen height
-    backgroundColor: '#fff',
     opacity: 0.95, // 95% opacity
     borderRadius: 30, // 30px corner radius
     justifyContent: 'center',
@@ -707,15 +733,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontFamily: 'Satoshi-Medium',
   },
-  toggleTextActive: {
-    color: '#000000', // Black text for active state
-  },
-  toggleTextInactive: {
-    color: '#D5D4DD', // Light gray text for inactive state
-  },
+
   underline: {
     height: 3,
-    backgroundColor: '#6366F1', // Purple underline
     width: '200%', // Slightly wider than text
     marginTop: 2,
   },
@@ -726,8 +746,6 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 24,
-    fontFamily: 'Satoshi-Variable',
-    color: '#000000',
   },
   inputContainer: {
     width: '100%',
@@ -740,12 +758,9 @@ const styles = StyleSheet.create({
   textInput: {
     height: 50,
     borderWidth: 2,
-    borderColor: '#D5D4DD',
     borderRadius: 30,
     paddingHorizontal: 20,
     fontSize: 16,
-    fontFamily: 'Satoshi-Variable',
-    color: '#000000',
   },
   passwordToggle: {
     position: 'absolute',
@@ -759,19 +774,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   signInButton: {
-    backgroundColor: '#4F41D8',
     borderRadius: 10,
     paddingHorizontal: 30,
     paddingVertical: 10,
   },
-  signInButtonDisabled: {
-    backgroundColor: '#9CA3AF',
-    opacity: 0.6,
-  },
   signInButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'Satoshi-Variable',
     textAlign: 'center',
   },
   forgotPasswordContainer: {
@@ -780,13 +788,9 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Variable',
-    color: '#000', // Same purple as button for consistency
   },
   signInWithText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Variable',
-    color: '#000', // Same purple as button for consistency
     marginBottom: 16,
   },
   socialLoginContainer: {
@@ -800,7 +804,6 @@ const styles = StyleSheet.create({
     width: '90%',
     height: 50,
     borderWidth: 2,
-    borderColor: '#D5D4DD',
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
@@ -811,8 +814,6 @@ const styles = StyleSheet.create({
   },
   socialLoginText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Variable',
-    color: '#000000',
   },
   iconContainer: {
     width: '20%', // 1/8 of the width
@@ -832,7 +833,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 24,
     margin: 20,
@@ -841,16 +841,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 24,
-    fontFamily: 'Satoshi-Variable',
     fontWeight: '700',
-    color: '#000',
     textAlign: 'center',
     marginBottom: 12,
   },
   modalSubtitle: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
-    color: '#666',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
@@ -858,12 +854,9 @@ const styles = StyleSheet.create({
   modalInput: {
     height: 50,
     borderWidth: 2,
-    borderColor: '#D5D4DD',
     borderRadius: 25,
     paddingHorizontal: 20,
     fontSize: 16,
-    fontFamily: 'Satoshi-Variable',
-    color: '#000000',
     marginBottom: 24,
   },
   modalButtonContainer: {
@@ -875,32 +868,23 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderWidth: 2,
-    borderColor: '#D5D4DD',
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCancelButtonText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
-    color: '#666',
     textAlign: 'center'
   },
   modalConfirmButton: {
     flex: 1,
     height: 50,
-    backgroundColor: '#4F41D8',
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalConfirmButtonDisabled: {
-    backgroundColor: '#9CA3AF',
-    opacity: 0.6,
-  },
+
   modalConfirmButtonText: {
     fontSize: 16,
-    fontFamily: 'Satoshi-Medium',
-    color: '#FFFFFF',
   },
 }); 

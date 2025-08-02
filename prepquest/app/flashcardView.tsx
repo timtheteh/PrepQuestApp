@@ -21,10 +21,8 @@ import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import * as Speech from 'expo-speech';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useFocusEffect } from '@react-navigation/native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -32,26 +30,21 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { 
-  getCurrentUserID, 
-  getTimeLimit, 
   loadFlashcardsFromDatabaseForView, 
   updateFlashcardDate, 
   updateDeckCompletionDate, 
   updateFlashcardDifficulty, 
   toggleFlashcardFavoriteForView, 
-  trackAttemptedFlashcard, 
   loadHalfwayCheckpointSetting,
   getFlashcardCount,
   deleteFlashcard,
   updateDeckLastModifiedAfterFlashcardDeletion,
   type TransformedFlashcard,
-  type DatabaseFlashcard
 } from '@/db/decks';
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 // Helper function to extract SVG paths from blob data
@@ -130,7 +123,6 @@ const MAX_CACHE_SIZE = 50; // Limit cache to 50 entries
 // Function to clear blob cache to manage memory
 const clearBlobCache = () => {
   blobCache.clear();
-  console.log('Blob cache cleared');
 };
 
 // Function to add to cache with size limit
@@ -329,7 +321,6 @@ const copyAssetToClipboard = async (imageSource: any) => {
     
     // Copy base64 image to clipboard
     await Clipboard.setImageAsync(base64Data);
-    console.log('Image copied to clipboard successfully!');
     return true;
   } catch (error) {
     console.error('Failed to copy image to clipboard:', error);
@@ -539,7 +530,6 @@ async function playAudio(uri: any) {
       });
       
       const { sound } = await Audio.Sound.createAsync({ uri });
-      console.log('Playing Sound');
       await sound.setVolumeAsync(1.0); // Set volume to maximum (1.0)
       await sound.playAsync();
       
@@ -548,7 +538,7 @@ async function playAudio(uri: any) {
         await sound.setVolumeAsync(1.0);
       }, 100);
   } catch (e) {
-    console.log('Audio playback error:', e);
+    console.error('Audio playback error:', e);
   }
 }
 
@@ -1089,7 +1079,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
       }
     } catch (e) {
       setIsAudioPlaying(false);
-      console.log('Audio playback error:', e);
+      console.error('Audio playback error:', e);
     }
   }
 
@@ -1773,8 +1763,6 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
                     onPress={() => {
-                      // TODO: Implement AI chat functionality
-                      console.log('AI Chat button pressed');
                     }}
                     disabled={!recordedAudioUri}
                   >
@@ -2172,7 +2160,6 @@ export default function FlashcardViewPage() {
           }
           
           setFlashcards(loadedFlashcards);
-          console.log('Loaded flashcards from database:', loadedFlashcards.length);
         } catch (error) {
           console.error('Error loading flashcards:', error);
           setFlashcards([]);
@@ -2200,7 +2187,6 @@ export default function FlashcardViewPage() {
           : card
       ));
 
-      console.log(`Flashcard ${currentFlashcard.flashcardID} favorite status updated to ${newFavoriteStatus}`);
     } catch (error) {
       console.error('Error toggling favorite status:', error);
     }
@@ -2246,7 +2232,6 @@ export default function FlashcardViewPage() {
   const updateDeckCompletionDateLocal = async (isStudyMode: boolean) => {
     try {
       await updateDeckCompletionDate(isStudyMode, deckID as string, isAIDeckParam as string);
-      console.log(`Updated deck ${deckID} completion date (deck completed)`);
     } catch (error) {
       console.error(`Error updating deck completion date:`, error);
     }
@@ -2286,7 +2271,6 @@ export default function FlashcardViewPage() {
       // Force a re-render by incrementing the trigger
       setDifficultyUpdateTrigger(prev => prev + 1);
       
-      console.log(`Updated difficulty rating for flashcard ${currentFlashcard.flashcardID} to ${difficulty}`);
     } catch (error) {
       console.error('Error updating difficulty rating:', error);
     }
@@ -2373,9 +2357,6 @@ export default function FlashcardViewPage() {
 
       // Update local state by removing the deleted flashcard
       setFlashcards(prev => prev.filter((_, idx) => idx !== currentIdx));
-      
-      console.log(`Deleted flashcard ${currentFlashcard.flashcardID}`);
-
       // Navigate to next card or previous card if at the end
       const newTotalCards = flashcards.length - 1;
       if (newTotalCards === 0) {

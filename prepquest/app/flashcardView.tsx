@@ -599,10 +599,10 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards, languag
   const currentDifficulty = currentFlashcard?.flashcardDifficulty;
 
   const DIFFICULTY_LABELS: { [key: string]: string } = {
-    Again: language === 'Chinese' ? '重来' : 'Again',
-    Hard: language === 'Chinese' ? '困难' : 'Hard',
-    Good: language === 'Chinese' ? '良好' : 'Good',
-    Easy: language === 'Chinese' ? '简单' : 'Easy',
+    Again: strings[language].flashcardViewPage.again,
+    Hard: strings[language].flashcardViewPage.hard,
+    Good: strings[language].flashcardViewPage.good,
+    Easy: strings[language].flashcardViewPage.easy,
   };
 
   return (
@@ -688,7 +688,7 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
         {isCompleted && (
           <View style={styles.loadingBarTextContainer}>
             <Text style={styles.loadingBarCompleteText}>
-              {language === 'Chinese' ? '已完成！' : 'Completed!'}
+              {strings[language].flashcardViewPage.completed}
             </Text>
           </View>
         )}
@@ -1069,15 +1069,15 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         if (!hasFlippedCard) {
           if (!hasDifficultySelected) {
-            showStudyValidationModal(language === 'Chinese' ? '请先查看答案并选择难度后再继续!' : 'Cannot move on until you have viewed answer and selected a difficulty!');
+            showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutAnswer);
             return;
           } else {
-            showStudyValidationModal(language === 'Chinese' ? '请翻转卡片查看答案后再继续!' : 'Please flip the card to view the answer before moving on to the next flashcard!');
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToViewAnswer);
             return;
           }
         } else {
           if (!hasDifficultySelected) {
-            showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
             return;
           }
         }
@@ -1086,24 +1086,24 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         if (!hasFlippedCard) {
           if (!hasDifficultySelected) {
-            showStudyValidationModal(language === 'Chinese' ? '请先查看背面、回答选择题并选择难度后再继续!' : 'Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!');
+            showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQ);
             return;
           } else {
-            showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并回答选择题后再继续!' : 'Please flip the card to view and answer the MCQ before moving onto the next flashcard!');
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToAnswerMCQ);
             return;
           }
         } else {
           if (!hasDifficultySelected) {
             if (!hasSubmittedMCQ) {
-              showStudyValidationModal(language === 'Chinese' ? '请先回答选择题并选择难度后再继续!' : 'Cannot move on until you have answered the MCQ and selected a difficulty!');
+              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQAnswer);
               return;
             } else {
-              showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
               return;
             }
           } else {
             if (!hasSubmittedMCQ) {
-              showStudyValidationModal(language === 'Chinese' ? '请先回答选择题后再继续!' : 'Cannot move on until you have answered the MCQ!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseAnswerMCQ);
               return;
             }
           }
@@ -1113,24 +1113,24 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
         if (!hasFlippedCard) {
           if (!hasDifficultySelected) {
-            showStudyValidationModal(language === 'Chinese' ? '请先查看背面、录音作答并选择难度后再继续!' : 'Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!');
+            showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceAnswer);
             return;
           } else {
-            showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并录音作答后再继续!' : 'Please flip the card to view and record your voice answer before moving onto the next flashcard!');
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToRecordVoice);
             return;
           }
         } else {
           if (!hasDifficultySelected) {
             if (!recordedAudioUri) {
-              showStudyValidationModal(language === 'Chinese' ? '请先录音作答并选择难度后再继续!' : 'Cannot move on until you have recorded your voice answer and selected a difficulty!');
+              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceRecording);
               return;
             } else {
-              showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
               return;
             }
           } else {
             if (!recordedAudioUri) {
-              showStudyValidationModal(language === 'Chinese' ? '请先录音作答后再继续!' : 'Cannot move on until you have recorded your voice answer!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseRecordVoiceAnswer);
               return;
             }
           }
@@ -1160,15 +1160,15 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
-              showStudyValidationModal(language === 'Chinese' ? '请先查看答案并选择难度后再继续!' : 'Cannot move on until you have viewed answer and selected a difficulty!');
+              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutAnswer);
               return;
             } else {
-              showStudyValidationModal(language === 'Chinese' ? '请翻转卡片查看答案后再继续!' : 'Please flip the card to view the answer before moving on to the next flashcard!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToViewAnswer);
               return;
             }
           } else {
             if (!hasDifficultySelected) {
-              showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
               return;
             }
           }
@@ -1177,24 +1177,24 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
-              showStudyValidationModal(language === 'Chinese' ? '请先查看背面、回答选择题并选择难度后再继续!' : 'Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!');
+              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQ);
               return;
             } else {
-              showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并回答选择题后再继续!' : 'Please flip the card to view and answer the MCQ before moving onto the next flashcard!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToAnswerMCQ);
               return;
             }
           } else {
             if (!hasDifficultySelected) {
               if (!hasSubmittedMCQ) {
-                showStudyValidationModal(language === 'Chinese' ? '请先回答选择题并选择难度后再继续!' : 'Cannot move on until you have answered the MCQ and selected a difficulty!');
+                showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQAnswer);
                 return;
               } else {
-                showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
+                showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
                 return;
               }
             } else {
               if (!hasSubmittedMCQ) {
-                showStudyValidationModal(language === 'Chinese' ? '请先回答选择题后再继续!' : 'Cannot move on until you have answered the MCQ!');
+                showStudyValidationModal(strings[language].flashcardViewPage.pleaseAnswerMCQ);
                 return;
               }
             }
@@ -1204,24 +1204,24 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
           if (!hasFlippedCard) {
             if (!hasDifficultySelected) {
-              showStudyValidationModal(language === 'Chinese' ? '请先查看背面、录音作答并选择难度后再继续!' : 'Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!');
+              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceAnswer);
               return;
             } else {
-              showStudyValidationModal(language === 'Chinese' ? '请翻转卡片并录音作答后再继续!' : 'Please flip the card to view and record your voice answer before moving onto the next flashcard!');
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToRecordVoice);
               return;
             }
           } else {
             if (!hasDifficultySelected) {
               if (!recordedAudioUri) {
-                showStudyValidationModal(language === 'Chinese' ? '请先录音作答并选择难度后再继续!' : 'Cannot move on until you have recorded your voice answer and selected a difficulty!');
+                showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceRecording);
                 return;
               } else {
-                showStudyValidationModal(language === 'Chinese' ? '请为此卡片选择一个难度等级后再继续!' : 'Give this flashcard a difficulty rating before moving onto the next flashcard!');
+                showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
                 return;
               }
             } else {
               if (!recordedAudioUri) {
-                showStudyValidationModal(language === 'Chinese' ? '请先录音作答后再继续!' : 'Cannot move on until you have recorded your voice answer!');
+                showStudyValidationModal(strings[language].flashcardViewPage.pleaseRecordVoiceAnswer);
                 return;
               }
             }
@@ -1705,16 +1705,16 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             <Animated.View style={[styles.topContainer, { opacity: frontOpacity }]}>
               <View style={styles.topContainerContent}>
                 <Text style={styles.flashcardIndexText}>
-                  {`${language === 'Chinese' ? '题' : 'Qn'} ${displayNumber} ${language === 'Chinese' ? '共' : 'of'} ${totalCards}`}
+                  {`${strings[language].flashcardViewPage.questionLabel} ${displayNumber} ${strings[language].flashcardViewPage.ofLabel} ${totalCards}`}
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{language === 'Chinese' ? '时间到!' : "Time's Up!"}</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{language === 'Chinese' ? `${countdown}秒` : `${countdown}s`}</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -1771,7 +1771,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               )}
               {flashcardQnType === 'audio' && !!flashcardQn && (
                 <View style={styles.audioContainer}>
-                  <Text style={styles.audioLabel}>{language === 'Chinese' ? '问题' : 'Question'}:</Text>
+                  <Text style={styles.audioLabel}>{strings[language].flashcardViewPage.question}:</Text>
                   <Pressable
                     style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
                     onPress={() => handleAudioButtonPress(flashcardQn)}
@@ -1811,7 +1811,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   left: 10, 
                 }}>
                   <Text style={{ fontSize: 14, color: '#222', textAlign: 'center', fontFamily: 'Satoshi-Medium' }}>
-                    {getCognitiveQnTypeLabel(currentFlashcard.cognitiveQnType, language)} {language === 'Chinese' ? '题' : 'Qn'}
+                    {getCognitiveQnTypeLabel(currentFlashcard.cognitiveQnType, language)} {strings[language].flashcardViewPage.questionLabel}
                   </Text>
                 </View>
               )}
@@ -1889,16 +1889,16 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             <Animated.View style={[styles.topContainer, { opacity: backOpacity }]}>
               <View style={styles.topContainerContent}>
                 <Text style={styles.flashcardIndexText}>
-                  {`${language === 'Chinese' ? '答' : 'Ans'} ${displayNumber} ${language === 'Chinese' ? '共' : 'of'} ${totalCards}`}
+                  {`${strings[language].flashcardViewPage.answerLabel} ${displayNumber} ${strings[language].flashcardViewPage.ofLabel} ${totalCards}`}
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{language === 'Chinese' ? '时间到!' : "Time's Up!"}</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{language === 'Chinese' ? `${countdown}秒` : `${countdown}s`}</Text>
+                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -1936,8 +1936,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                     <>
                       <Text style={styles.voiceAnswerText}>
                         {recordedAudioUri ? 
-                        language === 'Chinese' ? "回答得很好！重放你的音频或通过AI获取反馈!" : "Great answer! Replay your audio or get feedback by AI!" : 
-                        language === 'Chinese' ? "录音答题，获取AI反馈!" : "Record your answer and get feedback by AI!"}
+                        strings[language].flashcardViewPage.greatAnswerReplayOrFeedback : 
+                        strings[language].flashcardViewPage.recordAnswerGetFeedback}
                       </Text>
                       <LottieView
                         source={require('@/assets/animations/DownArrowAnimation.json')}
@@ -2051,7 +2051,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               )}
               {flashcardAnswerType === 'audio' && !!flashcardAnswer && (
                 <View style={styles.audioContainer}>
-                  <Text style={styles.audioLabel}>{language === 'Chinese' ? '答案' : 'Answer'}:</Text>
+                  <Text style={styles.audioLabel}>{strings[language].flashcardViewPage.answer}:</Text>
                   <Pressable
                     style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
                     onPress={() => handleAudioButtonPress(flashcardAnswer)}
@@ -2155,7 +2155,7 @@ const SubmitButton = ({ enabled, onPress, disabled, language }: { enabled: boole
       disabled={isDisabled}
       activeOpacity={0.8}
     >
-      <Text style={styles.submitButtonText}>{language === 'Chinese' ? '提交' : 'Submit'}</Text>
+              <Text style={styles.submitButtonText}>{strings[language].flashcardViewPage.submit}</Text>
     </TouchableOpacity>
   );
 };
@@ -2181,7 +2181,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
       {/* Centered text */}
       <View style={styles.mcqModalTextCenterWrap}>
         <Text style={[styles.mcqModalText]}>
-          {isCorrect ? (language === 'Chinese' ? "回答正确! 干得漂亮!" : "That's correct! Good job!") : (language === 'Chinese' ? "回答错误! 下次再试!" : "Oops that's incorrect! Try again next time!")}
+          {isCorrect ? strings[language].flashcardViewPage.correctAnswerGoodJob : strings[language].flashcardViewPage.incorrectAnswerTryAgain}
         </Text>
       </View>
       {/* Lottie animation absolutely positioned */}
@@ -2193,7 +2193,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
       />
       {/* Button absolutely at bottom center */}
       <TouchableOpacity style={styles.mcqModalButtonAbsolute} onPress={onDismiss} activeOpacity={0.8}>
-        <Text style={styles.mcqModalButtonText}>{language === 'Chinese' ? '好的' : 'OK'}</Text>
+        <Text style={styles.mcqModalButtonText}>{strings[language].flashcardViewPage.ok}</Text>
       </TouchableOpacity>
     </Animated.View>
   ) : null
@@ -2257,7 +2257,7 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
               marginTop: 24,
               marginBottom: 16,
             }}>
-              {language === 'Chinese' ? '加载你的卡片...' : 'Loading your flashcards...'}
+              {strings[language].flashcardViewPage.loading}
             </Text>
             <View style={{
               width: '100%',
@@ -2300,7 +2300,7 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
               textAlign: 'center',
               marginTop: 2,
             }}>
-              {language === 'Chinese' ? `${current} / ${total} 张卡片已加载` : `${current} out of ${total} Flashcards loaded`}
+              {`${current} ${strings[language].flashcardViewPage.outOf} ${total} ${strings[language].flashcardViewPage.flashcardsLoaded}`}
             </Text>
           </View>
         </View>
@@ -2715,17 +2715,17 @@ export default function FlashcardViewPage() {
         const answerType = currentFlashcard?.flashcardAnswerType;
         const answer = currentFlashcard?.flashcardAnswer;
         
-        if (answerType === 'text' && typeof answer === 'string') {
-          await Clipboard.setStringAsync(answer);
-          Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied text to clipboard!');
-        } else if (answerType === 'mcq' && Array.isArray(answer)) {
+              if (answerType === 'text' && typeof answer === 'string') {
+        await Clipboard.setStringAsync(answer);
+        Alert.alert(strings[language].flashcardViewPage.copiedTextToClipboard);
+      } else if (answerType === 'mcq' && Array.isArray(answer)) {
           // Use the displayed MCQ order and labels
           if (mcqOptionsWithLettersRef.current && mcqOptionsWithLettersRef.current.length > 0) {
             const mcqText = mcqOptionsWithLettersRef.current.map(option => {
               return `${option.letter}) ${option.choice}`;
             }).join('\n');
             await Clipboard.setStringAsync(mcqText);
-            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied MCQ text to clipboard!');
+            Alert.alert(strings[language].flashcardViewPage.copiedMCQTextToClipboard);
           } else {
             // fallback to original order if ref is empty
             const mcqText = answer.map((option, index) => {
@@ -2733,14 +2733,14 @@ export default function FlashcardViewPage() {
               return `${letter}) ${option.choice}`;
             }).join('\n');
             await Clipboard.setStringAsync(mcqText);
-            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied MCQ text to clipboard!');
+            Alert.alert(strings[language].flashcardViewPage.copiedMCQTextToClipboard);
           }
         } else if (answerType === 'image' && answer) {
           const success = await copyAssetToClipboard(answer);
           if (success) {
-            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied image to clipboard!');
+            Alert.alert(strings[language].flashcardViewPage.copiedImageToClipboard);
           } else {
-            Alert.alert(language === 'Chinese' ? '复制失败!' : 'Failed to copy image to clipboard');
+            Alert.alert(strings[language].flashcardViewPage.failedToCopyImage);
           }
         }
       } else {
@@ -2750,19 +2750,19 @@ export default function FlashcardViewPage() {
         
         if (questionType === 'text' && typeof question === 'string') {
           await Clipboard.setStringAsync(question);
-          Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied text to clipboard!');
+          Alert.alert(strings[language].flashcardViewPage.copiedTextToClipboard);
         } else if (questionType === 'image' && question) {
           const success = await copyAssetToClipboard(question);
           if (success) {
-            Alert.alert(language === 'Chinese' ? '已复制到剪贴板!' : 'Copied image to clipboard!');
+            Alert.alert(strings[language].flashcardViewPage.copiedImageToClipboard);
           } else {
-            Alert.alert(language === 'Chinese' ? '复制失败!' : 'Failed to copy image to clipboard');
+            Alert.alert(strings[language].flashcardViewPage.failedToCopyImage);
           }
         }
       }
     } catch (error) {
       console.error('Error copying to clipboard:', error);
-      Alert.alert(language === 'Chinese' ? '复制失败!' : 'Failed to copy to clipboard');
+      Alert.alert(strings[language].flashcardViewPage.failedToCopy);
     }
   };
 
@@ -3091,190 +3091,6 @@ export default function FlashcardViewPage() {
     });
   };
 
-  // 4. In FlashcardViewPage render, show Success UI if isSuccessMode is true
-  // if (isSuccessMode) {
-  //   return (
-  //     <Animated.View
-  //       style={{
-  //         flex: 1,
-  //         backgroundColor: '#fff',
-  //         alignItems: 'center',
-  //         justifyContent: 'center',
-  //         paddingHorizontal: 16,
-  //         opacity: successFadeAnim,
-  //       }}
-  //     >
-  //       {/* Home icon button at top left */}
-  //       <TouchableOpacity
-  //         style={{
-  //           position: 'absolute',
-  //           top: getTopBarAccountHeight(),
-  //           right: 16,
-  //           zIndex: 10,
-  //           padding: 8,
-  //         }}
-  //         onPress={() => router.replace('/')}
-  //       >
-  //         <MaterialIcons name="home" size={32} color="black" />
-  //       </TouchableOpacity>
-
-  //       {isQuizMode ? (
-  //         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
-  //           <LottieView
-  //             source={require('@/assets/animations/SuccessAnimation3_Confetti.json')}
-  //             autoPlay
-  //             loop
-  //             style={{ width: 120, height: 120, marginRight: 10, transform: [{ scaleX: -1 }] }}
-  //           />
-  //           <View style={{ width: 20 }} />
-  //           <LottieView
-  //             source={require('@/assets/animations/SuccessAnimation3_Confetti.json')}
-  //             autoPlay
-  //             loop
-  //             style={{ width: 120, height: 120, marginLeft: 10 }}
-  //           />
-  //         </View>
-  //       ) : (
-  //         <LottieView
-  //           source={require('@/assets/animations/SuccessAnimation2_Circle.json')}
-  //           autoPlay
-  //           loop={true}
-  //           style={{ width: 220, height: 220, marginBottom: 32 }}
-  //         />
-  //       )}
-  //       <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 40, color: '#222', textAlign: 'center', marginBottom: 48 }}>
-  //         {isQuizMode ? (language === 'Chinese' ? '干得漂亮!' : 'Nicely done!') : (language === 'Chinese' ? '学习得不错!' : 'Nice studying!')}
-  //       </Text>
-  //       {isQuizMode && (
-  //         <>
-  //         <TouchableOpacity
-  //         style={{
-  //           width: 318,
-  //           height: 72,
-  //           borderRadius: 30,
-  //           alignItems: 'center',
-  //           justifyContent: 'center',
-  //               backgroundColor: hasDifficultFlashcards() ? '#4F41D8' : '#D5D4DD',
-  //           marginBottom: 20,
-  //         }}
-  //             onPress={() => {
-  //               if (hasDifficultFlashcards()) {
-  //                 router.replace({
-  //                   pathname: '/flashcardView',
-  //                   params: { 
-  //                     deckID: deckID as string,
-  //                     flashcardIdx: '0',
-  //                     totalNumberOfFlashcards: totalCards.toString(),
-  //                     isStudyMode: 'true',
-  //                     isQuizMode: 'false',
-  //                     isAIDeck: isAIDeckParam as string,
-  //                     retryDifficult: 'true'
-  //                   },
-  //                 });
-  //               }
-  //             }}
-  //             disabled={!hasDifficultFlashcards()}
-  //             activeOpacity={hasDifficultFlashcards() ? 0.8 : 1}
-  //       >
-  //         <Text style={{ 
-  //           color: "#fff", 
-  //           fontFamily: 'Satoshi-Variable', 
-  //           fontWeight: '400', 
-  //           fontSize: 20 
-  //         }}>
-  //               {hasDifficultFlashcards() ? (language === 'Chinese' ? '重做难题' : 'Retry difficult flashcards?') : (language === 'Chinese' ? '没有难题可重做' : 'No difficult flashcards to retry')}
-  //         </Text>
-  //       </TouchableOpacity>
-  //       <TouchableOpacity
-  //         style={{
-  //           width: 318,
-  //           height: 72,
-  //           borderRadius: 30,
-  //           alignItems: 'center',
-  //           justifyContent: 'center',
-  //           backgroundColor: '#44B88A',
-  //           marginBottom: 20,
-  //         }}
-  //         onPress={() => router.push({
-  //           pathname: '/viewQuizStats',
-  //           params: { 
-  //             halfwayCheckpoint: 'false',
-  //             deckID: deckID as string,
-  //             isAIDeck: isAIDeckParam as string,
-  //             attemptedFlashcardIds: JSON.stringify(attemptedFlashcardIds)
-  //           }},
-  //         )}
-  //       >
-  //         <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-  //           {language === 'Chinese' ? '查看测验统计' : 'View Quiz Stats'}
-  //         </Text>
-  //       </TouchableOpacity>
-  //       </>
-  //       )}
-  //       <TouchableOpacity
-  //         style={{
-  //           width: 318,
-  //           height: 72,
-  //           borderRadius: 30,
-  //           alignItems: 'center',
-  //           justifyContent: 'center',
-  //           backgroundColor: '#44B88A',
-  //         }}
-  //         onPress={() => router.back()}
-  //       >
-  //         <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-  //           {language === 'Chinese' ? '返回卡组' : 'Back to Deck'}
-  //         </Text>
-  //       </TouchableOpacity>
-  //     </Animated.View>
-  //   );
-  // }
-
-  // Show countdown screen before quiz starts
-  // if (showQuizCountdown) {
-  //   return (
-  //     <View style={styles.safeArea}>
-  //     <SafeAreaView style={styles.safeArea}>
-  //     <View style={{
-  //       flex: 1,
-  //       backgroundColor: '#fff',
-  //       alignItems: 'center',
-  //       justifyContent: 'center',
-  //     }}>
-  //       {/* Back button at top left */}
-  //       <TouchableOpacity
-  //         style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
-  //         onPress={() => router.back()}
-  //       >
-  //         <AntDesign name="arrowleft" size={32} color="black" />
-  //       </TouchableOpacity>
-  //       {/* Quiz starting text */}
-  //       <Text style={{
-  //         fontFamily: 'Satoshi-Medium',
-  //         fontSize: 28,
-  //         color: '#222',
-  //         marginBottom: 24,
-  //         textAlign: 'center',
-  //       }}>
-  //         {language === 'Chinese' ? '测验即将开始...' : 'Quiz starting in...'}
-  //       </Text>
-  //       <LottieView
-  //         source={require('@/assets/animations/CountdownAnimation.json')}
-  //         autoPlay
-  //         loop={false}
-  //         style={{ width: 200, height: 200 }}
-  //       />
-  //     </View>
-  //     </SafeAreaView>
-  //     </View>
-  //   );
-  // }
-
-  // Show loading screen while flashcards are being loaded
-  // if (isLoadingFlashcards) {
-  //   return <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} language={language} />;
-  // }
-
   const getContentTopHeight = useContentTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getTopBarAccountHeight = useTopBarAccountHeight();
@@ -3330,7 +3146,7 @@ export default function FlashcardViewPage() {
           />
         )}
         <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 40, color: '#222', textAlign: 'center', marginBottom: 48 }}>
-          {isQuizMode ? (language === 'Chinese' ? '干得漂亮!' : 'Nicely done!') : (language === 'Chinese' ? '学习得不错!' : 'Nice studying!')}
+          {isQuizMode ? strings[language].flashcardViewPage.nicelyDone : strings[language].flashcardViewPage.niceStudying}
         </Text>
         {isQuizMode && (
           <>
@@ -3369,7 +3185,7 @@ export default function FlashcardViewPage() {
             fontWeight: '400', 
             fontSize: 20 
           }}>
-                {hasDifficultFlashcards() ? (language === 'Chinese' ? '重做难题' : 'Retry difficult flashcards?') : (language === 'Chinese' ? '没有难题可重做' : 'No difficult flashcards to retry')}
+                {hasDifficultFlashcards() ? strings[language].flashcardViewPage.retryDifficultFlashcards : strings[language].flashcardViewPage.noDifficultFlashcardsToRetry}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -3393,7 +3209,7 @@ export default function FlashcardViewPage() {
           )}
         >
           <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-            {language === 'Chinese' ? '查看测验统计' : 'View Quiz Stats'}
+            {strings[language].flashcardViewPage.viewQuizStats}
           </Text>
         </TouchableOpacity>
         </>
@@ -3410,7 +3226,7 @@ export default function FlashcardViewPage() {
           onPress={() => router.back()}
         >
           <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
-            {language === 'Chinese' ? '返回卡组' : 'Back to Deck'}
+            {strings[language].flashcardViewPage.backToDeck}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -3438,7 +3254,7 @@ export default function FlashcardViewPage() {
               marginBottom: 24,
               textAlign: 'center',
             }}>
-              {language === 'Chinese' ? '测验即将开始...' : 'Quiz starting in...'}
+              {strings[language].flashcardViewPage.quizStartingIn}
             </Text>
             <LottieView
               source={require('@/assets/animations/CountdownAnimation.json')}
@@ -3564,7 +3380,7 @@ export default function FlashcardViewPage() {
         visible={isDeleteModalOpen}
         opacity={deleteModalOpacity}
         Icon={DeleteModalIcon}
-        text={language === 'Chinese' ? "确定要删除这张卡片吗?" : "Are you sure you want to delete this flashcard?"}
+        text={strings[language].flashcardViewPage.deleteFlashcardConfirmation}
         buttons="double"
         onConfirm={handleConfirmDelete}
         onCancel={handleDismissDeleteModal}
@@ -3637,7 +3453,7 @@ export default function FlashcardViewPage() {
         visible={showEndStudyModal}
         opacity={endStudyModalOpacity}
         Icon={DeleteModalIcon}
-        text={language === 'Chinese' ? "中途退出学习?" : "End study session midway?"}
+        text={strings[language].flashcardViewPage.endStudySessionMidway}
         buttons="double"
         onConfirm={() => {
           Animated.parallel([
@@ -3695,7 +3511,7 @@ export default function FlashcardViewPage() {
         visible={showEndQuizModal}
         opacity={endQuizModalOpacity}
         Icon={DeleteModalIcon}
-        text={language === 'Chinese' ? '中途退出测验?' : 'End quiz session midway?'}
+        text={strings[language].flashcardViewPage.endQuizSessionMidway}
         buttons="double"
         onConfirm={() => {
           Animated.parallel([

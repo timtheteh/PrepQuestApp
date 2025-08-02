@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Text } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 
 // Global variable to store the typed text
 let lastTypedText = '';
@@ -35,12 +36,12 @@ export default function TextInputModal() {
             <View style={styles.modalView}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={handleDone}>
-                        <Text style={styles.doneButton}>{language === 'Chinese' ? '完成' : 'Done'}</Text>
+                        <Text style={styles.doneButton}>{strings[language].done}</Text>
                     </TouchableOpacity>
                 </View>
                 <TextInput
                     style={styles.input}
-                    placeholder={language === 'Chinese' ? '请在此输入！' : 'Type your text here...'}
+                    placeholder={strings[language].typeHere}
                     placeholderTextColor="#999"
                     autoFocus={true}
                     multiline

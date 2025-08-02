@@ -9,6 +9,7 @@ import DoubleChevron from '@/assets/icons/generalIcons/DoubleChevron.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 
 
 // Helper function to get current userID from AsyncStorage
@@ -228,9 +229,9 @@ export default function ViewQuizStatsModal() {
             <Image source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
           )}
           {isHalfwayCheckpoint ? (
-            <Text style={styles.wellDoneTitle}>{language === 'Chinese' ? '中途\n检查点' : 'Halfway\nCheckpoint'}</Text>
+                            <Text style={styles.wellDoneTitle}>{strings[language].flashcardViewPage.halfwayCheckpoint}</Text>
           ) : (
-            <Text style={styles.wellDoneTitle}>{language === 'Chinese' ? '干得漂亮!' : 'Well Done!'}</Text>
+                          <Text style={styles.wellDoneTitle}>{strings[language].flashcardViewPage.wellDone}</Text>
           )}
           {isHalfwayCheckpoint ? (
             <Image source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
@@ -267,7 +268,7 @@ export default function ViewQuizStatsModal() {
         
         {/* Total time spent */}
         <View style={styles.totalTimeWrap}>
-          <Text style={styles.totalTimeLabel}>{language === 'Chinese' ? '总用时:' : 'Total time spent:'}</Text>
+                          <Text style={styles.totalTimeLabel}>{strings[language].flashcardViewPage.totalTimeSpent}</Text>
           <Text style={styles.totalTimeValue}>{formatTime(quizStats.totalTimeSeconds)}</Text>
         </View>
       </ScrollView>
@@ -277,7 +278,7 @@ export default function ViewQuizStatsModal() {
         <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
           <TouchableOpacity style={styles.fixedBottomButton} activeOpacity={0.85} onPress={() => router.back()}>
             <View style={styles.buttonContentRow}>
-              <Text style={styles.buttonText}>{language === 'Chinese' ? '继续测验' : 'Continue with quiz'}</Text>
+                              <Text style={styles.buttonText}>{strings[language].flashcardViewPage.continueWithQuiz}</Text>
               <DoubleChevron width={36} height={36} />
             </View>
           </TouchableOpacity>

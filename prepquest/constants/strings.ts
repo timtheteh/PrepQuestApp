@@ -443,6 +443,81 @@ export const strings: Record<string, any> = {
       areYouSureYouWantToUnfavoriteTheseFolders: 'Are you sure you want to unfavorite these folder(s)?',
       areYouSureYouWantToUnfavoriteTheseDecks: 'Are you sure you want to unfavorite these deck(s)?',
     },
+    // FlashcardView page strings
+    flashcardViewPage: {
+      // Timer and countdown
+      timesUp: "Time's Up!",
+      seconds: 's',
+      // Labels
+      question: 'Question',
+      answer: 'Answer',
+      // Buttons
+      submit: 'Submit',
+      ok: 'OK',
+      // Delete confirmation
+      deleteFlashcardConfirmation: 'Are you sure you want to delete this flashcard?',
+      // Study/Quiz exit confirmation
+      endStudySessionMidway: 'End study session midway?',
+      endQuizSessionMidway: 'End quiz session midway?',
+      // Difficulty labels
+      again: 'Again',
+      hard: 'Hard',
+      good: 'Good',
+      easy: 'Easy',
+      // Loading text
+      loading: 'Loading...',
+      // Validation messages
+      cannotMoveOnWithoutAnswer: 'Cannot move on until you have viewed answer and selected a difficulty!',
+      pleaseFlipCardToViewAnswer: 'Please flip the card to view the answer before moving on to the next flashcard!',
+      pleaseSelectDifficulty: 'Give this flashcard a difficulty rating before moving onto the next flashcard!',
+      cannotMoveOnWithoutMCQ: 'Cannot move on until you have viewed the back, answered the MCQ, and selected a difficulty!',
+      pleaseFlipCardToAnswerMCQ: 'Please flip the card to view and answer the MCQ before moving onto the next flashcard!',
+      cannotMoveOnWithoutMCQAnswer: 'Cannot move on until you have answered the MCQ and selected a difficulty!',
+      pleaseAnswerMCQ: 'Cannot move on until you have answered the MCQ!',
+      cannotMoveOnWithoutVoiceAnswer: 'Cannot move on until you have viewed the back, recorded your voice answer, and selected a difficulty!',
+      pleaseFlipCardToRecordVoice: 'Please flip the card to view and record your voice answer before moving onto the next flashcard!',
+      cannotMoveOnWithoutVoiceRecording: 'Cannot move on until you have recorded your voice answer and selected a difficulty!',
+      pleaseRecordVoiceAnswer: 'Cannot move on until you have recorded your voice answer!',
+      // Copy to clipboard messages
+      copiedTextToClipboard: 'Copied text to clipboard!',
+      copiedMCQTextToClipboard: 'Copied MCQ text to clipboard!',
+      copiedImageToClipboard: 'Copied image to clipboard!',
+      failedToCopyImage: 'Failed to copy image to clipboard',
+      failedToCopy: 'Failed to copy to clipboard',
+      // Success messages
+      nicelyDone: 'Nicely done!',
+      niceStudying: 'Nice studying!',
+      // Retry messages
+      retryDifficultFlashcards: 'Retry difficult flashcards?',
+      noDifficultFlashcardsToRetry: 'No difficult flashcards to retry',
+      // Navigation labels
+      viewQuizStats: 'View Quiz Stats',
+      backToDeck: 'Back to Deck',
+      // Quiz countdown
+      quizStartingIn: 'Quiz starting in...',
+      // Question/Answer labels
+      questionLabel: 'Qn',
+      answerLabel: 'Ans',
+      ofLabel: 'of',
+      // Voice answer messages
+      greatAnswerReplayOrFeedback: 'Great answer! Replay your audio or get feedback by AI!',
+      recordAnswerGetFeedback: 'Record your answer and get feedback by AI!',
+      // Completion message
+      completed: 'Completed!',
+      // MCQ feedback messages
+      correctAnswerGoodJob: "That's correct! Good job!",
+      incorrectAnswerTryAgain: "Oops that's incorrect! Try again next time!",
+      // Loading progress message
+      flashcardsLoaded: 'Flashcards loaded',
+      outOf: 'out of',
+      // Quiz stats related
+      totalTimeSpent: 'Total time spent:',
+      continueWithQuiz: 'Continue with quiz',
+      wellDone: 'Well Done!',
+      // Deck creation related
+      creatingFlashcards: 'Creating Flashcards...',
+      creatingDeck: 'Creating Deck...',
+    },
   },
   Chinese: {
                     // Statistics page strings
@@ -536,6 +611,81 @@ export const strings: Record<string, any> = {
     progress: '进度',
     completed: '已完成！',
     untitledDeck: '未命名卡片组',
+    // FlashcardView page strings
+    flashcardViewPage: {
+      // Timer and countdown
+      timesUp: '时间到!',
+      seconds: '秒',
+      // Labels
+      question: '问题',
+      answer: '答案',
+      // Buttons
+      submit: '提交',
+      ok: '好的',
+      // Delete confirmation
+      deleteFlashcardConfirmation: '确定要删除这张卡片吗?',
+      // Study/Quiz exit confirmation
+      endStudySessionMidway: '中途退出学习?',
+      endQuizSessionMidway: '中途退出测验?',
+      // Difficulty labels
+      again: '重来',
+      hard: '困难',
+      good: '良好',
+      easy: '简单',
+      // Loading text
+      loading: '加载中...',
+      // Validation messages
+      cannotMoveOnWithoutAnswer: '请先查看答案并选择难度后再继续!',
+      pleaseFlipCardToViewAnswer: '请翻转卡片查看答案后再继续!',
+      pleaseSelectDifficulty: '请为此卡片选择一个难度等级后再继续!',
+      cannotMoveOnWithoutMCQ: '请先查看背面、回答选择题并选择难度后再继续!',
+      pleaseFlipCardToAnswerMCQ: '请翻转卡片并回答选择题后再继续!',
+      cannotMoveOnWithoutMCQAnswer: '请先回答选择题并选择难度后再继续!',
+      pleaseAnswerMCQ: '请先回答选择题后再继续!',
+      cannotMoveOnWithoutVoiceAnswer: '请先查看背面、录音作答并选择难度后再继续!',
+      pleaseFlipCardToRecordVoice: '请翻转卡片并录音作答后再继续!',
+      cannotMoveOnWithoutVoiceRecording: '请先录音作答并选择难度后再继续!',
+      pleaseRecordVoiceAnswer: '请先录音作答后再继续!',
+      // Copy to clipboard messages
+      copiedTextToClipboard: '已复制到剪贴板!',
+      copiedMCQTextToClipboard: '已复制到剪贴板!',
+      copiedImageToClipboard: '已复制到剪贴板!',
+      failedToCopyImage: '复制失败!',
+      failedToCopy: '复制失败!',
+      // Success messages
+      nicelyDone: '干得漂亮!',
+      niceStudying: '学习得不错!',
+      // Retry messages
+      retryDifficultFlashcards: '重做难题',
+      noDifficultFlashcardsToRetry: '没有难题可重做',
+      // Navigation labels
+      viewQuizStats: '查看测验统计',
+      backToDeck: '返回卡组',
+      // Quiz countdown
+      quizStartingIn: '测验即将开始...',
+      // Question/Answer labels
+      questionLabel: '题',
+      answerLabel: '答',
+      ofLabel: '共',
+      // Voice answer messages
+      greatAnswerReplayOrFeedback: '回答得很好！重放你的音频或通过AI获取反馈!',
+      recordAnswerGetFeedback: '录音答题，获取AI反馈!',
+      // Completion message
+      completed: '已完成！',
+      // MCQ feedback messages
+      correctAnswerGoodJob: "回答正确! 干得漂亮!",
+      incorrectAnswerTryAgain: "回答错误! 下次再试!",
+      // Loading progress message
+      flashcardsLoaded: '张卡片已加载',
+      outOf: '/',
+      // Quiz stats related
+      totalTimeSpent: '总用时:',
+      continueWithQuiz: '继续测验',
+      wellDone: '干得漂亮!',
+      // Deck creation related
+      creatingFlashcards: '正在创建卡片…',
+      creatingDeck: '正在创建卡组…',
+    },
     // AIPromptModal strings
     aiPromptTitle: '试试为你量身定制的AI卡片组！',
     loadingAiDecks: '正在加载AI卡片组...',

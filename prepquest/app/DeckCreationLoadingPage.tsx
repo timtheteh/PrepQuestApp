@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import { useContentTopHeightNoRoundedToggle2, useTopBarAccountHeight } from '@/hooks/heights';
@@ -69,7 +70,7 @@ export default function DeckCreationLoadingPage({
           style={{ position: 'absolute', top: insets.top + 10, right: 16, zIndex: 10, padding: 8 }}
           onPress={onCancel}
         >
-          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
+          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{strings[language].cancel}</Text>
         </TouchableOpacity>
       )}
       {/* Wrapper for all content to keep it centered as a unit */}
@@ -131,7 +132,7 @@ export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = fa
           style={{ position: 'absolute', top: insets.top + 10, right: 16, zIndex: 10, padding: 8 }}
           onPress={onCancel}
         >
-          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{language === 'Chinese' ? '取消' : 'Cancel'}</Text>
+          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{strings[language].cancel}</Text>
         </TouchableOpacity>
       )}
       <View style={{ width: '100%', alignItems: 'center', marginTop: 20}}>
@@ -154,8 +155,8 @@ export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = fa
         <View style={{ width: '100%', paddingHorizontal: 16, alignItems: 'center', marginTop: 8,}}>
           <Text style={styles.title}>
             {isInViewFlashcardsPage
-              ? (language === 'Chinese' ? '正在创建卡片…' : 'Creating Flashcards...')
-              : (language === 'Chinese' ? '正在创建卡组…' : 'Creating Deck...')}
+              ? strings[language].flashcardViewPage.creatingFlashcards
+              : strings[language].flashcardViewPage.creatingDeck}
           </Text>
           <View style={{ width: '80%', marginTop: 8,  marginLeft: 48}}>
             {statusRows.map((row, idx) => (

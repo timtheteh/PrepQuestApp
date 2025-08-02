@@ -9,21 +9,28 @@ import { DifficultyToggleRow } from '@/components/general/DifficultyToggleRow';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Local component for title and toggle row
 const TitleToggleRow = ({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
+  const unselectedText = useThemeColor({}, 'unselectedText');
+  const brandColor1 = useThemeColor({}, 'brandColor1');
+  
   return (
     <View style={styles.titleToggleRow}>
       <Text style={styles.titleToggleText}>{text}</Text>
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#D5D4DD', true: '#44B88A' }}
+        trackColor={{ false: unselectedText, true: brandColor1 }}
         thumbColor={value ? '#FFFFFF' : '#FFFFFF'}
-        ios_backgroundColor="#D5D4DD"
+        ios_backgroundColor={unselectedText}
       />
     </View>
   );
@@ -124,7 +131,7 @@ const TimePicker = ({
       textAlign: 'center',
       height: ITEM_HEIGHT,
       lineHeight: ITEM_HEIGHT,
-      fontFamily: 'Satoshi-Medium',
+      fontFamily: Fonts.bodyMedium,
     } as TextStyle;
   };
 
@@ -162,7 +169,7 @@ const TimePicker = ({
         </Animated.ScrollView>
       </View>
       {/* Label */}
-      <Text style={timePickerStyles.label}>{language === 'Chinese' ? '分' : 'min'}</Text>
+      <Text style={timePickerStyles.label}>{strings[language].deckSettingsPage.timePicker.min}</Text>
       {/* Seconds */}
       <View style={[timePickerStyles.pickerColumn, timePickerStyles.secColumn]}>
         <Animated.ScrollView
@@ -191,7 +198,7 @@ const TimePicker = ({
         </Animated.ScrollView>
       </View>
       {/* Label */}
-      <Text style={timePickerStyles.label}>{language === 'Chinese' ? '秒' : 'sec'}</Text>
+      <Text style={timePickerStyles.label}>{strings[language].deckSettingsPage.timePicker.sec}</Text>
     </View>
   );
 };
@@ -231,7 +238,7 @@ const timePickerStyles = RNStyleSheet.create({
     textAlign: 'center',
     // borderWidth: 1,
     // borderColor: 'red',
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
   },
   centerHighlight: {
     position: 'absolute',
@@ -249,6 +256,10 @@ export default function DeckSettingsPage() {
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
   const getTopBarAccountHeight = useTopBarAccountHeight();
+  const text = useThemeColor({}, 'text');
+  const background = useThemeColor({}, 'background');
+  const brandColor2 = useThemeColor({}, 'brandColor2');
+  const alertColor = useThemeColor({}, 'alertColor');
   
   useFocusEffect(
     React.useCallback(() => {
@@ -553,21 +564,21 @@ export default function DeckSettingsPage() {
   }, [isHelpModalOpen]);
 
   return (
-    <View style={{ flex: 1, position: 'relative', backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, position: 'relative', backgroundColor: background }}>
         <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
         >
-          <AntDesign name="arrowleft" size={32} color="black" />
+          <AntDesign name="arrowleft" size={32} color={text} />
         </TouchableOpacity>
         <Text style={[styles.title, { 
-          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Regular' : 'Neuton-Regular',
+          color: text,
           marginLeft: language === 'Chinese' ? 0 : 16,
           marginBottom: language === 'Chinese' ? Platform.OS === 'ios' ? 0 : 5 : Platform.OS === 'ios' ? 5 : 10, 
-          }]}>{language === 'Chinese' ? '卡片组设置' : 'Deck Settings'}</Text>
+          }]}>{strings[language].deckSettingsPage.title}</Text>
       </View>
-      <View style={styles.mainContainer}>
+      <View style={[styles.mainContainer, { backgroundColor: background }]}>
         <ScrollView 
           style={styles.scrollView}
           contentContainerStyle={[styles.scrollContent]}
@@ -576,69 +587,51 @@ export default function DeckSettingsPage() {
           overScrollMode="always"
         >
           <TitleToggleRow 
-            text={language === 'Chinese' ? '自动创建卡片组' : 'Auto-decks'}
+            text={strings[language].deckSettingsPage.autoDecks}
             value={autoDecksEnabled}
             onValueChange={setAutoDecksEnabled}
           />
-          <Text style={styles.descriptionText}>
-            {language === 'Chinese' ? '开启此功能后，系统将根据您最近创建和复习的卡片组自动生成新卡片组。' : 'Turning this on will allow decks to be auto-generated based on your most recent decks created and reviewed.'}
+          <Text style={[styles.descriptionText, { color: text }]}>
+            {strings[language].deckSettingsPage.autoDecksDescription}
           </Text>
-          <Text style={styles.sectionTitle}>{language === 'Chinese' ? '闪卡设置' : 'Flashcard settings'}</Text>
+          <Text style={[styles.sectionTitle, { color: brandColor2 }]}>{strings[language].deckSettingsPage.flashcardSettings}</Text>
           <TitleToggleRow 
-            text={language === 'Chinese' ? '填空题' : 'Cloze Questions'}
+            text={strings[language].deckSettingsPage.clozeQuestions}
             value={clozeQuestionsEnabled}
             onValueChange={setClozeQuestionsEnabled}
           />
-          <Text style={styles.descriptionText}>
-            {language === 'Chinese' ? '启用后，系统将以填空题形式生成并显示问题，主要适用于回忆类问题。' : 'Enabling this will allow questions to be generated and displayed in cloze format to you. This applies mainly to recall-based questions.'}
+          <Text style={[styles.descriptionText, { color: text }]}>
+            {strings[language].deckSettingsPage.clozeQuestionsDescription}
           </Text>
           <TitleToggleRow 
-            text={language === 'Chinese' ? '选择题' : 'MCQ Questions'}
+            text={strings[language].deckSettingsPage.mcqQuestions}
             value={mcqQuestionsEnabled}
             onValueChange={setMcqQuestionsEnabled}
           />
-          <Text style={styles.descriptionText}>
-            {language === 'Chinese' ? '启用后，系统将以选择题格式生成并显示答案，主要适用于以下题型：' : 'Enabling this will allow answers to be generated and displayed in a MCQ format to you. This applies mainly to the following question types:'}
+          <Text style={[styles.descriptionText, { color: text }]}>
+            {strings[language].deckSettingsPage.mcqQuestionsDescription}
           </Text>
           <ListParagraph 
-            listItems={language === 'Chinese' ? [
-              '回忆类问题 (Recall questions)',
-              '理解类问题 (Comprehension questions)',
-              '分析类问题 (Analysis questions)',
-            ] : [
-              'Recall-based questions',
-              'Comprehension-based questions', 
-              'Analysis-based questions',
-            ]}
+            listItems={strings[language].deckSettingsPage.mcqQuestionTypes}
             onHelpPress={handleHelpPress}
           />
           <TitleToggleRow 
-            text={language === 'Chinese' ? '语音回答' : 'Voice-Recorded Answers'}
+            text={strings[language].deckSettingsPage.voiceRecordedAnswers}
             value={voiceRecordedAnswersEnabled}
             onValueChange={setVoiceRecordedAnswersEnabled}
           />
-          <Text style={styles.descriptionText}>
-            {language === 'Chinese' ? '启用此功能后，您可以通过录音回答问题并获得AI反馈。此功能适用于行为面试（Behavioral Interviews）和案例面试（Case Interviews）的准备，或以下题型的练习：' : 'With this enabled, you can record your answers and get feedback by AI. This applies if you are preparing for Behavioral Interviews and Case Interviews or if you are preparing for these question types:'}
+          <Text style={[styles.descriptionText, { color: text }]}>
+            {strings[language].deckSettingsPage.voiceRecordedAnswersDescription}
           </Text>
           <ListParagraph 
-            listItems={language === 'Chinese' ? [
-              '应用类问题 (Application questions)',
-              '综合类问题 (Synthesis questions)',
-              '评估类问题 (Evaluation questions)',
-              '解决问题类问题 (Problem-Solving)',
-            ] : [
-              'Application-based questions',
-              'Synthesis-based questions', 
-              'Evaluation-based questions',
-              'Problem-Solving questions',
-            ]}
+            listItems={strings[language].deckSettingsPage.voiceRecordedQuestionTypes}
             onHelpPress={handleHelpPress}
           />
           <View style={styles.titleToggleRow}>
-            <Text style={styles.titleToggleText}>{language === 'Chinese' ? '语音录制计时器' : 'Voice Recording Timer'}</Text>
+            <Text style={[styles.titleToggleText, { color: text }]}>{strings[language].deckSettingsPage.voiceRecordingTimer}</Text>
           </View>
-          <Text style={[styles.descriptionText, {marginBottom: 0}]}> 
-            {language === 'Chinese' ? '设置答题时语音录制的时间限制。' : 'Set the time limit for voice recording answers in quiz mode.'}
+          <Text style={[styles.descriptionText, { color: text, marginBottom: 0 }]}> 
+            {strings[language].deckSettingsPage.voiceRecordingTimerDescription}
           </Text>
           <TimePicker
             key={`voice-recorded-timer-${resetCounter}`}
@@ -649,17 +642,17 @@ export default function DeckSettingsPage() {
             secondsRange={Array.from({ length: 60 }, (_, i) => i)}
             language={language}
           />
-          <Text style={styles.sectionTitle}>{language === 'Chinese' ? '测验偏好' : 'Quiz Preferences'}</Text>
+          <Text style={[styles.sectionTitle, { color: brandColor2 }]}>{strings[language].deckSettingsPage.quizPreferences}</Text>
           <TitleToggleRow 
-            text={language === 'Chinese' ? '中途检查点' : 'Halfway Checkpoint'}
+            text={strings[language].deckSettingsPage.halfwayCheckpoint}
             value={halfwayCheckpointEnabled}
             onValueChange={setHalfwayCheckpointEnabled}
           />
-          <Text style={styles.descriptionText}>
-            {language === 'Chinese' ? '开启此功能后，您将在答题中途看到当前测验表现的统计数据。' : 'Turning this on will let you see current statistics of your quiz performance halfway through the quiz.'}
+          <Text style={[styles.descriptionText, { color: text }]}>
+            {strings[language].deckSettingsPage.halfwayCheckpointDescription}
           </Text>
           <View style={styles.titleToggleRow}>
-            <Text style={styles.titleToggleText}>{language === 'Chinese' ? '各难度级别的计时设置' : 'Timer Settings for Respective Difficulty'}</Text>
+            <Text style={[styles.titleToggleText, { color: text }]}>{strings[language].deckSettingsPage.timerSettingsForDifficulty}</Text>
           </View>
           <View style={{marginTop: 10}}>
             <DifficultyToggleRow
@@ -686,7 +679,7 @@ export default function DeckSettingsPage() {
           right: 16,
           bottom: 24,
           height: 72,
-          backgroundColor: '#FF3B30',
+          backgroundColor: alertColor,
           borderRadius: 30,
           alignItems: 'center',
           justifyContent: 'center',
@@ -698,11 +691,11 @@ export default function DeckSettingsPage() {
         <Text
           style={{
             color: '#fff',
-            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium',
+            fontFamily: Fonts.bodyMedium,
             fontSize: 24,
           }}
         >
-          {language === 'Chinese' ? '恢复默认设置？' : 'Back to default settings?'}
+          {strings[language].deckSettingsPage.backToDefaultSettings}
         </Text>
       </TouchableOpacity>
       <GreyOverlayBackground 
@@ -713,10 +706,10 @@ export default function DeckSettingsPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text={language === 'Chinese' ? '我们的团队基于布鲁姆分类法，确定了7种主要认知题型，助力高效学习。了解更多内容，请访问我们的官网。' : "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more."}
+        text={strings[language].deckSettingsPage.helpModalText}
         buttons='none'
         textStyle={{
-          highlightWord: language === 'Chinese' ? '官网' : 'our website',
+          highlightWord: strings[language].deckSettingsPage.helpModalWebsite,
           highlightColor: "#44B88A"
         }}
         Icon={HelpIconFilled}
@@ -740,7 +733,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   title: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 32,
     color: '#000',
     marginLeft: 16,
@@ -769,7 +762,7 @@ const styles = StyleSheet.create({
     // borderColor: 'blue',
   },
   titleToggleText: {
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontSize: 16,
     color: '#000',
   },
@@ -787,7 +780,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   descriptionText: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 16,
     color: '#000',
     textAlign: 'left',
@@ -797,14 +790,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontFamily: 'Neuton-Regular',
+    fontFamily: Fonts.title,
     fontSize: 32,
     color: '#4F41D8',
     marginVertical: 20,
     lineHeight: 36,
   },
   subsectionText: {
-    fontFamily: 'Satoshi-Variable',
+    fontFamily: Fonts.bodyBold,
     fontSize: 16,
     color: '#000',
     textAlign: 'left',
@@ -832,13 +825,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   bulletPoint: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalicLight,
     fontSize: 16,
     color: '#000',
     marginRight: 8,
   },
   listText: {
-    fontFamily: 'Satoshi-Italic',
+    fontFamily: Fonts.bodyItalicLight,
     fontSize: 16,
     color: '#000',
     flex: 1,

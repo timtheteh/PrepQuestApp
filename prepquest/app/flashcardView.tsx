@@ -23,7 +23,7 @@ import { Asset } from 'expo-asset';
 import * as Speech from 'expo-speech';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useFocusEffect } from '@react-navigation/native';
-import { db } from '@/db/index';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,136 +31,28 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { 
+  getCurrentUserID, 
+  getTimeLimit, 
+  loadFlashcardsFromDatabaseForView, 
+  updateFlashcardDate, 
+  updateDeckCompletionDate, 
+  updateFlashcardDifficulty, 
+  toggleFlashcardFavoriteForView, 
+  trackAttemptedFlashcard, 
+  loadHalfwayCheckpointSetting,
+  getFlashcardCount,
+  deleteFlashcard,
+  updateDeckLastModifiedAfterFlashcardDeletion,
+  type TransformedFlashcard,
+  type DatabaseFlashcard
+} from '@/db/decks';
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
-
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
-
-// Interface for database flashcard
-interface DatabaseFlashcard {
-  flashcardID: number;
-  deckID: number;
-  difficultyRating: string;
-  cognitiveQnType: string;
-  isFavorited: number;
-  questionType: string;
-  questionText: string | null;
-  questionBlob: string | null; // hex string from SQLite
-  answerType: string;
-  answerText: string | null;
-  answerMCQ: string | null;
-  answerBlob: string | null; // hex string from SQLite
-  timeTaken: number | null;
-  isMcqAnswerRight: number | null;
-  lastStudiedDate: string | null;
-  lastQuizzedDate: string | null;
-}
-
-// Interface for transformed flashcard (matching dummy data format)
-interface TransformedFlashcard {
-  flashcardID: number;
-  flashcardDifficulty: string;
-  flashcardQnType: string;
-  flashcardQn: string | any; // string for text, require() for image/audio
-  flashcardAnswerType: string;
-  flashcardAnswer: string | any[] | any; // string for text, array for MCQ, require() for image/audio
-  timeLimit: number;
-  cognitiveQnType: string;
-  isFavorited: boolean;
-  isMcqAnswerRight: number | null; // Add this field to track MCQ correctness
-}
-
-// Function to get time limit based on difficulty rating
-const getTimeLimit = async (difficultyRating: string, answerType?: string): Promise<number> => {
-  try {
-    const userID = await getCurrentUserID();
-    
-    // Load timer settings from database
-    const result = await db.getFirstAsync(`
-      SELECT 
-        defaultTimer,
-        againTimer,
-        hardTimer,
-        goodTimer,
-        easyTimer,
-        voiceRecordedTimer
-      FROM users WHERE userID = ?
-    `, [userID]);
-
-    if (result) {
-      const userData = result as {
-        defaultTimer: number;
-        againTimer: number;
-        hardTimer: number;
-        goodTimer: number;
-        easyTimer: number;
-        voiceRecordedTimer: number;
-      };
-
-      console.log('defaultTimer', userData.defaultTimer);
-      console.log('againTimer', userData.againTimer);
-      console.log('hardTimer', userData.hardTimer);
-      console.log('goodTimer', userData.goodTimer);
-      console.log('easyTimer', userData.easyTimer);
-      console.log('voiceRecordedTimer', userData.voiceRecordedTimer);
-
-      // For voice answer types, always use the voice recorded timer regardless of difficulty
-      if (answerType === 'voice') {
-        return userData.voiceRecordedTimer;
-      }
-
-      // Return appropriate timer based on difficulty rating for non-voice answer types
-      switch (difficultyRating) {
-        case 'Again': return userData.againTimer;
-        case 'Hard': return userData.hardTimer;
-        case 'Good': return userData.goodTimer;
-        case 'Easy': return userData.easyTimer;
-        case 'None': return userData.defaultTimer;
-        default: return userData.defaultTimer;
-      }
-    } else {
-      // Fallback to default values if no user data found
-      if (answerType === 'voice') {
-        return 120; // 2 minutes default for voice recordings
-      }
-      switch (difficultyRating) {
-        case 'Again': return 60;
-        case 'Hard': return 45;
-        case 'Good': return 30;
-        case 'Easy': return 15;
-        case 'None': return 20;
-        default: return 20;
-      }
-    }
-  } catch (error) {
-    console.error('Error loading timer settings from database:', error);
-    // Fallback to default values if loading fails
-    if (answerType === 'voice') {
-      return 120; // 2 minutes default for voice recordings
-    }
-    switch (difficultyRating) {
-      case 'Again': return 60;
-      case 'Hard': return 45;
-      case 'Good': return 30;
-      case 'Easy': return 15;
-      case 'None': return 20;
-      default: return 20;
-    }
-  }
-};
 
 // Helper function to extract SVG paths from blob data
 const extractSVGFromBlob = (blob: string | Uint8Array): { paths: Array<{ d: string; stroke: string; strokeWidth: string; fill: string }>; viewBox: string } | null => {
@@ -370,144 +262,8 @@ const blobToAudioSource = (blob: Uint8Array | string): any => {
   }
 };
 
-// Function to load flashcards from database
-const loadFlashcardsFromDatabase = async (deckId: string, isAIDeck: string, retryDifficult?: boolean): Promise<TransformedFlashcard[]> => {
-  try {
-    const userID = await getCurrentUserID();
-    const isAIDeckFromParams = isAIDeck === 'true';
-    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-    
-    let query = `
-      SELECT 
-        flashcardID,
-        deckID,
-        difficultyRating,
-        cognitiveQnType,
-        isFavorited,
-        questionType,
-        questionText,
-        CASE 
-          WHEN questionBlob IS NOT NULL 
-          THEN hex(questionBlob) 
-          ELSE NULL 
-        END as questionBlob,
-        answerType,
-        answerText,
-        answerMCQ,
-        CASE 
-          WHEN answerBlob IS NOT NULL 
-          THEN hex(answerBlob) 
-          ELSE NULL 
-        END as answerBlob,
-        timeTaken,
-        isMcqAnswerRight,
-        lastStudiedDate,
-        lastQuizzedDate
-      FROM ${tableName}
-      WHERE deckID = ? AND userID = ?
-    `;
 
-    const params: any[] = [parseInt(deckId), userID];
 
-    if (retryDifficult) {
-      // Filter for difficult flashcards: Again, Hard, or MCQ with wrong answers
-      query += `
-        AND (
-          difficultyRating IN ('Again', 'Hard') 
-          OR (answerType = 'mcq' AND isMcqAnswerRight = 0)
-        )
-      `;
-    }
-
-    query += `
-      ORDER BY 
-        CASE difficultyRating
-          WHEN 'None' THEN 1
-          WHEN 'Easy' THEN 2
-          WHEN 'Good' THEN 3
-          WHEN 'Hard' THEN 4
-          WHEN 'Again' THEN 5
-          ELSE 6
-        END,
-        flashcardID ASC
-    `;
-
-    const result = await db.getAllAsync(query, params);
-
-    if (!result) {
-      return [];
-    }
-
-    const flashcards = result as DatabaseFlashcard[];
-    
-    // Transform database flashcards to match dummy data format
-    const transformedFlashcards: TransformedFlashcard[] = [];
-    
-    for (const flashcard of flashcards) {
-      // Transform question
-      let transformedQuestion: string | any;
-      if (flashcard.questionType === 'text') {
-        transformedQuestion = flashcard.questionText || '';
-      } else if (flashcard.questionType === 'image' && flashcard.questionBlob) {
-        transformedQuestion = blobToImageSource(flashcard.questionBlob);
-      } else if (flashcard.questionType === 'audio' && flashcard.questionBlob) {
-        transformedQuestion = blobToAudioSource(flashcard.questionBlob);
-      } else {
-        transformedQuestion = '';
-      }
-
-      // Transform answer
-      let transformedAnswer: string | any[] | any;
-      if (flashcard.answerType === 'text') {
-        transformedAnswer = flashcard.answerText || '';
-      } else if (flashcard.answerType === 'mcq' && flashcard.answerMCQ) {
-        try {
-          const mcqData = JSON.parse(flashcard.answerMCQ);
-          console.log(mcqData);
-          transformedAnswer = mcqData.map((item: any) => ({
-            choice: item.option || item.choice,
-            ans: item.ans || false
-          }));
-        } catch (error) {
-          console.error('Error parsing MCQ data:', error);
-          transformedAnswer = [];
-        }
-      } else if ((flashcard.answerType === 'image' || flashcard.answerType === 'audio') && flashcard.answerBlob) {
-        if (flashcard.answerType === 'image') {
-          transformedAnswer = blobToImageSource(flashcard.answerBlob);
-        } else {
-          transformedAnswer = blobToAudioSource(flashcard.answerBlob);
-        }
-      } else if (flashcard.answerType === 'voice') {
-        transformedAnswer = null;
-      } else {
-        transformedAnswer = '';
-      }
-
-      // Get time limit asynchronously
-      const timeLimit = await getTimeLimit(flashcard.difficultyRating, flashcard.answerType);
-      console.log("timlimit: ", timeLimit);
-
-      transformedFlashcards.push({
-        flashcardID: flashcard.flashcardID,
-        flashcardDifficulty: flashcard.difficultyRating,
-        flashcardQnType: flashcard.questionType,
-        flashcardQn: transformedQuestion,
-        flashcardAnswerType: flashcard.answerType,
-        flashcardAnswer: transformedAnswer,
-        timeLimit: timeLimit,
-        cognitiveQnType: flashcard.cognitiveQnType,
-        isFavorited: flashcard.isFavorited === 1,
-        isMcqAnswerRight: flashcard.isMcqAnswerRight
-      });
-    }
-    
-    return transformedFlashcards;
-  } catch (error) {
-    console.error('Error loading flashcards from database:', error);
-    return [];
-  }
-};
 
 // Helper function to copy asset images to clipboard
 const copyAssetToClipboard = async (imageSource: any) => {
@@ -828,11 +584,13 @@ interface FlippableFlashcardProps {
   flashcards: TransformedFlashcard[];
   recordedAudioUri: string | null;
   setRecordedAudioUri: React.Dispatch<React.SetStateAction<string | null>>;
-  updateFlashcardDate: (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => Promise<void>;
-  updateDeckCompletionDate: (isStudyMode: boolean) => Promise<void>;
+  updateFlashcardDate: (flashcardId: number, isStudyMode: boolean, deckId: string, isAIDeck: string, timeTaken?: number, isMcqCorrect?: boolean) => Promise<void>;
+  updateDeckCompletionDate: (isStudyMode: boolean, deckId: string, isAIDeck: string) => Promise<void>;
   startFlashcardTimer: (flashcardId: number) => void;
   retryDifficultParam?: string;
   language: string;
+  deckID: string;
+  isAIDeckParam: string;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -990,7 +748,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         
         // Update flashcard with MCQ correctness in quiz mode or study mode
         if ((isQuizMode || isStudyMode) && currentFlashcard) {
-          updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, undefined, isCorrect);
+          props.updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, props.deckID, props.isAIDeckParam, undefined, isCorrect);
         }
         
         Animated.parallel([
@@ -1146,11 +904,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
       
       // Update the date for the last card before going to success mode
       if (currentFlashcard) {
-        updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode);
+        props.updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, props.deckID, props.isAIDeckParam);
       }
       
       // Update the deck's completion date when entire deck is finished
-      await updateDeckCompletionDate(isStudyMode);
+      await updateDeckCompletionDate(isStudyMode, props.deckID, props.isAIDeckParam);
       
       // If all validation is passed, set success mode and return
       setIsSuccessMode(true);
@@ -1237,7 +995,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         
         // Update the date for the current card before moving to the next
         if (currentFlashcard) {
-          updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode);
+          props.updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, props.deckID, props.isAIDeckParam);
         }
       }
       stopSpeech();
@@ -1719,9 +1477,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -1907,9 +1665,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -2395,26 +2153,13 @@ export default function FlashcardViewPage() {
           const retryDifficult = retryDifficultParam === 'true';
           
           // First, get the actual count of flashcards to load
-          const userID = await getCurrentUserID();
-          const isAIDeckFromParams = isAIDeckParam === 'true';
-          const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-          
-          let countQuery = `
-            SELECT COUNT(*) as count
-            FROM ${tableName}
-            WHERE deckID = ? AND userID = ?
-          `;
-          
-          const countParams: any[] = [parseInt(deckID as string), userID];
-          
-          const countResult = await db.getFirstAsync(countQuery, countParams);
-          const actualCount = (countResult as any)?.count || 0;
+          const actualCount = await getFlashcardCount(deckID as string, isAIDeckParam as string);
           
           // Set the actual total
           setLoadingTotal(actualCount);
           
           // Load flashcards with progress tracking
-          const loadedFlashcards = await loadFlashcardsFromDatabase(deckID as string, isAIDeckParam as string, retryDifficult);
+          const loadedFlashcards = await loadFlashcardsFromDatabaseForView(deckID as string, isAIDeckParam as string, retryDifficult);
           
           // Update progress as each flashcard is processed
           let processedCount = 0;
@@ -2446,22 +2191,12 @@ export default function FlashcardViewPage() {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
 
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeckParam === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      const newFavoriteStatus = currentFlashcard.isFavorited ? 0 : 1;
-
-      // Update database
-      await db.runAsync(`
-        UPDATE ${tableName}
-        SET isFavorited = ?
-        WHERE flashcardID = ? AND userID = ?
-      `, [newFavoriteStatus, currentFlashcard.flashcardID, userID]);
+      const newFavoriteStatus = await toggleFlashcardFavoriteForView(currentFlashcard.flashcardID, isAIDeckParam as string);
 
       // Update local state
       setFlashcards(prev => prev.map((card, idx) => 
         idx === currentIdx 
-          ? { ...card, isFavorited: !card.isFavorited }
+          ? { ...card, isFavorited: newFavoriteStatus }
           : card
       ));
 
@@ -2493,63 +2228,25 @@ export default function FlashcardViewPage() {
   };
 
   // Function to update last studied/quizzed date
-  const updateFlashcardDate = async (flashcardId: number, isStudyMode: boolean, timeTaken?: number, isMcqCorrect?: boolean) => {
+  const updateFlashcardDateLocal = async (flashcardId: number, isStudyMode: boolean, deckId: string, isAIDeck: string, timeTaken?: number, isMcqCorrect?: boolean) => {
     try {
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeckParam === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
-      const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
-      
-      const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
-      
       // Calculate time taken if not provided
       const finalTimeTaken = timeTaken !== undefined ? timeTaken : calculateTimeTaken(flashcardId);
       
-      // Update the flashcard's study/quiz date, time taken, and MCQ answer correctness
-      await db.runAsync(`
-        UPDATE ${tableName}
-        SET ${fieldToUpdate} = ?, timeTaken = ?, isMcqAnswerRight = ?
-        WHERE flashcardID = ? AND userID = ?
-      `, [currentDate, finalTimeTaken, isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : null, flashcardId, userID]);
-
-      // Update the deck's lastModifiedDate since it was actively used
-      await db.runAsync(`
-        UPDATE ${deckTableName}
-        SET lastModifiedDate = ?
-        WHERE deckID = ? AND userID = ?
-      `, [currentDate, parseInt(deckID as string), userID]);
-
+      await updateFlashcardDate(flashcardId, isStudyMode, deckID as string, isAIDeckParam as string, finalTimeTaken || undefined, isMcqCorrect);
+      
       // Track this flashcard as attempted for halfway checkpoint
       trackAttemptedFlashcard(flashcardId);
-
-      console.log(`Updated ${fieldToUpdate} for flashcard ${flashcardId} to ${currentDate}`);
-      console.log(`Updated timeTaken for flashcard ${flashcardId} to ${finalTimeTaken || 'null'}`);
-      console.log(`Updated isMcqAnswerRight for flashcard ${flashcardId} to ${isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : 'null'}`);
-      console.log(`Updated lastModifiedDate for deck ${deckID} to ${currentDate}`);
     } catch (error) {
       console.error(`Error updating ${isStudyMode ? 'study' : 'quiz'} date:`, error);
     }
   };
 
   // Function to update deck's completion date when entire deck is finished
-  const updateDeckCompletionDate = async (isStudyMode: boolean) => {
+  const updateDeckCompletionDateLocal = async (isStudyMode: boolean) => {
     try {
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeckParam === 'true';
-      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
-      const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
-      
-      const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
-      
-      // Update the deck's completion date
-      await db.runAsync(`
-        UPDATE ${deckTableName}
-        SET ${fieldToUpdate} = ?
-        WHERE deckID = ? AND userID = ?
-      `, [currentDate, parseInt(deckID as string), userID]);
-
-      console.log(`Updated deck ${deckID} ${fieldToUpdate} to ${currentDate} (deck completed)`);
+      await updateDeckCompletionDate(isStudyMode, deckID as string, isAIDeckParam as string);
+      console.log(`Updated deck ${deckID} completion date (deck completed)`);
     } catch (error) {
       console.error(`Error updating deck completion date:`, error);
     }
@@ -2579,16 +2276,7 @@ export default function FlashcardViewPage() {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
 
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeckParam === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      
-      // Update the database
-      await db.runAsync(`
-        UPDATE ${tableName}
-        SET difficultyRating = ?
-        WHERE flashcardID = ? AND userID = ?
-      `, [difficulty, currentFlashcard.flashcardID, userID]);
+      await updateFlashcardDifficulty(currentFlashcard.flashcardID, difficulty, isAIDeckParam as string);
 
       // Update local state
       const updatedFlashcards = [...flashcards];
@@ -2677,29 +2365,16 @@ export default function FlashcardViewPage() {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
 
-      const userID = await getCurrentUserID();
-      const isAIDeckFromParams = isAIDeckParam === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
-      
       // Delete from database
-      await db.runAsync(`
-        DELETE FROM ${tableName}
-        WHERE flashcardID = ? AND userID = ?
-      `, [currentFlashcard.flashcardID, userID]);
+      await deleteFlashcard(currentFlashcard.flashcardID, isAIDeckParam as string);
 
       // Update the deck's lastModifiedDate since a flashcard was deleted
-      await db.runAsync(`
-        UPDATE ${deckTableName}
-        SET lastModifiedDate = '${new Date().toISOString()}'
-        WHERE deckID = ? AND userID = ?
-      `, [parseInt(deckID as string), userID]);
-      console.log(`Updated lastModifiedDate for deck ${deckID} after flashcard deletion`);
+      await updateDeckLastModifiedAfterFlashcardDeletion(deckID as string, isAIDeckParam as string);
 
       // Update local state by removing the deleted flashcard
       setFlashcards(prev => prev.filter((_, idx) => idx !== currentIdx));
       
-      console.log(`Deleted flashcard ${currentFlashcard.flashcardID} from ${tableName}`);
+      console.log(`Deleted flashcard ${currentFlashcard.flashcardID}`);
 
       // Navigate to next card or previous card if at the end
       const newTotalCards = flashcards.length - 1;
@@ -3039,20 +2714,10 @@ export default function FlashcardViewPage() {
   const [halfwayCheckpointEnabled, setHalfwayCheckpointEnabled] = useState(true); // Default to true
 
   // Load halfway checkpoint setting from database
-  const loadHalfwayCheckpointSetting = async () => {
+  const loadHalfwayCheckpointSettingLocal = async () => {
     try {
-      const userID = await getCurrentUserID();
-      const result = await db.getFirstAsync(`
-        SELECT halfwayCheckpoint FROM users WHERE userID = ?
-      `, [userID]);
-      
-      if (result) {
-        const userData = result as { halfwayCheckpoint: number };
-        setHalfwayCheckpointEnabled(userData.halfwayCheckpoint === 1);
-      } else {
-        // Default to true if no user data found
-        setHalfwayCheckpointEnabled(true);
-      }
+      const isEnabled = await loadHalfwayCheckpointSetting();
+      setHalfwayCheckpointEnabled(isEnabled);
     } catch (error) {
       console.error('Error loading halfway checkpoint setting from database:', error);
       setHalfwayCheckpointEnabled(true); // Default to true if loading fails
@@ -3061,7 +2726,7 @@ export default function FlashcardViewPage() {
 
   // Load setting when component mounts
   useEffect(() => {
-    loadHalfwayCheckpointSetting();
+    loadHalfwayCheckpointSettingLocal();
   }, []);
 
   // Track attempted flashcard IDs when flashcards are completed
@@ -3384,11 +3049,13 @@ export default function FlashcardViewPage() {
               flashcards={flashcards}
               recordedAudioUri={recordedAudioUri}
               setRecordedAudioUri={setRecordedAudioUri}
-              updateFlashcardDate={updateFlashcardDate}
-              updateDeckCompletionDate={updateDeckCompletionDate}
+              updateFlashcardDate={updateFlashcardDateLocal}
+              updateDeckCompletionDate={updateDeckCompletionDateLocal}
               startFlashcardTimer={startFlashcardTimer}
               retryDifficultParam={retryDifficultParam as string}
               language={language}
+              deckID={deckID as string}
+              isAIDeckParam={isAIDeckParam as string}
             />
           </View>
           <View style={styles.difficultyPillRowContainer}>

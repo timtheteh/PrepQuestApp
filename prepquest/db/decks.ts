@@ -3427,3 +3427,627 @@ export async function resetDeckSettingsToDefaults(): Promise<boolean> {
     return false;
   }
 }
+
+// Flashcard View Database Functions
+// =================================
+
+// Interface for database flashcard
+export interface DatabaseFlashcard {
+  flashcardID: number;
+  deckID: number;
+  difficultyRating: string;
+  cognitiveQnType: string;
+  isFavorited: number;
+  questionType: string;
+  questionText: string | null;
+  questionBlob: string | null; // hex string from SQLite
+  answerType: string;
+  answerText: string | null;
+  answerMCQ: string | null;
+  answerBlob: string | null; // hex string from SQLite
+  timeTaken: number | null;
+  isMcqAnswerRight: number | null;
+  lastStudiedDate: string | null;
+  lastQuizzedDate: string | null;
+}
+
+// Interface for transformed flashcard (matching dummy data format)
+export interface TransformedFlashcard {
+  flashcardID: number;
+  flashcardDifficulty: string;
+  flashcardQnType: string;
+  flashcardQn: string | any; // string for text, require() for image/audio
+  flashcardAnswerType: string;
+  flashcardAnswer: string | any[] | any; // string for text, array for MCQ, require() for image/audio
+  timeLimit: number;
+  cognitiveQnType: string;
+  isFavorited: boolean;
+  isMcqAnswerRight: number | null; // Add this field to track MCQ correctness
+}
+
+// Function to get time limit based on difficulty rating
+export const getTimeLimit = async (difficultyRating: string, answerType?: string): Promise<number> => {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Load timer settings from database
+    const result = await db.getFirstAsync(`
+      SELECT 
+        defaultTimer,
+        againTimer,
+        hardTimer,
+        goodTimer,
+        easyTimer,
+        voiceRecordedTimer
+      FROM users WHERE userID = ?
+    `, [userID]);
+
+    if (result) {
+      const userData = result as {
+        defaultTimer: number;
+        againTimer: number;
+        hardTimer: number;
+        goodTimer: number;
+        easyTimer: number;
+        voiceRecordedTimer: number;
+      };
+
+      console.log('defaultTimer', userData.defaultTimer);
+      console.log('againTimer', userData.againTimer);
+      console.log('hardTimer', userData.hardTimer);
+      console.log('goodTimer', userData.goodTimer);
+      console.log('easyTimer', userData.easyTimer);
+      console.log('voiceRecordedTimer', userData.voiceRecordedTimer);
+
+      // For voice answer types, always use the voice recorded timer regardless of difficulty
+      if (answerType === 'voice') {
+        return userData.voiceRecordedTimer;
+      }
+
+      // Return appropriate timer based on difficulty rating for non-voice answer types
+      switch (difficultyRating) {
+        case 'Again': return userData.againTimer;
+        case 'Hard': return userData.hardTimer;
+        case 'Good': return userData.goodTimer;
+        case 'Easy': return userData.easyTimer;
+        case 'None': return userData.defaultTimer;
+        default: return userData.defaultTimer;
+      }
+    } else {
+      // Fallback to default values if no user data found
+      const defaultValues = {
+        defaultTimer: 30,
+        againTimer: 30,
+        hardTimer: 45,
+        goodTimer: 60,
+        easyTimer: 90,
+        voiceRecordedTimer: 60
+      };
+
+      if (answerType === 'voice') {
+        return defaultValues.voiceRecordedTimer;
+      }
+
+      switch (difficultyRating) {
+        case 'Again': return defaultValues.againTimer;
+        case 'Hard': return defaultValues.hardTimer;
+        case 'Good': return defaultValues.goodTimer;
+        case 'Easy': return defaultValues.easyTimer;
+        case 'None': return defaultValues.defaultTimer;
+        default: return defaultValues.defaultTimer;
+      }
+    }
+  } catch (error) {
+    console.error('Error getting time limit:', error);
+    // Return default values on error
+    return 30;
+  }
+};
+
+// Helper functions for blob processing
+const extractSVGFromBlob = (blob: string | Uint8Array): { paths: Array<{ d: string; stroke: string; strokeWidth: string; fill: string }>; viewBox: string } | null => {
+  try {
+    if (typeof blob === 'string') {
+      // If it's already a hex string, convert to Uint8Array
+      const bytes = new Uint8Array(blob.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+      blob = bytes;
+    }
+
+    const decoder = new TextDecoder();
+    const svgString = decoder.decode(blob as Uint8Array);
+    
+    // Extract viewBox
+    const viewBoxMatch = svgString.match(/viewBox="([^"]+)"/);
+    const viewBox = viewBoxMatch ? viewBoxMatch[1] : "0 0 100 100";
+    
+    // Extract path elements
+    const pathMatches = svgString.match(/<path[^>]*>/g);
+    if (!pathMatches) return null;
+    
+    const paths = pathMatches.map(path => {
+      const dMatch = path.match(/d="([^"]+)"/);
+      const strokeMatch = path.match(/stroke="([^"]+)"/);
+      const strokeWidthMatch = path.match(/stroke-width="([^"]+)"/);
+      const fillMatch = path.match(/fill="([^"]+)"/);
+      
+      return {
+        d: dMatch ? dMatch[1] : '',
+        stroke: strokeMatch ? strokeMatch[1] : 'black',
+        strokeWidth: strokeWidthMatch ? strokeWidthMatch[1] : '1',
+        fill: fillMatch ? fillMatch[1] : 'none'
+      };
+    });
+    
+    return { paths, viewBox };
+  } catch (error) {
+    console.error('Error extracting SVG from blob:', error);
+    return null;
+  }
+};
+
+const arrayBufferToBase64 = (buffer: ArrayBufferLike): string => {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
+
+// Cache for blob conversions
+const blobCache = new Map<string, any>();
+
+const clearBlobCache = () => {
+  blobCache.clear();
+};
+
+const addToCache = (key: string, value: any) => {
+  blobCache.set(key, value);
+};
+
+const blobToImageSource = (blob: Uint8Array | string): any => {
+  try {
+    let hexString: string;
+    
+    if (typeof blob === 'string') {
+      hexString = blob;
+    } else {
+      // Convert Uint8Array to hex string
+      hexString = Array.from(blob)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+    
+    // Check cache first
+    if (blobCache.has(hexString)) {
+      return blobCache.get(hexString);
+    }
+    
+    // Convert hex to base64
+    const binaryString = hexString.match(/.{1,2}/g)?.map(byte => String.fromCharCode(parseInt(byte, 16))).join('') || '';
+    const base64 = btoa(binaryString);
+    
+    // Create data URI
+    const dataUri = `data:image/png;base64,${base64}`;
+    
+    // Cache the result
+    addToCache(hexString, { uri: dataUri });
+    
+    return { uri: dataUri };
+  } catch (error) {
+    console.error('Error converting blob to image source:', error);
+    return undefined;
+  }
+};
+
+const blobToAudioSource = (blob: Uint8Array | string): any => {
+  try {
+    let hexString: string;
+    
+    if (typeof blob === 'string') {
+      hexString = blob;
+    } else {
+      // Convert Uint8Array to hex string
+      hexString = Array.from(blob)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+    
+    // Check cache first
+    if (blobCache.has(hexString)) {
+      return blobCache.get(hexString);
+    }
+    
+    // Convert hex to base64
+    const binaryString = hexString.match(/.{1,2}/g)?.map(byte => String.fromCharCode(parseInt(byte, 16))).join('') || '';
+    const base64 = btoa(binaryString);
+    
+    // Create data URI (assuming audio/m4a format)
+    const dataUri = `data:audio/m4a;base64,${base64}`;
+    
+    // Cache the result
+    addToCache(hexString, { uri: dataUri });
+    
+    return { uri: dataUri };
+  } catch (error) {
+    console.error('Error converting blob to audio source:', error);
+    return undefined;
+  }
+};
+
+// Function to load flashcards from database for flashcard view
+export const loadFlashcardsFromDatabaseForView = async (deckId: string, isAIDeck: string, retryDifficult?: boolean): Promise<TransformedFlashcard[]> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    let query = `
+      SELECT 
+        flashcardID,
+        deckID,
+        difficultyRating,
+        cognitiveQnType,
+        isFavorited,
+        questionType,
+        questionText,
+        CASE 
+          WHEN questionBlob IS NOT NULL 
+          THEN hex(questionBlob) 
+          ELSE NULL 
+        END as questionBlob,
+        answerType,
+        answerText,
+        answerMCQ,
+        CASE 
+          WHEN answerBlob IS NOT NULL 
+          THEN hex(answerBlob) 
+          ELSE NULL 
+        END as answerBlob,
+        timeTaken,
+        isMcqAnswerRight,
+        lastStudiedDate,
+        lastQuizzedDate
+      FROM ${tableName}
+      WHERE deckID = ? AND userID = ?
+    `;
+
+    const params: any[] = [parseInt(deckId), userID];
+
+    if (retryDifficult) {
+      // Filter for difficult flashcards: Again, Hard, or MCQ with wrong answers
+      query += `
+        AND (
+          difficultyRating IN ('Again', 'Hard') 
+          OR (answerType = 'mcq' AND isMcqAnswerRight = 0)
+        )
+      `;
+    }
+
+    query += `
+      ORDER BY 
+        CASE difficultyRating
+          WHEN 'None' THEN 1
+          WHEN 'Easy' THEN 2
+          WHEN 'Good' THEN 3
+          WHEN 'Hard' THEN 4
+          WHEN 'Again' THEN 5
+          ELSE 6
+        END,
+        flashcardID ASC
+    `;
+
+    const result = await db.getAllAsync(query, params);
+
+    if (!result) {
+      return [];
+    }
+
+    const flashcards = result as DatabaseFlashcard[];
+    
+    // Transform database flashcards to match dummy data format
+    const transformedFlashcards: TransformedFlashcard[] = [];
+    
+    for (const flashcard of flashcards) {
+      // Transform question
+      let transformedQuestion: string | any;
+      if (flashcard.questionType === 'text') {
+        transformedQuestion = flashcard.questionText || '';
+      } else if (flashcard.questionType === 'image' && flashcard.questionBlob) {
+        transformedQuestion = blobToImageSource(flashcard.questionBlob);
+      } else if (flashcard.questionType === 'audio' && flashcard.questionBlob) {
+        transformedQuestion = blobToAudioSource(flashcard.questionBlob);
+      } else {
+        transformedQuestion = '';
+      }
+
+      // Transform answer
+      let transformedAnswer: string | any[] | any;
+      if (flashcard.answerType === 'text') {
+        transformedAnswer = flashcard.answerText || '';
+      } else if (flashcard.answerType === 'mcq' && flashcard.answerMCQ) {
+        try {
+          const mcqData = JSON.parse(flashcard.answerMCQ);
+          console.log(mcqData);
+          transformedAnswer = mcqData.map((item: any) => ({
+            choice: item.option || item.choice,
+            ans: item.ans || false
+          }));
+        } catch (error) {
+          console.error('Error parsing MCQ data:', error);
+          transformedAnswer = [];
+        }
+      } else if (flashcard.answerType === 'image' && flashcard.answerBlob) {
+        transformedAnswer = blobToImageSource(flashcard.answerBlob);
+      } else if (flashcard.answerType === 'audio' && flashcard.answerBlob) {
+        transformedAnswer = blobToAudioSource(flashcard.answerBlob);
+      } else {
+        transformedAnswer = '';
+      }
+
+      // Get time limit for this flashcard
+      const timeLimit = await getTimeLimit(flashcard.difficultyRating, flashcard.answerType);
+
+      // Create transformed flashcard
+      const transformedFlashcard: TransformedFlashcard = {
+        flashcardID: flashcard.flashcardID,
+        flashcardDifficulty: flashcard.difficultyRating,
+        flashcardQnType: flashcard.questionType,
+        flashcardQn: transformedQuestion,
+        flashcardAnswerType: flashcard.answerType,
+        flashcardAnswer: transformedAnswer,
+        timeLimit: timeLimit,
+        cognitiveQnType: flashcard.cognitiveQnType,
+        isFavorited: flashcard.isFavorited === 1,
+        isMcqAnswerRight: flashcard.isMcqAnswerRight
+      };
+
+      transformedFlashcards.push(transformedFlashcard);
+    }
+
+    return transformedFlashcards;
+  } catch (error) {
+    console.error('Error loading flashcards from database:', error);
+    return [];
+  }
+};
+
+// Function to update flashcard study/quiz date
+export const updateFlashcardDate = async (
+  flashcardId: number, 
+  isStudyMode: boolean, 
+  deckId: string, 
+  isAIDeck: string,
+  timeTaken?: number, 
+  isMcqCorrect?: boolean
+): Promise<void> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+    const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
+    
+    const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
+    
+    // Update the flashcard's study/quiz date, time taken, and MCQ answer correctness
+    await db.runAsync(`
+      UPDATE ${tableName}
+      SET ${fieldToUpdate} = ?, timeTaken = ?, isMcqAnswerRight = ?
+      WHERE flashcardID = ? AND userID = ?
+    `, [currentDate, timeTaken || null, isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : null, flashcardId, userID]);
+
+    // Update the deck's lastModifiedDate since it was actively used
+    await db.runAsync(`
+      UPDATE ${deckTableName}
+      SET lastModifiedDate = ?
+      WHERE deckID = ? AND userID = ?
+    `, [currentDate, parseInt(deckId), userID]);
+
+    console.log(`Updated ${fieldToUpdate} for flashcard ${flashcardId} to ${currentDate}`);
+    console.log(`Updated timeTaken for flashcard ${flashcardId} to ${timeTaken || 'null'}`);
+    console.log(`Updated isMcqAnswerRight for flashcard ${flashcardId} to ${isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : 'null'}`);
+    console.log(`Updated lastModifiedDate for deck ${deckId} to ${currentDate}`);
+  } catch (error) {
+    console.error(`Error updating ${isStudyMode ? 'study' : 'quiz'} date:`, error);
+  }
+};
+
+// Function to update deck's completion date when entire deck is finished
+export const updateDeckCompletionDate = async (
+  isStudyMode: boolean, 
+  deckId: string, 
+  isAIDeck: string
+): Promise<void> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+    const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
+    
+    const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
+    
+    // Update the deck's completion date
+    await db.runAsync(`
+      UPDATE ${deckTableName}
+      SET ${fieldToUpdate} = ?
+      WHERE deckID = ? AND userID = ?
+    `, [currentDate, parseInt(deckId), userID]);
+
+    console.log(`Updated deck ${deckId} ${fieldToUpdate} to ${currentDate} (deck completed)`);
+  } catch (error) {
+    console.error(`Error updating deck completion date:`, error);
+  }
+};
+
+// Function to update the difficulty of a flashcard
+export const updateFlashcardDifficulty = async (
+  flashcardId: number, 
+  difficulty: string, 
+  isAIDeck: string
+): Promise<void> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    // Update the database
+    await db.runAsync(`
+      UPDATE ${tableName}
+      SET difficultyRating = ?
+      WHERE flashcardID = ? AND userID = ?
+    `, [difficulty, flashcardId, userID]);
+
+    console.log(`Updated difficulty for flashcard ${flashcardId} to ${difficulty}`);
+  } catch (error) {
+    console.error('Error updating flashcard difficulty:', error);
+  }
+};
+
+// Function to toggle flashcard favorite status for flashcard view
+export const toggleFlashcardFavoriteForView = async (
+  flashcardId: number, 
+  isAIDeck: string
+): Promise<boolean> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    // Get current favorite status
+    const result = await db.getFirstAsync(`
+      SELECT isFavorited FROM ${tableName}
+      WHERE flashcardID = ? AND userID = ?
+    `, [flashcardId, userID]);
+
+    if (result) {
+      const currentStatus = (result as any).isFavorited;
+      const newStatus = currentStatus === 1 ? 0 : 1;
+      
+      // Update the database
+      await db.runAsync(`
+        UPDATE ${tableName}
+        SET isFavorited = ?
+        WHERE flashcardID = ? AND userID = ?
+      `, [newStatus, flashcardId, userID]);
+
+      console.log(`Toggled favorite status for flashcard ${flashcardId} to ${newStatus}`);
+      return newStatus === 1;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error toggling flashcard favorite status:', error);
+    return false;
+  }
+};
+
+// Function to track attempted flashcard for halfway checkpoint
+export const trackAttemptedFlashcard = async (flashcardId: number): Promise<void> => {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Check if this flashcard is already tracked
+    const existing = await db.getFirstAsync(`
+      SELECT 1 FROM attemptedFlashcards 
+      WHERE flashcardID = ? AND userID = ?
+    `, [flashcardId, userID]);
+
+    if (!existing) {
+      // Add to attempted flashcards table
+      await db.runAsync(`
+        INSERT INTO attemptedFlashcards (flashcardID, userID, attemptDate)
+        VALUES (?, ?, ?)
+      `, [flashcardId, userID, new Date().toISOString()]);
+
+      console.log(`Tracked flashcard ${flashcardId} as attempted`);
+    }
+  } catch (error) {
+    console.error('Error tracking attempted flashcard:', error);
+  }
+};
+
+// Function to load halfway checkpoint setting
+export const loadHalfwayCheckpointSetting = async (): Promise<boolean> => {
+  try {
+    const userID = await getCurrentUserID();
+    
+    const result = await db.getFirstAsync(`
+      SELECT halfwayCheckpoint FROM users WHERE userID = ?
+    `, [userID]);
+
+    if (result) {
+      return (result as any).halfwayCheckpoint === 1;
+    }
+    
+    return false; // Default to false if not found
+  } catch (error) {
+    console.error('Error loading halfway checkpoint setting:', error);
+    return false;
+  }
+};
+
+// Function to get flashcard count for loading progress
+export const getFlashcardCount = async (deckId: string, isAIDeck: string): Promise<number> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    const countQuery = `
+      SELECT COUNT(*) as count FROM ${tableName}
+      WHERE deckID = ? AND userID = ?
+    `;
+    
+    const countParams: any[] = [parseInt(deckId), userID];
+    
+    const countResult = await db.getFirstAsync(countQuery, countParams);
+    const actualCount = (countResult as any)?.count || 0;
+    
+    return actualCount;
+  } catch (error) {
+    console.error('Error getting flashcard count:', error);
+    return 0;
+  }
+};
+
+// Function to delete a flashcard from database
+export const deleteFlashcard = async (flashcardId: number, isAIDeck: string): Promise<void> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    
+    // Delete from database
+    await db.runAsync(`
+      DELETE FROM ${tableName}
+      WHERE flashcardID = ? AND userID = ?
+    `, [flashcardId, userID]);
+
+    console.log(`Deleted flashcard ${flashcardId} from ${tableName}`);
+  } catch (error) {
+    console.error('Error deleting flashcard:', error);
+    throw error;
+  }
+};
+
+// Function to update deck's lastModifiedDate after flashcard deletion
+export const updateDeckLastModifiedAfterFlashcardDeletion = async (deckId: string, isAIDeck: string): Promise<void> => {
+  try {
+    const userID = await getCurrentUserID();
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+    
+    // Update the deck's lastModifiedDate since a flashcard was deleted
+    await db.runAsync(`
+      UPDATE ${deckTableName}
+      SET lastModifiedDate = ?
+      WHERE deckID = ? AND userID = ?
+    `, [new Date().toISOString(), parseInt(deckId), userID]);
+    
+    console.log(`Updated lastModifiedDate for deck ${deckId} after flashcard deletion`);
+  } catch (error) {
+    console.error('Error updating deck lastModifiedDate after flashcard deletion:', error);
+    throw error;
+  }
+};

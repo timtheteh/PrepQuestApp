@@ -517,6 +517,7 @@ export const strings: Record<string, any> = {
       // Deck creation related
       creatingFlashcards: 'Creating Flashcards...',
       creatingDeck: 'Creating Deck...',
+      halfwayCheckpoint: 'Halfway\nCheckpoint',
     },
   },
   Chinese: {
@@ -685,6 +686,7 @@ export const strings: Record<string, any> = {
       // Deck creation related
       creatingFlashcards: '正在创建卡片…',
       creatingDeck: '正在创建卡组…',
+      halfwayCheckpoint: '中途\n检查点',
     },
     // AIPromptModal strings
     aiPromptTitle: '试试为你量身定制的AI卡片组！',

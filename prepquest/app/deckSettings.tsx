@@ -14,12 +14,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Local component for title and toggle row
-const TitleToggleRow = React.memo(({ text, value, onValueChange }: { text: string; value: boolean; onValueChange: (value: boolean) => void }) => {
-  const unselectedText = useThemeColor({}, 'unselectedText');
-  const brandColor1 = useThemeColor({}, 'brandColor1');
+const TitleToggleRow = React.memo(({ text, value, onValueChange, styles }: { text: string; value: boolean; onValueChange: (value: boolean) => void; styles: any }) => {
+  const { theme } = useTheme();
+  const unselectedText = Colors[theme].unselectedText;
+  const brandColor1 = Colors[theme].brandColor1;
   
   return (
     <View style={styles.titleToggleRow}>
@@ -28,7 +29,7 @@ const TitleToggleRow = React.memo(({ text, value, onValueChange }: { text: strin
         value={value}
         onValueChange={onValueChange}
         trackColor={{ false: unselectedText, true: brandColor1 }}
-        thumbColor={value ? '#FFFFFF' : '#FFFFFF'}
+        thumbColor={Colors[theme].background}
         ios_backgroundColor={unselectedText}
       />
     </View>
@@ -36,7 +37,7 @@ const TitleToggleRow = React.memo(({ text, value, onValueChange }: { text: strin
 });
 
 // Local component for list paragraph with help icon
-const ListParagraph = React.memo(({ listItems, onHelpPress }: { listItems: string[]; onHelpPress: () => void }) => {
+const ListParagraph = React.memo(({ listItems, onHelpPress, styles }: { listItems: string[]; onHelpPress: () => void; styles: any }) => {
   return (
     <View style={styles.listParagraphContainer}>
       <View style={styles.listColumn}>
@@ -76,6 +77,7 @@ const TimePicker = ({
   minutesRange = DEFAULT_MINUTES_RANGE,
   secondsRange = DEFAULT_SECONDS_RANGE,
   language = 'English',
+  theme = 'light',
 }: {
   initialMinutes?: number;
   initialSeconds?: number;
@@ -83,6 +85,7 @@ const TimePicker = ({
   minutesRange?: number[];
   secondsRange?: number[];
   language?: string;
+  theme?: 'light' | 'dark';
 }) => {
   const [selectedMin, setSelectedMin] = React.useState<number>(initialMinutes);
   const [selectedSec, setSelectedSec] = React.useState<number>(initialSeconds);
@@ -128,7 +131,7 @@ const TimePicker = ({
     return {
       transform: [{ scale }],
       opacity,
-      color: '#222',
+      color: Colors[theme].text,
       fontWeight: 'bold',
       fontSize: 32,
       textAlign: 'center',
@@ -139,6 +142,7 @@ const TimePicker = ({
   }, []);
 
   const pickerProps = Platform.OS === 'android' ? { nestedScrollEnabled: true } : {};
+  const timePickerStyles = createTimePickerStyles(theme);
 
   return (
     <View style={timePickerStyles.container}>
@@ -206,7 +210,7 @@ const TimePicker = ({
   );
 };
 
-const timePickerStyles = RNStyleSheet.create({
+const createTimePickerStyles = (theme: 'light' | 'dark') => RNStyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -234,7 +238,7 @@ const timePickerStyles = RNStyleSheet.create({
   },
   label: {
     fontSize: 22,
-    color: '#222',
+    color: Colors[theme].text,
     fontWeight: '400',
     marginHorizontal: 0,
     width: 40,
@@ -249,7 +253,7 @@ const timePickerStyles = RNStyleSheet.create({
     right: 0,
     top: ITEM_HEIGHT * CENTER_INDEX,
     height: ITEM_HEIGHT,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors[theme].secondaryShade,
     borderRadius: 8,
     zIndex: 0,
   },
@@ -259,10 +263,11 @@ export default function DeckSettingsPage() {
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
   const getTopBarAccountHeight = useTopBarAccountHeight();
-  const text = useThemeColor({}, 'text');
-  const background = useThemeColor({}, 'background');
-  const brandColor2 = useThemeColor({}, 'brandColor2');
-  const alertColor = useThemeColor({}, 'alertColor');
+  const { theme } = useTheme();
+  const text = Colors[theme].text;
+  const background = Colors[theme].background;
+  const brandColor2 = Colors[theme].brandColor2;
+  const alertColor = Colors[theme].alertColor;
   
   useFocusEffect(
     React.useCallback(() => {
@@ -455,9 +460,12 @@ export default function DeckSettingsPage() {
     }
   }, [isHelpModalOpen]);
 
+  // Create dynamic styles based on theme
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  
   // Memoize style objects to prevent recreation
   const containerStyle = React.useMemo(() => ({ flex: 1, position: 'relative' as const, backgroundColor: background }), [background]);
-  const topBarStyle = React.useMemo(() => [styles.topBar, { paddingTop: getTopBarAccountHeight() }], [getTopBarAccountHeight]);
+  const topBarStyle = React.useMemo(() => [styles.topBar, { paddingTop: getTopBarAccountHeight() }], [getTopBarAccountHeight, styles.topBar]);
   const titleStyle = React.useMemo(() => [
     styles.title, 
     { 
@@ -465,8 +473,8 @@ export default function DeckSettingsPage() {
       marginLeft: language === 'Chinese' ? 0 : 16,
       marginBottom: language === 'Chinese' ? Platform.OS === 'ios' ? 0 : 5 : Platform.OS === 'ios' ? 5 : 10, 
     }
-  ], [text, language]);
-  const mainContainerStyle = React.useMemo(() => [styles.mainContainer, { backgroundColor: background }], [background]);
+  ], [text, language, styles.title]);
+  const mainContainerStyle = React.useMemo(() => [styles.mainContainer, { backgroundColor: background }], [background, styles.mainContainer]);
 
   return (
     <View style={containerStyle}>
@@ -491,6 +499,7 @@ export default function DeckSettingsPage() {
             text={strings[language].deckSettingsPage.autoDecks}
             value={autoDecksEnabled}
             onValueChange={setAutoDecksEnabled}
+            styles={styles}
           />
           <Text style={[styles.descriptionText, { color: text }]}>
             {strings[language].deckSettingsPage.autoDecksDescription}
@@ -500,6 +509,7 @@ export default function DeckSettingsPage() {
             text={strings[language].deckSettingsPage.clozeQuestions}
             value={clozeQuestionsEnabled}
             onValueChange={setClozeQuestionsEnabled}
+            styles={styles}
           />
           <Text style={[styles.descriptionText, { color: text }]}>
             {strings[language].deckSettingsPage.clozeQuestionsDescription}
@@ -508,6 +518,7 @@ export default function DeckSettingsPage() {
             text={strings[language].deckSettingsPage.mcqQuestions}
             value={mcqQuestionsEnabled}
             onValueChange={setMcqQuestionsEnabled}
+            styles={styles}
           />
           <Text style={[styles.descriptionText, { color: text }]}>
             {strings[language].deckSettingsPage.mcqQuestionsDescription}
@@ -515,11 +526,13 @@ export default function DeckSettingsPage() {
           <ListParagraph 
             listItems={strings[language].deckSettingsPage.mcqQuestionTypes}
             onHelpPress={handleHelpPress}
+            styles={styles}
           />
           <TitleToggleRow 
             text={strings[language].deckSettingsPage.voiceRecordedAnswers}
             value={voiceRecordedAnswersEnabled}
             onValueChange={setVoiceRecordedAnswersEnabled}
+            styles={styles}
           />
           <Text style={[styles.descriptionText, { color: text }]}>
             {strings[language].deckSettingsPage.voiceRecordedAnswersDescription}
@@ -527,6 +540,7 @@ export default function DeckSettingsPage() {
           <ListParagraph 
             listItems={strings[language].deckSettingsPage.voiceRecordedQuestionTypes}
             onHelpPress={handleHelpPress}
+            styles={styles}
           />
           <View style={styles.titleToggleRow}>
             <Text style={[styles.titleToggleText, { color: text }]}>{strings[language].deckSettingsPage.voiceRecordingTimer}</Text>
@@ -542,12 +556,14 @@ export default function DeckSettingsPage() {
             minutesRange={Array.from({ length: 10 }, (_, i) => i)}
             secondsRange={Array.from({ length: 60 }, (_, i) => i)}
             language={language}
+            theme={theme}
           />
           <Text style={[styles.sectionTitle, { color: brandColor2 }]}>{strings[language].deckSettingsPage.quizPreferences}</Text>
           <TitleToggleRow 
             text={strings[language].deckSettingsPage.halfwayCheckpoint}
             value={halfwayCheckpointEnabled}
             onValueChange={setHalfwayCheckpointEnabled}
+            styles={styles}
           />
           <Text style={[styles.descriptionText, { color: text }]}>
             {strings[language].deckSettingsPage.halfwayCheckpointDescription}
@@ -569,6 +585,7 @@ export default function DeckSettingsPage() {
               initialSeconds={pickerSeconds}
               onChange={handleTimeChange}
               language={language}
+              theme={theme}
             />
           </Animated.View>
         </ScrollView>
@@ -591,7 +608,7 @@ export default function DeckSettingsPage() {
       >
         <Text
           style={{
-            color: '#fff',
+            color: Colors[theme].background,
             fontFamily: Fonts.bodyMedium,
             fontSize: 24,
           }}
@@ -611,7 +628,7 @@ export default function DeckSettingsPage() {
         buttons='none'
         textStyle={{
           highlightWord: strings[language].deckSettingsPage.helpModalWebsite,
-          highlightColor: "#44B88A"
+          highlightColor: Colors[theme].brandColor2
         }}
         Icon={HelpIconFilled}
       />
@@ -619,10 +636,10 @@ export default function DeckSettingsPage() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: 'light' | 'dark') => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors[theme].background,
   },
   topBar: {
     flexDirection: 'row',
@@ -636,7 +653,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Fonts.title,
     fontSize: 32,
-    color: '#000',
+    color: Colors[theme].text,
     marginLeft: 16,
     marginBottom: Platform.OS === 'ios' ? 5 : 10,
     justifyContent: 'center',
@@ -645,7 +662,7 @@ const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors[theme].background,
   },
   scrollView: {
     flex: 1,
@@ -659,13 +676,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    // borderWidth: 1,
-    // borderColor: 'blue',
   },
   titleToggleText: {
     fontFamily: Fonts.bodyBold,
     fontSize: 16,
-    color: '#000',
+    color: Colors[theme].text,
   },
   content: {
     flex: 1,
@@ -675,50 +690,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   subtitle: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyMedium,
     fontSize: 16,
-    color: '#666',
+    color: Colors[theme].text,
     textAlign: 'center',
   },
   descriptionText: {
     fontFamily: Fonts.bodyMedium,
     fontSize: 16,
-    color: '#000',
+    color: Colors[theme].text,
     textAlign: 'left',
     marginTop: 10,
-    // borderWidth: 1,
-    // borderColor: 'red',
     marginBottom: 10,
   },
   sectionTitle: {
     fontFamily: Fonts.title,
     fontSize: 32,
-    color: '#4F41D8',
+    color: Colors[theme].brandColor2,
     marginVertical: 20,
     lineHeight: 36,
   },
   subsectionText: {
     fontFamily: Fonts.bodyBold,
     fontSize: 16,
-    color: '#000',
+    color: Colors[theme].text,
     textAlign: 'left',
     marginTop: 10,
-    // borderWidth: 1,
-    // borderColor: 'red',
   },
   listParagraphContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     width: '100%',
-    // borderWidth: 1,
-    // borderColor: 'blue',
     marginBottom: 10,
   },
   listColumn: {
     flex: 10,
     paddingLeft: 20,
-    // borderWidth: 1,
-    // borderColor: 'green',
   },
   listItem: {
     flexDirection: 'row',
@@ -728,21 +735,19 @@ const styles = StyleSheet.create({
   bulletPoint: {
     fontFamily: Fonts.bodyItalicLight,
     fontSize: 16,
-    color: '#000',
+    color: Colors[theme].text,
     marginRight: 8,
   },
   listText: {
     fontFamily: Fonts.bodyItalicLight,
     fontSize: 16,
-    color: '#000',
+    color: Colors[theme].text,
     flex: 1,
   },
   iconColumn: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    // borderWidth: 1,    
-    // borderColor: 'red',
     alignSelf: 'stretch',
   },
 }); 

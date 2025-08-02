@@ -6,13 +6,13 @@ import { AverageGradeThermometer } from '@/components/statsComponents/AverageGra
 import BreakdownByDifficultyPie from '@/components/statsComponents/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/statsComponents/AverageSpeedTotal';
 import DoubleChevron from '@/assets/icons/generalIcons/DoubleChevron.svg';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '@/db/index';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { loadQuizStatsForView, type QuizStats } from '@/db/decks';
 
 // Memoized child components to prevent unnecessary re-renders
 const MemoizedText = React.memo(({ style, children }: { style: any; children: React.ReactNode }) => (
@@ -43,33 +43,8 @@ const MemoizedImage = React.memo(({ source, style, resizeMode }: {
   <Image source={source} style={style} resizeMode={resizeMode} />
 ));
 
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-}
-
 const ConfettiIcon = require('@/assets/icons/generalIcons/ConfettiIcon.png');
 const FlagIcon = require('@/assets/icons/generalIcons/FlagIcon.png');
-
-interface QuizStats {
-  currentGrade: number;
-  difficultyBreakdown: {
-    Again: number;
-    Hard: number;
-    Good: number;
-    Easy: number;
-  };
-  averageTimeSeconds: number;
-  totalTimeSeconds: number;
-  attemptedCount: number;
-  totalCount: number;
-}
 
 export default function ViewQuizStatsModal() {
   const router = useRouter();
@@ -165,127 +140,13 @@ export default function ViewQuizStatsModal() {
     try {
       if (!deckID || !attemptedFlashcardIds) return;
 
-      const isAIDeckFromParams = isAIDeck === 'true';
-      const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
-      const deckId = parseInt(deckID as string);
+      const stats = await loadQuizStatsForView(
+        deckID as string,
+        isAIDeck as string,
+        attemptedFlashcardIds as string
+      );
       
-      // Parse the attempted flashcard IDs
-      const attemptedIds = JSON.parse(attemptedFlashcardIds as string) as number[];
-      
-      if (attemptedIds.length === 0) {
-        setQuizStats({
-          currentGrade: 0,
-          difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
-          averageTimeSeconds: 0,
-          totalTimeSeconds: 0,
-          attemptedCount: 0,
-          totalCount: 0
-        });
-        return;
-      }
-
-      // Get attempted flashcards with their difficulty ratings and time taken
-      const placeholders = attemptedIds.map(() => '?').join(',');
-      const userID = await getCurrentUserID();
-      const attemptedFlashcards = await db.getAllAsync(`
-        SELECT 
-          flashcardID,
-          difficultyRating,
-          timeTaken,
-          lastStudiedDate,
-          lastQuizzedDate,
-          answerType,
-          isMcqAnswerRight
-        FROM ${tableName}
-        WHERE flashcardID IN (${placeholders})
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-          AND userID = ?
-      `, [...attemptedIds, userID]);
-
-      // Get total flashcard count for the deck
-      const totalResult = await db.getFirstAsync(`
-        SELECT COUNT(*) as total
-        FROM ${tableName}
-        WHERE deckID = ? AND userID = ?
-      `, [deckId, userID]);
-
-      const totalCount = (totalResult as any)?.total || 0;
-      const attemptedCount = attemptedFlashcards?.length || 0;
-
-      if (attemptedCount === 0) {
-        setQuizStats({
-          currentGrade: 0,
-          difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
-          averageTimeSeconds: 0,
-          totalTimeSeconds: 0,
-          attemptedCount: 0,
-          totalCount
-        });
-        return;
-      }
-
-      // Calculate difficulty breakdown
-      const breakdown = { Again: 0, Hard: 0, Good: 0, Easy: 0 };
-      let totalTimeSeconds = 0;
-      let validTimeCount = 0;
-
-      attemptedFlashcards.forEach((flashcard: any) => {
-        const difficulty = flashcard.difficultyRating;
-        if (difficulty in breakdown) {
-          breakdown[difficulty as keyof typeof breakdown]++;
-        }
-
-        if (flashcard.timeTaken) {
-          totalTimeSeconds += flashcard.timeTaken;
-          validTimeCount++;
-        }
-      });
-
-      // Calculate current grade using weighted scoring
-      const weights = {
-        'Again': 0,     // 0% - needs to learn
-        'Hard': 0.4,    // 40% - partially learned
-        'Good': 0.8,    // 80% - well learned
-        'Easy': 1.0     // 100% - mastered
-      };
-
-      let totalWeight = 0;
-      let validFlashcardCount = 0;
-
-      attemptedFlashcards.forEach((flashcard: any) => {
-        const difficulty = flashcard.difficultyRating;
-        const answerType = flashcard.answerType;
-        const isMcqAnswerRight = flashcard.isMcqAnswerRight;
-
-        let weight = 0;
-
-        if (answerType === 'mcq') {
-          // For MCQ flashcards, use isMcqAnswerRight: 0 if wrong, 1 if correct
-          weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
-        } else {
-          // For non-MCQ flashcards, use difficulty-based weights
-          weight = weights[difficulty as keyof typeof weights] || 0;
-        }
-
-        totalWeight += weight;
-        validFlashcardCount++;
-      });
-
-      const currentGrade = Math.round((totalWeight / validFlashcardCount) * 100);
-
-      // Calculate average time
-      const averageTimeSeconds = validTimeCount > 0 ? Math.round(totalTimeSeconds / validTimeCount) : 0;
-
-      setQuizStats({
-        currentGrade,
-        difficultyBreakdown: breakdown,
-        averageTimeSeconds,
-        totalTimeSeconds,
-        attemptedCount,
-        totalCount
-      });
-
+      setQuizStats(stats);
     } catch (error) {
       console.error('Error loading quiz stats:', error);
     }

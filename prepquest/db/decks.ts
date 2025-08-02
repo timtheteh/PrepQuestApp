@@ -4051,3 +4051,168 @@ export const updateDeckLastModifiedAfterFlashcardDeletion = async (deckId: strin
     throw error;
   }
 };
+
+// Quiz stats interface for viewQuizStats
+export interface QuizStats {
+  currentGrade: number;
+  difficultyBreakdown: {
+    Again: number;
+    Hard: number;
+    Good: number;
+    Easy: number;
+  };
+  averageTimeSeconds: number;
+  totalTimeSeconds: number;
+  attemptedCount: number;
+  totalCount: number;
+}
+
+// Load quiz statistics from database for viewQuizStats
+export const loadQuizStatsForView = async (
+  deckID: string,
+  isAIDeck: string,
+  attemptedFlashcardIds: string
+): Promise<QuizStats> => {
+  try {
+    if (!deckID || !attemptedFlashcardIds) {
+      return {
+        currentGrade: 0,
+        difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
+        averageTimeSeconds: 0,
+        totalTimeSeconds: 0,
+        attemptedCount: 0,
+        totalCount: 0
+      };
+    }
+
+    const isAIDeckFromParams = isAIDeck === 'true';
+    const tableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
+    const deckId = parseInt(deckID);
+    
+    // Parse the attempted flashcard IDs
+    const attemptedIds = JSON.parse(attemptedFlashcardIds) as number[];
+    
+    if (attemptedIds.length === 0) {
+      return {
+        currentGrade: 0,
+        difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
+        averageTimeSeconds: 0,
+        totalTimeSeconds: 0,
+        attemptedCount: 0,
+        totalCount: 0
+      };
+    }
+
+    // Get attempted flashcards with their difficulty ratings and time taken
+    const placeholders = attemptedIds.map(() => '?').join(',');
+    const userID = await getCurrentUserID();
+    const attemptedFlashcards = await db.getAllAsync(`
+      SELECT 
+        flashcardID,
+        difficultyRating,
+        timeTaken,
+        lastStudiedDate,
+        lastQuizzedDate,
+        answerType,
+        isMcqAnswerRight
+      FROM ${tableName}
+      WHERE flashcardID IN (${placeholders})
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND difficultyRating != 'None'
+        AND userID = ?
+    `, [...attemptedIds, userID]);
+
+    // Get total flashcard count for the deck
+    const totalResult = await db.getFirstAsync(`
+      SELECT COUNT(*) as total
+      FROM ${tableName}
+      WHERE deckID = ? AND userID = ?
+    `, [deckId, userID]);
+
+    const totalCount = (totalResult as any)?.total || 0;
+    const attemptedCount = attemptedFlashcards?.length || 0;
+
+    if (attemptedCount === 0) {
+      return {
+        currentGrade: 0,
+        difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
+        averageTimeSeconds: 0,
+        totalTimeSeconds: 0,
+        attemptedCount: 0,
+        totalCount
+      };
+    }
+
+    // Calculate difficulty breakdown
+    const breakdown = { Again: 0, Hard: 0, Good: 0, Easy: 0 };
+    let totalTimeSeconds = 0;
+    let validTimeCount = 0;
+
+    attemptedFlashcards.forEach((flashcard: any) => {
+      const difficulty = flashcard.difficultyRating;
+      if (difficulty in breakdown) {
+        breakdown[difficulty as keyof typeof breakdown]++;
+      }
+
+      if (flashcard.timeTaken) {
+        totalTimeSeconds += flashcard.timeTaken;
+        validTimeCount++;
+      }
+    });
+
+    // Calculate current grade using weighted scoring
+    const weights = {
+      'Again': 0,     // 0% - needs to learn
+      'Hard': 0.4,    // 40% - partially learned
+      'Good': 0.8,    // 80% - well learned
+      'Easy': 1.0     // 100% - mastered
+    };
+
+    let totalWeight = 0;
+    let validFlashcardCount = 0;
+
+    attemptedFlashcards.forEach((flashcard: any) => {
+      const difficulty = flashcard.difficultyRating;
+      const answerType = flashcard.answerType;
+      const isMcqAnswerRight = flashcard.isMcqAnswerRight;
+
+      let weight = 0;
+
+      if (answerType === 'mcq') {
+        // For MCQ flashcards, use isMcqAnswerRight: 0 if wrong, 1 if correct
+        weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
+      } else {
+        // For non-MCQ flashcards, use difficulty-based weights
+        weight = weights[difficulty as keyof typeof weights] || 0;
+      }
+
+      totalWeight += weight;
+      validFlashcardCount++;
+    });
+
+    const currentGrade = Math.round((totalWeight / validFlashcardCount) * 100);
+
+    // Calculate average time
+    const averageTimeSeconds = validTimeCount > 0 ? Math.round(totalTimeSeconds / validTimeCount) : 0;
+
+    return {
+      currentGrade,
+      difficultyBreakdown: breakdown,
+      averageTimeSeconds,
+      totalTimeSeconds,
+      attemptedCount,
+      totalCount
+    };
+
+  } catch (error) {
+    console.error('Error loading quiz stats:', error);
+    return {
+      currentGrade: 0,
+      difficultyBreakdown: { Again: 0, Hard: 0, Good: 0, Easy: 0 },
+      averageTimeSeconds: 0,
+      totalTimeSeconds: 0,
+      attemptedCount: 0,
+      totalCount: 0
+    };
+  }
+};

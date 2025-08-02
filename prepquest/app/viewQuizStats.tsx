@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -14,6 +14,34 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 
+// Memoized child components to prevent unnecessary re-renders
+const MemoizedText = React.memo(({ style, children }: { style: any; children: React.ReactNode }) => (
+  <Text style={style}>{children}</Text>
+));
+
+const MemoizedTouchableOpacity = React.memo(({ 
+  style, 
+  onPress, 
+  children, 
+  activeOpacity 
+}: {
+  style: any;
+  onPress: () => void;
+  children: React.ReactNode;
+  activeOpacity?: number;
+}) => (
+  <TouchableOpacity style={style} onPress={onPress} activeOpacity={activeOpacity}>
+    {children}
+  </TouchableOpacity>
+));
+
+const MemoizedImage = React.memo(({ source, style, resizeMode }: {
+  source: any;
+  style: any;
+  resizeMode: any;
+}) => (
+  <Image source={source} style={style} resizeMode={resizeMode} />
+));
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -59,8 +87,81 @@ export default function ViewQuizStatsModal() {
     totalCount: 0
   });
 
+  // Format time from seconds to "Xmin Ys" format, localized
+  const formatTime = useCallback((seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    if (language === 'Chinese') {
+      if (minutes > 0) {
+        return `${minutes}分${remainingSeconds}秒`;
+      } else {
+        return `${remainingSeconds}秒`;
+      }
+    } else {
+      if (minutes > 0) {
+        return `${minutes}min ${remainingSeconds}s`;
+      } else {
+        return `${remainingSeconds}s`;
+      }
+    }
+  }, [language]);
+
+  // Memoized style objects to prevent recreation on every render
+  const containerStyle = useMemo(() => [
+    styles.container, 
+    { backgroundColor: Colors[theme].background }
+  ], [theme]);
+
+  const closeButtonIconColor = useMemo(() => Colors[theme].text, [theme]);
+
+  const wellDoneTitleStyle = useMemo(() => [
+    styles.wellDoneTitle, 
+    { color: Colors[theme].text, fontFamily: Fonts.title }
+  ], [theme]);
+
+  const progressIndicatorStyle = useMemo(() => [
+    styles.progressIndicator, 
+    { backgroundColor: Colors[theme].secondaryShade }
+  ], [theme]);
+
+  const progressTextStyle = useMemo(() => [
+    styles.progressText, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
+
+  const totalTimeLabelStyle = useMemo(() => [
+    styles.totalTimeLabel, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
+
+  const totalTimeValueStyle = useMemo(() => [
+    styles.totalTimeValue, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyBold }
+  ], [theme]);
+
+  const fixedBottomButtonStyle = useMemo(() => [
+    styles.fixedBottomButton, 
+    { backgroundColor: Colors[theme].brandColor2 }
+  ], [theme]);
+
+  const buttonTextStyle = useMemo(() => [
+    styles.buttonText, 
+    { color: Colors[theme].background, fontFamily: Fonts.bodyBold }
+  ], [theme]);
+
+  // Memoized values
+  const progressText = useMemo(() => 
+    `${quizStats.attemptedCount} / ${quizStats.totalCount} ${strings[language].flashcardViewPage.flashcardsCompleted}`,
+    [quizStats.attemptedCount, quizStats.totalCount, language]
+  );
+
+  const formattedTotalTime = useMemo(() => 
+    formatTime(quizStats.totalTimeSeconds),
+    [quizStats.totalTimeSeconds]
+  );
+
   // Load quiz statistics from database
-  const loadQuizStats = async () => {
+  const loadQuizStats = useCallback(async () => {
     try {
       if (!deckID || !attemptedFlashcardIds) return;
 
@@ -188,38 +289,23 @@ export default function ViewQuizStatsModal() {
     } catch (error) {
       console.error('Error loading quiz stats:', error);
     }
-  };
+  }, [deckID, isAIDeck, attemptedFlashcardIds]);
 
   // Load stats when component mounts
   useEffect(() => {
     loadQuizStats();
-  }, [deckID, isAIDeck, attemptedFlashcardIds]);
+  }, [loadQuizStats]);
 
-  // Format time from seconds to "Xmin Ys" format, localized
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    if (language === 'Chinese') {
-      if (minutes > 0) {
-        return `${minutes}分${remainingSeconds}秒`;
-      } else {
-        return `${remainingSeconds}秒`;
-      }
-    } else {
-      if (minutes > 0) {
-        return `${minutes}min ${remainingSeconds}s`;
-      } else {
-        return `${remainingSeconds}s`;
-      }
-    }
-  };
+  const handleBackPress = useCallback(() => {
+    router.back();
+  }, [router]);
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
+    <View style={containerStyle}>
       {/* Close button absolutely positioned at top right */}
-      <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-        <AntDesign name="close" size={28} color={Colors[theme].text} />
-      </TouchableOpacity>
+      <MemoizedTouchableOpacity style={styles.closeButton} onPress={handleBackPress}>
+        <AntDesign name="close" size={28} color={closeButtonIconColor} />
+      </MemoizedTouchableOpacity>
       <ScrollView
         style={[styles.scrollContainer, { marginBottom: isHalfwayCheckpoint ? 120 : 0 }]}
         contentContainerStyle={styles.scrollContent}
@@ -228,28 +314,28 @@ export default function ViewQuizStatsModal() {
         {/* Title row with confetti */}
         <View style={styles.titleRow}>
           {isHalfwayCheckpoint ? (
-            <Image source={FlagIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+            <MemoizedImage source={FlagIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
           ) : (
-            <Image source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+            <MemoizedImage source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
           )}
           {isHalfwayCheckpoint ? (
-            <Text style={[styles.wellDoneTitle, { color: Colors[theme].text, fontFamily: Fonts.title }]}>{strings[language].flashcardViewPage.halfwayCheckpoint}</Text>
+            <MemoizedText style={wellDoneTitleStyle}>{strings[language].flashcardViewPage.halfwayCheckpoint}</MemoizedText>
           ) : (
-            <Text style={[styles.wellDoneTitle, { color: Colors[theme].text, fontFamily: Fonts.title }]}>{strings[language].flashcardViewPage.wellDone}</Text>
+            <MemoizedText style={wellDoneTitleStyle}>{strings[language].flashcardViewPage.wellDone}</MemoizedText>
           )}
           {isHalfwayCheckpoint ? (
-            <Image source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
+            <MemoizedImage source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
           ) : (
-            <Image source={ConfettiIcon} style={styles.confettiIcon} resizeMode="contain" />
+            <MemoizedImage source={ConfettiIcon} style={styles.confettiIcon} resizeMode="contain" />
           )}
         </View>
         
         {/* Progress indicator for halfway checkpoint */}
         {isHalfwayCheckpoint && (
-          <View style={[styles.progressIndicator, { backgroundColor: Colors[theme].secondaryShade }]}>
-            <Text style={[styles.progressText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
-              {`${quizStats.attemptedCount} / ${quizStats.totalCount} ${strings[language].flashcardViewPage.flashcardsCompleted}`}
-            </Text>
+          <View style={progressIndicatorStyle}>
+            <MemoizedText style={progressTextStyle}>
+              {progressText}
+            </MemoizedText>
           </View>
         )}
 
@@ -270,20 +356,20 @@ export default function ViewQuizStatsModal() {
         
         {/* Total time spent */}
         <View style={styles.totalTimeWrap}>
-          <Text style={[styles.totalTimeLabel, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].flashcardViewPage.totalTimeSpent}</Text>
-          <Text style={[styles.totalTimeValue, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{formatTime(quizStats.totalTimeSeconds)}</Text>
+          <MemoizedText style={totalTimeLabelStyle}>{strings[language].flashcardViewPage.totalTimeSpent}</MemoizedText>
+          <MemoizedText style={totalTimeValueStyle}>{formattedTotalTime}</MemoizedText>
         </View>
       </ScrollView>
       
       {/* Halfway checkpoint button fixed at bottom */}
       {isHalfwayCheckpoint && (
         <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
-          <TouchableOpacity style={[styles.fixedBottomButton, { backgroundColor: Colors[theme].brandColor2 }]} activeOpacity={0.85} onPress={() => router.back()}>
+          <MemoizedTouchableOpacity style={fixedBottomButtonStyle} activeOpacity={0.85} onPress={handleBackPress}>
             <View style={styles.buttonContentRow}>
-              <Text style={[styles.buttonText, { color: Colors[theme].background, fontFamily: Fonts.bodyBold }]}>{strings[language].flashcardViewPage.continueWithQuiz}</Text>
+              <MemoizedText style={buttonTextStyle}>{strings[language].flashcardViewPage.continueWithQuiz}</MemoizedText>
               <DoubleChevron width={36} height={36} />
             </View>
-          </TouchableOpacity>
+          </MemoizedTouchableOpacity>
         </View>
       )}
     </View>

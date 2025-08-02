@@ -28,6 +28,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
 
 // Helper function to get current userID from AsyncStorage
@@ -594,6 +597,7 @@ interface DifficultyPillRowProps {
 }
 
 const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards, language }: DifficultyPillRowProps) => {
+  const { theme } = useTheme();
   // Get the current flashcard's difficulty
   const currentFlashcard = flashcards[currentIdx];
   const currentDifficulty = currentFlashcard?.flashcardDifficulty;
@@ -613,14 +617,14 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards, languag
           style={[
             styles.difficultyPillButton,
             { backgroundColor: color },
-            currentDifficulty === type && { borderColor: '#4F41D8', borderWidth: 3 },
+            currentDifficulty === type && { borderColor: Colors[theme].brandColor2, borderWidth: 3 },
           ]}
           activeOpacity={0.8}
           onPress={() => {
             onDifficultyChange(type);
           }}
         >
-          <Text style={styles.difficultyPillButtonText}>{DIFFICULTY_LABELS[type]}</Text>
+          <Text style={[styles.difficultyPillButtonText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{DIFFICULTY_LABELS[type]}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -641,6 +645,7 @@ interface LoadingBarProps {
 }
 
 const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode, recordedAudioUri, language }: LoadingBarProps) => {
+  const { theme } = useTheme();
   // Create animated value for progress
   const progressAnim = useRef(new Animated.Value(0)).current;
   
@@ -671,7 +676,8 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
     <View style={styles.loadingBarContainer}>
       <View style={[
         styles.loadingBarBg,
-        isCompleted && { backgroundColor: '#44B88A' }
+        { backgroundColor: Colors[theme].secondaryShade },
+        isCompleted && { backgroundColor: Colors[theme].brandColor1 }
       ]}>
         <Animated.View 
           style={[
@@ -681,13 +687,13 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
                 inputRange: [0, 1],
                 outputRange: ['0%', '100%'],
               }),
-              backgroundColor: isCompleted ? '#44B88A' : '#4F41D8'
+              backgroundColor: isCompleted ? Colors[theme].brandColor1 : Colors[theme].brandColor2
             }
           ]} 
         />
         {isCompleted && (
           <View style={styles.loadingBarTextContainer}>
-            <Text style={styles.loadingBarCompleteText}>
+            <Text style={[styles.loadingBarCompleteText, { color: Colors[theme].background, fontFamily: Fonts.bodyItalic }]}>
               {strings[language].flashcardViewPage.completed}
             </Text>
           </View>
@@ -698,12 +704,12 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
 };
 
 // Helper to render text with <blank> replaced by underline
-function renderQuestionWithBlanks(text: string) {
+function renderQuestionWithBlanks(text: string, theme: 'light' | 'dark') {
   const parts = text.split(/<blank>/g);
   const elements: React.ReactNode[] = [];
   parts.forEach((part, idx) => {
     elements.push(
-      <Text key={`text-${idx}`} style={styles.questionText}>
+      <Text key={`text-${idx}`} style={[styles.questionText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
         {part}
       </Text>
     );
@@ -711,20 +717,20 @@ function renderQuestionWithBlanks(text: string) {
       elements.push(
         <View
           key={`blank-${idx}`}
-          style={styles.blankUnderlineView}
+          style={[styles.blankUnderlineView, { borderColor: Colors[theme].text }]}
         />
       );
     }
   });
   return (
-    <Text style={styles.questionText}>
+    <Text style={[styles.questionText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
       {elements}
     </Text>
   );
 }
 
 // Helper to render MCQ answers with randomly assigned option letters
-function renderMCQAnswers(mcqData: { choice: string; ans: boolean }[]) {
+function renderMCQAnswers(mcqData: { choice: string; ans: boolean }[], theme: 'light' | 'dark') {
   // Create array of option letters (A, B, C, D, etc.)
   const optionLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   
@@ -753,7 +759,7 @@ function renderMCQAnswers(mcqData: { choice: string; ans: boolean }[]) {
     <View style={styles.mcqContainer}>
       {optionsWithLetters.map((option, index) => (
         <View key={index} style={styles.mcqOptionRow}>
-          <Text style={styles.mcqOptionText}>
+          <Text style={[styles.mcqOptionText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
             {option.letter}) {option.choice}
           </Text>
         </View>
@@ -831,6 +837,7 @@ interface FlippableFlashcardProps {
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
 const FlippableFlashcard = (props: FlippableFlashcardProps) => {
+  const { theme } = useTheme();
   const {
     currentIdx,
     setCurrentIdx,
@@ -1559,7 +1566,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   }, [countdown, isQuizMode, showQuizCountdown]);
 
   // Define the border/circle color based on countdown
-  const borderColor = countdown === 0 ? '#F8696B' : '#44B88A';
+  const borderColor = countdown === 0 ? Colors[theme].alertColor : Colors[theme].brandColor1;
 
   // Start timing when current flashcard changes
   React.useEffect(() => {
@@ -1601,7 +1608,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           <AntDesign
             name="left"
             size={30}
-            color={isLeftChevronDisabled() ? "#D5D4DD" : "#000000"}
+                            color={isLeftChevronDisabled() ? Colors[theme].unselectedText : Colors[theme].text}
           />
         </TouchableOpacity>
       ) : null}
@@ -1614,7 +1621,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         <AntDesign
           name="right"
           size={30}
-          color={isRightChevronDisabled() ? "#D5D4DD" : "#000000"}
+                          color={isRightChevronDisabled() ? Colors[theme].unselectedText : Colors[theme].text}
         />
       </TouchableOpacity>
       <Animated.View style={[{ flex: 1 }, slideStyle]}>
@@ -1629,7 +1636,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             style={[
               styles.flippableCard,
               {
-                backgroundColor: '#F8F8F8',
+                backgroundColor: Colors[theme].secondaryShade,
                 transform: [
                   { rotateY: frontInterpolate },
                   { translateX: shiverAnim },
@@ -1704,7 +1711,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             {/* Top container */}
             <Animated.View style={[styles.topContainer, { opacity: frontOpacity }]}>
               <View style={styles.topContainerContent}>
-                <Text style={styles.flashcardIndexText}>
+                <Text style={[styles.flashcardIndexText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
                   {`${strings[language].flashcardViewPage.questionLabel} ${displayNumber} ${strings[language].flashcardViewPage.ofLabel} ${totalCards}`}
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
@@ -1712,9 +1719,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -1728,7 +1735,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   contentContainerStyle={styles.questionScrollViewContent}
                   showsVerticalScrollIndicator={false}
                 >
-                  {renderQuestionWithBlanks(flashcardQn)}
+                  {renderQuestionWithBlanks(flashcardQn, theme)}
                 </ScrollView>
               )}
               {flashcardQnType === 'image' && !!flashcardQn && (
@@ -1771,9 +1778,13 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               )}
               {flashcardQnType === 'audio' && !!flashcardQn && (
                 <View style={styles.audioContainer}>
-                  <Text style={styles.audioLabel}>{strings[language].flashcardViewPage.question}:</Text>
+                  <Text style={[styles.audioLabel, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].flashcardViewPage.question}:</Text>
                   <Pressable
-                    style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
+                    style={({ pressed }) => [
+                      styles.replayButton, 
+                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
+                    ]}
                     onPress={() => handleAudioButtonPress(flashcardQn)}
                   >
                     {!isAudioPlaying ? (
@@ -1802,15 +1813,15 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   width: '50%',
                   height: '60%',
                   borderRadius: 30,
-                  backgroundColor: '#fff',
-                  borderColor: '#4F41D8',
+                  backgroundColor: Colors[theme].background,
+                  borderColor: Colors[theme].brandColor2,
                   borderWidth: 2,
                   alignItems: 'center',
                   justifyContent: 'center',
                   alignSelf: 'flex-start',
                   left: 10, 
                 }}>
-                  <Text style={{ fontSize: 14, color: '#222', textAlign: 'center', fontFamily: 'Satoshi-Medium' }}>
+                  <Text style={{ fontSize: 14, color: Colors[theme].text, textAlign: 'center', fontFamily: Fonts.bodyMedium }}>
                     {getCognitiveQnTypeLabel(currentFlashcard.cognitiveQnType, language)} {strings[language].flashcardViewPage.questionLabel}
                   </Text>
                 </View>
@@ -1826,7 +1837,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             style={[
               styles.flippableCard,
               {
-                backgroundColor: '#F8F8F8',
+                backgroundColor: Colors[theme].secondaryShade,
                 transform: [
                   { rotateY: backInterpolate },
                   { translateX: shiverAnim },
@@ -1888,7 +1899,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             {/* Top container */}
             <Animated.View style={[styles.topContainer, { opacity: backOpacity }]}>
               <View style={styles.topContainerContent}>
-                <Text style={styles.flashcardIndexText}>
+                <Text style={[styles.flashcardIndexText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
                   {`${strings[language].flashcardViewPage.answerLabel} ${displayNumber} ${strings[language].flashcardViewPage.ofLabel} ${totalCards}`}
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
@@ -1896,9 +1907,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {countdown === 0 ? (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#F8696B', textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: 'Satoshi-Bold', fontSize: 24, color: '#44B88A', textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -1912,7 +1923,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       contentContainerStyle={styles.questionScrollViewContent}
                       showsVerticalScrollIndicator={false}
                   >
-                      {renderQuestionWithBlanks(flashcardAnswer)}
+                      {renderQuestionWithBlanks(flashcardAnswer, theme)}
                   </ScrollView>
                   )}
               {flashcardAnswerType === 'mcq' && Array.isArray(flashcardAnswer) && (
@@ -1934,7 +1945,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                 <View style={styles.voiceAnswerContainer}>
                   {!isRecording ? (
                     <>
-                      <Text style={styles.voiceAnswerText}>
+                      <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
                         {recordedAudioUri ? 
                         strings[language].flashcardViewPage.greatAnswerReplayOrFeedback : 
                         strings[language].flashcardViewPage.recordAnswerGetFeedback}
@@ -1961,8 +1972,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   <Pressable 
                     style={({ pressed }) => [
                       styles.micButton,
-                      pressed && styles.buttonPressed,
-                      isRecording && styles.recordingButton
+                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }],
+                      isRecording && [styles.recordingButton, { backgroundColor: Colors[theme].alertColor }]
                     ]}
                     onPressIn={startRecording}
                     onPressOut={stopRecording}
@@ -1985,7 +1997,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       <Svg width={45} height={45} viewBox="0 0 24 24" fill="none">
                         <Path 
                           d="M8 5v14l11-7z" 
-                          fill={recordedAudioUri ? "black" : "#D5D4DD"}
+                          fill={recordedAudioUri ? Colors[theme].text : Colors[theme].unselectedText}
                           transform="rotate(0 12 12)"
                         />
                       </Svg>
@@ -1999,7 +2011,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   <Pressable 
                     style={({ pressed }) => [
                       styles.aiChatButton,
-                      pressed && styles.buttonPressed
+                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
                     onPress={() => {
                       // TODO: Implement AI chat functionality
@@ -2051,9 +2064,13 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               )}
               {flashcardAnswerType === 'audio' && !!flashcardAnswer && (
                 <View style={styles.audioContainer}>
-                  <Text style={styles.audioLabel}>{strings[language].flashcardViewPage.answer}:</Text>
+                  <Text style={[styles.audioLabel, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].flashcardViewPage.answer}:</Text>
                   <Pressable
-                    style={({ pressed }) => [styles.replayButton, pressed && styles.buttonPressed]}
+                    style={({ pressed }) => [
+                      styles.replayButton, 
+                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
+                    ]}
                     onPress={() => handleAudioButtonPress(flashcardAnswer)}
                   >
                     {!isAudioPlaying ? (
@@ -2134,22 +2151,24 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
 
 // Local MCQ Option component
 const MCQOption = ({ text, selected, onPress, disabled }: { text: string; selected: boolean; onPress: () => void; disabled?: boolean }) => {
+  const { theme } = useTheme();
   return (
     <View style={styles.mcqOptionContainer}>
       <SmallCircleSelectButton selected={selected} onPress={onPress} disabled={disabled} />
-      <Text style={[styles.mcqOptionLabelText, disabled && { color: '#D5D4DD' }]}>{text}</Text>
+                      <Text style={[styles.mcqOptionLabelText, disabled && { color: Colors[theme].unselectedText }]}>{text}</Text>
     </View>
   );
 };
 
 // Local Submit Button component
 const SubmitButton = ({ enabled, onPress, disabled, language }: { enabled: boolean; onPress: () => void; disabled?: boolean; language: string }) => {
+  const { theme } = useTheme();
   const isDisabled = disabled || !enabled;
   return (
     <TouchableOpacity
       style={[
         styles.submitButton,
-        { backgroundColor: isDisabled ? '#D5D4DD' : '#4F41D8' }
+        { backgroundColor: isDisabled ? Colors[theme].unselectedText : Colors[theme].brandColor2 }
       ]}
       onPress={onPress}
       disabled={isDisabled}
@@ -2171,16 +2190,25 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
   isQuizMode: boolean;
   language: string;
 }) => {
+  const { theme } = useTheme();
   return (
     visible ? (
-    <Animated.View style={[styles.mcqModalOverlay, { opacity, zIndex: 9999 }]}> 
+    <Animated.View style={[
+      styles.mcqModalOverlay, 
+      { 
+        opacity, 
+        zIndex: 9999,
+        backgroundColor: Colors[theme].background,
+        borderColor: Colors[theme].brandColor2
+      }
+    ]}> 
       {/* Icon at top left */}
       <View style={styles.mcqModalIconAbsolute}>
         {isCorrect ? <GreenTickIcon width={24} height={24} /> : <DeleteModalIcon width={24} height={24} />}
       </View>
       {/* Centered text */}
       <View style={styles.mcqModalTextCenterWrap}>
-        <Text style={[styles.mcqModalText]}>
+        <Text style={[styles.mcqModalText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
           {isCorrect ? strings[language].flashcardViewPage.correctAnswerGoodJob : strings[language].flashcardViewPage.incorrectAnswerTryAgain}
         </Text>
       </View>
@@ -2192,8 +2220,8 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
         style={[styles.mcqModalLottie, { width: isCorrect ? 375 : 225, height: isCorrect ? 375 : 225, left: isCorrect ? -34 : 30, top: isCorrect ? -40 : 45}]}
       />
       {/* Button absolutely at bottom center */}
-      <TouchableOpacity style={styles.mcqModalButtonAbsolute} onPress={onDismiss} activeOpacity={0.8}>
-        <Text style={styles.mcqModalButtonText}>{strings[language].flashcardViewPage.ok}</Text>
+              <TouchableOpacity style={[styles.mcqModalButtonAbsolute, { backgroundColor: Colors[theme].brandColor2 }]} onPress={onDismiss} activeOpacity={0.8}>
+        <Text style={[styles.mcqModalButtonText, { color: Colors[theme].background, fontFamily: Fonts.bodyMedium }]}>{strings[language].flashcardViewPage.ok}</Text>
       </TouchableOpacity>
     </Animated.View>
   ) : null
@@ -2202,6 +2230,7 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
 
 // Loading Screen Component to avoid hooks in conditional render
 const LoadingScreen = ({ progress, current, total, language }: { progress: number; current: number; total: number; language: string }) => {
+  const { theme } = useTheme();
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -2222,11 +2251,11 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
   }, [progressAnim]);
 
   return (
-    <View style={styles.safeArea}>
-      <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { backgroundColor: Colors[theme].background }]}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors[theme].background }]}>
         <View style={{
           flex: 1,
-          backgroundColor: '#fff',
+          backgroundColor: Colors[theme].background,
           alignItems: 'center',
           justifyContent: 'center',
         }}>
@@ -2249,10 +2278,10 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
           {/* Text and progress below */}
           <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
             <Text style={{
-              fontFamily: 'Satoshi-Variable',
+              fontFamily: Fonts.bodyBold,
               fontWeight: '700',
               fontSize: 24,
-              color: '#000',
+              color: Colors[theme].text,
               textAlign: 'center',
               marginTop: 24,
               marginBottom: 16,
@@ -2268,14 +2297,14 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
               <View style={{
                 width: '100%',
                 height: 16,
-                backgroundColor: '#D5D4DD',
+                backgroundColor: Colors[theme].unselectedText,
                 borderRadius: 8,
                 overflow: 'hidden',
               }}>
                 <Animated.View 
                   style={{
                     height: '100%',
-                    backgroundColor: percent === 100 ? '#44B88A' : '#4F41D8',
+                    backgroundColor: percent === 100 ? Colors[theme].brandColor1 : Colors[theme].brandColor2,
                     borderRadius: 8,
                     width: animatedWidth(),
                   }} 
@@ -2283,10 +2312,10 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
               </View>
             </View>
             <Text style={{
-              fontFamily: 'Satoshi-Variable',
+              fontFamily: Fonts.bodyBold,
               fontWeight: '700',
               fontSize: 24,
-              color: '#4F41D8',
+              color: Colors[theme].brandColor2,
               textAlign: 'center',
               marginTop: 4,
               marginBottom: 4,
@@ -2294,9 +2323,9 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
               {percent}%
             </Text>
             <Text style={{
-              fontFamily: 'Satoshi-Medium',
+              fontFamily: Fonts.bodyMedium,
               fontSize: 14,
-              color: '#000',
+              color: Colors[theme].text,
               textAlign: 'center',
               marginTop: 2,
             }}>
@@ -2312,6 +2341,7 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
 export default function FlashcardViewPage() {
   const router = useRouter();
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const { deckID, flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam, isAIDeck: isAIDeckParam, retryDifficult: retryDifficultParam } = useLocalSearchParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
@@ -3100,7 +3130,7 @@ export default function FlashcardViewPage() {
       <Animated.View
         style={{
           flex: 1,
-          backgroundColor: '#fff',
+          backgroundColor: Colors[theme].background,
           alignItems: 'center',
           justifyContent: 'center',
           paddingHorizontal: 16,
@@ -3118,7 +3148,7 @@ export default function FlashcardViewPage() {
           }}
           onPress={() => router.replace('/')}
         >
-          <MaterialIcons name="home" size={32} color="black" />
+          <MaterialIcons name="home" size={32} color={Colors[theme].text} />
         </TouchableOpacity>
 
         {isQuizMode ? (
@@ -3145,7 +3175,7 @@ export default function FlashcardViewPage() {
             style={{ width: 220, height: 220, marginBottom: 32 }}
           />
         )}
-        <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 40, color: '#222', textAlign: 'center', marginBottom: 48 }}>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 40, color: Colors[theme].text, textAlign: 'center', marginBottom: 48 }}>
           {isQuizMode ? strings[language].flashcardViewPage.nicelyDone : strings[language].flashcardViewPage.niceStudying}
         </Text>
         {isQuizMode && (
@@ -3157,7 +3187,7 @@ export default function FlashcardViewPage() {
             borderRadius: 30,
             alignItems: 'center',
             justifyContent: 'center',
-                backgroundColor: hasDifficultFlashcards() ? '#4F41D8' : '#D5D4DD',
+                backgroundColor: hasDifficultFlashcards() ? Colors[theme].brandColor2 : Colors[theme].unselectedText,
             marginBottom: 20,
           }}
               onPress={() => {
@@ -3180,8 +3210,8 @@ export default function FlashcardViewPage() {
               activeOpacity={hasDifficultFlashcards() ? 0.8 : 1}
         >
           <Text style={{ 
-            color: "#fff", 
-            fontFamily: 'Satoshi-Variable', 
+            color: Colors[theme].background, 
+            fontFamily: Fonts.bodyBold, 
             fontWeight: '400', 
             fontSize: 20 
           }}>
@@ -3195,7 +3225,7 @@ export default function FlashcardViewPage() {
             borderRadius: 30,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#44B88A',
+            backgroundColor: Colors[theme].brandColor1,
             marginBottom: 20,
           }}
           onPress={() => router.push({
@@ -3208,7 +3238,7 @@ export default function FlashcardViewPage() {
             }},
           )}
         >
-          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+          <Text style={{ color: Colors[theme].background, fontFamily: Fonts.bodyBold, fontWeight: '400', fontSize: 20 }}>
             {strings[language].flashcardViewPage.viewQuizStats}
           </Text>
         </TouchableOpacity>
@@ -3221,21 +3251,21 @@ export default function FlashcardViewPage() {
             borderRadius: 30,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#44B88A',
+            backgroundColor: Colors[theme].brandColor1,
           }}
           onPress={() => router.back()}
         >
-          <Text style={{ color: '#fff', fontFamily: 'Satoshi-Variable', fontWeight: '400', fontSize: 20 }}>
+          <Text style={{ color: Colors[theme].background, fontFamily: Fonts.bodyBold, fontWeight: '400', fontSize: 20 }}>
             {strings[language].flashcardViewPage.backToDeck}
           </Text>
         </TouchableOpacity>
       </Animated.View>
     ) : showQuizCountdown ? (
-      <View style={styles.safeArea}>
-        <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { backgroundColor: Colors[theme].background }]}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors[theme].background }]}>
           <View style={{
             flex: 1,
-            backgroundColor: '#fff',
+            backgroundColor: Colors[theme].background,
             alignItems: 'center',
             justifyContent: 'center',
           }}>
@@ -3248,9 +3278,9 @@ export default function FlashcardViewPage() {
             </TouchableOpacity>
             {/* Quiz starting text */}
             <Text style={{
-              fontFamily: 'Satoshi-Medium',
+              fontFamily: Fonts.bodyMedium,
               fontSize: 28,
-              color: '#222',
+              color: Colors[theme].text,
               marginBottom: 24,
               textAlign: 'center',
             }}>
@@ -3268,9 +3298,9 @@ export default function FlashcardViewPage() {
     ) : isLoadingFlashcards ? (
       <LoadingScreen progress={loadingProgress} current={loadingCurrent} total={loadingTotal} language={language} />
     ) : (
-    <View style={styles.safeArea}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
+    <View style={[styles.safeArea, { backgroundColor: Colors[theme].background }]}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors[theme].background }]}>
+        <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
           <TouchableOpacity
           style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
             onPress={async () => {
@@ -3553,11 +3583,9 @@ export default function FlashcardViewPage() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   backButton: {
     position: 'absolute',
@@ -3593,14 +3621,12 @@ const styles = StyleSheet.create({
   loadingBarBg: {
     width: '100%',
     height: 21,
-    backgroundColor: '#F8F8F8',
     borderRadius: 21,
     overflow: 'hidden',
     justifyContent: 'center',
   },
   loadingBarFg: {
     height: 21,
-    backgroundColor: '#4F41D8',
     borderRadius: 21,
   },
   loadingBarTextContainer: {
@@ -3614,9 +3640,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   loadingBarCompleteText: {
-    fontFamily: 'Satoshi-Italic',
     fontSize: 14,
-    color: '#FFFFFF',
     textAlign: 'center',
   },
   difficultyPillRowContainer: {
@@ -3642,9 +3666,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   difficultyPillButtonText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 16,
-    color: '#222',
     textAlign: 'center',
   },
   flippableCard: {
@@ -3701,9 +3723,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   flashcardIndexText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 24,
-    color: '#222',
   },
   flipArrowPressable: {
     position: 'absolute',
@@ -3729,14 +3749,11 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   questionText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 32,
-    color: '#222',
     textAlign: 'center',
   },
   blankUnderlineView: {
     borderBottomWidth: 2,
-    borderColor: '#222',
     width: 100,
     marginHorizontal: 2,
     alignSelf: 'center',
@@ -3765,7 +3782,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   audioLabel: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 36,
     marginBottom: 16,
   },
@@ -3773,17 +3789,14 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#F8F8F8',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   buttonPressed: {
-    backgroundColor: '#ECECEC',
   },
   mcqContainer: {
     flex: 1,
@@ -3799,9 +3812,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   mcqOptionText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 28,
-    color: '#222',
     textAlign: 'left',
     lineHeight: 28,
   },
@@ -3811,9 +3822,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   mcqOptionLabelText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 14,
-    color: '#222',
     textAlign: 'left',
   },
   submitButton: {
@@ -3824,9 +3833,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   submitButtonText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 14,
-    color: '#FFFFFF',
   },
   mcqBottomContainer: {
     flexDirection: 'row',
@@ -3841,10 +3848,8 @@ const styles = StyleSheet.create({
     height: 300,
     marginLeft: -152.5, // Half of width
     marginTop: -150, // Half of height
-    backgroundColor: '#FFFFFF',
     borderRadius: 30,
     borderWidth: 10,
-    borderColor: '#4F41D8',
     zIndex: 1001,
     overflow: 'hidden',
   },
@@ -3863,10 +3868,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   mcqModalText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 18,
     textAlign: 'center',
-    color: '#222',
     marginHorizontal: 16,
   },
   mcqModalButtonAbsolute: {
@@ -3879,12 +3882,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
-    backgroundColor: '#4F41D8',
     borderRadius: 16,
   },
   mcqModalButtonText: {
-    color: '#fff',
-    fontFamily: 'Satoshi-Medium',
     fontSize: 16,
   },
   mcqModalLottie: {
@@ -3903,9 +3903,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   voiceAnswerText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 28,
-    color: '#D5D4DD',
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -3929,17 +3927,14 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#F8F8F8',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   recordingButton: {
-    backgroundColor: '#FF3B30',
   },
   soundWaveAnimation: {
     width: 250,
@@ -3950,10 +3945,8 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#F8F8F8',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,

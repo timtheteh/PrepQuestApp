@@ -11,6 +11,8 @@ import { Toast } from '@/components/general/Toast';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createUser } from '@/db/users';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,6 +25,7 @@ export default function SplashScreen({
   isDatabaseReady = false, 
   onAuthComplete,
 }: SplashScreenProps) {
+  const { language } = useLanguage();
   const { 
     isAuthenticated, 
     user, 
@@ -126,14 +129,14 @@ export default function SplashScreen({
   const validateSignUp = () => {
     // Check if fields are empty
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setToastMessage('Fill up both email and password');
+      setToastMessage(strings[language].splash.fillUpBothEmailAndPassword);
       setToastVisible(true);
       return false;
     }
     
     // Check if passwords match
     if (password !== confirmPassword) {
-      setToastMessage('Passwords don\'t match');
+      setToastMessage(strings[language].splash.passwordsDontMatch);
       setToastVisible(true);
       return false;
     }
@@ -147,15 +150,15 @@ export default function SplashScreen({
         const result = await signUpWithEmail(email.trim(), password);
         
         if (result.success) {
-          setToastMessage('Account created successfully!');
+          setToastMessage(strings[language].splash.accountCreatedSuccessfully);
           setToastVisible(true);
           // Auth state will be updated and trigger the useEffect
         } else {
-          setToastMessage(result.error || 'Sign up failed');
+          setToastMessage(result.error || strings[language].splash.signUpFailed);
           setToastVisible(true);
         }
       } catch (error: any) {
-        const errorMessage = error?.message || 'Sign up failed';
+        const errorMessage = error?.message || strings[language].splash.signUpFailed;
         setToastMessage(errorMessage);
         setToastVisible(true);
       }
@@ -165,7 +168,7 @@ export default function SplashScreen({
   const handleSignIn = async () => {
     // Check if fields are empty
     if (!email.trim() || !password.trim()) {
-      setToastMessage('Fill up both email and password');
+      setToastMessage(strings[language].splash.fillUpBothEmailAndPassword);
       setToastVisible(true);
       return;
     }
@@ -177,11 +180,11 @@ export default function SplashScreen({
         // Email/password auth automatically sets the session
         // Auth state will be updated and trigger the useEffect
       } else {
-        setToastMessage(result.error || 'Sign in failed');
+        setToastMessage(result.error || strings[language].splash.signInFailed);
         setToastVisible(true);
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Sign in failed';
+      const errorMessage = error?.message || strings[language].splash.signInFailed;
       setToastMessage(errorMessage);
       setToastVisible(true);
     }
@@ -201,7 +204,7 @@ export default function SplashScreen({
           oauthFunction = signInWithApple;
           break;
         default:
-          setToastMessage('Provider not supported');
+          setToastMessage(strings[language].splash.providerNotSupported);
           setToastVisible(true);
           return;
       }
@@ -213,7 +216,20 @@ export default function SplashScreen({
       
       // Auth state will be updated and trigger the useEffect
     } catch (error: any) {
-      const errorMessage = error?.message || `${provider} sign in failed`;
+      let errorMessage;
+      switch (provider) {
+        case 'google':
+          errorMessage = error?.message || strings[language].splash.googleSignInFailed;
+          break;
+        case 'facebook':
+          errorMessage = error?.message || strings[language].splash.facebookSignInFailed;
+          break;
+        case 'apple':
+          errorMessage = error?.message || strings[language].splash.appleSignInFailed;
+          break;
+        default:
+          errorMessage = error?.message || strings[language].splash.signInFailed;
+      }
       setToastMessage(errorMessage);
       setToastVisible(true);
     }
@@ -274,7 +290,7 @@ export default function SplashScreen({
   // Handle password reset
   const handlePasswordReset = async () => {
     if (!forgotPasswordEmail.trim()) {
-      setToastMessage('Please enter your email address');
+      setToastMessage(strings[language].splash.pleaseEnterYourEmailAddress);
       setToastVisible(true);
       return;
     }
@@ -285,16 +301,16 @@ export default function SplashScreen({
       const result = await resetPassword(forgotPasswordEmail.trim());
       
       if (result.success) {
-        setToastMessage('Password reset email sent! Check your inbox.');
+        setToastMessage(strings[language].splash.passwordResetEmailSent);
         setToastVisible(true);
         setForgotPasswordModalVisible(false);
         setForgotPasswordEmail('');
       } else {
-        setToastMessage(result.error || 'Failed to send reset email');
+        setToastMessage(result.error || strings[language].splash.failedToSendResetEmail);
         setToastVisible(true);
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to send reset email';
+      const errorMessage = error?.message || strings[language].splash.failedToSendResetEmail;
       setToastMessage(errorMessage);
       setToastVisible(true);
     }
@@ -360,7 +376,7 @@ export default function SplashScreen({
                     styles.toggleText,
                     isSignIn ? styles.toggleTextActive : styles.toggleTextInactive
                   ]}>
-                    Sign In
+                    {strings[language].splash.signIn}
                   </Text>
                   {isSignIn && <View style={styles.underline} />}
                 </TouchableOpacity>
@@ -373,7 +389,7 @@ export default function SplashScreen({
                     styles.toggleText,
                     !isSignIn ? styles.toggleTextActive : styles.toggleTextInactive
                   ]}>
-                    Sign Up
+                    {strings[language].splash.signUp}
                   </Text>
                   {!isSignIn && <View style={styles.underline} />}
                 </TouchableOpacity>
@@ -384,11 +400,11 @@ export default function SplashScreen({
                 {/* Welcome text for sign in/sign up state */}
                 {isSignIn ? (
                   <View style={styles.welcomeContainer}>
-                    <Text style={styles.welcomeText}>Welcome back!</Text>
+                    <Text style={styles.welcomeText}>{strings[language].splash.welcomeBack}</Text>
                   </View>
                 ) : (
                   <View style={styles.welcomeContainer}>
-                    <Text style={styles.welcomeText}>Welcome Aboard!</Text>
+                    <Text style={styles.welcomeText}>{strings[language].splash.welcomeAboard}</Text>
                   </View>
                 )}
                 
@@ -398,7 +414,7 @@ export default function SplashScreen({
                   <View style={styles.inputWrapper}>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="Email"
+                      placeholder={strings[language].splash.email}
                       placeholderTextColor="#D5D4DD"
                       value={email}
                       onChangeText={setEmail}
@@ -409,7 +425,7 @@ export default function SplashScreen({
                   <View style={styles.inputWrapper}>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="Password"
+                      placeholder={strings[language].splash.password}
                       placeholderTextColor="#D5D4DD"
                       secureTextEntry={!showPassword}
                       value={password}
@@ -430,14 +446,14 @@ export default function SplashScreen({
                   {/* Confirm Password input - only in sign up state */}
                   {!isSignIn && (
                     <View style={styles.inputWrapper}>
-                      <TextInput
-                        style={styles.textInput}
-                        placeholder="Confirm Password"
-                        placeholderTextColor="#D5D4DD"
-                        secureTextEntry={!showPassword}
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                      />
+                                          <TextInput
+                      style={styles.textInput}
+                      placeholder={strings[language].splash.confirmPassword}
+                      placeholderTextColor="#D5D4DD"
+                      secureTextEntry={!showPassword}
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                    />
                       <TouchableOpacity 
                         style={styles.passwordToggle}
                         onPress={() => setShowPassword(!showPassword)}
@@ -459,7 +475,7 @@ export default function SplashScreen({
                     onPress={isSignIn ? handleSignIn : handleSignUp}
                   >
                     <Text style={styles.signInButtonText}>
-                      {isSignIn ? 'Sign In' : 'Sign Up'}
+                      {isSignIn ? strings[language].splash.signIn : strings[language].splash.signUp}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -468,7 +484,7 @@ export default function SplashScreen({
                 {isSignIn && (
                 <View style={styles.forgotPasswordContainer}>
                   <TouchableOpacity onPress={handleForgotPassword}>
-                    <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                    <Text style={styles.forgotPasswordText}>{strings[language].splash.forgotPassword}</Text>
                   </TouchableOpacity>
                 </View>
                 )}
@@ -477,7 +493,7 @@ export default function SplashScreen({
               {/* Social login section - visible in both states */}
               <View style={styles.forgotPasswordContainer}>
                 <Text style={styles.signInWithText}>
-                  {isSignIn ? 'Or Sign In With' : 'Or Sign Up With'}
+                  {isSignIn ? strings[language].splash.orSignInWith : strings[language].splash.orSignUpWith}
                 </Text>
                 
                 {/* Social login buttons */}
@@ -491,7 +507,7 @@ export default function SplashScreen({
                       <GoogleLoginIcon width={24} height={24} />
                     </View>
                     <View style={styles.textContainer}>
-                      <Text style={styles.socialLoginText}>Continue with Google</Text>
+                      <Text style={styles.socialLoginText}>{strings[language].splash.continueWithGoogle}</Text>
                     </View>
                   </TouchableOpacity>
                   
@@ -504,9 +520,9 @@ export default function SplashScreen({
                       <View style={styles.iconContainer}>
                         <AppleLoginIcon width={24} height={24} />
                       </View>
-                      <View style={styles.textContainer}>
-                        <Text style={styles.socialLoginText}>Continue with Apple</Text>
-                      </View>
+                                          <View style={styles.textContainer}>
+                      <Text style={styles.socialLoginText}>{strings[language].splash.continueWithApple}</Text>
+                    </View>
                     </TouchableOpacity>
                   )}
                   
@@ -519,7 +535,7 @@ export default function SplashScreen({
                       <FacebookLoginIcon width={24} height={24} />
                     </View>
                     <View style={styles.textContainer}>
-                      <Text style={styles.socialLoginText}>Continue with Facebook</Text>
+                      <Text style={styles.socialLoginText}>{strings[language].splash.continueWithFacebook}</Text>
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -548,7 +564,7 @@ export default function SplashScreen({
 
           {/* Optional: Add a loading text in case animation fails */}
           <View style={styles.loadingTextContainer}>
-            <Text style={styles.loadingText}>Loading...</Text>
+            <Text style={styles.loadingText}>{strings[language].splash.loading}</Text>
           </View>
         </>
       )}
@@ -562,14 +578,14 @@ export default function SplashScreen({
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Reset Password</Text>
+            <Text style={styles.modalTitle}>{strings[language].splash.resetPassword}</Text>
             <Text style={styles.modalSubtitle}>
-              Enter your email address and we'll send you a link to reset your password.
+              {strings[language].splash.resetPasswordSubtitle}
             </Text>
             
             <TextInput
               style={styles.modalInput}
-              placeholder="Enter your email"
+              placeholder={strings[language].splash.enterYourEmail}
               placeholderTextColor="#D5D4DD"
               value={forgotPasswordEmail}
               onChangeText={setForgotPasswordEmail}
@@ -583,7 +599,7 @@ export default function SplashScreen({
                 style={styles.modalCancelButton}
                 onPress={() => setForgotPasswordModalVisible(false)}
               >
-                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                <Text style={styles.modalCancelButtonText}>{strings[language].splash.cancel}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -592,7 +608,7 @@ export default function SplashScreen({
                 disabled={isResettingPassword}
               >
                 <Text style={styles.modalConfirmButtonText}>
-                  {isResettingPassword ? 'Sending...' : 'Send Email'}
+                  {isResettingPassword ? strings[language].splash.sending : strings[language].splash.sendEmail}
                 </Text>
               </TouchableOpacity>
             </View>

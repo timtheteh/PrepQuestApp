@@ -3202,3 +3202,228 @@ export async function deleteSelectedFlashcards(selectedCardIndexes: number[], fl
     return { success: false, updatedFlashcards: flashcards };
   }
 }
+
+// Deck Settings Interfaces
+export interface DeckSettings {
+  autoDecksEnabled: boolean;
+  clozeQuestionsEnabled: boolean;
+  mcqQuestionsEnabled: boolean;
+  voiceRecordedAnswersEnabled: boolean;
+  voiceRecordedTimerEnabled: boolean;
+  voiceRecordedTimer: { min: number; sec: number };
+  halfwayCheckpointEnabled: boolean;
+  difficultyTimes: Array<{ min: number; sec: number }>;
+}
+
+export interface DeckSettingsData {
+  autoDecksEnabled: number;
+  clozeQuestionsEnabled: number;
+  mcqQuestionsEnabled: number;
+  voiceRecordedQuestionsEnabled: number;
+  voiceRecordedTimer: number;
+  halfwayCheckpoint: number;
+  defaultTimer: number;
+  againTimer: number;
+  hardTimer: number;
+  goodTimer: number;
+  easyTimer: number;
+}
+
+// Helper function to convert seconds to time format
+function convertSecondsToTime(seconds: number): { min: number; sec: number } {
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return { min, sec };
+}
+
+// Helper function to convert time format to seconds
+function convertTimeToSeconds(time: { min: number; sec: number }): number {
+  return time.min * 60 + time.sec;
+}
+
+// Load deck settings from database
+export async function loadDeckSettings(): Promise<DeckSettings> {
+  try {
+    const userID = await getCurrentUserID();
+    if (!userID) {
+      throw new Error('No user ID found');
+    }
+
+    const result = await db.getFirstAsync(`
+      SELECT 
+        autoDecksEnabled,
+        clozeQuestionsEnabled,
+        mcqQuestionsEnabled,
+        voiceRecordedQuestionsEnabled,
+        voiceRecordedTimer,
+        halfwayCheckpoint,
+        defaultTimer,
+        againTimer,
+        hardTimer,
+        goodTimer,
+        easyTimer
+      FROM users WHERE userID = ?
+    `, [userID]);
+    
+    if (result) {
+      const userData = result as DeckSettingsData;
+
+      // Convert timer values from seconds to {min, sec} format
+      const loadedDefaultTimer = convertSecondsToTime(userData.defaultTimer);
+      const loadedAgainTimer = convertSecondsToTime(userData.againTimer);
+      const loadedHardTimer = convertSecondsToTime(userData.hardTimer);
+      const loadedGoodTimer = convertSecondsToTime(userData.goodTimer);
+      const loadedEasyTimer = convertSecondsToTime(userData.easyTimer);
+      const loadedVoiceRecordedTimer = convertSecondsToTime(userData.voiceRecordedTimer);
+
+      return {
+        autoDecksEnabled: userData.autoDecksEnabled === 1,
+        clozeQuestionsEnabled: userData.clozeQuestionsEnabled === 1,
+        mcqQuestionsEnabled: userData.mcqQuestionsEnabled === 1,
+        voiceRecordedAnswersEnabled: userData.voiceRecordedQuestionsEnabled === 1,
+        voiceRecordedTimerEnabled: userData.voiceRecordedQuestionsEnabled === 1,
+        voiceRecordedTimer: loadedVoiceRecordedTimer,
+        halfwayCheckpointEnabled: userData.halfwayCheckpoint === 1,
+        difficultyTimes: [
+          loadedDefaultTimer,
+          loadedAgainTimer,
+          loadedHardTimer,
+          loadedGoodTimer,
+          loadedEasyTimer,
+        ],
+      };
+    }
+
+    // Return default settings if no data found
+    return {
+      autoDecksEnabled: true,
+      clozeQuestionsEnabled: true,
+      mcqQuestionsEnabled: true,
+      voiceRecordedAnswersEnabled: true,
+      voiceRecordedTimerEnabled: true,
+      voiceRecordedTimer: { min: 2, sec: 0 },
+      halfwayCheckpointEnabled: true,
+      difficultyTimes: [
+        { min: 0, sec: 20 },
+        { min: 1, sec: 0 },
+        { min: 0, sec: 45 },
+        { min: 0, sec: 30 },
+        { min: 0, sec: 15 },
+      ],
+    };
+  } catch (error) {
+    console.error('Error loading deck settings:', error);
+    // Return default settings if loading fails
+    return {
+      autoDecksEnabled: true,
+      clozeQuestionsEnabled: true,
+      mcqQuestionsEnabled: true,
+      voiceRecordedAnswersEnabled: true,
+      voiceRecordedTimerEnabled: true,
+      voiceRecordedTimer: { min: 2, sec: 0 },
+      halfwayCheckpointEnabled: true,
+      difficultyTimes: [
+        { min: 0, sec: 20 },
+        { min: 1, sec: 0 },
+        { min: 0, sec: 45 },
+        { min: 0, sec: 30 },
+        { min: 0, sec: 15 },
+      ],
+    };
+  }
+}
+
+// Save deck settings to database
+export async function saveDeckSettings(settings: DeckSettings): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    if (!userID) {
+      throw new Error('No user ID found');
+    }
+
+    await db.runAsync(`
+      UPDATE users 
+      SET 
+        autoDecksEnabled = ?,
+        clozeQuestionsEnabled = ?,
+        mcqQuestionsEnabled = ?,
+        voiceRecordedQuestionsEnabled = ?,
+        voiceRecordedTimer = ?,
+        halfwayCheckpoint = ?,
+        defaultTimer = ?,
+        againTimer = ?,
+        hardTimer = ?,
+        goodTimer = ?,
+        easyTimer = ?
+      WHERE userID = ?
+    `, [
+      settings.autoDecksEnabled ? 1 : 0,
+      settings.clozeQuestionsEnabled ? 1 : 0,
+      settings.mcqQuestionsEnabled ? 1 : 0,
+      settings.voiceRecordedAnswersEnabled ? 1 : 0,
+      convertTimeToSeconds(settings.voiceRecordedTimer),
+      settings.halfwayCheckpointEnabled ? 1 : 0,
+      convertTimeToSeconds(settings.difficultyTimes[0]),
+      convertTimeToSeconds(settings.difficultyTimes[1]),
+      convertTimeToSeconds(settings.difficultyTimes[2]),
+      convertTimeToSeconds(settings.difficultyTimes[3]),
+      convertTimeToSeconds(settings.difficultyTimes[4]),
+      userID
+    ]);
+    
+    console.log('Deck settings saved successfully');
+    return true;
+  } catch (error) {
+    console.error('Error saving deck settings:', error);
+    return false;
+  }
+}
+
+// Reset deck settings to defaults
+export async function resetDeckSettingsToDefaults(): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    if (!userID) {
+      throw new Error('No user ID found');
+    }
+
+    const defaultDifficultyTimes = [
+      { min: 0, sec: 20 },
+      { min: 1, sec: 0 },
+      { min: 0, sec: 45 },
+      { min: 0, sec: 30 },
+      { min: 0, sec: 15 },
+    ];
+
+    await db.runAsync(`
+      UPDATE users 
+      SET 
+        autoDecksEnabled = 1,
+        clozeQuestionsEnabled = 1,
+        mcqQuestionsEnabled = 1,
+        voiceRecordedQuestionsEnabled = 1,
+        voiceRecordedTimer = ?,
+        halfwayCheckpoint = 1,
+        defaultTimer = ?,
+        againTimer = ?,
+        hardTimer = ?,
+        goodTimer = ?,
+        easyTimer = ?
+      WHERE userID = ?
+    `, [
+      convertTimeToSeconds({ min: 2, sec: 0 }),
+      convertTimeToSeconds(defaultDifficultyTimes[0]),
+      convertTimeToSeconds(defaultDifficultyTimes[1]),
+      convertTimeToSeconds(defaultDifficultyTimes[2]),
+      convertTimeToSeconds(defaultDifficultyTimes[3]),
+      convertTimeToSeconds(defaultDifficultyTimes[4]),
+      userID
+    ]);
+    
+    console.log('Deck settings reset to defaults');
+    return true;
+  } catch (error) {
+    console.error('Error resetting deck settings:', error);
+    return false;
+  }
+}

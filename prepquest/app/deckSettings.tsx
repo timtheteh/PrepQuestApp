@@ -6,8 +6,7 @@ import HelpIconFilled from '@/assets/icons/generalIcons/helpIconFilled.svg';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { DifficultyToggleRow } from '@/components/general/DifficultyToggleRow';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '@/db/index';
+import { loadDeckSettings, saveDeckSettings, resetDeckSettingsToDefaults, DeckSettings } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useFocusEffect } from '@react-navigation/native';
@@ -274,71 +273,17 @@ export default function DeckSettingsPage() {
   // Load settings from database
   const loadSettings = async () => {
     try {
-      const userID = await AsyncStorage.getItem('userID');
-      if (userID) {
-        const result = await db.getFirstAsync(`
-          SELECT 
-            autoDecksEnabled,
-            clozeQuestionsEnabled,
-            mcqQuestionsEnabled,
-            voiceRecordedQuestionsEnabled,
-            voiceRecordedTimer,
-            halfwayCheckpoint,
-            defaultTimer,
-            againTimer,
-            hardTimer,
-            goodTimer,
-            easyTimer
-          FROM users WHERE userID = ?
-        `, [userID]);
-        
-        if (result) {
-          const userData = result as {
-            autoDecksEnabled: number;
-            clozeQuestionsEnabled: number;
-            mcqQuestionsEnabled: number;
-            voiceRecordedQuestionsEnabled: number;
-            voiceRecordedTimer: number;
-            halfwayCheckpoint: number;
-            defaultTimer: number;
-            againTimer: number;
-            hardTimer: number;
-            goodTimer: number;
-            easyTimer: number;
-          };
-
-          // Set boolean values (convert from integer to boolean)
-          setAutoDecksEnabled(userData.autoDecksEnabled === 1);
-          setClozeQuestionsEnabled(userData.clozeQuestionsEnabled === 1);
-          setMcqQuestionsEnabled(userData.mcqQuestionsEnabled === 1);
-          setVoiceRecordedAnswersEnabled(userData.voiceRecordedQuestionsEnabled === 1);
-          setVoiceRecordedTimerEnabled(userData.voiceRecordedQuestionsEnabled === 1);
-          setHalfwayCheckpointEnabled(userData.halfwayCheckpoint === 1);
-
-          // Convert timer values from seconds to {min, sec} format
-          const convertSecondsToTime = (seconds: number) => {
-            const min = Math.floor(seconds / 60);
-            const sec = seconds % 60;
-            return { min, sec };
-          };
-
-          const loadedDefaultTimer = convertSecondsToTime(userData.defaultTimer);
-          const loadedAgainTimer = convertSecondsToTime(userData.againTimer);
-          const loadedHardTimer = convertSecondsToTime(userData.hardTimer);
-          const loadedGoodTimer = convertSecondsToTime(userData.goodTimer);
-          const loadedEasyTimer = convertSecondsToTime(userData.easyTimer);
-          const loadedVoiceRecordedTimer = convertSecondsToTime(userData.voiceRecordedTimer);
-
-          setDifficultyTimes([
-            loadedDefaultTimer,
-            loadedAgainTimer,
-            loadedHardTimer,
-            loadedGoodTimer,
-            loadedEasyTimer,
-          ]);
-          setVoiceRecordedTimer(loadedVoiceRecordedTimer);
-        }
-      }
+      const settings = await loadDeckSettings();
+      
+      // Set boolean values
+      setAutoDecksEnabled(settings.autoDecksEnabled);
+      setClozeQuestionsEnabled(settings.clozeQuestionsEnabled);
+      setMcqQuestionsEnabled(settings.mcqQuestionsEnabled);
+      setVoiceRecordedAnswersEnabled(settings.voiceRecordedAnswersEnabled);
+      setVoiceRecordedTimerEnabled(settings.voiceRecordedTimerEnabled);
+      setHalfwayCheckpointEnabled(settings.halfwayCheckpointEnabled);
+      setDifficultyTimes(settings.difficultyTimes);
+      setVoiceRecordedTimer(settings.voiceRecordedTimer);
     } catch (error) {
       console.error('Error loading deck settings:', error);
       // Use defaults if loading fails
@@ -355,44 +300,18 @@ export default function DeckSettingsPage() {
   // Save settings to database
   const saveSettings = async () => {
     try {
-      const userID = await AsyncStorage.getItem('userID');
-      if (userID) {
-        // Convert timer values from {min, sec} format to seconds
-        const convertTimeToSeconds = (time: { min: number; sec: number }) => {
-          return time.min * 60 + time.sec;
-        };
-
-        await db.runAsync(`
-          UPDATE users 
-          SET 
-            autoDecksEnabled = ?,
-            clozeQuestionsEnabled = ?,
-            mcqQuestionsEnabled = ?,
-            voiceRecordedQuestionsEnabled = ?,
-            voiceRecordedTimer = ?,
-            halfwayCheckpoint = ?,
-            defaultTimer = ?,
-            againTimer = ?,
-            hardTimer = ?,
-            goodTimer = ?,
-            easyTimer = ?
-          WHERE userID = ?
-        `, [
-          autoDecksEnabled ? 1 : 0,
-          clozeQuestionsEnabled ? 1 : 0,
-          mcqQuestionsEnabled ? 1 : 0,
-          voiceRecordedAnswersEnabled ? 1 : 0,
-          convertTimeToSeconds(voiceRecordedTimer),
-          halfwayCheckpointEnabled ? 1 : 0,
-          convertTimeToSeconds(difficultyTimes[0]),
-          convertTimeToSeconds(difficultyTimes[1]),
-          convertTimeToSeconds(difficultyTimes[2]),
-          convertTimeToSeconds(difficultyTimes[3]),
-          convertTimeToSeconds(difficultyTimes[4]),
-          userID
-        ]);
-        console.log('Deck settings saved successfully');
-      }
+      const settings: DeckSettings = {
+        autoDecksEnabled,
+        clozeQuestionsEnabled,
+        mcqQuestionsEnabled,
+        voiceRecordedAnswersEnabled,
+        voiceRecordedTimerEnabled,
+        voiceRecordedTimer,
+        halfwayCheckpointEnabled,
+        difficultyTimes,
+      };
+      
+      await saveDeckSettings(settings);
     } catch (error) {
       console.error('Error saving deck settings:', error);
     }
@@ -401,38 +320,9 @@ export default function DeckSettingsPage() {
   // Reset settings to defaults
   const resetToDefaults = async () => {
     try {
-      const userID = await AsyncStorage.getItem('userID');
-      if (userID) {
-        // Convert default timer values to seconds
-        const convertTimeToSeconds = (time: { min: number; sec: number }) => {
-          return time.min * 60 + time.sec;
-        };
-
-        await db.runAsync(`
-          UPDATE users 
-          SET 
-            autoDecksEnabled = 1,
-            clozeQuestionsEnabled = 1,
-            mcqQuestionsEnabled = 1,
-            voiceRecordedQuestionsEnabled = 1,
-            voiceRecordedTimer = ?,
-            halfwayCheckpoint = 1,
-            defaultTimer = ?,
-            againTimer = ?,
-            hardTimer = ?,
-            goodTimer = ?,
-            easyTimer = ?
-          WHERE userID = ?
-        `, [
-          convertTimeToSeconds({ min: 2, sec: 0 }),
-          convertTimeToSeconds(defaultDifficultyTimes[0]),
-          convertTimeToSeconds(defaultDifficultyTimes[1]),
-          convertTimeToSeconds(defaultDifficultyTimes[2]),
-          convertTimeToSeconds(defaultDifficultyTimes[3]),
-          convertTimeToSeconds(defaultDifficultyTimes[4]),
-          userID
-        ]);
-
+      const success = await resetDeckSettingsToDefaults();
+      
+      if (success) {
         // Update local state
         setAutoDecksEnabled(true);
         setClozeQuestionsEnabled(true);
@@ -443,8 +333,6 @@ export default function DeckSettingsPage() {
         setHalfwayCheckpointEnabled(true);
         setDifficultyTimes(defaultDifficultyTimes);
         setResetCounter(c => c + 1);
-        
-        console.log('Deck settings reset to defaults');
       }
     } catch (error) {
       console.error('Error resetting deck settings:', error);

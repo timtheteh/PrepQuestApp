@@ -233,8 +233,6 @@ export async function deleteDeck(deckId: number): Promise<boolean> {
     
     // Commit the transaction
     await db.execAsync('COMMIT');
-    
-    console.log(`Successfully deleted deck ${deckId} and its flashcards`);
     return true;
   } catch (error) {
     // Rollback the transaction on error
@@ -271,8 +269,6 @@ export async function deleteMultipleDecks(deckIds: number[]): Promise<boolean> {
     
     // Commit the transaction
     await db.execAsync('COMMIT');
-    
-    console.log(`Successfully deleted ${deckIds.length} decks and their flashcards`);
     return true;
   } catch (error) {
     // Rollback the transaction on error
@@ -451,7 +447,6 @@ export async function deleteFolder(folderId: number): Promise<boolean> {
     // Commit the transaction
     await db.execAsync('COMMIT');
     
-    console.log(`Successfully deleted folder ${folderId} and updated related decks`);
     return true;
   } catch (error) {
     // Rollback the transaction on error
@@ -527,7 +522,6 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
     // Commit the transaction
     await db.execAsync('COMMIT');
     
-    console.log(`Successfully deleted ${folderIds.length} folders and updated related decks`);
     return true;
   } catch (error) {
     // Rollback the transaction on error
@@ -855,30 +849,25 @@ export async function getDeckGrades(deckIds: number[]): Promise<Map<number, Deck
 
 // Test function to verify grade calculation logic
 export function testGradeCalculation() {
-  console.log('Testing grade calculation...');
   
   // Test case 1: All Easy cards
   const allEasy = ['Easy', 'Easy', 'Easy', 'Easy', 'Easy'];
   const grade1 = calculateWeightedScore(allEasy);
-  console.log('All Easy cards:', grade1);
   // Expected: score: 100, masteryLevel: 'Expert'
   
   // Test case 2: Mixed ratings
   const mixed = ['Easy', 'Good', 'Hard', 'Again', 'Easy'];
   const grade2 = calculateWeightedScore(mixed);
-  console.log('Mixed ratings:', grade2);
   // Expected: (1.0 + 0.8 + 0.4 + 0.0 + 1.0) / 5 * 100 = 64, masteryLevel: 'Developing'
   
   // Test case 3: All Again cards
   const allAgain = ['Again', 'Again', 'Again'];
   const grade3 = calculateWeightedScore(allAgain);
-  console.log('All Again cards:', grade3);
   // Expected: score: 0, masteryLevel: 'Needs Practice'
   
   // Test case 4: Good and Easy mix
   const goodEasy = ['Good', 'Easy', 'Good', 'Easy'];
   const grade4 = calculateWeightedScore(goodEasy);
-  console.log('Good and Easy mix:', grade4);
   // Expected: (0.8 + 1.0 + 0.8 + 1.0) / 4 * 100 = 90, masteryLevel: 'Expert'
 }
 
@@ -1101,9 +1090,6 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
         const questionBlobHex = aiFlashcard.questionBlob ? `X'${Array.from(aiFlashcard.questionBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
         const answerBlobHex = aiFlashcard.answerBlob ? `X'${Array.from(aiFlashcard.answerBlob as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
         
-        console.log('Question blob hex length:', questionBlobHex !== 'NULL' ? questionBlobHex.length - 3 : 0);
-        console.log('Answer blob hex length:', answerBlobHex !== 'NULL' ? answerBlobHex.length - 3 : 0);
-        
         // Insert the flashcard
         await db.execAsync(`
           INSERT INTO flashcards (
@@ -1120,7 +1106,6 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
           )
         `);
         
-        console.log(`Inserted flashcard with questionType: ${aiFlashcard.questionType}, answerType: ${aiFlashcard.answerType}`);
       }
       
       // 6. Delete all AI flashcards from AIFlashcards table
@@ -1138,7 +1123,6 @@ export async function saveAIDeck(aiDeckId: number): Promise<{ success: boolean; 
       // Commit the transaction
       await db.execAsync('COMMIT');
       
-      console.log(`Successfully saved AI deck ${aiDeckId} to regular deck ${newDeckId}`);
       return { success: true, newDeckId };
       
     } catch (error) {
@@ -1286,7 +1270,6 @@ export async function createManualDeck(formData: {
       // Commit the transaction
       await db.execAsync('COMMIT');
       
-      console.log(`Successfully created manual deck ${newDeckId} with name: ${formData.deckName}`);
       return { success: true, deckId: newDeckId };
       
     } catch (error) {
@@ -1370,7 +1353,6 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             questionType = 'text';
             questionText = extractTextFromContent(frontContent.content);
           } else if (frontContent.type === 'camera' && frontContent.content) {
-            console.log('frontContent.content', frontContent.content);
             questionType = 'image';
             // Convert image URI to blob
             questionBlob = await uriToBlob(frontContent.content.props.source.uri);
@@ -1379,13 +1361,10 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             // Convert audio URI to blob
             questionBlob = await uriToBlob(frontContent.audioUri);
           } else if (frontContent.type === 'marker' && frontContent.content) {
-            console.log('Processing front drawing content:', frontContent.content);
             questionType = 'image';
             // Convert drawing data to image, then to blob
             const drawingRenderer = frontContent.content as React.ReactElement<{ drawingData: { path: string; strokeWidth: number }[] }>;
-            console.log('Drawing renderer props:', drawingRenderer.props);
             if (drawingRenderer.props.drawingData) {
-              console.log('Drawing data found:', drawingRenderer.props.drawingData);
               // Convert drawing data to SVG string
               const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
                 ${drawingRenderer.props.drawingData.map(pathData => 
@@ -1393,17 +1372,14 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
                 ).join('')}
               </svg>`;
               
-              console.log('Generated SVG string:', svgString);
               
               // Convert SVG to base64 data URI
               const base64Svg = btoa(svgString);
               const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
               
-              console.log('Generated data URI:', dataUri);
               
               // Convert data URI to blob
               questionBlob = await uriToBlob(dataUri);
-              console.log('Generated question blob:', questionBlob ? questionBlob.length : 'null');
             } else {
               console.log('No drawing data found in front content');
             }
@@ -1414,7 +1390,6 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             answerType = 'text';
             answerText = extractTextFromContent(backContent.content);
           } else if (backContent.type === 'camera' && backContent.content) {
-            console.log('backContent.content', backContent.content);
             answerType = 'image';
             // Convert image URI to blob
             answerBlob = await uriToBlob(backContent.content.props.source.uri);
@@ -1423,13 +1398,10 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             // Convert audio URI to blob
             answerBlob = await uriToBlob(backContent.audioUri);
           } else if (backContent.type === 'marker' && backContent.content) {
-            console.log('Processing back drawing content:', backContent.content);
             answerType = 'image';
             // Convert drawing data to image, then to blob
             const drawingRenderer = backContent.content as React.ReactElement<{ drawingData: { path: string; strokeWidth: number }[] }>;
-            console.log('Back drawing renderer props:', drawingRenderer.props);
             if (drawingRenderer.props.drawingData) {
-              console.log('Back drawing data found:', drawingRenderer.props.drawingData);
               // Convert drawing data to SVG string
               const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
                 ${drawingRenderer.props.drawingData.map(pathData => 
@@ -1437,17 +1409,14 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
                 ).join('')}
               </svg>`;
               
-              console.log('Generated back SVG string:', svgString);
               
               // Convert SVG to base64 data URI
               const base64Svg = btoa(svgString);
               const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
               
-              console.log('Generated back data URI:', dataUri);
               
               // Convert data URI to blob
               answerBlob = await uriToBlob(dataUri);
-              console.log('Generated answer blob:', answerBlob ? answerBlob.length : 'null');
             } else {
               console.log('No drawing data found in back content');
             }
@@ -1457,8 +1426,6 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
           const questionBlobHex = questionBlob ? `X'${Array.from(questionBlob).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
           const answerBlobHex = answerBlob ? `X'${Array.from(answerBlob).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
           
-          console.log('Question blob hex length:', questionBlobHex !== 'NULL' ? questionBlobHex.length - 3 : 0);
-          console.log('Answer blob hex length:', answerBlobHex !== 'NULL' ? answerBlobHex.length - 3 : 0);
           
           // Insert the flashcard
           await db.execAsync(`
@@ -1479,7 +1446,6 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             flashcardIds.push(lastIdResult.id);
           }
           
-          console.log(`Inserted flashcard with questionType: ${questionType}, answerType: ${answerType}`);
           
           flashcardCount++;
         }
@@ -1500,7 +1466,6 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
       // Commit the transaction
       await db.execAsync('COMMIT');
       
-      console.log(`Successfully created ${flashcardCount} flashcards for deck ${deckId}`);
       return { success: true, flashcardCount, flashcardIds };
       
     } catch (error) {
@@ -1960,7 +1925,6 @@ export async function saveUserFileUploadFormEntry({
   interviewJobRole?: string;
   interviewType?: string;
 }): Promise<{ success: boolean }> {
-  console.log("interviewType >>>>>>>>>>>>>>>>> \n", interviewType);
   try {
     const userID = await getCurrentUserID();
     const formSubmissionDate = new Date().toISOString();
@@ -2005,7 +1969,6 @@ export async function saveUserYouTubeLinkFormEntry({
   interviewType?: string;
   youtubeLink: string;
 }): Promise<{ success: boolean }> {
-  console.log("interviewType >>>>>>>>>>>>>>>>> \n", interviewType);
   try {
     const userID = await getCurrentUserID();
     const formSubmissionDate = new Date().toISOString();
@@ -2583,7 +2546,6 @@ export async function createNewFavoritedFolder(): Promise<{ success: boolean; ne
         deckCount: 0
       };
       
-      console.log('Successfully created new favorited folder:', newFolderName);
       return { success: true, newFolder: newFolderObject };
     } else {
       console.error('Failed to retrieve the newly created folder');
@@ -2610,7 +2572,6 @@ export async function unfavoriteMultipleDecks(deckIds: number[]): Promise<boolea
       WHERE deckID IN (${deckIdsString}) AND userID = '${userID}'
     `);
     
-    console.log(`Successfully unfavorited ${deckIds.length} deck(s)`);
     return true;
   } catch (error) {
     console.error('Error unfavoriting decks:', error);
@@ -2633,7 +2594,6 @@ export async function unfavoriteMultipleFolders(folderIds: number[]): Promise<bo
       WHERE folderID IN (${folderIdsString}) AND userID = '${userID}'
     `);
     
-    console.log(`Successfully unfavorited ${folderIds.length} folder(s)`);
     return true;
   } catch (error) {
     console.error('Error unfavoriting folders:', error);
@@ -2663,10 +2623,8 @@ export async function checkDatabaseReady(): Promise<boolean> {
     const userID = await getCurrentUserID();
     // Try a simple query to check if database is ready
     const result = await db.getAllAsync('SELECT COUNT(*) as count FROM decks WHERE userID = ?', [userID]);
-    console.log('Database is ready, decks count:', (result[0] as any)?.count);
     return true;
   } catch (error) {
-    console.log('Database not ready yet:', error);
     return false;
   }
 }
@@ -2677,10 +2635,8 @@ export async function checkFoldersDatabaseReady(): Promise<{ isReady: boolean; f
     // Try a simple query to check if database is ready
     const result = await db.getAllAsync('SELECT COUNT(*) as count FROM folders WHERE userID = ?', [userID]);
     const foldersCount = (result[0] as any)?.count || 0;
-    console.log('Database is ready, folders count:', foldersCount);
     return { isReady: true, foldersCount };
   } catch (error) {
-    console.log('Database not ready yet:', error);
     return { isReady: false, foldersCount: 0 };
   }
 }
@@ -2750,14 +2706,11 @@ export async function createNewFolder(): Promise<{ success: boolean; newFolder?:
         deckCount: 0
       };
       
-      console.log('Successfully created new folder:', newFolderName);
       return { success: true, newFolder: newFolderObject };
     } else {
-      console.error('Failed to retrieve the newly created folder');
       return { success: false };
     }
   } catch (error) {
-    console.error('Error creating new folder:', error);
     return { success: false };
   }
 }
@@ -3189,12 +3142,10 @@ export async function deleteSelectedFlashcards(selectedCardIndexes: number[], fl
       SET lastModifiedDate = '${new Date().toISOString()}'
       WHERE deckID = ? AND userID = ?
     `, [parseInt(deckId), userID]);
-    console.log(`Updated lastModifiedDate for deck ${deckId} after flashcard deletion`);
 
     // Update local state by removing deleted flashcards
     const updatedFlashcards = flashcards.filter((_, idx) => !selectedCardIndexes.includes(idx));
 
-    console.log(`Deleted ${selectedCardIndexes.length} flashcards from ${tableName}`);
     
     return { success: true, updatedFlashcards };
   } catch (error) {
@@ -3371,7 +3322,6 @@ export async function saveDeckSettings(settings: DeckSettings): Promise<boolean>
       userID
     ]);
     
-    console.log('Deck settings saved successfully');
     return true;
   } catch (error) {
     console.error('Error saving deck settings:', error);
@@ -3420,7 +3370,6 @@ export async function resetDeckSettingsToDefaults(): Promise<boolean> {
       userID
     ]);
     
-    console.log('Deck settings reset to defaults');
     return true;
   } catch (error) {
     console.error('Error resetting deck settings:', error);
@@ -3491,14 +3440,6 @@ export const getTimeLimit = async (difficultyRating: string, answerType?: string
         easyTimer: number;
         voiceRecordedTimer: number;
       };
-
-      console.log('defaultTimer', userData.defaultTimer);
-      console.log('againTimer', userData.againTimer);
-      console.log('hardTimer', userData.hardTimer);
-      console.log('goodTimer', userData.goodTimer);
-      console.log('easyTimer', userData.easyTimer);
-      console.log('voiceRecordedTimer', userData.voiceRecordedTimer);
-
       // For voice answer types, always use the voice recorded timer regardless of difficulty
       if (answerType === 'voice') {
         return userData.voiceRecordedTimer;
@@ -3768,7 +3709,6 @@ export const loadFlashcardsFromDatabaseForView = async (deckId: string, isAIDeck
       } else if (flashcard.answerType === 'mcq' && flashcard.answerMCQ) {
         try {
           const mcqData = JSON.parse(flashcard.answerMCQ);
-          console.log(mcqData);
           transformedAnswer = mcqData.map((item: any) => ({
             choice: item.option || item.choice,
             ans: item.ans || false
@@ -3844,10 +3784,6 @@ export const updateFlashcardDate = async (
       WHERE deckID = ? AND userID = ?
     `, [currentDate, parseInt(deckId), userID]);
 
-    console.log(`Updated ${fieldToUpdate} for flashcard ${flashcardId} to ${currentDate}`);
-    console.log(`Updated timeTaken for flashcard ${flashcardId} to ${timeTaken || 'null'}`);
-    console.log(`Updated isMcqAnswerRight for flashcard ${flashcardId} to ${isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : 'null'}`);
-    console.log(`Updated lastModifiedDate for deck ${deckId} to ${currentDate}`);
   } catch (error) {
     console.error(`Error updating ${isStudyMode ? 'study' : 'quiz'} date:`, error);
   }
@@ -3874,7 +3810,6 @@ export const updateDeckCompletionDate = async (
       WHERE deckID = ? AND userID = ?
     `, [currentDate, parseInt(deckId), userID]);
 
-    console.log(`Updated deck ${deckId} ${fieldToUpdate} to ${currentDate} (deck completed)`);
   } catch (error) {
     console.error(`Error updating deck completion date:`, error);
   }
@@ -3898,7 +3833,6 @@ export const updateFlashcardDifficulty = async (
       WHERE flashcardID = ? AND userID = ?
     `, [difficulty, flashcardId, userID]);
 
-    console.log(`Updated difficulty for flashcard ${flashcardId} to ${difficulty}`);
   } catch (error) {
     console.error('Error updating flashcard difficulty:', error);
   }
@@ -3931,7 +3865,6 @@ export const toggleFlashcardFavoriteForView = async (
         WHERE flashcardID = ? AND userID = ?
       `, [newStatus, flashcardId, userID]);
 
-      console.log(`Toggled favorite status for flashcard ${flashcardId} to ${newStatus}`);
       return newStatus === 1;
     }
     
@@ -3960,7 +3893,6 @@ export const trackAttemptedFlashcard = async (flashcardId: number): Promise<void
         VALUES (?, ?, ?)
       `, [flashcardId, userID, new Date().toISOString()]);
 
-      console.log(`Tracked flashcard ${flashcardId} as attempted`);
     }
   } catch (error) {
     console.error('Error tracking attempted flashcard:', error);
@@ -4024,7 +3956,6 @@ export const deleteFlashcard = async (flashcardId: number, isAIDeck: string): Pr
       WHERE flashcardID = ? AND userID = ?
     `, [flashcardId, userID]);
 
-    console.log(`Deleted flashcard ${flashcardId} from ${tableName}`);
   } catch (error) {
     console.error('Error deleting flashcard:', error);
     throw error;
@@ -4045,7 +3976,6 @@ export const updateDeckLastModifiedAfterFlashcardDeletion = async (deckId: strin
       WHERE deckID = ? AND userID = ?
     `, [new Date().toISOString(), parseInt(deckId), userID]);
     
-    console.log(`Updated lastModifiedDate for deck ${deckId} after flashcard deletion`);
   } catch (error) {
     console.error('Error updating deck lastModifiedDate after flashcard deletion:', error);
     throw error;

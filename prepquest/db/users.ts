@@ -68,7 +68,6 @@ export async function getUserQuestionSettings(): Promise<{
 // Create a new user in the database
 export async function createUser(userID: string): Promise<boolean> {
   try {
-    console.log('🔍 Creating new user in database:', userID);
     
     // First check if user already exists
     const existingUser = await db.getFirstAsync(`
@@ -76,7 +75,6 @@ export async function createUser(userID: string): Promise<boolean> {
     `, [userID]);
     
     if (existingUser) {
-      console.log('✅ User already exists in database:', userID);
       return true;
     }
     
@@ -115,7 +113,6 @@ export async function createUser(userID: string): Promise<boolean> {
       )
     `, [userID, currentDate, currentDate]);
     
-    console.log('✅ User created successfully in database');
     return true;
   } catch (error) {
     console.error('❌ Error creating user in database:', error);

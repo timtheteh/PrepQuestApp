@@ -63,10 +63,8 @@ const calculateWeightedScoreWithMCQ = (flashcards: Array<{
 // Get all study/quiz dates and calculate grades for each day
 export async function getDailyGrades(): Promise<DayGrade[]> {
   try {
-    console.log('🔍 Fetching daily grades from database...');
     
     const userID = await getCurrentUserID();
-    console.log('👤 Current userID:', userID);
     
     // Get all flashcards with study or quiz dates from both tables
     const result = await db.getAllAsync(`
@@ -84,7 +82,6 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       isMcqAnswerRight: number | null;
     }>;
 
-    console.log('📊 Raw flashcard data:', flashcards?.length || 0, 'flashcards found');
 
     if (!flashcards || flashcards.length === 0) {
       console.log('❌ No flashcard data found');
@@ -102,7 +99,6 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       // Add to study date group
       if (flashcard.lastStudiedDate) {
         const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        console.log(`📅 Study date: ${flashcard.lastStudiedDate} -> ${studyDate}`);
         if (!dateGroups.has(studyDate)) {
           dateGroups.set(studyDate, []);
         }
@@ -116,7 +112,7 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       // Add to quiz date group
       if (flashcard.lastQuizzedDate) {
         const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-        console.log(`📅 Quiz date: ${flashcard.lastQuizzedDate} -> ${quizDate}`);
+
         if (!dateGroups.has(quizDate)) {
           dateGroups.set(quizDate, []);
         }
@@ -126,11 +122,6 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
           isMcqAnswerRight: flashcard.isMcqAnswerRight
         });
       }
-    });
-
-    console.log('📅 Date groups:', dateGroups.size, 'unique dates');
-    dateGroups.forEach((flashcards, dateKey) => {
-      console.log(`  - ${dateKey}: ${flashcards.length} flashcards`);
     });
 
     // Calculate grade for each date
@@ -151,7 +142,6 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       const year = date.getFullYear();
       const dateFormatted = `${dayOfMonth} ${month} ${year}`;
       
-      console.log(`📊 ${dateFormatted} (${day}): ${score}% (${flashcardsForDate.length} flashcards) - from dateString: ${dateString}`);
       
       dailyGrades.push({
         day,
@@ -167,7 +157,6 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       return dateA.getTime() - dateB.getTime();
     });
 
-    console.log('✅ Daily grades calculated:', dailyGrades.length, 'days');
     return dailyGrades;
   } catch (error) {
     console.error('❌ Error getting daily grades:', error);
@@ -228,22 +217,17 @@ export async function getMonthlyGrades(): Promise<MonthGrade[]> {
 // Get complete timeline with zero scores for missing dates
 export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
   try {
-    console.log('🔍 Getting complete daily grades...');
     
     // Log current date for debugging
     const now = new Date();
-    console.log('🕐 Current date/time:', now.toISOString());
-    console.log('🕐 Current date (local):', now.toLocaleDateString());
     
     const dailyGrades = await getDailyGrades();
     
-    console.log('📊 Daily grades from getDailyGrades():', dailyGrades.length, 'entries');
     dailyGrades.forEach(grade => {
       console.log(`  - ${grade.date} (${grade.day}): ${grade.score}%`);
     });
     
     if (dailyGrades.length === 0) {
-      console.log('❌ No daily grades found, returning empty array');
       return [];
     }
 
@@ -256,7 +240,6 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
     const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
     const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
     
-    console.log('📅 Date range:', startDate.toISOString().split('T')[0], 'to', endDate.toISOString().split('T')[0]);
     
     // Create a map of existing grades
     const gradeMap = new Map<string, DayGrade>();
@@ -265,26 +248,20 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
       const day = dateParts[0].padStart(2, '0'); // Pad single-digit days with leading zero
       const dateKey = `${dateParts[2]}-${getMonthNumber(dateParts[1])}-${day}`;
       gradeMap.set(dateKey, grade);
-      console.log(`🗺️ Mapping ${grade.date} to key: ${dateKey}`);
     });
 
-    console.log('🗺️ All keys in gradeMap:', Array.from(gradeMap.keys()));
 
     // Fill in missing dates with zero scores
     const completeGrades: DayGrade[] = [];
     const currentDate = new Date(startDate);
     
-    console.log('🔄 Filling in complete timeline...');
     while (currentDate <= endDate) {
       const dateKey = currentDate.toISOString().split('T')[0];
       
-      console.log(`🔍 Looking for dateKey: ${dateKey} in gradeMap...`);
-      console.log(`🔍 gradeMap has keys:`, Array.from(gradeMap.keys()));
       
       if (gradeMap.has(dateKey)) {
         const grade = gradeMap.get(dateKey)!;
         completeGrades.push(grade);
-        console.log(`✅ ${dateKey}: Found grade ${grade.score}%`);
       } else {
         // Create zero score entry for missing date
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -302,17 +279,11 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
           score: 0
         };
         completeGrades.push(zeroGrade);
-        console.log(`❌ ${dateKey}: Added zero grade for ${dateFormatted}`);
       }
       
       // Move to next day
       currentDate.setDate(currentDate.getDate() + 1);
     }
-
-    console.log('✅ Complete daily grades:', completeGrades.length, 'entries');
-    completeGrades.forEach(grade => {
-      console.log(`  - ${grade.date} (${grade.day}): ${grade.score}%`);
-    });
 
     return completeGrades;
   } catch (error) {
@@ -334,10 +305,8 @@ function getMonthNumber(monthName: string): string {
 // Calculate average grade for all time
 export async function getAverageGradeAllTime(): Promise<number> {
   try {
-    console.log('🔍 Calculating average grade for all time...');
     
     const userID = await getCurrentUserID();
-    console.log('👤 Current userID:', userID);
     
     // Get all flashcards with study or quiz dates from both tables
     const result = await db.getAllAsync(`
@@ -355,10 +324,8 @@ export async function getAverageGradeAllTime(): Promise<number> {
       isMcqAnswerRight: number | null;
     }>;
 
-    console.log('📊 Total flashcards for average calculation:', flashcards?.length || 0);
 
     if (!flashcards || flashcards.length === 0) {
-      console.log('❌ No flashcard data found for average calculation');
       return 0;
     }
 
@@ -392,7 +359,6 @@ export async function getAverageGradeAllTime(): Promise<number> {
 
     const averageScore = Math.round((totalWeight / flashcards.length) * 100);
     
-    console.log(`✅ Average grade for all time: ${averageScore}% (${flashcards.length} flashcards)`);
     
     return averageScore;
   } catch (error) {
@@ -409,9 +375,7 @@ export async function getDifficultyBreakdown(): Promise<{
   Easy: number;
 }> {
   try {
-    console.log('🔍 Calculating difficulty breakdown...');
     const userID = await getCurrentUserID();
-    console.log('👤 Current userID:', userID);
     // Get all flashcards with difficulty ratings from both tables
     const result = await db.getAllAsync(`
       SELECT difficultyRating, COUNT(*) as count
@@ -421,7 +385,6 @@ export async function getDifficultyBreakdown(): Promise<{
     `, [userID]);
     const breakdown = result as Array<{ difficultyRating: string; count: number }>;
 
-    console.log('📊 Difficulty breakdown raw data:', breakdown);
 
     // Initialize breakdown with zeros
     const finalBreakdown = {
@@ -443,8 +406,6 @@ export async function getDifficultyBreakdown(): Promise<{
 
     const total = finalBreakdown.Again + finalBreakdown.Hard + finalBreakdown.Good + finalBreakdown.Easy;
     
-    console.log(`✅ Difficulty breakdown:`, finalBreakdown);
-    console.log(`📊 Total flashcards with difficulty ratings: ${total}`);
     
     return finalBreakdown;
   } catch (error) {
@@ -473,9 +434,7 @@ export interface MonthSpeed {
 // Get all study/quiz dates and calculate average speed for each day
 export async function getDailySpeeds(): Promise<DaySpeed[]> {
   try {
-    console.log('🔍 Fetching daily speeds from database...');
     const userID = await getCurrentUserID();
-    console.log('👤 Current userID:', userID);
     // Get all flashcards with study or quiz dates and timeTaken from both tables
     const result = await db.getAllAsync(`
       SELECT timeTaken, lastStudiedDate, lastQuizzedDate
@@ -490,10 +449,8 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       lastQuizzedDate: string | null;
     }>;
 
-    console.log('📊 Raw flashcard speed data:', flashcards?.length || 0, 'flashcards found');
 
     if (!flashcards || flashcards.length === 0) {
-      console.log('❌ No flashcard speed data found');
       return [];
     }
 
@@ -504,7 +461,6 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       // Add to study date group
       if (flashcard.lastStudiedDate) {
         const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        console.log(`📅 Study date: ${flashcard.lastStudiedDate} -> ${studyDate}, time: ${flashcard.timeTaken}s`);
         if (!dateGroups.has(studyDate)) {
           dateGroups.set(studyDate, []);
         }
@@ -514,17 +470,11 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       // Add to quiz date group
       if (flashcard.lastQuizzedDate) {
         const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-        console.log(`📅 Quiz date: ${flashcard.lastQuizzedDate} -> ${quizDate}, time: ${flashcard.timeTaken}s`);
         if (!dateGroups.has(quizDate)) {
           dateGroups.set(quizDate, []);
         }
         dateGroups.get(quizDate)!.push(flashcard.timeTaken);
       }
-    });
-
-    console.log('📅 Date groups:', dateGroups.size, 'unique dates');
-    dateGroups.forEach((times, dateKey) => {
-      console.log(`  - ${dateKey}: ${times.length} flashcards, avg: ${Math.round(times.reduce((sum, time) => sum + time, 0) / times.length)}s`);
     });
 
     // Calculate average speed for each date
@@ -545,7 +495,6 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       const year = date.getFullYear();
       const dateFormatted = `${dayOfMonth} ${month} ${year}`;
       
-      console.log(`📊 ${dateFormatted} (${day}): ${averageTime}s average (${timesForDate.length} flashcards) - from dateString: ${dateString}`);
       
       dailySpeeds.push({
         day,
@@ -561,7 +510,6 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       return dateA.getTime() - dateB.getTime();
     });
 
-    console.log('✅ Daily speeds calculated:', dailySpeeds.length, 'days');
     return dailySpeeds;
   } catch (error) {
     console.error('❌ Error getting daily speeds:', error);
@@ -622,16 +570,9 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
 // Get complete timeline with zero speeds for missing dates
 export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
   try {
-    console.log('🔍 Getting complete daily speeds...');
     const dailySpeeds = await getDailySpeeds();
     
-    console.log('📊 Daily speeds from getDailySpeeds():', dailySpeeds.length, 'entries');
-    dailySpeeds.forEach(speed => {
-      console.log(`  - ${speed.date} (${speed.day}): ${speed.time}s`);
-    });
-    
     if (dailySpeeds.length === 0) {
-      console.log('❌ No daily speeds found, returning empty array');
       return [];
     }
 
@@ -644,7 +585,6 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
     const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
     const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
     
-    console.log('📅 Date range:', startDate.toISOString().split('T')[0], 'to', endDate.toISOString().split('T')[0]);
     
     // Create a map of existing speeds
     const speedMap = new Map<string, DaySpeed>();
@@ -653,26 +593,20 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
       const day = dateParts[0].padStart(2, '0'); // Pad single-digit days with leading zero
       const dateKey = `${dateParts[2]}-${getMonthNumber(dateParts[1])}-${day}`;
       speedMap.set(dateKey, speed);
-      console.log(`🗺️ Mapping ${speed.date} to key: ${dateKey}`);
     });
 
-    console.log('🗺️ All keys in speedMap:', Array.from(speedMap.keys()));
 
     // Fill in missing dates with zero speeds
     const completeSpeeds: DaySpeed[] = [];
     const currentDate = new Date(startDate);
     
-    console.log('🔄 Filling in complete timeline...');
     while (currentDate <= endDate) {
       const dateKey = currentDate.toISOString().split('T')[0];
       
-      console.log(`🔍 Looking for dateKey: ${dateKey} in speedMap...`);
-      console.log(`🔍 speedMap has keys:`, Array.from(speedMap.keys()));
       
       if (speedMap.has(dateKey)) {
         const speed = speedMap.get(dateKey)!;
         completeSpeeds.push(speed);
-        console.log(`✅ ${dateKey}: Found speed ${speed.time}s`);
       } else {
         // Create zero speed entry for missing date
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -690,17 +624,11 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
           time: 0
         };
         completeSpeeds.push(zeroSpeed);
-        console.log(`❌ ${dateKey}: Added zero speed for ${dateFormatted}`);
       }
       
       // Move to next day
       currentDate.setDate(currentDate.getDate() + 1);
     }
-
-    console.log('✅ Complete daily speeds:', completeSpeeds.length, 'entries');
-    completeSpeeds.forEach(speed => {
-      console.log(`  - ${speed.date} (${speed.day}): ${speed.time}s`);
-    });
 
     return completeSpeeds;
   } catch (error) {
@@ -712,9 +640,7 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
 // Calculate average time taken for all time
 export async function getAverageTimeAllTime(): Promise<number> {
   try {
-    console.log('🔍 Calculating average time for all time...');
     const userID = await getCurrentUserID();
-    console.log('👤 Current userID:', userID);
     // Get all flashcards with study or quiz dates and timeTaken from both tables
     const result = await db.getFirstAsync(`
       SELECT AVG(timeTaken) as averageTime, COUNT(*) as attemptedCount
@@ -725,16 +651,13 @@ export async function getAverageTimeAllTime(): Promise<number> {
     `, [userID]);
     const data = result as { averageTime: number | null; attemptedCount: number };
     
-    console.log('📊 Average time calculation result:', data);
 
     if (!data || data.attemptedCount === 0 || data.averageTime === null) {
-      console.log('❌ No attempted flashcards or time data found');
       return 0;
     }
 
     const averageTime = Math.round(data.averageTime);
     
-    console.log(`✅ Average time for all time: ${averageTime}s (${data.attemptedCount} flashcards)`);
     
     return averageTime;
   } catch (error) {
@@ -755,9 +678,7 @@ export interface LongestStreakData {
 // Calculate longest streak and related data
 export async function getLongestStreakData(): Promise<LongestStreakData> {
   try {
-    console.log('🔍 Calculating longest streak data...');
     const userID = await getCurrentUserID();
-    console.log('👤 Current userID:', userID);
     // Get all study and quiz dates from both tables
     const result = await db.getAllAsync(`
       SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
@@ -772,10 +693,8 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
       deckID: number;
     }>;
 
-    console.log('📊 Raw streak data:', flashcards?.length || 0, 'flashcards found');
 
     if (!flashcards || flashcards.length === 0) {
-      console.log('❌ No streak data found');
       return {
         streakLength: 0,
         uniqueFlashcards: 0,
@@ -799,7 +718,6 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
     });
 
     const sortedDates = Array.from(allDates).sort();
-    console.log('📅 All unique dates:', sortedDates.length, 'dates');
 
     // Find the longest consecutive streak
     let longestStreak = 0;
@@ -842,7 +760,6 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
       streakEndDate = sortedDates[sortedDates.length - 1];
     }
 
-    console.log(`📊 Longest streak: ${longestStreak} days (${streakStartDate} to ${streakEndDate})`);
 
     // Calculate unique flashcards and decks during the longest streak
     let uniqueFlashcards = 0;
@@ -877,7 +794,6 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
       uniqueFlashcards = uniqueFlashcardIds.size;
       uniqueDecks = uniqueDeckIds.size;
       
-      console.log(`📊 Streak period flashcards: ${uniqueFlashcards} unique flashcards, ${uniqueDecks} unique decks`);
     }
 
     const streakData = {
@@ -888,7 +804,6 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
       streakEndDate
     };
 
-    console.log('✅ Longest streak data calculated:', streakData);
     
     return streakData;
   } catch (error) {
@@ -906,9 +821,7 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
 // Get all studied dates for calendar visualization
 export async function getAllStudiedDates(): Promise<string[]> {
   try {
-    console.log('🔍 Getting all studied dates for calendar...');
     const userID = await getCurrentUserID();
-    console.log('👤 Current userID:', userID);
     // Get all study and quiz dates from both tables
     const result = await db.getAllAsync(`
       SELECT lastStudiedDate, lastQuizzedDate
@@ -922,7 +835,6 @@ export async function getAllStudiedDates(): Promise<string[]> {
     }>;
 
     if (!flashcards || flashcards.length === 0) {
-      console.log('❌ No studied dates found');
       return [];
     }
 
@@ -940,11 +852,9 @@ export async function getAllStudiedDates(): Promise<string[]> {
     });
 
     const sortedDates = Array.from(allDates).sort();
-    console.log('📅 All studied dates for calendar:', sortedDates.length, 'dates');
     
     return sortedDates;
   } catch (error) {
-    console.error('❌ Error getting studied dates:', error);
     return [];
   }
 } 

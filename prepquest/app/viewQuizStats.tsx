@@ -10,6 +10,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/db/index';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 
 // Helper function to get current userID from AsyncStorage
@@ -43,6 +46,7 @@ interface QuizStats {
 export default function ViewQuizStatsModal() {
   const router = useRouter();
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const { halfwayCheckpoint, deckID, isAIDeck, attemptedFlashcardIds } = useLocalSearchParams();
   const isHalfwayCheckpoint = halfwayCheckpoint === 'true';
   
@@ -211,10 +215,10 @@ export default function ViewQuizStatsModal() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
       {/* Close button absolutely positioned at top right */}
       <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-        <AntDesign name="close" size={28} color="#222" />
+        <AntDesign name="close" size={28} color={Colors[theme].text} />
       </TouchableOpacity>
       <ScrollView
         style={[styles.scrollContainer, { marginBottom: isHalfwayCheckpoint ? 120 : 0 }]}
@@ -229,9 +233,9 @@ export default function ViewQuizStatsModal() {
             <Image source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
           )}
           {isHalfwayCheckpoint ? (
-                            <Text style={styles.wellDoneTitle}>{strings[language].flashcardViewPage.halfwayCheckpoint}</Text>
+            <Text style={[styles.wellDoneTitle, { color: Colors[theme].text, fontFamily: Fonts.title }]}>{strings[language].flashcardViewPage.halfwayCheckpoint}</Text>
           ) : (
-                          <Text style={styles.wellDoneTitle}>{strings[language].flashcardViewPage.wellDone}</Text>
+            <Text style={[styles.wellDoneTitle, { color: Colors[theme].text, fontFamily: Fonts.title }]}>{strings[language].flashcardViewPage.wellDone}</Text>
           )}
           {isHalfwayCheckpoint ? (
             <Image source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
@@ -242,11 +246,9 @@ export default function ViewQuizStatsModal() {
         
         {/* Progress indicator for halfway checkpoint */}
         {isHalfwayCheckpoint && (
-          <View style={styles.progressIndicator}>
-            <Text style={styles.progressText}>
-              {language === 'Chinese'
-                ? `${quizStats.attemptedCount} / ${quizStats.totalCount} 张卡片已完成`
-                : `${quizStats.attemptedCount} of ${quizStats.totalCount} flashcards completed`}
+          <View style={[styles.progressIndicator, { backgroundColor: Colors[theme].secondaryShade }]}>
+            <Text style={[styles.progressText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
+              {`${quizStats.attemptedCount} / ${quizStats.totalCount} ${strings[language].flashcardViewPage.flashcardsCompleted}`}
             </Text>
           </View>
         )}
@@ -268,17 +270,17 @@ export default function ViewQuizStatsModal() {
         
         {/* Total time spent */}
         <View style={styles.totalTimeWrap}>
-                          <Text style={styles.totalTimeLabel}>{strings[language].flashcardViewPage.totalTimeSpent}</Text>
-          <Text style={styles.totalTimeValue}>{formatTime(quizStats.totalTimeSeconds)}</Text>
+          <Text style={[styles.totalTimeLabel, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].flashcardViewPage.totalTimeSpent}</Text>
+          <Text style={[styles.totalTimeValue, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{formatTime(quizStats.totalTimeSeconds)}</Text>
         </View>
       </ScrollView>
       
       {/* Halfway checkpoint button fixed at bottom */}
       {isHalfwayCheckpoint && (
         <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
-          <TouchableOpacity style={styles.fixedBottomButton} activeOpacity={0.85} onPress={() => router.back()}>
+          <TouchableOpacity style={[styles.fixedBottomButton, { backgroundColor: Colors[theme].brandColor2 }]} activeOpacity={0.85} onPress={() => router.back()}>
             <View style={styles.buttonContentRow}>
-                              <Text style={styles.buttonText}>{strings[language].flashcardViewPage.continueWithQuiz}</Text>
+              <Text style={[styles.buttonText, { color: Colors[theme].background, fontFamily: Fonts.bodyBold }]}>{strings[language].flashcardViewPage.continueWithQuiz}</Text>
               <DoubleChevron width={36} height={36} />
             </View>
           </TouchableOpacity>
@@ -299,7 +301,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     paddingTop: Platform.OS === 'ios' ? 30 : 60,
     paddingHorizontal: 0,
   },
@@ -322,9 +323,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   wellDoneTitle: {
-    fontFamily: 'Neuton-Regular',
     fontSize: 44,
-    color: '#222',
     textAlign: 'center',
     marginHorizontal: 10,
     marginTop: 2,
@@ -355,16 +354,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   totalTimeLabel: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 32,
-    color: '#111',
     textAlign: 'center',
     marginTop: 0,
   },
   totalTimeValue: {
-    fontFamily: 'Satoshi-Variable',
     fontSize: 40,
-    color: '#111',
     textAlign: 'center',
     marginTop: 0,
   },
@@ -380,7 +375,6 @@ const styles = StyleSheet.create({
   fixedBottomButton: {
     width: 350,
     height: 72,
-    backgroundColor: '#4F41D8',
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
@@ -398,20 +392,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   buttonText: {
-    color: '#fff',
-    fontFamily: 'Satoshi-Bold',
     fontSize: 22,
     letterSpacing: 0.2,
   },
   progressIndicator: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: '#f0f0f0',
     borderRadius: 10,
   },
   progressText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 18,
-    color: '#111',
   },
 }); 

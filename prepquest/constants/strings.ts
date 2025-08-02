@@ -553,6 +553,9 @@ export const strings: Record<string, any> = {
       creatingFlashcards: 'Creating Flashcards...',
       creatingDeck: 'Creating Deck...',
       halfwayCheckpoint: 'Halfway\nCheckpoint',
+      // Quiz stats progress indicator
+      flashcardsCompleted: 'of flashcards completed',
+      flashcardsCompletedChinese: '张卡片已完成',
     },
   },
   Chinese: {
@@ -757,6 +760,9 @@ export const strings: Record<string, any> = {
       creatingFlashcards: '正在创建卡片…',
       creatingDeck: '正在创建卡组…',
       halfwayCheckpoint: '中途\n检查点',
+      // Quiz stats progress indicator
+      flashcardsCompleted: '张卡片已完成',
+      flashcardsCompletedChinese: '张卡片已完成',
     },
     // AIPromptModal strings
     aiPromptTitle: '试试为你量身定制的AI卡片组！',

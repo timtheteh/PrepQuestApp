@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet, Platform, SafeAreaView, Dimensions, Text, TouchableWithoutFeedback, Animated, Pressable, ScrollView, Image, Alert, AppState, AppStateStatus, ImageSourcePropType , Easing } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -343,7 +343,7 @@ interface DifficultyPillRowProps {
   language: string;
 }
 
-const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards, language }: DifficultyPillRowProps) => {
+const DifficultyPillRow = React.memo(({ currentIdx, onDifficultyChange, flashcards, language }: DifficultyPillRowProps) => {
   const { theme } = useTheme();
   // Get the current flashcard's difficulty
   const currentFlashcard = flashcards[currentIdx];
@@ -376,7 +376,7 @@ const DifficultyPillRow = ({ currentIdx, onDifficultyChange, flashcards, languag
       ))}
     </View>
   );
-};
+});
 
 // Updated LoadingBar to accept currentIdx and totalCards as props with smooth animations
 interface LoadingBarProps {
@@ -391,7 +391,7 @@ interface LoadingBarProps {
   language: string;
 }
 
-const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode, recordedAudioUri, language }: LoadingBarProps) => {
+const LoadingBar = React.memo(({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSubmittedMCQ, flashcardAnswerType, isQuizMode, recordedAudioUri, language }: LoadingBarProps) => {
   const { theme } = useTheme();
   // Create animated value for progress
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -448,7 +448,7 @@ const LoadingBar = ({ currentIdx, totalCards, isStudyMode, hasFlippedCard, hasSu
       </View>
     </View>
   );
-};
+});
 
 // Helper to render text with <blank> replaced by underline
 function renderQuestionWithBlanks(text: string, theme: 'light' | 'dark') {
@@ -1896,7 +1896,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
 };
 
 // Local MCQ Option component
-const MCQOption = ({ text, selected, onPress, disabled }: { text: string; selected: boolean; onPress: () => void; disabled?: boolean }) => {
+const MCQOption = React.memo(({ text, selected, onPress, disabled }: { text: string; selected: boolean; onPress: () => void; disabled?: boolean }) => {
   const { theme } = useTheme();
   return (
     <View style={styles.mcqOptionContainer}>
@@ -1904,10 +1904,10 @@ const MCQOption = ({ text, selected, onPress, disabled }: { text: string; select
                       <Text style={[styles.mcqOptionLabelText, disabled && { color: Colors[theme].unselectedText }]}>{text}</Text>
     </View>
   );
-};
+});
 
 // Local Submit Button component
-const SubmitButton = ({ enabled, onPress, disabled, language }: { enabled: boolean; onPress: () => void; disabled?: boolean; language: string }) => {
+const SubmitButton = React.memo(({ enabled, onPress, disabled, language }: { enabled: boolean; onPress: () => void; disabled?: boolean; language: string }) => {
   const { theme } = useTheme();
   const isDisabled = disabled || !enabled;
   return (
@@ -1923,10 +1923,10 @@ const SubmitButton = ({ enabled, onPress, disabled, language }: { enabled: boole
               <Text style={styles.submitButtonText}>{strings[language].flashcardViewPage.submit}</Text>
     </TouchableOpacity>
   );
-};
+});
 
 // Local MCQ Feedback Modal component
-const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80, isStudyMode, isQuizMode, language }: {
+const MCQFeedbackModal = React.memo(({ visible, opacity, isCorrect, onDismiss, lottieMarginTop = 80, isStudyMode, isQuizMode, language }: {
   visible: boolean;
   opacity: Animated.Value;
   isCorrect: boolean;
@@ -1972,10 +1972,10 @@ const MCQFeedbackModal = ({ visible, opacity, isCorrect, onDismiss, lottieMargin
     </Animated.View>
   ) : null
   );
-};
+});
 
 // Loading Screen Component to avoid hooks in conditional render
-const LoadingScreen = ({ progress, current, total, language }: { progress: number; current: number; total: number; language: string }) => {
+const LoadingScreen = React.memo(({ progress, current, total, language }: { progress: number; current: number; total: number; language: string }) => {
   const { theme } = useTheme();
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -2082,7 +2082,7 @@ const LoadingScreen = ({ progress, current, total, language }: { progress: numbe
       </SafeAreaView>
     </View>
   );
-};
+});
 
 export default function FlashcardViewPage() {
   const router = useRouter();
@@ -2102,7 +2102,10 @@ export default function FlashcardViewPage() {
 
   // Lift currentIdx state up here
   const [currentIdx, setCurrentIdx] = useState(parseInt(flashcardIdx as string) || 0);
-  const totalCards = flashcards.length > 0 ? flashcards.length : parseInt(totalNumberOfFlashcards as string) || 0;
+  const totalCards = useMemo(() => 
+    flashcards.length > 0 ? flashcards.length : parseInt(totalNumberOfFlashcards as string) || 0, 
+    [flashcards.length, totalNumberOfFlashcards]
+  );
   
   // Add isFlipped state to track card side
   const [isFlipped, setIsFlipped] = useState(false);
@@ -2173,7 +2176,7 @@ export default function FlashcardViewPage() {
   }, [deckID, isAIDeckParam, retryDifficultParam]);
 
   // Handler to toggle favorite for current card - UPDATED TO WORK WITH DATABASE
-  const handleToggleFavorite = async () => {
+  const handleToggleFavorite = useCallback(async () => {
     try {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
@@ -2190,7 +2193,7 @@ export default function FlashcardViewPage() {
     } catch (error) {
       console.error('Error toggling favorite status:', error);
     }
-  };
+  }, [flashcards, currentIdx, isAIDeckParam]);
 
   // Add time tracking state
   const [flashcardStartTimes, setFlashcardStartTimes] = useState<{ [flashcardId: number]: number }>({});
@@ -2256,7 +2259,7 @@ export default function FlashcardViewPage() {
   }, [isQuizMode, isLoadingFlashcards, flashcards.length]);
 
   // Function to update the difficulty of the current flashcard
-  const handleDifficultyChange = async (difficulty: string) => {
+  const handleDifficultyChange = useCallback(async (difficulty: string) => {
     try {
       const currentFlashcard = flashcards[currentIdx];
       if (!currentFlashcard) return;
@@ -2274,7 +2277,7 @@ export default function FlashcardViewPage() {
     } catch (error) {
       console.error('Error updating difficulty rating:', error);
     }
-  };
+  }, [flashcards, currentIdx, isAIDeckParam]);
 
   // Study validation modal handlers
   const showStudyValidationModal = (message: string) => {

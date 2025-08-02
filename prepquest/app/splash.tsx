@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Dimensions, Text, ScrollView, TouchableOpacity, TextInput, Platform, Animated, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
@@ -23,6 +23,73 @@ interface SplashScreenProps {
   isDatabaseReady?: boolean;
   onAuthComplete?: () => void;
 }
+
+// Memoized child components to prevent unnecessary re-renders
+const MemoizedTextInput = React.memo(({ 
+  style, 
+  placeholder, 
+  placeholderTextColor, 
+  value, 
+  onChangeText, 
+  secureTextEntry,
+  keyboardType,
+  autoCapitalize,
+  autoCorrect
+}: {
+  style: any;
+  placeholder: string;
+  placeholderTextColor: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  secureTextEntry?: boolean;
+  keyboardType?: any;
+  autoCapitalize?: any;
+  autoCorrect?: boolean;
+}) => (
+  <TextInput
+    style={style}
+    placeholder={placeholder}
+    placeholderTextColor={placeholderTextColor}
+    value={value}
+    onChangeText={onChangeText}
+    secureTextEntry={secureTextEntry}
+    keyboardType={keyboardType}
+    autoCapitalize={autoCapitalize}
+    autoCorrect={autoCorrect}
+  />
+));
+
+const MemoizedTouchableOpacity = React.memo(({ 
+  style, 
+  onPress, 
+  children, 
+  disabled 
+}: {
+  style: any;
+  onPress: () => void;
+  children: React.ReactNode;
+  disabled?: boolean;
+}) => (
+  <TouchableOpacity 
+    style={style}
+    onPress={onPress}
+    disabled={disabled}
+  >
+    {children}
+  </TouchableOpacity>
+));
+
+const MemoizedText = React.memo(({ 
+  style, 
+  children 
+}: {
+  style: any;
+  children: React.ReactNode;
+}) => (
+  <Text style={style}>
+    {children}
+  </Text>
+));
 
 export default function SplashScreen({ 
   isDatabaseReady = false, 
@@ -69,6 +136,177 @@ export default function SplashScreen({
   // Animation state
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const toggleFadeAnim = useRef(new Animated.Value(1)).current;
+
+  // Memoized animation configurations for better performance
+  const fadeInAnimationConfig = useMemo(() => ({
+    toValue: 1,
+    duration: 800,
+    useNativeDriver: true,
+  }), []);
+
+  const fadeOutAnimationConfig = useMemo(() => ({
+    toValue: 0,
+    duration: 150,
+    useNativeDriver: true,
+  }), []);
+
+  const fadeInQuickAnimationConfig = useMemo(() => ({
+    toValue: 1,
+    duration: 150,
+    useNativeDriver: true,
+  }), []);
+
+  // Memoized values to prevent unnecessary recalculations
+  const containerStyle = useMemo(() => [
+    styles.container, 
+    { backgroundColor: Colors[theme].background }
+  ], [theme]);
+
+  const whiteContainerStyle = useMemo(() => [
+    styles.whiteContainer, 
+    { backgroundColor: Colors[theme].background }
+  ], [theme]);
+
+  const signInContainerStyle = useMemo(() => [
+    styles.signInContainer, 
+    { 
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+    }
+  ], [insets.top, insets.bottom]);
+
+  // Memoized text input styles
+  const textInputStyle = useMemo(() => [
+    styles.textInput, 
+    { 
+      borderColor: Colors[theme].unselectedText,
+      color: Colors[theme].text,
+      fontFamily: Fonts.bodyBold
+    }
+  ], [theme]);
+
+  const placeholderTextColor = useMemo(() => Colors[theme].unselectedText, [theme]);
+
+  // Memoized button styles
+  const signInButtonStyle = useMemo(() => [
+    styles.signInButton, 
+    { backgroundColor: Colors[theme].brandColor2 }
+  ], [theme]);
+
+  const signInButtonTextStyle = useMemo(() => [
+    styles.signInButtonText, 
+    { color: Colors[theme].background, fontFamily: Fonts.bodyBold }
+  ], [theme]);
+
+  // Memoized social login button style
+  const socialLoginButtonStyle = useMemo(() => [
+    styles.socialLoginButton, 
+    { borderColor: Colors[theme].unselectedText }
+  ], [theme]);
+
+  const socialLoginTextStyle = useMemo(() => [
+    styles.socialLoginText, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyBold }
+  ], [theme]);
+
+  // Memoized toggle text styles
+  const signInToggleTextStyle = useMemo(() => [
+    styles.toggleText,
+    { 
+      color: isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
+      fontFamily: Fonts.bodyMedium
+    }
+  ], [isSignIn, theme]);
+
+  const signUpToggleTextStyle = useMemo(() => [
+    styles.toggleText,
+    { 
+      color: !isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
+      fontFamily: Fonts.bodyMedium
+    }
+  ], [isSignIn, theme]);
+
+  const underlineStyle = useMemo(() => [
+    styles.underline, 
+    { backgroundColor: Colors[theme].brandColor2 }
+  ], [theme]);
+
+  const welcomeTextStyle = useMemo(() => [
+    styles.welcomeText, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
+
+  const forgotPasswordTextStyle = useMemo(() => [
+    styles.forgotPasswordText, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyBold }
+  ], [theme]);
+
+  const signInWithTextStyle = useMemo(() => [
+    styles.signInWithText, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyBold }
+  ], [theme]);
+
+  const loadingTextStyle = useMemo(() => [
+    styles.loadingText, 
+    { color: Colors[theme].text }
+  ], [theme]);
+
+  // Memoized animation sources to prevent unnecessary re-renders
+  const backgroundAnimationSource = useMemo(() => 
+    require('../assets/animations/SplashScreenAnimation.json'), 
+    []
+  );
+
+  const logoAnimationSource = useMemo(() => 
+    require('../assets/animations/splashScreenLogoAnimation.json'), 
+    []
+  );
+
+  // Memoized modal styles
+  const modalContentStyle = useMemo(() => [
+    styles.modalContent, 
+    { backgroundColor: Colors[theme].background }
+  ], [theme]);
+
+  const modalTitleStyle = useMemo(() => [
+    styles.modalTitle, 
+    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
+
+  const modalSubtitleStyle = useMemo(() => [
+    styles.modalSubtitle, 
+    { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
+
+  const modalInputStyle = useMemo(() => [
+    styles.modalInput, 
+    { 
+      borderColor: Colors[theme].unselectedText,
+      color: Colors[theme].text,
+      fontFamily: Fonts.bodyBold
+    }
+  ], [theme]);
+
+  const modalCancelButtonStyle = useMemo(() => [
+    styles.modalCancelButton, 
+    { borderColor: Colors[theme].unselectedText }
+  ], [theme]);
+
+  const modalCancelButtonTextStyle = useMemo(() => [
+    styles.modalCancelButtonText, 
+    { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
+
+  const modalConfirmButtonStyle = useMemo(() => [
+    styles.modalConfirmButton, 
+    { backgroundColor: Colors[theme].brandColor2 },
+    isResettingPassword && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }
+  ], [theme, isResettingPassword]);
+
+  const modalConfirmButtonTextStyle = useMemo(() => [
+    styles.modalConfirmButtonText, 
+    { color: Colors[theme].background, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
 
   // Check if user is already signed in
   useEffect(() => {
@@ -129,8 +367,17 @@ export default function SplashScreen({
     }
   }, [isLoading, isAuthenticated]);
 
+  // Cleanup animations on unmount
+  useEffect(() => {
+    return () => {
+      // Stop any running animations to prevent memory leaks
+      fadeAnim.stopAnimation();
+      toggleFadeAnim.stopAnimation();
+    };
+  }, [fadeAnim, toggleFadeAnim]);
+
   // Validation function
-  const validateSignUp = () => {
+  const validateSignUp = useCallback(() => {
     // Check if fields are empty
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
       setToastMessage(strings[language].splash.fillUpBothEmailAndPassword);
@@ -146,9 +393,9 @@ export default function SplashScreen({
     }
     
     return true;
-  };
+  }, [email, password, confirmPassword, language]);
 
-    const handleSignUp = async () => {
+  const handleSignUp = useCallback(async () => {
     if (validateSignUp()) {
       try {
         const result = await signUpWithEmail(email.trim(), password);
@@ -167,9 +414,9 @@ export default function SplashScreen({
         setToastVisible(true);
       }
     }
-  };
+  }, [validateSignUp, email, password, signUpWithEmail, language]);
 
-  const handleSignIn = async () => {
+  const handleSignIn = useCallback(async () => {
     // Check if fields are empty
     if (!email.trim() || !password.trim()) {
       setToastMessage(strings[language].splash.fillUpBothEmailAndPassword);
@@ -192,9 +439,9 @@ export default function SplashScreen({
       setToastMessage(errorMessage);
       setToastVisible(true);
     }
-  };
+  }, [email, password, signInWithEmail, language]);
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+  const handleSocialLogin = useCallback(async (provider: 'google' | 'facebook' | 'apple') => {
     try {
       let oauthFunction;
       switch (provider) {
@@ -237,7 +484,7 @@ export default function SplashScreen({
       setToastMessage(errorMessage);
       setToastVisible(true);
     }
-  };
+  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language]);
 
   useEffect(() => {
     // Ensure animations start playing
@@ -247,27 +494,33 @@ export default function SplashScreen({
     if (logoAnimationRef.current) {
       logoAnimationRef.current.play();
     }
+
+    // Cleanup function to stop animations when component unmounts
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.pause();
+      }
+      if (logoAnimationRef.current) {
+        logoAnimationRef.current.pause();
+      }
+    };
   }, []);
 
   // Fade in animation when database is ready
   useEffect(() => {
     if (isDatabaseReady) {
       Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800, // 800ms fade in
-        useNativeDriver: true,
+        ...fadeInAnimationConfig,
       }).start();
     }
-  }, [isDatabaseReady, fadeAnim]);
+  }, [isDatabaseReady, fadeAnim, fadeInAnimationConfig]);
 
   // Handle toggle between sign in and sign up with fade animation
-  const handleToggle = (newIsSignIn: boolean) => {
+  const handleToggle = useCallback((newIsSignIn: boolean) => {
     if (newIsSignIn !== isSignIn) {
       // Fade out
       Animated.timing(toggleFadeAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
+        ...fadeOutAnimationConfig,
       }).start(() => {
         // Change state
         setIsSignIn(newIsSignIn);
@@ -277,22 +530,20 @@ export default function SplashScreen({
         setConfirmPassword('');
         // Fade in
         Animated.timing(toggleFadeAnim, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
+          ...fadeInQuickAnimationConfig,
         }).start();
       });
     }
-  };
+  }, [isSignIn, toggleFadeAnim, fadeOutAnimationConfig, fadeInQuickAnimationConfig]);
 
   // Handle forgot password
-  const handleForgotPassword = () => {
+  const handleForgotPassword = useCallback(() => {
     setForgotPasswordModalVisible(true);
     setForgotPasswordEmail(email.trim()); // Pre-populate with current email
-  };
+  }, [email]);
 
   // Handle password reset
-  const handlePasswordReset = async () => {
+  const handlePasswordReset = useCallback(async () => {
     if (!forgotPasswordEmail.trim()) {
       setToastMessage(strings[language].splash.pleaseEnterYourEmailAddress);
       setToastVisible(true);
@@ -320,18 +571,77 @@ export default function SplashScreen({
     }
 
     setIsResettingPassword(false);
-  };
+  }, [forgotPasswordEmail, resetPassword, language]);
+
+  const handleCloseModal = useCallback(() => {
+    setForgotPasswordModalVisible(false);
+  }, []);
+
+  const handleTogglePassword = useCallback(() => {
+    setShowPassword(!showPassword);
+  }, [showPassword]);
+
+  const handleEmailChange = useCallback((text: string) => {
+    setEmail(text);
+  }, []);
+
+  const handlePasswordChange = useCallback((text: string) => {
+    setPassword(text);
+  }, []);
+
+  const handleConfirmPasswordChange = useCallback((text: string) => {
+    setConfirmPassword(text);
+  }, []);
+
+  const handleForgotPasswordEmailChange = useCallback((text: string) => {
+    setForgotPasswordEmail(text);
+  }, []);
+
+  const handleHideToast = useCallback(() => {
+    setToastVisible(false);
+  }, []);
+
+  const handleSignInPress = useCallback(() => {
+    if (isSignIn) {
+      handleSignIn();
+    } else {
+      handleSignUp();
+    }
+  }, [isSignIn, handleSignIn, handleSignUp]);
+
+  const handleGoogleLogin = useCallback(() => {
+    handleSocialLogin('google');
+  }, [handleSocialLogin]);
+
+  const handleAppleLogin = useCallback(() => {
+    handleSocialLogin('apple');
+  }, [handleSocialLogin]);
+
+  const handleFacebookLogin = useCallback(() => {
+    handleSocialLogin('facebook');
+  }, [handleSocialLogin]);
+
+  const handleToggleSignIn = useCallback(() => {
+    handleToggle(true);
+  }, [handleToggle]);
+
+  const handleToggleSignUp = useCallback(() => {
+    handleToggle(false);
+  }, [handleToggle]);
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
+    <View style={containerStyle}>
       {/* Background animation that fills the screen */}
       <LottieView
         ref={animationRef}
-        source={require('../assets/animations/SplashScreenAnimation.json')}
+        source={backgroundAnimationSource}
         autoPlay
         loop={true}
         style={styles.animation}
         resizeMode="cover"
+        speed={1}
+        cacheComposition={true}
+        renderMode="HARDWARE"
         onAnimationFailure={(error) => {
           console.error('Background animation failed to load:', error);
         }}
@@ -341,22 +651,18 @@ export default function SplashScreen({
       <Toast
         visible={toastVisible}
         message={toastMessage}
-        onHide={() => setToastVisible(false)}
+        onHide={handleHideToast}
         duration={3000}
       />
       
       {/* Show sign in/signup screen when database is ready */}
       {isDatabaseReady ? (
         <Animated.View style={[
-          styles.signInContainer, 
-          { 
-            opacity: fadeAnim,
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-          }
+          signInContainerStyle, 
+          { opacity: fadeAnim }
         ]}>
           {/* White rectangle container */}
-          <View style={[styles.whiteContainer, { backgroundColor: Colors[theme].background }]}>
+          <View style={whiteContainerStyle}>
             <ScrollView 
               style={styles.scrollView}
               contentContainerStyle={styles.scrollViewContent}
@@ -372,36 +678,25 @@ export default function SplashScreen({
               
               {/* Sign In / Sign Up Toggle */}
               <View style={styles.toggleContainer}>
-                <TouchableOpacity 
+                <MemoizedTouchableOpacity 
                   style={styles.toggleOption}
-                  onPress={() => handleToggle(true)}
+                  onPress={handleToggleSignIn}
                 >
-                  <Text style={[
-                    styles.toggleText,
-                                        { 
-                      color: isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
-                      fontFamily: Fonts.bodyMedium
-                    }                  ]}>
+                  <MemoizedText style={signInToggleTextStyle}>
                     {strings[language].splash.signIn}
-                  </Text>
-                  {isSignIn && <View style={[styles.underline, { backgroundColor: Colors[theme].brandColor2 }]} />}
-                </TouchableOpacity>
+                  </MemoizedText>
+                  {isSignIn && <View style={underlineStyle} />}
+                </MemoizedTouchableOpacity>
                 
-                <TouchableOpacity 
+                <MemoizedTouchableOpacity 
                   style={styles.toggleOption}
-                  onPress={() => handleToggle(false)}
+                  onPress={handleToggleSignUp}
                 >
-                  <Text style={[
-                    styles.toggleText,
-                    { 
-                      color: !isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
-                      fontFamily: Fonts.bodyMedium
-                    }
-                  ]}>
+                  <MemoizedText style={signUpToggleTextStyle}>
                     {strings[language].splash.signUp}
-                  </Text>
-                  {!isSignIn && <View style={[styles.underline, { backgroundColor: Colors[theme].brandColor2 }]} />}
-                </TouchableOpacity>
+                  </MemoizedText>
+                  {!isSignIn && <View style={underlineStyle} />}
+                </MemoizedTouchableOpacity>
               </View>
               
               {/* Animated content that changes between sign in and sign up */}
@@ -409,11 +704,11 @@ export default function SplashScreen({
                 {/* Welcome text for sign in/sign up state */}
                 {isSignIn ? (
                   <View style={styles.welcomeContainer}>
-                    <Text style={[styles.welcomeText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.welcomeBack}</Text>
+                    <MemoizedText style={welcomeTextStyle}>{strings[language].splash.welcomeBack}</MemoizedText>
                   </View>
                 ) : (
                   <View style={styles.welcomeContainer}>
-                    <Text style={[styles.welcomeText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.welcomeAboard}</Text>
+                    <MemoizedText style={welcomeTextStyle}>{strings[language].splash.welcomeAboard}</MemoizedText>
                   </View>
                 )}
                 
@@ -421,144 +716,132 @@ export default function SplashScreen({
                 <View style={styles.inputContainer}>
                   {/* Email/Username input */}
                   <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={[styles.textInput, { 
-                        borderColor: Colors[theme].unselectedText,
-                        color: Colors[theme].text,
-                        fontFamily: Fonts.bodyBold
-                      }]}
+                    <MemoizedTextInput
+                      style={textInputStyle}
                       placeholder={strings[language].splash.email}
-                      placeholderTextColor={Colors[theme].unselectedText}
+                      placeholderTextColor={placeholderTextColor}
                       value={email}
-                      onChangeText={setEmail}
+                      onChangeText={handleEmailChange}
                     />
                   </View>
                   
                   {/* Password input */}
                   <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={[styles.textInput, { 
-                        borderColor: Colors[theme].unselectedText,
-                        color: Colors[theme].text,
-                        fontFamily: Fonts.bodyBold
-                      }]}
+                    <MemoizedTextInput
+                      style={textInputStyle}
                       placeholder={strings[language].splash.password}
-                      placeholderTextColor={Colors[theme].unselectedText}
+                      placeholderTextColor={placeholderTextColor}
                       secureTextEntry={!showPassword}
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={handlePasswordChange}
                     />
-                    <TouchableOpacity 
+                    <MemoizedTouchableOpacity 
                       style={styles.passwordToggle}
-                      onPress={() => setShowPassword(!showPassword)}
+                      onPress={handleTogglePassword}
                     >
                       <Feather 
                         name={showPassword ? 'eye' : 'eye-off'} 
                         size={20} 
                         color={Colors[theme].normalIconColor}
                       />
-                    </TouchableOpacity>
+                    </MemoizedTouchableOpacity>
                   </View>
                   
                   {/* Confirm Password input - only in sign up state */}
                   {!isSignIn && (
                     <View style={styles.inputWrapper}>
-                                                                <TextInput
-                        style={[styles.textInput, { 
-                          borderColor: Colors[theme].unselectedText,
-                          color: Colors[theme].text,
-                          fontFamily: Fonts.bodyBold
-                        }]}
+                      <MemoizedTextInput
+                        style={textInputStyle}
                         placeholder={strings[language].splash.confirmPassword}
-                        placeholderTextColor={Colors[theme].unselectedText}
+                        placeholderTextColor={placeholderTextColor}
                         secureTextEntry={!showPassword}
                         value={confirmPassword}
-                        onChangeText={setConfirmPassword}
+                        onChangeText={handleConfirmPasswordChange}
                       />
-                                              <TouchableOpacity 
-                          style={styles.passwordToggle}
-                          onPress={() => setShowPassword(!showPassword)}
-                        >
-                          <Feather 
-                            name={showPassword ? 'eye' : 'eye-off'} 
-                            size={20} 
-                            color={Colors[theme].normalIconColor}
-                          />
-                        </TouchableOpacity>
+                      <MemoizedTouchableOpacity 
+                        style={styles.passwordToggle}
+                        onPress={handleTogglePassword}
+                      >
+                        <Feather 
+                          name={showPassword ? 'eye' : 'eye-off'} 
+                          size={20} 
+                          color={Colors[theme].normalIconColor}
+                        />
+                      </MemoizedTouchableOpacity>
                     </View>
                   )}
                 </View>
                 
                 {/* Sign In/Sign Up button */}
                 <View style={styles.buttonContainer}>
-                  <TouchableOpacity 
-                    style={[styles.signInButton, { backgroundColor: Colors[theme].brandColor2 }]}
-                    onPress={isSignIn ? handleSignIn : handleSignUp}
+                  <MemoizedTouchableOpacity 
+                    style={signInButtonStyle}
+                    onPress={handleSignInPress}
                   >
-                    <Text style={[styles.signInButtonText, { color: Colors[theme].background, fontFamily: Fonts.bodyBold }]}>
+                    <MemoizedText style={signInButtonTextStyle}>
                       {isSignIn ? strings[language].splash.signIn : strings[language].splash.signUp}
-                    </Text>
-                  </TouchableOpacity>
+                    </MemoizedText>
+                  </MemoizedTouchableOpacity>
                 </View>
                 
                 {/* Forgot Password text - visible in both states */}
                 {isSignIn && (
-                <View style={styles.forgotPasswordContainer}>
-                  <TouchableOpacity onPress={handleForgotPassword}>
-                    <Text style={[styles.forgotPasswordText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.forgotPassword}</Text>
-                  </TouchableOpacity>
-                </View>
+                                  <View style={styles.forgotPasswordContainer}>
+                   <MemoizedTouchableOpacity style={{}} onPress={handleForgotPassword}>
+                     <MemoizedText style={forgotPasswordTextStyle}>{strings[language].splash.forgotPassword}</MemoizedText>
+                   </MemoizedTouchableOpacity>
+                 </View>
                 )}
               </Animated.View>
               
               {/* Social login section - visible in both states */}
               <View style={styles.forgotPasswordContainer}>
-                <Text style={[styles.signInWithText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>
+                <MemoizedText style={signInWithTextStyle}>
                   {isSignIn ? strings[language].splash.orSignInWith : strings[language].splash.orSignUpWith}
-                </Text>
+                </MemoizedText>
                 
                 {/* Social login buttons */}
                 <View style={styles.socialLoginContainer}>
                   {/* Google login */}
-                  <TouchableOpacity 
-                    style={[styles.socialLoginButton, { borderColor: Colors[theme].unselectedText }]}
-                    onPress={() => handleSocialLogin('google')}
+                  <MemoizedTouchableOpacity 
+                    style={socialLoginButtonStyle}
+                    onPress={handleGoogleLogin}
                   >
                     <View style={styles.iconContainer}>
                       <GoogleLoginIcon width={24} height={24} />
                     </View>
                     <View style={styles.textContainer}>
-                      <Text style={[styles.socialLoginText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.continueWithGoogle}</Text>
+                      <MemoizedText style={socialLoginTextStyle}>{strings[language].splash.continueWithGoogle}</MemoizedText>
                     </View>
-                  </TouchableOpacity>
+                  </MemoizedTouchableOpacity>
                   
                   {/* Apple login - only on iOS */}
                   {Platform.OS === 'ios' && (
-                    <TouchableOpacity 
-                      style={[styles.socialLoginButton, { borderColor: Colors[theme].unselectedText }]}
-                      onPress={() => handleSocialLogin('apple')}
+                    <MemoizedTouchableOpacity 
+                      style={socialLoginButtonStyle}
+                      onPress={handleAppleLogin}
                     >
                       <View style={styles.iconContainer}>
                         <AppleLoginIcon width={24} height={24} />
                       </View>
-                                                                <View style={styles.textContainer}>
-                        <Text style={[styles.socialLoginText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.continueWithApple}</Text>
+                      <View style={styles.textContainer}>
+                        <MemoizedText style={socialLoginTextStyle}>{strings[language].splash.continueWithApple}</MemoizedText>
                       </View>
-                    </TouchableOpacity>
+                    </MemoizedTouchableOpacity>
                   )}
                   
                   {/* Facebook login */}
-                  <TouchableOpacity 
-                    style={[styles.socialLoginButton, { borderColor: Colors[theme].unselectedText }]}
-                    onPress={() => handleSocialLogin('facebook')}
+                  <MemoizedTouchableOpacity 
+                    style={socialLoginButtonStyle}
+                    onPress={handleFacebookLogin}
                   >
                     <View style={styles.iconContainer}>
                       <FacebookLoginIcon width={24} height={24} />
                     </View>
                     <View style={styles.textContainer}>
-                      <Text style={[styles.socialLoginText, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>{strings[language].splash.continueWithFacebook}</Text>
+                      <MemoizedText style={socialLoginTextStyle}>{strings[language].splash.continueWithFacebook}</MemoizedText>
                     </View>
-                  </TouchableOpacity>
+                  </MemoizedTouchableOpacity>
                 </View>
               </View>
               
@@ -573,10 +856,13 @@ export default function SplashScreen({
           <View style={styles.logoContainer}>
             <LottieView
               ref={logoAnimationRef}
-              source={require('../assets/animations/splashScreenLogoAnimation.json')}
+              source={logoAnimationSource}
               autoPlay
               loop={false}
               style={styles.logoAnimation}
+              speed={1}
+              cacheComposition={true}
+              renderMode="HARDWARE"
               onAnimationFailure={(error) => {
                 console.error('Logo animation failed to load:', error);
               }}
@@ -585,7 +871,7 @@ export default function SplashScreen({
 
           {/* Optional: Add a loading text in case animation fails */}
           <View style={styles.loadingTextContainer}>
-            <Text style={[styles.loadingText, { color: Colors[theme].text }]}>{strings[language].splash.loading}</Text>
+            <MemoizedText style={loadingTextStyle}>{strings[language].splash.loading}</MemoizedText>
           </View>
         </>
       )}
@@ -595,51 +881,43 @@ export default function SplashScreen({
         visible={forgotPasswordModalVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setForgotPasswordModalVisible(false)}
+        onRequestClose={handleCloseModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: Colors[theme].background }]}>
-            <Text style={[styles.modalTitle, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.resetPassword}</Text>
-            <Text style={[styles.modalSubtitle, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
+          <View style={modalContentStyle}>
+            <MemoizedText style={modalTitleStyle}>{strings[language].splash.resetPassword}</MemoizedText>
+            <MemoizedText style={modalSubtitleStyle}>
               {strings[language].splash.resetPasswordSubtitle}
-            </Text>
+            </MemoizedText>
             
-            <TextInput
-              style={[styles.modalInput, { 
-                borderColor: Colors[theme].unselectedText,
-                color: Colors[theme].text,
-                fontFamily: Fonts.bodyBold
-              }]}
+            <MemoizedTextInput
+              style={modalInputStyle}
               placeholder={strings[language].splash.enterYourEmail}
-              placeholderTextColor={Colors[theme].unselectedText}
+              placeholderTextColor={placeholderTextColor}
               value={forgotPasswordEmail}
-              onChangeText={setForgotPasswordEmail}
+              onChangeText={handleForgotPasswordEmailChange}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
             
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity 
-                style={[styles.modalCancelButton, { borderColor: Colors[theme].unselectedText }]}
-                onPress={() => setForgotPasswordModalVisible(false)}
+              <MemoizedTouchableOpacity 
+                style={modalCancelButtonStyle}
+                onPress={handleCloseModal}
               >
-                <Text style={[styles.modalCancelButtonText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>{strings[language].splash.cancel}</Text>
-              </TouchableOpacity>
+                <MemoizedText style={modalCancelButtonTextStyle}>{strings[language].splash.cancel}</MemoizedText>
+              </MemoizedTouchableOpacity>
               
-              <TouchableOpacity 
-                style={[
-                  styles.modalConfirmButton, 
-                  { backgroundColor: Colors[theme].brandColor2 },
-                  isResettingPassword && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }
-                ]}
+              <MemoizedTouchableOpacity 
+                style={modalConfirmButtonStyle}
                 onPress={handlePasswordReset}
                 disabled={isResettingPassword}
               >
-                <Text style={[styles.modalConfirmButtonText, { color: Colors[theme].background, fontFamily: Fonts.bodyMedium }]}>
+                <MemoizedText style={modalConfirmButtonTextStyle}>
                   {isResettingPassword ? strings[language].splash.sending : strings[language].splash.sendEmail}
-                </Text>
-              </TouchableOpacity>
+                </MemoizedText>
+              </MemoizedTouchableOpacity>
             </View>
           </View>
         </View>

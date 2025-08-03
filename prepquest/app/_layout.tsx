@@ -16,6 +16,8 @@ import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext'
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
 import { BackgroundTaskNotification } from '@/components/general/BackgroundTaskNotification';
+import NotificationService from '@/utils/notifications';
+import * as Notifications from 'expo-notifications';
 
 // Token cache for Clerk
 const tokenCache = {
@@ -99,7 +101,7 @@ function AppContent() {
     'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
   });
 
-  // Initialize database when app starts
+  // Initialize database and notifications when app starts
   useEffect(() => {
     const initDatabase = async () => {
       try {
@@ -111,6 +113,26 @@ function AppContent() {
         const endTime = Date.now();
         
         console.log(`✅ Database initialization and dummy data population completed successfully in ${endTime - startTime}ms`);
+        
+        // Initialize notifications
+        console.log('🔔 Initializing notifications...');
+        await NotificationService.getInstance().initialize();
+        console.log('✅ Notifications initialized successfully');
+        
+        // Set up notification response handler
+        const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+          const data = response.notification.request.content.data as any;
+          console.log('Notification tapped:', data);
+          
+          // Handle navigation based on notification type
+          if (data?.type === 'deck_created' || data?.type === 'deck_and_flashcards_created') {
+            // Navigate to deck details or main page
+            // You can add navigation logic here when needed
+          }
+        });
+        
+        // Clean up subscription on unmount
+        return () => subscription.remove();
         
         // Ensure minimum 3 seconds of splash screen
         const elapsedTime = endTime - startTime;

@@ -226,25 +226,50 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     
     // Mark as complete - ensure this happens even if background service stops
     try {
+      // Determine the action type and deck name for notifications
+      let actionType = 'deck_created';
+      let notificationDeckName = formData.deckName;
+      
+      if (isInViewFlashcardsPage) {
+        // Adding flashcards to existing deck - need to get the existing deck name
+        actionType = 'flashcards_added';
+        // For viewFlashcardsPage, we need to get the existing deck name from the deckId
+        // This will be handled in the notification service
+      } else {
+        // Creating new deck
+        actionType = 'deck_created';
+        notificationDeckName = formData.deckName;
+      }
+      
       await saveGenAIDeckCreationProgress({ 
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData, prompt, createdDeckId, createdFlashcardIds, flashcards,
+        actionType, // New field to track the action type
+        notificationDeckName, // New field for the deck name to show in notification
+        status: 'deckAndFlashcardsCreated',
         inProgress: false, 
-        completed: true,
-        createdDeckId,
-        createdFlashcardIds
+        completed: true
       });
       console.log('Completion status saved to AsyncStorage');
+      
+      // Mark notification as sent to prevent duplicates
+      console.log('Background task completed - notification will be sent by context');
     } catch (error) {
       console.error('Error saving completion status:', error);
       // Try one more time after a delay
       setTimeout(async () => {
         try {
           await saveGenAIDeckCreationProgress({ 
+            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+            formData, prompt, createdDeckId, createdFlashcardIds, flashcards,
+            status: 'deckAndFlashcardsCreated',
             inProgress: false, 
-            completed: true,
-            createdDeckId,
-            createdFlashcardIds
+            completed: true
           });
           console.log('Completion status saved to AsyncStorage (retry)');
+          
+          // Mark notification as sent to prevent duplicates
+          console.log('Background task completed (retry) - notification will be sent by context');
         } catch (retryError) {
           console.error('Failed to save completion status after retry:', retryError);
         }

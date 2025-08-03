@@ -22,7 +22,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.anonymous.prepquest"
     },
@@ -45,7 +46,14 @@
       "expo-audio",
       "expo-web-browser",
       "expo-asset",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#44B88A"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

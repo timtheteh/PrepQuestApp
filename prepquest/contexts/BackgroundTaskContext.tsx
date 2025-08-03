@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
+import NotificationService from '../utils/notifications';
+import { useLanguage } from './LanguageContext';
 
 // Progress key for background tasks
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
@@ -33,6 +35,8 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   const [backgroundTaskProgress, setBackgroundTaskProgress] = useState<any | null>(null);
   const monitoringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
+  const { language } = useLanguage();
+  const notificationService = NotificationService.getInstance();
 
   // Helper to load progress from AsyncStorage
   const loadBackgroundTaskProgress = async (): Promise<any | null> => {
@@ -56,8 +60,49 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     }
   };
 
+  // Helper to send completion notification
+  const sendCompletionNotification = React.useCallback(async (progress: any) => {
+    try {
+      const { formData, createdDeckId, createdFlashcardIds, flashcards } = progress;
+      
+      if (!formData?.deckName) return;
+
+      const deckName = formData.deckName;
+      const flashcardCount = flashcards?.length || createdFlashcardIds?.length || 0;
+      
+      // Check if we're adding flashcards to existing deck or creating new deck
+      if (progress.isInViewFlashcardsPage && createdFlashcardIds?.length > 0) {
+        // Adding flashcards to existing deck
+        await notificationService.sendFlashcardsCreatedNotification(
+          flashcardCount,
+          deckName,
+          createdDeckId || 0,
+          language
+        );
+      } else if (createdDeckId) {
+        // Creating new deck with flashcards
+        if (flashcardCount > 0) {
+          await notificationService.sendDeckAndFlashcardsCreatedNotification(
+            deckName,
+            createdDeckId,
+            flashcardCount,
+            language
+          );
+        } else {
+          await notificationService.sendDeckCreatedNotification(
+            deckName,
+            createdDeckId,
+            language
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error sending completion notification:', error);
+    }
+  }, [language, notificationService]);
+
   // Start monitoring background task progress
-  const startBackgroundTaskMonitoring = () => {
+  const startBackgroundTaskMonitoring = React.useCallback(() => {
     console.log('Starting background task monitoring...');
     
     const checkProgress = async () => {
@@ -91,6 +136,20 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
               });
             }
             
+            // Send notification if task completed successfully and app is in background
+            // Only send if app is not active (background/closed) and notification hasn't been sent
+            if (progress.completed && !progress.error && appStateRef.current !== 'active' && !progress.notificationSent) {
+              console.log('Sending notification for completed background task');
+              await sendCompletionNotification(progress);
+              // Mark as notification sent to avoid duplicate notifications
+              await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify({
+                ...progress,
+                notificationSent: true
+              }));
+            } else if (progress.completed && !progress.error && appStateRef.current === 'active') {
+              console.log('Task completed while app is active - no notification needed');
+            }
+            
             // Don't clear progress immediately - let the UI handle it
             // Progress will be cleared when user dismisses notification or navigates
           }
@@ -108,16 +167,16 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     
     // Set up interval to check every 2 seconds
     monitoringIntervalRef.current = setInterval(checkProgress, 2000);
-  };
+  }, [sendCompletionNotification]);
 
   // Stop monitoring
-  const stopBackgroundTaskMonitoring = () => {
+  const stopBackgroundTaskMonitoring = React.useCallback(() => {
     console.log('Stopping background task monitoring...');
     if (monitoringIntervalRef.current) {
       clearInterval(monitoringIntervalRef.current);
       monitoringIntervalRef.current = null;
     }
-  };
+  }, []);
 
   // App state change handler to resume monitoring when app comes to foreground
   useEffect(() => {
@@ -142,7 +201,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
       subscription.remove();
       stopBackgroundTaskMonitoring();
     };
-  }, []);
+  }, [startBackgroundTaskMonitoring, stopBackgroundTaskMonitoring]);
 
   const value: BackgroundTaskContextType = {
     isBackgroundTaskRunning,

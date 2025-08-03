@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,6 +18,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const slideAnim = useState(new Animated.Value(-100))[0];
   const opacityAnim = useState(new Animated.Value(0))[0];
+  const lastCompletedTaskRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Check if a background task just completed
@@ -25,52 +26,64 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
       const isCompleted = backgroundTaskProgress.completed;
       const hasError = backgroundTaskProgress.error;
       
-      if (isCompleted && !hasError) {
-        // Task completed successfully
-        setNotificationType('success');
-        setShowNotification(true);
-        
-        // Animate in
-        Animated.parallel([
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacityAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-          hideNotification();
-        }, 5000);
-      } else if (hasError) {
-        // Task failed
-        setNotificationType('error');
-        setShowNotification(true);
-        
-        // Animate in
-        Animated.parallel([
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacityAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-          hideNotification();
-        }, 5000);
+      // Create a unique identifier for this task completion
+      const taskId = `${backgroundTaskProgress.createdDeckId || 'no-deck'}-${backgroundTaskProgress.createdFlashcardIds?.join(',') || 'no-flashcards'}-${isCompleted}-${hasError}`;
+      
+      // Only show notification if we haven't shown one for this specific task completion
+      if (lastCompletedTaskRef.current !== taskId) {
+        if (isCompleted && !hasError) {
+          // Task completed successfully
+          console.log('Showing success notification for task:', taskId);
+          lastCompletedTaskRef.current = taskId;
+          setNotificationType('success');
+          setShowNotification(true);
+          
+          // Animate in
+          Animated.parallel([
+            Animated.timing(slideAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacityAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start();
+          
+          // Auto-hide after 5 seconds
+          setTimeout(() => {
+            hideNotification();
+          }, 5000);
+        } else if (hasError) {
+          // Task failed
+          console.log('Showing error notification for task:', taskId);
+          lastCompletedTaskRef.current = taskId;
+          setNotificationType('error');
+          setShowNotification(true);
+          
+          // Animate in
+          Animated.parallel([
+            Animated.timing(slideAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacityAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start();
+          
+          // Auto-hide after 5 seconds
+          setTimeout(() => {
+            hideNotification();
+          }, 5000);
+        }
+      } else {
+        console.log('Skipping duplicate notification for task:', taskId);
       }
     }
   }, [isBackgroundTaskRunning, backgroundTaskProgress]);
@@ -92,6 +105,8 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
       // Clear progress when notification is dismissed
       setTimeout(() => {
         clearBackgroundTaskProgress();
+        // Reset the ref to allow future notifications
+        lastCompletedTaskRef.current = null;
       }, 1000); // Small delay to ensure UI updates are complete
     });
   };
@@ -109,6 +124,27 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
 
   const isInViewFlashcardsPage = backgroundTaskProgress?.isInViewFlashcardsPage;
   const isSuccess = notificationType === 'success';
+  
+  // Determine the message based on where the task was created
+  const getMessage = () => {
+    if (!isSuccess) {
+      return language === 'Chinese' ? '创建过程中出现错误' : 'An error occurred during creation';
+    }
+    
+    const deckName = backgroundTaskProgress?.formData?.deckName || 'Deck';
+    
+    if (isInViewFlashcardsPage) {
+      // Flashcards were added to existing deck
+      return language === 'Chinese' 
+        ? `闪卡已为"${deckName}"创建`
+        : `Flashcards created for "${deckName}"`;
+    } else {
+      // New deck was created (from index, favorites, or viewDecksInFolder pages)
+      return language === 'Chinese' 
+        ? `卡组"${deckName}"已创建`
+        : `Deck created for "${deckName}"`;
+    }
+  };
 
   return (
     <Animated.View 
@@ -131,10 +167,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
               }
             </Text>
             <Text style={styles.message}>
-              {isSuccess 
-                ? (language === 'Chinese' ? '卡组和闪卡已成功创建' : 'Deck and flashcards successfully created')
-                : (language === 'Chinese' ? '创建过程中出现错误' : 'An error occurred during creation')
-              }
+              {getMessage()}
             </Text>
           </View>
         </View>

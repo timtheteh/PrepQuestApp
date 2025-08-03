@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { db } from '@/db/index';
@@ -17,6 +18,7 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import NotificationService from '@/utils/notifications';
 
 const TitleToggleRow = React.memo(({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
     const { theme } = useTheme();
@@ -76,6 +78,7 @@ export default function AppSettingsScreen() {
     checkCameraPermission();
     checkGalleryPermission();
     checkMicPermission();
+    checkNotificationPermission();
     loadNotificationsPreference();
   }, []);
 
@@ -112,10 +115,34 @@ export default function AppSettingsScreen() {
     }
   };
 
-  const handleNotificationsToggle = React.useCallback((value: boolean) => {
-    setNotificationsAccessEnabled(value);
-    saveNotificationsPreference(value);
-  }, []);
+  const handleNotificationsToggle = React.useCallback(async (value: boolean) => {
+    if (value) {
+      // Request notification permissions
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status === 'granted') {
+        setNotificationsAccessEnabled(true);
+        saveNotificationsPreference(true);
+      } else {
+        // If permission denied, show alert and open settings
+        Alert.alert(
+          language === 'Chinese' ? '需要通知权限' : 'Notification Permission Required',
+          language === 'Chinese' 
+            ? '请在设置中启用通知权限以接收卡组创建完成的通知。' 
+            : 'Please enable notification permissions in settings to receive deck creation notifications.',
+          [
+            { text: language === 'Chinese' ? '取消' : 'Cancel', style: 'cancel' },
+            { 
+              text: language === 'Chinese' ? '打开设置' : 'Open Settings', 
+              onPress: () => Linking.openSettings() 
+            }
+          ]
+        );
+      }
+    } else {
+      setNotificationsAccessEnabled(false);
+      saveNotificationsPreference(false);
+    }
+  }, [language]);
 
   const checkCameraPermission = async () => {
     const { status } = await ImagePicker.getCameraPermissionsAsync();
@@ -131,6 +158,23 @@ export default function AppSettingsScreen() {
     const { status } = await Audio.getPermissionsAsync();
     setMicAccessEnabled(status === 'granted');
   };
+
+  const checkNotificationPermission = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    setNotificationsAccessEnabled(status === 'granted');
+  };
+
+  const handleTestNotification = React.useCallback(async () => {
+    try {
+      await NotificationService.getInstance().sendTestNotification(language);
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      Alert.alert(
+        language === 'Chinese' ? '错误' : 'Error',
+        language === 'Chinese' ? '发送测试通知时出错' : 'Error sending test notification'
+      );
+    }
+  }, [language]);
 
 
 
@@ -459,6 +503,19 @@ export default function AppSettingsScreen() {
                     onValueChange={handleNotificationsToggle}
                     language={language}
                 />
+                {notificationsAccessEnabled && (
+                  <TouchableOpacity 
+                    style={[styles.cloudButton, { backgroundColor: colors.brandColor1, marginTop: 10 }]}
+                    onPress={handleTestNotification}
+                  >
+                    <View style={styles.buttonContent}>
+                      <MaterialIcons name="notifications" size={30} color="#fff" />
+                      <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>
+                        {language === 'Chinese' ? '测试通知' : 'Test Notification'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor2 }]}
                   onPress={handleBackupPress}>

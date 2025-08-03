@@ -13,6 +13,7 @@ interface FloatingActionButtonProps extends ViewProps {
   disableOverlay?: boolean;
   backgroundColor?: string;
   animationType?: 'default' | 'viewFlashcards';
+  isFoldersPage?: boolean;
 }
 
 export const FloatingActionButton = ({ 
@@ -22,6 +23,7 @@ export const FloatingActionButton = ({
   disableOverlay = false,
   backgroundColor,
   animationType = 'default',
+  isFoldersPage = false,
   ...props 
 }: FloatingActionButtonProps) => {
   const { theme } = useTheme();
@@ -78,7 +80,7 @@ export const FloatingActionButton = ({
       activeOpacity={0.8}
       {...props}
     >
-      {isBackgroundTaskRunning ? (
+      {isBackgroundTaskRunning && !isFoldersPage ? (
         <LottieView
           source={animationType === 'viewFlashcards' 
             ? require('@/assets/animations/addDeckLoadingAnimation2.json')

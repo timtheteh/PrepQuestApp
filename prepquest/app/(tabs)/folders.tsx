@@ -1452,6 +1452,7 @@ export default function FoldersScreen() {
               style={styles.fab}
               disableOverlay={true}
               onPress={handleFabPress}
+              isFoldersPage={true}
             />
           </Animated.View>
         </View>

@@ -225,14 +225,7 @@ export default function ViewFlashcardsScreen() {
     }
   });
 
-  // Fallback refresh mechanism - watch for background task completion
-  useEffect(() => {
-    if (backgroundTaskProgress?.completed === true && deckId) {
-      console.log('Fallback: Background task completed - refreshing flashcards data');
-      loadFlashcards();
-      loadTopics();
-    }
-  }, [backgroundTaskProgress?.completed, deckId]);
+
 
   useEffect(() => {
     if (isSelectMode) {

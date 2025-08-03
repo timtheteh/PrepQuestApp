@@ -39,27 +39,10 @@ export const useBackgroundTaskRefresh = (options: UseBackgroundTaskRefreshOption
       }
     }
     
-    // Check if task just completed - simplified logic
+    // Only trigger refresh when task is actually completed (not just status changes)
+    // This prevents multiple refreshes during the same task completion process
     if (currentTaskCompleted && !lastTaskState.current.wasCompleted) {
       console.log('Background task completed - triggering refresh');
-      if (options.onTaskComplete) {
-        options.onTaskComplete();
-      }
-    }
-    
-    // Also trigger refresh when status changes to deckAndFlashcardsCreated
-    const currentStatus = backgroundTaskProgress?.status;
-    const lastStatus = lastTaskState.current.lastStatus;
-    if (currentStatus === 'deckAndFlashcardsCreated' && lastStatus !== 'deckAndFlashcardsCreated') {
-      console.log('Background task deck and flashcards created - triggering refresh');
-      if (options.onTaskComplete) {
-        options.onTaskComplete();
-      }
-    }
-    
-    // Also trigger refresh when background service stops but we have flashcards generated
-    if (currentStatus === 'flashcardsGenerated' && lastStatus === 'flashcardsGenerated' && !currentTaskRunning) {
-      console.log('Background service stopped with flashcards generated - triggering refresh');
       if (options.onTaskComplete) {
         options.onTaskComplete();
       }
@@ -69,7 +52,7 @@ export const useBackgroundTaskRefresh = (options: UseBackgroundTaskRefreshOption
     lastTaskState.current = {
       wasRunning: currentTaskRunning,
       wasCompleted: currentTaskCompleted,
-      lastStatus: currentStatus,
+      lastStatus: backgroundTaskProgress?.status,
     };
   }, [isBackgroundTaskRunning, backgroundTaskProgress?.completed, options.onTaskComplete, options.onTaskStart]);
 

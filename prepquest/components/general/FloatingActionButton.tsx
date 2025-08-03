@@ -15,6 +15,7 @@ interface FloatingActionButtonProps extends ViewProps {
   backgroundColor?: string;
   animationType?: 'default' | 'viewFlashcards';
   isFoldersPage?: boolean;
+  isFavoritesPageFavFolders?: boolean;
 }
 
 export const FloatingActionButton = ({ 
@@ -25,6 +26,7 @@ export const FloatingActionButton = ({
   backgroundColor,
   animationType = 'default',
   isFoldersPage = false,
+  isFavoritesPageFavFolders = false,
   ...props 
 }: FloatingActionButtonProps) => {
   const { theme } = useTheme();
@@ -43,9 +45,9 @@ export const FloatingActionButton = ({
   } = useContext(MenuContext);
 
   const handlePress = () => {
-    // If there's a background task running and we're not on the folders page,
+    // If there's a background task running and we're not on the folders page or favorites page fav folders,
     // navigate to the deck creation status page instead of showing the add deck modal
-    if (isBackgroundTaskRunning && !isFoldersPage && backgroundTaskProgress) {
+    if (isBackgroundTaskRunning && !isFoldersPage && !isFavoritesPageFavFolders && backgroundTaskProgress) {
       // Navigate to deck creation status page - it will get real-time updates from background task
       router.push({
         pathname: '/deckCreationStatusPage',
@@ -95,7 +97,7 @@ export const FloatingActionButton = ({
       activeOpacity={0.8}
       {...props}
     >
-      {isBackgroundTaskRunning && !isFoldersPage ? (
+      {isBackgroundTaskRunning && !isFoldersPage && !isFavoritesPageFavFolders ? (
         <LottieView
           source={animationType === 'viewFlashcards' 
             ? require('@/assets/animations/addDeckLoadingAnimation2.json')

@@ -1708,6 +1708,7 @@ export default function FavoritesScreen() {
               style={styles.fab}
               onPress={handleFabPress}
               disableOverlay={isFavFoldersMode}
+              isFavoritesPageFavFolders={isFavFoldersMode}
             />
           </Animated.View>
         </ThemedView>

@@ -121,20 +121,30 @@ export default function DeckCreationLoadingPage({
   );
 }
 
-export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = false, onCancel }: { statusRows: { done: boolean, label: string }[], isInViewFlashcardsPage?: boolean, onCancel?: () => void }) {
+export function DeckCreationStatusPage({ statusRows, isInViewFlashcardsPage = false, onCancel, onMinimize }: { statusRows: { done: boolean, label: string }[], isInViewFlashcardsPage?: boolean, onCancel?: () => void, onMinimize?: () => void }) {
   const { language } = useLanguage();
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
-      {/* Cancel button at top right */}
-      {onCancel && (
+      {/* Top row with Minimize and Cancel buttons */}
+      <View style={{ position: 'absolute', top: insets.top + 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10, paddingHorizontal: 16 }}>
+        {/* Minimize button at top left */}
         <TouchableOpacity
-          style={{ position: 'absolute', top: insets.top + 10, right: 16, zIndex: 10, padding: 8 }}
-          onPress={onCancel}
+          style={{ padding: 8 }}
+          onPress={onMinimize || (() => {})}
         >
-          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{strings[language].cancel}</Text>
+          <Text style={{ fontSize: 20, color: '#44B88A', fontFamily: 'Satoshi-Medium' }}>{strings[language].minimize}</Text>
         </TouchableOpacity>
-      )}
+        {/* Cancel button at top right */}
+        {onCancel && (
+          <TouchableOpacity
+            style={{ padding: 8 }}
+            onPress={onCancel}
+          >
+            <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{strings[language].cancel}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <View style={{ width: '100%', alignItems: 'center', marginTop: 20}}>
         {/* Stacked image + Lottie animation */}
         <View style={{ aspectRatio: 1.2, width: '100%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>

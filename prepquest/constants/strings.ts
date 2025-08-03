@@ -165,6 +165,7 @@ export const strings: Record<string, any> = {
     },
     // ActionButtonsRow strings
     cancel: 'Cancel',
+    minimize: 'Minimize',
     // BottomTextInputModal strings
     editDeckName: 'Edit deck name',
     done: 'Done',
@@ -588,6 +589,7 @@ export const strings: Record<string, any> = {
       resetPasswordSubtitle: '输入您的邮箱地址，我们将发送重置密码链接给您。',
       enterYourEmail: '输入您的邮箱',
       cancel: '取消',
+      minimize: '最小化',
       sendEmail: '发送邮件',
       sending: '发送中...',
       pleaseEnterYourEmailAddress: '请输入您的邮箱地址',
@@ -803,6 +805,7 @@ export const strings: Record<string, any> = {
     },
     // ActionButtonsRow strings
     cancel: '取消',
+    minimize: '最小化',
     // BottomTextInputModal strings
     editDeckName: '编辑卡组名称',
     done: '完成',

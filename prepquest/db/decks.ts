@@ -2890,6 +2890,22 @@ export async function loadSortPreferences(): Promise<{ field: 'name' | 'dateAdde
 }
 
 // Function to update folder name
+export async function getFolderById(folderId: number): Promise<{ folderName: string } | null> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(`
+      SELECT folderName
+      FROM folders 
+      WHERE folderID = ? AND userID = ?
+    `, [folderId, userID]);
+    
+    return result as { folderName: string } | null;
+  } catch (error) {
+    console.error('Error fetching folder by ID:', error);
+    return null;
+  }
+}
+
 export async function updateFolderName(folderId: number, newFolderName: string): Promise<boolean> {
   try {
     const userID = await getCurrentUserID();

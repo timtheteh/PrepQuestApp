@@ -1,14 +1,18 @@
 import React, { ReactNode, useContext } from 'react';
 import { StyleSheet, TouchableOpacity, ViewProps, Animated } from 'react-native';
+import LottieView from 'lottie-react-native';
+import { Feather } from '@expo/vector-icons';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { Colors } from '@/constants/Colors';
 
 interface FloatingActionButtonProps extends ViewProps {
   onPress?: () => void;
-  children: ReactNode;
+  children?: ReactNode;
   disableOverlay?: boolean;
   backgroundColor?: string;
+  animationType?: 'default' | 'viewFlashcards';
 }
 
 export const FloatingActionButton = ({ 
@@ -17,10 +21,15 @@ export const FloatingActionButton = ({
   children,
   disableOverlay = false,
   backgroundColor,
+  animationType = 'default',
   ...props 
 }: FloatingActionButtonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
+  const { isBackgroundTaskRunning } = useBackgroundTask();
+  
+  // Debug logging
+  console.log('FloatingActionButton - isBackgroundTaskRunning:', isBackgroundTaskRunning);
   
   const { 
     setIsMenuOpen, 
@@ -69,7 +78,20 @@ export const FloatingActionButton = ({
       activeOpacity={0.8}
       {...props}
     >
-      {children}
+      {isBackgroundTaskRunning ? (
+        <LottieView
+          source={animationType === 'viewFlashcards' 
+            ? require('@/assets/animations/addDeckLoadingAnimation2.json')
+            : require('@/assets/animations/addDeckLoadingAnimation.json')
+          }
+          autoPlay
+          loop
+          style={styles.loadingAnimation}
+          cacheComposition={true}
+        />
+      ) : (
+        children || <Feather name="plus" size={38} color="white" />
+      )}
     </TouchableOpacity>
   );
 };
@@ -89,5 +111,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 8, // for Android shadow
+  },
+  loadingAnimation: {
+    width: 38,
+    height: 38,
   },
 }); 

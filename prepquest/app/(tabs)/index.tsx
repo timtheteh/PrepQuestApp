@@ -1,6 +1,6 @@
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, Dimensions } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
-import { Feather } from '@expo/vector-icons';
+
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
@@ -1354,9 +1354,7 @@ export default function DecksScreen() {
             <FloatingActionButton
               style={styles.fab}
               onPress={() => {}}
-            >
-              <Feather name="plus" size={38} color="white" />
-            </FloatingActionButton>
+            />
           </Animated.View>
         </ThemedView>
       </SafeAreaView>

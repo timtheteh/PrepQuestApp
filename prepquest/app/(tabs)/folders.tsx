@@ -3,7 +3,7 @@ import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/He
 import { Title } from '@/components/general/Title';
 import { FolderCard } from '@/components/folderComponents/FolderCard';
 import { ActionButtonsRow } from '@/components/general/ActionButtonsRow';
-import { Feather } from '@expo/vector-icons';
+
 import { useState, useRef, useContext, useEffect, useCallback, useMemo } from 'react';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -1452,9 +1452,7 @@ export default function FoldersScreen() {
               style={styles.fab}
               disableOverlay={true}
               onPress={handleFabPress}
-            >
-              <Feather name="plus" size={38} color="white" />
-            </FloatingActionButton>
+            />
           </Animated.View>
         </View>
       </SafeAreaView>

@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FavoriteButton } from '@/components/general/FavoriteButton';
 import { CircleSelectButtonGreen } from '@/components/general/CircleSelectButtonGreen';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
-import Feather from '@expo/vector-icons/Feather';
+
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1102,9 +1102,8 @@ export default function ViewFlashcardsScreen() {
             <FloatingActionButton
               style={styles.fab}
               backgroundColor="#44B88A"
-            >
-              <Feather name="plus" size={38} color="white" />
-            </FloatingActionButton>
+              animationType="viewFlashcards"
+            />
           )}    
         </ThemedView>
       </SafeAreaView>

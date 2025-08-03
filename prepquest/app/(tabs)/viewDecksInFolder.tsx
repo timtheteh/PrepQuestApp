@@ -10,7 +10,7 @@ import { FolderDetailsTopBar } from '@/components/folderComponents/FolderDetails
 import { ActionButtonsRow } from '@/components/general/ActionButtonsRow';
 import { Card } from '@/components/general/Card';
 import { FloatingActionButton } from '@/components/general/FloatingActionButton';
-import { Feather } from '@expo/vector-icons';
+
 import { BottomTextInputModal } from '@/components/general/BottomTextInputModal';
 import { 
   getDecksInFolder, 
@@ -21,7 +21,8 @@ import {
   updateFolderName,
   removeDecksFromFolder,
   updateDeckFavoriteStatusInFolder,
-  checkDatabaseReady
+  checkDatabaseReady,
+  getFolderById
 } from '@/db/decks';
 import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/general/Toast';
@@ -80,6 +81,7 @@ export default function ViewDecksInFolderScreen() {
   const [decks, setDecks] = useState<(Deck & { progress: number })[]>([]);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
+  const [folderTitleFromDb, setFolderTitleFromDb] = useState<string>('');
   const selectUnselectedDuration = 300;
   const selectTextAnim = useRef(new Animated.Value(0)).current;
   const fabOpacity = useRef(new Animated.Value(1)).current;
@@ -88,7 +90,7 @@ export default function ViewDecksInFolderScreen() {
 
   // Edit name modal state
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editText, setEditText] = useState(folderTitle as string || '');
+  const [editText, setEditText] = useState((folderTitle || folderTitleFromDb) as string || '');
   const [editNameSelected, setEditNameSelected] = useState(false);
 
   // Toast state
@@ -115,6 +117,26 @@ export default function ViewDecksInFolderScreen() {
     
     checkDatabaseReadyLocal();
   }, []);
+
+  // Fetch folder title from database if not provided in params
+  useEffect(() => {
+    const fetchFolderTitle = async () => {
+      if (!isDatabaseReady || !folderId || folderTitle) {
+        return;
+      }
+      
+      try {
+        const folderData = await getFolderById(parseInt(folderId as string));
+        if (folderData) {
+          setFolderTitleFromDb(folderData.folderName);
+        }
+      } catch (error) {
+        console.error('Error fetching folder title:', error);
+      }
+    };
+
+    fetchFolderTitle();
+  }, [isDatabaseReady, folderId, folderTitle]);
 
   // Load decks data from database
   useEffect(() => {
@@ -260,13 +282,13 @@ export default function ViewDecksInFolderScreen() {
     if (folderId) {
       setCurrentFolderId(folderId as string);
     }
-    if (folderTitle) {
-      setCurrentFolderTitle(folderTitle as string);
+    if (folderTitle || folderTitleFromDb) {
+      setCurrentFolderTitle((folderTitle || folderTitleFromDb) as string);
     }
     if (sourcePage) {
       setCurrentSourcePage(sourcePage as string);
     }
-  }, [folderId, folderTitle, sourcePage, setCurrentFolderId, setCurrentFolderTitle, setCurrentSourcePage]);
+  }, [folderId, folderTitle, folderTitleFromDb, sourcePage, setCurrentFolderId, setCurrentFolderTitle, setCurrentSourcePage]);
 
   // Helper function to format date
   const formatDate = useCallback((dateString: string): string => {
@@ -422,10 +444,10 @@ export default function ViewDecksInFolderScreen() {
 
   const handleEditNamePress = useCallback(() => {
     if (editNameSelected) return;
-    setEditText(folderTitle as string || '');
+    setEditText((folderTitle || folderTitleFromDb) as string || '');
     setShowEditModal(true);
     setEditNameSelected(true);
-  }, [editNameSelected, folderTitle]);
+  }, [editNameSelected, folderTitle, folderTitleFromDb]);
 
   const handleDoneEdit = async () => {
     const trimmedText = editText.trim();
@@ -438,7 +460,7 @@ export default function ViewDecksInFolderScreen() {
     }
     
     // Check if the folder name has actually changed (ignoring whitespace)
-    const currentFolderName = (folderTitle as string || '').trim();
+    const currentFolderName = ((folderTitle || folderTitleFromDb) as string || '').trim();
     if (trimmedText === currentFolderName) {
       // No change, just close the modal
       setShowEditModal(false);
@@ -527,7 +549,7 @@ export default function ViewDecksInFolderScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  }, [folderId, folderTitle, sourcePage, router, menuOverlayOpacity, deleteFolderModalOpacity]);
+  }, [folderId, folderTitle, folderTitleFromDb, sourcePage, router, menuOverlayOpacity, deleteFolderModalOpacity]);
 
   const handleDeckSelection = useCallback((index: number, selected: boolean) => {
     setSelectedDecks(prev => {
@@ -636,7 +658,7 @@ export default function ViewDecksInFolderScreen() {
               params: { 
                 isMoveToFolders: 'true',
                 selectedState: 'true',
-                folderTitle: folderTitle as string,
+                folderTitle: (folderTitle || folderTitleFromDb) as string,
                 folderId: folderId as string,
                 sourcePage: sourcePage as string,
                 selectedDeckIds: JSON.stringify(selectedDeckIds)
@@ -649,7 +671,7 @@ export default function ViewDecksInFolderScreen() {
             params: { 
               isMoveToFolders: 'true',
               selectedState: 'true',
-              folderTitle: folderTitle as string,
+              folderTitle: (folderTitle || folderTitleFromDb) as string,
               folderId: folderId as string,
               sourcePage: sourcePage as string,
               selectedDeckIds: JSON.stringify(selectedDeckIds)
@@ -679,7 +701,7 @@ export default function ViewDecksInFolderScreen() {
         ]).start();
         break;
     }
-  }, [selectedDecks, decks, sourcePage, folderTitle, folderId, language, router, navbarRef, menuOverlayOpacity, noSelectionModalOpacity, trashModalOpacity, slidingMenuDuration]);
+  }, [selectedDecks, decks, sourcePage, folderTitle, folderTitleFromDb, folderId, language, router, navbarRef, menuOverlayOpacity, noSelectionModalOpacity, trashModalOpacity, slidingMenuDuration]);
 
   const selectOpacity = selectTextAnim.interpolate({
     inputRange: [0, 1],
@@ -886,7 +908,7 @@ export default function ViewDecksInFolderScreen() {
           flashcardCount={data.flashcardCount}
           deckDetailsBackgroundIndex={data.cardDesignIndex}
           company={data.deckType === 'interview' && data.interviewCompany ? data.interviewCompany : undefined}
-          folderTitle={folderTitle as string}
+          folderTitle={(folderTitle || folderTitleFromDb) as string}
           folderId={folderId as string}
           sourcePage={sourcePage as string}
           isStudy={data.deckType === 'study'}
@@ -929,7 +951,7 @@ export default function ViewDecksInFolderScreen() {
                 <Text style={[
                   styles.title,
                 ]} numberOfLines={2}>
-                  {folderTitle}
+                  {folderTitle || folderTitleFromDb}
                 </Text>
               </View>
 
@@ -1018,9 +1040,7 @@ export default function ViewDecksInFolderScreen() {
             <FloatingActionButton
               style={styles.fab}
               onPress={() => {}}
-            >
-              <Feather name="plus" size={38} color="white" />
-            </FloatingActionButton>
+            />
           </Animated.View>
         </View>
       </SafeAreaView>

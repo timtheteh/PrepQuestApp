@@ -6,6 +6,7 @@ import { MenuContext } from '@/contexts/MenuContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { Colors } from '@/constants/Colors';
+import { useRouter } from 'expo-router';
 
 interface FloatingActionButtonProps extends ViewProps {
   onPress?: () => void;
@@ -28,7 +29,8 @@ export const FloatingActionButton = ({
 }: FloatingActionButtonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const { isBackgroundTaskRunning } = useBackgroundTask();
+  const { isBackgroundTaskRunning, backgroundTaskProgress } = useBackgroundTask();
+  const router = useRouter();
   
   // Debug logging
   console.log('FloatingActionButton - isBackgroundTaskRunning:', isBackgroundTaskRunning);
@@ -41,6 +43,19 @@ export const FloatingActionButton = ({
   } = useContext(MenuContext);
 
   const handlePress = () => {
+    // If there's a background task running and we're not on the folders page,
+    // navigate to the deck creation status page instead of showing the add deck modal
+    if (isBackgroundTaskRunning && !isFoldersPage && backgroundTaskProgress) {
+      // Navigate to deck creation status page - it will get real-time updates from background task
+      router.push({
+        pathname: '/deckCreationStatusPage',
+        params: {
+          isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage ? 'true' : 'false'
+        }
+      });
+      return;
+    }
+
     if (disableOverlay) {
       if (onPress) {
         onPress();

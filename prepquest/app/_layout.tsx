@@ -250,6 +250,14 @@ function AppContent() {
                 headerShown: false,
               }} 
             />
+            <Stack.Screen 
+              name="deckCreationStatusPage" 
+              options={{
+                presentation: 'fullScreenModal',
+                animation: 'slide_from_right',
+                headerShown: false,
+              }} 
+            />
           </Stack>
           <BackgroundTaskNotification />
           <StatusBar style="auto" />

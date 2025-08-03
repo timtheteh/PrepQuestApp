@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Dimensions, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Dimensions, Alert, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/formComponents/FormHeaderIcons';
@@ -24,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserQuestionSettings } from '../db/users';
 import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
+import BackgroundService from 'react-native-background-actions';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -35,6 +36,205 @@ async function getCurrentUserID(): Promise<string> {
     return '1'; // Default to '1' on error
   }
 }
+
+// --- Background Task Logic for GenAI Deck/Flashcard Creation ---
+const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
+
+// Helper to save progress
+async function saveGenAIDeckCreationProgress(progress: any) {
+  try {
+    await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(progress));
+  } catch (e) { 
+    console.error('Failed to save GenAI deck creation progress', e); 
+  }
+}
+
+// Helper to load progress
+async function loadGenAIDeckCreationProgress(): Promise<any | null> {
+  try {
+    const data = await AsyncStorage.getItem(BG_TASK_PROGRESS_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (e) { 
+    console.error('Failed to load GenAI deck creation progress', e);
+    return null; 
+  }
+}
+
+// Helper to clear progress
+async function clearGenAIDeckCreationProgress() {
+  try { 
+    await AsyncStorage.removeItem(BG_TASK_PROGRESS_KEY); 
+  } catch (e) {
+    console.error('Failed to clear GenAI deck creation progress', e);
+  }
+}
+
+// The background task function for GenAI deck creation
+const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
+  const { 
+    mode, 
+    deckId, 
+    folderId, 
+    isInFavoritesPage, 
+    isInIndexPage, 
+    isInViewDecksInFolderPage, 
+    isInViewFlashcardsPage,
+    formData,
+    prompt,
+    startIndex 
+  } = taskDataArguments;
+  
+  let createdDeckId: number | null = null;
+  let createdFlashcardIds: number[] = [];
+  let cancelled = false;
+  
+  console.log('Background task started with parameters:', { mode, deckId, folderId });
+  
+  try {
+    // Step 1: Generate flashcards via API
+    if (BackgroundService.isRunning() === false) { 
+      console.log('Background service stopped, cancelling task');
+      cancelled = true; 
+      return; 
+    }
+    
+    console.log('Saving initial progress: requestReceived');
+    // Save progress - API request received
+    await saveGenAIDeckCreationProgress({
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData, prompt, createdDeckId, createdFlashcardIds, 
+      status: 'requestReceived', inProgress: true
+    });
+    
+    console.log('Making API call to GenAI...');
+    // Call the GenAI API
+    let response;
+    try {
+      response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ prompt }),
+      });
+    } catch (networkError) {
+      if (networkError instanceof Error && networkError.name === 'AbortError') {
+        console.log('Request was cancelled');
+        return;
+      }
+      throw networkError;
+    }
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    let flashcards = data.flashcards?.flashcards ?? data.flashcards;
+    
+    // If it's a single object, wrap in array
+    if (flashcards && !Array.isArray(flashcards)) {
+      flashcards = [flashcards];
+    }
+    
+    if (!flashcards || !Array.isArray(flashcards) || flashcards.length === 0) {
+      throw new Error('No flashcards generated');
+    }
+    
+    console.log(`Generated ${flashcards.length} flashcards, saving progress: flashcardsGenerated`);
+    // Save progress - flashcards generated
+    await saveGenAIDeckCreationProgress({
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData, prompt, createdDeckId, createdFlashcardIds, flashcards,
+      status: 'flashcardsGenerated', inProgress: true
+    });
+    
+    // Add a small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Step 2: Create deck and/or add flashcards
+    if (BackgroundService.isRunning() === false) { 
+      console.log('Background service stopped, cancelling task');
+      cancelled = true; 
+      return; 
+    }
+    
+    console.log('Creating deck and flashcards...');
+    if (isInIndexPage) {
+      const result = await createDeckWithGenAIFlashcards({
+        deckName: formData.deckName,
+        mode: formData.mode === 'study' ? 'study' : 'interview',
+        formFields: formData.formFields,
+        flashcards
+      });
+      createdDeckId = result.deckId || null;
+    }
+    
+    if (isInFavoritesPage) {
+      const result = await createDeckWithGenAIFlashcards({
+        deckName: formData.deckName,
+        mode: formData.mode === 'study' ? 'study' : 'interview',
+        formFields: formData.formFields,
+        flashcards,
+        isFavorited: 1
+      });
+      createdDeckId = result.deckId || null;
+    }
+    
+    if (isInViewDecksInFolderPage) {
+      const result = await createDeckWithGenAIFlashcards({
+        deckName: formData.deckName,
+        mode: formData.mode === 'study' ? 'study' : 'interview',
+        formFields: formData.formFields,
+        flashcards,
+        folderIDs: `[${folderId}]`
+      });
+      createdDeckId = result.deckId || null;
+    }
+    
+    if (isInViewFlashcardsPage) {
+      const result = await createGenAIFlashcardsForDeck({
+        deckId: Number(deckId),
+        flashcards
+      });
+      if (result && result.flashcardIds) {
+        createdFlashcardIds = result.flashcardIds;
+      }
+    }
+    
+    console.log('Deck and flashcards created, saving progress: deckAndFlashcardsCreated');
+    // Save progress - deck and flashcards created
+    await saveGenAIDeckCreationProgress({
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData, prompt, createdDeckId, createdFlashcardIds, flashcards,
+      status: 'deckAndFlashcardsCreated', inProgress: true
+    });
+    
+    // Add a small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('Task completed successfully, marking as complete');
+    // Mark as complete
+    await saveGenAIDeckCreationProgress({ 
+      inProgress: false, 
+      completed: true,
+      createdDeckId,
+      createdFlashcardIds
+    });
+    
+  } catch (e: any) {
+    console.error('Background task error:', e);
+    // Save progress on error
+    await saveGenAIDeckCreationProgress({
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData, prompt, createdDeckId, createdFlashcardIds, 
+      inProgress: true, error: e.message
+    });
+    throw e;
+  }
+};
+// --- END Background Task Logic ---
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -101,15 +301,15 @@ const TOAST_MESSAGES = {
   },
   invalidSubjects: {
     English: "Invalid form input for 'Subject(s)'",
-    Chinese: '“科目”输入无效'
+    Chinese: '“科目"输入无效'
   },
   invalidTopics: {
     English: "Invalid form input for 'Topic(s)'",
-    Chinese: '“主题”输入无效'
+    Chinese: '“主题"输入无效'
   },
   invalidSubtopics: {
     English: "Invalid form input for 'Subtopic(s)'",
-    Chinese: '“子主题”输入无效'
+    Chinese: '“子主题"输入无效'
   },
   insufficientQuestions: {
     English: 'Number of questions insufficient to cover all kinds of questions chosen!',
@@ -179,6 +379,74 @@ export default function GenAIFormPage() {
     // Ensure the layout is ready after the first render
     const timer = setTimeout(() => setIsReady(true), 0);
     return () => clearTimeout(timer);
+  }, []);
+
+  // AppState logic to resume GenAI deck/flashcard creation if needed
+  useEffect(() => {
+    let appState = AppState.currentState;
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (typeof appState === 'string' && appState.match(/inactive|background/) && nextAppState === 'active') {
+        // App is foregrounded - check if there's an ongoing background task
+        const progress = await loadGenAIDeckCreationProgress();
+        if (progress && progress.inProgress && !progress.completed) {
+          // Resume background task
+          const { 
+            mode, 
+            deckId, 
+            folderId, 
+            isInFavoritesPage, 
+            isInIndexPage, 
+            isInViewDecksInFolderPage, 
+            isInViewFlashcardsPage,
+            formData,
+            prompt
+          } = progress;
+          
+          // Start the background task
+          try {
+            await BackgroundService.start(genAIDeckCreationBackgroundTask, {
+              taskName: 'GenAIDeckCreation',
+              taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
+              taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+              taskIcon: { name: 'ic_launcher', type: 'mipmap' },
+              color: '#44B88A',
+              parameters: {
+                mode, 
+                deckId, 
+                folderId, 
+                isInFavoritesPage, 
+                isInIndexPage, 
+                isInViewDecksInFolderPage, 
+                isInViewFlashcardsPage,
+                formData,
+                prompt
+              },
+            });
+          } catch (error) {
+            console.error('Failed to resume background task:', error);
+          }
+        }
+      }
+      appState = nextAppState;
+    };
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [language]);
+
+  // Cleanup effect to stop background service when component unmounts
+  useEffect(() => {
+    return () => {
+      // Cleanup function to stop background service when component unmounts
+      const cleanup = async () => {
+        try {
+          await BackgroundService.stop();
+          await clearGenAIDeckCreationProgress();
+        } catch (error) {
+          console.error('Error cleaning up background service:', error);
+        }
+      };
+      cleanup();
+    };
   }, []);
 
   // Fetch deck title when in view flashcards page
@@ -809,6 +1077,8 @@ export default function GenAIFormPage() {
       setShowStatusPage(true);
       setStatusGeneratingFlashcards(false);
       setStatusAddingDeckAndFlashcards(false);
+      
+      // Save form entry
       const now = new Date().toISOString();
       await saveUserGenAIFormEntry({
         deckName,
@@ -828,108 +1098,151 @@ export default function GenAIFormPage() {
         interviewExperienceLevel: interviewOptionalQuestion2,
         interviewTopics: interviewOptionalQuestion3
       });
-      setTimeout(async () => {
-        if (cancelCreationRef.current) return;
-        const flashcards = await callGenAIFlashcardsGeneration();
-        if (cancelCreationRef.current) return;
-        setStatusRequestReceived(true);
-        if (cancelCreationRef.current) return;
-        if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
-          setTimeout(async () => {
-            if (cancelCreationRef.current) return;
-            setStatusGeneratingFlashcards(true);
-            let newDeckId: number | null = null;
-            if (isInIndexPage) {
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (isInFavoritesPage) {
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards,
-                isFavorited: 1
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (isInViewDecksInFolderPage) {
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards,
-                folderIDs: `[${folderId}]`
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (newDeckId) setCreatedDeckId(newDeckId);
-            if (isInViewFlashcardsPage) {
-              const result = await createGenAIFlashcardsForDeck({
-                deckId: Number(deckId),
-                flashcards
-              });
-              // Get the IDs of the newly created flashcards
-              if (result && result.flashcardIds) setCreatedFlashcardIds(result.flashcardIds);
-            }
-            if (cancelCreationRef.current) return;
-            setStatusAddingDeckAndFlashcards(true);
-            setTimeout(() => {
-              setShowStatusPage(false);
-              if (!cancelCreationRef.current) {
-                router.back();
-              }
-            }, 1200);
-          }, 900);
-        } else {
-          setShowStatusPage(false);
-          // router.back();
+
+      // Build form data for background task
+      const formData = {
+        deckName,
+        mode: mode === 'study' ? 'study' : 'interview',
+        formFields: {
+          studyEducationLevel: studyMandatoryQuestion1,
+          studySubjects: studyMandatoryQuestion2,
+          studyTopics: studyOptionalQuestion1,
+          studySubtopics: studyOptionalQuestion2,
+          studyExam: studyOptionalQuestion3,
+          interviewJobRole: interviewMandatoryQuestion1,
+          interviewType,
+          interviewCompany: interviewOptionalQuestion1,
+          interviewExperienceLevel: interviewOptionalQuestion2,
+          interviewTopics: interviewOptionalQuestion3,
+          numberOfQuestions,
+          kindsOfQuestions: JSON.stringify(questionType)
         }
-      }, 900);
+      };
+
+      // Build prompt for GenAI
+      let prompt = "";
+      if (mode === 'interview' && language === 'English') {
+        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
+        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+          prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion1}.\n`
+        }
+        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+          prompt += `The experience level for this position is ${interviewOptionalQuestion2}.\n`
+        }
+        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+          prompt += `The topics I would like to focus on are ${interviewOptionalQuestion3}.\n`
+        }
+      }
+      if (mode === 'interview' && language === 'Chinese') {
+        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
+        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+          prompt += `我准备面试的公司是${interviewOptionalQuestion1}。\n`
+        }
+        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+          prompt += `这个职位的经验水平是${interviewOptionalQuestion2}。\n`
+        }
+        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+          prompt += `我想要聚焦的领域是${interviewOptionalQuestion3}。\n`
+        }
+      }
+      if (mode === 'study' && language === 'English') {
+        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
+        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+          prompt += `The topics I would like to study are ${studyOptionalQuestion1}.\n`
+        }
+        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+          prompt += `The subtopics I would like to focus on are ${studyOptionalQuestion2}.\n`
+        }
+        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+          prompt += `The exam I am preparing for is ${studyOptionalQuestion3}.\n`
+        }
+      }
+      if (mode === 'study' && language === 'Chinese') { 
+        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
+        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+          prompt += `我想要学习的领域是${studyOptionalQuestion1}。\n`
+        }
+        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+          prompt += `我想要聚焦的子领域是${studyOptionalQuestion2}。\n`
+        }
+        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+          prompt += `我正在准备${studyOptionalQuestion3}考试。\n`
+        }
+      }
+
+      // Add flashcard distribution and type prompts
+      const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
+      const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
+        isMcqEnabled,
+        isClozeEnabled,
+        isVoiceRecordedEnabled,
+        interviewType,
+        numberOfQuestions,
+        questionType
+      );
+
+      if (distributionOfFlashcards) {   
+        if (language === 'English') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
+            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
+          }
+        } 
+        if (language === 'Chinese') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
+            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
+          }
+        }
+      }
+
+      // Add final instructions
+      if (language === 'English' && mode === 'interview') { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'interview') { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+      if (language === 'English' && mode === 'study') { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'study') { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+
+      // Start background task
+      try {
+        await BackgroundService.start(genAIDeckCreationBackgroundTask, {
+          taskName: 'GenAIDeckCreation',
+          taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
+          taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+          taskIcon: { name: 'ic_launcher', type: 'mipmap' },
+          color: '#44B88A',
+          parameters: {
+            mode, 
+            deckId, 
+            folderId, 
+            isInFavoritesPage, 
+            isInIndexPage, 
+            isInViewDecksInFolderPage, 
+            isInViewFlashcardsPage,
+            formData,
+            prompt
+          },
+        });
+
+        // Start progress monitoring
+        startProgressMonitoring();
+        
+      } catch (error) {
+        console.error('Failed to start background task:', error);
+        setShowStatusPage(false);
+        Alert.alert('Error', 'Failed to start background task');
+      }
     });
   };
 
@@ -951,6 +1264,8 @@ export default function GenAIFormPage() {
       setShowStatusPage(true);
       setStatusGeneratingFlashcards(false);
       setStatusAddingDeckAndFlashcards(false);
+      
+      // Save form entry
       const now = new Date().toISOString();
       await saveUserGenAIFormEntry({
         deckName,
@@ -970,107 +1285,151 @@ export default function GenAIFormPage() {
         interviewExperienceLevel: interviewOptionalQuestion2,
         interviewTopics: interviewOptionalQuestion3
       });
-      setTimeout(async () => {
-        if (cancelCreationRef.current) return;
-        setStatusRequestReceived(true);
-        const flashcards = await callGenAIFlashcardsGeneration();
-        if (cancelCreationRef.current) return;
-        if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
-          setTimeout(async () => {
-            if (cancelCreationRef.current) return;
-            setStatusGeneratingFlashcards(true);
-            let newDeckId: number | null = null;
-            if (isInIndexPage) {
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (isInFavoritesPage) {
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards,
-                isFavorited: 1
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (isInViewDecksInFolderPage) {
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  studyTopics: studyOptionalQuestion1,
-                  studySubtopics: studyOptionalQuestion2,
-                  studyExam: studyOptionalQuestion3,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  interviewCompany: interviewOptionalQuestion1,
-                  interviewExperienceLevel: interviewOptionalQuestion2,
-                  interviewTopics: interviewOptionalQuestion3,
-                  numberOfQuestions,
-                  kindsOfQuestions: JSON.stringify(questionType)
-                },
-                flashcards,
-                folderIDs: `[${folderId}]`
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (newDeckId) setCreatedDeckId(newDeckId);
-            if (isInViewFlashcardsPage) {
-              const result = await createGenAIFlashcardsForDeck({
-                deckId: Number(deckId),
-                flashcards
-              });
-              // Get the IDs of the newly created flashcards
-              if (result && result.flashcardIds) setCreatedFlashcardIds(result.flashcardIds);
-            }
-            if (cancelCreationRef.current) return;
-            setStatusAddingDeckAndFlashcards(true);
-            setTimeout(() => {
-              setShowStatusPage(false);
-              if (!cancelCreationRef.current) {
-                router.back();
-              }
-            }, 1200);
-          }, 900);
-        } else {
-          setShowStatusPage(false);
-          // router.back();
+
+      // Build form data for background task
+      const formData = {
+        deckName,
+        mode: mode === 'study' ? 'study' : 'interview',
+        formFields: {
+          studyEducationLevel: studyMandatoryQuestion1,
+          studySubjects: studyMandatoryQuestion2,
+          studyTopics: studyOptionalQuestion1,
+          studySubtopics: studyOptionalQuestion2,
+          studyExam: studyOptionalQuestion3,
+          interviewJobRole: interviewMandatoryQuestion1,
+          interviewType,
+          interviewCompany: interviewOptionalQuestion1,
+          interviewExperienceLevel: interviewOptionalQuestion2,
+          interviewTopics: interviewOptionalQuestion3,
+          numberOfQuestions,
+          kindsOfQuestions: JSON.stringify(questionType)
         }
-      }, 900);
+      };
+
+      // Build prompt for GenAI
+      let prompt = "";
+      if (mode === 'interview' && language === 'English') {
+        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
+        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+          prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion1}.\n`
+        }
+        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+          prompt += `The experience level for this position is ${interviewOptionalQuestion2}.\n`
+        }
+        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+          prompt += `The topics I would like to focus on are ${interviewOptionalQuestion3}.\n`
+        }
+      }
+      if (mode === 'interview' && language === 'Chinese') {
+        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
+        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+          prompt += `我准备面试的公司是${interviewOptionalQuestion1}。\n`
+        }
+        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+          prompt += `这个职位的经验水平是${interviewOptionalQuestion2}。\n`
+        }
+        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+          prompt += `我想要聚焦的领域是${interviewOptionalQuestion3}。\n`
+        }
+      }
+      if (mode === 'study' && language === 'English') {
+        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
+        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+          prompt += `The topics I would like to study are ${studyOptionalQuestion1}.\n`
+        }
+        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+          prompt += `The subtopics I would like to focus on are ${studyOptionalQuestion2}.\n`
+        }
+        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+          prompt += `The exam I am preparing for is ${studyOptionalQuestion3}.\n`
+        }
+      }
+      if (mode === 'study' && language === 'Chinese') { 
+        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
+        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+          prompt += `我想要学习的领域是${studyOptionalQuestion1}。\n`
+        }
+        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+          prompt += `我想要聚焦的子领域是${studyOptionalQuestion2}。\n`
+        }
+        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+          prompt += `我正在准备${studyOptionalQuestion3}考试。\n`
+        }
+      }
+
+      // Add flashcard distribution and type prompts
+      const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
+      const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
+        isMcqEnabled,
+        isClozeEnabled,
+        isVoiceRecordedEnabled,
+        interviewType,
+        numberOfQuestions,
+        questionType
+      );
+
+      if (distributionOfFlashcards) {   
+        if (language === 'English') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
+            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
+          }
+        } 
+        if (language === 'Chinese') {
+          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
+            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
+          }
+        }
+      }
+
+      // Add final instructions
+      if (language === 'English' && mode === 'interview') { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'interview') { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+      if (language === 'English' && mode === 'study') { 
+        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
+        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+      }
+      if (language === 'Chinese' && mode === 'study') { 
+        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
+        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+      }
+
+      // Start background task
+      try {
+        await BackgroundService.start(genAIDeckCreationBackgroundTask, {
+          taskName: 'GenAIDeckCreation',
+          taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
+          taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+          taskIcon: { name: 'ic_launcher', type: 'mipmap' },
+          color: '#44B88A',
+          parameters: {
+            mode, 
+            deckId, 
+            folderId, 
+            isInFavoritesPage, 
+            isInIndexPage, 
+            isInViewDecksInFolderPage, 
+            isInViewFlashcardsPage,
+            formData,
+            prompt
+          },
+        });
+
+        // Start progress monitoring
+        startProgressMonitoring();
+        
+      } catch (error) {
+        console.error('Failed to start background task:', error);
+        setShowStatusPage(false);
+        Alert.alert('Error', 'Failed to start background task');
+      }
     });
   };
 
@@ -1088,6 +1447,102 @@ export default function GenAIFormPage() {
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
+
+  // Centralized progress monitoring function
+  const startProgressMonitoring = () => {
+    console.log('Starting progress monitoring...');
+    let lastStatus = '';
+    
+    const checkProgress = async () => {
+      if (cancelCreationRef.current) {
+        console.log('Progress monitoring cancelled');
+        return;
+      }
+      
+      try {
+        const progress = await loadGenAIDeckCreationProgress();
+        console.log('Progress check result:', progress);
+        
+        if (progress && progress.status && progress.status !== lastStatus) {
+          console.log('Status changed from', lastStatus, 'to', progress.status);
+          lastStatus = progress.status;
+          
+          if (progress.status === 'requestReceived') {
+            console.log('Setting statusRequestReceived to true');
+            setStatusRequestReceived(true);
+          }
+          if (progress.status === 'flashcardsGenerated') {
+            console.log('Setting statusGeneratingFlashcards to true');
+            setStatusGeneratingFlashcards(true);
+          }
+          if (progress.status === 'deckAndFlashcardsCreated') {
+            console.log('Setting statusAddingDeckAndFlashcards to true');
+            setStatusAddingDeckAndFlashcards(true);
+            if (progress.createdDeckId) setCreatedDeckId(progress.createdDeckId);
+            if (progress.createdFlashcardIds) setCreatedFlashcardIds(progress.createdFlashcardIds);
+            
+            // Clear progress and stop background service
+            await clearGenAIDeckCreationProgress();
+            await BackgroundService.stop();
+            
+            // Show completion and navigate back
+            setTimeout(() => {
+              setShowStatusPage(false);
+              if (!cancelCreationRef.current) {
+                router.back();
+              }
+            }, 1200);
+            return;
+          }
+          if (progress.error) {
+            console.log('Progress error:', progress.error);
+            // Handle error
+            setShowStatusPage(false);
+            Alert.alert('Error', progress.error);
+            await clearGenAIDeckCreationProgress();
+            await BackgroundService.stop();
+            return;
+          }
+          if (progress.completed) {
+            console.log('Task completed, setting final status');
+            setStatusAddingDeckAndFlashcards(true);
+            if (progress.createdDeckId) setCreatedDeckId(progress.createdDeckId);
+            if (progress.createdFlashcardIds) setCreatedFlashcardIds(progress.createdFlashcardIds);
+            
+            // Clear progress and stop background service
+            await clearGenAIDeckCreationProgress();
+            await BackgroundService.stop();
+            
+            // Show completion and navigate back
+            setTimeout(() => {
+              setShowStatusPage(false);
+              if (!cancelCreationRef.current) {
+                router.back();
+              }
+            }, 1200);
+            return;
+          }
+        } else if (progress && !progress.status) {
+          console.log('Progress exists but no status yet');
+        } else if (!progress) {
+          console.log('No progress found yet');
+        }
+        
+        // Continue checking progress
+        if (!cancelCreationRef.current) {
+          setTimeout(checkProgress, 500); // Check more frequently
+        }
+      } catch (error) {
+        console.error('Error monitoring progress:', error);
+        if (!cancelCreationRef.current) {
+          setTimeout(checkProgress, 1000);
+        }
+      }
+    };
+    
+    // Start monitoring after a short delay to allow background task to start
+    setTimeout(checkProgress, 500);
+  };
 
   if (showStatusPage) {
     return (
@@ -1111,6 +1566,14 @@ export default function GenAIFormPage() {
           if (abortControllerRef.current) {
             abortControllerRef.current.abort();
             abortControllerRef.current = null;
+          }
+          
+          // Stop background service and clear progress
+          try {
+            await BackgroundService.stop();
+            await clearGenAIDeckCreationProgress();
+          } catch (error) {
+            console.error('Error stopping background service:', error);
           }
           
           setShowStatusPage(false);

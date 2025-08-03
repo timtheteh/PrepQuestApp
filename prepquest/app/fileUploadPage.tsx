@@ -35,7 +35,7 @@ import * as XLSX from 'xlsx'; // Use CommonJS import for React Native compatibil
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getUserQuestionSettings } from '@/db/users';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
-import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
+import DeckCreationStatusPage from './deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (

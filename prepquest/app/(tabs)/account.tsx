@@ -14,7 +14,8 @@ import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { strings } from '@/constants/strings';
-import DeckCreationLoadingPage, { DeckCreationStatusPage } from '../DeckCreationLoadingPage';
+import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
+import DeckCreationStatusPage from '../deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 
 export default function AccountScreen() {

@@ -22,7 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserQuestionSettings } from '../db/users';
-import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
+import DeckCreationStatusPage from './deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import BackgroundService from 'react-native-background-actions';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';

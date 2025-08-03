@@ -26,6 +26,7 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
+import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -955,6 +956,53 @@ export default function FavoritesScreen() {
       loadFavoritedData();
     }
   }, [isFocused, isDatabaseReady]);
+
+  // Background task refresh hook
+  const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
+    onTaskComplete: () => {
+      console.log('Background task completed - refreshing favorited data');
+      // Refresh favorited data when background task completes
+      if (isDatabaseReady) {
+        const loadFavoritedData = async () => {
+          try {
+            const [decksData, foldersData] = await Promise.all([
+              getFavoritedDecks(),
+              getFavoritedFolders()
+            ]);
+            setFavoritedDecks(decksData);
+            setFavoritedFolders(foldersData);
+            setFavDeckCardsCount(decksData.length);
+            setFavFolderCardsCount(foldersData.length);
+          } catch (error) {
+            console.error('Error refreshing favorited data:', error);
+          }
+        };
+        loadFavoritedData();
+      }
+    }
+  });
+
+  // Fallback refresh mechanism - watch for background task completion
+  useEffect(() => {
+    if (backgroundTaskProgress?.completed === true && isDatabaseReady) {
+      console.log('Fallback: Background task completed - refreshing favorited data');
+      const loadFavoritedData = async () => {
+        try {
+          const [decksData, foldersData] = await Promise.all([
+            getFavoritedDecks(),
+            getFavoritedFolders()
+          ]);
+          setFavoritedDecks(decksData);
+          setFavoritedFolders(foldersData);
+          setFavDeckCardsCount(decksData.length);
+          setFavFolderCardsCount(foldersData.length);
+        } catch (error) {
+          console.error('Error refreshing favorited data (fallback):', error);
+        }
+      };
+      loadFavoritedData();
+    }
+  }, [backgroundTaskProgress?.completed, isDatabaseReady]);
 
   // Load sort preferences when component mounts
   useEffect(() => {

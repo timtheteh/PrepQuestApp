@@ -21,6 +21,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 import { useCallback } from 'react';
 import { 
   loadFlashcardsFromDatabase, 
@@ -211,6 +212,27 @@ export default function ViewFlashcardsScreen() {
       screenOpacity.setValue(0);
     }
   }, [isFocused]);
+
+  // Background task refresh hook
+  const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
+    onTaskComplete: () => {
+      console.log('Background task completed - refreshing flashcards data');
+      // Refresh flashcards data when background task completes
+      if (deckId) {
+        loadFlashcards();
+        loadTopics();
+      }
+    }
+  });
+
+  // Fallback refresh mechanism - watch for background task completion
+  useEffect(() => {
+    if (backgroundTaskProgress?.completed === true && deckId) {
+      console.log('Fallback: Background task completed - refreshing flashcards data');
+      loadFlashcards();
+      loadTopics();
+    }
+  }, [backgroundTaskProgress?.completed, deckId]);
 
   useEffect(() => {
     if (isSelectMode) {

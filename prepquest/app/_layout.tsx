@@ -14,6 +14,8 @@ import SplashScreen from './splash';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
+import { BackgroundTaskNotification } from '@/components/general/BackgroundTaskNotification';
 
 // Token cache for Clerk
 const tokenCache = {
@@ -227,6 +229,7 @@ function AppContent() {
               }} 
             />
           </Stack>
+          <BackgroundTaskNotification />
           <StatusBar style="auto" />
         </>
       )}
@@ -247,7 +250,9 @@ export default function RootLayout() {
       <LanguageProvider>
         <HybridAuthProvider>
           <CustomThemeProvider>
-            <AppContent />
+            <BackgroundTaskProvider>
+              <AppContent />
+            </BackgroundTaskProvider>
           </CustomThemeProvider>
         </HybridAuthProvider>
       </LanguageProvider>

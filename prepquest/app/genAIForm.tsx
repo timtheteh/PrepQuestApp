@@ -25,6 +25,7 @@ import { getUserQuestionSettings } from '../db/users';
 import { DeckCreationStatusPage } from './DeckCreationLoadingPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import BackgroundService from 'react-native-background-actions';
+import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -154,14 +155,13 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Step 2: Create deck and/or add flashcards
-    if (BackgroundService.isRunning() === false) { 
-      console.log('Background service stopped, cancelling task');
-      cancelled = true; 
-      return; 
-    }
+    // Don't cancel the task if background service stops - continue with deck creation
+    // The background service might stop but we should still complete the database operations
+    console.log('Proceeding with deck and flashcard creation...');
     
     console.log('Creating deck and flashcards...');
     if (isInIndexPage) {
+      console.log('Creating deck for index page...');
       const result = await createDeckWithGenAIFlashcards({
         deckName: formData.deckName,
         mode: formData.mode === 'study' ? 'study' : 'interview',
@@ -169,6 +169,7 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         flashcards
       });
       createdDeckId = result.deckId || null;
+      console.log('Index page deck created with ID:', createdDeckId);
     }
     
     if (isInFavoritesPage) {
@@ -204,6 +205,7 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     }
     
     console.log('Deck and flashcards created, saving progress: deckAndFlashcardsCreated');
+    console.log('Created deck ID:', createdDeckId, 'Created flashcard IDs:', createdFlashcardIds);
     // Save progress - deck and flashcards created
     await saveGenAIDeckCreationProgress({
       mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
@@ -214,23 +216,51 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     // Add a small delay to ensure UI updates
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // Check if background service is still running, but don't cancel if it's not
+    if (BackgroundService.isRunning() === false) {
+      console.log('Background service stopped, but continuing with completion...');
+    }
+    
     console.log('Task completed successfully, marking as complete');
-    // Mark as complete
-    await saveGenAIDeckCreationProgress({ 
-      inProgress: false, 
-      completed: true,
-      createdDeckId,
-      createdFlashcardIds
-    });
+    console.log('Final completion data:', { createdDeckId, createdFlashcardIds });
+    
+    // Mark as complete - ensure this happens even if background service stops
+    try {
+      await saveGenAIDeckCreationProgress({ 
+        inProgress: false, 
+        completed: true,
+        createdDeckId,
+        createdFlashcardIds
+      });
+      console.log('Completion status saved to AsyncStorage');
+    } catch (error) {
+      console.error('Error saving completion status:', error);
+      // Try one more time after a delay
+      setTimeout(async () => {
+        try {
+          await saveGenAIDeckCreationProgress({ 
+            inProgress: false, 
+            completed: true,
+            createdDeckId,
+            createdFlashcardIds
+          });
+          console.log('Completion status saved to AsyncStorage (retry)');
+        } catch (retryError) {
+          console.error('Failed to save completion status after retry:', retryError);
+        }
+      }, 1000);
+    }
     
   } catch (e: any) {
     console.error('Background task error:', e);
+    console.error('Error stack:', e.stack);
     // Save progress on error
     await saveGenAIDeckCreationProgress({
       mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
       formData, prompt, createdDeckId, createdFlashcardIds, 
       inProgress: true, error: e.message
     });
+    console.log('Error progress saved to AsyncStorage');
     throw e;
   }
 };
@@ -365,15 +395,11 @@ export default function GenAIFormPage() {
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
   const getTopBarAccountHeight = useTopBarAccountHeight();
+  const { startBackgroundTaskMonitoring, backgroundTaskProgress } = useBackgroundTask();
   // Status page state for GenAI deck creation
   const [showStatusPage, setShowStatusPage] = useState(false);
-  const [statusRequestReceived, setStatusRequestReceived] = useState(false);
-  const [statusGeneratingFlashcards, setStatusGeneratingFlashcards] = useState(false);
-  const [statusAddingDeckAndFlashcards, setStatusAddingDeckAndFlashcards] = useState(false);
   const cancelCreationRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const [createdDeckId, setCreatedDeckId] = useState<number | null>(null);
-  const [createdFlashcardIds, setCreatedFlashcardIds] = useState<number[]>([]);
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -1075,8 +1101,6 @@ export default function GenAIFormPage() {
     ]).start(async () => {
       setIsSuccessModalOpen(false);
       setShowStatusPage(true);
-      setStatusGeneratingFlashcards(false);
-      setStatusAddingDeckAndFlashcards(false);
       
       // Save form entry
       const now = new Date().toISOString();
@@ -1235,8 +1259,8 @@ export default function GenAIFormPage() {
           },
         });
 
-        // Start progress monitoring
-        startProgressMonitoring();
+        // Start global background task monitoring
+        startBackgroundTaskMonitoring();
         
       } catch (error) {
         console.error('Failed to start background task:', error);
@@ -1262,8 +1286,6 @@ export default function GenAIFormPage() {
     ]).start(async () => {
       setIsOptionalFieldsWarningModalOpen(false);
       setShowStatusPage(true);
-      setStatusGeneratingFlashcards(false);
-      setStatusAddingDeckAndFlashcards(false);
       
       // Save form entry
       const now = new Date().toISOString();
@@ -1422,8 +1444,8 @@ export default function GenAIFormPage() {
           },
         });
 
-        // Start progress monitoring
-        startProgressMonitoring();
+        // Start global background task monitoring
+        startBackgroundTaskMonitoring();
         
       } catch (error) {
         console.error('Failed to start background task:', error);
@@ -1448,103 +1470,22 @@ export default function GenAIFormPage() {
     outputRange: [0, 1],
   });
 
-  // Centralized progress monitoring function
-  const startProgressMonitoring = () => {
-    console.log('Starting progress monitoring...');
-    let lastStatus = '';
-    
-    const checkProgress = async () => {
-      if (cancelCreationRef.current) {
-        console.log('Progress monitoring cancelled');
-        return;
-      }
-      
-      try {
-        const progress = await loadGenAIDeckCreationProgress();
-        console.log('Progress check result:', progress);
-        
-        if (progress && progress.status && progress.status !== lastStatus) {
-          console.log('Status changed from', lastStatus, 'to', progress.status);
-          lastStatus = progress.status;
-          
-          if (progress.status === 'requestReceived') {
-            console.log('Setting statusRequestReceived to true');
-            setStatusRequestReceived(true);
-          }
-          if (progress.status === 'flashcardsGenerated') {
-            console.log('Setting statusGeneratingFlashcards to true');
-            setStatusGeneratingFlashcards(true);
-          }
-          if (progress.status === 'deckAndFlashcardsCreated') {
-            console.log('Setting statusAddingDeckAndFlashcards to true');
-            setStatusAddingDeckAndFlashcards(true);
-            if (progress.createdDeckId) setCreatedDeckId(progress.createdDeckId);
-            if (progress.createdFlashcardIds) setCreatedFlashcardIds(progress.createdFlashcardIds);
-            
-            // Clear progress and stop background service
-            await clearGenAIDeckCreationProgress();
-            await BackgroundService.stop();
-            
-            // Show completion and navigate back
-            setTimeout(() => {
-              setShowStatusPage(false);
-              if (!cancelCreationRef.current) {
-                router.back();
-              }
-            }, 1200);
-            return;
-          }
-          if (progress.error) {
-            console.log('Progress error:', progress.error);
-            // Handle error
-            setShowStatusPage(false);
-            Alert.alert('Error', progress.error);
-            await clearGenAIDeckCreationProgress();
-            await BackgroundService.stop();
-            return;
-          }
-          if (progress.completed) {
-            console.log('Task completed, setting final status');
-            setStatusAddingDeckAndFlashcards(true);
-            if (progress.createdDeckId) setCreatedDeckId(progress.createdDeckId);
-            if (progress.createdFlashcardIds) setCreatedFlashcardIds(progress.createdFlashcardIds);
-            
-            // Clear progress and stop background service
-            await clearGenAIDeckCreationProgress();
-            await BackgroundService.stop();
-            
-            // Show completion and navigate back
-            setTimeout(() => {
-              setShowStatusPage(false);
-              if (!cancelCreationRef.current) {
-                router.back();
-              }
-            }, 1200);
-            return;
-          }
-        } else if (progress && !progress.status) {
-          console.log('Progress exists but no status yet');
-        } else if (!progress) {
-          console.log('No progress found yet');
-        }
-        
-        // Continue checking progress
-        if (!cancelCreationRef.current) {
-          setTimeout(checkProgress, 500); // Check more frequently
-        }
-      } catch (error) {
-        console.error('Error monitoring progress:', error);
-        if (!cancelCreationRef.current) {
-          setTimeout(checkProgress, 1000);
-        }
-      }
-    };
-    
-    // Start monitoring after a short delay to allow background task to start
-    setTimeout(checkProgress, 500);
-  };
+
 
   if (showStatusPage) {
+    // Get status from global background task progress
+    const statusRequestReceived = backgroundTaskProgress?.status === 'requestReceived' || backgroundTaskProgress?.status === 'flashcardsGenerated' || backgroundTaskProgress?.status === 'deckAndFlashcardsCreated' || backgroundTaskProgress?.completed;
+    const statusGeneratingFlashcards = backgroundTaskProgress?.status === 'flashcardsGenerated' || backgroundTaskProgress?.status === 'deckAndFlashcardsCreated' || backgroundTaskProgress?.completed;
+    const statusAddingDeckAndFlashcards = backgroundTaskProgress?.status === 'deckAndFlashcardsCreated' || backgroundTaskProgress?.completed;
+    
+    // If task is completed and we're still showing status page, navigate back after a delay
+    if (backgroundTaskProgress?.completed && !cancelCreationRef.current) {
+      setTimeout(() => {
+        setShowStatusPage(false);
+        router.back();
+      }, 1500); // Show completion for 1.5 seconds then navigate back
+    }
+    
     return (
       <DeckCreationStatusPage
         statusRows={[
@@ -1577,13 +1518,24 @@ export default function GenAIFormPage() {
           }
           
           setShowStatusPage(false);
-          if (createdDeckId && !isInViewFlashcardsPage) {
-            await import('../db/decks').then(db => db.deleteDeck(createdDeckId));
+          if (backgroundTaskProgress?.createdDeckId && !isInViewFlashcardsPage) {
+            await import('../db/decks').then(db => db.deleteDeck(backgroundTaskProgress.createdDeckId));
           }
-          if (isInViewFlashcardsPage && createdFlashcardIds.length > 0) {
-            await import('../db/decks').then(db => db.deleteFlashcardsByIds(createdFlashcardIds));
+          if (isInViewFlashcardsPage && backgroundTaskProgress?.createdFlashcardIds?.length > 0) {
+            await import('../db/decks').then(db => db.deleteFlashcardsByIds(backgroundTaskProgress.createdFlashcardIds));
           }
 
+          router.back();
+        }}
+        onMinimize={async () => {
+          // Hide the status page and navigate back
+          setShowStatusPage(false);
+          
+          // Don't cancel the background task - let it continue running
+          // The background task will continue to run and update the database
+          // We'll set up a global monitoring system to detect completion
+          
+          // Navigate back to the previous page
           router.back();
         }}
       />

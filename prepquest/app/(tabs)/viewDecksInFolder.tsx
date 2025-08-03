@@ -32,6 +32,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
@@ -143,6 +144,59 @@ export default function ViewDecksInFolderScreen() {
       loadDecksData();
     }
   }, [isFocused, isDatabaseReady, folderId]);
+
+  // Background task refresh hook
+  const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
+    onTaskComplete: () => {
+      console.log('Background task completed - refreshing folder decks data');
+      // Refresh folder decks data when background task completes
+      if (isDatabaseReady && folderId) {
+        const loadDecksData = async () => {
+          try {
+            const decksData = await getDecksInFolder(parseInt(folderId as string));
+            setDecks(decksData);
+            setDecksCount(decksData.length);
+            
+            // Load image sources for each deck
+            const sources = new Map<number, { uri: string } | undefined>();
+            for (const deck of decksData) {
+              const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+              sources.set(deck.deckID, imageSource);
+            }
+            setImageSources(sources);
+          } catch (error) {
+            console.error('Error refreshing folder decks data:', error);
+          }
+        };
+        loadDecksData();
+      }
+    }
+  });
+
+  // Fallback refresh mechanism - watch for background task completion
+  useEffect(() => {
+    if (backgroundTaskProgress?.completed === true && isDatabaseReady && folderId) {
+      console.log('Fallback: Background task completed - refreshing folder decks data');
+      const loadDecksData = async () => {
+        try {
+          const decksData = await getDecksInFolder(parseInt(folderId as string));
+          setDecks(decksData);
+          setDecksCount(decksData.length);
+          
+          // Load image sources for each deck
+          const sources = new Map<number, { uri: string } | undefined>();
+          for (const deck of decksData) {
+            const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+            sources.set(deck.deckID, imageSource);
+          }
+          setImageSources(sources);
+        } catch (error) {
+          console.error('Error refreshing folder decks data (fallback):', error);
+        }
+      };
+      loadDecksData();
+    }
+  }, [backgroundTaskProgress?.completed, isDatabaseReady, folderId]);
 
   // Reset header icons state when screen comes into focus
   useEffect(() => {

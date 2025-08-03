@@ -22,6 +22,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -405,6 +406,79 @@ export default function DecksScreen() {
       screenOpacity.setValue(0);
     }
   }, [isFocused]);
+
+  // Background task refresh hook
+  const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
+    onTaskComplete: () => {
+      console.log('Background task completed - refreshing deck data');
+      // Refresh deck data when background task completes
+      if (isDatabaseReady) {
+        const loadDeckData = async () => {
+          try {
+            const [studyData, interviewData] = await Promise.all([
+              getStudyDecksWithProgress(),
+              getInterviewDecksWithProgress()
+            ]);
+            setStudyDecks(studyData);
+            setInterviewDecks(interviewData);
+            setFilteredStudyDecks(studyData);
+            setFilteredInterviewDecks(interviewData);
+            setStudyCardsCount(studyData.length);
+            setInterviewCardsCount(interviewData.length);
+            
+            // Load image sources for all decks (both study and interview)
+            const sources = new Map<number, { uri: string } | undefined>();
+            const allDecks = [...studyData, ...interviewData];
+            for (const deck of allDecks) {
+              const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+              sources.set(deck.deckID, imageSource);
+            }
+            setImageSources(sources);
+          } catch (error) {
+            console.error('Error refreshing deck data:', error);
+          }
+        };
+        loadDeckData();
+      }
+    }
+  });
+
+  // Fallback refresh mechanism - watch for background task completion or deck creation
+  useEffect(() => {
+    const shouldRefresh = (backgroundTaskProgress?.completed === true || 
+                          backgroundTaskProgress?.status === 'deckAndFlashcardsCreated') && 
+                          isDatabaseReady;
+    
+    if (shouldRefresh) {
+      console.log('Fallback: Background task completed or deck created - refreshing deck data');
+      const loadDeckData = async () => {
+        try {
+          const [studyData, interviewData] = await Promise.all([
+            getStudyDecksWithProgress(),
+            getInterviewDecksWithProgress()
+          ]);
+          setStudyDecks(studyData);
+          setInterviewDecks(interviewData);
+          setFilteredStudyDecks(studyData);
+          setFilteredInterviewDecks(interviewData);
+          setStudyCardsCount(studyData.length);
+          setInterviewCardsCount(interviewData.length);
+          
+          // Load image sources for all decks (both study and interview)
+          const sources = new Map<number, { uri: string } | undefined>();
+          const allDecks = [...studyData, ...interviewData];
+          for (const deck of allDecks) {
+            const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+            sources.set(deck.deckID, imageSource);
+          }
+          setImageSources(sources);
+        } catch (error) {
+          console.error('Error refreshing deck data (fallback):', error);
+        }
+      };
+      loadDeckData();
+    }
+  }, [backgroundTaskProgress?.completed, backgroundTaskProgress?.status, isDatabaseReady]);
 
   // Reset selection mode when leaving the tab
   useEffect(() => {

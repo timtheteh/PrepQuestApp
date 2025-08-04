@@ -33,6 +33,7 @@ export default function DeckCreationStatusPage({
   const [currentIsInViewFlashcardsPage, setCurrentIsInViewFlashcardsPage] = useState(false);
   const [deckName, setDeckName] = useState<string>('');
   const cancelCreationRef = useRef(false);
+  const hasNavigatedRef = useRef(false);
 
   // Helper to clear GenAI deck creation progress
   const clearGenAIDeckCreationProgress = async () => {
@@ -85,13 +86,28 @@ export default function DeckCreationStatusPage({
       setCurrentIsInViewFlashcardsPage(backgroundTaskProgress.isInViewFlashcardsPage || false);
       
       // If task is completed, navigate back after a delay
-      if (backgroundTaskProgress.completed && !backgroundTaskProgress.error && !backgroundTaskProgress.cancelled && !cancelCreationRef.current) {
+      if (backgroundTaskProgress.completed && !backgroundTaskProgress.error && !backgroundTaskProgress.cancelled && !cancelCreationRef.current && !hasNavigatedRef.current) {
+        hasNavigatedRef.current = true;
         setTimeout(() => {
           router.back();
         }, 2000); // Wait 2 seconds to show completion
       }
     }
   }, [backgroundTaskProgress, router]);
+
+  // Reset navigation flag when component unmounts or when a new task starts
+  useEffect(() => {
+    return () => {
+      hasNavigatedRef.current = false;
+    };
+  }, []);
+
+  // Reset navigation flag when a new task starts (when progress changes from null to something)
+  useEffect(() => {
+    if (backgroundTaskProgress && !backgroundTaskProgress.completed) {
+      hasNavigatedRef.current = false;
+    }
+  }, [backgroundTaskProgress?.completed]);
 
   // Fetch deck name when we have a deckId (for existing decks)
   useEffect(() => {

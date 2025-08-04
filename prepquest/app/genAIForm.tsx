@@ -452,25 +452,7 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       console.log('Background task completed - notification will be sent by context');
     } catch (error) {
       console.error('Error saving completion status:', error);
-      // Try one more time after a delay
-      setTimeout(async () => {
-        try {
-          await saveGenAIDeckCreationProgress({ 
-            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-            formData, prompt, createdDeckId, createdFlashcardIds, flashcards,
-            status: 'deckAndFlashcardsCreated',
-            inProgress: false, 
-            completed: true,
-            timestamp: Date.now()
-          });
-          console.log('Completion status saved to AsyncStorage (retry)');
-          
-          // Mark notification as sent to prevent duplicates
-          console.log('Background task completed (retry) - notification will be sent by context');
-        } catch (retryError) {
-          console.error('Failed to save completion status after retry:', retryError);
-        }
-      }, 1000);
+      // Don't retry - let the BackgroundTaskContext handle completion detection
     }
     
   } catch (e: any) {
@@ -1500,6 +1482,14 @@ export default function GenAIFormPage() {
 
       // Start background task
       try {
+        // Check if background service is already running to prevent duplicates
+        if (BackgroundService.isRunning()) {
+          console.log('Background service is already running, skipping start');
+          // Still start monitoring in case it wasn't started before
+          startBackgroundTaskMonitoring();
+          return;
+        }
+        
         await BackgroundService.start(genAIDeckCreationBackgroundTask, {
           taskName: 'GenAIDeckCreation',
           taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
@@ -1703,6 +1693,14 @@ export default function GenAIFormPage() {
 
       // Start background task
       try {
+        // Check if background service is already running to prevent duplicates
+        if (BackgroundService.isRunning()) {
+          console.log('Background service is already running, skipping start');
+          // Still start monitoring in case it wasn't started before
+          startBackgroundTaskMonitoring();
+          return;
+        }
+        
         await BackgroundService.start(genAIDeckCreationBackgroundTask, {
           taskName: 'GenAIDeckCreation',
           taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
@@ -1803,26 +1801,8 @@ export default function GenAIFormPage() {
     const statusAddingDeckAndFlashcards = backgroundTaskProgress?.status === 'deckAndFlashcardsCreated' || backgroundTaskProgress?.completed;
     
     // If task is completed and we're still showing status page, navigate back after a delay
-    if (backgroundTaskProgress?.completed && !cancelCreationRef.current) {
-      setTimeout(() => {
-        setShowStatusPage(false);
-        
-        // Navigate back to the appropriate page based on where we came from
-        if (isInViewFlashcardsPage === 'true') {
-          // If we came from viewFlashcardsPage, navigate back to it
-          router.replace(`/viewFlashcards?deckId=${deckId}`);
-        } else if (isInFavoritesPage === 'true') {
-          // If we came from favorites page, navigate back to it
-          router.replace('/favorites');
-        } else if (isInViewDecksInFolderPage === 'true') {
-          // If we came from folder page, navigate back to it
-          router.replace(`/viewDecksInFolder?folderId=${folderId}`);
-        } else {
-          // Default: navigate back to index page
-          router.replace('/');
-        }
-      }, 1500); // Show completion for 1.5 seconds then navigate back
-    }
+    // REMOVED: This navigation logic is now handled by deckCreationStatusPage.tsx
+    // The status page will handle navigation when the user stays on it
     
     return (
       <DeckCreationStatusPage

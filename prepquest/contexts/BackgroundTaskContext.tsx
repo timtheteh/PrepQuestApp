@@ -46,6 +46,12 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   // Flag to track if we've force stopped the task
   const forceStoppedRef = useRef(false);
   
+  // Flag to track if progress is being cleared
+  const isClearingProgressRef = useRef(false);
+  
+  // Ref to track the last progress data to prevent duplicate updates
+  const lastProgressRef = useRef<string | null>(null);
+  
   // Update ref whenever state changes
   React.useEffect(() => {
     isBackgroundTaskRunningRef.current = isBackgroundTaskRunning;
@@ -65,6 +71,9 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   // Helper to clear progress
   const clearBackgroundTaskProgress = async () => {
     try {
+      // Set clearing flag to prevent notifications during clearing
+      isClearingProgressRef.current = true;
+      
       // Mark task as completed before clearing
       const currentProgress = await loadBackgroundTaskProgress();
       if (currentProgress && currentProgress.inProgress && !currentProgress.completed) {
@@ -78,8 +87,18 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
       await AsyncStorage.removeItem(BG_TASK_PROGRESS_KEY);
       setBackgroundTaskProgress(null);
       setIsBackgroundTaskRunning(false);
+      
+      // Reset clearing flag after a short delay
+      setTimeout(() => {
+        isClearingProgressRef.current = false;
+      }, 1000);
+      
+      // Reset last progress ref to allow future updates
+      lastProgressRef.current = null;
     } catch (e) {
       console.error('Failed to clear background task progress', e);
+      // Reset clearing flag on error
+      isClearingProgressRef.current = false;
     }
   };
 
@@ -157,6 +176,14 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   // Start monitoring background task progress
   const startBackgroundTaskMonitoring = React.useCallback(() => {
     console.log('Starting background task monitoring...');
+    console.log('Current monitoring interval:', monitoringIntervalRef.current);
+    
+    // Stop any existing monitoring to prevent multiple intervals
+    if (monitoringIntervalRef.current) {
+      console.log('Stopping existing monitoring interval before starting new one');
+      clearInterval(monitoringIntervalRef.current);
+      monitoringIntervalRef.current = null;
+    }
     
     // Reset force stopped flag when starting monitoring
     forceStoppedRef.current = false;
@@ -170,7 +197,9 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
             inProgress: progress.inProgress,
             completed: progress.completed,
             status: progress.status,
-            hasError: !!progress.error
+            hasError: !!progress.error,
+            timestamp: progress.timestamp,
+            deckName: progress.formData?.deckName || progress.deckName
           });
           
           // Clear stale progress data that might be causing issues
@@ -189,7 +218,24 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
             }
           }
           
-          setBackgroundTaskProgress(progress);
+          // Create a unique identifier for this progress data
+          const progressId = JSON.stringify({
+            completed: progress.completed,
+            error: progress.error,
+            status: progress.status,
+            timestamp: progress.timestamp,
+            deckId: progress.createdDeckId,
+            flashcardIds: progress.createdFlashcardIds
+          });
+          
+          // Only update progress if it's different from the last one
+          if (lastProgressRef.current !== progressId) {
+            console.log('BackgroundTaskContext - Setting new progress data');
+            lastProgressRef.current = progressId;
+            setBackgroundTaskProgress(progress);
+          } else {
+            console.log('BackgroundTaskContext - Skipping duplicate progress update');
+          }
           
           // Check if task is running
           // Consider task as running if it's not completed and either:
@@ -220,6 +266,19 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
               }));
             } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current && appStateRef.current === 'active') {
               console.log('Task completed while app is active - no notification needed');
+            }
+            
+            // Clear progress after a delay to allow notifications to be shown
+            // This prevents duplicate notifications while ensuring the progress is eventually cleared
+            if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
+              setTimeout(async () => {
+                try {
+                  await clearBackgroundTaskProgress();
+                  console.log('Cleared background task progress after completion delay');
+                } catch (error) {
+                  console.error('Error clearing background task progress:', error);
+                }
+              }, 10000); // 10 second delay to ensure notifications are shown
             }
           } else {
             // If progress exists but doesn't have inProgress flag, check if it's recent

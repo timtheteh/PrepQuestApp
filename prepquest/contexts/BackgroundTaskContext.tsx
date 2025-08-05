@@ -264,21 +264,46 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
                 ...progress,
                 notificationSent: true
               }));
-            } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current && appStateRef.current === 'active') {
-              console.log('Task completed while app is active - no notification needed');
-            }
-            
-            // Clear progress after a delay to allow notifications to be shown
-            // This prevents duplicate notifications while ensuring the progress is eventually cleared
-            if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
+              
+              // Clear progress immediately after sending notification
+              try {
+                await clearBackgroundTaskProgress();
+                console.log('Cleared background task progress immediately after sending notification');
+              } catch (error) {
+                console.error('Error clearing background task progress after notification:', error);
+              }
+            } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current && progress.notificationSent) {
+              console.log('Task completed and notification already sent - clearing progress with delay for UI');
+              
+              // Clear progress after a brief delay to allow UI components to react to completion
               setTimeout(async () => {
                 try {
                   await clearBackgroundTaskProgress();
-                  console.log('Cleared background task progress after completion delay');
+                  console.log('Cleared background task progress after UI delay (notification already sent)');
                 } catch (error) {
                   console.error('Error clearing background task progress:', error);
                 }
-              }, 10000); // 10 second delay to ensure notifications are shown
+              }, 2500); // 2.5 second delay to allow status page to navigate
+            } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current && appStateRef.current === 'active') {
+              console.log('Task completed while app is active - no notification needed');
+              
+              // Clear progress after a brief delay to allow UI components to react to completion
+              setTimeout(async () => {
+                try {
+                  await clearBackgroundTaskProgress();
+                  console.log('Cleared background task progress after UI delay (app is active)');
+                } catch (error) {
+                  console.error('Error clearing background task progress:', error);
+                }
+              }, 2500); // 2.5 second delay to allow status page to navigate
+            } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
+              // Fallback case - clear progress if completed but not handled above
+              try {
+                await clearBackgroundTaskProgress();
+                console.log('Cleared background task progress immediately (fallback)');
+              } catch (error) {
+                console.error('Error clearing background task progress (fallback):', error);
+              }
             }
           } else {
             // If progress exists but doesn't have inProgress flag, check if it's recent

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, AppState, AppStateStatus } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -34,6 +34,7 @@ export default function DeckCreationStatusPage({
   const [deckName, setDeckName] = useState<string>('');
   const cancelCreationRef = useRef(false);
   const hasNavigatedRef = useRef(false);
+  const lastProgressRef = useRef<any>(null);
 
   // Helper to clear GenAI deck creation progress
   const clearGenAIDeckCreationProgress = async () => {
@@ -64,9 +65,22 @@ export default function DeckCreationStatusPage({
 
   // Update status rows based on background task progress
   useEffect(() => {
+    // Check if we had completed progress that is now cleared (progress went from completed to null)
+    if (!backgroundTaskProgress && lastProgressRef.current && lastProgressRef.current.completed && !lastProgressRef.current.error && !lastProgressRef.current.cancelled && !hasNavigatedRef.current) {
+      console.log('DeckCreationStatusPage - Detected completion followed by clearing, navigating back');
+      hasNavigatedRef.current = true;
+      setTimeout(() => {
+        router.back();
+      }, 1000); // Short delay to show final completion state
+    }
+    
     if (backgroundTaskProgress) {
       console.log('DeckCreationStatusPage - Background task progress update:', backgroundTaskProgress.status);
       console.log('DeckCreationStatusPage - Full background task progress:', backgroundTaskProgress);
+      
+      // Store current progress for transition detection
+      lastProgressRef.current = backgroundTaskProgress;
+      
       const newStatusRows = [
         { 
           done: backgroundTaskProgress.status === 'requestReceived' || backgroundTaskProgress.status === 'flashcardsGenerated' || backgroundTaskProgress.status === 'deckAndFlashcardsCreated', 
@@ -95,10 +109,24 @@ export default function DeckCreationStatusPage({
     }
   }, [backgroundTaskProgress, router]);
 
+  // Additional safety check - if all status rows are done and we have no progress, navigate back
+  useEffect(() => {
+    const allStatusRowsDone = currentStatusRows.length > 0 && currentStatusRows.every(row => row.done);
+    
+    if (allStatusRowsDone && !backgroundTaskProgress && !hasNavigatedRef.current) {
+      console.log('DeckCreationStatusPage - All status rows completed and no progress data, navigating back');
+      hasNavigatedRef.current = true;
+      setTimeout(() => {
+        router.back();
+      }, 1000);
+    }
+  }, [currentStatusRows, backgroundTaskProgress, router]);
+
   // Reset navigation flag when component unmounts or when a new task starts
   useEffect(() => {
     return () => {
       hasNavigatedRef.current = false;
+      lastProgressRef.current = null;
     };
   }, []);
 
@@ -108,6 +136,27 @@ export default function DeckCreationStatusPage({
       hasNavigatedRef.current = false;
     }
   }, [backgroundTaskProgress?.completed]);
+
+  // Handle app state changes - if user taps notification and returns to this page, navigate back
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App became active - check if we should navigate back
+        // If we have no background task running and no progress, and we haven't navigated yet, 
+        // it's likely the user tapped a completion notification
+        setTimeout(() => {
+          if (!backgroundTaskProgress && !hasNavigatedRef.current) {
+            console.log('DeckCreationStatusPage - App became active with no progress, likely from notification tap - navigating back');
+            hasNavigatedRef.current = true;
+            router.back();
+          }
+        }, 500); // Small delay to allow context to update
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [backgroundTaskProgress, router]);
 
   // Fetch deck name when we have a deckId (for existing decks)
   useEffect(() => {

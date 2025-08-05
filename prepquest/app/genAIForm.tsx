@@ -26,6 +26,8 @@ import DeckCreationStatusPage from './deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import BackgroundService from 'react-native-background-actions';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
+import NotificationService from '@/utils/notifications';
+import { db } from '@/db/index';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -419,6 +421,63 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     console.log('Task completed successfully, marking as complete');
     console.log('Final completion data:', { createdDeckId, createdFlashcardIds });
     
+    // Check if app is in background and send notification immediately
+    const currentAppState = AppState.currentState;
+    console.log('Current app state during task completion:', currentAppState);
+    
+    // Send notification immediately if app is in background
+    if (currentAppState !== 'active') {
+      console.log('App is in background - sending notification immediately');
+      try {
+        const notificationService = NotificationService.getInstance();
+        const flashcardCount = flashcards?.length || createdFlashcardIds?.length || 0;
+        
+        // Get user language from database
+        let userLanguage = 'English';
+        try {
+          const userID = await getCurrentUserID();
+          if (userID) {
+            const result = await db.getFirstAsync(`SELECT language FROM users WHERE userID = ?`, [userID]) as any;
+            if (result && result.language && typeof result.language === 'string') {
+              userLanguage = result.language;
+            }
+          }
+        } catch (e) {
+          console.log('Could not get user language, defaulting to English');
+        }
+        
+        if (isInViewFlashcardsPage && createdFlashcardIds?.length > 0) {
+          // Adding flashcards to existing deck - get deck name from deckId
+          const existingDeckName = await getDeckNameById(Number(deckId));
+          await notificationService.sendFlashcardsCreatedNotification(
+            flashcardCount,
+            existingDeckName || formData.deckName,
+            Number(deckId),
+            userLanguage
+          );
+        } else if (createdDeckId) {
+          // Creating new deck with flashcards
+          if (flashcardCount > 0) {
+            await notificationService.sendDeckAndFlashcardsCreatedNotification(
+              formData.deckName,
+              createdDeckId,
+              flashcardCount,
+              userLanguage
+            );
+          } else {
+            await notificationService.sendDeckCreatedNotification(
+              formData.deckName,
+              createdDeckId,
+              userLanguage
+            );
+          }
+        }
+        console.log('Notification sent immediately from background task');
+      } catch (error) {
+        console.error('Error sending immediate notification:', error);
+      }
+    }
+    
     // Mark as complete - ensure this happens even if background service stops
     try {
       // Determine the action type and deck name for notifications
@@ -444,12 +503,13 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         status: 'deckAndFlashcardsCreated',
         inProgress: false, 
         completed: true,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        notificationSent: currentAppState !== 'active' // Mark as sent if we sent it immediately
       });
       console.log('Completion status saved to AsyncStorage');
       
       // Mark notification as sent to prevent duplicates
-      console.log('Background task completed - notification will be sent by context');
+      console.log('Background task completed - notification handling complete');
     } catch (error) {
       console.error('Error saving completion status:', error);
       // Don't retry - let the BackgroundTaskContext handle completion detection

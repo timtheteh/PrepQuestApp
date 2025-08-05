@@ -18,7 +18,7 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
-import NotificationService from '@/utils/notifications';
+
 
 const TitleToggleRow = React.memo(({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
     const { theme } = useTheme();
@@ -164,17 +164,7 @@ export default function AppSettingsScreen() {
     setNotificationsAccessEnabled(status === 'granted');
   };
 
-  const handleTestNotification = React.useCallback(async () => {
-    try {
-      await NotificationService.getInstance().sendTestNotification(language);
-    } catch (error) {
-      console.error('Error sending test notification:', error);
-      Alert.alert(
-        language === 'Chinese' ? '错误' : 'Error',
-        language === 'Chinese' ? '发送测试通知时出错' : 'Error sending test notification'
-      );
-    }
-  }, [language]);
+
 
 
 
@@ -503,19 +493,6 @@ export default function AppSettingsScreen() {
                     onValueChange={handleNotificationsToggle}
                     language={language}
                 />
-                {notificationsAccessEnabled && (
-                  <TouchableOpacity 
-                    style={[styles.cloudButton, { backgroundColor: colors.brandColor1, marginTop: 10 }]}
-                    onPress={handleTestNotification}
-                  >
-                    <View style={styles.buttonContent}>
-                      <MaterialIcons name="notifications" size={30} color="#fff" />
-                      <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>
-                        {language === 'Chinese' ? '测试通知' : 'Test Notification'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
 
                 <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor2 }]}
                   onPress={handleBackupPress}>

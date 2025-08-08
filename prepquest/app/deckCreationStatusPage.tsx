@@ -81,39 +81,82 @@ export default function DeckCreationStatusPage({
       // Store current progress for transition detection
       lastProgressRef.current = backgroundTaskProgress;
       
-      const statusRequestReceived = backgroundTaskProgress.status === 'requestReceived'
-        || backgroundTaskProgress.status === 'flashcardsGenerated'
-        || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
-        || backgroundTaskProgress.completed;
-      const statusGeneratingFlashcards = backgroundTaskProgress.status === 'flashcardsGenerated'
-        || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
-        || backgroundTaskProgress.completed;
-      const statusAddingDeckAndFlashcards = backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
-        || backgroundTaskProgress.completed;
       const inView = backgroundTaskProgress.isInViewFlashcardsPage || false;
+      const isFileUploadTask = backgroundTaskProgress.taskType === 'fileUpload';
 
-      const newStatusRows = [
-        {
-          done: statusRequestReceived,
-          label: language === 'Chinese' ? '请求已收到' : 'Request received'
-        },
-        {
-          done: statusGeneratingFlashcards,
-          label: statusGeneratingFlashcards
-            ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards')
-            : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards')
-        },
-        {
-          done: statusAddingDeckAndFlashcards,
-          label: statusAddingDeckAndFlashcards
-            ? (inView
-                ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
-                : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
-            : (inView
-                ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
-                : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck'))
-        }
-      ];
+      let newStatusRows: { done: boolean; label: string }[] = [];
+
+      if (isFileUploadTask) {
+        // File upload flow statuses
+        const statusExtractingInfo = backgroundTaskProgress.status === 'fileInfoExtracted'
+          || backgroundTaskProgress.status === 'flashcardsGenerated'
+          || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+        const statusGeneratingFlashcards = backgroundTaskProgress.status === 'flashcardsGenerated'
+          || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+        const statusAddingDeckAndFlashcards = backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+
+        newStatusRows = [
+          {
+            done: statusExtractingInfo,
+            label: statusExtractingInfo
+              ? (language === 'Chinese' ? '成功提取信息' : 'Successfully extracted\ninfo from file')
+              : (language === 'Chinese' ? '正在提取信息' : 'Extracting info\nfrom file')
+          },
+          {
+            done: statusGeneratingFlashcards,
+            label: statusGeneratingFlashcards
+              ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards')
+              : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards')
+          },
+          {
+            done: statusAddingDeckAndFlashcards,
+            label: statusAddingDeckAndFlashcards
+              ? (inView
+                  ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
+                  : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+              : (inView
+                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
+                  : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck'))
+          }
+        ];
+      } else {
+        // GenAI form flow statuses
+        const statusRequestReceived = backgroundTaskProgress.status === 'requestReceived'
+          || backgroundTaskProgress.status === 'flashcardsGenerated'
+          || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+        const statusGeneratingFlashcards = backgroundTaskProgress.status === 'flashcardsGenerated'
+          || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+        const statusAddingDeckAndFlashcards = backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+
+        newStatusRows = [
+          {
+            done: statusRequestReceived,
+            label: language === 'Chinese' ? '请求已收到' : 'Request received'
+          },
+          {
+            done: statusGeneratingFlashcards,
+            label: statusGeneratingFlashcards
+              ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards')
+              : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards')
+          },
+          {
+            done: statusAddingDeckAndFlashcards,
+            label: statusAddingDeckAndFlashcards
+              ? (inView
+                  ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
+                  : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+              : (inView
+                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
+                  : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck'))
+          }
+        ];
+      }
       console.log('DeckCreationStatusPage - Setting new status rows:', newStatusRows);
       setCurrentStatusRows(newStatusRows);
       setCurrentIsInViewFlashcardsPage(inView);
@@ -123,7 +166,7 @@ export default function DeckCreationStatusPage({
         hasNavigatedRef.current = true;
         setTimeout(() => {
           router.back();
-        }, 2000); // Wait 2 seconds to show completion
+        }, 1000); // Wait 2 seconds to show completion
       }
     }
   }, [backgroundTaskProgress, router]);

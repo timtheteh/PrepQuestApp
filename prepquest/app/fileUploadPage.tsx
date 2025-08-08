@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, Alert, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/formComponents/FormHeaderIcons';
@@ -37,6 +37,361 @@ import { getUserQuestionSettings } from '@/db/users';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 import DeckCreationStatusPage from './deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
+import BackgroundService from 'react-native-background-actions';
+import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// --- Background Task Progress Helpers (reuse same key as GenAI form) ---
+const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
+
+async function saveDeckCreationProgress(progress: any) {
+  try {
+    await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(progress));
+  } catch (e) {
+    console.error('Failed to save deck creation progress (file upload)', e);
+  }
+}
+
+async function loadDeckCreationProgress(): Promise<any | null> {
+  try {
+    const data = await AsyncStorage.getItem(BG_TASK_PROGRESS_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (e) {
+    console.error('Failed to load deck creation progress (file upload)', e);
+    return null;
+  }
+}
+
+async function clearDeckCreationProgress() {
+  try {
+    await AsyncStorage.removeItem(BG_TASK_PROGRESS_KEY);
+  } catch (e) {
+    console.error('Failed to clear deck creation progress (file upload)', e);
+  }
+}
+
+async function keepProgressFresh(base: any, intervalMs: number = 5000) {
+  const interval = setInterval(async () => {
+    try {
+      const current = await loadDeckCreationProgress();
+      if (current) {
+        await saveDeckCreationProgress({ ...current, timestamp: Date.now() });
+      } else {
+        await saveDeckCreationProgress({ ...base, timestamp: Date.now() });
+      }
+    } catch (err) {
+      console.error('Error refreshing progress timestamp (file upload)', err);
+    }
+  }, intervalMs);
+  return () => clearInterval(interval);
+}
+
+// --- Background Task for File Upload deck/flashcard creation ---
+const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
+  const {
+    // Context flags
+    mode,
+    deckId,
+    folderId,
+    isInFavoritesPage,
+    isInIndexPage,
+    isInViewDecksInFolderPage,
+    isInViewFlashcardsPage,
+    // Form data
+    language,
+    deckName,
+    studyMandatoryQuestion1,
+    studyMandatoryQuestion2,
+    interviewMandatoryQuestion1,
+    interviewType,
+    numberOfQuestions,
+    isAIGenerate,
+    // File-related
+    selectedFile, // { uri, name, mimeType }
+    uploadType, // 'image' | 'file'
+    uploadedFileName,
+    extractedText,
+    imageUris = [],
+  } = taskDataArguments;
+
+  let createdDeckId: number | null = null;
+  let createdFlashcardIds: number[] = [];
+
+  try {
+    if (BackgroundService.isRunning() === false) return;
+
+    // Initial progress: request received
+    await saveDeckCreationProgress({
+      taskType: 'fileUpload',
+      mode,
+      deckId,
+      folderId,
+      isInFavoritesPage,
+      isInIndexPage,
+      isInViewDecksInFolderPage,
+      isInViewFlashcardsPage,
+      formData: {
+        deckName,
+        studyMandatoryQuestion1,
+        studyMandatoryQuestion2,
+        interviewMandatoryQuestion1,
+        interviewType,
+        numberOfQuestions,
+        isAIGenerate,
+      },
+      createdDeckId,
+      createdFlashcardIds,
+      status: 'requestReceived',
+      inProgress: true,
+      timestamp: Date.now(),
+    });
+
+    const stopKeepAlive = await keepProgressFresh({ inProgress: true });
+
+    // Step A: Build captions from file(s)
+    let pdfCaptionClaudeCaption: string | null = null;
+    let imageCaptionClaudeCaption: string | null = null;
+
+    // PDF caption (if applicable)
+    if (selectedFile && selectedFile.name && String(selectedFile.name).toLowerCase().endsWith('.pdf')) {
+      if (BackgroundService.isRunning() === false) {
+        stopKeepAlive();
+        return;
+      }
+      try {
+        const formData = new FormData();
+        formData.append('file', {
+          uri: selectedFile.uri,
+          name: selectedFile.name,
+          type: selectedFile.mimeType || 'application/pdf',
+        } as any);
+        const resp = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/pdfCaptionClaude`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+        });
+        if (resp.ok) {
+          const j = await resp.json();
+          pdfCaptionClaudeCaption = j.caption;
+        }
+      } catch (e) {
+        // Ignore caption failure; proceed without it
+      }
+    }
+
+    // Image captions (if provided URIs)
+    if (Array.isArray(imageUris) && imageUris.length > 0) {
+      if (BackgroundService.isRunning() === false) {
+        stopKeepAlive();
+        return;
+      }
+      try {
+        const formData = new FormData();
+        for (const uri of imageUris) {
+          formData.append('images[]', {
+            uri,
+            name: uri.split('/').pop() || 'image.jpg',
+            type: uri.endsWith('.png') ? 'image/png' : 'image/jpeg',
+          } as any);
+        }
+        const resp = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/imageCaptionClaude`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+        });
+        if (resp.ok) {
+          const j = await resp.json();
+          imageCaptionClaudeCaption = j.caption;
+        }
+      } catch (e) {
+        // Ignore caption failure; proceed without it
+      }
+    }
+
+    // Mark extraction complete before generating
+    await saveDeckCreationProgress({
+      taskType: 'fileUpload',
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData: { deckName },
+      createdDeckId, createdFlashcardIds,
+      status: 'fileInfoExtracted', inProgress: true, timestamp: Date.now(),
+    });
+
+    // Step B: Construct prompt
+    const { getUserQuestionSettings } = await import('@/db/users');
+    const { getDistributionOfFlashcardsForInterviewType } = await import('@/constants/promptEngineering');
+    const { promptAndData, promptAndDataChinese } = await import('@/constants/promptEngineering');
+
+    const userSettings = await getUserQuestionSettings();
+    const distribution = getDistributionOfFlashcardsForInterviewType(
+      userSettings.isMcqEnabled,
+      userSettings.isClozeEnabled,
+      userSettings.isVoiceRecordedEnabled,
+      interviewType,
+      numberOfQuestions,
+    );
+
+    let prompt = '';
+    if (mode === 'interview' && language === 'English') {
+      prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`;
+    }
+    if (mode === 'interview' && language === 'Chinese') {
+      prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n`;
+    }
+    if (mode === 'study' && language === 'English') {
+      prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`;
+    }
+    if (mode === 'study' && language === 'Chinese') {
+      prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`;
+    }
+    if (pdfCaptionClaudeCaption && language === 'English') {
+      prompt += `Here is additional information and context from a PDF file for my preparation: ${pdfCaptionClaudeCaption}\n`;
+    }
+    if (pdfCaptionClaudeCaption && language === 'Chinese') {
+      prompt += `这里有一些额外的信息和上下文，来自一个PDF文件，用于我的准备：${pdfCaptionClaudeCaption}\n`;
+    }
+    if (extractedText && extractedText.trim() !== '' && language === 'English') {
+      prompt += `Here is additional information and context from a text file for my preparation: ${extractedText}\n`;
+    }
+    if (extractedText && extractedText.trim() !== '' && language === 'Chinese') {
+      prompt += `这里有一些额外的信息和上下文，来自一个文本文件，用于我的准备：${extractedText}\n`;
+    }
+    if (imageCaptionClaudeCaption && language === 'English') {
+      prompt += `Here is additional information and context from some images for my preparation: ${imageCaptionClaudeCaption}\n`;
+    }
+    if (imageCaptionClaudeCaption && language === 'Chinese') {
+      prompt += `这里有一些额外的信息和上下文，来自一些图像，用于我的准备：${imageCaptionClaudeCaption}\n`;
+    }
+
+    if (distribution) {
+      if (language === 'English') {
+        for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+          prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`;
+          // @ts-ignore
+          prompt += `${promptAndData[flashcardType].prompt}\n`;
+        }
+      } else {
+        for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+          prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`;
+          // @ts-ignore
+          prompt += `${promptAndDataChinese[flashcardType].prompt}\n`;
+        }
+      }
+    }
+
+    if (language === 'English' && mode === 'interview' && isAIGenerate) {
+      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n';
+      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
+    }
+    if (language === 'English' && mode === 'interview' && !isAIGenerate) {
+      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\nHowever, it is EXTREMELY CRUCIAL THAT YOU DO NOT DEVIATE from the information and context I have provided from the PDF file, text file or images. STICK ONLY TO CONTENT FROM THE PDF FILE, TEXT FILE OR IMAGES. ';
+      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
+    }
+    if (language === 'Chinese' && mode === 'interview' && isAIGenerate) {
+      prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n';
+      prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
+    }
+    if (language === 'English' && mode === 'study' && isAIGenerate) {
+      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n';
+      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
+    }
+    if (language === 'Chinese' && mode === 'study' && isAIGenerate) {
+      prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n';
+      prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
+    }
+
+    if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
+
+    // Step C: Call GenAI to generate flashcards
+    let flashcards: any[] | null = null;
+    try {
+      const resp = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        let f = data.flashcards?.flashcards ?? data.flashcards;
+        if (f && !Array.isArray(f)) f = [f];
+        flashcards = f;
+      }
+    } catch (_) {}
+
+    if (!flashcards || flashcards.length === 0) {
+      stopKeepAlive();
+      // Mark as completed without results to allow UI to close gracefully
+      await saveDeckCreationProgress({
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData: { deckName },
+        createdDeckId, createdFlashcardIds,
+        status: 'cancelled', inProgress: false, cancelled: true, timestamp: Date.now(),
+      });
+      return;
+    }
+
+    // Update: flashcards generated
+    await saveDeckCreationProgress({
+      taskType: 'fileUpload',
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData: { deckName },
+      createdDeckId, createdFlashcardIds,
+      status: 'flashcardsGenerated', inProgress: true, timestamp: Date.now(),
+    });
+
+    if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
+
+    // Step D: Save to DB (create deck or add to existing)
+    const { createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck } = await import('@/db/decks');
+    if (isInViewFlashcardsPage) {
+      const result = await createGenAIFlashcardsForDeck({
+        deckId: Number(deckId),
+        flashcards,
+      });
+      createdFlashcardIds = result?.flashcardIds || [];
+    } else {
+      const params: any = {
+        deckName,
+        mode: mode === 'study' ? 'study' : 'interview',
+        formFields: {
+          studyEducationLevel: studyMandatoryQuestion1,
+          studySubjects: studyMandatoryQuestion2,
+          interviewJobRole: interviewMandatoryQuestion1,
+          interviewType,
+          numberOfQuestions,
+        },
+        flashcards,
+      };
+      if (isInFavoritesPage) params.isFavorited = 1;
+      if (isInViewDecksInFolderPage && folderId) params.folderIDs = `[${folderId}]`;
+      const result = await createDeckWithGenAIFlashcards(params);
+      createdDeckId = result.deckId || null;
+    }
+
+    if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
+
+    // Final progress: deck and flashcards created
+    await saveDeckCreationProgress({
+      taskType: 'fileUpload',
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData: { deckName },
+      createdDeckId, createdFlashcardIds,
+      status: 'deckAndFlashcardsCreated', inProgress: false, completed: true, timestamp: Date.now(),
+    });
+
+    stopKeepAlive();
+  } catch (error) {
+    console.error('File upload background task error:', error);
+    await saveDeckCreationProgress({ taskType: 'fileUpload', inProgress: false, error: true, timestamp: Date.now() });
+  }
+};
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -386,6 +741,8 @@ export default function FileUploadPage() {
   const [createdFlashcardIds, setCreatedFlashcardIds] = useState<number[]>([]);
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const isMinimizingRef = useRef(false);
+  const { startBackgroundTaskMonitoring, backgroundTaskProgress, forceStopBackgroundTask } = useBackgroundTask();
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -621,6 +978,57 @@ export default function FileUploadPage() {
     // Ensure the layout is ready after the first render
     const timer = setTimeout(() => setIsReady(true), 0);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Resume background task on app foreground (mirrors genAIForm)
+  useEffect(() => {
+    let appState = AppState.currentState;
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (typeof appState === 'string' && appState.match(/inactive|background/) && nextAppState === 'active') {
+        const progress = await loadDeckCreationProgress();
+        if (progress && progress.inProgress && !progress.completed) {
+          const now = Date.now();
+          const progressTime = progress.timestamp || 0;
+          const isRecent = now - progressTime < 5 * 60 * 1000;
+          if (isRecent) {
+            try {
+              await BackgroundService.start(fileUploadDeckCreationBackgroundTask, {
+                taskName: 'GenAIDeckCreation',
+                taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
+                taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+                taskIcon: { name: 'ic_launcher', type: 'mipmap' },
+                color: '#44B88A',
+                parameters: progress,
+              });
+            } catch (e) {
+              console.error('Failed to resume file upload background task:', e);
+            }
+          } else {
+            await clearDeckCreationProgress();
+          }
+        }
+      }
+      appState = nextAppState;
+    };
+    const sub = AppState.addEventListener('change', handleAppStateChange);
+    return () => sub.remove();
+  }, [language]);
+
+  // Cleanup: stop background service when unmounting unless minimizing
+  useEffect(() => {
+    return () => {
+      const cleanup = async () => {
+        try {
+          if (!isMinimizingRef.current) {
+            await BackgroundService.stop();
+            await clearDeckCreationProgress();
+          }
+        } catch (error) {
+          console.error('Error cleaning up file upload background service:', error);
+        }
+      };
+      cleanup();
+    };
   }, []);
 
   useEffect(() => {
@@ -999,11 +1407,56 @@ export default function FileUploadPage() {
         useNativeDriver: true,
       })
     ]).start(async () => {
+      // Start global background task monitoring
+      startBackgroundTaskMonitoring();
+
+      // Prepare parameters for background task
+      const params: any = {
+        mode,
+        deckId,
+        folderId,
+        isInFavoritesPage,
+        isInIndexPage,
+        isInViewDecksInFolderPage,
+        isInViewFlashcardsPage,
+        language,
+        deckName,
+        studyMandatoryQuestion1,
+        studyMandatoryQuestion2,
+        interviewMandatoryQuestion1,
+        interviewType,
+        numberOfQuestions,
+        isAIGenerate,
+        selectedFile,
+        uploadType,
+        uploadedFileName,
+        extractedText,
+        imageUris: uploadType === 'image' && uploadedFileName ? [uploadedFileName] : extractedImages,
+      };
+
+      try {
+        await BackgroundService.start(fileUploadDeckCreationBackgroundTask, {
+          taskName: 'GenAIDeckCreation',
+          taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
+          taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+          taskIcon: { name: 'ic_launcher', type: 'mipmap' },
+          color: '#44B88A',
+          parameters: params,
+        });
+      } catch (error) {
+        console.error('Failed to start background task (file upload):', error);
+        setShowStatusPage(false);
+        Alert.alert('Error', 'Failed to start background task');
+        return;
+      }
+
+      // Show status page; actual progress will stream from BackgroundTaskContext
       setIsSuccessModalOpen(false);
       setShowStatusPage(true);
-      setStatusExtractingInformationFromFiles(false)
+      setStatusExtractingInformationFromFiles(false);
       setStatusGeneratingFlashcards(false);
       setStatusAddingDeckAndFlashcards(false);
+
       // Save form submission to userFormEntries
       await saveUserFileUploadFormEntry({
         deckName,
@@ -1011,317 +1464,8 @@ export default function FileUploadPage() {
         studySubjects: studyMandatoryQuestion2,
         numberOfQuestions,
         interviewJobRole: interviewMandatoryQuestion1,
-        interviewType
+        interviewType,
       });
-      // 1. Extracting information from files
-      setTimeout(async () => {
-        let pdfCaptionClaudeCaption = null;
-        let imageCaptionClaudeCaption = null;
-          // If PDF file was uploaded, send to Claude PDF Caption endpoint
-        if (selectedFile && selectedFile.name && selectedFile.name.toLowerCase().endsWith('.pdf')) {
-          console.log('Starting PDF caption request...');
-          if (cancelCreationRef.current) {
-            console.log('PDF caption request cancelled before starting');
-            return;
-          }
-          
-          const fileUri = selectedFile.uri;
-          const fileName = selectedFile.name;
-          const mimeType = selectedFile.mimeType || 'application/pdf';
-
-          const formData = new FormData();
-          // @ts-ignore: React Native FormData file object
-          formData.append('file', {
-            uri: fileUri,
-            name: fileName,
-            type: mimeType,
-          });
-          let pdfCaptionClaudeResponse;
-          try {
-            // Create a new AbortController for this request
-            abortControllerRef.current = new AbortController();
-            console.log('About to make PDF caption fetch request...');
-            
-            const SUPABASE_FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/pdfCaptionClaude`;
-                          pdfCaptionClaudeResponse = await fetch(SUPABASE_FUNCTION_URL, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                  // Let fetch set Content-Type
-                  'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-                },
-              signal: abortControllerRef.current.signal,
-            });
-          } catch (networkError) {
-            console.log('PDF caption request caught error:', networkError);
-            // Check if the error is due to cancellation
-            if (networkError instanceof Error && networkError.name === 'AbortError') {
-              console.log('PDF caption request was cancelled');
-              return null;
-            }
-            Alert.alert(
-              language === 'Chinese' ? '错误' : 'Error',
-              language === 'Chinese'
-                ? '网络错误。请检查您的网络连接，然后重试。'
-                : 'Network error. Please check your connection and try again.'
-            );
-          }
-          if (!pdfCaptionClaudeResponse?.ok) {
-            let message = '';
-            // Add Chinese translations for each error message
-            const errorMessages: Record<string, { English: string; Chinese: string }> = {
-              '400': {
-                English: 'There was an issue with the format or content of your request.',
-                Chinese: '您的请求格式或内容有误。',
-              },
-              '401': {
-                English: 'There’s an issue with your API key.',
-                Chinese: '您的 API 密钥存在问题。',
-              },
-              '403': {
-                English: 'Your API key does not have permission to use the specified resource.',
-                Chinese: '您的 API 密钥无权访问指定资源。',
-              },
-              '404': {
-                English: 'The requested resource was not found.',
-                Chinese: '未找到请求的资源。',
-              },
-              '413': {
-                English: 'Request exceeds the maximum allowed number of bytes.',
-                Chinese: '请求超出了允许的最大字节数。',
-              },
-              '429': {
-                English: 'Your account has hit a rate limit.',
-                Chinese: '您的账户已达到速率限制。',
-              },
-              '500': {
-                English: 'An unexpected error has occurred internal to Anthropic’s systems.',
-                Chinese: 'Anthropic 系统内部发生了意外错误。',
-              },
-              '529': {
-                English: 'Anthropic’s API is temporarily overloaded.',
-                Chinese: 'Anthropic 的 API 暂时过载。',
-              },
-              default: {
-                English: 'Something went wrong. Please try again.',
-                Chinese: '发生错误，请重试。',
-              },
-            };
-            const status = pdfCaptionClaudeResponse?.status;
-            const langKey = language === 'Chinese' ? 'Chinese' : 'English';
-            const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
-            message = errorMessages[statusKey][langKey];
-            Alert.alert('Error', message);
-            return null;
-          }
-          const pdfCaptionClaudeResult = await pdfCaptionClaudeResponse.json();
-          pdfCaptionClaudeCaption = pdfCaptionClaudeResult.caption;
-          console.log('Claude PDF Caption:', pdfCaptionClaudeCaption);
-        }
-        // Send images to imageCaptionClaude if any
-        if (cancelCreationRef.current) {
-          console.log('Image caption request cancelled before starting');
-          return;
-        }
-        
-        let imageUris: string[] = [];
-        if (uploadType === 'image' && uploadedFileName) {
-          // Single image from picker/camera
-          imageUris = [uploadedFileName];
-        } else if (extractedImages.length > 0) {
-          imageUris = extractedImages;
-        }
-        if (imageUris.length > 0) {
-          const formData = new FormData();
-          for (const uri of imageUris) {
-            // Always process before upload
-            const processedUri = await prepareImageForUpload(uri);
-            // Try to infer type from extension
-            let type = 'image/jpeg';
-            if (processedUri.endsWith('.png')) type = 'image/png';
-            else if (processedUri.endsWith('.jpg') || processedUri.endsWith('.jpeg')) type = 'image/jpeg';
-            else if (processedUri.endsWith('.gif')) type = 'image/gif';
-            formData.append('images[]', {
-              uri: processedUri,
-              name: processedUri.split('/').pop() || 'image.jpg',
-              type,
-            } as any);
-          }
-          let imageCaptionClaudeResponse;
-          try {
-            // Create a new AbortController for this request
-            abortControllerRef.current = new AbortController();
-            
-            const SUPABASE_IMAGE_FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/imageCaptionClaude`;
-            imageCaptionClaudeResponse = await fetch(SUPABASE_IMAGE_FUNCTION_URL, {
-              method: 'POST',
-              body: formData,
-              headers: {
-                'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-              },
-              signal: abortControllerRef.current.signal,
-            });
-          } catch (networkError) {
-            // Check if the error is due to cancellation
-            if (networkError instanceof Error && networkError.name === 'AbortError') {
-              console.log('Image caption request was cancelled');
-              return null;
-            }
-            Alert.alert(
-              language === 'Chinese' ? '错误' : 'Error',
-              language === 'Chinese'
-                ? '网络错误。请检查您的网络连接，然后重试。'
-                : 'Network error. Please check your connection and try again.'
-            );
-          }
-          if (!imageCaptionClaudeResponse?.ok) {
-            let message = '';
-            // Add Chinese translations for each error message
-            const errorMessages: Record<string, { English: string; Chinese: string }> = {
-              '400': {
-                English: 'There was an issue with the format or content of your request.',
-                Chinese: '您的请求格式或内容有误。',
-              },
-              '401': {
-                English: 'There’s an issue with your API key.',
-                Chinese: '您的 API 密钥存在问题。',
-              },
-              '403': {
-                English: 'Your API key does not have permission to use the specified resource.',
-                Chinese: '您的 API 密钥无权访问指定资源。',
-              },
-              '404': {
-                English: 'The requested resource was not found.',
-                Chinese: '未找到请求的资源。',
-              },
-              '413': {
-                English: 'Request exceeds the maximum allowed number of bytes.',
-                Chinese: '请求超出了允许的最大字节数。',
-              },
-              '429': {
-                English: 'Your account has hit a rate limit.',
-                Chinese: '您的账户已达到速率限制。',
-              },
-              '500': {
-                English: 'An unexpected error has occurred internal to Anthropic’s systems.',
-                Chinese: 'Anthropic 系统内部发生了意外错误。',
-              },
-              '529': {
-                English: 'Anthropic’s API is temporarily overloaded.',
-                Chinese: 'Anthropic 的 API 暂时过载。',
-              },
-              default: {
-                English: 'Something went wrong. Please try again.',
-                Chinese: '发生错误，请重试。',
-              },
-            };
-            const status = imageCaptionClaudeResponse?.status;
-            const langKey = language === 'Chinese' ? 'Chinese' : 'English';
-            const statusKey = status && errorMessages.hasOwnProperty(String(status)) ? String(status) : 'default';
-            message = errorMessages[statusKey][langKey];
-            Alert.alert('Error', message);
-          } else {
-            const result = await imageCaptionClaudeResponse.json();
-            imageCaptionClaudeCaption = result.caption;
-            console.log('Claude Image Caption:', imageCaptionClaudeCaption);
-          }
-        }
-        // Done extracting information from files via claude
-        if (cancelCreationRef.current) {
-          console.log('Flashcard generation cancelled before starting');
-          return;
-        }
-        setStatusExtractingInformationFromFiles(true);
-
-        const flashcards = await callGenAIFlashcardsGeneration(
-          pdfCaptionClaudeCaption,
-          extractedText,
-          imageCaptionClaudeCaption
-        );
-        console.log('FLASHCARDS >>>>>>>>>>>>>>>>> \n', flashcards);
-        if (flashcards && Array.isArray(flashcards) && flashcards.length > 0) {
-          setTimeout(async () => {
-            if (cancelCreationRef.current) return;
-            setStatusGeneratingFlashcards(true);
-            // Use the same logic as before for DB insert, but skip UI updates
-            let newDeckId: number | null = null;
-            if (isInIndexPage) {
-              if (cancelCreationRef.current) return;
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  numberOfQuestions,
-                },
-                flashcards
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (isInFavoritesPage) {
-              if (cancelCreationRef.current) return;
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  numberOfQuestions,
-                },
-                flashcards,
-                isFavorited: 1
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (isInViewDecksInFolderPage) {
-              if (cancelCreationRef.current) return;
-              const result = await createDeckWithGenAIFlashcards({
-                deckName,
-                mode: mode === 'study' ? 'study' : 'interview',
-                formFields: {
-                  studyEducationLevel: studyMandatoryQuestion1,
-                  studySubjects: studyMandatoryQuestion2,
-                  interviewJobRole: interviewMandatoryQuestion1,
-                  interviewType,
-                  numberOfQuestions,
-                },
-                flashcards,
-                folderIDs: `[${folderId}]`
-              });
-              newDeckId = result.deckId || null;
-            }
-            if (newDeckId) setCreatedDeckId(newDeckId);
-            if (isInViewFlashcardsPage) {
-              if (cancelCreationRef.current) return;
-              const result = await createGenAIFlashcardsForDeck({
-                deckId: Number(deckId),
-                flashcards
-              });
-              // Get the IDs of the newly created flashcards
-              if (result && result.flashcardIds) setCreatedFlashcardIds(result.flashcardIds);
-            }
-            if (cancelCreationRef.current) return;
-            setStatusAddingDeckAndFlashcards(true);
-            // Optionally, add a delay for user to see all ticks
-            setTimeout(() => {
-              if (cancelCreationRef.current) return;
-              setShowStatusPage(false);
-              // Optionally, navigate or show a final success UI
-              router.back();
-            }, 1200);
-          }, 900);
-        } else {
-          setShowStatusPage(false);
-          // setErrorMessage('An error occurred during flashcard generation.');
-          // setIsErrorModalOpen(true);
-          router.back();
-        }
-      }, 900);  
     });
   };
 
@@ -1635,12 +1779,27 @@ export default function FileUploadPage() {
             abortControllerRef.current = null;
           }
           
-          setShowStatusPage(false);
-          if (createdDeckId && !isInViewFlashcardsPage) {
-            await import('../db/decks').then(db => db.deleteDeck(createdDeckId));
+          // Stop background service and clear progress
+          try {
+            forceStopBackgroundTask();
+            await BackgroundService.stop();
+            await clearDeckCreationProgress();
+          } catch (error) {
+            console.error('Error stopping background task (file upload):', error);
           }
-          if (isInViewFlashcardsPage && createdFlashcardIds.length > 0) {
-            await import('../db/decks').then(db => db.deleteFlashcardsByIds(createdFlashcardIds));
+          
+          setShowStatusPage(false);
+          try {
+            // Prefer cleaning up using backgroundTaskProgress if available
+            const inView = backgroundTaskProgress?.isInViewFlashcardsPage || false;
+            if (backgroundTaskProgress?.createdDeckId && !inView) {
+              await import('../db/decks').then(db => db.deleteDeck(backgroundTaskProgress.createdDeckId));
+            }
+            if (inView && backgroundTaskProgress?.createdFlashcardIds?.length > 0) {
+              await import('../db/decks').then(db => db.deleteFlashcardsByIds(backgroundTaskProgress.createdFlashcardIds));
+            }
+          } catch (e) {
+            console.error('Error cleaning up after cancel (file upload):', e);
           }
           
           // Reset all state variables after cancellation
@@ -1651,6 +1810,11 @@ export default function FileUploadPage() {
           setCreatedFlashcardIds([]);
           cancelCreationRef.current = false; // Reset the cancel flag          
           // Navigate back to the previous page
+          router.back();
+        }}
+        onMinimize={async () => {
+          // When minimizing, keep background task running
+          isMinimizingRef.current = true;
           router.back();
         }}
       />

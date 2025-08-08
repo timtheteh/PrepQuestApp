@@ -264,26 +264,24 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
                 ...progress,
                 notificationSent: true
               }));
-              
-              // Clear progress immediately after sending notification
-              try {
-                await clearBackgroundTaskProgress();
-                console.log('Cleared background task progress immediately after sending notification');
-              } catch (error) {
-                console.error('Error clearing background task progress after notification:', error);
-              }
+              // Do NOT clear progress here while app is in background.
+              // Leave it so the status page can show completed statuses when user taps the notification.
             } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current && progress.notificationSent) {
-              console.log('Task completed and notification already sent - clearing progress with delay for UI');
-              
-              // Clear progress after a brief delay to allow UI components to react to completion
-              setTimeout(async () => {
-                try {
-                  await clearBackgroundTaskProgress();
-                  console.log('Cleared background task progress after UI delay (notification already sent)');
-                } catch (error) {
-                  console.error('Error clearing background task progress:', error);
-                }
-              }, 2500); // 2.5 second delay to allow status page to navigate
+              // Only clear after app is active so the status page can render completed states.
+              if (appStateRef.current === 'active') {
+                console.log('Task completed and notification already sent - clearing progress with delay for UI (app active)');
+                setTimeout(async () => {
+                  try {
+                    await clearBackgroundTaskProgress();
+                    console.log('Cleared background task progress after UI delay (notification already sent, app active)');
+                  } catch (error) {
+                    console.error('Error clearing background task progress:', error);
+                  }
+                }, 1000); // 2.5 second delay to allow status page to navigate
+              } else {
+                // App not active; keep progress until app becomes active
+                console.log('Notification sent while app in background - deferring progress clear until app is active');
+              }
             } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current && appStateRef.current === 'active') {
               console.log('Task completed while app is active - no notification needed');
               
@@ -295,7 +293,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
                 } catch (error) {
                   console.error('Error clearing background task progress:', error);
                 }
-              }, 2500); // 2.5 second delay to allow status page to navigate
+              }, 1000); // 2.5 second delay to allow status page to navigate
             } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
               // Fallback case - clear progress if completed but not handled above
               try {
@@ -341,6 +339,9 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
 
   // App state change handler to resume monitoring when app comes to foreground
   useEffect(() => {
+    // Ensure notifications are initialized (permissions, channels, handler)
+    notificationService.initialize().catch(() => {});
+
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
         // App is foregrounded - check if there's a background task running

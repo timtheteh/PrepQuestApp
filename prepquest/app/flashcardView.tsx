@@ -18,8 +18,8 @@ import MicIcon from '@/assets/icons/flippableCard/micIcon.svg';
 import AIChatIcon from '@/assets/icons/flashcardView/AIChatIcon.svg';
 import AIChatIconGrey from '@/assets/icons/flashcardView/AIChatIconGrey.svg';
 import * as Clipboard from 'expo-clipboard';
-import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
 import * as Speech from 'expo-speech';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -41,6 +41,7 @@ import {
   updateDeckLastModifiedAfterFlashcardDeletion,
   type TransformedFlashcard,
 } from '@/db/decks';
+//
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -1053,7 +1054,20 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           await audioSoundRef.current.playAsync();
         } else {
           // Handle both string URIs (recorded audio) and object sources (existing audio)
-          const source = typeof uri === 'string' ? { uri } : uri;
+          let source = typeof uri === 'string' ? { uri } : uri;
+          // If we receive a data URI, write to a temporary file for reliable playback
+          if (source && typeof source.uri === 'string' && source.uri.startsWith('data:audio')) {
+            const base64Data = source.uri.split(',')[1] || '';
+            if (base64Data.length > 0) {
+              const tempFileUri = `${FileSystem.cacheDirectory}pq_audio_${Date.now()}.m4a`;
+              try {
+                await FileSystem.writeAsStringAsync(tempFileUri, base64Data, { encoding: FileSystem.EncodingType.Base64 });
+                source = { uri: tempFileUri };
+              } catch (e) {
+                // Fallback to original source if file write fails
+              }
+            }
+          }
           const { sound } = await Audio.Sound.createAsync(source, { positionMillis: audioPosition });
           audioSoundRef.current = sound;
           sound.setOnPlaybackStatusUpdate((status) => {

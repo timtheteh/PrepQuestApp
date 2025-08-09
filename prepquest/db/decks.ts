@@ -3565,7 +3565,7 @@ const addToCache = (key: string, value: any) => {
 const blobToImageSource = (blob: Uint8Array | string): any => {
   try {
     let hexString: string;
-    
+
     if (typeof blob === 'string') {
       hexString = blob;
     } else {
@@ -3574,22 +3574,34 @@ const blobToImageSource = (blob: Uint8Array | string): any => {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
     }
-    
+
     // Check cache first
     if (blobCache.has(hexString)) {
       return blobCache.get(hexString);
     }
-    
+
     // Convert hex to base64
-    const binaryString = hexString.match(/.{1,2}/g)?.map(byte => String.fromCharCode(parseInt(byte, 16))).join('') || '';
+    const binaryString = hexString
+      .match(/.{1,2}/g)
+      ?.map(byte => String.fromCharCode(parseInt(byte, 16)))
+      .join('') || '';
     const base64 = btoa(binaryString);
-    
-    // Create data URI
-    const dataUri = `data:image/png;base64,${base64}`;
-    
+
+    // Peek decoded content to detect SVG vs bitmap
+    let mime = 'image/png';
+    try {
+      const decoded = atob(base64);
+      if (decoded.includes('<svg') || decoded.includes('<?xml')) {
+        mime = 'image/svg+xml';
+      }
+    } catch {}
+
+    // Create data URI with correct MIME
+    const dataUri = `data:${mime};base64,${base64}`;
+
     // Cache the result
     addToCache(hexString, { uri: dataUri });
-    
+
     return { uri: dataUri };
   } catch (error) {
     console.error('Error converting blob to image source:', error);

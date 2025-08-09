@@ -978,12 +978,12 @@ export default function ManualAddDeckPage() {
   };
 
   const handleNextFlashcard = async () => {
-    // Save current card to cache before creating next card
-    saveCurrentCardToCache();
-    // Also save drawing content if it exists
+    // First persist drawing into front/back content if present
     if (flippableCardRef.current?.saveDrawingAsContent) {
       await flippableCardRef.current.saveDrawingAsContent();
     }
+    // Then save the card to cache with the updated content
+    saveCurrentCardToCache();
     
     // Mark the current card as submitted
     setCardCache(prev => {
@@ -1199,9 +1199,14 @@ export default function ManualAddDeckPage() {
   const handleAddViewToggle = (newState: 'add' | 'view') => {
     // Save current card to cache when switching from add to view
     if (addViewState === 'add' && newState === 'view') {
-      saveCurrentCardToCache();
-      // Also save drawing content if it exists
-      flippableCardRef.current?.saveDrawingAsContent();
+      // Ensure drawing content is saved into content before caching
+      if (flippableCardRef.current?.saveDrawingAsContent) {
+        void flippableCardRef.current.saveDrawingAsContent().then(() => {
+          saveCurrentCardToCache();
+        });
+      } else {
+        saveCurrentCardToCache();
+      }
     }
     
     setAddViewState(newState);

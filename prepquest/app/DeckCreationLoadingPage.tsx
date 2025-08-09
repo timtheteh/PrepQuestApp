@@ -5,6 +5,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useContentTopHeightNoRoundedToggle2, useTopBarAccountHeight } from '@/hooks/heights';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -14,6 +16,7 @@ interface DeckCreationLoadingPageProps {
   total: number;
   isInViewFlashcardsPage: boolean;
   onCancel?: () => void;
+  onMinimize?: () => void;
 }
 
 
@@ -31,10 +34,20 @@ export default function DeckCreationLoadingPage({
   total = 1,
   isInViewFlashcardsPage = false,
   onCancel,
+  onMinimize,
 }: DeckCreationLoadingPageProps) {
   const { language } = useLanguage();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
-  const percent = Math.round(progress * 100);
+  const { backgroundTaskProgress } = useBackgroundTask();
+  const router = useRouter();
+  // Derive progress from background task if available (manual add)
+  const bgTotal = Number(backgroundTaskProgress?.totalCount || 0);
+  const bgCurrent = Number(backgroundTaskProgress?.createdCount || 0);
+  const useBg = backgroundTaskProgress && backgroundTaskProgress.taskType === 'manualAdd' && bgTotal > 0;
+  const effectiveTotal = useBg ? bgTotal : total;
+  const effectiveCurrent = useBg ? bgCurrent : current;
+  const effectiveProgress = useBg ? (bgTotal > 0 ? bgCurrent / bgTotal : 0) : progress;
+  const percent = Math.round(effectiveProgress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
   const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
@@ -58,6 +71,22 @@ export default function DeckCreationLoadingPage({
 
   return (
     <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
+      {/* Top row with Minimize (left) and Cancel (right) to match status page */}
+      {onMinimize && (
+        <TouchableOpacity
+          style={{ position: 'absolute', top: insets.top + 10, left: 16, zIndex: 10, padding: 8 }}
+          onPress={() => {
+            if (onMinimize) {
+              onMinimize();
+            } else {
+              // Default: navigate back to previous screen
+              router.back();
+            }
+          }}
+        >
+          <Text style={{ fontSize: 20, color: '#44B88A', fontFamily: 'Satoshi-Medium' }}>{strings[language].minimize}</Text>
+        </TouchableOpacity>
+      )}
       {/* Cancel button at top right */}
       {onCancel && (
         <TouchableOpacity
@@ -106,8 +135,8 @@ export default function DeckCreationLoadingPage({
           <Text style={styles.percentText}>{percent}%</Text>
           <Text style={styles.countText}>{
             lang === 'Chinese'
-              ? STRINGS.flashcardsGenerated[lang].replace('{current}', String(current)).replace('{total}', String(total))
-              : `${current} out of ${total} Flashcards generated`
+              ? STRINGS.flashcardsGenerated[lang].replace('{current}', String(effectiveCurrent)).replace('{total}', String(effectiveTotal))
+              : `${effectiveCurrent} out of ${effectiveTotal} Flashcards generated`
           }</Text>
         </View>
       </View>

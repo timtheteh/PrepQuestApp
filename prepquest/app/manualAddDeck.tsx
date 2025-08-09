@@ -27,6 +27,104 @@ import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarAccountHeight } from '@/hooks/heights';
+import BackgroundService from 'react-native-background-actions';
+import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
+import NotificationService from '@/utils/notifications';
+
+// --- Background Task helpers (reuse GenAI progress key) ---
+const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
+async function saveManualProgress(progress: any) {
+  try { await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(progress)); } catch {}
+}
+async function loadManualProgress(): Promise<any | null> {
+  try { const data = await AsyncStorage.getItem(BG_TASK_PROGRESS_KEY); return data ? JSON.parse(data) : null; } catch { return null; }
+}
+
+// Manual background task: create deck and add flashcards from cached cards
+const manualDeckCreationBackgroundTask = async (taskDataArguments: any) => {
+  const { mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage, formData, submittedCards, language } = taskDataArguments;
+  const { createManualDeck, createFlashcardsFromCache } = await import('../db/decks');
+  const { db } = await import('../db/index');
+
+  let createdDeckId: number | null = null;
+  let createdFlashcardIds: number[] = [];
+  const totalCount = Array.isArray(submittedCards) ? submittedCards.length : 0;
+
+  // Mark request received
+  await saveManualProgress({
+    taskType: 'manualAdd',
+    mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+    formData, createdDeckId, createdFlashcardIds,
+    totalCount,
+    createdCount: 0,
+    status: 'requestReceived', inProgress: true, timestamp: Date.now(),
+  });
+
+  // Create deck if needed
+  if (!isInViewFlashcardsPage) {
+    const deckResult = await createManualDeck(formData);
+    if (!deckResult.success || !deckResult.deckId) {
+      await saveManualProgress({ inProgress: false, error: true, timestamp: Date.now() });
+      return;
+    }
+    createdDeckId = deckResult.deckId;
+
+    // Favorites
+    if (isInFavoritesPage === 'true') {
+      try {
+        await db.execAsync(`UPDATE decks SET isFavorited = 1 WHERE deckID = ${createdDeckId}`);
+      } catch {}
+    }
+    // Folder
+    if (isInViewDecksInFolderPage === 'true' && folderId) {
+      try {
+        const currentDeck = await db.getFirstAsync(`SELECT folderIDs FROM decks WHERE deckID = ${createdDeckId}`);
+        let currentFolderIds: number[] = [];
+        if (currentDeck && (currentDeck as any).folderIDs) {
+          try { currentFolderIds = JSON.parse((currentDeck as any).folderIDs); } catch {}
+        }
+        const newFolderIds = [...new Set([...currentFolderIds, parseInt(folderId as string)])];
+        await db.execAsync(`UPDATE decks SET folderIDs = '${JSON.stringify(newFolderIds)}' WHERE deckID = ${createdDeckId}`);
+      } catch {}
+    }
+  } else {
+    createdDeckId = parseInt(deckId as string);
+  }
+
+  // Add flashcards one-by-one to report progress
+  if (createdDeckId && Array.isArray(submittedCards)) {
+    let createdCount = 0;
+    for (let i = 0; i < submittedCards.length; i++) {
+      const result = await createFlashcardsFromCache(createdDeckId, [submittedCards[i]]);
+      const ids = Array.isArray(result?.flashcardIds) ? result!.flashcardIds! : [];
+      if (ids.length > 0) {
+        createdFlashcardIds.push(...ids);
+      }
+      createdCount += 1;
+      await saveManualProgress({
+        taskType: 'manualAdd',
+        mode, deckId: createdDeckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData, createdDeckId, createdFlashcardIds,
+        totalCount,
+        createdCount,
+        status: createdCount > 0 ? 'flashcardsGenerated' : 'requestReceived',
+        inProgress: true,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  // Complete
+  await saveManualProgress({
+    taskType: 'manualAdd',
+    mode, deckId: createdDeckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+    formData, createdDeckId, createdFlashcardIds,
+    totalCount,
+    createdCount: totalCount,
+    status: 'deckAndFlashcardsCreated', inProgress: false, completed: true, timestamp: Date.now(),
+  });
+
+};
 // import BackgroundService from 'react-native-background-actions';
 
 
@@ -194,6 +292,29 @@ export default function ManualAddDeckPage() {
   const { language } = useLanguage();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const getTopBarAccountHeight = useTopBarAccountHeight();
+  const { startBackgroundTaskMonitoring, backgroundTaskProgress } = useBackgroundTask();
+
+  // Sync background manualAdd progress to loading UI
+  useEffect(() => {
+    if (backgroundTaskProgress && backgroundTaskProgress.taskType === 'manualAdd') {
+      const total = Number(backgroundTaskProgress.totalCount || 0);
+      const current = Number(backgroundTaskProgress.createdCount || 0);
+      if (total > 0) {
+        setLoadingTotal(total);
+        setLoadingCurrent(current);
+        setLoadingProgress(current / total);
+        if (!showLoadingPage) setShowLoadingPage(true);
+      }
+      if (backgroundTaskProgress.completed && !backgroundTaskProgress.error) {
+        setTimeout(() => {
+          if (showLoadingPage) {
+            setShowLoadingPage(false);
+            router.back();
+          }
+        }, 800);
+      }
+    }
+  }, [backgroundTaskProgress, showLoadingPage, router]);
 
   // Cache for storing all created cards
   interface CachedCard {
@@ -1325,7 +1446,64 @@ export default function ManualAddDeckPage() {
     ]).start(() => {
       setIsSuccessModalOpen(false);
       setTimeout(async () => {        
-        cancelCreationRef.current = false; // Reset cancel flag at start
+        // Begin background task monitoring and start background service
+        try {
+          startBackgroundTaskMonitoring();
+        } catch {}
+
+        const submittedCards = getSubmittedCards();
+        // Ensure deckName present for notifications when adding to existing deck
+        let resolvedDeckName = deckName;
+        if ((isInViewFlashcardsPage === 'true') && (!resolvedDeckName || resolvedDeckName.trim() === '') && deckId) {
+          try {
+            const name = await getDeckNameById(Number(deckId));
+            if (name) resolvedDeckName = name;
+          } catch {}
+        }
+        const params: any = {
+          taskType: 'manualAdd',
+          mode,
+          deckId,
+          folderId,
+          isInFavoritesPage,
+          isInIndexPage,
+          isInViewDecksInFolderPage,
+          isInViewFlashcardsPage,
+          language,
+          formData: {
+            deckName: resolvedDeckName,
+            mode: mode as 'study' | 'interview',
+            studyMandatoryQuestion1,
+            studyMandatoryQuestion2,
+            studyMandatoryQuestion3,
+            interviewMandatoryQuestion1,
+            interviewMandatoryQuestion2,
+            interviewType
+          },
+          submittedCards,
+        };
+
+        try {
+          await BackgroundService.start(manualDeckCreationBackgroundTask as any, {
+            taskName: 'GenAIDeckCreation',
+            taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
+            taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+            taskIcon: { name: 'ic_launcher', type: 'mipmap' },
+            color: '#44B88A',
+            parameters: params,
+          });
+        } catch (error) {
+          console.error('Failed to start manual background task:', error);
+        }
+
+        // Show loading page that reflects background progress
+        setLoadingTotal(submittedCards.length);
+        setLoadingCurrent(0);
+        setLoadingProgress(0);
+        setShowLoadingPage(true);
+        return;
+
+        // Legacy inline path kept for reference (unreachable due to early return):
         if (isInIndexPage === 'true') {
           const formData = {
             deckName,
@@ -1349,15 +1527,15 @@ export default function ManualAddDeckPage() {
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
               if (cancelCreationRef.current) break;
-              await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
+              await createFlashcardsFromCache(deckResult.deckId as number, [submittedCards[i]]);
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
             }
             // Cleanup if cancelled
             if (cancelCreationRef.current && createdDeckId) {
-              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId}`);
-              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId}`);
+              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId as number}`);
+              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId as number}`);
             }
             setTimeout(() => {
               setShowLoadingPage(false);
@@ -1400,15 +1578,15 @@ export default function ManualAddDeckPage() {
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
               if (cancelCreationRef.current) break;
-              await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
+              await createFlashcardsFromCache(deckResult.deckId as number, [submittedCards[i]]);
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
             }
             // Cleanup if cancelled
             if (cancelCreationRef.current && createdDeckId) {
-              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId}`);
-              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId}`);
+              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId as number}`);
+              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId as number}`);
             }
             setTimeout(() => {
               setShowLoadingPage(false);
@@ -1452,9 +1630,10 @@ export default function ManualAddDeckPage() {
               if (currentDeck) {
                 const deckData = currentDeck as { folderIDs: string | null };
                 let currentFolderIds: number[] = [];
-                if (deckData.folderIDs) {
+                if (typeof deckData.folderIDs === 'string') {
                   try {
-                    currentFolderIds = JSON.parse(deckData.folderIDs);
+                    const parsed = JSON.parse(deckData.folderIDs as string);
+                    currentFolderIds = Array.isArray(parsed) ? parsed : [];
                   } catch (error) {
                     console.error('Error parsing existing folderIDs:', error);
                     currentFolderIds = [];
@@ -1473,15 +1652,15 @@ export default function ManualAddDeckPage() {
             let createdCount = 0;
             for (let i = 0; i < submittedCards.length; i++) {
               if (cancelCreationRef.current) break;
-              await createFlashcardsFromCache(deckResult.deckId, [submittedCards[i]]);
+              await createFlashcardsFromCache(deckResult.deckId as number, [submittedCards[i]]);
               createdCount++;
               setLoadingCurrent(createdCount);
               setLoadingProgress(createdCount / submittedCards.length);
             }
             // Cleanup if cancelled
             if (cancelCreationRef.current && createdDeckId) {
-              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId}`);
-              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId}`);
+              await db.execAsync(`DELETE FROM flashcards WHERE deckID = ${createdDeckId as number}`);
+              await db.execAsync(`DELETE FROM decks WHERE deckID = ${createdDeckId as number}`);
             }
             setTimeout(() => {
               setShowLoadingPage(false);
@@ -1502,14 +1681,15 @@ export default function ManualAddDeckPage() {
             setLoadingCurrent(0);
             setLoadingProgress(0);
             setShowLoadingPage(true);
-            const deckNameForEntry = await getDeckNameById(currentDeckId);
+            const deckNameForEntry = await getDeckNameById(Number(currentDeckId));
             let createdCount = 0;
             let newFlashcardIds: number[] = [];
             for (let i = 0; i < submittedCards.length; i++) {
               if (cancelCreationRef.current) break;
               const result = await createFlashcardsFromCache(currentDeckId, [submittedCards[i]]);
-              if (result && result.flashcardIds && result.flashcardIds.length > 0) {
-                newFlashcardIds.push(...result.flashcardIds);
+              const ids = Array.isArray(result?.flashcardIds) ? result!.flashcardIds! : [];
+              if (ids.length > 0) {
+                newFlashcardIds.push(...ids);
               }
               createdCount++;
               setLoadingCurrent(createdCount);
@@ -1712,6 +1892,21 @@ export default function ManualAddDeckPage() {
         onCancel={() => {
           cancelCreationRef.current = true;
           setShowLoadingPage(false);
+        }}
+        onMinimize={async () => {
+          // Hide the loading page and navigate back
+          setShowLoadingPage(false);
+          // Refresh background progress timestamp to keep it fresh while minimized
+          try {
+            const progress = backgroundTaskProgress;
+            if (progress && progress.inProgress && !progress.completed) {
+              await AsyncStorage.setItem('genAIDeckCreationBgTaskProgress', JSON.stringify({
+                ...progress,
+                timestamp: Date.now(),
+              }));
+            }
+          } catch {}
+          router.back();
         }}
       />
     );

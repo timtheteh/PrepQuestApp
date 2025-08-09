@@ -48,13 +48,19 @@ export const FloatingActionButton = ({
     // If there's a background task running and we're not on the folders page or favorites page fav folders,
     // navigate to the deck creation status page instead of showing the add deck modal
     if (isBackgroundTaskRunning && !isFoldersPage && !isFavoritesPageFavFolders && backgroundTaskProgress) {
-      // Navigate to deck creation status page - it will get real-time updates from background task
-      router.push({
-        pathname: '/deckCreationStatusPage',
-        params: {
-          isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage ? 'true' : 'false'
-        }
-      });
+      // If manual add task, go to loading page; otherwise go to status page
+      if (backgroundTaskProgress.taskType === 'manualAdd') {
+        router.push({
+          pathname: '/DeckCreationLoadingPage',
+        });
+      } else {
+        router.push({
+          pathname: '/deckCreationStatusPage',
+          params: {
+            isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage ? 'true' : 'false'
+          }
+        });
+      }
       return;
     }
 

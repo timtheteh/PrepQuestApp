@@ -1,8 +1,8 @@
+import 'react-native-reanimated';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Animated } from 'react-native';
 import { ClerkProvider } from '@clerk/clerk-expo';
@@ -103,6 +103,8 @@ function AppContent() {
 
   // Initialize database and notifications when app starts
   useEffect(() => {
+    let notificationResponseSubscription: Notifications.EventSubscription | undefined;
+
     const initDatabase = async () => {
       try {
         console.log('🚀 Starting database initialization and dummy data population...');
@@ -120,7 +122,7 @@ function AppContent() {
         console.log('✅ Notifications initialized successfully');
         
         // Set up notification response handler
-        const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+        notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
           const data = response.notification.request.content.data as any;
           console.log('Notification tapped:', data);
           
@@ -130,9 +132,6 @@ function AppContent() {
             // You can add navigation logic here when needed
           }
         });
-        
-        // Clean up subscription on unmount
-        return () => subscription.remove();
         
         // Ensure minimum 3 seconds of splash screen
         const elapsedTime = endTime - startTime;
@@ -161,12 +160,18 @@ function AppContent() {
     };
     
     initDatabase();
+    
+    return () => {
+      try {
+        notificationResponseSubscription?.remove();
+      } catch {}
+    };
   }, [fadeAnim, splashStartTime]);
 
   return (
     <ThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
-      {/* Show splash screen while fonts are loading, database is initializing, or user is not authenticated */}
-      {(!loaded || showSplash) ? (
+      {/* Show splash screen while fonts are loading or database is not ready, or while auth splash is active */}
+      {(!loaded || !isDatabaseReady || showSplash) ? (
           <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
             <SplashScreen 
               isDatabaseReady={isDatabaseReady} 

@@ -2067,11 +2067,25 @@ export interface BreakdownDatum {
   color: string;
 }
 
+// Defensive helper: check if a table exists in the current SQLite database
+async function tableExists(tableName: string): Promise<boolean> {
+  try {
+    const row = await db.getFirstAsync(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
+      [tableName]
+    );
+    return !!row;
+  } catch {
+    return false;
+  }
+}
+
 export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[], flashcardsData: BreakdownDatum[] }> {
   try {
     const userID = await getCurrentUserID();
+    const hasAIDecks = await tableExists('AIDecks');
     // Single optimized query with JOINs to get both deck counts and flashcard counts
-    const result = await db.getAllAsync(`
+    const sql = `
       WITH deck_categories AS (
         SELECT 
           CASE 
@@ -2081,7 +2095,7 @@ export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[],
           deckID 
         FROM decks 
         WHERE deckType IS NOT NULL AND userID = ?
-        UNION ALL
+        ${hasAIDecks ? `UNION ALL
         SELECT 
           CASE 
             WHEN deckType = 'interview' THEN interviewType 
@@ -2089,7 +2103,7 @@ export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[],
           END as categoryType,
           deckID 
         FROM AIDecks 
-        WHERE deckType IS NOT NULL AND userID = ?
+        WHERE deckType IS NOT NULL AND userID = ?` : ''}
       ),
       category_counts AS (
         SELECT 
@@ -2128,7 +2142,9 @@ export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[],
         total_flashcards
       FROM flashcard_counts
       ORDER BY deck_count DESC
-    `, [userID, userID, userID, userID]);
+    `;
+    const params = hasAIDecks ? [userID, userID, userID, userID] : [userID, userID];
+    const result = await db.getAllAsync(sql, params);
 
     // Define colors for each type
     const typeColors = {

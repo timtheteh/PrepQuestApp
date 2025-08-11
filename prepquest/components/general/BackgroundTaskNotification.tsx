@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, InteractionManager } from 'react-native';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -68,6 +68,13 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
         return;
       }
       
+      // Don't show notification if push notification was already sent
+      if (backgroundTaskProgress.notificationSent) {
+        console.log('Skipping notification - push notification was already sent');
+        processedProgressRef.current = progressId;
+        return;
+      }
+      
       // Don't show notification if the progress data is too old (stale)
       const now = Date.now();
       const progressTime = backgroundTaskProgress.timestamp || 0;
@@ -97,27 +104,26 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
             type: 'success'
           };
-          setNotificationType('success');
-          setShowNotification(true);
-          
-          // Animate in
-          Animated.parallel([
-            Animated.timing(slideAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-          ]).start();
-          
-          // Auto-hide after 5 seconds
-          setTimeout(() => {
-            hideNotification();
-          }, 5000);
+          // Defer state updates and animations until after insertion/layout phase
+          InteractionManager.runAfterInteractions(() => {
+            setNotificationType('success');
+            setShowNotification(true);
+            Animated.parallel([
+              Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+              Animated.timing(opacityAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+            ]).start();
+            setTimeout(() => {
+              hideNotification();
+            }, 5000);
+          });
         } else if (hasError) {
           // Task failed
           console.log('Showing error notification for task:', taskId);
@@ -129,27 +135,26 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
             type: 'error'
           };
-          setNotificationType('error');
-          setShowNotification(true);
-          
-          // Animate in
-          Animated.parallel([
-            Animated.timing(slideAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-          ]).start();
-          
-          // Auto-hide after 5 seconds
-          setTimeout(() => {
-            hideNotification();
-          }, 5000);
+          // Defer state updates and animations until after insertion/layout phase
+          InteractionManager.runAfterInteractions(() => {
+            setNotificationType('error');
+            setShowNotification(true);
+            Animated.parallel([
+              Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+              Animated.timing(opacityAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+            ]).start();
+            setTimeout(() => {
+              hideNotification();
+            }, 5000);
+          });
         }
       } else {
         console.log('Skipping duplicate notification for task:', taskId);

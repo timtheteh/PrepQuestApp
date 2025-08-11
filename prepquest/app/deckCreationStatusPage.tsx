@@ -83,6 +83,7 @@ export default function DeckCreationStatusPage({
       
       const inView = backgroundTaskProgress.isInViewFlashcardsPage || false;
       const isFileUploadTask = backgroundTaskProgress.taskType === 'fileUpload';
+      const isYouTubeLinkTask = backgroundTaskProgress.taskType === 'youtubeLink';
 
       let newStatusRows: { done: boolean; label: string }[] = [];
 
@@ -104,6 +105,42 @@ export default function DeckCreationStatusPage({
             label: statusExtractingInfo
               ? (language === 'Chinese' ? '成功提取信息' : 'Successfully extracted\ninfo from file')
               : (language === 'Chinese' ? '正在提取信息' : 'Extracting info\nfrom file')
+          },
+          {
+            done: statusGeneratingFlashcards,
+            label: statusGeneratingFlashcards
+              ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards')
+              : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards')
+          },
+          {
+            done: statusAddingDeckAndFlashcards,
+            label: statusAddingDeckAndFlashcards
+              ? (inView
+                  ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
+                  : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+              : (inView
+                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
+                  : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck'))
+          }
+        ];
+      } else if (isYouTubeLinkTask) {
+        // YouTube link flow statuses
+        const statusTranscriptFetched = backgroundTaskProgress.status === 'transcriptFetched'
+          || backgroundTaskProgress.status === 'flashcardsGenerated'
+          || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+        const statusGeneratingFlashcards = backgroundTaskProgress.status === 'flashcardsGenerated'
+          || backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+        const statusAddingDeckAndFlashcards = backgroundTaskProgress.status === 'deckAndFlashcardsCreated'
+          || backgroundTaskProgress.completed;
+
+        newStatusRows = [
+          {
+            done: statusTranscriptFetched,
+            label: statusTranscriptFetched
+              ? (language === 'Chinese' ? '文字稿已获取' : 'Transcript fetched')
+              : (language === 'Chinese' ? '正在获取YouTube文字稿' : 'Fetching youtube transcript')
           },
           {
             done: statusGeneratingFlashcards,

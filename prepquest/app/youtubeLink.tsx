@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/formComponents/FormHeaderIcons';
@@ -17,11 +17,13 @@ import { QuestionTextBar } from '@/components/formComponents/QuestionTextBar';
 import { NumberOfQuestions } from '@/components/formComponents/NumberOfQuestions';
 import { TypeOfInterviewQn } from '@/components/formComponents/TypeOfInterviewQn';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
-import { checkDeckNameExists, saveUserYouTubeLinkFormEntry, getMostRecentYouTubeLinkFormEntry } from '../db/decks';
+import { checkDeckNameExists, saveUserYouTubeLinkFormEntry, getMostRecentYouTubeLinkFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck } from '../db/decks';
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { getDeckNameById } from '../db/decks';
+import { getUserQuestionSettings } from '@/db/users';
+import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -98,6 +100,36 @@ const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { you
     </View>
   );
 };
+
+// Helper: fetch transcript text for a YouTube URL
+async function fetchYouTubeTranscript(videoUrl: string): Promise<string | null> {
+  try {
+    const endpoint = process.env.EXPO_PUBLIC_YOUTUBE_TRANSCRIPT_API_ENDPOINT as string | undefined;
+    if (!endpoint) {
+      return null;
+    }
+    const url = `${endpoint}?video_url=${encodeURIComponent(videoUrl)}`;
+    console.log('Fetching transcript from:', url);
+    const resp = await fetch(url, { method: 'GET' });
+    if (!resp.ok) return null;
+    const contentType = resp.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await resp.json();
+      // Try common keys; fallback to stringified JSON if needed
+      return (
+        data?.transcript ||
+        data?.text ||
+        data?.caption ||
+        (typeof data === 'string' ? data : JSON.stringify(data))
+      );
+    }
+    // Fallback to raw text
+    console.log('Response:', await resp.text());
+    return await resp.text();
+  } catch (e) {
+    return null;
+  }
+}
 
 export default function YouTubeLinkPage() {
   const { 
@@ -419,7 +451,7 @@ export default function YouTubeLinkPage() {
   };
 
   const handleSuccessConfirm = async () => {
-    // Animate out first, then navigate
+    // Animate out first, then proceed with generation
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -433,7 +465,8 @@ export default function YouTubeLinkPage() {
       })
     ]).start(async () => {
       setIsSuccessModalOpen(false);
-      // Save form submission to userFormEntries
+
+      // Save form submission first
       await saveUserYouTubeLinkFormEntry({
         deckName: isInViewFlashcardsPage === 'true' ? deckTitle : deckName,
         studyEducationLevel: studyMandatoryQuestion1,
@@ -443,10 +476,143 @@ export default function YouTubeLinkPage() {
         interviewType,
         youtubeLink
       });
-      // Navigate after animation completes
-      setTimeout(() => {
-        router.back();
-      }, 50);
+
+      // 1) Fetch YouTube transcript
+      const transcript = await fetchYouTubeTranscript(youtubeLink);
+      if (!transcript || (typeof transcript === 'string' && transcript.trim() === '')) {
+        Alert.alert('Error', lang === 'Chinese' ? '无法获取YouTube文字稿，请稍后再试。' : 'Failed to fetch YouTube transcript. Please try again.');
+        return;
+      }
+
+      try {
+        // 2) Build prompt using user inputs + transcript
+        const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
+        const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
+          isMcqEnabled,
+          isClozeEnabled,
+          isVoiceRecordedEnabled,
+          interviewType,
+          numberOfQuestions,
+        );
+
+        let prompt = '';
+        if (mode === 'interview' && language === 'English') {
+          prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`;
+        }
+        if (mode === 'interview' && language === 'Chinese') {
+          prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n`;
+        }
+        if (mode === 'study' && language === 'English') {
+          prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`;
+        }
+        if (mode === 'study' && language === 'Chinese') {
+          prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`;
+        }
+
+        if (language === 'English') {
+          prompt += `Here is additional information and context from a YouTube video transcript for my preparation: ${transcript}\n`;
+        } else {
+          prompt += `这里有一些额外的信息和上下文，来自一个YouTube视频的文字稿，用于我的准备：${transcript}\n`;
+        }
+
+        if (distributionOfFlashcards) {
+          if (language === 'English') {
+            for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+              prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`;
+              prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`;
+            }
+          } else {
+            for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+              prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`;
+              prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`;
+            }
+          }
+        }
+
+        if (language === 'English' && mode === 'interview' && isAIGenerate) {
+          prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n';
+          prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
+        }
+        if (language === 'English' && mode === 'interview' && !isAIGenerate) {
+          prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\nHowever, it is EXTREMELY CRUCIAL THAT YOU DO NOT DEVIATE from the information and context I have provided from the YouTube video transcript. STICK ONLY TO CONTENT FROM THE TRANSCRIPT. ';
+          prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
+        }
+        if (language === 'Chinese' && mode === 'interview' && isAIGenerate) {
+          prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n';
+          prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
+        }
+        if (language === 'English' && mode === 'study' && isAIGenerate) {
+          prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n';
+          prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
+        }
+        if (language === 'Chinese' && mode === 'study' && isAIGenerate) {
+          prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n';
+          prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
+        }
+
+        // 3) Generate flashcards via Supabase Edge function
+        let response;
+        try {
+          response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ prompt }),
+          });
+        } catch (_) {
+          Alert.alert('Error', lang === 'Chinese' ? '生成闪卡时发生网络错误。' : 'Network error while generating flashcards.');
+          return;
+        }
+
+        if (!response.ok) {
+          Alert.alert('Error', lang === 'Chinese' ? '生成闪卡失败，请稍后再试。' : 'Failed to generate flashcards. Please try again.');
+          return;
+        }
+
+        const data = await response.json();
+        let flashcards = data?.flashcards?.flashcards ?? data?.flashcards;
+        if (flashcards && !Array.isArray(flashcards)) {
+          flashcards = [flashcards];
+        }
+
+        if (!flashcards || flashcards.length === 0) {
+          Alert.alert('Error', lang === 'Chinese' ? '未生成任何闪卡。' : 'No flashcards were generated.');
+          return;
+        }
+
+        // 4) Save to DB (create deck or add to existing)
+        if (isInViewFlashcardsPage === 'true') {
+          await createGenAIFlashcardsForDeck({
+            deckId: Number(deckId),
+            flashcards,
+          });
+        } else {
+          const params: any = {
+            deckName,
+            mode: mode === 'study' ? 'study' : 'interview',
+            formFields: {
+              studyEducationLevel: studyMandatoryQuestion1,
+              studySubjects: studyMandatoryQuestion2,
+              interviewJobRole: interviewMandatoryQuestion1,
+              interviewType,
+              numberOfQuestions,
+            },
+            flashcards,
+          };
+          if (isInFavoritesPage === 'true') params.isFavorited = 1;
+          if (isInViewDecksInFolderPage === 'true' && folderId) params.folderIDs = `[${folderId}]`;
+          await createDeckWithGenAIFlashcards(params);
+        }
+
+        // 5) Navigate back on success
+        setTimeout(() => {
+          router.back();
+        }, 50);
+      } catch (err) {
+        Alert.alert('Error', lang === 'Chinese' ? '处理您的请求时出错。' : 'An error occurred while processing your request.');
+      }
     });
   };
 

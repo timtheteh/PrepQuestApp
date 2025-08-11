@@ -1461,6 +1461,12 @@ export async function createFlashcardsFromCache(deckId: number, cardCache: any[]
             lastUpdated = '${currentDate}'
           WHERE userID = '${userID}'
         `);
+        // Also update the deck's lastModifiedDate since new flashcards were created
+        await db.execAsync(`
+          UPDATE decks
+          SET lastModifiedDate = '${currentDate}'
+          WHERE deckID = ${deckId}
+        `);
       }
       
       // Commit the transaction
@@ -1896,6 +1902,12 @@ export async function createGenAIFlashcardsForDeck({
             accumulatedFlashcardsCreated = accumulatedFlashcardsCreated + ${flashcardCount},
             lastUpdated = '${currentDate}'
           WHERE userID = '${userID}'
+        `);
+        // Also update the deck's lastModifiedDate since new flashcards were created
+        await db.execAsync(`
+          UPDATE decks
+          SET lastModifiedDate = '${currentDate}'
+          WHERE deckID = ${deckId}
         `);
       }
       await db.execAsync('COMMIT');

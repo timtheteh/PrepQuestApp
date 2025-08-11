@@ -2097,6 +2097,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: Platform.OS === 'ios' ? 0 : 20,
     justifyContent: 'center',
   },

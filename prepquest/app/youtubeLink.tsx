@@ -123,9 +123,10 @@ async function fetchYouTubeTranscript(videoUrl: string): Promise<string | null> 
         (typeof data === 'string' ? data : JSON.stringify(data))
       );
     }
-    // Fallback to raw text
-    console.log('Response:', await resp.text());
-    return await resp.text();
+    // Fallback to raw text (read once)
+    const text = await resp.text();
+    console.log('Response:', text);
+    return text;
   } catch (e) {
     return null;
   }
@@ -143,8 +144,7 @@ export default function YouTubeLinkPage() {
   } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isMandatory, setIsMandatory] = useState(isInViewFlashcardsPage === 'true' ? false : true);
-  const [deckName, setDeckName] = useState('');
+  const [isMandatory, setIsMandatory] = useState(true);  const [deckName, setDeckName] = useState('');
   const [deckTitle, setDeckTitle] = useState<string>('');
   const [studyMandatoryQuestion1, setStudyMandatoryQuestion1] = useState('');
   const [studyMandatoryQuestion2, setStudyMandatoryQuestion2] = useState('');
@@ -156,7 +156,7 @@ export default function YouTubeLinkPage() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(isInViewFlashcardsPage === 'true' ? 1 : 0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const [isAIGenerate, setIsAIGenerate] = useState(false);
   const [isAIHelpModalOpen, setIsAIHelpModalOpen] = useState(false);
   const aiHelpOverlayOpacity = useRef(new Animated.Value(0)).current;
@@ -337,15 +337,31 @@ export default function YouTubeLinkPage() {
   };
 
   const isStudyMandatoryFieldsFilled = () => {
-    return deckName.trim() !== '' && 
-           studyMandatoryQuestion1.trim() !== '' && 
-           studyMandatoryQuestion2.trim() !== '';
+    if (isInViewFlashcardsPage === 'true') {
+      return (
+        studyMandatoryQuestion1.trim() !== '' &&
+        studyMandatoryQuestion2.trim() !== ''
+      );
+    }
+    return (
+      deckName.trim() !== '' &&
+      studyMandatoryQuestion1.trim() !== '' &&
+      studyMandatoryQuestion2.trim() !== ''
+    );
   };
 
   const isInterviewMandatoryFieldsFilled = () => {
-    return deckName.trim() !== '' && 
-           interviewMandatoryQuestion1.trim() !== '' && 
-           interviewType !== '';
+    if (isInViewFlashcardsPage === 'true') {
+      return (
+        interviewMandatoryQuestion1.trim() !== '' &&
+        interviewType !== ''
+      );
+    }
+    return (
+      deckName.trim() !== '' &&
+      interviewMandatoryQuestion1.trim() !== '' &&
+      interviewType !== ''
+    );
   };
 
   const isSubmitDisabled = () => {
@@ -357,7 +373,8 @@ export default function YouTubeLinkPage() {
     const youtubeLinkFilled = youtubeLink.trim() !== '';
 
     // Check if deck name already exists
-    if (deckName.trim() !== '') {
+    // Check if deck name already exists (only when creating a new deck)
+    if (isInViewFlashcardsPage !== 'true' && deckName.trim() !== '') {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
@@ -763,16 +780,14 @@ export default function YouTubeLinkPage() {
       </View>
 
       <View style={styles.mainContainer}>
-        {isInViewFlashcardsPage !== 'true' && (
-          <View style={styles.toggleContainer}>
-            <RoundedContainer 
-              leftLabel={STRINGS.mandatory[lang]}
-              rightLabel={STRINGS.youtubeLink[lang]}
-              onToggle={handleToggle}
-            />
-          </View>
-        )}
-        {isMandatory && isInViewFlashcardsPage !== 'true' && (
+      <View style={styles.toggleContainer}>
+          <RoundedContainer 
+            leftLabel={STRINGS.mandatory[lang]}
+            rightLabel={STRINGS.youtubeLink[lang]}
+            onToggle={handleToggle}
+          />
+        </View>
+        {isMandatory && (
           <ScrollView 
           style={[
             styles.scrollView,
@@ -856,10 +871,10 @@ export default function YouTubeLinkPage() {
         </ScrollView>
         )}
         
-       <Animated.View style={[
-        styles.youtubeLinkContent,
-        { opacity: youtubeLinkOpacity, display: (!isMandatory || isInViewFlashcardsPage === 'true') ? 'flex' : 'none' }
-        ]}>
+        <Animated.View style={[
+         styles.youtubeLinkContent,
+         { opacity: youtubeLinkOpacity, display: !isMandatory ? 'flex' : 'none' }
+         ]}>
             <ScrollView 
               style={[
                 { marginBottom: keyboardHeight > 0 ? keyboardHeight : 90 + bottomOffset }

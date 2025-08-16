@@ -326,18 +326,18 @@ export default function SplashScreen({
   // Handle auth state changes after login/signup
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      // User just signed in, handle database user creation if needed
+      // User authenticated via Clerk, handle database user creation if needed
       const handleUserCreation = async () => {
         try {
           if (user.id) {
-            // Store userID in AsyncStorage
+            // Store userID in AsyncStorage for compatibility with existing database operations
             await AsyncStorage.setItem('userID', user.id);
             
-            // Check if user exists in database, if not create them
-            // This handles both new sign-ups and social login users
+            // Check if user exists in local database, if not create them
+            // This handles both new Clerk signups and social login users
             const dbSuccess = await createUser(user.id);
             if (!dbSuccess) {
-              console.warn('Failed to create user in local database, but auth succeeded');
+              console.warn('Failed to create user in local database, but Clerk auth succeeded');
             }
           }
         } catch (error) {
@@ -405,7 +405,16 @@ export default function SplashScreen({
           setToastVisible(true);
           // Auth state will be updated and trigger the useEffect
         } else {
-          setToastMessage(result.error || strings[language].splash.signUpFailed);
+          // Handle Clerk-specific error messages
+          let errorMessage = result.error || strings[language].splash.signUpFailed;
+          
+          // Check for common Clerk error scenarios
+          if (result.error?.includes('verification') || result.error?.includes('email')) {
+            // This might be an email verification requirement
+            errorMessage = result.error;
+          }
+          
+          setToastMessage(errorMessage);
           setToastVisible(true);
         }
       } catch (error: any) {
@@ -428,10 +437,19 @@ export default function SplashScreen({
       const result = await signInWithEmail(email.trim(), password);
 
       if (result.success) {
-        // Email/password auth automatically sets the session
-        // Auth state will be updated and trigger the useEffect
+        // Clerk authentication successful - auth state will be updated and trigger the useEffect
       } else {
-        setToastMessage(result.error || strings[language].splash.signInFailed);
+        // Handle Clerk-specific error messages
+        let errorMessage = result.error || strings[language].splash.signInFailed;
+        
+        // Provide user-friendly messages for common Clerk errors
+        if (result.error?.includes('identifier') || result.error?.includes('not found')) {
+          errorMessage = result.error; // Use Clerk's specific error message
+        } else if (result.error?.includes('password') || result.error?.includes('credentials')) {
+          errorMessage = result.error; // Use Clerk's specific error message
+        }
+        
+        setToastMessage(errorMessage);
         setToastVisible(true);
       }
     } catch (error: any) {
@@ -462,10 +480,8 @@ export default function SplashScreen({
     
       await oauthFunction();
       
-      // For social login, the user state will be updated by the context
+      // Clerk social login successful - user state will be updated by the context
       // and we can handle user creation in the useEffect that watches auth state changes
-      
-      // Auth state will be updated and trigger the useEffect
     } catch (error: any) {
       let errorMessage;
       switch (provider) {
@@ -553,6 +569,7 @@ export default function SplashScreen({
     setIsResettingPassword(true);
 
     try {
+      // Clerk handles password reset via email verification
       const result = await resetPassword(forgotPasswordEmail.trim());
       
       if (result.success) {

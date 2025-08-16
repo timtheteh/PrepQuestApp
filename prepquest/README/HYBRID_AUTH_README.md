@@ -1,11 +1,11 @@
-# Hybrid Authentication System
+# Clerk Authentication System
 
-This document describes the hybrid authentication system implemented for PrepQuest, which uses **Supabase for email/password authentication** and **Clerk for social logins**.
+This document describes the authentication system implemented for PrepQuest, which uses **Clerk for all authentication methods** including email/password and social logins.
 
 ## Overview
 
 The authentication system supports:
-- **Email/Password sign up and sign in** (via Supabase)
+- **Email/Password sign up and sign in** (via Clerk)
 - **Social login** (Google, Facebook, Apple via Clerk)
 - Session persistence
 - Automatic user state management
@@ -13,38 +13,38 @@ The authentication system supports:
 
 ## Architecture
 
-### Hybrid Authentication Context
-The `HybridAuthContext` manages authentication state and provides a unified interface for both authentication methods:
+### Authentication Context
+The `HybridAuthContext` (kept for backward compatibility) manages authentication state and provides a unified interface for all authentication methods:
 
-- **Supabase**: Handles email/password authentication
-- **Clerk**: Handles OAuth social logins
-- **Unified State**: Both authentication methods update the same user state
+- **Clerk**: Handles all authentication including email/password and OAuth social logins
+- **Unified State**: All authentication methods update the same user state
 
 ### Files Created/Modified
 
 #### New Files
-- `lib/supabase.ts` - Supabase client configuration and authentication utilities
-- `contexts/HybridAuthContext.tsx` - Hybrid authentication context
+- `contexts/HybridAuthContext.tsx` - Authentication context (now Clerk-only)
 - `hooks/useAuth.ts` - Backward compatibility hook
 - `HYBRID_AUTH_README.md` - This documentation
 
 #### Modified Files
 - `app/_layout.tsx` - Added HybridAuthProvider wrapper
-- `app/splash.tsx` - Updated to use hybrid authentication
-- `app/(tabs)/account.tsx` - Updated to use hybrid authentication
+- `app/splash.tsx` - Updated to use Clerk authentication
+- `app/(tabs)/account.tsx` - Updated to use Clerk authentication
+- `supabase/supabase.ts` - Removed AuthService (auth now handled by Clerk)
 
 ## Authentication Flow
 
 ### 1. App Startup
-- App checks for existing session using both Supabase and Clerk
-- If user is authenticated with either method, they skip the login screen
+- App checks for existing Clerk session
+- If user is authenticated, they skip the login screen
 - If no session exists, the login/signup screen is shown
 
-### 2. Email/Password Authentication (Supabase)
-- Users can sign in with email/password via Supabase
-- Users can sign up with email/password via Supabase
-- Password reset functionality via Supabase
+### 2. Email/Password Authentication (Clerk)
+- Users can sign in with email/password via Clerk
+- Users can sign up with email/password via Clerk
+- Password reset functionality via Clerk
 - Form validation and error handling
+- Email verification support
 
 ### 3. Social Login (Clerk)
 - Google OAuth via Clerk
@@ -55,11 +55,11 @@ The `HybridAuthContext` manages authentication state and provides a unified inte
 ### 4. Authentication State Management
 - `HybridAuthContext` manages user state globally
 - Automatic session persistence using AsyncStorage
-- Real-time auth state changes via both Supabase and Clerk listeners
+- Real-time auth state changes via Clerk listeners
 
 ## Usage Examples
 
-### Using the Hybrid Auth Hook
+### Using the Auth Hook
 ```typescript
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 
@@ -80,7 +80,7 @@ function MyComponent() {
   const handleEmailSignIn = async () => {
     const result = await signInWithEmail(email, password);
     if (result.success) {
-      // User signed in successfully
+      // User signed in successfully via Clerk
     } else {
       // Handle error
       console.error(result.error);
@@ -99,7 +99,7 @@ function MyComponent() {
   return (
     <View>
       {isAuthenticated ? (
-        <Text>Welcome, {user?.id}!</Text>
+        <Text>Welcome, {user?.email || user?.id}!</Text>
       ) : (
         <Text>Please sign in</Text>
       )}
@@ -114,7 +114,7 @@ For existing code that uses the old `useAuth` hook:
 ```typescript
 import { useAuth } from '@/hooks/useAuth';
 
-// This will work the same as before, but now uses the hybrid system
+// This will work the same as before, but now uses Clerk for all authentication
 const { user, signOut } = useAuth();
 ```
 
@@ -124,24 +124,20 @@ const { user, signOut } = useAuth();
 Create a `.env` file in the root of your project:
 
 ```bash
-# Clerk Configuration (for social logins)
+# Clerk Configuration (for all authentication)
 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
 
-# Supabase Configuration (for email/password)
+# Supabase Configuration (for database operations only, not auth)
 EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### Supabase Setup
-1. Go to your Supabase project dashboard
-2. Navigate to **Authentication** → **Settings**
-3. Configure email/password authentication
-4. Set up password reset templates
-
 ### Clerk Setup
 1. Go to your Clerk dashboard
-2. Configure OAuth providers (Google, Facebook, Apple)
-3. Set up redirect URLs and OAuth credentials
+2. Enable email/password authentication
+3. Configure OAuth providers (Google, Facebook, Apple)
+4. Set up redirect URLs and OAuth credentials
+5. Configure email templates for verification and password reset
 
 ## User Data Structure
 
@@ -167,48 +163,50 @@ The authentication system includes comprehensive error handling:
 - OAuth provider errors
 - Session management errors
 
-## Migration from Pure Clerk
+## Migration from Hybrid to Pure Clerk
 
-The app has been migrated from pure Clerk authentication to a hybrid system:
+The app has been migrated from a hybrid authentication system (Supabase + Clerk) to a pure Clerk system:
 
 ### Changes Made
-1. **Added Supabase Integration** - Email/password authentication now uses Supabase
-2. **Updated Authentication Context** - Created HybridAuthContext to manage both systems
-3. **Updated Splash Screen** - Now handles both authentication methods
-4. **Updated Account Page** - Uses hybrid sign out functionality
-5. **Maintained Social Login** - All OAuth functionality still uses Clerk
+1. **Removed Supabase Authentication** - All authentication now uses Clerk
+2. **Updated Authentication Context** - HybridAuthContext now uses Clerk for all methods
+3. **Updated Email/Password Flow** - Now handled by Clerk instead of Supabase
+4. **Maintained Social Login** - All OAuth functionality continues to use Clerk
+5. **Simplified Architecture** - Single authentication provider for all methods
 
 ### Benefits
-- More control over email/password authentication
-- Better integration with Supabase database
-- Maintained social login functionality
-- Backward compatibility with existing code
-- Unified user state management
+- Simplified authentication architecture with single provider
+- Consistent user experience across all authentication methods
+- Better email verification and password reset flows via Clerk
+- Maintained backward compatibility with existing code
+- Unified user state management with richer user data from Clerk
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"Missing Supabase environment variables"**
-   - Make sure you have created a `.env` file with Supabase credentials
-
-2. **"Missing Clerk environment variables"**
+1. **"Missing Clerk environment variables"**
    - Make sure you have created a `.env` file with Clerk publishable key
+   - Verify EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is set correctly
 
-3. **Social login not working**
+2. **Social login not working**
    - Check that OAuth providers are properly configured in Clerk dashboard
    - Verify redirect URIs match between Clerk and OAuth providers
 
-4. **Email/password not working**
-   - Check that Supabase authentication is properly configured
-   - Verify email templates are set up in Supabase
+3. **Email/password not working**
+   - Check that email/password authentication is enabled in Clerk dashboard
+   - Verify email templates are set up in Clerk for verification and password reset
 
-5. **Sign out not working**
-   - The hybrid system handles sign out from both Supabase and Clerk
-   - Check that both services are properly configured
+4. **Sign up requires email verification**
+   - Clerk may require email verification for new signups
+   - Check your Clerk dashboard settings for email verification requirements
+
+5. **Password reset not working**
+   - Ensure password reset is enabled in Clerk dashboard
+   - Check that email templates are properly configured
 
 ### Getting Help
 
-- [Supabase Documentation](https://supabase.com/docs)
 - [Clerk Documentation](https://clerk.com/docs)
+- [Clerk React Native Guide](https://clerk.com/docs/quickstarts/react-native)
 - [React Native Authentication Guide](https://reactnative.dev/docs/authentication) 

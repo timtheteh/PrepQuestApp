@@ -1,60 +1,64 @@
 # Authentication Implementation
 
-This document describes the authentication system implemented for PrepQuest using Supabase.
+This document describes the authentication system implemented for PrepQuest using Clerk.
 
 ## Overview
 
 The authentication system supports:
-- Email/Password sign up and sign in
-- Social login (Google, Facebook, Apple)
+- Email/Password sign up and sign in (via Clerk)
+- Social login (Google, Facebook, Apple via Clerk)
 - Session persistence
 - Automatic user state management
+- Email verification and password reset
 
 ## Files Created/Modified
 
 ### New Files
-- `lib/supabase.ts` - Supabase client configuration and authentication utilities
-- `contexts/AuthContext.tsx` - Authentication context for state management
-- `hooks/useAuth.ts` - Re-export of the useAuth hook
+- `contexts/HybridAuthContext.tsx` - Authentication context for state management (now Clerk-only)
+- `hooks/useAuth.ts` - Re-export of the useAuth hook for backward compatibility
 - `AUTHENTICATION_README.md` - This documentation
 
 ### Modified Files
-- `app/splash.tsx` - Integrated authentication UI and logic
-- `app/_layout.tsx` - Added AuthProvider wrapper
+- `app/splash.tsx` - Integrated authentication UI and logic using Clerk
+- `app/_layout.tsx` - Added HybridAuthProvider wrapper
 - `app/(tabs)/account.tsx` - Added user info display and sign out functionality
+- `supabase/supabase.ts` - Removed AuthService (auth now handled by Clerk)
 
 ## Authentication Flow
 
 ### 1. App Startup
-- App checks for existing session using `AuthService.getCurrentUser()`
+- App checks for existing Clerk session
 - If user is authenticated, they skip the login screen
 - If no session exists, the login/signup screen is shown
 
 ### 2. Login/Signup Screen
-- Users can sign in with email/password
-- Users can sign up with email/password
-- Users can use social login (Google, Facebook, Apple)
+- Users can sign in with email/password via Clerk
+- Users can sign up with email/password via Clerk
+- Users can use social login (Google, Facebook, Apple) via Clerk
 - Form validation and error handling
 - Loading states during authentication
+- Email verification support for new signups
 
 ### 3. Authentication State Management
-- `AuthContext` manages user state globally
+- `HybridAuthContext` manages user state globally
 - Automatic session persistence using AsyncStorage
-- Real-time auth state changes via Supabase listener
+- Real-time auth state changes via Clerk listeners
 
 ## Usage Examples
 
 ### Using the Auth Hook
 ```typescript
-import { useAuth } from '@/contexts/AuthContext';
+import { useHybridAuth } from '@/contexts/HybridAuthContext';
+// Or use the backward-compatible import:
+// import { useAuth } from '@/hooks/useAuth';
 
 function MyComponent() {
-  const { user, signIn, signUp, signOut, isLoading } = useAuth();
+  const { user, signInWithEmail, signUpWithEmail, signOut, isLoading } = useHybridAuth();
   
   const handleSignIn = async () => {
-    const result = await signIn(email, password);
+    const result = await signInWithEmail(email, password);
     if (result.success) {
-      // User signed in successfully
+      // User signed in successfully via Clerk
     } else {
       // Handle error
       console.error(result.error);
@@ -64,7 +68,7 @@ function MyComponent() {
   return (
     <View>
       {user ? (
-        <Text>Welcome, {user.email}!</Text>
+        <Text>Welcome, {user.email || user.id}!</Text>
       ) : (
         <Text>Please sign in</Text>
       )}
@@ -75,41 +79,45 @@ function MyComponent() {
 
 ### Social Login
 ```typescript
-const { signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
+const { signInWithGoogle, signInWithFacebook, signInWithApple } = useHybridAuth();
 
-// Google login
+// Google login via Clerk
 await signInWithGoogle();
 
-// Facebook login
+// Facebook login via Clerk
 await signInWithFacebook();
 
-// Apple login (iOS only)
+// Apple login via Clerk (iOS only)
 await signInWithApple();
 ```
 
 ## Configuration
 
-### Supabase Setup
-The app is configured to use the Supabase project at:
-- URL: `https://esbkgdyjvysatwdlkegc.supabase.co`
-- Anonymous key is already configured in `lib/supabase.ts`
+### Clerk Setup
+The app uses Clerk for all authentication. To configure:
+
+1. Go to your Clerk dashboard
+2. Enable email/password authentication
+3. Configure OAuth providers (Google, Facebook, Apple)
+4. Set up redirect URLs and OAuth credentials
+5. Configure email templates for verification and password reset
 
 ### Social Login Setup
-To enable social login, you need to configure the providers in your Supabase dashboard:
+To enable social login, you need to configure the providers in your Clerk dashboard:
 
-1. Go to your Supabase project dashboard
-2. Navigate to Authentication > Providers
+1. Go to your Clerk project dashboard
+2. Navigate to User & Authentication > Social connections
 3. Configure each provider:
    - **Google**: Add your Google OAuth credentials
    - **Facebook**: Add your Facebook OAuth credentials  
    - **Apple**: Add your Apple OAuth credentials
 
 ### Environment Variables
-For production, consider moving the Supabase URL and key to environment variables:
+Make sure you have the Clerk publishable key in your environment variables:
 
-```typescript
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+```bash
+# .env file
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
 ```
 
 ## User Data Structure
@@ -148,8 +156,8 @@ All errors are displayed to the user via toast messages.
 
 To test the authentication:
 
-1. **Email/Password**: Use any valid email and password
-2. **Social Login**: Ensure providers are configured in Supabase
+1. **Email/Password**: Use any valid email and password (may require email verification)
+2. **Social Login**: Ensure providers are configured in Clerk dashboard
 3. **Sign Out**: Use the sign out button in the account screen
 4. **Session Persistence**: Close and reopen the app to verify session persistence
 
@@ -157,22 +165,23 @@ To test the authentication:
 
 ### Common Issues
 
-1. **Social login not working**: Check provider configuration in Supabase dashboard
+1. **Social login not working**: Check provider configuration in Clerk dashboard
 2. **Session not persisting**: Verify AsyncStorage is working correctly
-3. **Network errors**: Check internet connection and Supabase service status
+3. **Email/password signup failing**: Check if email verification is required in Clerk settings
+4. **Network errors**: Check internet connection and Clerk service status
 
 ### Debug Information
 
-Enable debug logging by adding console logs in the AuthContext:
+Enable debug logging by adding console logs in the HybridAuthContext:
 ```typescript
-console.log('Auth state changed:', event, session?.user?.id);
+console.log('Auth state changed:', isClerkSignedIn, clerkUserId);
 ```
 
 ## Next Steps
 
-1. **User Profile**: Add user profile management
-2. **Password Reset**: Implement password reset functionality
-3. **Email Verification**: Add email verification flow
-4. **Advanced Security**: Add 2FA, biometric authentication
-5. **Analytics**: Track authentication events
-6. **Testing**: Add unit tests for authentication functions 
+1. **User Profile**: Add user profile management using Clerk's user management features
+2. **Email Verification Flow**: Handle email verification responses in the app
+3. **Advanced Security**: Add 2FA, biometric authentication via Clerk
+4. **Analytics**: Track authentication events
+5. **Testing**: Add unit tests for authentication functions
+6. **Error Handling**: Improve error messages and user feedback 

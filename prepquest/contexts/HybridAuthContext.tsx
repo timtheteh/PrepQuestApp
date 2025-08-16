@@ -1,15 +1,30 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth as useClerkAuth, useSignIn as useClerkSignIn, useSignUp as useClerkSignUp, useOAuth } from '@clerk/clerk-expo';
-import { AuthService, AuthUser, AuthResult } from '@/supabase/supabase';
+import { useAuth as useClerkAuth, useSignIn as useClerkSignIn, useSignUp as useClerkSignUp, useOAuth, useUser } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface HybridAuthContextType {
+// Authentication types
+export interface AuthUser {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+}
+
+export interface AuthResult {
+  success: boolean;
+  user?: AuthUser;
+  error?: string;
+}
+
+interface ClerkAuthContextType {
   // User state
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   
-  // Supabase email/password methods
+  // Clerk email/password methods
   signInWithEmail: (email: string, password: string) => Promise<AuthResult>;
   signUpWithEmail: (email: string, password: string) => Promise<AuthResult>;
   resetPassword: (email: string) => Promise<AuthResult>;
@@ -24,27 +39,31 @@ interface HybridAuthContextType {
   refreshUser: () => Promise<void>;
 }
 
-const HybridAuthContext = createContext<HybridAuthContextType | undefined>(undefined);
+const ClerkAuthContext = createContext<ClerkAuthContextType | undefined>(undefined);
 
 export const useHybridAuth = () => {
-  const context = useContext(HybridAuthContext);
+  const context = useContext(ClerkAuthContext);
   if (!context) {
-    throw new Error('useHybridAuth must be used within a HybridAuthProvider');
+    throw new Error('useHybridAuth must be used within a ClerkAuthProvider');
   }
   return context;
 };
 
-interface HybridAuthProviderProps {
+interface ClerkAuthProviderProps {
   children: React.ReactNode;
 }
 
-export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children }) => {
+// Keep the same export name for backward compatibility, but now it's purely Clerk-based
+export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Clerk hooks
   const { isLoaded: isClerkLoaded, isSignedIn: isClerkSignedIn, userId: clerkUserId, signOut: clerkSignOut } = useClerkAuth();
+  const { user: clerkUser } = useUser();
+  const { signIn: clerkSignIn, setActive: setActiveSignIn } = useClerkSignIn();
+  const { signUp: clerkSignUp, setActive: setActiveSignUp } = useClerkSignUp();
   const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: 'oauth_google' });
   const { startOAuthFlow: startFacebookOAuth } = useOAuth({ strategy: 'oauth_facebook' });
   const { startOAuthFlow: startAppleOAuth } = useOAuth({ strategy: 'oauth_apple' });
@@ -55,24 +74,17 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
       try {
         setIsLoading(true);
         
-        // Check if user is authenticated with Supabase
-        const supabaseUser = await AuthService.getCurrentUser();
-        const isSupabaseAuthenticated = await AuthService.isAuthenticated();
-        
-        if (supabaseUser && isSupabaseAuthenticated) {
-          setUser(supabaseUser);
-          setIsAuthenticated(true);
-        } else if (isClerkLoaded && isClerkSignedIn && clerkUserId) {
-          // User is authenticated with Clerk (social login)
-          const clerkUser: AuthUser = {
+        if (isClerkLoaded && isClerkSignedIn && clerkUserId) {
+          // User is authenticated with Clerk
+          const authUser: AuthUser = {
             id: clerkUserId,
-            email: undefined, // Clerk doesn't expose email directly in this context
+            email: clerkUser?.primaryEmailAddress?.emailAddress,
             user_metadata: {
-              full_name: undefined,
-              avatar_url: undefined,
+              full_name: clerkUser?.fullName || undefined,
+              avatar_url: clerkUser?.imageUrl || undefined,
             },
           };
-          setUser(clerkUser);
+          setUser(authUser);
           setIsAuthenticated(true);
           // Store user ID in AsyncStorage for compatibility
           await AsyncStorage.setItem('userID', clerkUserId);
@@ -90,7 +102,7 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
     };
 
     initializeAuth();
-  }, [isClerkLoaded, isClerkSignedIn, clerkUserId]);
+  }, [isClerkLoaded, isClerkSignedIn, clerkUserId, clerkUser]);
 
   // Handle Clerk auth state changes
   useEffect(() => {
@@ -101,62 +113,128 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
     }
   }, [isClerkLoaded, isClerkSignedIn]);
 
-  // Supabase email/password authentication methods
+  // Clerk email/password authentication methods
   const signInWithEmail = async (email: string, password: string): Promise<AuthResult> => {
     try {
-      // First, ensure we're signed out from Clerk if there's a session
-      if (isClerkLoaded && isClerkSignedIn && clerkSignOut) {
-        await clerkSignOut();
+      if (!clerkSignIn) {
+        return {
+          success: false,
+          error: 'Sign in not available',
+        };
       }
-      
-      const result = await AuthService.signIn(email, password);
-      if (result.success && result.user) {
-        setUser(result.user);
-        setIsAuthenticated(true);
+
+      const result = await clerkSignIn.create({
+        identifier: email,
+        password,
+      });
+
+      if (result.status === 'complete') {
+        await setActiveSignIn({ session: result.createdSessionId });
+        // Auth state will be updated by the useEffect
+        return {
+          success: true,
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Sign in incomplete',
+        };
       }
-      return result;
     } catch (error: any) {
       return {
         success: false,
-        error: error.message || 'Sign in failed',
+        error: error.errors?.[0]?.message || error.message || 'Sign in failed',
       };
     }
   };
 
   const signUpWithEmail = async (email: string, password: string): Promise<AuthResult> => {
     try {
-      // First, ensure we're signed out from Clerk if there's a session
-      if (isClerkLoaded && isClerkSignedIn && clerkSignOut) {
-        await clerkSignOut();
+      if (!clerkSignUp) {
+        return {
+          success: false,
+          error: 'Sign up not available',
+        };
       }
-      
-      const result = await AuthService.signUp(email, password);
-      if (result.success && result.user) {
-        setUser(result.user);
-        setIsAuthenticated(true);
+
+      const result = await clerkSignUp.create({
+        emailAddress: email,
+        password,
+      });
+
+      if (result.status === 'complete') {
+        await setActiveSignUp({ session: result.createdSessionId });
+        // Auth state will be updated by the useEffect
+        return {
+          success: true,
+        };
+      } else if (result.status === 'missing_requirements') {
+        // Handle email verification if required
+        await result.prepareEmailAddressVerification({ strategy: 'email_code' });
+        return {
+          success: false,
+          error: 'Email verification required. Please check your email.',
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Sign up incomplete',
+        };
       }
-      return result;
     } catch (error: any) {
       return {
         success: false,
-        error: error.message || 'Sign up failed',
+        error: error.errors?.[0]?.message || error.message || 'Sign up failed',
       };
     }
   };
 
   const resetPassword = async (email: string): Promise<AuthResult> => {
-    return await AuthService.resetPassword(email);
+    try {
+      if (!clerkSignIn) {
+        return {
+          success: false,
+          error: 'Password reset not available',
+        };
+      }
+
+      // Create a sign-in attempt with the email
+      const result = await clerkSignIn.create({
+        identifier: email,
+      });
+
+      // Look for reset password factor in supported first factors
+      const resetPasswordFactor = result.supportedFirstFactors?.find(
+        (factor: any) => factor.strategy === 'reset_password_email_code'
+      );
+
+      if (!resetPasswordFactor) {
+        return {
+          success: false,
+          error: 'Password reset not available for this email',
+        };
+      }
+
+      // Prepare the reset password email
+      await result.prepareFirstFactor({
+        strategy: 'reset_password_email_code',
+        emailAddressId: (resetPasswordFactor as any).emailAddressId,
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.errors?.[0]?.message || error.message || 'Password reset failed',
+      };
+    }
   };
 
   // Clerk social login methods
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      // First, ensure we're signed out from Supabase if there's a session
-      const isSupabaseAuthenticated = await AuthService.isAuthenticated();
-      if (isSupabaseAuthenticated) {
-        await AuthService.signOut();
-      }
-      
       const result = await startGoogleOAuth();
       if (result.createdSessionId && result.setActive) {
         await result.setActive({ session: result.createdSessionId });
@@ -170,12 +248,6 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
 
   const signInWithFacebook = async (): Promise<void> => {
     try {
-      // First, ensure we're signed out from Supabase if there's a session
-      const isSupabaseAuthenticated = await AuthService.isAuthenticated();
-      if (isSupabaseAuthenticated) {
-        await AuthService.signOut();
-      }
-      
       const result = await startFacebookOAuth();
       if (result.createdSessionId && result.setActive) {
         await result.setActive({ session: result.createdSessionId });
@@ -189,12 +261,6 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
 
   const signInWithApple = async (): Promise<void> => {
     try {
-      // First, ensure we're signed out from Supabase if there's a session
-      const isSupabaseAuthenticated = await AuthService.isAuthenticated();
-      if (isSupabaseAuthenticated) {
-        await AuthService.signOut();
-      }
-      
       const result = await startAppleOAuth();
       if (result.createdSessionId && result.setActive) {
         await result.setActive({ session: result.createdSessionId });
@@ -209,11 +275,12 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
   // Common methods
   const signOut = async (): Promise<void> => {
     try {
-      // Sign out from both Supabase and Clerk
-      await AuthService.signOut();
+      // Sign out from Clerk
       if (clerkSignOut) {
         await clerkSignOut();
       }
+      // Clear AsyncStorage
+      await AsyncStorage.removeItem('userID');
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
@@ -223,21 +290,18 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
 
   const refreshUser = async (): Promise<void> => {
     try {
-      const supabaseUser = await AuthService.getCurrentUser();
-      if (supabaseUser) {
-        setUser(supabaseUser);
-        setIsAuthenticated(true);
-      } else if (isClerkSignedIn && clerkUserId) {
-        const clerkUser: AuthUser = {
+      if (isClerkSignedIn && clerkUserId && clerkUser) {
+        const authUser: AuthUser = {
           id: clerkUserId,
-          email: undefined,
+          email: clerkUser.primaryEmailAddress?.emailAddress,
           user_metadata: {
-            full_name: undefined,
-            avatar_url: undefined,
+            full_name: clerkUser.fullName || undefined,
+            avatar_url: clerkUser.imageUrl || undefined,
           },
         };
-        setUser(clerkUser);
+        setUser(authUser);
         setIsAuthenticated(true);
+        await AsyncStorage.setItem('userID', clerkUserId);
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -247,7 +311,7 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
     }
   };
 
-  const value: HybridAuthContextType = {
+  const value: ClerkAuthContextType = {
     user,
     isAuthenticated,
     isLoading,
@@ -262,8 +326,8 @@ export const HybridAuthProvider: React.FC<HybridAuthProviderProps> = ({ children
   };
 
   return (
-    <HybridAuthContext.Provider value={value}>
+    <ClerkAuthContext.Provider value={value}>
       {children}
-    </HybridAuthContext.Provider>
+    </ClerkAuthContext.Provider>
   );
 }; 

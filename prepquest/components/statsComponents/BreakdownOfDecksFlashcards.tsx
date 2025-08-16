@@ -258,7 +258,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       bodiesRef.current = [];
       worldRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [data, getRadius, containerWidth, containerHeight]);
 
   // Fade out, then switch data, then fade in

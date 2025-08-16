@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useContext, useState } from 'react';
+import React, { useRef, useEffect, useContext, useState , useCallback } from 'react';
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Animated, Text, ScrollView } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 import { useIsFocused } from '@react-navigation/native';
@@ -22,7 +22,6 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
-import { useCallback } from 'react';
 import { 
   loadFlashcardsFromDatabase, 
   loadTopicsFromDatabase, 

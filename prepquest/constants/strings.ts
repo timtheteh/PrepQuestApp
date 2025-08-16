@@ -34,6 +34,18 @@ export const strings: Record<string, any> = {
       pleaseEnterYourEmailAddress: 'Please enter your email address',
       passwordResetEmailSent: 'Password reset email sent! Check your inbox.',
       failedToSendResetEmail: 'Failed to send reset email',
+      // Email verification strings
+      verifyEmail: 'Verify Your Email',
+      verifyEmailSubtitle: 'We\'ve sent a verification code to your email address. Please enter the code below.',
+      enterVerificationCode: 'Enter verification code',
+      verify: 'Verify',
+      verifying: 'Verifying...',
+      resendCode: 'Resend Code',
+      resendingCode: 'Resending...',
+      verificationCodeSent: 'Verification code sent!',
+      verificationFailed: 'Verification failed',
+      invalidVerificationCode: 'Invalid verification code',
+      pleaseEnterAllDigits: 'Please enter all 6 digits',
     },
                     // Statistics page strings
                 statistics: {

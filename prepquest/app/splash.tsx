@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Dimensions, Text, ScrollView, TouchableOpacity, TextInput, Platform, Animated, Modal } from 'react-native';
+import { useSignUp } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
 import PrepQuestLogo from '@/assets/icons/loginIcons/PrepQuestLogo.svg';
@@ -17,7 +18,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 interface SplashScreenProps {
   isDatabaseReady?: boolean;
@@ -102,12 +103,15 @@ export default function SplashScreen({
     user, 
     isLoading,
     signInWithEmail,
-    signUpWithEmail,
+
     resetPassword,
     signInWithGoogle,
     signInWithFacebook,
     signInWithApple
   } = useHybridAuth();
+  
+  // Direct Clerk signup hook for verification
+  const { signUp, setActive } = useSignUp();
   
   const insets = useSafeAreaInsets();
   
@@ -116,6 +120,7 @@ export default function SplashScreen({
 
   const animationRef = useRef<LottieView>(null);
   const logoAnimationRef = useRef<LottieView>(null);
+  const verificationInputRefs = useRef<(TextInput | null)[]>([]);
   const [isSignIn, setIsSignIn] = useState(true); // true for Sign In, false for Sign Up
   const [showPassword, setShowPassword] = useState(false); // false = hidden, true = visible
   
@@ -132,6 +137,13 @@ export default function SplashScreen({
   const [forgotPasswordModalVisible, setForgotPasswordModalVisible] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  
+  // Email verification modal state
+  const [verificationModalVisible, setVerificationModalVisible] = useState(false);
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResendingCode, setIsResendingCode] = useState(false);
+  const [pendingSignUpAttempt, setPendingSignUpAttempt] = useState<any>(null);
   
   // Animation state
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -308,6 +320,29 @@ export default function SplashScreen({
     { color: Colors[theme].background, fontFamily: Fonts.bodyMedium }
   ], [theme]);
 
+  // Verification modal styles
+  const verificationCodeInputStyle = useMemo(() => [
+    styles.verificationCodeInput,
+    {
+      borderColor: Colors[theme].unselectedText,
+      color: Colors[theme].text,
+      backgroundColor: Colors[theme].background,
+      fontFamily: Fonts.bodyBold
+    }
+  ], [theme]);
+
+
+
+  const resendButtonStyle = useMemo(() => [
+    styles.resendButton,
+    { borderColor: Colors[theme].brandColor2 }
+  ], [theme]);
+
+  const resendButtonTextStyle = useMemo(() => [
+    styles.resendButtonText,
+    { color: Colors[theme].brandColor2, fontFamily: Fonts.bodyMedium }
+  ], [theme]);
+
   // Check if user is already signed in
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -398,32 +433,43 @@ export default function SplashScreen({
   const handleSignUp = useCallback(async () => {
     if (validateSignUp()) {
       try {
-        const result = await signUpWithEmail(email.trim(), password);
-        
-        if (result.success) {
+        // Use direct Clerk signup to handle verification flow
+        if (!signUp) {
+          setToastMessage(strings[language].splash.signUpFailed);
+          setToastVisible(true);
+          return;
+        }
+
+        const result = await signUp.create({
+          emailAddress: email.trim(),
+          password,
+        });
+
+        if (result.status === 'complete') {
+          // Signup completed without verification
+          if (setActive) {
+            await setActive({ session: result.createdSessionId });
+          }
           setToastMessage(strings[language].splash.accountCreatedSuccessfully);
           setToastVisible(true);
-          // Auth state will be updated and trigger the useEffect
+        } else if (result.status === 'missing_requirements') {
+          // Email verification required
+          await result.prepareEmailAddressVerification({ strategy: 'email_code' });
+          setPendingSignUpAttempt(result);
+          setVerificationModalVisible(true);
+          setToastMessage(strings[language].splash.verificationCodeSent);
+          setToastVisible(true);
         } else {
-          // Handle Clerk-specific error messages
-          let errorMessage = result.error || strings[language].splash.signUpFailed;
-          
-          // Check for common Clerk error scenarios
-          if (result.error?.includes('verification') || result.error?.includes('email')) {
-            // This might be an email verification requirement
-            errorMessage = result.error;
-          }
-          
-          setToastMessage(errorMessage);
+          setToastMessage(strings[language].splash.signUpFailed);
           setToastVisible(true);
         }
       } catch (error: any) {
-        const errorMessage = error?.message || strings[language].splash.signUpFailed;
+        const errorMessage = error.errors?.[0]?.message || error?.message || strings[language].splash.signUpFailed;
         setToastMessage(errorMessage);
         setToastVisible(true);
       }
     }
-  }, [validateSignUp, email, password, signUpWithEmail, language]);
+  }, [validateSignUp, email, password, signUp, setActive, language]);
 
   const handleSignIn = useCallback(async () => {
     // Check if fields are empty
@@ -616,6 +662,113 @@ export default function SplashScreen({
 
   const handleHideToast = useCallback(() => {
     setToastVisible(false);
+  }, []);
+
+  // Verification code handlers
+  const handleVerificationCodeChange = useCallback((text: string, index: number) => {
+    if (text.length > 1) {
+      // Handle paste - distribute characters across inputs
+      const chars = text.slice(0, 6).split('');
+      const newCode = [...verificationCode];
+      chars.forEach((char, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = char;
+        }
+      });
+      setVerificationCode(newCode);
+      return;
+    }
+
+    const newCode = [...verificationCode];
+    newCode[index] = text;
+    setVerificationCode(newCode);
+
+    // Auto-focus next input
+    if (text && index < 5) {
+      const nextInput = verificationInputRefs.current[index + 1];
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+  }, [verificationCode]);
+
+  const handleVerificationCodeKeyPress = useCallback((key: string, index: number) => {
+    if (key === 'Backspace' && !verificationCode[index] && index > 0) {
+      // Focus previous input on backspace if current is empty
+      const prevInput = verificationInputRefs.current[index - 1];
+      if (prevInput) {
+        prevInput.focus();
+      }
+    }
+  }, [verificationCode]);
+
+  const handleVerifyCode = useCallback(async () => {
+    const code = verificationCode.join('');
+    if (code.length !== 6) {
+      setToastMessage(strings[language].splash.pleaseEnterAllDigits);
+      setToastVisible(true);
+      return;
+    }
+
+    if (!pendingSignUpAttempt) {
+      setToastMessage(strings[language].splash.verificationFailed);
+      setToastVisible(true);
+      return;
+    }
+
+    setIsVerifying(true);
+
+    try {
+      const result = await pendingSignUpAttempt.attemptEmailAddressVerification({
+        code,
+      });
+
+      if (result.status === 'complete') {
+        if (setActive) {
+          await setActive({ session: result.createdSessionId });
+        }
+        setVerificationModalVisible(false);
+        setVerificationCode(['', '', '', '', '', '']);
+        setPendingSignUpAttempt(null);
+        setToastMessage(strings[language].splash.accountCreatedSuccessfully);
+        setToastVisible(true);
+      } else {
+        setToastMessage(strings[language].splash.verificationFailed);
+        setToastVisible(true);
+      }
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || strings[language].splash.invalidVerificationCode;
+      setToastMessage(errorMessage);
+      setToastVisible(true);
+    }
+
+    setIsVerifying(false);
+  }, [verificationCode, pendingSignUpAttempt, setActive, language]);
+
+  const handleResendCode = useCallback(async () => {
+    if (!pendingSignUpAttempt) {
+      return;
+    }
+
+    setIsResendingCode(true);
+
+    try {
+      await pendingSignUpAttempt.prepareEmailAddressVerification({ strategy: 'email_code' });
+      setToastMessage(strings[language].splash.verificationCodeSent);
+      setToastVisible(true);
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || strings[language].splash.verificationFailed;
+      setToastMessage(errorMessage);
+      setToastVisible(true);
+    }
+
+    setIsResendingCode(false);
+  }, [pendingSignUpAttempt, language]);
+
+  const handleCloseVerificationModal = useCallback(() => {
+    setVerificationModalVisible(false);
+    setVerificationCode(['', '', '', '', '', '']);
+    setPendingSignUpAttempt(null);
   }, []);
 
   const handleSignInPress = useCallback(() => {
@@ -939,6 +1092,75 @@ export default function SplashScreen({
           </View>
         </View>
       </Modal>
+
+      {/* Email Verification Modal */}
+      <Modal
+        visible={verificationModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseVerificationModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={modalContentStyle}>
+            <MemoizedText style={modalTitleStyle}>{strings[language].splash.verifyEmail}</MemoizedText>
+            <MemoizedText style={modalSubtitleStyle}>
+              {strings[language].splash.verifyEmailSubtitle}
+            </MemoizedText>
+            
+            {/* Verification Code Input Grid */}
+            <View style={styles.verificationCodeContainer}>
+              {verificationCode.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => {
+                    verificationInputRefs.current[index] = ref;
+                  }}
+                  style={verificationCodeInputStyle}
+                  value={digit}
+                  onChangeText={(text) => handleVerificationCodeChange(text, index)}
+                  onKeyPress={({ nativeEvent }) => handleVerificationCodeKeyPress(nativeEvent.key, index)}
+                  keyboardType="numeric"
+                  maxLength={6} // Allow paste of full code
+                  textAlign="center"
+                  selectTextOnFocus={true}
+                  autoFocus={index === 0}
+                />
+              ))}
+            </View>
+            
+            {/* Resend Code Button */}
+            <MemoizedTouchableOpacity 
+              style={resendButtonStyle}
+              onPress={handleResendCode}
+              disabled={isResendingCode}
+            >
+              <MemoizedText style={resendButtonTextStyle}>
+                {isResendingCode ? strings[language].splash.resendingCode : strings[language].splash.resendCode}
+              </MemoizedText>
+            </MemoizedTouchableOpacity>
+            
+            {/* Action Buttons */}
+            <View style={styles.modalButtonContainer}>
+              <MemoizedTouchableOpacity 
+                style={modalCancelButtonStyle}
+                onPress={handleCloseVerificationModal}
+              >
+                <MemoizedText style={modalCancelButtonTextStyle}>{strings[language].splash.cancel}</MemoizedText>
+              </MemoizedTouchableOpacity>
+              
+              <MemoizedTouchableOpacity 
+                style={[modalConfirmButtonStyle, isVerifying && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }]}
+                onPress={handleVerifyCode}
+                disabled={isVerifying}
+              >
+                <MemoizedText style={modalConfirmButtonTextStyle}>
+                  {isVerifying ? strings[language].splash.verifying : strings[language].splash.verify}
+                </MemoizedText>
+              </MemoizedTouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1181,5 +1403,34 @@ const styles = StyleSheet.create({
 
   modalConfirmButtonText: {
     fontSize: 16,
+  },
+  // Verification code modal styles
+  verificationCodeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  verificationCodeInput: {
+    width: 45,
+    height: 55,
+    borderWidth: 2,
+    borderRadius: 12,
+    fontSize: 24,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginHorizontal: 4,
+  },
+  resendButton: {
+    borderWidth: 1,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  resendButtonText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 }); 

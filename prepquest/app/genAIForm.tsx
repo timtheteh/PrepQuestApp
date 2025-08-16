@@ -1237,7 +1237,7 @@ export default function GenAIFormPage() {
         questionType // this is the allowed cognitive types
       );
 
-      var prompt = ""
+      let prompt = ""
       if (mode === 'interview' && language === 'English') {
         prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
         if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {

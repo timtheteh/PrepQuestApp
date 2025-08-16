@@ -46,6 +46,15 @@ export const strings: Record<string, any> = {
       verificationFailed: 'Verification failed',
       invalidVerificationCode: 'Invalid verification code',
       pleaseEnterAllDigits: 'Please enter all 6 digits',
+      // Password reset flow strings
+      verifyYourEmail: 'Verify Your Email',
+      firstKeyInCodeToVerify: 'First key in the code sent to your email to verify your email',
+      setNewPassword: 'Set New Password',
+      enterYourNewPassword: 'Enter your new password',
+      newPassword: 'New Password',
+      confirmNewPassword: 'Confirm New Password',
+      done: 'Done',
+      passwordResetSuccess: 'Your password has been reset! Try logging in',
     },
                     // Statistics page strings
                 statistics: {

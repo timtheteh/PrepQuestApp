@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Dimensions, Text, ScrollView, TouchableOpacity, TextInput, Platform, Animated, Modal } from 'react-native';
-import { useSignUp } from '@clerk/clerk-expo';
+import { useSignUp, useSignIn } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
 import PrepQuestLogo from '@/assets/icons/loginIcons/PrepQuestLogo.svg';
@@ -103,15 +103,17 @@ export default function SplashScreen({
     user, 
     isLoading,
     signInWithEmail,
-
-    resetPassword,
     signInWithGoogle,
     signInWithFacebook,
-    signInWithApple
+    signInWithApple,
+    signOut
   } = useHybridAuth();
   
   // Direct Clerk signup hook for verification
   const { signUp, setActive } = useSignUp();
+  
+  // Direct Clerk signin hook for password reset
+  const { signIn } = useSignIn();
   
   const insets = useSafeAreaInsets();
   
@@ -139,6 +141,13 @@ export default function SplashScreen({
   const [forgotPasswordModalVisible, setForgotPasswordModalVisible] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [passwordResetStep, setPasswordResetStep] = useState<'email' | 'code' | 'newPassword'>('email');
+  const [passwordResetCode, setPasswordResetCode] = useState(['', '', '', '', '', '']);
+  const [isVerifyingResetCode, setIsVerifyingResetCode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [pendingPasswordReset, setPendingPasswordReset] = useState<any>(null);
+  const passwordResetInputRefs = useRef<(TextInput | null)[]>([]);
   
   // Email verification modal state
   const [verificationModalVisible, setVerificationModalVisible] = useState(false);
@@ -667,27 +676,189 @@ export default function SplashScreen({
     setIsResettingPassword(true);
 
     try {
-      // Clerk handles password reset via email verification
-      const result = await resetPassword(forgotPasswordEmail.trim());
-      
-      if (result.success) {
-        showSuccessToast(strings[language].splash.passwordResetEmailSent);
-        setForgotPasswordModalVisible(false);
-        setForgotPasswordEmail('');
-      } else {
-        showErrorToast(result.error || strings[language].splash.failedToSendResetEmail);
+      // Start the password reset flow with Clerk
+      if (!signIn) {
+        showErrorToast('Sign in not available');
+        setIsResettingPassword(false);
+        return;
       }
+
+      // Create a sign-in attempt with the email
+      const result = await signIn.create({
+        identifier: forgotPasswordEmail.trim(),
+      });
+
+      // Look for reset password factor
+      const resetPasswordFactor = result.supportedFirstFactors?.find(
+        (factor: any) => factor.strategy === 'reset_password_email_code'
+      );
+
+      if (!resetPasswordFactor) {
+        showErrorToast('Password reset not available for this email');
+        setIsResettingPassword(false);
+        return;
+      }
+
+      // Prepare the reset password email
+      await result.prepareFirstFactor({
+        strategy: 'reset_password_email_code',
+        emailAddressId: (resetPasswordFactor as any).emailAddressId,
+      });
+
+      // Store the sign-in attempt for later use
+      setPendingPasswordReset(result);
+      
+      // Move to code verification step
+      setPasswordResetStep('code');
+      showSuccessToast(strings[language].splash.passwordResetEmailSent);
     } catch (error: any) {
       const errorMessage = error?.message || strings[language].splash.failedToSendResetEmail;
       showErrorToast(errorMessage);
     }
 
     setIsResettingPassword(false);
-  }, [forgotPasswordEmail, resetPassword, language, showSuccessToast, showErrorToast]);
+  }, [forgotPasswordEmail, signIn, language, showSuccessToast, showErrorToast]);
 
   const handleCloseModal = useCallback(() => {
     setForgotPasswordModalVisible(false);
+    // Reset all password reset states
+    setPasswordResetStep('email');
+    setPasswordResetCode(['', '', '', '', '', '']);
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPendingPasswordReset(null);
+    setForgotPasswordEmail('');
   }, []);
+
+  // Handle password reset code verification
+  const handleVerifyResetCode = useCallback(async () => {
+    const code = passwordResetCode.join('');
+    if (code.length !== 6) {
+      showErrorToast(strings[language].splash.pleaseEnterAllDigits);
+      return;
+    }
+
+    if (!pendingPasswordReset) {
+      showErrorToast('Password reset session expired');
+      return;
+    }
+
+    setIsVerifyingResetCode(true);
+
+    try {
+      const result = await pendingPasswordReset.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
+      });
+
+      if (result.status === 'needs_new_password') {
+        // Move to new password step
+        setPasswordResetStep('newPassword');
+        setPasswordResetCode(['', '', '', '', '', '']); // Clear code
+      } else {
+        showErrorToast('Password reset verification failed');
+      }
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || strings[language].splash.invalidVerificationCode;
+      showErrorToast(errorMessage);
+    }
+
+    setIsVerifyingResetCode(false);
+  }, [passwordResetCode, pendingPasswordReset, language, showErrorToast]);
+
+  // Handle new password submission
+  const handleSetNewPassword = useCallback(async () => {
+    if (!newPassword.trim() || !confirmNewPassword.trim()) {
+      showErrorToast('Please fill in both password fields');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      showErrorToast('Passwords do not match');
+      return;
+    }
+
+    if (!pendingPasswordReset) {
+      showErrorToast('Password reset session expired');
+      return;
+    }
+
+    try {
+      await pendingPasswordReset.resetPassword({
+        password: newPassword,
+      });
+
+      // Password reset completed successfully
+      // Clerk might have automatically created a session, so we need to clear it
+      // to ensure the user signs in fresh with their new password
+      try {
+        await signOut();
+      } catch (signOutError) {
+        // Ignore sign out errors - there might not be a session to clear
+        console.log('No session to clear after password reset');
+      }
+
+      // Close modal and show success message
+      setForgotPasswordModalVisible(false);
+      showSuccessToast(strings[language].splash.passwordResetSuccess);
+      
+      // Reset all password reset states
+      setPasswordResetStep('email');
+      setPasswordResetCode(['', '', '', '', '', '']);
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setPendingPasswordReset(null);
+      setForgotPasswordEmail('');
+      
+      // Clear main sign-in form to ensure fresh sign-in
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || 'Failed to reset password';
+      showErrorToast(errorMessage);
+    }
+  }, [newPassword, confirmNewPassword, pendingPasswordReset, showErrorToast, showSuccessToast, language, signOut]);
+
+  // Handle password reset code input change
+  const handlePasswordResetCodeChange = useCallback((text: string, index: number) => {
+    if (text.length > 1) {
+      // Handle paste - distribute characters across inputs
+      const chars = text.slice(0, 6).split('');
+      const newCode = [...passwordResetCode];
+      chars.forEach((char, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = char;
+        }
+      });
+      setPasswordResetCode(newCode);
+      return;
+    }
+
+    const newCode = [...passwordResetCode];
+    newCode[index] = text;
+    setPasswordResetCode(newCode);
+
+    // Auto-focus next input
+    if (text && index < 5) {
+      const nextInput = passwordResetInputRefs.current[index + 1];
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+  }, [passwordResetCode]);
+
+  // Handle password reset code key press
+  const handlePasswordResetCodeKeyPress = useCallback((key: string, index: number) => {
+    if (key === 'Backspace' && !passwordResetCode[index] && index > 0) {
+      // Focus previous input on backspace if current is empty
+      const prevInput = passwordResetInputRefs.current[index - 1];
+      if (prevInput) {
+        prevInput.focus();
+      }
+    }
+  }, [passwordResetCode]);
 
   const handleTogglePassword = useCallback(() => {
     setShowPassword(!showPassword);
@@ -707,6 +878,14 @@ export default function SplashScreen({
 
   const handleForgotPasswordEmailChange = useCallback((text: string) => {
     setForgotPasswordEmail(text);
+  }, []);
+
+  const handleNewPasswordChange = useCallback((text: string) => {
+    setNewPassword(text);
+  }, []);
+
+  const handleConfirmNewPasswordChange = useCallback((text: string) => {
+    setConfirmNewPassword(text);
   }, []);
 
   // Verification code handlers
@@ -1109,40 +1288,164 @@ export default function SplashScreen({
       >
         <View style={styles.modalOverlay}>
           <View style={modalContentStyle}>
-            <MemoizedText style={modalTitleStyle}>{strings[language].splash.resetPassword}</MemoizedText>
-            <MemoizedText style={modalSubtitleStyle}>
-              {strings[language].splash.resetPasswordSubtitle}
-            </MemoizedText>
-            
-            <MemoizedTextInput
-              style={modalInputStyle}
-              placeholder={strings[language].splash.enterYourEmail}
-              placeholderTextColor={placeholderTextColor}
-              value={forgotPasswordEmail}
-              onChangeText={handleForgotPasswordEmailChange}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            
-            <View style={styles.modalButtonContainer}>
-              <MemoizedTouchableOpacity 
-                style={modalCancelButtonStyle}
-                onPress={handleCloseModal}
-              >
-                <MemoizedText style={modalCancelButtonTextStyle}>{strings[language].splash.cancel}</MemoizedText>
-              </MemoizedTouchableOpacity>
-              
-              <MemoizedTouchableOpacity 
-                style={modalConfirmButtonStyle}
-                onPress={handlePasswordReset}
-                disabled={isResettingPassword}
-              >
-                <MemoizedText style={modalConfirmButtonTextStyle}>
-                  {isResettingPassword ? strings[language].splash.sending : strings[language].splash.sendEmail}
+            {passwordResetStep === 'email' && (
+              <>
+                <MemoizedText style={modalTitleStyle}>{strings[language].splash.resetPassword}</MemoizedText>
+                <MemoizedText style={modalSubtitleStyle}>
+                  {strings[language].splash.resetPasswordSubtitle}
                 </MemoizedText>
-              </MemoizedTouchableOpacity>
-            </View>
+                
+                <MemoizedTextInput
+                  style={modalInputStyle}
+                  placeholder={strings[language].splash.enterYourEmail}
+                  placeholderTextColor={placeholderTextColor}
+                  value={forgotPasswordEmail}
+                  onChangeText={handleForgotPasswordEmailChange}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                
+                <View style={styles.modalButtonContainer}>
+                  <MemoizedTouchableOpacity 
+                    style={modalCancelButtonStyle}
+                    onPress={handleCloseModal}
+                  >
+                    <MemoizedText style={modalCancelButtonTextStyle}>{strings[language].splash.cancel}</MemoizedText>
+                  </MemoizedTouchableOpacity>
+                  
+                  <MemoizedTouchableOpacity 
+                    style={modalConfirmButtonStyle}
+                    onPress={handlePasswordReset}
+                    disabled={isResettingPassword}
+                  >
+                    <MemoizedText style={modalConfirmButtonTextStyle}>
+                      {isResettingPassword ? strings[language].splash.sending : strings[language].splash.sendEmail}
+                    </MemoizedText>
+                  </MemoizedTouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {passwordResetStep === 'code' && (
+              <>
+                <MemoizedText style={modalTitleStyle}>{strings[language].splash.verifyYourEmail}</MemoizedText>
+                <MemoizedText style={modalSubtitleStyle}>
+                  {strings[language].splash.firstKeyInCodeToVerify}
+                </MemoizedText>
+                
+                {/* Password Reset Code Input Grid */}
+                <View style={styles.verificationCodeContainer}>
+                  {passwordResetCode.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={(ref) => {
+                        passwordResetInputRefs.current[index] = ref;
+                      }}
+                      style={verificationCodeInputStyle}
+                      value={digit}
+                      onChangeText={(text) => handlePasswordResetCodeChange(text, index)}
+                      onKeyPress={({ nativeEvent }) => handlePasswordResetCodeKeyPress(nativeEvent.key, index)}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      textAlign="center"
+                      selectTextOnFocus={true}
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                </View>
+                
+                <View style={styles.modalButtonContainer}>
+                  <MemoizedTouchableOpacity 
+                    style={modalCancelButtonStyle}
+                    onPress={handleCloseModal}
+                  >
+                    <MemoizedText style={modalCancelButtonTextStyle}>{strings[language].splash.cancel}</MemoizedText>
+                  </MemoizedTouchableOpacity>
+                  
+                  <MemoizedTouchableOpacity 
+                    style={[modalConfirmButtonStyle, isVerifyingResetCode && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }]}
+                    onPress={handleVerifyResetCode}
+                    disabled={isVerifyingResetCode}
+                  >
+                    <MemoizedText style={modalConfirmButtonTextStyle}>
+                      {isVerifyingResetCode ? strings[language].splash.verifying : strings[language].splash.verify}
+                    </MemoizedText>
+                  </MemoizedTouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {passwordResetStep === 'newPassword' && (
+              <>
+                <MemoizedText style={modalTitleStyle}>{strings[language].splash.setNewPassword}</MemoizedText>
+                <MemoizedText style={modalSubtitleStyle}>
+                  {strings[language].splash.enterYourNewPassword}
+                </MemoizedText>
+                
+                <View style={styles.inputWrapper}>
+                  <MemoizedTextInput
+                    style={modalInputStyle}
+                    placeholder={strings[language].splash.newPassword}
+                    placeholderTextColor={placeholderTextColor}
+                    secureTextEntry={!showPassword}
+                    value={newPassword}
+                    onChangeText={handleNewPasswordChange}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <MemoizedTouchableOpacity 
+                    style={styles.passwordToggle}
+                    onPress={handleTogglePassword}
+                  >
+                    <Feather 
+                      name={showPassword ? 'eye' : 'eye-off'} 
+                      size={20} 
+                      color={Colors[theme].normalIconColor}
+                    />
+                  </MemoizedTouchableOpacity>
+                </View>
+                
+                <View style={styles.inputWrapper}>
+                  <MemoizedTextInput
+                    style={modalInputStyle}
+                    placeholder={strings[language].splash.confirmNewPassword}
+                    placeholderTextColor={placeholderTextColor}
+                    secureTextEntry={!showPassword}
+                    value={confirmNewPassword}
+                    onChangeText={handleConfirmNewPasswordChange}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <MemoizedTouchableOpacity 
+                    style={styles.passwordToggle}
+                    onPress={handleTogglePassword}
+                  >
+                    <Feather 
+                      name={showPassword ? 'eye' : 'eye-off'} 
+                      size={20} 
+                      color={Colors[theme].normalIconColor}
+                    />
+                  </MemoizedTouchableOpacity>
+                </View>
+                
+                <View style={styles.modalButtonContainer}>
+                  <MemoizedTouchableOpacity 
+                    style={modalCancelButtonStyle}
+                    onPress={handleCloseModal}
+                  >
+                    <MemoizedText style={modalCancelButtonTextStyle}>{strings[language].splash.cancel}</MemoizedText>
+                  </MemoizedTouchableOpacity>
+                  
+                  <MemoizedTouchableOpacity 
+                    style={modalConfirmButtonStyle}
+                    onPress={handleSetNewPassword}
+                  >
+                    <MemoizedText style={modalConfirmButtonTextStyle}>{strings[language].splash.done}</MemoizedText>
+                  </MemoizedTouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </Modal>

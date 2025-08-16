@@ -307,7 +307,7 @@ export default function SplashScreen({
 
   const modalCancelButtonTextStyle = useMemo(() => [
     styles.modalCancelButtonText, 
-    { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }
+    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
   ], [theme]);
 
   const modalConfirmButtonStyle = useMemo(() => [
@@ -594,10 +594,6 @@ export default function SplashScreen({
       }).start(() => {
         // Change state
         setIsSignIn(newIsSignIn);
-        // Clear form fields
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
         // Fade in
         Animated.timing(toggleFadeAnim, {
           ...fadeInQuickAnimationConfig,
@@ -1403,7 +1399,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 24,
-    paddingHorizontal: 8,
   },
   verificationCodeInput: {
     width: 45,
@@ -1413,7 +1408,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     textAlign: 'center',
-    marginHorizontal: 4,
   },
   resendButton: {
     borderWidth: 1,

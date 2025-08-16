@@ -121,6 +121,7 @@ export default function SplashScreen({
   const animationRef = useRef<LottieView>(null);
   const logoAnimationRef = useRef<LottieView>(null);
   const verificationInputRefs = useRef<(TextInput | null)[]>([]);
+  const resendTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isSignIn, setIsSignIn] = useState(true); // true for Sign In, false for Sign Up
   const [showPassword, setShowPassword] = useState(false); // false = hidden, true = visible
   
@@ -146,6 +147,8 @@ export default function SplashScreen({
   const [isResendingCode, setIsResendingCode] = useState(false);
   const [pendingSignUpAttempt, setPendingSignUpAttempt] = useState<any>(null);
   const [hasVerificationError, setHasVerificationError] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(15);
+  const [canResendCode, setCanResendCode] = useState(false);
   
   // Animation state
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -337,13 +340,19 @@ export default function SplashScreen({
 
   const resendButtonStyle = useMemo(() => [
     styles.resendButton,
-    { borderColor: Colors[theme].brandColor2 }
-  ], [theme]);
+    { 
+      borderColor: canResendCode ? Colors[theme].brandColor2 : Colors[theme].unselectedText,
+      opacity: canResendCode ? 1 : 0.5
+    }
+  ], [theme, canResendCode]);
 
   const resendButtonTextStyle = useMemo(() => [
     styles.resendButtonText,
-    { color: Colors[theme].brandColor2, fontFamily: Fonts.bodyMedium }
-  ], [theme]);
+    { 
+      color: canResendCode ? Colors[theme].brandColor2 : Colors[theme].unselectedText, 
+      fontFamily: Fonts.bodyMedium 
+    }
+  ], [theme, canResendCode]);
 
   // Check if user is already signed in
   useEffect(() => {
@@ -410,8 +419,39 @@ export default function SplashScreen({
       // Stop any running animations to prevent memory leaks
       fadeAnim.stopAnimation();
       toggleFadeAnim.stopAnimation();
+      // Clear resend timer
+      if (resendTimerRef.current) {
+        clearInterval(resendTimerRef.current);
+        resendTimerRef.current = null;
+      }
     };
   }, [fadeAnim, toggleFadeAnim]);
+
+  // Handle resend code countdown
+  useEffect(() => {
+    if (!canResendCode && resendCountdown > 0) {
+      resendTimerRef.current = setInterval(() => {
+        setResendCountdown((prev) => {
+          if (prev <= 1) {
+            setCanResendCode(true);
+            if (resendTimerRef.current) {
+              clearInterval(resendTimerRef.current);
+              resendTimerRef.current = null;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (resendTimerRef.current) {
+          clearInterval(resendTimerRef.current);
+          resendTimerRef.current = null;
+        }
+      };
+    }
+  }, [canResendCode, resendCountdown]);
 
   const handleHideToast = useCallback(() => {
     setToastVisible(false);
@@ -429,6 +469,12 @@ export default function SplashScreen({
     setToastMessage(message);
     setToastBackgroundColor(undefined); // Use default error color
     setToastVisible(true);
+  }, []);
+
+  // Helper function to start resend countdown
+  const startResendCountdown = useCallback(() => {
+    setCanResendCode(false);
+    setResendCountdown(5);
   }, []);
 
   // Validation function
@@ -474,6 +520,7 @@ export default function SplashScreen({
           await result.prepareEmailAddressVerification({ strategy: 'email_code' });
           setPendingSignUpAttempt(result);
           setHasVerificationError(false); // Reset error state when opening modal
+          startResendCountdown(); // Start 5-second countdown for resend button
           setVerificationModalVisible(true);
           showSuccessToast(strings[language].splash.verificationCodeSent);
         } else {
@@ -484,7 +531,7 @@ export default function SplashScreen({
         showErrorToast(errorMessage);
       }
     }
-  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast]);
+  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast, startResendCountdown]);
 
   const handleSignIn = useCallback(async () => {
     // Check if fields are empty
@@ -754,19 +801,27 @@ export default function SplashScreen({
     try {
       await pendingSignUpAttempt.prepareEmailAddressVerification({ strategy: 'email_code' });
       showSuccessToast(strings[language].splash.verificationCodeSent);
+      startResendCountdown(); // Start countdown again after successful resend
     } catch (error: any) {
       const errorMessage = error.errors?.[0]?.message || strings[language].splash.verificationFailed;
       showErrorToast(errorMessage);
     }
 
     setIsResendingCode(false);
-  }, [pendingSignUpAttempt, language, showSuccessToast, showErrorToast]);
+  }, [pendingSignUpAttempt, language, showSuccessToast, showErrorToast, startResendCountdown]);
 
   const handleCloseVerificationModal = useCallback(() => {
     setVerificationModalVisible(false);
     setVerificationCode(['', '', '', '', '', '']);
     setPendingSignUpAttempt(null);
     setHasVerificationError(false);
+    // Reset countdown states
+    setCanResendCode(false);
+    setResendCountdown(5);
+    if (resendTimerRef.current) {
+      clearInterval(resendTimerRef.current);
+      resendTimerRef.current = null;
+    }
   }, []);
 
   const handleSignInPress = useCallback(() => {
@@ -1131,10 +1186,15 @@ export default function SplashScreen({
             <MemoizedTouchableOpacity 
               style={resendButtonStyle}
               onPress={handleResendCode}
-              disabled={isResendingCode}
+              disabled={!canResendCode || isResendingCode}
             >
               <MemoizedText style={resendButtonTextStyle}>
-                {isResendingCode ? strings[language].splash.resendingCode : strings[language].splash.resendCode}
+                {isResendingCode 
+                  ? strings[language].splash.resendingCode 
+                  : canResendCode 
+                    ? strings[language].splash.resendCode
+                    : `${strings[language].splash.resendCode} (${resendCountdown}s)`
+                }
               </MemoizedText>
             </MemoizedTouchableOpacity>
             

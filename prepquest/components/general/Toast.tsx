@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Text, Animated, View, PanResponder } from 'react-native';
+import { StyleSheet, Text, Animated, PanResponder } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -9,9 +9,10 @@ interface ToastProps {
   message: string;
   onHide: () => void;
   duration?: number;
+  backgroundColor?: string;
 }
 
-export function Toast({ visible, message, onHide, duration = 3000 }: ToastProps) {
+export function Toast({ visible, message, onHide, duration = 3000, backgroundColor }: ToastProps) {
   const { theme } = useTheme();
   const colors = Colors[theme];
   const opacity = useRef(new Animated.Value(0)).current;
@@ -118,7 +119,7 @@ export function Toast({ visible, message, onHide, duration = 3000 }: ToastProps)
       ]}
     >
       <Animated.View 
-        style={[styles.toast, { backgroundColor: colors.alertColor }]}
+        style={[styles.toast, { backgroundColor: backgroundColor || colors.alertColor }]}
         {...panResponder.panHandlers}
       >
         <Text style={[styles.message, { color: colors.background }]}>{message}</Text>

@@ -132,6 +132,7 @@ export default function SplashScreen({
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastBackgroundColor, setToastBackgroundColor] = useState<string | undefined>(undefined);
   
   // Forgot password modal state
   const [forgotPasswordModalVisible, setForgotPasswordModalVisible] = useState(false);
@@ -411,24 +412,40 @@ export default function SplashScreen({
     };
   }, [fadeAnim, toggleFadeAnim]);
 
+  const handleHideToast = useCallback(() => {
+    setToastVisible(false);
+    setToastBackgroundColor(undefined);
+  }, []);
+
+  // Helper functions for different toast types
+  const showSuccessToast = useCallback((message: string) => {
+    setToastMessage(message);
+    setToastBackgroundColor('#44B88A');
+    setToastVisible(true);
+  }, []);
+
+  const showErrorToast = useCallback((message: string) => {
+    setToastMessage(message);
+    setToastBackgroundColor(undefined); // Use default error color
+    setToastVisible(true);
+  }, []);
+
   // Validation function
   const validateSignUp = useCallback(() => {
     // Check if fields are empty
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setToastMessage(strings[language].splash.fillUpBothEmailAndPassword);
-      setToastVisible(true);
+      showErrorToast(strings[language].splash.fillUpBothEmailAndPassword);
       return false;
     }
     
     // Check if passwords match
     if (password !== confirmPassword) {
-      setToastMessage(strings[language].splash.passwordsDontMatch);
-      setToastVisible(true);
+      showErrorToast(strings[language].splash.passwordsDontMatch);
       return false;
     }
     
     return true;
-  }, [email, password, confirmPassword, language]);
+  }, [email, password, confirmPassword, language, showErrorToast]);
 
   const handleSignUp = useCallback(async () => {
     if (validateSignUp()) {
@@ -450,32 +467,27 @@ export default function SplashScreen({
           if (setActive) {
             await setActive({ session: result.createdSessionId });
           }
-          setToastMessage(strings[language].splash.accountCreatedSuccessfully);
-          setToastVisible(true);
+          showSuccessToast(strings[language].splash.accountCreatedSuccessfully);
         } else if (result.status === 'missing_requirements') {
           // Email verification required
           await result.prepareEmailAddressVerification({ strategy: 'email_code' });
           setPendingSignUpAttempt(result);
           setVerificationModalVisible(true);
-          setToastMessage(strings[language].splash.verificationCodeSent);
-          setToastVisible(true);
+          showSuccessToast(strings[language].splash.verificationCodeSent);
         } else {
-          setToastMessage(strings[language].splash.signUpFailed);
-          setToastVisible(true);
+          showErrorToast(strings[language].splash.signUpFailed);
         }
       } catch (error: any) {
         const errorMessage = error.errors?.[0]?.message || error?.message || strings[language].splash.signUpFailed;
-        setToastMessage(errorMessage);
-        setToastVisible(true);
+        showErrorToast(errorMessage);
       }
     }
-  }, [validateSignUp, email, password, signUp, setActive, language]);
+  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast]);
 
   const handleSignIn = useCallback(async () => {
     // Check if fields are empty
     if (!email.trim() || !password.trim()) {
-      setToastMessage(strings[language].splash.fillUpBothEmailAndPassword);
-      setToastVisible(true);
+      showErrorToast(strings[language].splash.fillUpBothEmailAndPassword);
       return;
     }
     
@@ -495,15 +507,13 @@ export default function SplashScreen({
           errorMessage = result.error; // Use Clerk's specific error message
         }
         
-        setToastMessage(errorMessage);
-        setToastVisible(true);
+        showErrorToast(errorMessage);
       }
     } catch (error: any) {
       const errorMessage = error?.message || strings[language].splash.signInFailed;
-      setToastMessage(errorMessage);
-      setToastVisible(true);
+      showErrorToast(errorMessage);
     }
-  }, [email, password, signInWithEmail, language]);
+  }, [email, password, signInWithEmail, language, showErrorToast]);
 
   const handleSocialLogin = useCallback(async (provider: 'google' | 'facebook' | 'apple') => {
     try {
@@ -519,8 +529,7 @@ export default function SplashScreen({
           oauthFunction = signInWithApple;
           break;
         default:
-          setToastMessage(strings[language].splash.providerNotSupported);
-          setToastVisible(true);
+          showErrorToast(strings[language].splash.providerNotSupported);
           return;
       }
     
@@ -543,10 +552,9 @@ export default function SplashScreen({
         default:
           errorMessage = error?.message || strings[language].splash.signInFailed;
       }
-      setToastMessage(errorMessage);
-      setToastVisible(true);
+      showErrorToast(errorMessage);
     }
-  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language]);
+  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast]);
 
   useEffect(() => {
     // Ensure animations start playing
@@ -607,8 +615,7 @@ export default function SplashScreen({
   // Handle password reset
   const handlePasswordReset = useCallback(async () => {
     if (!forgotPasswordEmail.trim()) {
-      setToastMessage(strings[language].splash.pleaseEnterYourEmailAddress);
-      setToastVisible(true);
+      showErrorToast(strings[language].splash.pleaseEnterYourEmailAddress);
       return;
     }
 
@@ -619,22 +626,19 @@ export default function SplashScreen({
       const result = await resetPassword(forgotPasswordEmail.trim());
       
       if (result.success) {
-        setToastMessage(strings[language].splash.passwordResetEmailSent);
-        setToastVisible(true);
+        showSuccessToast(strings[language].splash.passwordResetEmailSent);
         setForgotPasswordModalVisible(false);
         setForgotPasswordEmail('');
       } else {
-        setToastMessage(result.error || strings[language].splash.failedToSendResetEmail);
-        setToastVisible(true);
+        showErrorToast(result.error || strings[language].splash.failedToSendResetEmail);
       }
     } catch (error: any) {
       const errorMessage = error?.message || strings[language].splash.failedToSendResetEmail;
-      setToastMessage(errorMessage);
-      setToastVisible(true);
+      showErrorToast(errorMessage);
     }
 
     setIsResettingPassword(false);
-  }, [forgotPasswordEmail, resetPassword, language]);
+  }, [forgotPasswordEmail, resetPassword, language, showSuccessToast, showErrorToast]);
 
   const handleCloseModal = useCallback(() => {
     setForgotPasswordModalVisible(false);
@@ -658,10 +662,6 @@ export default function SplashScreen({
 
   const handleForgotPasswordEmailChange = useCallback((text: string) => {
     setForgotPasswordEmail(text);
-  }, []);
-
-  const handleHideToast = useCallback(() => {
-    setToastVisible(false);
   }, []);
 
   // Verification code handlers
@@ -705,14 +705,12 @@ export default function SplashScreen({
   const handleVerifyCode = useCallback(async () => {
     const code = verificationCode.join('');
     if (code.length !== 6) {
-      setToastMessage(strings[language].splash.pleaseEnterAllDigits);
-      setToastVisible(true);
+      showErrorToast(strings[language].splash.pleaseEnterAllDigits);
       return;
     }
 
     if (!pendingSignUpAttempt) {
-      setToastMessage(strings[language].splash.verificationFailed);
-      setToastVisible(true);
+      showErrorToast(strings[language].splash.verificationFailed);
       return;
     }
 
@@ -730,20 +728,17 @@ export default function SplashScreen({
         setVerificationModalVisible(false);
         setVerificationCode(['', '', '', '', '', '']);
         setPendingSignUpAttempt(null);
-        setToastMessage(strings[language].splash.accountCreatedSuccessfully);
-        setToastVisible(true);
+        showSuccessToast(strings[language].splash.accountCreatedSuccessfully);
       } else {
-        setToastMessage(strings[language].splash.verificationFailed);
-        setToastVisible(true);
+        showErrorToast(strings[language].splash.verificationFailed);
       }
     } catch (error: any) {
       const errorMessage = error.errors?.[0]?.message || strings[language].splash.invalidVerificationCode;
-      setToastMessage(errorMessage);
-      setToastVisible(true);
+      showErrorToast(errorMessage);
     }
 
     setIsVerifying(false);
-  }, [verificationCode, pendingSignUpAttempt, setActive, language]);
+  }, [verificationCode, pendingSignUpAttempt, setActive, language, showSuccessToast, showErrorToast]);
 
   const handleResendCode = useCallback(async () => {
     if (!pendingSignUpAttempt) {
@@ -754,16 +749,14 @@ export default function SplashScreen({
 
     try {
       await pendingSignUpAttempt.prepareEmailAddressVerification({ strategy: 'email_code' });
-      setToastMessage(strings[language].splash.verificationCodeSent);
-      setToastVisible(true);
+      showSuccessToast(strings[language].splash.verificationCodeSent);
     } catch (error: any) {
       const errorMessage = error.errors?.[0]?.message || strings[language].splash.verificationFailed;
-      setToastMessage(errorMessage);
-      setToastVisible(true);
+      showErrorToast(errorMessage);
     }
 
     setIsResendingCode(false);
-  }, [pendingSignUpAttempt, language]);
+  }, [pendingSignUpAttempt, language, showSuccessToast, showErrorToast]);
 
   const handleCloseVerificationModal = useCallback(() => {
     setVerificationModalVisible(false);
@@ -823,6 +816,7 @@ export default function SplashScreen({
         message={toastMessage}
         onHide={handleHideToast}
         duration={3000}
+        backgroundColor={toastBackgroundColor}
       />
       
       {/* Show sign in/signup screen when database is ready */}

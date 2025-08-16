@@ -145,6 +145,7 @@ export default function SplashScreen({
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResendingCode, setIsResendingCode] = useState(false);
   const [pendingSignUpAttempt, setPendingSignUpAttempt] = useState<any>(null);
+  const [hasVerificationError, setHasVerificationError] = useState(false);
   
   // Animation state
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -325,12 +326,12 @@ export default function SplashScreen({
   const verificationCodeInputStyle = useMemo(() => [
     styles.verificationCodeInput,
     {
-      borderColor: Colors[theme].unselectedText,
+      borderColor: hasVerificationError ? '#FF4444' : Colors[theme].unselectedText,
       color: Colors[theme].text,
       backgroundColor: Colors[theme].background,
       fontFamily: Fonts.bodyBold
     }
-  ], [theme]);
+  ], [theme, hasVerificationError]);
 
 
 
@@ -472,6 +473,7 @@ export default function SplashScreen({
           // Email verification required
           await result.prepareEmailAddressVerification({ strategy: 'email_code' });
           setPendingSignUpAttempt(result);
+          setHasVerificationError(false); // Reset error state when opening modal
           setVerificationModalVisible(true);
           showSuccessToast(strings[language].splash.verificationCodeSent);
         } else {
@@ -662,6 +664,11 @@ export default function SplashScreen({
 
   // Verification code handlers
   const handleVerificationCodeChange = useCallback((text: string, index: number) => {
+    // Clear error state when user starts typing
+    if (hasVerificationError) {
+      setHasVerificationError(false);
+    }
+
     if (text.length > 1) {
       // Handle paste - distribute characters across inputs
       const chars = text.slice(0, 6).split('');
@@ -686,7 +693,7 @@ export default function SplashScreen({
         nextInput.focus();
       }
     }
-  }, [verificationCode]);
+  }, [verificationCode, hasVerificationError]);
 
   const handleVerificationCodeKeyPress = useCallback((key: string, index: number) => {
     if (key === 'Backspace' && !verificationCode[index] && index > 0) {
@@ -724,13 +731,14 @@ export default function SplashScreen({
         setVerificationModalVisible(false);
         setVerificationCode(['', '', '', '', '', '']);
         setPendingSignUpAttempt(null);
+        setHasVerificationError(false);
         showSuccessToast(strings[language].splash.accountCreatedSuccessfully);
       } else {
-        showErrorToast(strings[language].splash.verificationFailed);
+        setHasVerificationError(true);
       }
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || strings[language].splash.invalidVerificationCode;
-      showErrorToast(errorMessage);
+      // Show red border for invalid verification code instead of toast
+      setHasVerificationError(true);
     }
 
     setIsVerifying(false);
@@ -758,6 +766,7 @@ export default function SplashScreen({
     setVerificationModalVisible(false);
     setVerificationCode(['', '', '', '', '', '']);
     setPendingSignUpAttempt(null);
+    setHasVerificationError(false);
   }, []);
 
   const handleSignInPress = useCallback(() => {

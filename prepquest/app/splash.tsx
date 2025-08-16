@@ -148,6 +148,8 @@ export default function SplashScreen({
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [pendingPasswordReset, setPendingPasswordReset] = useState<any>(null);
   const passwordResetInputRefs = useRef<(TextInput | null)[]>([]);
+  const passwordResetFadeAnim = useRef(new Animated.Value(1)).current;
+  const [hasPasswordResetError, setHasPasswordResetError] = useState(false);
   
   // Email verification modal state
   const [verificationModalVisible, setVerificationModalVisible] = useState(false);
@@ -345,6 +347,17 @@ export default function SplashScreen({
     }
   ], [theme, hasVerificationError]);
 
+  // Password reset verification code input styles
+  const passwordResetCodeInputStyle = useMemo(() => [
+    styles.verificationCodeInput,
+    {
+      borderColor: hasPasswordResetError ? '#FF4444' : Colors[theme].unselectedText,
+      color: Colors[theme].text,
+      backgroundColor: Colors[theme].background,
+      fontFamily: Fonts.bodyBold
+    }
+  ], [theme, hasPasswordResetError]);
+
 
 
   const resendButtonStyle = useMemo(() => [
@@ -428,13 +441,14 @@ export default function SplashScreen({
       // Stop any running animations to prevent memory leaks
       fadeAnim.stopAnimation();
       toggleFadeAnim.stopAnimation();
+      passwordResetFadeAnim.stopAnimation();
       // Clear resend timer
       if (resendTimerRef.current) {
         clearInterval(resendTimerRef.current);
         resendTimerRef.current = null;
       }
     };
-  }, [fadeAnim, toggleFadeAnim]);
+  }, [fadeAnim, toggleFadeAnim, passwordResetFadeAnim]);
 
   // Handle resend code countdown
   useEffect(() => {
@@ -485,6 +499,25 @@ export default function SplashScreen({
     setCanResendCode(false);
     setResendCountdown(5);
   }, []);
+
+  // Helper function to transition password reset steps with fade animation
+  const transitionPasswordResetStep = useCallback((newStep: 'email' | 'code' | 'newPassword') => {
+    // Fade out
+    Animated.timing(passwordResetFadeAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      // Change step
+      setPasswordResetStep(newStep);
+      // Fade in
+      Animated.timing(passwordResetFadeAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [passwordResetFadeAnim]);
 
   // Validation function
   const validateSignUp = useCallback(() => {
@@ -708,8 +741,9 @@ export default function SplashScreen({
       // Store the sign-in attempt for later use
       setPendingPasswordReset(result);
       
-      // Move to code verification step
-      setPasswordResetStep('code');
+      // Move to code verification step with animation
+      setHasPasswordResetError(false); // Reset error state when opening code step
+      transitionPasswordResetStep('code');
       showSuccessToast(strings[language].splash.passwordResetEmailSent);
     } catch (error: any) {
       const errorMessage = error?.message || strings[language].splash.failedToSendResetEmail;
@@ -717,7 +751,7 @@ export default function SplashScreen({
     }
 
     setIsResettingPassword(false);
-  }, [forgotPasswordEmail, signIn, language, showSuccessToast, showErrorToast]);
+  }, [forgotPasswordEmail, signIn, language, showSuccessToast, showErrorToast, transitionPasswordResetStep]);
 
   const handleCloseModal = useCallback(() => {
     setForgotPasswordModalVisible(false);
@@ -728,13 +762,16 @@ export default function SplashScreen({
     setConfirmNewPassword('');
     setPendingPasswordReset(null);
     setForgotPasswordEmail('');
-  }, []);
+    setHasPasswordResetError(false);
+    // Reset animation
+    passwordResetFadeAnim.setValue(1);
+  }, [passwordResetFadeAnim]);
 
   // Handle password reset code verification
   const handleVerifyResetCode = useCallback(async () => {
     const code = passwordResetCode.join('');
     if (code.length !== 6) {
-      showErrorToast(strings[language].splash.pleaseEnterAllDigits);
+      setHasPasswordResetError(true);
       return;
     }
 
@@ -752,19 +789,20 @@ export default function SplashScreen({
       });
 
       if (result.status === 'needs_new_password') {
-        // Move to new password step
-        setPasswordResetStep('newPassword');
+        // Move to new password step with animation
+        transitionPasswordResetStep('newPassword');
         setPasswordResetCode(['', '', '', '', '', '']); // Clear code
+        setHasPasswordResetError(false); // Clear error state
       } else {
-        showErrorToast('Password reset verification failed');
+        setHasPasswordResetError(true);
       }
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || strings[language].splash.invalidVerificationCode;
-      showErrorToast(errorMessage);
+      // Show red border for invalid verification code instead of toast
+      setHasPasswordResetError(true);
     }
 
     setIsVerifyingResetCode(false);
-  }, [passwordResetCode, pendingPasswordReset, language, showErrorToast]);
+  }, [passwordResetCode, pendingPasswordReset, showErrorToast, transitionPasswordResetStep]);
 
   // Handle new password submission
   const handleSetNewPassword = useCallback(async () => {
@@ -793,7 +831,7 @@ export default function SplashScreen({
       // to ensure the user signs in fresh with their new password
       try {
         await signOut();
-      } catch (signOutError) {
+      } catch {
         // Ignore sign out errors - there might not be a session to clear
         console.log('No session to clear after password reset');
       }
@@ -809,6 +847,10 @@ export default function SplashScreen({
       setConfirmNewPassword('');
       setPendingPasswordReset(null);
       setForgotPasswordEmail('');
+      setHasPasswordResetError(false);
+      
+      // Reset animation
+      passwordResetFadeAnim.setValue(1);
       
       // Clear main sign-in form to ensure fresh sign-in
       setEmail('');
@@ -819,10 +861,15 @@ export default function SplashScreen({
       const errorMessage = error.errors?.[0]?.message || 'Failed to reset password';
       showErrorToast(errorMessage);
     }
-  }, [newPassword, confirmNewPassword, pendingPasswordReset, showErrorToast, showSuccessToast, language, signOut]);
+  }, [newPassword, confirmNewPassword, pendingPasswordReset, showErrorToast, showSuccessToast, language, signOut, passwordResetFadeAnim]);
 
   // Handle password reset code input change
   const handlePasswordResetCodeChange = useCallback((text: string, index: number) => {
+    // Clear error state when user starts typing
+    if (hasPasswordResetError) {
+      setHasPasswordResetError(false);
+    }
+
     if (text.length > 1) {
       // Handle paste - distribute characters across inputs
       const chars = text.slice(0, 6).split('');
@@ -847,7 +894,7 @@ export default function SplashScreen({
         nextInput.focus();
       }
     }
-  }, [passwordResetCode]);
+  }, [passwordResetCode, hasPasswordResetError]);
 
   // Handle password reset code key press
   const handlePasswordResetCodeKeyPress = useCallback((key: string, index: number) => {
@@ -1288,7 +1335,8 @@ export default function SplashScreen({
       >
         <View style={styles.modalOverlay}>
           <View style={modalContentStyle}>
-            {passwordResetStep === 'email' && (
+            <Animated.View style={{ opacity: passwordResetFadeAnim, width: '100%' }}>
+              {passwordResetStep === 'email' && (
               <>
                 <MemoizedText style={modalTitleStyle}>{strings[language].splash.resetPassword}</MemoizedText>
                 <MemoizedText style={modalSubtitleStyle}>
@@ -1342,7 +1390,7 @@ export default function SplashScreen({
                       ref={(ref) => {
                         passwordResetInputRefs.current[index] = ref;
                       }}
-                      style={verificationCodeInputStyle}
+                      style={passwordResetCodeInputStyle}
                       value={digit}
                       onChangeText={(text) => handlePasswordResetCodeChange(text, index)}
                       onKeyPress={({ nativeEvent }) => handlePasswordResetCodeKeyPress(nativeEvent.key, index)}
@@ -1446,6 +1494,7 @@ export default function SplashScreen({
                 </View>
               </>
             )}
+            </Animated.View>
           </View>
         </View>
       </Modal>

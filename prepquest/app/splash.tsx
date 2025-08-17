@@ -438,7 +438,7 @@ export default function SplashScreen({
         onAuthComplete?.();
       }, remainingTime);
     }
-  }, [isLoading, isAuthenticated, user, onAuthComplete, isFreshAuth]);
+  }, [isLoading, isAuthenticated, user, onAuthComplete]);
 
   // Clear any existing session when component mounts
   useEffect(() => {

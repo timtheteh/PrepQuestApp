@@ -72,8 +72,6 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        setIsLoading(true);
-        
         if (isClerkLoaded && isClerkSignedIn && clerkUserId) {
           // User is authenticated with Clerk
           const authUser: AuthUser = {
@@ -88,7 +86,8 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
           setIsAuthenticated(true);
           // Store user ID in AsyncStorage for compatibility
           await AsyncStorage.setItem('userID', clerkUserId);
-        } else {
+        } else if (isClerkLoaded) {
+          // Only clear state if Clerk is loaded and user is not signed in
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -97,11 +96,19 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
         setUser(null);
         setIsAuthenticated(false);
       } finally {
-        setIsLoading(false);
+        // Only set loading to false if Clerk is loaded
+        if (isClerkLoaded) {
+          setIsLoading(false);
+        }
       }
     };
 
-    initializeAuth();
+    // Use setTimeout to avoid state updates during render phase
+    const timeoutId = setTimeout(() => {
+      initializeAuth();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [isClerkLoaded, isClerkSignedIn, clerkUserId, clerkUser]);
 
   // Handle Clerk auth state changes

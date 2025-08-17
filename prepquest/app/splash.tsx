@@ -168,6 +168,9 @@ export default function SplashScreen({
   // Loading overlay state
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
   const loadingOverlayRef = useRef<LottieView>(null);
+  
+  // Track if this is a fresh authentication (not session restoration)
+  const [isFreshAuth, setIsFreshAuth] = useState(false);
 
   // Memoized animation configurations for better performance
   const fadeInAnimationConfig = useMemo(() => ({
@@ -398,9 +401,6 @@ export default function SplashScreen({
   // Handle authentication state changes
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      // Show loading overlay for any authentication
-      setShowLoadingOverlay(true);
-      
       const handleAuthComplete = async () => {
         try {
           if (user?.id) {
@@ -428,20 +428,26 @@ export default function SplashScreen({
       const elapsedTime = Date.now() - splashStartTime.current;
       const remainingTime = Math.max(0, 3000 - elapsedTime);
       
-      console.log(`🕐 Splash (auth complete): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
+      console.log(`🕐 Splash (auth complete): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms, isFreshAuth: ${isFreshAuth}`);
       
       setTimeout(() => {
+        // Always ensure loading overlay is hidden before completing auth
         setShowLoadingOverlay(false);
+        // Reset fresh auth flag
+        setIsFreshAuth(false);
         onAuthComplete?.();
       }, remainingTime);
     }
-  }, [isLoading, isAuthenticated, user, onAuthComplete]);
+  }, [isLoading, isAuthenticated, user, onAuthComplete, isFreshAuth]);
 
   // Clear any existing session when component mounts
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       // Ensure AsyncStorage is cleared when not signed in
       AsyncStorage.removeItem('userID');
+      // Reset fresh auth state when not authenticated
+      setIsFreshAuth(false);
+      setShowLoadingOverlay(false);
     }
   }, [isLoading, isAuthenticated]);
 
@@ -562,10 +568,12 @@ export default function SplashScreen({
         });
 
         if (result.status === 'complete') {
-          // Signup completed without verification
+          // Signup completed without verification - mark as fresh auth and show loading overlay
           if (setActive) {
             await setActive({ session: result.createdSessionId });
           }
+          setIsFreshAuth(true);
+          setShowLoadingOverlay(true);
           showSuccessToast(strings[language].splash.accountCreatedSuccessfully);
         } else if (result.status === 'missing_requirements') {
           // Email verification required
@@ -596,6 +604,9 @@ export default function SplashScreen({
       const result = await signInWithEmail(email.trim(), password);
 
       if (result.success) {
+        // Mark as fresh authentication and show loading overlay
+        setIsFreshAuth(true);
+        setShowLoadingOverlay(true);
         // Clerk authentication successful - auth state will be updated and trigger the useEffect
       } else {
         // Handle Clerk-specific error messages
@@ -636,14 +647,16 @@ export default function SplashScreen({
     
       await oauthFunction();
       
-      // Show loading overlay immediately after successful social authentication
+      // Mark as fresh authentication and show loading overlay immediately after successful social authentication
+      setIsFreshAuth(true);
       setShowLoadingOverlay(true);
       
       // Clerk social login successful - user state will be updated by the context
       // and we can handle user creation in the useEffect that watches auth state changes
     } catch (error: any) {
-      // Ensure loading overlay is hidden when social sign-in fails or is canceled
+      // Ensure loading overlay is hidden and fresh auth flag is reset when social sign-in fails or is canceled
       setShowLoadingOverlay(false);
+      setIsFreshAuth(false);
       
       // If user canceled OAuth, handle silently (no error message)
       if (error?.code === 'oauth_canceled') {
@@ -1029,11 +1042,12 @@ export default function SplashScreen({
         if (setActive) {
           await setActive({ session: result.createdSessionId });
         }
-        // Close verification modal and show loading overlay
+        // Close verification modal, mark as fresh auth and show loading overlay
         setVerificationModalVisible(false);
         setVerificationCode(['', '', '', '', '', '']);
         setPendingSignUpAttempt(null);
         setHasVerificationError(false);
+        setIsFreshAuth(true);
         setShowLoadingOverlay(true);
         showSuccessToast(strings[language].splash.accountCreatedSuccessfully);
       } else {

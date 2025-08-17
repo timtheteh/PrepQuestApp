@@ -4,7 +4,6 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Animated } from 'react-native';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,48 +43,22 @@ function AppContent() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [splashStartTime] = useState(Date.now());
-  const fadeAnim = useState(new Animated.Value(1))[0];
 
   // Function to handle authentication completion
   const handleAuthComplete = () => {
-    // Ensure minimum splash screen duration has passed
-    const elapsedTime = Date.now() - splashStartTime;
-    const remainingTime = Math.max(0, 3000 - elapsedTime);
+    console.log(`🕐 Auth complete - transitioning to main app`);
     
-    console.log(`🕐 Splash screen elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
-    
-    setTimeout(() => {
-      // Start fade out animation to transition to main app
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 800, // 800ms fade out
-        useNativeDriver: true,
-      }).start(() => {
-        setShowSplash(false);
-      });
-    }, remainingTime);
+    // Immediately hide splash screen without fade animation to prevent blank white screen
+    setShowSplash(false);
   };
 
   // Show splash screen when user is not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       setShowSplash(true);
-      fadeAnim.setValue(1);
-    } else if (!isLoading && isAuthenticated) {
-      // Store user ID in AsyncStorage for database compatibility
-      if (user?.id) {
-        AsyncStorage.setItem('userID', user.id);
-      }
-      
-      // Ensure minimum splash duration even for authenticated users
-      const elapsedTime = Date.now() - splashStartTime;
-      const remainingTime = Math.max(0, 3000 - elapsedTime);
-      
-      setTimeout(() => {
-        setShowSplash(false);
-      }, remainingTime);
     }
-  }, [isAuthenticated, isLoading, fadeAnim, user, splashStartTime]);
+    // For authenticated users, let the splash screen handle the transition via handleAuthComplete
+  }, [isAuthenticated, isLoading]);
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -166,18 +139,16 @@ function AppContent() {
         notificationResponseSubscription?.remove();
       } catch {}
     };
-  }, [fadeAnim, splashStartTime]);
+  }, [splashStartTime]);
 
   return (
     <ThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
       {/* Show splash screen while fonts are loading or database is not ready, or while auth splash is active */}
       {(!loaded || !isDatabaseReady || showSplash) ? (
-          <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-            <SplashScreen 
-              isDatabaseReady={isDatabaseReady} 
-              onAuthComplete={handleAuthComplete}
-            />
-          </Animated.View>
+          <SplashScreen 
+            isDatabaseReady={isDatabaseReady} 
+            onAuthComplete={handleAuthComplete}
+          />
       ) : (
         <>
           <Stack>

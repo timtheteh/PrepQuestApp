@@ -164,6 +164,10 @@ export default function SplashScreen({
   // Animation state
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const toggleFadeAnim = useRef(new Animated.Value(1)).current;
+  
+  // Loading overlay state
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+  const loadingOverlayRef = useRef<LottieView>(null);
 
   // Memoized animation configurations for better performance
   const fadeInAnimationConfig = useMemo(() => ({
@@ -290,6 +294,11 @@ export default function SplashScreen({
     []
   );
 
+  const loadingAnimationSource = useMemo(() => 
+    require('../assets/animations/addDeckLoadingAnimation.json'), 
+    []
+  );
+
   // Memoized modal styles
   const modalContentStyle = useMemo(() => [
     styles.modalContent, 
@@ -376,28 +385,25 @@ export default function SplashScreen({
     }
   ], [theme, canResendCode]);
 
-  // Check if user is already signed in
+  // Loading overlay styles
+  const loadingOverlayStyle = useMemo(() => [
+    styles.loadingOverlay,
+    { backgroundColor: 'rgba(0, 0, 0, 0.7)' }
+  ], []);
+
+  const loadingAnimationContainerStyle = useMemo(() => [
+    styles.loadingAnimationContainer
+  ], []);
+
+  // Handle authentication state changes
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      // User is already signed in, ensure minimum splash duration
-      const elapsedTime = Date.now() - splashStartTime.current;
-      const remainingTime = Math.max(0, 3000 - elapsedTime);
+      // Show loading overlay for any authentication
+      setShowLoadingOverlay(true);
       
-      console.log(`🕐 Splash (auth check): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
-      
-      setTimeout(() => {
-        onAuthComplete?.();
-      }, remainingTime);
-    }
-  }, [isLoading, isAuthenticated, onAuthComplete]);
-
-  // Handle auth state changes after login/signup
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && user) {
-      // User authenticated via Clerk, handle database user creation if needed
-      const handleUserCreation = async () => {
+      const handleAuthComplete = async () => {
         try {
-          if (user.id) {
+          if (user?.id) {
             // Store userID in AsyncStorage for compatibility with existing database operations
             await AsyncStorage.setItem('userID', user.id);
             
@@ -413,15 +419,19 @@ export default function SplashScreen({
         }
       };
       
-      handleUserCreation();
+      // Handle user creation if there's a user object (new auth), otherwise just proceed (existing auth)
+      if (user) {
+        handleAuthComplete();
+      }
       
       // Complete auth after ensuring minimum splash duration
       const elapsedTime = Date.now() - splashStartTime.current;
       const remainingTime = Math.max(0, 3000 - elapsedTime);
       
-      console.log(`🕐 Splash (user creation): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
+      console.log(`🕐 Splash (auth complete): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
       
       setTimeout(() => {
+        setShowLoadingOverlay(false);
         onAuthComplete?.();
       }, remainingTime);
     }
@@ -626,6 +636,9 @@ export default function SplashScreen({
     
       await oauthFunction();
       
+      // Show loading overlay immediately after successful social authentication
+      setShowLoadingOverlay(true);
+      
       // Clerk social login successful - user state will be updated by the context
       // and we can handle user creation in the useEffect that watches auth state changes
     } catch (error: any) {
@@ -655,6 +668,9 @@ export default function SplashScreen({
     if (logoAnimationRef.current) {
       logoAnimationRef.current.play();
     }
+    if (loadingOverlayRef.current) {
+      loadingOverlayRef.current.play();
+    }
 
     // Cleanup function to stop animations when component unmounts
     return () => {
@@ -663,6 +679,9 @@ export default function SplashScreen({
       }
       if (logoAnimationRef.current) {
         logoAnimationRef.current.pause();
+      }
+      if (loadingOverlayRef.current) {
+        loadingOverlayRef.current.pause();
       }
     };
   }, []);
@@ -1001,10 +1020,12 @@ export default function SplashScreen({
         if (setActive) {
           await setActive({ session: result.createdSessionId });
         }
+        // Close verification modal and show loading overlay
         setVerificationModalVisible(false);
         setVerificationCode(['', '', '', '', '', '']);
         setPendingSignUpAttempt(null);
         setHasVerificationError(false);
+        setShowLoadingOverlay(true);
         showSuccessToast(strings[language].splash.accountCreatedSuccessfully);
       } else {
         setHasVerificationError(true);
@@ -1572,6 +1593,27 @@ export default function SplashScreen({
           </View>
         </View>
       </Modal>
+
+      {/* Loading Overlay */}
+      {showLoadingOverlay && (
+        <View style={loadingOverlayStyle}>
+          <View style={loadingAnimationContainerStyle}>
+            <LottieView
+              ref={loadingOverlayRef}
+              source={loadingAnimationSource}
+              autoPlay
+              loop={true}
+              style={styles.loadingAnimation}
+              speed={1}
+              cacheComposition={true}
+              renderMode="HARDWARE"
+              onAnimationFailure={(error) => {
+                console.error('Loading overlay animation failed to load:', error);
+              }}
+            />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -1841,5 +1883,24 @@ const styles = StyleSheet.create({
   resendButtonText: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  // Loading overlay styles
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000, // Higher than modals
+  },
+  loadingAnimationContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingAnimation: {
+    width: 96, // Same size as the animation
+    height: 96,
   },
 }); 

@@ -234,6 +234,13 @@ function AppContent() {
                 headerShown: false,
               }} 
             />
+            <Stack.Screen 
+              name="oauth-native-callback" 
+              options={{
+                headerShown: false,
+                animation: 'none', // No animation for seamless transition
+              }} 
+            />
           </Stack>
           <BackgroundTaskNotification />
           <StatusBar style="auto" />

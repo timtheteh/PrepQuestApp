@@ -12,6 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import ModalExclamationMarkIcon from '@/assets/icons/generalIcons/modalExclamationMarkIcon.svg';
+import LottieView from 'lottie-react-native';
 
 export default function TabLayout() {
   const navbarRef = useRef<NavBarRef>(null);
@@ -64,9 +65,35 @@ export default function TabLayout() {
   const [handleUnfavorite, setHandleUnfavorite] = useState<(() => void) | null>(null);
   const [isDecksAlreadyInFoldersModalOpen, setIsDecksAlreadyInFoldersModalOpen] = useState(false);
   const decksAlreadyInFoldersModalOpacity = useRef(new Animated.Value(0)).current;
+  const [showGlobalLoadingOverlay, setShowGlobalLoadingOverlay] = useState(false);
+  const globalLoadingOverlayRef = useRef<LottieView>(null);
   const slidingMenuDuration = 300;
   const overlayDuration = 200;
   const { language } = useLanguage();
+
+  // Memoized loading animation source
+  const globalLoadingAnimationSource = useMemo(() => 
+    require('../../assets/animations/addDeckLoadingAnimation.json'), 
+    []
+  );
+
+  // Global loading overlay styles
+  const globalLoadingOverlayStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    zIndex: 3000, // Higher than all other modals
+  }), []);
+
+  const globalLoadingAnimationContainerStyle = useMemo(() => ({
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  }), []);
 
   // Memoize animation configurations to prevent recreation on every render
   const animationConfigs = useMemo(() => ({
@@ -86,6 +113,20 @@ export default function TabLayout() {
       useNativeDriver: true,
     }
   }), [overlayDuration, slidingMenuDuration]);
+
+  // Handle global loading overlay animation
+  useEffect(() => {
+    if (showGlobalLoadingOverlay && globalLoadingOverlayRef.current) {
+      globalLoadingOverlayRef.current.play();
+    }
+    
+    // Cleanup function to stop animation when component unmounts or overlay is hidden
+    return () => {
+      if (globalLoadingOverlayRef.current) {
+        globalLoadingOverlayRef.current.pause();
+      }
+    };
+  }, [showGlobalLoadingOverlay]);
 
   const handleDismissMenu = useCallback(() => {
     if (isAIPromptOpen) {
@@ -321,6 +362,8 @@ export default function TabLayout() {
     decksAlreadyInFoldersModalOpacity,
     deckDetailsSaveModalType,
     setDeckDetailsSaveModalType,
+    showGlobalLoadingOverlay,
+    setShowGlobalLoadingOverlay,
   }), [
     isMenuOpen, 
     menuOverlayOpacity, 
@@ -407,6 +450,8 @@ export default function TabLayout() {
     decksAlreadyInFoldersModalOpacity,
     deckDetailsSaveModalType,
     setDeckDetailsSaveModalType,
+    showGlobalLoadingOverlay,
+    setShowGlobalLoadingOverlay,
   ]);
 
   return (
@@ -714,6 +759,27 @@ export default function TabLayout() {
           buttons="single"
           onConfirm={handleDismissMenu}
         />
+        
+        {/* Global Loading Overlay - covers entire screen including navbar */}
+        {showGlobalLoadingOverlay && (
+          <View style={globalLoadingOverlayStyle}>
+            <View style={globalLoadingAnimationContainerStyle}>
+              <LottieView
+                ref={globalLoadingOverlayRef}
+                source={globalLoadingAnimationSource}
+                autoPlay
+                loop={true}
+                style={{ width: 96, height: 96 }}
+                speed={1}
+                cacheComposition={true}
+                renderMode="HARDWARE"
+                onAnimationFailure={(error) => {
+                  console.error('Global loading overlay animation failed to load:', error);
+                }}
+              />
+            </View>
+          </View>
+        )}
       </View>
     </MenuContext.Provider>
   );

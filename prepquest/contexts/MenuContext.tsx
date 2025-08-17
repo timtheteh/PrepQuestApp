@@ -91,6 +91,8 @@ interface MenuContextType {
   setCurrentSourcePage: (sourcePage: string | undefined) => void;
   currentDeckType: string | undefined;
   setCurrentDeckType: (deckType: string | undefined) => void;
+  showGlobalLoadingOverlay: boolean;
+  setShowGlobalLoadingOverlay: (value: boolean) => void;
 }
 
 export const MenuContext = createContext<MenuContextType>({
@@ -182,4 +184,6 @@ export const MenuContext = createContext<MenuContextType>({
   setCurrentSourcePage: () => {},
   currentDeckType: undefined,
   setCurrentDeckType: () => {},
+  showGlobalLoadingOverlay: false,
+  setShowGlobalLoadingOverlay: () => {},
 }); 

@@ -11,6 +11,8 @@ import GrapeStem from '@/assets/icons/account/grapeStem.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
+import { useContext } from 'react';
+import { MenuContext } from '@/contexts/MenuContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { strings } from '@/constants/strings';
@@ -27,11 +29,13 @@ export default function AccountScreen() {
   const [ratePressed, setRatePressed] = useState(false);
   const [websitePressed, setWebsitePressed] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [preservedUser, setPreservedUser] = useState<any>(null);
   const screenHeight = Dimensions.get('window').height;
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
   const { signOut, user } = useHybridAuth();
   const { theme, setThemeMode, isSystemTheme } = useTheme();
+  const { showGlobalLoadingOverlay, setShowGlobalLoadingOverlay } = useContext(MenuContext);
   const themeColors = Colors[theme];
   const getTopBarAccountHeight = useTopBarAccountHeight();
 
@@ -88,6 +92,8 @@ export default function AccountScreen() {
     }).start();
   }, [theme]);
 
+
+
   const handleDeckSettingsPress = useCallback(() => {
     router.push('/deckSettings');
   }, [router]);
@@ -109,16 +115,26 @@ export default function AccountScreen() {
           text: strings[language].signOut,
           style: 'destructive',
           onPress: async () => {
+            // Preserve current user information before sign out
+            setPreservedUser(user);
+            // Show global loading overlay instead of changing profile info
+            setShowGlobalLoadingOverlay(true);
             setIsSigningOut(true);
             try {
               // Sign out from both Supabase and Clerk
               await signOut();
-              // Force a small delay to ensure session is cleared
+              // Force a small delay to ensure session is cleared and user sees the loading animation
               setTimeout(() => {
                 setIsSigningOut(false);
-              }, 500);
+                setShowGlobalLoadingOverlay(false);
+                // Clear preserved user after sign out is complete
+                setPreservedUser(null);
+              }, 1500); // Slightly longer delay to show the loading animation
             } catch (error) {
               setIsSigningOut(false);
+              setShowGlobalLoadingOverlay(false);
+              // Clear preserved user on error
+              setPreservedUser(null);
             }
           },
         },
@@ -181,6 +197,13 @@ export default function AccountScreen() {
     [screenHeight, stylesConditional.grapeBunchFlexWrapper]
   );
 
+
+
+  // Get the user to display (preserved user during sign out, otherwise current user)
+  const displayUser = useMemo(() => {
+    return isSigningOut && preservedUser ? preservedUser : user;
+  }, [isSigningOut, preservedUser, user]);
+
   // Theme-dependent styles - memoized to prevent recreation
   const themeStyles = useMemo(() => ({
     profileCircle: {
@@ -217,7 +240,7 @@ export default function AccountScreen() {
         <View style={styles.circleContainer}> 
           <View style={themeStyles.profileCircle}>
             <Text style={[styles.profileInitials, { color: themeColors.text }]}>
-              {user?.id ? user.id.substring(0, 2).toUpperCase() : 'GU'}
+              {displayUser?.id ? displayUser.id.substring(0, 2).toUpperCase() : 'GU'}
             </Text>
           </View>
         </View>
@@ -228,7 +251,7 @@ export default function AccountScreen() {
           </View>
           <View style={styles.infoRow}>
             <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].userId}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>{user?.id || strings[language].notAvailable}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>{displayUser?.id || strings[language].notAvailable}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].currentPlan}</Text>
@@ -381,7 +404,7 @@ export default function AccountScreen() {
     darkButtonOpacity,
     themeStyles.profileCircle,
     themeColors.text,
-    user?.id,
+    displayUser?.id,
     strings,
     language,
     grapePositions,

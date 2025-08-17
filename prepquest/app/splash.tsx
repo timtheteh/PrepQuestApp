@@ -642,6 +642,15 @@ export default function SplashScreen({
       // Clerk social login successful - user state will be updated by the context
       // and we can handle user creation in the useEffect that watches auth state changes
     } catch (error: any) {
+      // Ensure loading overlay is hidden when social sign-in fails or is canceled
+      setShowLoadingOverlay(false);
+      
+      // If user canceled OAuth, handle silently (no error message)
+      if (error?.code === 'oauth_canceled') {
+        // User canceled - just return to login screen silently
+        return;
+      }
+      
       let errorMessage;
       switch (provider) {
         case 'google':

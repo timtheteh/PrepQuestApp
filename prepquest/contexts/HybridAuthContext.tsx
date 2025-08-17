@@ -239,6 +239,11 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (result.createdSessionId && result.setActive) {
         await result.setActive({ session: result.createdSessionId });
         // The auth state will be updated by the useEffect
+      } else {
+        // User canceled OAuth - throw a specific cancellation error
+        const cancelError = new Error('User canceled OAuth');
+        (cancelError as any).code = 'oauth_canceled';
+        throw cancelError;
       }
     } catch (error) {
       console.error('Google sign in error:', error);
@@ -252,6 +257,11 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (result.createdSessionId && result.setActive) {
         await result.setActive({ session: result.createdSessionId });
         // The auth state will be updated by the useEffect
+      } else {
+        // User canceled OAuth - throw a specific cancellation error
+        const cancelError = new Error('User canceled OAuth');
+        (cancelError as any).code = 'oauth_canceled';
+        throw cancelError;
       }
     } catch (error) {
       console.error('Facebook sign in error:', error);
@@ -265,6 +275,11 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (result.createdSessionId && result.setActive) {
         await result.setActive({ session: result.createdSessionId });
         // The auth state will be updated by the useEffect
+      } else {
+        // User canceled OAuth - throw a specific cancellation error
+        const cancelError = new Error('User canceled OAuth');
+        (cancelError as any).code = 'oauth_canceled';
+        throw cancelError;
       }
     } catch (error) {
       console.error('Apple sign in error:', error);

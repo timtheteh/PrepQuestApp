@@ -1376,6 +1376,7 @@ export default function SplashScreen({
         transparent={true}
         animationType="fade"
         onRequestClose={handleCloseModal}
+        statusBarTranslucent={Platform.OS === 'android'}
       >
         <View style={styles.modalOverlay}>
           <View style={modalContentStyle}>
@@ -1549,6 +1550,7 @@ export default function SplashScreen({
         transparent={true}
         animationType="fade"
         onRequestClose={handleCloseVerificationModal}
+        statusBarTranslucent={Platform.OS === 'android'}
       >
         <View style={styles.modalOverlay}>
           <View style={modalContentStyle}>

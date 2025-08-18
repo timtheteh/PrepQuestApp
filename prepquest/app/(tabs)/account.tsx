@@ -50,6 +50,10 @@ export default function AccountScreen() {
 
   useEffect(() => {
     if (isFocused) {
+      // Reset to grape bunch view when returning to account page
+      setCurrentView('profile');
+      swipeAnim.setValue(0);
+      
       fadeAnim.setValue(0);
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -57,7 +61,7 @@ export default function AccountScreen() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isFocused]);
+  }, [isFocused, swipeAnim, fadeAnim]);
 
   useFocusEffect(
     useCallback(() => {

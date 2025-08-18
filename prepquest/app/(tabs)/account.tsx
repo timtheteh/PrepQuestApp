@@ -4,6 +4,7 @@ import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-g
 import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import LightSwitchBody from '@/assets/icons/account/lightSwitchBody.svg';
 import DarkSwitchBody from '@/assets/icons/account/darkSwitchBody.svg';
 import LightSwitch from '@/assets/icons/account/lightSwitch.svg';
@@ -448,6 +449,11 @@ export default function AccountScreen() {
                   />
                 </TouchableOpacity>
               </View>
+              
+              {/* Right Arrow for Swipe Hint */}
+              <View style={styles.rightArrowContainer}>
+                <FontAwesome6 name="arrow-left-long" size={24} color={themeColors.text} />
+              </View>
             </View>
           </Animated.View>
           <Animated.View 
@@ -530,6 +536,11 @@ export default function AccountScreen() {
                     </View>
                   </View>
                 </View>
+              </View>
+              
+              {/* Left Arrow for Swipe Hint */}
+              <View style={styles.leftArrowContainer}>
+                <FontAwesome6 name="arrow-right-long" size={24} color={themeColors.text} />
               </View>
             </View>
           </Animated.View>
@@ -667,6 +678,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: 'center',
     marginTop: 10,
+  },
+  rightArrowContainer: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    zIndex: 15,
+  },
+  leftArrowContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    zIndex: 15,
   },
 
   signOutText: {

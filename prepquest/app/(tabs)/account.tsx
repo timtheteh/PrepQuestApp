@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Image, Share, Alert } from 'react-native';
+import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -30,7 +31,9 @@ export default function AccountScreen() {
   const [websitePressed, setWebsitePressed] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [preservedUser, setPreservedUser] = useState<any>(null);
+  const [currentView, setCurrentView] = useState<'profile' | 'stats'>('profile');
   const screenHeight = Dimensions.get('window').height;
+  const screenWidth = Dimensions.get('window').width;
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
   const { signOut, user } = useHybridAuth();
@@ -42,6 +45,7 @@ export default function AccountScreen() {
   // For button animation
   const buttonAnim = useRef(new Animated.Value(theme === 'dark' ? 0 : 1)).current; // 1 = right (light), 0 = left (dark)
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const swipeAnim = useRef(new Animated.Value(0)).current; // 0 = profile view, 1 = stats view
   const isFocused = useIsFocused();
 
   useEffect(() => {
@@ -91,6 +95,36 @@ export default function AccountScreen() {
       useNativeDriver: false,
     }).start();
   }, [theme]);
+
+  // Swipe gesture handler
+  const onSwipeGestureEvent = useCallback((event: any) => {
+    const { translationX } = event.nativeEvent;
+    const threshold = screenWidth * 0.3; // 30% of screen width
+    
+    if (translationX < -threshold && currentView === 'profile') {
+      // Swiped left from profile view - go to stats
+      setCurrentView('stats');
+      Animated.timing(swipeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else if (translationX > threshold && currentView === 'stats') {
+      // Swiped right from stats view - go to profile
+      setCurrentView('profile');
+      Animated.timing(swipeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [currentView, screenWidth, swipeAnim]);
+
+  const onSwipeHandlerStateChange = useCallback((event: any) => {
+    if (event.nativeEvent.state === State.END) {
+      onSwipeGestureEvent(event);
+    }
+  }, [onSwipeGestureEvent]);
 
 
 
@@ -213,182 +247,227 @@ export default function AccountScreen() {
     },
   }), [themeColors.brandColor1, themeColors.background]);
 
+
+
+
   const MainContent = useMemo(() => (
-    <View style={{ flex: 1, width: '100%' }}> 
-      <View style={[styles.mainColumnContainer, { paddingTop: getTopBarAccountHeight()}]}> 
-        <View style={styles.topBar}> 
-          <TouchableOpacity onPress={handleSignOut}>
-            <Text style={[styles.signOutText, { color: themeColors.text }]}>{strings[language].signOut}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleToggle} activeOpacity={0.8} style={styles.switchContainer}>
-            <Animated.View style={[StyleSheet.absoluteFill, { opacity: lightBodyOpacity }]}> 
-              <LightSwitchBody width={55} height={30} />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.mainScrollContent}>
+      {/* Fixed Top Bar */}
+      <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight(), paddingHorizontal: 24 }]}> 
+        <TouchableOpacity onPress={handleSignOut}>
+          <Text style={[styles.signOutText, { color: themeColors.text }]}>{strings[language].signOut}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleToggle} activeOpacity={0.8} style={styles.switchContainer}>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: lightBodyOpacity }]}> 
+            <LightSwitchBody width={55} height={30} />
+          </Animated.View>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: darkBodyOpacity }]}> 
+            <DarkSwitchBody width={55} height={30} />
+          </Animated.View>
+          <Animated.View style={[styles.switchButton, { transform: [{ translateX }] }]}> 
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: lightButtonOpacity }]}> 
+              <LightSwitch width={28} height={28} />
             </Animated.View>
-            <Animated.View style={[StyleSheet.absoluteFill, { opacity: darkBodyOpacity }]}> 
-              <DarkSwitchBody width={55} height={30} />
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: darkButtonOpacity }]}> 
+              <DarkSwitch width={28} height={28} />
             </Animated.View>
-            <Animated.View style={[styles.switchButton, { transform: [{ translateX }] }]}> 
-              <Animated.View style={[StyleSheet.absoluteFill, { opacity: lightButtonOpacity }]}> 
-                <LightSwitch width={28} height={28} />
-              </Animated.View>
-              <Animated.View style={[StyleSheet.absoluteFill, { opacity: darkButtonOpacity }]}> 
-                <DarkSwitch width={28} height={28} />
-              </Animated.View>
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.circleContainer}> 
-          <View style={themeStyles.profileCircle}>
-            <Text style={[styles.profileInitials, { color: themeColors.text }]}>
-              {displayUser?.email ? displayUser.email.replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase() : 'GU'}
-            </Text>
-          </View>
-        </View>
-        <View style={[styles.infoColumn, { marginTop: '10%', marginBottom: '15%' }]}> 
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].username}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>{displayUser?.email || strings[language].notAvailable}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].currentPlan}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>{strings[language].basicPlan}</Text>
-          </View>
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+      
+      {/* Fixed Profile Circle */}
+      <View style={styles.circleContainer}> 
+        <View style={themeStyles.profileCircle}>
+          <Text style={[styles.profileInitials, { color: themeColors.text }]}>
+            {displayUser?.email ? displayUser.email.replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase() : 'GU'}
+          </Text>
         </View>
       </View>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <View style={styles.grapeBunchContainer}>
-          {/* Stem (behind) */}
-          <GrapeStem
-            style={[
-              styles.grapeCircle,
-              styles.stem,
-              { ...(grapePositions.stem as any), 
-                zIndex: 6 } as any
-            ]}
-          />
-          {/* Website button (behind) */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => setWebsitePressed(true)}
-            onPressOut={() => setWebsitePressed(false)}
-            style={[
-              styles.grapeCircle,
-              { backgroundColor: websitePressed ? '#8684FF' : '#685CDD', 
-                position: 'absolute', 
-                ...(grapePositions.website as any), 
-                zIndex: 7,
-                transform: [{ translateX: -70 }, { translateY: -70 }]
-              } as any
-            ]}
-          >
-            <Text style={[styles.grapeMenuText, {marginLeft: -48, marginBottom: 15, textAlign: 'center'}]}>{strings[language].website}</Text>
-          </TouchableOpacity>
-          {/* Rate & Review button (behind) */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => setRatePressed(true)}
-            onPressOut={() => setRatePressed(false)}
-            style={[
-              styles.grapeCircle,
-              { backgroundColor: ratePressed ? '#8684FF' : '#4F41D8', 
-                position: 'absolute', 
-                ...(grapePositions.rate as any), 
-                zIndex: 8,
-                transform: [{ translateX: -70 }, { translateY: -70 }]
-              } as any
-            ]}
-          >
-            <Text style={[styles.grapeMenuText, {marginLeft: 25, marginBottom: 15, textAlign: 'center'}]}>{strings[language].rateAndReview}</Text>
-          </TouchableOpacity>
-          {/* Share button (behind) */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => setSharePressed(true)}
-            onPressOut={() => setSharePressed(false)}
-            onPress={handleShare}
-            style={[
-              styles.grapeCircle,
-              { backgroundColor: sharePressed ? '#8684FF' : '#685CDD', 
-                position: 'absolute', ...(grapePositions.share as any), 
-                zIndex: 9, 
-                transform: [{ translateX: -70 }, { translateY: -70 }]} as any
-            ]}
-          >
-            <Text style={[styles.grapeMenuText, {marginLeft: 15, marginTop: 5, textAlign: 'center'}]}>{strings[language].share}</Text>
-          </TouchableOpacity>
-          {/* T&C button (behind) */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => setTCPressed(true)}
-            onPressOut={() => setTCPressed(false)}
-            style={[
-              styles.grapeCircle,
-              { backgroundColor: tcPressed ? '#8684FF' : '#4F41D8', 
-                position: 'absolute', ...(grapePositions.tc as any), 
-                zIndex: 9, 
-                transform: [{ translateX: -70 }, { translateY: -70 }]} as any
-            ]}
-          >
-            <Text style={[styles.grapeMenuText, {marginRight: 22, textAlign: 'center'}]}>{strings[language].termsAndConditions}</Text>
-          </TouchableOpacity>
-          {/* App Settings button (behind) */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => setAppSettingsPressed(true)}
-            onPressOut={() => setAppSettingsPressed(false)}
-            onPress={handleAppSettingsPress}
-            style={[
-              styles.grapeCircle,
-              { backgroundColor: appSettingsPressed ? '#8684FF' : '#3B30A7', 
-                position: 'absolute', 
-                ...(grapePositions.app as any), 
-                zIndex: 8, 
-                transform: [{ translateX: -70 }, { translateY: -70 }]
-              } as any
-            ]}
-          >
-            <Text style={[styles.grapeMenuText, {marginTop: 50, textAlign: 'center'}]}>{strings[language].appSettings}</Text>
-          </TouchableOpacity>
-          {/* Deck Settings button (behind) */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => setDeckSettingsPressed(true)}
-            onPressOut={() => setDeckSettingsPressed(false)}
-            onPress={handleDeckSettingsPress}
-            style={[
-              styles.grapeCircle,
-              { backgroundColor: deckSettingsPressed ? '#8684FF' : '#3B30A7', 
-                position: 'absolute', 
-                ...(grapePositions.deck as any), 
-                zIndex: 8,
-                transform: [{ translateX: -70 }, { translateY: -70 }]
-              } as any
-            ]}
-          >
-            <Text style={[styles.grapeMenuText, {marginBottom: 48, textAlign: 'center'}]}>{strings[language].deckSettings}</Text>
-          </TouchableOpacity>
-          {/* Upgrade button (on top) */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => setUpgradePressed(true)}
-            onPressOut={() => setUpgradePressed(false)}
-            style={[styles.grapeCircle, 
-              { backgroundColor: upgradePressed ? '#8684FF' : '#685CDD', 
-                position: 'absolute', 
-                ...(grapePositions.upgrade as any), 
-                zIndex: 10, 
-                transform: [{ translateX: -70 }, { translateY: -70 }] } as any]}
-          >
-            <Text style={styles.grapeMenuText}>{strings[language].upgrade}</Text>
-            <Image 
-              source={require('@/assets/images/Diamond.png')} 
-              style={styles.diamondImage}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+      
+      {/* Fixed Info Column */}
+      <View style={[styles.infoColumn, { marginTop: '10%', marginBottom: '15%' }]}> 
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].username}</Text>
+          <Text style={[styles.infoValue, { color: themeColors.text }]}>{displayUser?.email || strings[language].notAvailable}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].currentPlan}</Text>
+          <Text style={[styles.infoValue, { color: themeColors.text }]}>{strings[language].basicPlan}</Text>
         </View>
       </View>
-    </View>
+      
+      {/* Swipeable Content Container */}
+      <PanGestureHandler onHandlerStateChange={onSwipeHandlerStateChange}>
+        <Animated.View style={styles.swipeableContainer}>
+          <Animated.View 
+            style={[
+              styles.viewContainer,
+              {
+                transform: [{
+                  translateX: swipeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -screenWidth],
+                  })
+                }]
+              }
+            ]}
+          >
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <View style={styles.grapeBunchContainer}>
+                {/* Stem (behind) */}
+                <GrapeStem
+                  style={[
+                    styles.grapeCircle,
+                    styles.stem,
+                    { ...(grapePositions.stem as any), 
+                      zIndex: 6 } as any
+                  ]}
+                />
+                {/* Website button (behind) */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPressIn={() => setWebsitePressed(true)}
+                  onPressOut={() => setWebsitePressed(false)}
+                  style={[
+                    styles.grapeCircle,
+                    { backgroundColor: websitePressed ? '#8684FF' : '#685CDD', 
+                      position: 'absolute', 
+                      ...(grapePositions.website as any), 
+                      zIndex: 7,
+                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                    } as any
+                  ]}
+                >
+                  <Text style={[styles.grapeMenuText, {marginLeft: -48, marginBottom: 15, textAlign: 'center'}]}>{strings[language].website}</Text>
+                </TouchableOpacity>
+                {/* Rate & Review button (behind) */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPressIn={() => setRatePressed(true)}
+                  onPressOut={() => setRatePressed(false)}
+                  style={[
+                    styles.grapeCircle,
+                    { backgroundColor: ratePressed ? '#8684FF' : '#4F41D8', 
+                      position: 'absolute', 
+                      ...(grapePositions.rate as any), 
+                      zIndex: 8,
+                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                    } as any
+                  ]}
+                >
+                  <Text style={[styles.grapeMenuText, {marginLeft: 25, marginBottom: 15, textAlign: 'center'}]}>{strings[language].rateAndReview}</Text>
+                </TouchableOpacity>
+                {/* Share button (behind) */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPressIn={() => setSharePressed(true)}
+                  onPressOut={() => setSharePressed(false)}
+                  onPress={handleShare}
+                  style={[
+                    styles.grapeCircle,
+                    { backgroundColor: sharePressed ? '#8684FF' : '#685CDD', 
+                      position: 'absolute', ...(grapePositions.share as any), 
+                      zIndex: 9, 
+                      transform: [{ translateX: -70 }, { translateY: -70 }]} as any
+                  ]}
+                >
+                  <Text style={[styles.grapeMenuText, {marginLeft: 15, marginTop: 5, textAlign: 'center'}]}>{strings[language].share}</Text>
+                </TouchableOpacity>
+                {/* T&C button (behind) */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPressIn={() => setTCPressed(true)}
+                  onPressOut={() => setTCPressed(false)}
+                  style={[
+                    styles.grapeCircle,
+                    { backgroundColor: tcPressed ? '#8684FF' : '#4F41D8', 
+                      position: 'absolute', ...(grapePositions.tc as any), 
+                      zIndex: 9, 
+                      transform: [{ translateX: -70 }, { translateY: -70 }]} as any
+                  ]}
+                >
+                  <Text style={[styles.grapeMenuText, {marginRight: 22, textAlign: 'center'}]}>{strings[language].termsAndConditions}</Text>
+                </TouchableOpacity>
+                {/* App Settings button (behind) */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPressIn={() => setAppSettingsPressed(true)}
+                  onPressOut={() => setAppSettingsPressed(false)}
+                  onPress={handleAppSettingsPress}
+                  style={[
+                    styles.grapeCircle,
+                    { backgroundColor: appSettingsPressed ? '#8684FF' : '#3B30A7', 
+                      position: 'absolute', 
+                      ...(grapePositions.app as any), 
+                      zIndex: 8, 
+                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                    } as any
+                  ]}
+                >
+                  <Text style={[styles.grapeMenuText, {marginTop: 50, textAlign: 'center'}]}>{strings[language].appSettings}</Text>
+                </TouchableOpacity>
+                {/* Deck Settings button (behind) */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPressIn={() => setDeckSettingsPressed(true)}
+                  onPressOut={() => setDeckSettingsPressed(false)}
+                  onPress={handleDeckSettingsPress}
+                  style={[
+                    styles.grapeCircle,
+                    { backgroundColor: deckSettingsPressed ? '#8684FF' : '#3B30A7', 
+                      position: 'absolute', 
+                      ...(grapePositions.deck as any), 
+                      zIndex: 8,
+                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                    } as any
+                  ]}
+                >
+                  <Text style={[styles.grapeMenuText, {marginBottom: 48, textAlign: 'center'}]}>{strings[language].deckSettings}</Text>
+                </TouchableOpacity>
+                {/* Upgrade button (on top) */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPressIn={() => setUpgradePressed(true)}
+                  onPressOut={() => setUpgradePressed(false)}
+                  style={[styles.grapeCircle, 
+                    { backgroundColor: upgradePressed ? '#8684FF' : '#685CDD', 
+                      position: 'absolute', 
+                      ...(grapePositions.upgrade as any), 
+                      zIndex: 10, 
+                      transform: [{ translateX: -70 }, { translateY: -70 }] } as any]}
+                >
+                  <Text style={styles.grapeMenuText}>{strings[language].upgrade}</Text>
+                  <Image 
+                    source={require('@/assets/images/Diamond.png')} 
+                    style={styles.diamondImage}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
+          <Animated.View 
+            style={[
+              styles.viewContainer,
+              {
+                transform: [{
+                  translateX: swipeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [screenWidth, 0],
+                  })
+                }]
+              }
+            ]}
+          >
+            <View style={styles.statsContent}>
+              <Text style={[styles.statsPlaceholder, { color: themeColors.unselectedText }]}>
+                Stats content will be displayed here
+              </Text>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </PanGestureHandler>
+    </ScrollView>
   ), [
     getTopBarAccountHeight,
     handleSignOut,
@@ -400,7 +479,8 @@ export default function AccountScreen() {
     darkButtonOpacity,
     themeStyles.profileCircle,
     themeColors.text,
-    displayUser?.id,
+    themeColors.unselectedText,
+    displayUser?.email,
     strings,
     language,
     grapePositions,
@@ -420,15 +500,20 @@ export default function AccountScreen() {
     setDeckSettingsPressed,
     handleDeckSettingsPress,
     upgradePressed,
-    setUpgradePressed
+    setUpgradePressed,
+    onSwipeHandlerStateChange,
+    swipeAnim,
+    screenWidth
   ]);
 
 
 
   return (
-    <Animated.View style={{ flex: 1, backgroundColor: themeColors.background, opacity: fadeAnim }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40}}>{MainContent}</ScrollView>
-    </Animated.View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Animated.View style={{ flex: 1, backgroundColor: themeColors.background, opacity: fadeAnim }}>
+        {MainContent}
+      </Animated.View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -437,10 +522,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
     width: '100%',
     marginBottom: 10,
   },
+  swipeableContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    width: '100%',
+  },
+  viewContainer: {
+    flex: 1,
+    width: '100%',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+  },
+  mainScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  statsContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statsPlaceholder: {
+    fontSize: 18,
+    fontFamily: 'Satoshi-Regular',
+    textAlign: 'center',
+  },
+
   signOutText: {
     fontFamily: Fonts.bodyBold,
     fontWeight: '700',

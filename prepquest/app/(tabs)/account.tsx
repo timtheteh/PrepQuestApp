@@ -240,18 +240,14 @@ export default function AccountScreen() {
         <View style={styles.circleContainer}> 
           <View style={themeStyles.profileCircle}>
             <Text style={[styles.profileInitials, { color: themeColors.text }]}>
-              {displayUser?.id ? displayUser.id.substring(0, 2).toUpperCase() : 'GU'}
+              {displayUser?.email ? displayUser.email.replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase() : 'GU'}
             </Text>
           </View>
         </View>
         <View style={[styles.infoColumn, { marginTop: '10%', marginBottom: '15%' }]}> 
           <View style={styles.infoRow}>
             <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].username}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>{strings[language].user}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].userId}</Text>
-            <Text style={[styles.infoValue, { color: themeColors.text }]}>{displayUser?.id || strings[language].notAvailable}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.text }]}>{displayUser?.email || strings[language].notAvailable}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].currentPlan}</Text>

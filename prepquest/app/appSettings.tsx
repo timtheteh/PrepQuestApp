@@ -541,6 +541,17 @@ export default function AppSettingsScreen() {
                  }]}>
                   {strings[language].appSettingsPage.clearLocalStorageDescription}
                 </Text>
+                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#CC0000', marginTop: 20 }]}
+                  onPress={() => {
+                    // TODO: Implement delete account functionality
+                    console.log('Delete account pressed');
+                  }}>
+                  <View style={styles.buttonContent}>
+                    <Text style={[styles.cloudButtonText, { 
+                      fontFamily: Fonts.bodyMedium,
+                    }]}>{strings[language].appSettingsPage.deleteAccount}</Text>
+                  </View>
+                </TouchableOpacity>
             </ScrollView>
         </View>
         <GreyOverlayBackground 

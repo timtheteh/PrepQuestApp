@@ -460,9 +460,73 @@ export default function AccountScreen() {
             ]}
           >
             <View style={styles.statsContent}>
-              <Text style={[styles.statsPlaceholder, { color: themeColors.unselectedText }]}>
-                Stats content will be displayed here
-              </Text>
+              <View style={styles.statsGrid}>
+                {/* First Row */}
+                <View style={styles.statsRow}>
+                  {/* GenAI Form Requests */}
+                  <View style={styles.statCard}>
+                    <Image 
+                      source={require('@/assets/images/meshBackground1.png')} 
+                      style={styles.statCardBackground}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.statCardOverlay}>
+                      <View style={styles.statCardContent}>
+                        <Text style={[styles.statNumber, { color: themeColors.text }]}>5/10</Text>
+                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].genAIFormRequests}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  {/* File Upload Form Requests */}
+                  <View style={styles.statCard}>
+                    <Image 
+                      source={require('@/assets/images/meshBackground2.png')} 
+                      style={styles.statCardBackground}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.statCardOverlay}>
+                      <View style={styles.statCardContent}>
+                        <Text style={[styles.statNumber, { color: themeColors.text }]}>4/10</Text>
+                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].fileUploadFormRequests}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                
+                {/* Second Row */}
+                <View style={styles.statsRow}>
+                  {/* Youtube Link Form Requests */}
+                  <View style={styles.statCard}>
+                    <Image 
+                      source={require('@/assets/images/meshBackground3.png')} 
+                      style={styles.statCardBackground}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.statCardOverlay}>
+                      <View style={styles.statCardContent}>
+                        <Text style={[styles.statNumber, { color: themeColors.text }]}>3/10</Text>
+                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].youtubeLinkFormRequests}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  {/* AI Chat Feedback Requests */}
+                  <View style={styles.statCard}>
+                    <Image 
+                      source={require('@/assets/images/meshBackground4.png')} 
+                      style={styles.statCardBackground}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.statCardOverlay}>
+                      <View style={styles.statCardContent}>
+                        <Text style={[styles.statNumber, { color: themeColors.text }]}>2/10</Text>
+                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].aiChatFeedbackRequests}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
             </View>
           </Animated.View>
         </Animated.View>
@@ -545,11 +609,60 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
+    marginTop: -80
   },
-  statsPlaceholder: {
-    fontSize: 18,
-    fontFamily: 'Satoshi-Regular',
+  statsGrid: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  statsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginTop: 18,
+    paddingHorizontal: 5,
+  },
+  statCard: {
+    width: 152,
+    height: 170,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  statCardBackground: {
+    width: 152,
+    height: 170,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  statCardOverlay: {
+    width: 152,
+    height: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  statCardContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statNumber: {
+    fontFamily: Fonts.title,
+    fontSize: 48,
     textAlign: 'center',
+    marginTop: -15,
+  },
+  statLabel: {
+    fontFamily: Fonts.title,
+    fontSize: 20,
+    textAlign: 'center',
+    marginTop: 10,
   },
 
   signOutText: {

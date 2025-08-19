@@ -11,6 +11,9 @@ import * as Notifications from 'expo-notifications';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { db } from '@/db/index';
+import { backupDataToCloud, BackupProgress } from '@/db/backup';
+import { useHybridAuth } from '@/contexts/HybridAuthContext';
+import { useAuth } from '@clerk/clerk-expo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
@@ -48,6 +51,7 @@ export default function AppSettingsScreen() {
   const { language, setLanguage } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
+  const { getToken } = useAuth();
   const [cameraAccessEnabled, setCameraAccessEnabled] = React.useState(false);
   const [galleryAccessEnabled, setGalleryAccessEnabled] = React.useState(false);
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
@@ -72,6 +76,10 @@ export default function AppSettingsScreen() {
 
   // language modal state
   const [isLanguageModalOpen, setIsLanguageModalOpen] = React.useState(false);
+
+  // backup progress state
+  const [isBackupInProgress, setIsBackupInProgress] = React.useState(false);
+  const [backupProgress, setBackupProgress] = React.useState<BackupProgress | null>(null);
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -304,10 +312,45 @@ export default function AppSettingsScreen() {
     });
   }, [overlayOpacity, modalOpacity]);
 
-  const handleConfirmBackup = React.useCallback(() => {
-    // TODO: Implement actual backup logic here
-    handleDismissBackup();
-  }, [handleDismissBackup]);
+  const handleConfirmBackup = React.useCallback(async () => {
+    try {
+      setIsBackupInProgress(true);
+      setBackupProgress({ stage: 'starting', completed: 0, total: 10, message: 'Initializing backup...' });
+      
+      // Dismiss the confirmation modal first
+      handleDismissBackup();
+      
+      // Get the Clerk token for Supabase authentication
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Unable to get authentication token');
+      }
+      
+      // Start the backup process
+      const result = await backupDataToCloud(token, (progress: BackupProgress) => {
+        setBackupProgress(progress);
+      });
+      
+      setIsBackupInProgress(false);
+      setBackupProgress(null);
+      
+      // Show result to user
+      Alert.alert(
+        result.success ? strings[language].success : strings[language].error,
+        result.message,
+        [{ text: strings[language].ok }]
+      );
+    } catch (error) {
+      setIsBackupInProgress(false);
+      setBackupProgress(null);
+      
+      Alert.alert(
+        strings[language].error,
+        `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: strings[language].ok }]
+      );
+    }
+  }, [handleDismissBackup, language, getToken]);
 
   const handleLoadDataPress = React.useCallback(() => {
     setIsLoadDataModalOpen(true);
@@ -593,6 +636,52 @@ export default function AppSettingsScreen() {
           onCancel={handleDismissDeleteLocalStorage}
           onConfirm={handleConfirmDeleteLocalStorage}
         />
+        
+        {/* Backup Progress Modal */}
+        {isBackupInProgress && (
+          <>
+            <GreyOverlayBackground 
+              visible={isBackupInProgress}
+              opacity={new Animated.Value(0.7)}
+              onPress={() => {}} // Prevent dismissal during backup
+            />
+            <Modal
+              visible={isBackupInProgress}
+              transparent={true}
+              animationType="fade"
+            >
+              <View style={styles.progressModalContainer}>
+                <View style={[styles.progressModal, { backgroundColor: colors.background }]}>
+                  <MaterialIcons name="cloud-upload" size={48} color={colors.brandColor2} />
+                  <Text style={[styles.progressTitle, { color: colors.text, fontFamily: Fonts.title }]}>
+                    {strings[language].appSettingsPage.backupInProgress}
+                  </Text>
+                  {backupProgress && (
+                    <>
+                      <Text style={[styles.progressMessage, { color: colors.text, fontFamily: Fonts.bodyMedium }]}>
+                        {backupProgress.message}
+                      </Text>
+                      <View style={[styles.progressBarContainer, { backgroundColor: colors.secondaryShade }]}>
+                        <View 
+                          style={[
+                            styles.progressBar, 
+                            { 
+                              backgroundColor: colors.brandColor1,
+                              width: `${Math.round((backupProgress.completed / backupProgress.total) * 100)}%`
+                            }
+                          ]} 
+                        />
+                      </View>
+                      <Text style={[styles.progressText, { color: colors.unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                        {backupProgress.completed} / {backupProgress.total}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              </View>
+            </Modal>
+          </>
+        )}
     </View>
   );
 }
@@ -663,5 +752,45 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 8,
+  },
+  progressModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  progressModal: {
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    minWidth: 280,
+    maxWidth: 320,
+  },
+  progressTitle: {
+    fontSize: 24,
+    marginTop: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  progressMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  progressBarContainer: {
+    width: '100%',
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
+    minWidth: 8,
+  },
+  progressText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 }); 

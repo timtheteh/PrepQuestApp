@@ -262,6 +262,8 @@ export const strings: Record<string, any> = {
     no: 'No',
     yes: 'Yes',
     ok: 'OK',
+    success: 'Success',
+    error: 'Error',
     // TabLayout strings
     deleteDecksConfirmation: 'Are you sure you want to delete these deck(s)?',
     noSelectionMade: 'No selection made!',
@@ -383,13 +385,13 @@ export const strings: Record<string, any> = {
       loadDataFromCloud: 'Load data from cloud',
       clearLocalStorageData: 'Clear local storage data',
       deleteAccount: 'Delete Account?',
-      backupDescription: 'Backup your local storage to cloud regularly so that you can access your data on other devices.\n\nEach backup will replace the previous one. For more clarification, please refer to the FAQ in our ',
+      backupDescription: 'Backup your local storage to cloud regularly so that you can access your data on other devices\nand so that AIDecks can be generated based on your latest decks/flashcards.\n\nEach backup will replace the previous one. For more clarification, please refer to the FAQ in our ',
       website: 'website',
       loadDataDescription: 'Import your existing data and progress from cloud if you logging in from another phone.\n\nEach import will replace your existing local storage. For more clarification, please refer to the FAQ in our ',
       clearLocalStorageDescription: 'This will delete all your local storage data and you will not be able to recover it. Please backup your data to cloud before clearing.',
-      proceedWithCloudBackup: 'Proceed with cloud backup?',
-      proceedWithCloudImport: 'Proceed with cloud import?',
-      proceedWithClearingLocalStorage: 'Proceed with clearing local storage?',
+      proceedWithCloudBackup: 'Proceed with\ncloud backup?',
+      proceedWithCloudImport: 'Proceed with\ncloud import?',
+      proceedWithClearingLocalStorage: 'Proceed with clearing\nlocal storage?',
       cameraPermissionRequired: 'Camera Permission Required',
       cameraPermissionMessage: 'Camera access is required to take photos. Please enable it in your device settings.',
       cameraPermission: 'Camera Permission',
@@ -403,6 +405,7 @@ export const strings: Record<string, any> = {
       microphonePermission: 'Microphone Permission',
       microphonePermissionDisableMessage: 'To disable microphone access, please go to your device settings and disable microphone permissions for this app.',
       settings: 'Settings',
+      backupInProgress: 'Backup in Progress',
     },
     // DeckSettings strings
     deckSettingsPage: {
@@ -909,6 +912,8 @@ export const strings: Record<string, any> = {
     no: '否',
     yes: '是',
     ok: '确定',
+    success: '成功',
+    error: '错误',
     // TabLayout strings
     deleteDecksConfirmation: '你确定要删除这些卡片组吗？',
     noSelectionMade: '未选择任何内容！',
@@ -1087,6 +1092,7 @@ export const strings: Record<string, any> = {
       microphonePermission: '麦克风权限',
       microphonePermissionDisableMessage: '要禁用麦克风访问，请前往设备设置并禁用此应用的麦克风权限。',
       settings: '设置',
+      backupInProgress: '备份进行中',
     },
     // Awards strings
     goals: '目标',

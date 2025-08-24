@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet, Text } from 'react-native';
+import { View, Animated, StyleSheet, Text, Easing } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 
@@ -30,25 +30,24 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
 
   // Animate the stripes continuously
   useEffect(() => {
-    const animate = () => {
+    Animated.loop(
       Animated.timing(animationValue, {
         toValue: 1,
         duration: 1000,
         useNativeDriver: true,
-      }).start(() => {
-        animationValue.setValue(0);
-        animate();
-      });
-    };
-    animate();
+        easing: Easing.linear,
+      }),
+      { iterations: -1 } // Infinite loop
+    ).start();
   }, [animationValue]);
 
   // Animate progress changes
   useEffect(() => {
     Animated.timing(progressValue, {
       toValue: progress,
-      duration: 300,
+      duration: 800,
       useNativeDriver: false,
+      easing: Easing.out(Easing.cubic),
     }).start();
   }, [progress, progressValue]);
 
@@ -157,10 +156,10 @@ const styles = StyleSheet.create({
   },
   stripe: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
+    top: -10,
+    bottom: -10,
     width: 20,
-    transform: [{ skewX: '-20deg' }],
+    transform: [{ rotateZ: '20deg' }],
   },
   labelContainer: {
     position: 'absolute',

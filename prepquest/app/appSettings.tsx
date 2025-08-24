@@ -607,7 +607,7 @@ export default function AppSettingsScreen() {
                         totalItems={backupBackgroundTaskProgress?.totalRows || 0}
                         height={60}
                         borderRadius={30}
-                        immediateProgress={true}
+                        immediateProgress={false}
                       />
                     </View>
                     <Text style={[{ 

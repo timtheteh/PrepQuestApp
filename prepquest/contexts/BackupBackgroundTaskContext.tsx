@@ -242,9 +242,9 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
                 console.log('Notification sent while app in background - deferring progress clear until app is active');
               }
             } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current && appStateRef.current === 'active') {
-              console.log('Backup completed while app is active - no notification needed');
+              console.log('Backup completed while app is active - allowing time for in-app notification');
               
-              // Clear progress after a brief delay to allow UI components to react to completion
+              // Clear progress after a longer delay to allow in-app notification to show
               setTimeout(async () => {
                 try {
                   await clearBackupBackgroundTaskProgress();
@@ -252,7 +252,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
                 } catch (error) {
                   console.error('Error clearing backup background task progress:', error);
                 }
-              }, 1000);
+              }, 6000); // Increased to 6 seconds to allow notification to show and auto-dismiss
             } else if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
               // Fallback case - clear progress if completed but not handled above
               try {

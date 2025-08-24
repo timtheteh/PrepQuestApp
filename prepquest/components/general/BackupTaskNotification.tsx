@@ -24,9 +24,13 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
 
   useEffect(() => {
     // Check if a backup task just completed
-    if (!isBackupBackgroundTaskRunning && backupBackgroundTaskProgress) {
+    if (backupBackgroundTaskProgress) {
       const isCompleted = backupBackgroundTaskProgress.completed;
       const hasError = backupBackgroundTaskProgress.error;
+      const wasRunning = backupBackgroundTaskProgress.inProgress;
+      
+      // Show notification when task completes (either from running to completed, or when we detect completed state)
+      const shouldShowNotification = (isCompleted || hasError) && !isBackupBackgroundTaskRunning;
       
       // Create a unique identifier for this specific progress data
       const progressId = JSON.stringify({
@@ -45,6 +49,9 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
       console.log('BackupTaskNotification - Progress update:', {
         isCompleted,
         hasError,
+        wasRunning,
+        isBackupBackgroundTaskRunning,
+        shouldShowNotification,
         message: backupBackgroundTaskProgress.message,
         timestamp: backupBackgroundTaskProgress.timestamp,
         lastCompletedTaskRef: lastCompletedTaskRef.current,
@@ -80,8 +87,8 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
       
       console.log('BackupTaskNotification - Task ID:', taskId);
       
-      // Only show notification if we haven't shown one for this specific task completion
-      if (lastCompletedTaskRef.current !== taskId && !showNotification) {
+      // Only show notification if we haven't shown one for this specific task completion and should show notification
+      if (lastCompletedTaskRef.current !== taskId && !showNotification && shouldShowNotification) {
         if (isCompleted && !hasError) {
           // Task completed successfully
           console.log('Showing backup success notification for task:', taskId);

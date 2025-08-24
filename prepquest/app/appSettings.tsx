@@ -8,8 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
+import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { db } from '@/db/index';
 import { backupDataToCloud, BackupProgress } from '@/db/backup';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
@@ -81,6 +81,12 @@ export default function AppSettingsScreen() {
   // backup progress state
   const [isBackupInProgress, setIsBackupInProgress] = React.useState(false);
   const [backupProgress, setBackupProgress] = React.useState<BackupProgress | null>(null);
+  
+  // success modal state
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
+  const [successMessage, setSuccessMessage] = React.useState('');
+  const successOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const successModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -344,11 +350,15 @@ export default function AppSettingsScreen() {
       setBackupProgress(null);
       
       // Show result to user
-      Alert.alert(
-        result.success ? strings[language].success : strings[language].error,
-        result.message,
-        [{ text: strings[language].ok }]
-      );
+      if (result.success) {
+        handleShowSuccessModal(result.message);
+      } else {
+        Alert.alert(
+          strings[language].error,
+          result.message,
+          [{ text: strings[language].ok }]
+        );
+      }
     } catch (error) {
       setIsBackupInProgress(false);
       setBackupProgress(null);
@@ -435,7 +445,41 @@ export default function AppSettingsScreen() {
   const handleConfirmDeleteLocalStorage = React.useCallback(() => {
     // TODO: Implement actual delete local storage logic here
     handleDismissDeleteLocalStorage();
-  }, [handleDismissDeleteLocalStorage]);    
+  }, [handleDismissDeleteLocalStorage]);
+
+  const handleShowSuccessModal = React.useCallback((message: string) => {
+    setSuccessMessage(message);
+    setIsSuccessModalOpen(true);
+    Animated.parallel([
+      Animated.timing(successOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [successOverlayOpacity, successModalOpacity]);
+
+  const handleDismissSuccessModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(successOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+    });
+  }, [successOverlayOpacity, successModalOpacity]);
 
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
@@ -547,13 +591,36 @@ export default function AppSettingsScreen() {
                 />
 
                 {isBackupInProgress ? (
-                  <View style={[styles.cloudButton, { backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }]}>
-                    <StripedProgressBar 
-                      progress={backupProgress?.percentage || 0}
-                      width={300}
-                      height={60}
-                      borderRadius={30}
-                    />
+                  <View style={{ 
+                    alignItems: 'center',
+                  }}>
+                    <View style={{ 
+                      width: '100%',
+                      height: 60,
+                      backgroundColor: 'red', // Debug: Make container visible
+                      justifyContent: 'center', 
+                      alignItems: 'center',
+                      borderRadius: 30
+                    }}>
+                      <StripedProgressBar 
+                        progress={Math.max(backupProgress?.percentage || 0, 10)} // Debug: 10% to see progress bar
+                        currentItems={backupProgress?.completed || 0}
+                        totalItems={backupProgress?.total || 0}
+                        height={60}
+                        borderRadius={30}
+                      />
+                    </View>
+                    <Text style={[{ 
+                      color: colors.text, 
+                      fontFamily: Fonts.bodyMedium,
+                      fontSize: 14,
+                      opacity: 0.8,
+                      marginTop: 6,
+                      textAlign: 'center',
+                      paddingHorizontal: 20
+                    }]}>
+                      {language === 'Chinese' ? '请保持应用开启，否则备份将提前结束' : 'Please leave this app open otherwise backup will end prematurely'}
+                    </Text>
                   </View>
                 ) : (
                   <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor2 }]}
@@ -655,6 +722,22 @@ export default function AppSettingsScreen() {
           buttons="double"
           onCancel={handleDismissDeleteLocalStorage}
           onConfirm={handleConfirmDeleteLocalStorage}
+        />
+        
+        <GreyOverlayBackground 
+          visible={isSuccessModalOpen}
+          opacity={successOverlayOpacity}
+          onPress={handleDismissSuccessModal}
+        />
+        <GenericModal
+          visible={isSuccessModalOpen}
+          opacity={successModalOpacity}
+          text={successMessage}
+          hasAnimation={true}
+          animationSource={require('@/assets/animations/SuccessAnimation1_Tick.json')}
+          animationLoop={true}
+          contentMarginTop={20}
+          lottieMarginTop={40}
         />
 
     </View>

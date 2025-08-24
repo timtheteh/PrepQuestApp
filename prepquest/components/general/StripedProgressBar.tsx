@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet, Text } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 
@@ -8,13 +8,19 @@ interface StripedProgressBarProps {
   width?: number;
   height?: number;
   borderRadius?: number;
+  currentItems?: number;
+  totalItems?: number;
+  showLabel?: boolean;
 }
 
 export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
   progress,
-  width = 300,
+  width,
   height = 60,
   borderRadius = 30,
+  currentItems,
+  totalItems,
+  showLabel = true,
 }) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -57,11 +63,20 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
     extrapolate: 'clamp',
   });
 
+  // Generate progress label text
+  const getProgressLabel = () => {
+    const percentage = Math.round(progress);
+    if (currentItems !== undefined && totalItems !== undefined) {
+      return `${percentage}% (${currentItems}/${totalItems} items uploaded)`;
+    }
+    return `${percentage}%`;
+  };
+
   return (
     <View style={[
       styles.container,
       {
-        width,
+        width: width || '100%',
         height,
         borderRadius,
         backgroundColor: colors.secondaryShade,
@@ -73,7 +88,6 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
           {
             width: progressWidth,
             height,
-            borderRadius,
             backgroundColor: colors.brandColor1,
             overflow: 'hidden',
           }
@@ -102,6 +116,23 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
           ))}
         </Animated.View>
       </Animated.View>
+      
+      {/* Progress Label */}
+      {showLabel && (
+        <View style={styles.labelContainer}>
+          <Text 
+            style={[
+              styles.progressLabel,
+              {
+                fontSize: height * 0.25, // Scale font size with height
+                color: 'white',
+              }
+            ]}
+          >
+            {getProgressLabel()}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -130,5 +161,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 20,
     transform: [{ skewX: '-20deg' }],
+  },
+  labelContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  progressLabel: {
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

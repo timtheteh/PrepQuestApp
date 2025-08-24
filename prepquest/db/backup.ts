@@ -824,7 +824,7 @@ export async function backupDataToCloud(
     
     return { 
       success: true, 
-      message: `Backup completed successfully! Uploaded ${totalItems} items to cloud.` 
+      message: `Backup completed!` 
     };
   } catch (error) {
     console.error('Error during backup process:', error);

@@ -597,13 +597,12 @@ export default function AppSettingsScreen() {
                     <View style={{ 
                       width: '100%',
                       height: 60,
-                      backgroundColor: 'red', // Debug: Make container visible
                       justifyContent: 'center', 
                       alignItems: 'center',
                       borderRadius: 30
                     }}>
                       <StripedProgressBar 
-                        progress={Math.max(backupProgress?.percentage || 0, 10)} // Debug: 10% to see progress bar
+                        progress={backupProgress?.percentage || 0} // Debug: 10% to see progress bar
                         currentItems={backupProgress?.completed || 0}
                         totalItems={backupProgress?.total || 0}
                         height={60}

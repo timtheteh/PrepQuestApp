@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { strings } from '../constants/strings';
 
 export interface NotificationData extends Record<string, unknown> {
-  type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created';
+  type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created' | 'backup_completed';
   deckId?: number;
   deckName?: string;
   flashcardCount?: number;
@@ -183,6 +183,22 @@ class NotificationService {
       deckId,
       deckName,
       folderName,
+    });
+  }
+
+  async sendBackupCompletedNotification(
+    language: string
+  ): Promise<void> {
+    const title = language === 'Chinese'
+      ? '备份完成！'
+      : 'Backup Completed!';
+    
+    const body = language === 'Chinese'
+      ? '您的数据已成功备份到云端'
+      : 'Your data has been successfully backed up to the cloud';
+
+    await this.sendLocalNotification(title, body, {
+      type: 'backup_completed',
     });
   }
 

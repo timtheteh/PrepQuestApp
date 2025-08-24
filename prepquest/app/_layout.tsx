@@ -14,7 +14,9 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
+import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskContext';
 import { BackgroundTaskNotification } from '@/components/general/BackgroundTaskNotification';
+import { BackupTaskNotification } from '@/components/general/BackupTaskNotification';
 import NotificationService from '@/utils/notifications';
 import * as Notifications from 'expo-notifications';
 
@@ -102,6 +104,10 @@ function AppContent() {
           // Handle navigation based on notification type
           if (data?.type === 'deck_created' || data?.type === 'deck_and_flashcards_created') {
             // Navigate to deck details or main page
+            // You can add navigation logic here when needed
+          } else if (data?.type === 'backup_completed') {
+            // Navigate to app settings page for backup completion
+            // The success modal will be shown automatically by the context
             // You can add navigation logic here when needed
           }
         });
@@ -243,6 +249,7 @@ function AppContent() {
             />
           </Stack>
           <BackgroundTaskNotification />
+          <BackupTaskNotification />
           <StatusBar style="auto" />
         </>
       )}
@@ -264,7 +271,9 @@ export default function RootLayout() {
         <HybridAuthProvider>
           <CustomThemeProvider>
             <BackgroundTaskProvider>
-              <AppContent />
+              <BackupBackgroundTaskProvider>
+                <AppContent />
+              </BackupBackgroundTaskProvider>
             </BackgroundTaskProvider>
           </CustomThemeProvider>
         </HybridAuthProvider>

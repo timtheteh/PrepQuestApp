@@ -11,10 +11,11 @@ import * as Notifications from 'expo-notifications';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { db } from '@/db/index';
-import { backupDataToCloud, BackupProgress } from '@/db/backup';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { StripedProgressBar } from '@/components/general/StripedProgressBar';
+import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext';
+import { startBackupBackgroundTask } from '@/utils/backupBackgroundTask';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
@@ -78,9 +79,12 @@ export default function AppSettingsScreen() {
   // language modal state
   const [isLanguageModalOpen, setIsLanguageModalOpen] = React.useState(false);
 
-  // backup progress state
-  const [isBackupInProgress, setIsBackupInProgress] = React.useState(false);
-  const [backupProgress, setBackupProgress] = React.useState<BackupProgress | null>(null);
+  // backup progress state - now handled by background task context
+  const { 
+    isBackupBackgroundTaskRunning, 
+    backupBackgroundTaskProgress, 
+    startBackupBackgroundTaskMonitoring 
+  } = useBackupBackgroundTask();
   
   // success modal state
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
@@ -95,6 +99,27 @@ export default function AppSettingsScreen() {
     checkMicPermission();
     checkNotificationPermission();
     loadNotificationsPreference();
+  }, []);
+
+  // Watch for backup completion to show success modal
+  React.useEffect(() => {
+    if (backupBackgroundTaskProgress?.completed && backupBackgroundTaskProgress?.success && !backupBackgroundTaskProgress?.error) {
+      // Show success modal when backup completes
+      handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
+    }
+  }, [backupBackgroundTaskProgress]);
+
+  // Handle notification responses for backup completion
+  React.useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      if (data?.type === 'backup_completed') {
+        // Show success modal when user taps on backup notification
+        handleShowSuccessModal('Backup completed successfully!');
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
 
   const loadNotificationsPreference = async () => {
@@ -321,55 +346,30 @@ export default function AppSettingsScreen() {
 
   const handleConfirmBackup = React.useCallback(async () => {
     try {
-      setIsBackupInProgress(true);
-      setBackupProgress({ stage: 'starting', completed: 0, total: 10, message: 'Initializing backup...' });
-      
       // Dismiss the confirmation modal first
       handleDismissBackup();
       
-      // Create a token getter function that refreshes tokens as needed
-      const tokenGetter = async () => {
-        try {
-          const token = await getToken();
-          if (!token) {
-            throw new Error('Unable to get authentication token');
-          }
-          return token;
-        } catch (error) {
-          console.error('Error getting token:', error);
-          return null;
-        }
-      };
+      // Start background task monitoring
+      startBackupBackgroundTaskMonitoring();
       
-      // Start the backup process
-      const result = await backupDataToCloud(tokenGetter, (progress: BackupProgress) => {
-        setBackupProgress(progress);
-      });
+      // Start the backup background task
+      const success = await startBackupBackgroundTask(getToken, language);
       
-      setIsBackupInProgress(false);
-      setBackupProgress(null);
-      
-      // Show result to user
-      if (result.success) {
-        handleShowSuccessModal(result.message);
-      } else {
+      if (!success) {
         Alert.alert(
           strings[language].error,
-          result.message,
+          'Failed to start backup process',
           [{ text: strings[language].ok }]
         );
       }
     } catch (error) {
-      setIsBackupInProgress(false);
-      setBackupProgress(null);
-      
       Alert.alert(
         strings[language].error,
         `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissBackup, language, getToken]);
+  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring]);
 
   const handleLoadDataPress = React.useCallback(() => {
     setIsLoadDataModalOpen(true);
@@ -590,7 +590,7 @@ export default function AppSettingsScreen() {
                     language={language}
                 />
 
-                {isBackupInProgress ? (
+                {isBackupBackgroundTaskRunning ? (
                   <View style={{ 
                     alignItems: 'center',
                   }}>
@@ -602,11 +602,12 @@ export default function AppSettingsScreen() {
                       borderRadius: 30
                     }}>
                       <StripedProgressBar 
-                        progress={backupProgress?.percentage || 0} // Debug: 10% to see progress bar
-                        currentItems={backupProgress?.completed || 0}
-                        totalItems={backupProgress?.total || 0}
+                        progress={backupBackgroundTaskProgress?.percentage || 0}
+                        currentItems={backupBackgroundTaskProgress?.rowsUploaded || 0}
+                        totalItems={backupBackgroundTaskProgress?.totalRows || 0}
                         height={60}
                         borderRadius={30}
+                        immediateProgress={true}
                       />
                     </View>
                     <Text style={[{ 

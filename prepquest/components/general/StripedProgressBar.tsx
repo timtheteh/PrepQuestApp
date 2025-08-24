@@ -11,6 +11,7 @@ interface StripedProgressBarProps {
   currentItems?: number;
   totalItems?: number;
   showLabel?: boolean;
+  immediateProgress?: boolean; // If true, progress updates immediately without animation
 }
 
 export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
@@ -21,6 +22,7 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
   currentItems,
   totalItems,
   showLabel = true,
+  immediateProgress = false,
 }) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -43,13 +45,19 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
 
   // Animate progress changes
   useEffect(() => {
-    Animated.timing(progressValue, {
-      toValue: progress,
-      duration: 800,
-      useNativeDriver: false,
-      easing: Easing.out(Easing.cubic),
-    }).start();
-  }, [progress, progressValue]);
+    if (immediateProgress) {
+      // Set progress immediately without animation
+      progressValue.setValue(progress);
+    } else {
+      // Animate to new progress value
+      Animated.timing(progressValue, {
+        toValue: progress,
+        duration: 800,
+        useNativeDriver: false,
+        easing: Easing.out(Easing.cubic),
+      }).start();
+    }
+  }, [progress, progressValue, immediateProgress]);
 
   const translateX = animationValue.interpolate({
     inputRange: [0, 1],

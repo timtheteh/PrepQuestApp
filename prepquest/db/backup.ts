@@ -437,13 +437,304 @@ export interface BackupProgress {
   completed: number;
   total: number;
   message: string;
+  rowsUploaded?: number;
+  totalRows?: number;
+  percentage?: number;
+}
+
+// Progress reporting function type
+type ProgressReporter = (stage: string, message: string, rowsJustUploaded: number) => void;
+
+// Token getter function type
+type TokenGetter = () => Promise<string | null>;
+
+// Chunked upload functions with progress tracking
+
+/**
+ * Upload folders to Supabase with chunked progress tracking
+ */
+async function uploadFoldersToSupabaseWithProgress(
+  folders: BackupFolder[], 
+  getToken: TokenGetter, 
+  reportProgress: ProgressReporter
+): Promise<boolean> {
+  try {
+    if (folders.length === 0) {
+      console.log('No folders to upload');
+      return true;
+    }
+
+    // Upload in chunks with progress reporting every 3 seconds
+    const chunkSize = 10;
+    let lastReportTime = Date.now();
+    
+    for (let i = 0; i < folders.length; i += chunkSize) {
+      const chunk = folders.slice(i, i + chunkSize);
+      
+      // Get fresh token for each chunk to handle expiration
+      const token = await getToken();
+      if (!token) {
+        console.error('Unable to get authentication token for folders');
+        return false;
+      }
+      
+      const authenticatedSupabase = await createAuthenticatedSupabaseClient(token);
+      
+      const { error } = await authenticatedSupabase
+        .from('folders')
+        .upsert(chunk, { 
+          onConflict: 'userID,folderID',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error('Error uploading folder chunk to Supabase:', error);
+        return false;
+      }
+
+      // Report progress every 3 seconds or on last chunk
+      const now = Date.now();
+      if (now - lastReportTime >= 3000 || i + chunkSize >= folders.length) {
+        reportProgress('uploading', 'Uploading folders...', chunk.length);
+        lastReportTime = now;
+      } else {
+        // Still count the rows but don't report yet
+        reportProgress('uploading', 'Uploading folders...', chunk.length);
+      }
+
+      // Small delay between chunks
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.log(`Successfully uploaded ${folders.length} folders to Supabase`);
+    return true;
+  } catch (error) {
+    console.error('Error in uploadFoldersToSupabaseWithProgress:', error);
+    return false;
+  }
+}
+
+/**
+ * Upload decks to Supabase with chunked progress tracking
+ */
+async function uploadDecksToSupabaseWithProgress(
+  decks: BackupDeck[], 
+  getToken: TokenGetter, 
+  reportProgress: ProgressReporter
+): Promise<boolean> {
+  try {
+    if (decks.length === 0) {
+      console.log('No decks to upload');
+      return true;
+    }
+
+    const chunkSize = 10;
+    let lastReportTime = Date.now();
+    
+    for (let i = 0; i < decks.length; i += chunkSize) {
+      const chunk = decks.slice(i, i + chunkSize);
+      
+      // Get fresh token for each chunk to handle expiration
+      const token = await getToken();
+      if (!token) {
+        console.error('Unable to get authentication token for decks');
+        return false;
+      }
+      
+      const authenticatedSupabase = await createAuthenticatedSupabaseClient(token);
+      
+      const { error } = await authenticatedSupabase
+        .from('decks')
+        .upsert(chunk, { 
+          onConflict: 'userID,deckID',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error('Error uploading deck chunk to Supabase:', error);
+        return false;
+      }
+
+      const now = Date.now();
+      if (now - lastReportTime >= 3000 || i + chunkSize >= decks.length) {
+        reportProgress('uploading', 'Uploading decks...', chunk.length);
+        lastReportTime = now;
+      } else {
+        reportProgress('uploading', 'Uploading decks...', chunk.length);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.log(`Successfully uploaded ${decks.length} decks to Supabase`);
+    return true;
+  } catch (error) {
+    console.error('Error in uploadDecksToSupabaseWithProgress:', error);
+    return false;
+  }
+}
+
+/**
+ * Upload flashcards to Supabase with chunked progress tracking
+ */
+async function uploadFlashcardsToSupabaseWithProgress(
+  flashcards: BackupFlashcard[], 
+  getToken: TokenGetter, 
+  reportProgress: ProgressReporter
+): Promise<boolean> {
+  try {
+    if (flashcards.length === 0) {
+      console.log('No flashcards to upload');
+      return true;
+    }
+
+    const chunkSize = 25; // Smaller chunks for flashcards
+    let lastReportTime = Date.now();
+    
+    for (let i = 0; i < flashcards.length; i += chunkSize) {
+      const chunk = flashcards.slice(i, i + chunkSize);
+      let retries = 0;
+      const maxRetries = 3;
+
+      while (retries < maxRetries) {
+        try {
+          // Get fresh token for each chunk to handle expiration
+          const token = await getToken();
+          if (!token) {
+            console.error('Unable to get authentication token for flashcards');
+            return false;
+          }
+          
+          const authenticatedSupabase = await createAuthenticatedSupabaseClient(token);
+          
+          const { error } = await authenticatedSupabase
+            .from('flashcards')
+            .upsert(chunk, { 
+              onConflict: 'userID,flashcardID',
+              ignoreDuplicates: false 
+            });
+
+          if (error) {
+            throw error;
+          }
+          break;
+        } catch (error) {
+          retries++;
+          if (retries >= maxRetries) {
+            console.error('Error uploading flashcard chunk after retries:', error);
+            return false;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+        }
+      }
+
+      const now = Date.now();
+      if (now - lastReportTime >= 3000 || i + chunkSize >= flashcards.length) {
+        reportProgress('uploading', 'Uploading flashcards...', chunk.length);
+        lastReportTime = now;
+      } else {
+        reportProgress('uploading', 'Uploading flashcards...', chunk.length);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    console.log(`Successfully uploaded ${flashcards.length} flashcards to Supabase`);
+    return true;
+  } catch (error) {
+    console.error('Error in uploadFlashcardsToSupabaseWithProgress:', error);
+    return false;
+  }
+}
+
+/**
+ * Upload user form entries to Supabase with progress tracking
+ */
+async function uploadUserFormEntriesToSupabaseWithProgress(
+  userFormEntries: BackupUserFormEntry[], 
+  getToken: TokenGetter, 
+  reportProgress: ProgressReporter
+): Promise<boolean> {
+  try {
+    if (userFormEntries.length === 0) {
+      console.log('No user form entries to upload');
+      return true;
+    }
+
+    // Get fresh token
+    const token = await getToken();
+    if (!token) {
+      console.error('Unable to get authentication token for user form entries');
+      return false;
+    }
+    
+    const authenticatedSupabase = await createAuthenticatedSupabaseClient(token);
+    
+    const { error } = await authenticatedSupabase
+      .from('userFormEntries')
+      .upsert(userFormEntries, { 
+        onConflict: 'userID,formEntryID',
+        ignoreDuplicates: false 
+      });
+
+    if (error) {
+      console.error('Error uploading user form entries to Supabase:', error);
+      return false;
+    }
+
+    reportProgress('uploading', 'Uploading user form entries...', userFormEntries.length);
+    console.log(`Successfully uploaded ${userFormEntries.length} user form entries to Supabase`);
+    return true;
+  } catch (error) {
+    console.error('Error in uploadUserFormEntriesToSupabaseWithProgress:', error);
+    return false;
+  }
+}
+
+/**
+ * Upload user data to Supabase with progress tracking
+ */
+async function uploadUserToSupabaseWithProgress(
+  user: BackupUser, 
+  getToken: TokenGetter, 
+  reportProgress: ProgressReporter
+): Promise<boolean> {
+  try {
+    // Get fresh token
+    const token = await getToken();
+    if (!token) {
+      console.error('Unable to get authentication token for user');
+      return false;
+    }
+    
+    const authenticatedSupabase = await createAuthenticatedSupabaseClient(token);
+
+    const { error } = await authenticatedSupabase
+      .from('users')
+      .upsert([user], { 
+        onConflict: 'userID',
+        ignoreDuplicates: false 
+      });
+
+    if (error) {
+      console.error('Error uploading user to Supabase:', error);
+      return false;
+    }
+
+    reportProgress('uploading', 'Uploading user data...', 1);
+    console.log('Successfully uploaded user data to Supabase');
+    return true;
+  } catch (error) {
+    console.error('Error in uploadUserToSupabaseWithProgress:', error);
+    return false;
+  }
 }
 
 /**
  * Main backup function that orchestrates the entire backup process
  */
 export async function backupDataToCloud(
-  token: string,
+  getToken: TokenGetter,
   onProgress?: (progress: BackupProgress) => void
 ): Promise<{ success: boolean; message: string }> {
   try {
@@ -471,38 +762,62 @@ export async function backupDataToCloud(
       return { success: false, message: 'User data not found in local database' };
     }
 
-    // Stage 2: Upload to Supabase
-    onProgress?.({ stage: 'uploading', completed: 0, total: 5, message: 'Uploading folders...' });
-    const foldersSuccess = await uploadFoldersToSupabase(folders, token);
+    // Calculate total rows for progress tracking
+    const totalRows = folders.length + decks.length + flashcards.length + userFormEntries.length + 1;
+    let uploadedRows = 0;
+
+    // Progress tracking state
+    const progressState = {
+      totalRows,
+      uploadedRows: 0,
+      lastReportTime: Date.now()
+    };
+
+    // Progress reporting function
+    const reportProgress = (stage: string, message: string, rowsJustUploaded: number = 0) => {
+      progressState.uploadedRows += rowsJustUploaded;
+      const percentage = Math.round((progressState.uploadedRows / totalRows) * 100);
+      
+      onProgress?.({
+        stage,
+        completed: progressState.uploadedRows,
+        total: totalRows,
+        message,
+        rowsUploaded: progressState.uploadedRows,
+        totalRows,
+        percentage
+      });
+    };
+
+    // Stage 2: Upload to Supabase with chunked progress
+    reportProgress('uploading', 'Starting upload...', 0);
+    
+    const foldersSuccess = await uploadFoldersToSupabaseWithProgress(folders, getToken, reportProgress);
     if (!foldersSuccess) {
       return { success: false, message: 'Failed to upload folders to cloud' };
     }
     
-    onProgress?.({ stage: 'uploading', completed: 1, total: 5, message: 'Uploading decks...' });
-    const decksSuccess = await uploadDecksToSupabase(decks, token);
+    const decksSuccess = await uploadDecksToSupabaseWithProgress(decks, getToken, reportProgress);
     if (!decksSuccess) {
       return { success: false, message: 'Failed to upload decks to cloud' };
     }
     
-    onProgress?.({ stage: 'uploading', completed: 2, total: 5, message: 'Uploading flashcards...' });
-    const flashcardsSuccess = await uploadFlashcardsToSupabase(flashcards, token);
+    const flashcardsSuccess = await uploadFlashcardsToSupabaseWithProgress(flashcards, getToken, reportProgress);
     if (!flashcardsSuccess) {
       return { success: false, message: 'Failed to upload flashcards to cloud' };
     }
     
-    onProgress?.({ stage: 'uploading', completed: 3, total: 5, message: 'Uploading user form entries...' });
-    const userFormEntriesSuccess = await uploadUserFormEntriesToSupabase(userFormEntries, token);
+    const userFormEntriesSuccess = await uploadUserFormEntriesToSupabaseWithProgress(userFormEntries, getToken, reportProgress);
     if (!userFormEntriesSuccess) {
       return { success: false, message: 'Failed to upload user form entries to cloud' };
     }
     
-    onProgress?.({ stage: 'uploading', completed: 4, total: 5, message: 'Uploading user data...' });
-    const userSuccess = await uploadUserToSupabase(user, token);
+    const userSuccess = await uploadUserToSupabaseWithProgress(user, getToken, reportProgress);
     if (!userSuccess) {
       return { success: false, message: 'Failed to upload user data to cloud' };
     }
     
-    onProgress?.({ stage: 'uploading', completed: 5, total: 5, message: 'Backup complete!' });
+    reportProgress('uploading', 'Backup complete!', 0);
 
     const totalItems = folders.length + decks.length + flashcards.length + userFormEntries.length + 1;
     console.log(`Backup completed successfully! Uploaded ${totalItems} total items to cloud.`);

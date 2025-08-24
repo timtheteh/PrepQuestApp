@@ -14,6 +14,7 @@ import { db } from '@/db/index';
 import { backupDataToCloud, BackupProgress } from '@/db/backup';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useAuth } from '@clerk/clerk-expo';
+import { StripedProgressBar } from '@/components/general/StripedProgressBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
@@ -320,14 +321,22 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissBackup();
       
-      // Get the Clerk token for Supabase authentication
-      const token = await getToken();
-      if (!token) {
-        throw new Error('Unable to get authentication token');
-      }
+      // Create a token getter function that refreshes tokens as needed
+      const tokenGetter = async () => {
+        try {
+          const token = await getToken();
+          if (!token) {
+            throw new Error('Unable to get authentication token');
+          }
+          return token;
+        } catch (error) {
+          console.error('Error getting token:', error);
+          return null;
+        }
+      };
       
       // Start the backup process
-      const result = await backupDataToCloud(token, (progress: BackupProgress) => {
+      const result = await backupDataToCloud(tokenGetter, (progress: BackupProgress) => {
         setBackupProgress(progress);
       });
       
@@ -537,13 +546,24 @@ export default function AppSettingsScreen() {
                     language={language}
                 />
 
-                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor2 }]}
-                  onPress={handleBackupPress}>
-                  <View style={styles.buttonContent}>
-                    <MaterialIcons name="cloud-upload" size={30} color="#fff" />
-                    <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>{strings[language].appSettingsPage.backupDataToCloud}</Text>
+                {isBackupInProgress ? (
+                  <View style={[styles.cloudButton, { backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }]}>
+                    <StripedProgressBar 
+                      progress={backupProgress?.percentage || 0}
+                      width={300}
+                      height={60}
+                      borderRadius={30}
+                    />
                   </View>
-                </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor2 }]}
+                    onPress={handleBackupPress}>
+                    <View style={styles.buttonContent}>
+                      <MaterialIcons name="cloud-upload" size={30} color="#fff" />
+                      <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>{strings[language].appSettingsPage.backupDataToCloud}</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
                 <Text style={[styles.descriptionText, { 
                   color: colors.text,
                   fontFamily: Fonts.bodyItalicLight,
@@ -636,52 +656,7 @@ export default function AppSettingsScreen() {
           onCancel={handleDismissDeleteLocalStorage}
           onConfirm={handleConfirmDeleteLocalStorage}
         />
-        
-        {/* Backup Progress Modal */}
-        {isBackupInProgress && (
-          <>
-            <GreyOverlayBackground 
-              visible={isBackupInProgress}
-              opacity={new Animated.Value(0.7)}
-              onPress={() => {}} // Prevent dismissal during backup
-            />
-            <Modal
-              visible={isBackupInProgress}
-              transparent={true}
-              animationType="fade"
-            >
-              <View style={styles.progressModalContainer}>
-                <View style={[styles.progressModal, { backgroundColor: colors.background }]}>
-                  <MaterialIcons name="cloud-upload" size={48} color={colors.brandColor2} />
-                  <Text style={[styles.progressTitle, { color: colors.text, fontFamily: Fonts.title }]}>
-                    {strings[language].appSettingsPage.backupInProgress}
-                  </Text>
-                  {backupProgress && (
-                    <>
-                      <Text style={[styles.progressMessage, { color: colors.text, fontFamily: Fonts.bodyMedium }]}>
-                        {backupProgress.message}
-                      </Text>
-                      <View style={[styles.progressBarContainer, { backgroundColor: colors.secondaryShade }]}>
-                        <View 
-                          style={[
-                            styles.progressBar, 
-                            { 
-                              backgroundColor: colors.brandColor1,
-                              width: `${Math.round((backupProgress.completed / backupProgress.total) * 100)}%`
-                            }
-                          ]} 
-                        />
-                      </View>
-                      <Text style={[styles.progressText, { color: colors.unselectedText, fontFamily: Fonts.bodyMedium }]}>
-                        {backupProgress.completed} / {backupProgress.total}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              </View>
-            </Modal>
-          </>
-        )}
+
     </View>
   );
 }
@@ -752,45 +727,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 8,
-  },
-  progressModalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  progressModal: {
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    minWidth: 280,
-    maxWidth: 320,
-  },
-  progressTitle: {
-    fontSize: 24,
-    marginTop: 16,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  progressMessage: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  progressBarContainer: {
-    width: '100%',
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 12,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 4,
-    minWidth: 8,
-  },
-  progressText: {
-    fontSize: 14,
-    textAlign: 'center',
   },
 }); 

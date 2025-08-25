@@ -4,6 +4,7 @@ import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext'
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
+import ModalExclamationMarkIcon from '@/assets/icons/generalIcons/modalExclamationMarkIcon.svg';
 
 interface BackupTaskNotificationProps {
   onViewResults?: () => void;
@@ -220,7 +221,11 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
     >
       <View style={[styles.notification, { backgroundColor: isSuccess ? '#44B88A' : '#D7191C' }]}>
         <View style={styles.content}>
-          <GreenTickIcon width={24} height={24} style={styles.icon} />
+          {isSuccess ? (
+            <GreenTickIcon width={24} height={24} style={styles.icon} />
+          ) : (
+            <ModalExclamationMarkIcon width={24} height={24} style={styles.icon} />
+          )}
           <View style={styles.textContainer}>
             <Text style={styles.title}>
               {isSuccess 

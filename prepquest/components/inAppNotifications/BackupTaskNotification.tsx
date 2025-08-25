@@ -200,9 +200,7 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
     }
     
     // Get message from multiple possible sources
-    const message = notificationData?.message || 
-                   backupBackgroundTaskProgress?.message || 
-                   (language === 'Chinese' ? '备份完成！' : 'Backup completed!');
+    const message = (language === 'Chinese' ? '数据已成功上传到云端!' : 'Data successfully uploaded to cloud!');
     
     return message;
   };

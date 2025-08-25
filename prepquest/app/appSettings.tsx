@@ -664,7 +664,7 @@ export default function AppSettingsScreen() {
                       textAlign: 'center',
                       paddingHorizontal: 20
                     }]}>
-                      {language === 'Chinese' ? '请保持应用开启，否则备份将提前结束' : 'Please leave this app open otherwise backup will end prematurely'}
+                      {language === 'Chinese' ? '请保持应用开启，否则备份将提前结束' : "Please don't close this app otherwise backup will end prematurely"}
                     </Text>
                   </View>
                 ) : (

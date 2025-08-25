@@ -15,8 +15,8 @@ import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext'
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
 import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskContext';
-import { BackgroundTaskNotification } from '@/components/general/BackgroundTaskNotification';
-import { BackupTaskNotification } from '@/components/general/BackupTaskNotification';
+import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
+import { BackupTaskNotification } from '@/components/inAppNotifications/BackupTaskNotification';
 import NotificationService from '@/utils/notifications';
 import * as Notifications from 'expo-notifications';
 

@@ -1,19 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, InteractionManager } from 'react-native';
-import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
+import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
-import ModalExclamationMarkIcon from '@/assets/icons/generalIcons/modalExclamationMarkIcon.svg';
+import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 
-interface BackgroundTaskNotificationProps {
+interface BackupTaskNotificationProps {
   onViewResults?: () => void;
 }
 
-export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProps> = ({ 
+export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({ 
   onViewResults 
 }) => {
-  const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress } = useBackgroundTask();
+  const { isBackupBackgroundTaskRunning, backupBackgroundTaskProgress, clearBackupBackgroundTaskProgress } = useBackupBackgroundTask();
   const { language } = useLanguage();
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
@@ -24,85 +24,80 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
   const preservedNotificationDataRef = useRef<any>(null);
 
   useEffect(() => {
-    // Check if a background task just completed
-    if (!isBackgroundTaskRunning && backgroundTaskProgress) {
-      const isCompleted = backgroundTaskProgress.completed;
-      const hasError = backgroundTaskProgress.error;
+    // Check if a backup task just completed
+    if (backupBackgroundTaskProgress) {
+      const isCompleted = backupBackgroundTaskProgress.completed;
+      const hasError = backupBackgroundTaskProgress.error;
+      const wasRunning = backupBackgroundTaskProgress.inProgress;
+      
+      // Show notification when task completes (either from running to completed, or when we detect completed state)
+      const shouldShowNotification = (isCompleted || hasError) && !isBackupBackgroundTaskRunning;
       
       // Create a unique identifier for this specific progress data
       const progressId = JSON.stringify({
         completed: isCompleted,
         error: hasError,
-        deckId: backgroundTaskProgress.createdDeckId,
-        flashcardIds: backgroundTaskProgress.createdFlashcardIds,
-        timestamp: backgroundTaskProgress.timestamp,
-        deckName: backgroundTaskProgress.formData?.deckName || backgroundTaskProgress.deckName
+        timestamp: backupBackgroundTaskProgress.timestamp,
+        message: backupBackgroundTaskProgress.message
       });
       
       // Skip if we've already processed this exact progress data
       if (processedProgressRef.current === progressId) {
-        console.log('Skipping notification - already processed this progress data');
+        console.log('Skipping backup notification - already processed this progress data');
         return;
       }
       
-      console.log('BackgroundTaskNotification - Progress update:', {
+      console.log('BackupTaskNotification - Progress update:', {
         isCompleted,
         hasError,
-        deckName: backgroundTaskProgress.formData?.deckName || backgroundTaskProgress.deckName,
-        timestamp: backgroundTaskProgress.timestamp,
+        wasRunning,
+        isBackupBackgroundTaskRunning,
+        shouldShowNotification,
+        message: backupBackgroundTaskProgress.message,
+        timestamp: backupBackgroundTaskProgress.timestamp,
         lastCompletedTaskRef: lastCompletedTaskRef.current,
         progressId
       });
       
-      // Don't show notification if progress data is incomplete (missing deck name)
-      // This prevents the fallback "Deck created for 'Deck'" message
-      if (isCompleted && !hasError && (!backgroundTaskProgress.formData?.deckName && !backgroundTaskProgress.deckName)) {
-        console.log('Skipping notification - incomplete progress data (missing deck name)');
-        processedProgressRef.current = progressId;
-        return;
-      }
-      
       // Don't show notification if progress is being cleared
-      if (backgroundTaskProgress.isClearing) {
-        console.log('Skipping notification - progress is being cleared');
+      if (backupBackgroundTaskProgress.isClearing) {
+        console.log('Skipping backup notification - progress is being cleared');
         processedProgressRef.current = progressId;
         return;
       }
       
       // Don't show notification if push notification was already sent
-      if (backgroundTaskProgress.notificationSent) {
-        console.log('Skipping notification - push notification was already sent');
+      if (backupBackgroundTaskProgress.notificationSent) {
+        console.log('Skipping backup notification - push notification was already sent');
         processedProgressRef.current = progressId;
         return;
       }
       
       // Don't show notification if the progress data is too old (stale)
       const now = Date.now();
-      const progressTime = backgroundTaskProgress.timestamp || 0;
+      const progressTime = backupBackgroundTaskProgress.timestamp || 0;
       const timeDiff = now - progressTime;
       if (timeDiff > 30000) { // 30 seconds
-        console.log('Skipping notification - progress data is too old (stale)');
+        console.log('Skipping backup notification - progress data is too old (stale)');
         processedProgressRef.current = progressId;
         return;
       }
       
       // Create a unique identifier for this task completion
-      // Use a more stable identifier that doesn't change with timestamps
-      const taskId = `${backgroundTaskProgress.createdDeckId || 'no-deck'}-${backgroundTaskProgress.createdFlashcardIds?.join(',') || 'no-flashcards'}-${isCompleted}-${hasError}`;
+      const taskId = `backup-${isCompleted}-${hasError}`;
       
-      console.log('BackgroundTaskNotification - Task ID:', taskId);
+      console.log('BackupTaskNotification - Task ID:', taskId);
       
-      // Only show notification if we haven't shown one for this specific task completion
-      if (lastCompletedTaskRef.current !== taskId && !showNotification) {
+      // Only show notification if we haven't shown one for this specific task completion and should show notification
+      if (lastCompletedTaskRef.current !== taskId && !showNotification && shouldShowNotification) {
         if (isCompleted && !hasError) {
           // Task completed successfully
-          console.log('Showing success notification for task:', taskId);
+          console.log('Showing backup success notification for task:', taskId);
           lastCompletedTaskRef.current = taskId;
           processedProgressRef.current = progressId;
           // Preserve notification data so it doesn't disappear when progress is cleared
           preservedNotificationDataRef.current = {
-            deckName: backgroundTaskProgress.formData?.deckName || backgroundTaskProgress.deckName || backgroundTaskProgress.notificationDeckName,
-            isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
+            message: backupBackgroundTaskProgress.message,
             type: 'success'
           };
           // Defer state updates and animations until after insertion/layout phase
@@ -127,13 +122,12 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
           });
         } else if (hasError) {
           // Task failed
-          console.log('Showing error notification for task:', taskId);
+          console.log('Showing backup error notification for task:', taskId);
           lastCompletedTaskRef.current = taskId;
           processedProgressRef.current = progressId;
           // Preserve notification data so it doesn't disappear when progress is cleared
           preservedNotificationDataRef.current = {
-            deckName: backgroundTaskProgress.formData?.deckName || backgroundTaskProgress.deckName || backgroundTaskProgress.notificationDeckName,
-            isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
+            message: backupBackgroundTaskProgress.errorMessage || backupBackgroundTaskProgress.message,
             type: 'error'
           };
           // Defer state updates and animations until after insertion/layout phase
@@ -158,10 +152,10 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
           });
         }
       } else {
-        console.log('Skipping duplicate notification for task:', taskId);
+        console.log('Skipping duplicate backup notification for task:', taskId);
       }
     }
-  }, [isBackgroundTaskRunning, backgroundTaskProgress]);
+  }, [isBackupBackgroundTaskRunning, backupBackgroundTaskProgress]);
 
   const hideNotification = () => {
     Animated.parallel([
@@ -177,8 +171,6 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
       }),
     ]).start(() => {
       setShowNotification(false);
-      // Don't clear progress immediately to prevent duplicate notifications
-      // The progress will be cleared by the BackgroundTaskContext when appropriate
       // Reset the refs to allow future notifications for different tasks
       lastCompletedTaskRef.current = null;
       processedProgressRef.current = null;
@@ -199,51 +191,23 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
 
   // Use preserved notification data if available (when progress is cleared)
   const notificationData = preservedNotificationDataRef.current;
-  const isInViewFlashcardsPage = notificationData?.isInViewFlashcardsPage || backgroundTaskProgress?.isInViewFlashcardsPage;
   const isSuccess = notificationType === 'success';
   
-  // Determine the message based on where the task was created
+  // Determine the message
   const getMessage = () => {
-    // Use preserved notification data if available (when progress is cleared)
-    const notificationData = preservedNotificationDataRef.current;
-    const isInViewFlashcardsPage = notificationData?.isInViewFlashcardsPage || backgroundTaskProgress?.isInViewFlashcardsPage;
-    const isSuccess = notificationType === 'success';
-    
     if (!isSuccess) {
-      return language === 'Chinese' ? '创建过程中出现错误' : 'An error occurred during creation';
+      return language === 'Chinese' ? '备份过程中出现错误' : 'An error occurred during backup';
     }
     
-    // Get deck name from multiple possible sources
-    const deckName = notificationData?.deckName || 
-                     backgroundTaskProgress?.formData?.deckName || 
-                     backgroundTaskProgress?.deckName || 
-                     backgroundTaskProgress?.notificationDeckName;
+    // Get message from multiple possible sources
+    const message = notificationData?.message || 
+                   backupBackgroundTaskProgress?.message || 
+                   (language === 'Chinese' ? '备份完成！' : 'Backup completed!');
     
-    // If we still don't have a deck name, don't show the notification
-    if (!deckName || deckName === 'Deck') {
-      console.log('Skipping notification - no valid deck name found');
-      return null;
-    }
-    
-    if (isInViewFlashcardsPage) {
-      // Flashcards were added to existing deck
-      return language === 'Chinese' 
-        ? `闪卡已为"${deckName}"创建`
-        : `Flashcards created for "${deckName}"`;
-    } else {
-      // New deck was created (from index, favorites, or viewDecksInFolder pages)
-      return language === 'Chinese' 
-        ? `卡组"${deckName}"已创建`
-        : `Deck created for "${deckName}"`;
-    }
+    return message;
   };
 
   const message = getMessage();
-  
-  // Don't render if we don't have a valid message
-  if (!message) {
-    return null;
-  }
 
   return (
     <Animated.View 
@@ -257,16 +221,16 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
     >
       <View style={[styles.notification, { backgroundColor: isSuccess ? '#44B88A' : '#D7191C' }]}>
         <View style={styles.content}>
-            {isSuccess ? (
+          {isSuccess ? (
             <GreenTickIcon width={24} height={24} style={styles.icon} />
-            ) : (
-              <ModalExclamationMarkIcon width={24} height={24} style={styles.icon} />
-            )}          
-            <View style={styles.textContainer}>
+          ) : (
+            <DeleteModalIcon width={24} height={24} style={styles.icon} />
+          )}
+          <View style={styles.textContainer}>
             <Text style={styles.title}>
               {isSuccess 
-                ? (language === 'Chinese' ? '任务完成！' : 'Task Completed!')
-                : (language === 'Chinese' ? '任务失败' : 'Task Failed')
+                ? (language === 'Chinese' ? '备份完成！' : 'Backup Completed!')
+                : (language === 'Chinese' ? '备份失败' : 'Backup Failed')
               }
             </Text>
             <Text style={styles.message}>
@@ -355,4 +319,4 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.8,
   },
-}); 
+});

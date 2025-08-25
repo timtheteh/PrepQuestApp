@@ -29,6 +29,7 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
   
   const animationValue = useRef(new Animated.Value(0)).current;
   const progressValue = useRef(new Animated.Value(0)).current;
+  const isFirstRender = useRef(true);
 
   // Animate the stripes continuously
   useEffect(() => {
@@ -45,7 +46,11 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
 
   // Animate progress changes
   useEffect(() => {
-    if (immediateProgress) {
+    if (isFirstRender.current) {
+      // On first render, set the progress immediately without animation
+      progressValue.setValue(progress);
+      isFirstRender.current = false;
+    } else if (immediateProgress) {
       // Set progress immediately without animation
       progressValue.setValue(progress);
     } else {

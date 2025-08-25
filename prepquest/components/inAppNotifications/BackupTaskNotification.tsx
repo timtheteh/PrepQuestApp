@@ -4,7 +4,7 @@ import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext'
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
-import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
+import DeleteModalIconWhite from '@/assets/icons/generalIcons/deleteModalIconWhite.svg';
 
 interface BackupTaskNotificationProps {
   onViewResults?: () => void;
@@ -222,7 +222,7 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
           {isSuccess ? (
             <GreenTickIcon width={24} height={24} style={styles.icon} />
           ) : (
-            <DeleteModalIcon width={24} height={24} style={styles.icon} />
+            <DeleteModalIconWhite width={24} height={24} style={styles.icon} />
           )}
           <View style={styles.textContainer}>
             <Text style={styles.title}>

@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import LottieView from 'lottie-react-native';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { db } from '@/db/index';
@@ -86,6 +87,10 @@ export default function AppSettingsScreen() {
     startBackupBackgroundTaskMonitoring 
   } = useBackupBackgroundTask();
   
+  // backup loading state
+  const [isBackupLoading, setIsBackupLoading] = React.useState(false);
+  const backupLoadingOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  
   // success modal state
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState('');
@@ -108,6 +113,19 @@ export default function AppSettingsScreen() {
       handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
     }
   }, [backupBackgroundTaskProgress]);
+
+  // Hide loading screen when backup background task starts running
+  React.useEffect(() => {
+    if (isBackupLoading && isBackupBackgroundTaskRunning) {
+      Animated.timing(backupLoadingOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsBackupLoading(false);
+      });
+    }
+  }, [isBackupBackgroundTaskRunning, isBackupLoading, backupLoadingOverlayOpacity]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -349,6 +367,14 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissBackup();
       
+      // Show loading screen
+      setIsBackupLoading(true);
+      Animated.timing(backupLoadingOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      
       // Start background task monitoring
       startBackupBackgroundTaskMonitoring();
       
@@ -356,20 +382,39 @@ export default function AppSettingsScreen() {
       const success = await startBackupBackgroundTask(getToken, language);
       
       if (!success) {
+        // Hide loading screen
+        Animated.timing(backupLoadingOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsBackupLoading(false);
+        });
+        
         Alert.alert(
           strings[language].error,
           'Failed to start backup process',
           [{ text: strings[language].ok }]
         );
       }
+      // If success, the loading screen will be hidden when isBackupBackgroundTaskRunning becomes true
     } catch (error) {
+      // Hide loading screen
+      Animated.timing(backupLoadingOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsBackupLoading(false);
+      });
+      
       Alert.alert(
         strings[language].error,
         `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring]);
+  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity]);
 
   const handleLoadDataPress = React.useCallback(() => {
     setIsLoadDataModalOpen(true);
@@ -740,6 +785,22 @@ export default function AppSettingsScreen() {
           lottieMarginTop={40}
         />
 
+        {/* Backup Loading Screen */}
+        <GreyOverlayBackground 
+          visible={isBackupLoading}
+          opacity={backupLoadingOverlayOpacity}
+        />
+        {isBackupLoading && (
+          <View style={styles.loadingContainer}>
+            <LottieView
+              source={require('@/assets/animations/addDeckLoadingAnimation.json')}
+              autoPlay
+              loop
+              style={styles.loadingAnimation}
+            />
+          </View>
+        )}
+
     </View>
   );
 }
@@ -810,5 +871,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 8,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1001,
+  },
+  loadingAnimation: {
+    width: 96,
+    height: 96,
   },
 }); 

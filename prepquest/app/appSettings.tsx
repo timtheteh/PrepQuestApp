@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Text, Platform, Switch, Alert, Link
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Entypo } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,12 +11,13 @@ import * as Notifications from 'expo-notifications';
 import LottieView from 'lottie-react-native';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
+import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import { db } from '@/db/index';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { StripedProgressBar } from '@/components/general/StripedProgressBar';
 import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext';
-import { startBackupBackgroundTask } from '@/utils/backupBackgroundTask';
+import { startBackupBackgroundTask, stopBackupBackgroundTask } from '@/utils/backupBackgroundTask';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
@@ -84,7 +85,9 @@ export default function AppSettingsScreen() {
   const { 
     isBackupBackgroundTaskRunning, 
     backupBackgroundTaskProgress, 
-    startBackupBackgroundTaskMonitoring 
+    startBackupBackgroundTaskMonitoring,
+    forceStopBackupBackgroundTask,
+    clearBackupBackgroundTaskProgress
   } = useBackupBackgroundTask();
   
   // backup loading state
@@ -99,6 +102,11 @@ export default function AppSettingsScreen() {
   
   // persistent backup completion state
   const [hasBackupCompleted, setHasBackupCompleted] = React.useState(false);
+
+  // cancel backup modal state
+  const [isCancelBackupModalOpen, setIsCancelBackupModalOpen] = React.useState(false);
+  const cancelBackupOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const cancelBackupModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -551,6 +559,67 @@ export default function AppSettingsScreen() {
     });
   }, [successOverlayOpacity, successModalOpacity]);
 
+  const handleCancelBackupPress = React.useCallback(() => {
+    setIsCancelBackupModalOpen(true);
+    Animated.parallel([
+      Animated.timing(cancelBackupOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cancelBackupModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [cancelBackupOverlayOpacity, cancelBackupModalOpacity]);
+
+  const handleDismissCancelBackup = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(cancelBackupOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cancelBackupModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsCancelBackupModalOpen(false);
+    });
+  }, [cancelBackupOverlayOpacity, cancelBackupModalOpacity]);
+
+  const handleConfirmCancelBackup = React.useCallback(async () => {
+    try {
+      // Dismiss the confirmation modal first
+      handleDismissCancelBackup();
+      
+      // Force stop the backup background task permanently
+      forceStopBackupBackgroundTask();
+      
+      // Stop the actual background service
+      await stopBackupBackgroundTask();
+      
+      // Clear the backup progress data
+      await clearBackupBackgroundTaskProgress();
+      
+      // Reset backup completion state
+      setHasBackupCompleted(false);
+      
+      console.log('Backup task cancelled successfully');
+    } catch (error) {
+      console.error('Error cancelling backup task:', error);
+      Alert.alert(
+        strings[language].error,
+        'Failed to cancel backup task',
+        [{ text: strings[language].ok }]
+      );
+    }
+  }, [handleDismissCancelBackup, forceStopBackupBackgroundTask, clearBackupBackgroundTaskProgress, language]);
+
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
         <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
@@ -667,18 +736,27 @@ export default function AppSettingsScreen() {
                     <View style={{ 
                       width: '100%',
                       height: 60,
-                      justifyContent: 'center', 
+                      flexDirection: 'row',
                       alignItems: 'center',
-                      borderRadius: 30
+                      gap: 12,
                     }}>
-                      <StripedProgressBar 
-                        progress={backupBackgroundTaskProgress?.percentage || 0}
-                        currentItems={backupBackgroundTaskProgress?.rowsUploaded || 0}
-                        totalItems={backupBackgroundTaskProgress?.totalRows || 0}
-                        height={60}
-                        borderRadius={30}
-                        immediateProgress={false}
-                      />
+                      <View style={{ flex: 1 }}>
+                        <StripedProgressBar 
+                          progress={backupBackgroundTaskProgress?.percentage || 0}
+                          currentItems={backupBackgroundTaskProgress?.rowsUploaded || 0}
+                          totalItems={backupBackgroundTaskProgress?.totalRows || 0}
+                          height={60}
+                          borderRadius={30}
+                          immediateProgress={false}
+                        />
+                      </View>
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={handleCancelBackupPress}
+                        activeOpacity={0.7}
+                      >
+                        <Entypo name="cross" size={24} color="#D7191C" />
+                      </TouchableOpacity>
                     </View>
                     <Text style={[{ 
                       color: colors.text, 
@@ -826,6 +904,22 @@ export default function AppSettingsScreen() {
           </View>
         )}
 
+        {/* Cancel Backup Modal */}
+        <GreyOverlayBackground 
+          visible={isCancelBackupModalOpen}
+          opacity={cancelBackupOverlayOpacity}
+          onPress={handleDismissCancelBackup}
+        />
+        <GenericModal
+          visible={isCancelBackupModalOpen}
+          opacity={cancelBackupModalOpacity}
+          text={strings[language].cancelBackup}
+          Icon={DeleteModalIcon}
+          buttons="double"
+          onCancel={handleDismissCancelBackup}
+          onConfirm={handleConfirmCancelBackup}
+        />
+
     </View>
   );
 }
@@ -910,5 +1004,13 @@ const styles = StyleSheet.create({
   loadingAnimation: {
     width: 96,
     height: 96,
+  },
+  cancelButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(215, 25, 28, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

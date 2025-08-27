@@ -264,6 +264,7 @@ export const strings: Record<string, any> = {
     ok: 'OK',
     success: 'Success',
     error: 'Error',
+    cancelBackup: 'Cancel backup?',
     // TabLayout strings
     deleteDecksConfirmation: 'Are you sure you want to delete these deck(s)?',
     noSelectionMade: 'No selection made!',
@@ -914,6 +915,7 @@ export const strings: Record<string, any> = {
     ok: '确定',
     success: '成功',
     error: '错误',
+    cancelBackup: '取消备份？',
     // TabLayout strings
     deleteDecksConfirmation: '你确定要删除这些卡片组吗？',
     noSelectionMade: '未选择任何内容！',

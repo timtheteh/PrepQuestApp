@@ -84,10 +84,13 @@ export default function AppSettingsScreen() {
   // backup progress state - now handled by background task context
   const { 
     isBackupBackgroundTaskRunning, 
+    isBackupCleanupInProgress,
+    isBackupStopping,
     backupBackgroundTaskProgress, 
     startBackupBackgroundTaskMonitoring,
     forceStopBackupBackgroundTask,
-    clearBackupBackgroundTaskProgress
+    clearBackupBackgroundTaskProgress,
+    resetBackupForceStoppedFlag
   } = useBackupBackgroundTask();
   
   // backup loading state
@@ -107,6 +110,13 @@ export default function AppSettingsScreen() {
   const [isCancelBackupModalOpen, setIsCancelBackupModalOpen] = React.useState(false);
   const cancelBackupOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const cancelBackupModalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // local stopping state to ensure immediate UI feedback
+  const [isLocallyStoppingBackup, setIsLocallyStoppingBackup] = React.useState(false);
+
+  // cooldown state after cancellation (5 second delay)
+  const [isCancelCooldownActive, setIsCancelCooldownActive] = React.useState(false);
+  const cooldownTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -161,6 +171,24 @@ export default function AppSettingsScreen() {
     });
 
     return () => subscription.remove();
+  }, []);
+
+  // Sync local stopping state with context stopping state
+  React.useEffect(() => {
+    if (!isBackupStopping && isLocallyStoppingBackup) {
+      // Context stopping state cleared, clear local state too
+      console.log('Context stopping cleared - clearing local stopping state');
+      setIsLocallyStoppingBackup(false);
+    }
+  }, [isBackupStopping, isLocallyStoppingBackup]);
+
+  // Cleanup cooldown timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+      }
+    };
   }, []);
 
   const loadNotificationsPreference = async () => {
@@ -390,7 +418,7 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissBackup();
       
-      // Show loading screen
+      // Show loading screen IMMEDIATELY to prevent any button UI changes
       setIsBackupLoading(true);
       Animated.timing(backupLoadingOverlayOpacity, {
         toValue: 0.5,
@@ -398,8 +426,67 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       }).start();
       
+      // Small delay to ensure loading screen renders before any state changes
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Check if cleanup, stopping, or cooldown is in progress and wait for it to complete
+      if (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) {
+        console.log('Backup cleanup in progress, waiting for completion...');
+        
+        // Wait for cleanup/cooldown to complete (max 10 seconds to account for 5-second cooldown)
+        let waitCount = 0;
+        const maxWait = 100; // 10 seconds (100 * 100ms)
+        
+        while ((isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) && waitCount < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waitCount++;
+        }
+        
+        if (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) {
+          console.warn('Cleanup/stopping/cooldown took too long, proceeding anyway');
+        } else {
+          console.log('Cleanup/stopping/cooldown completed, proceeding with backup');
+        }
+      }
+      
+      // Reset any force stopped flags from previous cancellations
+      resetBackupForceStoppedFlag();
+      
+      // Ensure clean state by clearing any residual progress data
+      await clearBackupBackgroundTaskProgress();
+      
+      // Wait for cleanup/stopping/cooldown to fully complete
+      if (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) {
+        console.log('Waiting for final cleanup/stopping/cooldown completion...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // Verify clean state
+      try {
+        const progressCheck = await AsyncStorage.getItem('backupDataBgTaskProgress');
+        if (progressCheck) {
+          console.warn('Warning: Found residual backup progress before starting new backup:', progressCheck);
+          // Force clear it
+          await AsyncStorage.removeItem('backupDataBgTaskProgress');
+        } else {
+          console.log('Confirmed: Clean state before starting new backup');
+        }
+      } catch (checkError) {
+        console.warn('Error checking backup state:', checkError);
+      }
+      
       // Start background task monitoring
       startBackupBackgroundTaskMonitoring();
+      
+      // Clear local stopping state and cooldown since we're starting a new backup
+      setIsLocallyStoppingBackup(false);
+      setIsCancelCooldownActive(false);
+      
+      // Clear any existing cooldown timer
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
       
       // Start the backup background task
       const success = await startBackupBackgroundTask(getToken, language);
@@ -437,7 +524,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity]);
+  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive]);
 
   const handleLoadDataPress = React.useCallback(() => {
     setIsLoadDataModalOpen(true);
@@ -597,19 +684,62 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissCancelBackup();
       
+      // IMMEDIATELY set local stopping state to prevent new backup attempts
+      // This provides instant UI feedback before context state updates
+      setIsLocallyStoppingBackup(true);
+      console.log('User confirmed cancellation - setting stopping state immediately');
+      
       // Force stop the backup background task permanently
       forceStopBackupBackgroundTask();
       
       // Stop the actual background service
       await stopBackupBackgroundTask();
       
-      // Clear the backup progress data
+      // Clear the backup progress data thoroughly
       await clearBackupBackgroundTaskProgress();
+      
+      // Additional cleanup: manually remove all backup-related AsyncStorage keys
+      try {
+        await AsyncStorage.multiRemove([
+          'backupDataBgTaskProgress',
+          'backupProgress',
+          'backupState'
+        ]);
+        console.log('Additional AsyncStorage cleanup completed');
+        
+        // Verify cleanup worked
+        const remainingProgress = await AsyncStorage.getItem('backupDataBgTaskProgress');
+        if (remainingProgress) {
+          console.warn('Warning: backup progress still exists after cleanup:', remainingProgress);
+        } else {
+          console.log('Confirmed: backup progress completely cleared');
+        }
+      } catch (cleanupError) {
+        console.warn('Additional cleanup failed:', cleanupError);
+      }
       
       // Reset backup completion state
       setHasBackupCompleted(false);
       
+      // Add a small delay to ensure all async operations complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       console.log('Backup task cancelled successfully');
+      
+      // Start 5-second cooldown period to prevent immediate restart
+      setIsCancelCooldownActive(true);
+      console.log('Starting 5-second cooldown after backup cancellation');
+      
+      // Clear any existing cooldown timer
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+      }
+      
+      // Set timer to clear cooldown after 5 seconds
+      cooldownTimerRef.current = setTimeout(() => {
+        setIsCancelCooldownActive(false);
+        console.log('Cooldown period ended - backup button re-enabled');
+      }, 5000);
     } catch (error) {
       console.error('Error cancelling backup task:', error);
       Alert.alert(
@@ -771,11 +901,27 @@ export default function AppSettingsScreen() {
                     </Text>
                   </View>
                 ) : (
-                  <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor2 }]}
-                    onPress={handleBackupPress}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.cloudButton, 
+                      { 
+                        backgroundColor: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive)) ? colors.unselectedText : colors.brandColor2,
+                        opacity: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive)) ? 0.6 : 1.0
+                      }
+                    ]}
+                    onPress={(!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive)) ? undefined : handleBackupPress}
+                    disabled={isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive}
+                  >
                     <View style={styles.buttonContent}>
                       <MaterialIcons name="cloud-upload" size={30} color="#fff" />
-                      <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>{strings[language].appSettingsPage.backupDataToCloud}</Text>
+                      <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>
+                        {isBackupLoading
+                          ? strings[language].appSettingsPage.backupDataToCloud
+                          : (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
+                            ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                            : strings[language].appSettingsPage.backupDataToCloud
+                        }
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 )}

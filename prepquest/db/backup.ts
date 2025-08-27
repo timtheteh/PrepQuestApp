@@ -456,7 +456,8 @@ type TokenGetter = () => Promise<string | null>;
 async function uploadFoldersToSupabaseWithProgress(
   folders: BackupFolder[], 
   getToken: TokenGetter, 
-  reportProgress: ProgressReporter
+  reportProgress: ProgressReporter,
+  isCancelled?: () => boolean
 ): Promise<boolean> {
   try {
     if (folders.length === 0) {
@@ -469,6 +470,12 @@ async function uploadFoldersToSupabaseWithProgress(
     let lastReportTime = Date.now();
     
     for (let i = 0; i < folders.length; i += chunkSize) {
+      // Check for cancellation before processing each chunk
+      if (isCancelled?.()) {
+        console.log('Folder upload cancelled by user');
+        return false;
+      }
+      
       const chunk = folders.slice(i, i + chunkSize);
       
       // Get fresh token for each chunk to handle expiration
@@ -520,7 +527,8 @@ async function uploadFoldersToSupabaseWithProgress(
 async function uploadDecksToSupabaseWithProgress(
   decks: BackupDeck[], 
   getToken: TokenGetter, 
-  reportProgress: ProgressReporter
+  reportProgress: ProgressReporter,
+  isCancelled?: () => boolean
 ): Promise<boolean> {
   try {
     if (decks.length === 0) {
@@ -532,6 +540,12 @@ async function uploadDecksToSupabaseWithProgress(
     let lastReportTime = Date.now();
     
     for (let i = 0; i < decks.length; i += chunkSize) {
+      // Check for cancellation before processing each chunk
+      if (isCancelled?.()) {
+        console.log('Deck upload cancelled by user');
+        return false;
+      }
+      
       const chunk = decks.slice(i, i + chunkSize);
       
       // Get fresh token for each chunk to handle expiration
@@ -580,7 +594,8 @@ async function uploadDecksToSupabaseWithProgress(
 async function uploadFlashcardsToSupabaseWithProgress(
   flashcards: BackupFlashcard[], 
   getToken: TokenGetter, 
-  reportProgress: ProgressReporter
+  reportProgress: ProgressReporter,
+  isCancelled?: () => boolean
 ): Promise<boolean> {
   try {
     if (flashcards.length === 0) {
@@ -592,12 +607,24 @@ async function uploadFlashcardsToSupabaseWithProgress(
     let lastReportTime = Date.now();
     
     for (let i = 0; i < flashcards.length; i += chunkSize) {
+      // Check for cancellation before processing each chunk
+      if (isCancelled?.()) {
+        console.log('Flashcard upload cancelled by user');
+        return false;
+      }
+      
       const chunk = flashcards.slice(i, i + chunkSize);
       let retries = 0;
       const maxRetries = 3;
 
       while (retries < maxRetries) {
         try {
+          // Check for cancellation before each retry
+          if (isCancelled?.()) {
+            console.log('Flashcard upload cancelled during retry');
+            return false;
+          }
+          
           // Get fresh token for each chunk to handle expiration
           const token = await getToken();
           if (!token) {
@@ -624,6 +651,13 @@ async function uploadFlashcardsToSupabaseWithProgress(
             console.error('Error uploading flashcard chunk after retries:', error);
             return false;
           }
+          
+          // Check for cancellation before waiting for retry
+          if (isCancelled?.()) {
+            console.log('Flashcard upload cancelled during retry wait');
+            return false;
+          }
+          
           await new Promise(resolve => setTimeout(resolve, 1000 * retries));
         }
       }
@@ -653,7 +687,8 @@ async function uploadFlashcardsToSupabaseWithProgress(
 async function uploadUserFormEntriesToSupabaseWithProgress(
   userFormEntries: BackupUserFormEntry[], 
   getToken: TokenGetter, 
-  reportProgress: ProgressReporter
+  reportProgress: ProgressReporter,
+  isCancelled?: () => boolean
 ): Promise<boolean> {
   try {
     if (userFormEntries.length === 0) {
@@ -661,6 +696,12 @@ async function uploadUserFormEntriesToSupabaseWithProgress(
       return true;
     }
 
+    // Check for cancellation before starting
+    if (isCancelled?.()) {
+      console.log('User form entries upload cancelled by user');
+      return false;
+    }
+    
     // Get fresh token
     const token = await getToken();
     if (!token) {
@@ -697,9 +738,16 @@ async function uploadUserFormEntriesToSupabaseWithProgress(
 async function uploadUserToSupabaseWithProgress(
   user: BackupUser, 
   getToken: TokenGetter, 
-  reportProgress: ProgressReporter
+  reportProgress: ProgressReporter,
+  isCancelled?: () => boolean
 ): Promise<boolean> {
   try {
+    // Check for cancellation before starting
+    if (isCancelled?.()) {
+      console.log('User upload cancelled by user');
+      return false;
+    }
+    
     // Get fresh token
     const token = await getToken();
     if (!token) {
@@ -735,28 +783,35 @@ async function uploadUserToSupabaseWithProgress(
  */
 export async function backupDataToCloud(
   getToken: TokenGetter,
-  onProgress?: (progress: BackupProgress) => void
+  onProgress?: (progress: BackupProgress) => void,
+  isCancelled?: () => boolean
 ): Promise<{ success: boolean; message: string }> {
   try {
     console.log('Starting backup process...');
     
     // Stage 1: Extract data from SQLite
     onProgress?.({ stage: 'extracting', completed: 0, total: 5, message: 'Extracting folders...' });
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     const folders = await extractFoldersFromSQLite();
     
     onProgress?.({ stage: 'extracting', completed: 1, total: 5, message: 'Extracting decks...' });
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     const decks = await extractDecksFromSQLite();
     
     onProgress?.({ stage: 'extracting', completed: 2, total: 5, message: 'Extracting flashcards...' });
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     const flashcards = await extractFlashcardsFromSQLite();
     
     onProgress?.({ stage: 'extracting', completed: 3, total: 5, message: 'Extracting user form entries...' });
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     const userFormEntries = await extractRecentUserFormEntriesFromSQLite();
     
     onProgress?.({ stage: 'extracting', completed: 4, total: 5, message: 'Extracting user data...' });
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     const user = await extractUserFromSQLite();
     
     onProgress?.({ stage: 'extracting', completed: 5, total: 5, message: 'Data extraction complete' });
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
 
     if (!user) {
       return { success: false, message: 'User data not found in local database' };
@@ -791,28 +846,33 @@ export async function backupDataToCloud(
 
     // Stage 2: Upload to Supabase with chunked progress
     reportProgress('uploading', 'Starting upload...', 0);
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     
-    const foldersSuccess = await uploadFoldersToSupabaseWithProgress(folders, getToken, reportProgress);
+    const foldersSuccess = await uploadFoldersToSupabaseWithProgress(folders, getToken, reportProgress, isCancelled);
     if (!foldersSuccess) {
       return { success: false, message: 'Failed to upload folders to cloud' };
     }
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     
-    const decksSuccess = await uploadDecksToSupabaseWithProgress(decks, getToken, reportProgress);
+    const decksSuccess = await uploadDecksToSupabaseWithProgress(decks, getToken, reportProgress, isCancelled);
     if (!decksSuccess) {
       return { success: false, message: 'Failed to upload decks to cloud' };
     }
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     
-    const flashcardsSuccess = await uploadFlashcardsToSupabaseWithProgress(flashcards, getToken, reportProgress);
+    const flashcardsSuccess = await uploadFlashcardsToSupabaseWithProgress(flashcards, getToken, reportProgress, isCancelled);
     if (!flashcardsSuccess) {
       return { success: false, message: 'Failed to upload flashcards to cloud' };
     }
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     
-    const userFormEntriesSuccess = await uploadUserFormEntriesToSupabaseWithProgress(userFormEntries, getToken, reportProgress);
+    const userFormEntriesSuccess = await uploadUserFormEntriesToSupabaseWithProgress(userFormEntries, getToken, reportProgress, isCancelled);
     if (!userFormEntriesSuccess) {
       return { success: false, message: 'Failed to upload user form entries to cloud' };
     }
+    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     
-    const userSuccess = await uploadUserToSupabaseWithProgress(user, getToken, reportProgress);
+    const userSuccess = await uploadUserToSupabaseWithProgress(user, getToken, reportProgress, isCancelled);
     if (!userSuccess) {
       return { success: false, message: 'Failed to upload user data to cloud' };
     }

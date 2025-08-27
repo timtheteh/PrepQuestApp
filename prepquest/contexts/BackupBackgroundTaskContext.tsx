@@ -10,6 +10,8 @@ const BACKUP_BG_TASK_PROGRESS_KEY = 'backupDataBgTaskProgress';
 
 interface BackupBackgroundTaskContextType {
   isBackupBackgroundTaskRunning: boolean;
+  isBackupCleanupInProgress: boolean;
+  isBackupStopping: boolean;
   backupBackgroundTaskProgress: any | null;
   startBackupBackgroundTaskMonitoring: () => void;
   stopBackupBackgroundTaskMonitoring: () => void;
@@ -34,6 +36,8 @@ interface BackupBackgroundTaskProviderProps {
 
 export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProviderProps> = ({ children }) => {
   const [isBackupBackgroundTaskRunning, setIsBackupBackgroundTaskRunning] = useState(false);
+  const [isBackupCleanupInProgress, setIsBackupCleanupInProgress] = useState(false);
+  const [isBackupStopping, setIsBackupStopping] = useState(false);
   const [backupBackgroundTaskProgress, setBackupBackgroundTaskProgress] = useState<any | null>(null);
   const monitoringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
@@ -49,13 +53,27 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   // Flag to track if progress is being cleared
   const isClearingProgressRef = useRef(false);
   
+  // Ref to track cleanup state for immediate access
+  const isBackupCleanupInProgressRef = useRef(false);
+  
+  // Ref to track stopping state for immediate access
+  const isBackupStoppingRef = useRef(false);
+  
   // Ref to track the last progress data to prevent duplicate updates
   const lastProgressRef = useRef<string | null>(null);
   
-  // Update ref whenever state changes
+  // Update refs whenever state changes
   React.useEffect(() => {
     isBackupBackgroundTaskRunningRef.current = isBackupBackgroundTaskRunning;
   }, [isBackupBackgroundTaskRunning]);
+
+  React.useEffect(() => {
+    isBackupCleanupInProgressRef.current = isBackupCleanupInProgress;
+  }, [isBackupCleanupInProgress]);
+
+  React.useEffect(() => {
+    isBackupStoppingRef.current = isBackupStopping;
+  }, [isBackupStopping]);
 
   // Helper to load progress from AsyncStorage
   const loadBackupBackgroundTaskProgress = async (): Promise<any | null> => {
@@ -71,7 +89,10 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   // Helper to clear progress
   const clearBackupBackgroundTaskProgress = async () => {
     try {
-      // Set clearing flag to prevent notifications during clearing
+      console.log('Starting backup progress cleanup...');
+      
+      // Set cleanup flags to prevent new operations and notifications
+      setIsBackupCleanupInProgress(true);
       isClearingProgressRef.current = true;
       
       // Mark task as completed before clearing
@@ -84,21 +105,33 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
         }));
       }
       
+      // Complete cleanup with proper sequencing
       await AsyncStorage.removeItem(BACKUP_BG_TASK_PROGRESS_KEY);
       setBackupBackgroundTaskProgress(null);
       setIsBackupBackgroundTaskRunning(false);
       
-      // Reset clearing flag after a short delay
-      setTimeout(() => {
-        isClearingProgressRef.current = false;
-      }, 1000);
-      
       // Reset last progress ref to allow future updates
       lastProgressRef.current = null;
+      
+      // Add a small delay to ensure all async operations complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      console.log('Backup progress cleanup completed');
+      
+      // Reset cleanup flags
+      setTimeout(() => {
+        isClearingProgressRef.current = false;
+        setIsBackupCleanupInProgress(false);
+        setIsBackupStopping(false);
+        console.log('Backup cleanup state reset - ready for new backup');
+      }, 100);
+      
     } catch (e) {
       console.error('Failed to clear backup background task progress', e);
-      // Reset clearing flag on error
+      // Reset cleanup flags on error
       isClearingProgressRef.current = false;
+      setIsBackupCleanupInProgress(false);
+      setIsBackupStopping(false);
     }
   };
 
@@ -106,6 +139,12 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   const forceStopBackupBackgroundTask = React.useCallback(() => {
     console.log('Force stopping backup background task...');
     console.log('Before force stop - isBackupBackgroundTaskRunning:', isBackupBackgroundTaskRunningRef.current);
+    
+    // Set stopping state to prevent new backup attempts during shutdown
+    setIsBackupStopping(true);
+    
+    // Set cleanup in progress to prevent new operations
+    setIsBackupCleanupInProgress(true);
     
     // Set force stopped flag
     forceStoppedRef.current = true;
@@ -123,7 +162,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
     setIsBackupBackgroundTaskRunning(false);
     setBackupBackgroundTaskProgress(null);
     
-    console.log('After force stop - isBackupBackgroundTaskRunning should be false');
+    console.log('After force stop - backup is now in stopping phase');
   }, []);
 
   // Helper to reset force stopped flag
@@ -205,6 +244,12 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             // Task completed, cancelled, failed, or force stopped
             setIsBackupBackgroundTaskRunning(false);
             
+            // Clear stopping state when backup is no longer active
+            if (isBackupStoppingRef.current) {
+              console.log('Backup no longer running - clearing stopping state');
+              setIsBackupStopping(false);
+            }
+            
             // Since notifications are now sent directly from the background task,
             // we only need to handle progress clearing here
             // For successful completions, we don't auto-clear to allow app settings page to show persistent success modal
@@ -233,6 +278,12 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
         } else {
           setIsBackupBackgroundTaskRunning(false);
           setBackupBackgroundTaskProgress(null);
+          
+          // Clear stopping state when no progress data exists
+          if (isBackupStoppingRef.current) {
+            console.log('No backup progress - clearing stopping state');
+            setIsBackupStopping(false);
+          }
         }
       } catch (error) {
         console.error('Error checking backup background task progress:', error);
@@ -300,6 +351,8 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
 
   const value: BackupBackgroundTaskContextType = {
     isBackupBackgroundTaskRunning,
+    isBackupCleanupInProgress,
+    isBackupStopping,
     backupBackgroundTaskProgress,
     startBackupBackgroundTaskMonitoring,
     stopBackupBackgroundTaskMonitoring,

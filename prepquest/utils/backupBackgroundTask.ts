@@ -103,7 +103,16 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       }
     };
     
-    // Start the backup process with progress tracking
+    // Create a cancellation checker function
+    const isCancelled = () => {
+      const isServiceRunning = BackgroundService.isRunning();
+      if (!isServiceRunning) {
+        console.log('Backup cancelled: BackgroundService is no longer running');
+      }
+      return !isServiceRunning;
+    };
+
+    // Start the backup process with progress tracking and cancellation support
     const result = await backupDataToCloud(tokenGetter, (progress: BackupProgress) => {
       // Save progress updates
       saveBackupProgress({
@@ -116,11 +125,11 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         rowsUploaded: progress.rowsUploaded,
         totalRows: progress.totalRows
       });
-    });
+    }, isCancelled);
     
     stopKeepAlive();
     
-    // Check if background service is still running before finalizing
+    // Check if the backup was cancelled or if background service was stopped
     if (BackgroundService.isRunning() === false) { 
       console.log('Background service stopped during backup, cancelling task');
       await saveBackupProgress({
@@ -131,6 +140,20 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         timestamp: Date.now()
       });
       return; 
+    }
+    
+    // Check if the backup result indicates cancellation
+    if (!result.success && result.message === 'Backup cancelled by user') {
+      console.log('Backup cancelled by user request');
+      await saveBackupProgress({
+        status: 'cancelled',
+        inProgress: false,
+        completed: false,
+        cancelled: true,
+        timestamp: Date.now(),
+        message: result.message
+      });
+      return;
     }
     
     // Save final progress
@@ -208,6 +231,25 @@ export const startBackupBackgroundTask = async (getToken: () => Promise<string |
       return false;
     }
     
+    // Ensure clean state by completely clearing any previous backup progress
+    console.log('Clearing any previous backup progress before starting fresh backup');
+    await clearBackupProgress();
+    
+    // Additional cleanup: remove all backup-related keys
+    try {
+      await AsyncStorage.multiRemove([
+        'backupDataBgTaskProgress',
+        'backupProgress', 
+        'backupState'
+      ]);
+      console.log('Additional cleanup completed before starting backup');
+    } catch (cleanupError) {
+      console.warn('Additional cleanup failed:', cleanupError);
+    }
+    
+    // Add a small delay to ensure AsyncStorage operations complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     await BackgroundService.start(backupDataBackgroundTask, {
       taskName: 'BackupData',
       taskTitle: language === 'Chinese' ? '备份数据' : 'Backing Up Data',
@@ -220,16 +262,21 @@ export const startBackupBackgroundTask = async (getToken: () => Promise<string |
       },
     });
 
-    // Save initial progress immediately
+    // Save initial progress immediately with explicit 0% and fresh state
     await saveBackupProgress({
       status: 'backupStarted',
       inProgress: true,
       completed: false,
+      cancelled: false,
+      error: false,
       timestamp: Date.now(),
       percentage: 0,
+      rowsUploaded: 0,
+      totalRows: 0,
       message: 'Starting backup...'
     });
 
+    console.log('Fresh backup task started successfully');
     return true;
   } catch (error) {
     console.error('Failed to start backup background task:', error);

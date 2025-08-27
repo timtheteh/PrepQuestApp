@@ -87,16 +87,35 @@ class NotificationService {
     data?: NotificationData
   ): Promise<void> {
     try {
+      // Use immediate notification with null trigger
       await Notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
           data,
+          sound: true, // Ensure sound plays
+          priority: Notifications.AndroidNotificationPriority.HIGH, // High priority for important notifications
         },
         trigger: null, // Send immediately
       });
+      
+      console.log('Local notification scheduled successfully:', { title, body, data });
     } catch (error) {
       console.error('Error sending local notification:', error);
+      
+      // Fallback: try using presentNotificationAsync for immediate display
+      try {
+        await Notifications.presentNotificationAsync({
+          title,
+          body,
+          data,
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        });
+        console.log('Fallback notification sent using presentNotificationAsync');
+      } catch (fallbackError) {
+        console.error('Fallback notification also failed:', fallbackError);
+      }
     }
   }
 

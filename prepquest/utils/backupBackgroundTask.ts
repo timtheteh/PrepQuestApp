@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import { backupDataToCloud, BackupProgress } from '../db/backup';
 import NotificationService from './notifications';
+import * as Notifications from 'expo-notifications';
 
 // Progress key for backup background task
 const BACKUP_BG_TASK_PROGRESS_KEY = 'backupDataBgTaskProgress';
@@ -142,6 +143,28 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         message: result.message,
         success: true
       });
+      
+      // Send notification directly from background task for better reliability
+      try {
+        console.log('Sending backup completion notification directly from background task');
+        const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
+        const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
+        
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title,
+            body,
+            data: { type: 'backup_completed' },
+            sound: true,
+            priority: Notifications.AndroidNotificationPriority.HIGH,
+          },
+          trigger: null, // Send immediately
+        });
+        
+        console.log('Backup completion notification sent successfully');
+      } catch (notificationError) {
+        console.error('Error sending backup completion notification:', notificationError);
+      }
     } else {
       await saveBackupProgress({
         status: 'error',

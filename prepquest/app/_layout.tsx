@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BackgroundService from 'react-native-background-actions';
 
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
@@ -36,6 +37,38 @@ const tokenCache = {
       return;
     }
   },
+};
+
+// Function to stop all background tasks on app startup
+const stopAllBackgroundTasks = async () => {
+  try {
+    console.log('🛑 Stopping all background tasks on app startup...');
+    
+    // Stop any running background service
+    if (BackgroundService.isRunning()) {
+      await BackgroundService.stop();
+      console.log('✅ Background service stopped');
+    }
+    
+    // Clear all background task progress data
+    const progressKeys = [
+      'genAIDeckCreationBgTaskProgress',
+      'backupDataBgTaskProgress'
+    ];
+    
+    for (const key of progressKeys) {
+      try {
+        await AsyncStorage.removeItem(key);
+        console.log(`✅ Cleared progress data for ${key}`);
+      } catch (error) {
+        console.log(`⚠️ Failed to clear progress data for ${key}:`, error);
+      }
+    }
+    
+    console.log('✅ All background tasks stopped and progress cleared');
+  } catch (error) {
+    console.error('❌ Error stopping background tasks:', error);
+  }
 };
 
 function AppContent() {
@@ -84,6 +117,9 @@ function AppContent() {
       try {
         console.log('🚀 Starting database initialization and dummy data population...');
         setIsInitializing(true);
+        
+        // Stop all background tasks first
+        await stopAllBackgroundTasks();
         
         const startTime = Date.now();
         await setupDatabase(); // This now includes both schema and dummy data

@@ -3,6 +3,7 @@ import BackgroundService from 'react-native-background-actions';
 import { backupDataToCloud, BackupProgress } from '../db/backup';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
+import { AppState } from 'react-native';
 
 // Progress key for backup background task
 const BACKUP_BG_TASK_PROGRESS_KEY = 'backupDataBgTaskProgress';
@@ -144,26 +145,35 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         success: true
       });
       
-      // Send notification directly from background task for better reliability
-      try {
-        console.log('Sending backup completion notification directly from background task');
-        const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
-        const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
-        
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title,
-            body,
-            data: { type: 'backup_completed' },
-            sound: true,
-            priority: Notifications.AndroidNotificationPriority.HIGH,
-          },
-          trigger: null, // Send immediately
-        });
-        
-        console.log('Backup completion notification sent successfully');
-      } catch (notificationError) {
-        console.error('Error sending backup completion notification:', notificationError);
+      // Only send notification if app is in background (not active)
+      // We can detect this by checking if the background service is still running
+      // and if the app state is not active
+      const currentAppState = AppState.currentState;
+      const isAppInBackground = currentAppState !== 'active';
+      
+      if (isAppInBackground) {
+        try {
+          console.log('Sending backup completion notification (app in background)');
+          const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
+          const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
+          
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title,
+              body,
+              data: { type: 'backup_completed' },
+              sound: true,
+              priority: Notifications.AndroidNotificationPriority.HIGH,
+            },
+            trigger: null, // Send immediately
+          });
+          
+          console.log('Backup completion notification sent successfully');
+        } catch (notificationError) {
+          console.error('Error sending backup completion notification:', notificationError);
+        }
+      } else {
+        console.log('App is active, skipping notification - user will see in-app success modal');
       }
     } else {
       await saveBackupProgress({

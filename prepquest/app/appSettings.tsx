@@ -885,7 +885,7 @@ export default function AppSettingsScreen() {
                         onPress={handleCancelBackupPress}
                         activeOpacity={0.7}
                       >
-                        <Entypo name="cross" size={24} color="#D7191C" />
+                        <Entypo name="cross" size={40} color="#D7191C" />
                       </TouchableOpacity>
                     </View>
                     <Text style={[{ 
@@ -1152,10 +1152,8 @@ const styles = StyleSheet.create({
     height: 96,
   },
   cancelButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(215, 25, 28, 0.1)',
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },

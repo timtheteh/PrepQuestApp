@@ -207,12 +207,16 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             
             // Since notifications are now sent directly from the background task,
             // we only need to handle progress clearing here
+            // For successful completions, we don't auto-clear to allow app settings page to show persistent success modal
             if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
-              // Clear progress after a delay to allow UI to show completion status
+              // Don't auto-clear successful backup progress - let app settings page handle it
+              console.log('Backup completed successfully - keeping progress for app settings page');
+            } else if (progress.cancelled || progress.error) {
+              // Only clear progress for cancelled or failed backups
               setTimeout(async () => {
                 try {
                   await clearBackupBackgroundTaskProgress();
-                  console.log('Cleared backup background task progress after UI delay');
+                  console.log('Cleared backup background task progress after UI delay (cancelled/error)');
                 } catch (error) {
                   console.error('Error clearing backup background task progress:', error);
                 }

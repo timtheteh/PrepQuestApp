@@ -96,6 +96,9 @@ export default function AppSettingsScreen() {
   const [successMessage, setSuccessMessage] = React.useState('');
   const successOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const successModalOpacity = React.useRef(new Animated.Value(0)).current;
+  
+  // persistent backup completion state
+  const [hasBackupCompleted, setHasBackupCompleted] = React.useState(false);
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -109,10 +112,20 @@ export default function AppSettingsScreen() {
   // Watch for backup completion to show success modal
   React.useEffect(() => {
     if (backupBackgroundTaskProgress?.completed && backupBackgroundTaskProgress?.success && !backupBackgroundTaskProgress?.error) {
-      // Show success modal when backup completes
+      // Set persistent backup completion state
+      setHasBackupCompleted(true);
+      
+      // Show success modal when backup completes (will stay open until manually dismissed)
       handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
     }
   }, [backupBackgroundTaskProgress]);
+
+  // Show success modal on page load if backup was completed
+  React.useEffect(() => {
+    if (hasBackupCompleted && !isSuccessModalOpen) {
+      handleShowSuccessModal('Backup completed successfully!');
+    }
+  }, [hasBackupCompleted, isSuccessModalOpen]);
 
   // Hide loading screen when backup background task starts running
   React.useEffect(() => {
@@ -132,7 +145,9 @@ export default function AppSettingsScreen() {
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data as any;
       if (data?.type === 'backup_completed') {
-        // Show success modal when user taps on backup notification
+        // Set persistent backup completion state
+        setHasBackupCompleted(true);
+        // Show success modal when user taps on backup notification (will stay open until manually dismissed)
         handleShowSuccessModal('Backup completed successfully!');
       }
     });
@@ -523,6 +538,8 @@ export default function AppSettingsScreen() {
       })
     ]).start(() => {
       setIsSuccessModalOpen(false);
+      // Clear the persistent backup completion state when user manually dismisses
+      setHasBackupCompleted(false);
     });
   }, [successOverlayOpacity, successModalOpacity]);
 

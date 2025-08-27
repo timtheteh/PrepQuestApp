@@ -536,10 +536,18 @@ export default function AppSettingsScreen() {
         duration: 200,
         useNativeDriver: true,
       })
-    ]).start(() => {
+    ]).start(async () => {
       setIsSuccessModalOpen(false);
       // Clear the persistent backup completion state when user manually dismisses
       setHasBackupCompleted(false);
+      
+      // Also clear the backup progress data from AsyncStorage to prevent it from showing again
+      try {
+        await AsyncStorage.removeItem('backupDataBgTaskProgress');
+        console.log('Cleared backup progress data after user dismissed success modal');
+      } catch (error) {
+        console.error('Error clearing backup progress data:', error);
+      }
     });
   }, [successOverlayOpacity, successModalOpacity]);
 

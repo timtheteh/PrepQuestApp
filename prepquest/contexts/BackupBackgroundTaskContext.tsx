@@ -504,7 +504,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             } catch (error) {
               console.error('Error sending pre-termination notification:', error);
             }
-          }, 9000); // 9 second delay (1 second before 10-second termination)
+          }, 29000); // 9 second delay (1 second before 10-second termination)
           
           // Schedule automatic termination for 10 seconds after backgrounding
           backgroundTerminationTimerRef.current = setTimeout(async () => {
@@ -520,7 +520,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             } catch (error) {
               console.error('Error during automatic backup termination:', error);
             }
-          }, 10000); // 30 second delay
+          }, 30000); // 30 second delay
         }
       }
       appStateRef.current = nextAppState;

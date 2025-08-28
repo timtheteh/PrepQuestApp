@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
+import * as Notifications from 'expo-notifications';
 import NotificationService from '../utils/notifications';
 import { useLanguage } from './LanguageContext';
 
@@ -61,6 +62,9 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   
   // Ref to track the last progress data to prevent duplicate updates
   const lastProgressRef = useRef<string | null>(null);
+  
+  // Ref to track background warning notification timer
+  const backgroundWarningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Update refs whenever state changes
   React.useEffect(() => {
@@ -319,6 +323,54 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
           // Resume monitoring
           startBackupBackgroundTaskMonitoring();
         }
+        
+        // Clear any pending background warning notification
+        if (backgroundWarningTimerRef.current) {
+          clearTimeout(backgroundWarningTimerRef.current);
+          backgroundWarningTimerRef.current = null;
+          console.log('Cleared background warning notification - app returned to foreground');
+        }
+      } else if (appStateRef.current === 'active' && nextAppState.match(/inactive|background/)) {
+        // App is going to background - check if backup is running
+        if (isBackupBackgroundTaskRunningRef.current) {
+          console.log('App backgrounded during backup - scheduling warning notification');
+          
+          // Clear any existing timer
+          if (backgroundWarningTimerRef.current) {
+            clearTimeout(backgroundWarningTimerRef.current);
+          }
+          
+          // Schedule warning notification for 1 second after backgrounding
+          backgroundWarningTimerRef.current = setTimeout(async () => {
+            try {
+              // Double-check backup is still running before sending notification
+              const progress = await loadBackupBackgroundTaskProgress();
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+                const title = language === 'Chinese' ? '备份任务警告' : 'Come back soon!';
+                const body = language === 'Chinese' 
+                  ? '备份任务将在大约30秒内提前结束。请尽快回来！' 
+                  : 'Backup task automatically ends in approximately 30 seconds!';
+                
+                await Notifications.scheduleNotificationAsync({
+                  content: {
+                    title,
+                    body,
+                    data: { type: 'backup_background_warning' },
+                    sound: true,
+                    priority: Notifications.AndroidNotificationPriority.HIGH,
+                  },
+                  trigger: null, // Send immediately
+                });
+                
+                console.log('Background warning notification sent successfully');
+              } else {
+                console.log('Backup no longer running - skipping background warning notification');
+              }
+            } catch (error) {
+              console.error('Error sending background warning notification:', error);
+            }
+          }, 1000); // 1 second delay
+        }
       }
       appStateRef.current = nextAppState;
     };
@@ -346,6 +398,12 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
     return () => {
       subscription.remove();
       stopBackupBackgroundTaskMonitoring();
+      
+      // Clear background warning timer on cleanup
+      if (backgroundWarningTimerRef.current) {
+        clearTimeout(backgroundWarningTimerRef.current);
+        backgroundWarningTimerRef.current = null;
+      }
     };
   }, [startBackupBackgroundTaskMonitoring, stopBackupBackgroundTaskMonitoring]);
 

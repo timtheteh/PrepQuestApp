@@ -72,6 +72,9 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   // Ref to track automatic termination timer (30 seconds after backgrounding)
   const backgroundTerminationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
+  // Ref to track pre-termination notification timer (1 second before termination)
+  const preTerminationNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
   // Update refs whenever state changes
   React.useEffect(() => {
     isBackupBackgroundTaskRunningRef.current = isBackupBackgroundTaskRunning;
@@ -330,6 +333,13 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
               console.log('Cleared background termination timer - backup no longer running');
             }
             
+            // Clear any pending pre-termination notification timer since backup is no longer running
+            if (preTerminationNotificationTimerRef.current) {
+              clearTimeout(preTerminationNotificationTimerRef.current);
+              preTerminationNotificationTimerRef.current = null;
+              console.log('Cleared pre-termination notification timer - backup no longer running');
+            }
+            
             // Since notifications are now sent directly from the background task,
             // we only need to handle progress clearing here
             // For successful completions, we don't auto-clear to allow app settings page to show persistent success modal
@@ -413,6 +423,13 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
           backgroundTerminationTimerRef.current = null;
           console.log('Cleared background termination timer - app returned to foreground');
         }
+        
+        // Clear any pending pre-termination notification timer
+        if (preTerminationNotificationTimerRef.current) {
+          clearTimeout(preTerminationNotificationTimerRef.current);
+          preTerminationNotificationTimerRef.current = null;
+          console.log('Cleared pre-termination notification timer - app returned to foreground');
+        }
       } else if (appStateRef.current === 'active' && nextAppState.match(/inactive|background/)) {
         // App is going to background - check if backup is running
         if (isBackupBackgroundTaskRunningRef.current) {
@@ -424,6 +441,9 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
           }
           if (backgroundTerminationTimerRef.current) {
             clearTimeout(backgroundTerminationTimerRef.current);
+          }
+          if (preTerminationNotificationTimerRef.current) {
+            clearTimeout(preTerminationNotificationTimerRef.current);
           }
           
           // Schedule warning notification for 1 second after backgrounding
@@ -457,13 +477,42 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             }
           }, 1000); // 1 second delay
           
-          // Schedule automatic termination for 30 seconds after backgrounding
+          // Schedule pre-termination notification for 9 seconds after backgrounding (1 second before termination)
+          preTerminationNotificationTimerRef.current = setTimeout(async () => {
+            try {
+              // Double-check backup is still running before sending notification
+              const progress = await loadBackupBackgroundTaskProgress();
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+                const title = 'Backup task cancelled!';
+                const body = 'Oops you were away for too long!';
+                
+                await Notifications.scheduleNotificationAsync({
+                  content: {
+                    title,
+                    body,
+                    data: { type: 'backup_pre_termination' },
+                    sound: true,
+                    priority: Notifications.AndroidNotificationPriority.HIGH,
+                  },
+                  trigger: null, // Send immediately
+                });
+                
+                console.log('Pre-termination notification sent successfully');
+              } else {
+                console.log('Backup no longer running - skipping pre-termination notification');
+              }
+            } catch (error) {
+              console.error('Error sending pre-termination notification:', error);
+            }
+          }, 9000); // 9 second delay (1 second before 10-second termination)
+          
+          // Schedule automatic termination for 10 seconds after backgrounding
           backgroundTerminationTimerRef.current = setTimeout(async () => {
             try {
               // Double-check backup is still running before terminating
               const progress = await loadBackupBackgroundTaskProgress();
               if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                console.log('30 seconds elapsed in background - automatically terminating backup task');
+                console.log('10 seconds elapsed in background - automatically terminating backup task');
                 await automaticallyCancelBackup();
               } else {
                 console.log('Backup no longer running - skipping automatic termination');
@@ -511,6 +560,12 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
       if (backgroundTerminationTimerRef.current) {
         clearTimeout(backgroundTerminationTimerRef.current);
         backgroundTerminationTimerRef.current = null;
+      }
+      
+      // Clear pre-termination notification timer on cleanup
+      if (preTerminationNotificationTimerRef.current) {
+        clearTimeout(preTerminationNotificationTimerRef.current);
+        preTerminationNotificationTimerRef.current = null;
       }
     };
   }, [startBackupBackgroundTaskMonitoring, stopBackupBackgroundTaskMonitoring]);

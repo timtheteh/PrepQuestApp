@@ -87,10 +87,12 @@ export default function AppSettingsScreen() {
     isBackupCleanupInProgress,
     isBackupStopping,
     backupBackgroundTaskProgress, 
+    wasAutomaticallyCancelled,
     startBackupBackgroundTaskMonitoring,
     forceStopBackupBackgroundTask,
     clearBackupBackgroundTaskProgress,
-    resetBackupForceStoppedFlag
+    resetBackupForceStoppedFlag,
+    resetAutomaticallyCancelledFlag
   } = useBackupBackgroundTask();
   
   // backup loading state
@@ -190,6 +192,35 @@ export default function AppSettingsScreen() {
       }
     };
   }, []);
+
+  // Handle automatic cancellation and trigger cooldown
+  React.useEffect(() => {
+    if (wasAutomaticallyCancelled) {
+      console.log('Detected automatic backup cancellation - starting cooldown');
+      
+      // Set local stopping state to provide UI feedback
+      setIsLocallyStoppingBackup(true);
+      
+      // Start 5-second cooldown period to prevent immediate restart
+      setIsCancelCooldownActive(true);
+      console.log('Starting 5-second cooldown after automatic backup cancellation');
+      
+      // Clear any existing cooldown timer
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+      }
+      
+      // Set timer to clear cooldown after 5 seconds
+      cooldownTimerRef.current = setTimeout(() => {
+        setIsCancelCooldownActive(false);
+        setIsLocallyStoppingBackup(false);
+        console.log('Cooldown period ended after automatic cancellation - backup button re-enabled');
+      }, 5000);
+      
+      // Reset the automatic cancellation flag
+      resetAutomaticallyCancelledFlag();
+    }
+  }, [wasAutomaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   const loadNotificationsPreference = async () => {
     try {
@@ -451,6 +482,9 @@ export default function AppSettingsScreen() {
       
       // Reset any force stopped flags from previous cancellations
       resetBackupForceStoppedFlag();
+      
+      // Reset automatic cancellation flag for clean state
+      resetAutomaticallyCancelledFlag();
       
       // Ensure clean state by clearing any residual progress data
       await clearBackupBackgroundTaskProgress();

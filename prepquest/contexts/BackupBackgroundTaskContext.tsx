@@ -14,11 +14,13 @@ interface BackupBackgroundTaskContextType {
   isBackupCleanupInProgress: boolean;
   isBackupStopping: boolean;
   backupBackgroundTaskProgress: any | null;
+  wasAutomaticallyCancelled: boolean;
   startBackupBackgroundTaskMonitoring: () => void;
   stopBackupBackgroundTaskMonitoring: () => void;
   clearBackupBackgroundTaskProgress: () => Promise<void>;
   forceStopBackupBackgroundTask: () => void;
   resetBackupForceStoppedFlag: () => void;
+  resetAutomaticallyCancelledFlag: () => void;
 }
 
 const BackupBackgroundTaskContext = createContext<BackupBackgroundTaskContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   const [isBackupCleanupInProgress, setIsBackupCleanupInProgress] = useState(false);
   const [isBackupStopping, setIsBackupStopping] = useState(false);
   const [backupBackgroundTaskProgress, setBackupBackgroundTaskProgress] = useState<any | null>(null);
+  const [wasAutomaticallyCancelled, setWasAutomaticallyCancelled] = useState(false);
   const monitoringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const { language } = useLanguage();
@@ -65,6 +68,9 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   
   // Ref to track background warning notification timer
   const backgroundWarningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Ref to track automatic termination timer (30 seconds after backgrounding)
+  const backgroundTerminationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Update refs whenever state changes
   React.useEffect(() => {
@@ -175,6 +181,69 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
     forceStoppedRef.current = false;
   }, []);
 
+  // Helper to reset automatically cancelled flag
+  const resetAutomaticallyCancelledFlag = React.useCallback(() => {
+    console.log('Resetting automatically cancelled flag...');
+    setWasAutomaticallyCancelled(false);
+  }, []);
+
+  // Helper to automatically cancel backup (replicates manual cancellation logic)
+  const automaticallyCancelBackup = React.useCallback(async () => {
+    try {
+      console.log('Automatically cancelling backup after 30 seconds in background...');
+      
+      // Set the automatic cancellation flag
+      setWasAutomaticallyCancelled(true);
+      
+      // IMMEDIATELY set local stopping state to prevent new backup attempts
+      // This provides instant UI feedback before context state updates
+      setIsBackupStopping(true);
+      console.log('Automatic cancellation - setting stopping state immediately');
+      
+      // Force stop the backup background task permanently
+      forceStopBackupBackgroundTask();
+      
+      // Stop the actual background service
+      try {
+        const { stopBackupBackgroundTask } = await import('../utils/backupBackgroundTask');
+        await stopBackupBackgroundTask();
+      } catch (importError) {
+        console.error('Error importing stopBackupBackgroundTask:', importError);
+      }
+      
+      // Clear the backup progress data thoroughly
+      await clearBackupBackgroundTaskProgress();
+      
+      // Additional cleanup: manually remove all backup-related AsyncStorage keys
+      try {
+        await AsyncStorage.multiRemove([
+          'backupDataBgTaskProgress',
+          'backupProgress',
+          'backupState'
+        ]);
+        console.log('Additional AsyncStorage cleanup completed (automatic cancellation)');
+        
+        // Verify cleanup worked
+        const remainingProgress = await AsyncStorage.getItem('backupDataBgTaskProgress');
+        if (remainingProgress) {
+          console.warn('Warning: backup progress still exists after automatic cleanup:', remainingProgress);
+        } else {
+          console.log('Confirmed: backup progress completely cleared (automatic)');
+        }
+      } catch (cleanupError) {
+        console.warn('Additional cleanup failed (automatic):', cleanupError);
+      }
+      
+      // Add a small delay to ensure all async operations complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('Backup task automatically cancelled successfully');
+      
+    } catch (error) {
+      console.error('Error automatically cancelling backup task:', error);
+    }
+  }, [forceStopBackupBackgroundTask, clearBackupBackgroundTaskProgress]);
+
   // Start monitoring background task progress
   const startBackupBackgroundTaskMonitoring = React.useCallback(() => {
     console.log('Starting backup background task monitoring...');
@@ -254,6 +323,13 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
               setIsBackupStopping(false);
             }
             
+            // Clear any pending termination timer since backup is no longer running
+            if (backgroundTerminationTimerRef.current) {
+              clearTimeout(backgroundTerminationTimerRef.current);
+              backgroundTerminationTimerRef.current = null;
+              console.log('Cleared background termination timer - backup no longer running');
+            }
+            
             // Since notifications are now sent directly from the background task,
             // we only need to handle progress clearing here
             // For successful completions, we don't auto-clear to allow app settings page to show persistent success modal
@@ -330,14 +406,24 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
           backgroundWarningTimerRef.current = null;
           console.log('Cleared background warning notification - app returned to foreground');
         }
+        
+        // Clear any pending background termination timer
+        if (backgroundTerminationTimerRef.current) {
+          clearTimeout(backgroundTerminationTimerRef.current);
+          backgroundTerminationTimerRef.current = null;
+          console.log('Cleared background termination timer - app returned to foreground');
+        }
       } else if (appStateRef.current === 'active' && nextAppState.match(/inactive|background/)) {
         // App is going to background - check if backup is running
         if (isBackupBackgroundTaskRunningRef.current) {
           console.log('App backgrounded during backup - scheduling warning notification');
           
-          // Clear any existing timer
+          // Clear any existing timers
           if (backgroundWarningTimerRef.current) {
             clearTimeout(backgroundWarningTimerRef.current);
+          }
+          if (backgroundTerminationTimerRef.current) {
+            clearTimeout(backgroundTerminationTimerRef.current);
           }
           
           // Schedule warning notification for 1 second after backgrounding
@@ -370,6 +456,22 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
               console.error('Error sending background warning notification:', error);
             }
           }, 1000); // 1 second delay
+          
+          // Schedule automatic termination for 30 seconds after backgrounding
+          backgroundTerminationTimerRef.current = setTimeout(async () => {
+            try {
+              // Double-check backup is still running before terminating
+              const progress = await loadBackupBackgroundTaskProgress();
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+                console.log('30 seconds elapsed in background - automatically terminating backup task');
+                await automaticallyCancelBackup();
+              } else {
+                console.log('Backup no longer running - skipping automatic termination');
+              }
+            } catch (error) {
+              console.error('Error during automatic backup termination:', error);
+            }
+          }, 10000); // 30 second delay
         }
       }
       appStateRef.current = nextAppState;
@@ -404,6 +506,12 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
         clearTimeout(backgroundWarningTimerRef.current);
         backgroundWarningTimerRef.current = null;
       }
+      
+      // Clear background termination timer on cleanup
+      if (backgroundTerminationTimerRef.current) {
+        clearTimeout(backgroundTerminationTimerRef.current);
+        backgroundTerminationTimerRef.current = null;
+      }
     };
   }, [startBackupBackgroundTaskMonitoring, stopBackupBackgroundTaskMonitoring]);
 
@@ -412,11 +520,13 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
     isBackupCleanupInProgress,
     isBackupStopping,
     backupBackgroundTaskProgress,
+    wasAutomaticallyCancelled,
     startBackupBackgroundTaskMonitoring,
     stopBackupBackgroundTaskMonitoring,
     clearBackupBackgroundTaskProgress,
     forceStopBackupBackgroundTask,
     resetBackupForceStoppedFlag,
+    resetAutomaticallyCancelledFlag,
   };
 
   return (

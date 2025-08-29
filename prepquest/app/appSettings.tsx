@@ -18,6 +18,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { StripedProgressBar } from '@/components/general/StripedProgressBar';
 import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext';
 import { startBackupBackgroundTask, stopBackupBackgroundTask } from '@/utils/backupBackgroundTask';
+import { importDataFromCloud, ImportProgress } from '@/db/importData';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
@@ -123,6 +124,16 @@ export default function AppSettingsScreen() {
   const [isCancelCooldownActive, setIsCancelCooldownActive] = React.useState(false);
   const cooldownTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Import process state
+  const [isImportRunning, setIsImportRunning] = React.useState(false);
+  const [importProgress, setImportProgress] = React.useState<ImportProgress | null>(null);
+  const [isCancelImportModalOpen, setIsCancelImportModalOpen] = React.useState(false);
+  const cancelImportOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const cancelImportModalOpacity = React.useRef(new Animated.Value(0)).current;
+  
+  // Import cancellation flag
+  const importCancelledRef = React.useRef(false);
+
   // Check camera permission status on component mount
   React.useEffect(() => {
     checkCameraPermission();
@@ -152,6 +163,26 @@ export default function AppSettingsScreen() {
     }
   }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity]);
 
+  // Watch for import completion to show success modal
+  React.useEffect(() => {
+    if (importProgress?.stage === 'inserting' && importProgress?.message === 'Import complete!') {
+      // If cancel import modal is open when import completes, dismiss it first
+      if (isCancelImportModalOpen) {
+        console.log('Import completed while cancel modal is open - dismissing cancel modal first');
+        setIsCancelImportModalOpen(false);
+        cancelImportOverlayOpacity.setValue(0);
+        cancelImportModalOpacity.setValue(0);
+      }
+      
+      // Show success modal when import completes
+      handleShowSuccessModal('Import completed successfully!');
+      
+      // Clean up import state
+      setIsImportRunning(false);
+      setImportProgress(null);
+    }
+  }, [importProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
+
   // Show success modal on page load if backup was completed
   React.useEffect(() => {
     if (hasBackupCompleted && !isSuccessModalOpen) {
@@ -177,13 +208,13 @@ export default function AppSettingsScreen() {
     }
   }, [isBackupBackgroundTaskRunning, isBackupLoading, backupLoadingOverlayOpacity]);
 
-  // Control button disable state based on backup status
+  // Control button disable state based on backup and import status
   React.useEffect(() => {
-    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive) {
-      // Re-enable buttons when backup is completely done
+    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportRunning) {
+      // Re-enable buttons when backup and import are completely done
       setShouldDisableOtherButtons(false);
     }
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportRunning]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -621,10 +652,55 @@ export default function AppSettingsScreen() {
     });
   }, [loadDataOverlayOpacity, loadDataModalOpacity]);
 
-  const handleConfirmLoadData = React.useCallback(() => {
-    // TODO: Implement actual load data logic here
-    handleDismissLoadData();
-  }, [handleDismissLoadData]);
+  const handleConfirmLoadData = React.useCallback(async () => {
+    try {
+      // Dismiss the confirmation modal first
+      handleDismissLoadData();
+      
+      // Reset import cancellation flag
+      importCancelledRef.current = false;
+      
+      // Start import process
+      setIsImportRunning(true);
+      setShouldDisableOtherButtons(true);
+      setImportProgress(null);
+      
+      console.log('Starting import process...');
+      
+      const result = await importDataFromCloud(
+        getToken,
+        (progress: ImportProgress) => {
+          setImportProgress(progress);
+        },
+        () => importCancelledRef.current
+      );
+      
+      if (!result.success) {
+        // Import failed - clean up and show error
+        setIsImportRunning(false);
+        setImportProgress(null);
+        setShouldDisableOtherButtons(false);
+        
+        Alert.alert(
+          strings[language].error,
+          result.message,
+          [{ text: strings[language].ok }]
+        );
+      }
+      // Success case is handled by the useEffect that watches importProgress
+    } catch (error) {
+      // Import failed - clean up and show error
+      setIsImportRunning(false);
+      setImportProgress(null);
+      setShouldDisableOtherButtons(false);
+      
+      Alert.alert(
+        strings[language].error,
+        `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: strings[language].ok }]
+      );
+    }
+  }, [handleDismissLoadData, getToken, language]);
 
   const handleDeleteLocalStoragePress = React.useCallback(() => {
     setIsDeleteLocalStorageModalOpen(true);
@@ -816,6 +892,60 @@ export default function AppSettingsScreen() {
     }
   }, [handleDismissCancelBackup, forceStopBackupBackgroundTask, clearBackupBackgroundTaskProgress, language]);
 
+  const handleCancelImportPress = React.useCallback(() => {
+    setIsCancelImportModalOpen(true);
+    Animated.parallel([
+      Animated.timing(cancelImportOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cancelImportModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [cancelImportOverlayOpacity, cancelImportModalOpacity]);
+
+  const handleDismissCancelImport = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(cancelImportOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cancelImportModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsCancelImportModalOpen(false);
+    });
+  }, [cancelImportOverlayOpacity, cancelImportModalOpacity]);
+
+  const handleConfirmCancelImport = React.useCallback(async () => {
+    try {
+      // Dismiss the confirmation modal first
+      handleDismissCancelImport();
+      
+      // Set cancellation flag to stop the import process
+      importCancelledRef.current = true;
+      
+      console.log('Import cancellation requested by user');
+      
+      // Clean up import state
+      setIsImportRunning(false);
+      setImportProgress(null);
+      setShouldDisableOtherButtons(false);
+      
+      console.log('Import process cancelled successfully');
+    } catch (error) {
+      console.error('Error cancelling import process:', error);
+    }
+  }, [handleDismissCancelImport]);
+
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
         <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
@@ -999,24 +1129,71 @@ export default function AppSettingsScreen() {
                   <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
                   <Text style={[styles.descriptionText, { color: colors.text, fontFamily: Fonts.bodyItalicLight }]}>.</Text>
                 </Text>
-                <TouchableOpacity 
-                  style={[
-                    styles.cloudButton, 
-                    { 
-                      backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : colors.brandColor3, 
-                      marginTop: 20,
-                      opacity: shouldDisableOtherButtons ? 0.6 : 1.0
-                    }
-                  ]}
-                  onPress={shouldDisableOtherButtons ? undefined : handleLoadDataPress}
-                  disabled={shouldDisableOtherButtons}>
-                  <View style={styles.buttonContent}>
-                    <MaterialIcons name="cloud-download" size={30} color="#fff" />
-                    <Text style={[styles.cloudButtonText, { 
+                {isImportRunning ? (
+                  <View style={{ 
+                    alignItems: 'center',
+                    marginTop: 20,
+                  }}>
+                    <View style={{ 
+                      width: '100%',
+                      height: 60,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}>
+                      <View style={{ flex: 1 }}>
+                        <StripedProgressBar 
+                          progress={importProgress?.percentage || 0}
+                          currentItems={importProgress?.rowsImported || 0}
+                          totalItems={importProgress?.totalRows || 0}
+                          height={60}
+                          borderRadius={30}
+                          immediateProgress={false}
+                        />
+                      </View>
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={handleCancelImportPress}
+                        activeOpacity={0.7}
+                      >
+                        <Entypo name="cross" size={40} color="#D7191C" />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={[{ 
+                      color: colors.text, 
                       fontFamily: Fonts.bodyMedium,
-                    }]}>{strings[language].appSettingsPage.loadDataFromCloud}</Text>
+                      fontSize: 14,
+                      opacity: 0.8,
+                      marginTop: 6,
+                      textAlign: 'center',
+                      paddingHorizontal: 20
+                    }]}>
+                      {importProgress?.stage === 'importing' 
+                        ? (language === 'Chinese' ? '正在从云端导入数据...' : 'Importing data from cloud...')
+                        : (language === 'Chinese' ? '正在更新本地数据库...' : 'Updating local database...')
+                      }
+                    </Text>
                   </View>
-                </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity 
+                    style={[
+                      styles.cloudButton, 
+                      { 
+                        backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : colors.brandColor3, 
+                        marginTop: 20,
+                        opacity: shouldDisableOtherButtons ? 0.6 : 1.0
+                      }
+                    ]}
+                    onPress={shouldDisableOtherButtons ? undefined : handleLoadDataPress}
+                    disabled={shouldDisableOtherButtons}>
+                    <View style={styles.buttonContent}>
+                      <MaterialIcons name="cloud-download" size={30} color="#fff" />
+                      <Text style={[styles.cloudButtonText, { 
+                        fontFamily: Fonts.bodyMedium,
+                      }]}>{strings[language].appSettingsPage.loadDataFromCloud}</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
                 <Text style={[styles.descriptionText, { 
                   color: colors.text,
                   fontFamily: Fonts.bodyItalicLight,
@@ -1157,6 +1334,22 @@ export default function AppSettingsScreen() {
           buttons="double"
           onCancel={handleDismissCancelBackup}
           onConfirm={handleConfirmCancelBackup}
+        />
+
+        {/* Cancel Import Modal */}
+        <GreyOverlayBackground 
+          visible={isCancelImportModalOpen}
+          opacity={cancelImportOverlayOpacity}
+          onPress={handleDismissCancelImport}
+        />
+        <GenericModal
+          visible={isCancelImportModalOpen}
+          opacity={cancelImportModalOpacity}
+          text={language === 'Chinese' ? '取消导入' : 'Cancel Import'}
+          Icon={DeleteModalIcon}
+          buttons="double"
+          onCancel={handleDismissCancelImport}
+          onConfirm={handleConfirmCancelImport}
         />
 
     </View>

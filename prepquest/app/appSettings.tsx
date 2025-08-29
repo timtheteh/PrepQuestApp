@@ -116,6 +116,9 @@ export default function AppSettingsScreen() {
   // local stopping state to ensure immediate UI feedback
   const [isLocallyStoppingBackup, setIsLocallyStoppingBackup] = React.useState(false);
 
+  // State to control when other buttons should be disabled (only when progress bar is actually visible)
+  const [shouldDisableOtherButtons, setShouldDisableOtherButtons] = React.useState(false);
+
   // cooldown state after cancellation (5 second delay)
   const [isCancelCooldownActive, setIsCancelCooldownActive] = React.useState(false);
   const cooldownTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,15 +162,28 @@ export default function AppSettingsScreen() {
   // Hide loading screen when backup background task starts running
   React.useEffect(() => {
     if (isBackupLoading && isBackupBackgroundTaskRunning) {
+      // Set isBackupLoading to false IMMEDIATELY to prevent button flashing
+      setIsBackupLoading(false);
+      
+      // Enable button disabling only when progress bar becomes visible
+      setShouldDisableOtherButtons(true);
+      
+      // Then animate out the loading overlay
       Animated.timing(backupLoadingOverlayOpacity, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
-      }).start(() => {
-        setIsBackupLoading(false);
-      });
+      }).start();
     }
   }, [isBackupBackgroundTaskRunning, isBackupLoading, backupLoadingOverlayOpacity]);
+
+  // Control button disable state based on backup status
+  React.useEffect(() => {
+    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive) {
+      // Re-enable buttons when backup is completely done
+      setShouldDisableOtherButtons(false);
+    }
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -209,6 +225,9 @@ export default function AppSettingsScreen() {
       
       // Set local stopping state to provide UI feedback
       setIsLocallyStoppingBackup(true);
+      
+      // Keep other buttons disabled during cooldown
+      setShouldDisableOtherButtons(true);
       
       // Start 5-second cooldown period to prevent immediate restart
       setIsCancelCooldownActive(true);
@@ -730,6 +749,10 @@ export default function AppSettingsScreen() {
       // IMMEDIATELY set local stopping state to prevent new backup attempts
       // This provides instant UI feedback before context state updates
       setIsLocallyStoppingBackup(true);
+      
+      // Keep other buttons disabled during cancellation and cooldown
+      setShouldDisableOtherButtons(true);
+      
       console.log('User confirmed cancellation - setting stopping state immediately');
       
       // Force stop the backup background task permanently
@@ -976,8 +999,17 @@ export default function AppSettingsScreen() {
                   <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
                   <Text style={[styles.descriptionText, { color: colors.text, fontFamily: Fonts.bodyItalicLight }]}>.</Text>
                 </Text>
-                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.brandColor3, marginTop: 20 }]}
-                  onPress={handleLoadDataPress}>
+                <TouchableOpacity 
+                  style={[
+                    styles.cloudButton, 
+                    { 
+                      backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : colors.brandColor3, 
+                      marginTop: 20,
+                      opacity: shouldDisableOtherButtons ? 0.6 : 1.0
+                    }
+                  ]}
+                  onPress={shouldDisableOtherButtons ? undefined : handleLoadDataPress}
+                  disabled={shouldDisableOtherButtons}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="cloud-download" size={30} color="#fff" />
                     <Text style={[styles.cloudButtonText, { 
@@ -993,8 +1025,17 @@ export default function AppSettingsScreen() {
                   <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
                   <Text style={[styles.descriptionText, { color: colors.text, fontFamily: Fonts.bodyItalicLight }]}>.</Text>
                 </Text>
-                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: colors.alertColor, marginTop: 20 }]}
-                  onPress={handleDeleteLocalStoragePress}>
+                <TouchableOpacity 
+                  style={[
+                    styles.cloudButton, 
+                    { 
+                      backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : colors.alertColor, 
+                      marginTop: 20,
+                      opacity: shouldDisableOtherButtons ? 0.6 : 1.0
+                    }
+                  ]}
+                  onPress={shouldDisableOtherButtons ? undefined : handleDeleteLocalStoragePress}
+                  disabled={shouldDisableOtherButtons}>
                   <View style={styles.buttonContent}>
                     <Ionicons name="trash" size={30} color="#fff" />
                     <Text style={[styles.cloudButtonText, { 
@@ -1008,11 +1049,20 @@ export default function AppSettingsScreen() {
                  }]}>
                   {strings[language].appSettingsPage.clearLocalStorageDescription}
                 </Text>
-                <TouchableOpacity style={[styles.cloudButton, { backgroundColor: '#CC0000', marginTop: 20 }]}
-                  onPress={() => {
+                <TouchableOpacity 
+                  style={[
+                    styles.cloudButton, 
+                    { 
+                      backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : '#CC0000', 
+                      marginTop: 20,
+                      opacity: shouldDisableOtherButtons ? 0.6 : 1.0
+                    }
+                  ]}
+                  onPress={shouldDisableOtherButtons ? undefined : () => {
                     // TODO: Implement delete account functionality
                     console.log('Delete account pressed');
-                  }}>
+                  }}
+                  disabled={shouldDisableOtherButtons}>
                   <View style={styles.buttonContent}>
                     <Text style={[styles.cloudButtonText, { 
                       fontFamily: Fonts.bodyMedium,

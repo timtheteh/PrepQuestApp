@@ -135,10 +135,19 @@ export default function AppSettingsScreen() {
       // Set persistent backup completion state
       setHasBackupCompleted(true);
       
+      // If cancel backup modal is open when backup completes, dismiss it first
+      if (isCancelBackupModalOpen) {
+        console.log('Backup completed while cancel modal is open - dismissing cancel modal first');
+        // Immediately dismiss cancel modal without animation to make it seamless
+        setIsCancelBackupModalOpen(false);
+        cancelBackupOverlayOpacity.setValue(0);
+        cancelBackupModalOpacity.setValue(0);
+      }
+      
       // Show success modal when backup completes (will stay open until manually dismissed)
       handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
     }
-  }, [backupBackgroundTaskProgress]);
+  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity]);
 
   // Show success modal on page load if backup was completed
   React.useEffect(() => {

@@ -229,6 +229,46 @@ export async function extractUserFromSQLite(): Promise<BackupUser | null> {
   }
 }
 
+// Network error detection helper
+function isNetworkError(error: any): boolean {
+  if (!error) return false;
+  
+  // Check for common network error patterns
+  const errorMessage = error.message?.toLowerCase() || '';
+  const errorName = error.name?.toLowerCase() || '';
+  
+  // Common network error indicators
+  const networkErrorPatterns = [
+    'network',
+    'fetch',
+    'connection',
+    'timeout',
+    'unreachable',
+    'offline',
+    'no internet',
+    'dns',
+    'enotfound',
+    'econnrefused',
+    'econnreset',
+    'etimedout'
+  ];
+  
+  // Check error message and name for network patterns
+  const hasNetworkPattern = networkErrorPatterns.some(pattern => 
+    errorMessage.includes(pattern) || errorName.includes(pattern)
+  );
+  
+  // Check for specific error types
+  const isNetworkErrorType = error instanceof TypeError && errorMessage.includes('failed to fetch');
+  const isAbortError = error.name === 'AbortError';
+  
+  // Check for common HTTP status codes that indicate network issues
+  const networkStatusCodes = [0, 502, 503, 504];
+  const hasNetworkStatusCode = error.status && networkStatusCodes.includes(error.status);
+  
+  return hasNetworkPattern || isNetworkErrorType || hasNetworkStatusCode || isAbortError;
+}
+
 // Supabase upload functions
 
 /**
@@ -496,6 +536,9 @@ async function uploadFoldersToSupabaseWithProgress(
 
       if (error) {
         console.error('Error uploading folder chunk to Supabase:', error);
+        if (isNetworkError(error)) {
+          throw error; // Propagate network errors up to main backup function
+        }
         return false;
       }
 
@@ -517,6 +560,9 @@ async function uploadFoldersToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadFoldersToSupabaseWithProgress:', error);
+    if (isNetworkError(error)) {
+      throw error; // Propagate network errors up to main backup function
+    }
     return false;
   }
 }
@@ -566,6 +612,9 @@ async function uploadDecksToSupabaseWithProgress(
 
       if (error) {
         console.error('Error uploading deck chunk to Supabase:', error);
+        if (isNetworkError(error)) {
+          throw error; // Propagate network errors up to main backup function
+        }
         return false;
       }
 
@@ -584,6 +633,9 @@ async function uploadDecksToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadDecksToSupabaseWithProgress:', error);
+    if (isNetworkError(error)) {
+      throw error; // Propagate network errors up to main backup function
+    }
     return false;
   }
 }
@@ -647,8 +699,13 @@ async function uploadFlashcardsToSupabaseWithProgress(
           break;
         } catch (error) {
           retries++;
+          
+          // If this is a network error and we've exhausted retries, throw it up
           if (retries >= maxRetries) {
             console.error('Error uploading flashcard chunk after retries:', error);
+            if (isNetworkError(error)) {
+              throw error; // Propagate network errors up to main backup function
+            }
             return false;
           }
           
@@ -677,6 +734,9 @@ async function uploadFlashcardsToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadFlashcardsToSupabaseWithProgress:', error);
+    if (isNetworkError(error)) {
+      throw error; // Propagate network errors up to main backup function
+    }
     return false;
   }
 }
@@ -720,6 +780,9 @@ async function uploadUserFormEntriesToSupabaseWithProgress(
 
     if (error) {
       console.error('Error uploading user form entries to Supabase:', error);
+      if (isNetworkError(error)) {
+        throw error; // Propagate network errors up to main backup function
+      }
       return false;
     }
 
@@ -728,6 +791,9 @@ async function uploadUserFormEntriesToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadUserFormEntriesToSupabaseWithProgress:', error);
+    if (isNetworkError(error)) {
+      throw error; // Propagate network errors up to main backup function
+    }
     return false;
   }
 }
@@ -766,6 +832,9 @@ async function uploadUserToSupabaseWithProgress(
 
     if (error) {
       console.error('Error uploading user to Supabase:', error);
+      if (isNetworkError(error)) {
+        throw error; // Propagate network errors up to main backup function
+      }
       return false;
     }
 
@@ -774,6 +843,9 @@ async function uploadUserToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadUserToSupabaseWithProgress:', error);
+    if (isNetworkError(error)) {
+      throw error; // Propagate network errors up to main backup function
+    }
     return false;
   }
 }
@@ -785,7 +857,7 @@ export async function backupDataToCloud(
   getToken: TokenGetter,
   onProgress?: (progress: BackupProgress) => void,
   isCancelled?: () => boolean
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean; message: string; isNetworkError?: boolean }> {
   try {
     console.log('Starting backup process...');
     
@@ -888,6 +960,17 @@ export async function backupDataToCloud(
     };
   } catch (error) {
     console.error('Error during backup process:', error);
+    
+    // Check if this is a network error
+    if (isNetworkError(error)) {
+      console.log('Network error detected during backup');
+      return { 
+        success: false, 
+        message: 'Backup cancelled due to network error! Check your network.',
+        isNetworkError: true
+      };
+    }
+    
     return { 
       success: false, 
       message: `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}` 

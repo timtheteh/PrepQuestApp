@@ -150,6 +150,119 @@ export default function AppSettingsScreen() {
   const noBackupDataOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const noBackupDataModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Network error modal state
+  const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = React.useState(false);
+  const networkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const networkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // Track if network error modal has been shown to prevent dismissal by in-app notification
+  const [hasNetworkErrorModalBeenShown, setHasNetworkErrorModalBeenShown] = React.useState(false);
+
+  // Backup loading network error modal state
+  const [isBackupLoadingNetworkErrorModalOpen, setIsBackupLoadingNetworkErrorModalOpen] = React.useState(false);
+  const backupLoadingNetworkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const backupLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // Handler functions
+  const handleShowNetworkErrorModal = React.useCallback(() => {
+    setIsNetworkErrorModalOpen(true);
+    setHasNetworkErrorModalBeenShown(true);
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
+  const handleDismissNetworkErrorModal = React.useCallback(async () => {
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNetworkErrorModalOpen(false);
+      setHasNetworkErrorModalBeenShown(false);
+    });
+    
+    // Clear the backup progress data when user dismisses network error modal
+    try {
+      await clearBackupBackgroundTaskProgress();
+      console.log('Cleared backup progress data after user dismissed network error modal');
+    } catch (error) {
+      console.error('Error clearing backup progress data:', error);
+    }
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity, clearBackupBackgroundTaskProgress]);
+
+  const handleShowBackupLoadingNetworkErrorModal = React.useCallback(() => {
+    setIsBackupLoadingNetworkErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(backupLoadingNetworkErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backupLoadingNetworkErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [backupLoadingNetworkErrorOverlayOpacity, backupLoadingNetworkErrorModalOpacity]);
+
+  const handleDismissBackupLoadingNetworkErrorModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(backupLoadingNetworkErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backupLoadingNetworkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackupLoadingNetworkErrorModalOpen(false);
+    });
+  }, [backupLoadingNetworkErrorOverlayOpacity, backupLoadingNetworkErrorModalOpacity]);
+
+  // Network connectivity check function
+  const checkNetworkConnectivity = React.useCallback(async (): Promise<boolean> => {
+    try {
+      // Create an AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      // Try to fetch a small resource to test network connectivity
+      const response = await fetch('https://www.google.com/favicon.ico', {
+        method: 'HEAD',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      const isConnected = response.ok;
+      console.log('Network connectivity check:', { isConnected, status: response.status });
+      return isConnected;
+    } catch (error) {
+      console.error('Error checking network connectivity:', error);
+      return false;
+    }
+  }, []);
+
   // Check camera permission status on component mount
   React.useEffect(() => {
     checkCameraPermission();
@@ -161,7 +274,7 @@ export default function AppSettingsScreen() {
 
   // Watch for backup completion to show success modal
   React.useEffect(() => {
-    if (backupBackgroundTaskProgress?.completed && backupBackgroundTaskProgress?.success && !backupBackgroundTaskProgress?.error) {
+    if (backupBackgroundTaskProgress?.completed && backupBackgroundTaskProgress?.success && !backupBackgroundTaskProgress?.error && !backupBackgroundTaskProgress?.networkError) {
       // Set persistent backup completion state
       setHasBackupCompleted(true);
       
@@ -176,8 +289,11 @@ export default function AppSettingsScreen() {
       
       // Show success modal when backup completes (will stay open until manually dismissed)
       handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
+    } else if (backupBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
+      // Show persistent network error modal only if it hasn't been shown yet
+      handleShowNetworkErrorModal();
     }
-  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity]);
+  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, hasNetworkErrorModalBeenShown]);
 
   // Watch for import completion to show success modal
   React.useEffect(() => {
@@ -259,11 +375,14 @@ export default function AppSettingsScreen() {
         setHasBackupCompleted(true);
         // Show success modal when user taps on backup notification (will stay open until manually dismissed)
         handleShowSuccessModal('Backup completed successfully!');
+      } else if (data?.type === 'backup_network_error') {
+        // Show persistent network error modal when user taps on network error notification
+        handleShowNetworkErrorModal();
       }
     });
 
     return () => subscription.remove();
-  }, []);
+  }, [handleShowNetworkErrorModal]);
 
   // Sync local stopping state with context stopping state
   React.useEffect(() => {
@@ -587,6 +706,9 @@ export default function AppSettingsScreen() {
       // Reset automatic cancellation flag for clean state
       resetAutomaticallyCancelledFlag();
       
+      // Reset network error modal state for clean state
+      setHasNetworkErrorModalBeenShown(false);
+      
       // Ensure clean state by clearing any residual progress data
       await clearBackupBackgroundTaskProgress();
       
@@ -621,6 +743,23 @@ export default function AppSettingsScreen() {
       if (cooldownTimerRef.current) {
         clearTimeout(cooldownTimerRef.current);
         cooldownTimerRef.current = null;
+      }
+      
+      // Check network connectivity before starting backup
+      const isNetworkConnected = await checkNetworkConnectivity();
+      if (!isNetworkConnected) {
+        // Hide loading screen
+        Animated.timing(backupLoadingOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsBackupLoading(false);
+        });
+        
+        // Show network error modal
+        handleShowBackupLoadingNetworkErrorModal();
+        return;
       }
       
       // Start the backup background task
@@ -659,7 +798,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive]);
+  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, checkNetworkConnectivity, handleShowBackupLoadingNetworkErrorModal]);
 
   const handleLoadDataPress = React.useCallback(() => {
     setIsLoadDataModalOpen(true);
@@ -1571,6 +1710,36 @@ export default function AppSettingsScreen() {
           Icon={ModalExclamationMarkIcon}
           buttons="single"
           onConfirm={handleDismissNoBackupDataModal}
+        />
+
+        {/* Network Error Modal */}
+        <GreyOverlayBackground 
+          visible={isNetworkErrorModalOpen}
+          opacity={networkErrorOverlayOpacity}
+          onPress={handleDismissNetworkErrorModal}
+        />
+        <GenericModal
+          visible={isNetworkErrorModalOpen}
+          opacity={networkErrorModalOpacity}
+          text={language === 'Chinese' ? '备份因网络错误而取消！检查您的网络。' : 'Backup cancelled\ndue to network error!'}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissNetworkErrorModal}
+        />
+
+        {/* Backup Loading Network Error Modal */}
+        <GreyOverlayBackground 
+          visible={isBackupLoadingNetworkErrorModalOpen}
+          opacity={backupLoadingNetworkErrorOverlayOpacity}
+          onPress={handleDismissBackupLoadingNetworkErrorModal}
+        />
+        <GenericModal
+          visible={isBackupLoadingNetworkErrorModalOpen}
+          opacity={backupLoadingNetworkErrorModalOpacity}
+          text={language === 'Chinese' ? '备份因网络错误而无法启动！' : 'Backup failed to start\ndue to network error!'}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissBackupLoadingNetworkErrorModal}
         />
 
     </View>

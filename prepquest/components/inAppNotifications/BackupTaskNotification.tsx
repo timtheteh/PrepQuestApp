@@ -28,15 +28,17 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
     if (backupBackgroundTaskProgress) {
       const isCompleted = backupBackgroundTaskProgress.completed;
       const hasError = backupBackgroundTaskProgress.error;
+      const hasNetworkError = backupBackgroundTaskProgress.networkError;
       const wasRunning = backupBackgroundTaskProgress.inProgress;
       
       // Show notification when task completes (either from running to completed, or when we detect completed state)
-      const shouldShowNotification = (isCompleted || hasError) && !isBackupBackgroundTaskRunning;
+      const shouldShowNotification = (isCompleted || hasError || hasNetworkError) && !isBackupBackgroundTaskRunning;
       
       // Create a unique identifier for this specific progress data
       const progressId = JSON.stringify({
         completed: isCompleted,
         error: hasError,
+        networkError: hasNetworkError,
         timestamp: backupBackgroundTaskProgress.timestamp,
         message: backupBackgroundTaskProgress.message
       });
@@ -50,6 +52,7 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
       console.log('BackupTaskNotification - Progress update:', {
         isCompleted,
         hasError,
+        hasNetworkError,
         wasRunning,
         isBackupBackgroundTaskRunning,
         shouldShowNotification,
@@ -84,13 +87,13 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
       }
       
       // Create a unique identifier for this task completion
-      const taskId = `backup-${isCompleted}-${hasError}`;
+      const taskId = `backup-${isCompleted}-${hasError}-${hasNetworkError}`;
       
       console.log('BackupTaskNotification - Task ID:', taskId);
       
       // Only show notification if we haven't shown one for this specific task completion and should show notification
       if (lastCompletedTaskRef.current !== taskId && !showNotification && shouldShowNotification) {
-        if (isCompleted && !hasError) {
+        if (isCompleted && !hasError && !hasNetworkError) {
           // Task completed successfully
           console.log('Showing backup success notification for task:', taskId);
           lastCompletedTaskRef.current = taskId;
@@ -120,15 +123,16 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
               hideNotification();
             }, 5000);
           });
-        } else if (hasError) {
-          // Task failed
-          console.log('Showing backup error notification for task:', taskId);
+        } else if (hasError || hasNetworkError) {
+          // Task failed (general error or network error)
+          console.log(`Showing backup ${hasNetworkError ? 'network error' : 'error'} notification for task:`, taskId);
           lastCompletedTaskRef.current = taskId;
           processedProgressRef.current = progressId;
           // Preserve notification data so it doesn't disappear when progress is cleared
           preservedNotificationDataRef.current = {
             message: backupBackgroundTaskProgress.errorMessage || backupBackgroundTaskProgress.message,
-            type: 'error'
+            type: 'error',
+            isNetworkError: hasNetworkError
           };
           // Defer state updates and animations until after insertion/layout phase
           InteractionManager.runAfterInteractions(() => {
@@ -196,6 +200,10 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
   // Determine the message
   const getMessage = () => {
     if (!isSuccess) {
+      // Check if it's a network error
+      if (notificationData?.isNetworkError) {
+        return language === 'Chinese' ? '糟糕，备份因网络错误而取消！' : 'Oops backup has cancelled due to a network error!';
+      }
       return language === 'Chinese' ? '备份过程中出现错误' : 'An error occurred during backup';
     }
     
@@ -228,7 +236,9 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
             <Text style={styles.title}>
               {isSuccess 
                 ? (language === 'Chinese' ? '备份完成！' : 'Backup Completed!')
-                : (language === 'Chinese' ? '备份失败' : 'Backup Failed')
+                : notificationData?.isNetworkError
+                  ? (language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!')
+                  : (language === 'Chinese' ? '备份失败' : 'Backup Failed')
               }
             </Text>
             <Text style={styles.message}>

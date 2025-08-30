@@ -37,6 +37,28 @@ async function clearBackupProgress() {
   }
 }
 
+// Helper to determine if push notification should be sent
+function shouldSendPushNotification(): boolean {
+  const currentAppState = AppState.currentState;
+  const isBackgroundServiceRunning = BackgroundService.isRunning();
+  const isAppInBackground = currentAppState === 'background' || currentAppState === 'inactive';
+  
+  const shouldSend = isAppInBackground || isBackgroundServiceRunning || currentAppState === 'unknown';
+  
+  console.log('Push notification check:', {
+    currentAppState,
+    isBackgroundServiceRunning,
+    isAppInBackground,
+    shouldSend
+  });
+  
+  // Send notification if:
+  // 1. App is in background/inactive state
+  // 2. Background service is running (indicating user left the app)
+  // 3. App state is unknown (fallback for reliability)
+  return shouldSend;
+}
+
 // Helper to update progress periodically during long operations
 async function updateBackupProgressPeriodically(progressData: any, intervalMs: number = 5000) {
   const interval = setInterval(async () => {
@@ -156,6 +178,90 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       return;
     }
     
+    // Check if the backup result indicates network error
+    if (!result.success && (result as any).isNetworkError) {
+      console.log('Backup cancelled due to network error');
+      await saveBackupProgress({
+        status: 'networkError',
+        inProgress: false,
+        completed: false,
+        networkError: true,
+        timestamp: Date.now(),
+        message: result.message,
+        errorMessage: result.message
+      });
+      
+      // Check if we should send a push notification
+      if (shouldSendPushNotification()) {
+        try {
+          // Check notification permissions first
+          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
+          
+          if (permissionStatus === 'granted') {
+            console.log('Sending network error notification (app in background)');
+            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
+            const body = language === 'Chinese' ? '糟糕，备份因网络错误而取消！' : 'Oops backup has cancelled due to a network error!';
+            
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: { type: 'backup_network_error' },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null, // Send immediately
+            });
+            
+            console.log('Network error notification sent successfully with ID:', notificationId);
+            
+            // Mark that notification was sent to prevent duplicate in-app notifications
+            await saveBackupProgress({
+              status: 'networkError',
+              inProgress: false,
+              completed: false,
+              networkError: true,
+              notificationSent: true,
+              timestamp: Date.now(),
+              message: result.message,
+              errorMessage: result.message
+            });
+          } else {
+            console.log('Notification permissions not granted, cannot send push notification');
+          }
+        } catch (notificationError) {
+          console.error('Error sending network error notification:', notificationError);
+          
+          // Fallback: try to send notification even if initial check failed
+          try {
+            console.log('Attempting fallback network error notification...');
+            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
+            const body = language === 'Chinese' ? '糟糕，备份因网络错误而取消！' : 'Oops backup has cancelled due to a network error!';
+            
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: { type: 'backup_network_error' },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null, // Send immediately
+            });
+            
+            console.log('Fallback network error notification sent successfully with ID:', notificationId);
+          } catch (fallbackError) {
+            console.error('Fallback notification also failed:', fallbackError);
+          }
+        }
+      } else {
+        console.log('App is active, in-app notification will be shown instead');
+      }
+      return;
+    }
+    
     // Save final progress
     if (result.success) {
       await saveBackupProgress({
@@ -168,32 +274,70 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         success: true
       });
       
-      // Only send notification if app is in background (not active)
-      // We can detect this by checking if the background service is still running
-      // and if the app state is not active
-      const currentAppState = AppState.currentState;
-      const isAppInBackground = currentAppState !== 'active';
-      
-      if (isAppInBackground) {
+      // Check if we should send a push notification
+      if (shouldSendPushNotification()) {
         try {
-          console.log('Sending backup completion notification (app in background)');
-          const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
-          const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
+          // Check notification permissions first
+          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
           
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title,
-              body,
-              data: { type: 'backup_completed' },
-              sound: true,
-              priority: Notifications.AndroidNotificationPriority.HIGH,
-            },
-            trigger: null, // Send immediately
-          });
-          
-          console.log('Backup completion notification sent successfully');
+          if (permissionStatus === 'granted') {
+            console.log('Sending backup completion notification (app in background)');
+            const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
+            const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
+            
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: { type: 'backup_completed' },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null, // Send immediately
+            });
+            
+            console.log('Backup completion notification sent successfully with ID:', notificationId);
+            
+            // Mark that notification was sent to prevent duplicate in-app notifications
+            await saveBackupProgress({
+              status: 'completed',
+              inProgress: false,
+              completed: true,
+              notificationSent: true,
+              timestamp: Date.now(),
+              percentage: 100,
+              message: result.message,
+              success: true
+            });
+          } else {
+            console.log('Notification permissions not granted, cannot send push notification');
+          }
         } catch (notificationError) {
           console.error('Error sending backup completion notification:', notificationError);
+          
+          // Fallback: try to send notification even if initial check failed
+          try {
+            console.log('Attempting fallback backup completion notification...');
+            const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
+            const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
+            
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: { type: 'backup_completed' },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null, // Send immediately
+            });
+            
+            console.log('Fallback backup completion notification sent successfully with ID:', notificationId);
+          } catch (fallbackError) {
+            console.error('Fallback notification also failed:', fallbackError);
+          }
         }
       } else {
         console.log('App is active, skipping notification - user will see in-app success modal');

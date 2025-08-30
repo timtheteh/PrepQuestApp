@@ -277,7 +277,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
           });
           
           // Clear stale progress data that might be causing issues
-          if (progress.inProgress && !progress.completed && !progress.error) {
+          if (progress.inProgress && !progress.completed && !progress.error && !progress.networkError) {
             const now = Date.now();
             const progressTime = progress.timestamp || 0;
             const timeDiff = now - progressTime;
@@ -294,6 +294,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
           const progressId = JSON.stringify({
             completed: progress.completed,
             error: progress.error,
+            networkError: progress.networkError,
             status: progress.status,
             timestamp: progress.timestamp,
             percentage: progress.percentage
@@ -314,9 +315,9 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
           const timeDiff = now - progressTime;
           const isRecent = timeDiff < 30 * 1000; // 30 seconds
           
-          if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !forceStoppedRef.current) {
+          if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError && !forceStoppedRef.current) {
             setIsBackupBackgroundTaskRunning(true);
-          } else if (progress.completed || progress.cancelled || progress.error || forceStoppedRef.current) {
+          } else if (progress.completed || progress.cancelled || progress.error || progress.networkError || forceStoppedRef.current) {
             // Task completed, cancelled, failed, or force stopped
             setIsBackupBackgroundTaskRunning(false);
             
@@ -343,10 +344,10 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             // Since notifications are now sent directly from the background task,
             // we only need to handle progress clearing here
             // For successful completions, we don't auto-clear to allow app settings page to show persistent success modal
-            if (progress.completed && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
+            if (progress.completed && !progress.error && !progress.networkError && !progress.cancelled && !forceStoppedRef.current) {
               // Don't auto-clear successful backup progress - let app settings page handle it
               console.log('Backup completed successfully - keeping progress for app settings page');
-            } else if (progress.cancelled || progress.error) {
+            } else if (progress.cancelled || progress.error || progress.networkError) {
               // Only clear progress for cancelled or failed backups
               setTimeout(async () => {
                 try {
@@ -359,7 +360,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             }
           } else {
             // If progress exists but doesn't have inProgress flag, check if it's recent
-            if (isRecent && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
+            if (isRecent && !progress.error && !progress.networkError && !progress.cancelled && !forceStoppedRef.current) {
               setIsBackupBackgroundTaskRunning(true);
             } else {
               setIsBackupBackgroundTaskRunning(false);
@@ -451,7 +452,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             try {
               // Double-check backup is still running before sending notification
               const progress = await loadBackupBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
                 const title = language === 'Chinese' ? '备份任务警告' : 'Come back soon!';
                 const body = language === 'Chinese' 
                   ? '备份任务将在大约30秒内提前结束。请尽快回来！' 
@@ -482,7 +483,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             try {
               // Double-check backup is still running before sending notification
               const progress = await loadBackupBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
                 const title = 'Backup task cancelled!';
                 const body = 'Oops you were away for too long!';
                 
@@ -504,14 +505,14 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             } catch (error) {
               console.error('Error sending pre-termination notification:', error);
             }
-          }, 29000); // 9 second delay (1 second before 10-second termination)
+          }, 59000); // 9 second delay (1 second before 10-second termination)
           
           // Schedule automatic termination for 10 seconds after backgrounding
           backgroundTerminationTimerRef.current = setTimeout(async () => {
             try {
               // Double-check backup is still running before terminating
               const progress = await loadBackupBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
                 console.log('10 seconds elapsed in background - automatically terminating backup task');
                 await automaticallyCancelBackup();
               } else {
@@ -520,7 +521,7 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
             } catch (error) {
               console.error('Error during automatic backup termination:', error);
             }
-          }, 30000); // 30 second delay
+          }, 60000); // 30 second delay
         }
       }
       appStateRef.current = nextAppState;

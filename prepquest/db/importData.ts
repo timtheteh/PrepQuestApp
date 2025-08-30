@@ -828,7 +828,7 @@ export async function importDataFromCloud(
     }
 
     if (rowCounts.total === 0) {
-      return { success: false, message: 'No data found in cloud to import' };
+      return { success: false, message: 'NO_DATA_TO_IMPORT' };
     }
 
     // Progress tracking state for import phase

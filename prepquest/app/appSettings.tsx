@@ -12,6 +12,7 @@ import LottieView from 'lottie-react-native';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
+import ModalExclamationMarkIcon from '@/assets/icons/generalIcons/modalExclamationMarkIcon.svg';
 import { db } from '@/db/index';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { useAuth } from '@clerk/clerk-expo';
@@ -137,6 +138,11 @@ export default function AppSettingsScreen() {
   
   // Import cancellation flag
   const importCancelledRef = React.useRef(false);
+
+  // No data modal state
+  const [isNoDataModalOpen, setIsNoDataModalOpen] = React.useState(false);
+  const noDataOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const noDataModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -723,11 +729,16 @@ export default function AppSettingsScreen() {
           setIsImportLoading(false);
         });
         
-        Alert.alert(
-          strings[language].error,
-          result.message,
-          [{ text: strings[language].ok }]
-        );
+        // Check if it's the specific "no data" case
+        if (result.message === 'NO_DATA_TO_IMPORT') {
+          handleShowNoDataModal();
+        } else {
+          Alert.alert(
+            strings[language].error,
+            result.message,
+            [{ text: strings[language].ok }]
+          );
+        }
       }
       // Success case is handled by the useEffect that watches importProgress
     } catch (error) {
@@ -745,11 +756,16 @@ export default function AppSettingsScreen() {
         setIsImportLoading(false);
       });
       
-      Alert.alert(
-        strings[language].error,
-        `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        [{ text: strings[language].ok }]
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage === 'NO_DATA_TO_IMPORT') {
+        handleShowNoDataModal();
+      } else {
+        Alert.alert(
+          strings[language].error,
+          `Import failed: ${errorMessage}`,
+          [{ text: strings[language].ok }]
+        );
+      }
     }
   }, [handleDismissLoadData, getToken, language]);
 
@@ -996,6 +1012,39 @@ export default function AppSettingsScreen() {
       console.error('Error cancelling import process:', error);
     }
   }, [handleDismissCancelImport]);
+
+  const handleShowNoDataModal = React.useCallback(() => {
+    setIsNoDataModalOpen(true);
+    Animated.parallel([
+      Animated.timing(noDataOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(noDataModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [noDataOverlayOpacity, noDataModalOpacity]);
+
+  const handleDismissNoDataModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(noDataOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(noDataModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNoDataModalOpen(false);
+    });
+  }, [noDataOverlayOpacity, noDataModalOpacity]);
 
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
@@ -1419,6 +1468,21 @@ export default function AppSettingsScreen() {
           buttons="double"
           onCancel={handleDismissCancelImport}
           onConfirm={handleConfirmCancelImport}
+        />
+
+        {/* No Data Modal */}
+        <GreyOverlayBackground 
+          visible={isNoDataModalOpen}
+          opacity={noDataOverlayOpacity}
+          onPress={handleDismissNoDataModal}
+        />
+        <GenericModal
+          visible={isNoDataModalOpen}
+          opacity={noDataModalOpacity}
+          text={language === 'Chinese' ? '没有数据可导入！\n\n请先尝试备份数据。' : 'No data to import!\n\nTry backing up first.'}
+          Icon={ModalExclamationMarkIcon}
+          buttons="single"
+          onConfirm={handleDismissNoDataModal}
         />
 
     </View>

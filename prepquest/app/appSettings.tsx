@@ -20,6 +20,7 @@ import { StripedProgressBar } from '@/components/general/StripedProgressBar';
 import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext';
 import { startBackupBackgroundTask, stopBackupBackgroundTask } from '@/utils/backupBackgroundTask';
 import { importDataFromCloud, ImportProgress } from '@/db/importData';
+import { extractFoldersFromSQLite, extractDecksFromSQLite, extractFlashcardsFromSQLite, extractRecentUserFormEntriesFromSQLite } from '@/db/backup';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
@@ -143,6 +144,11 @@ export default function AppSettingsScreen() {
   const [isNoDataModalOpen, setIsNoDataModalOpen] = React.useState(false);
   const noDataOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const noDataModalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // No backup data modal state
+  const [isNoBackupDataModalOpen, setIsNoBackupDataModalOpen] = React.useState(false);
+  const noBackupDataOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const noBackupDataModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -535,6 +541,14 @@ export default function AppSettingsScreen() {
     try {
       // Dismiss the confirmation modal first
       handleDismissBackup();
+      
+      // Check if there's any data to backup
+      const hasDataToBackup = await checkForBackupData();
+      if (!hasDataToBackup) {
+        console.log('No data to backup - showing modal');
+        handleShowNoBackupDataModal();
+        return;
+      }
       
       // Show loading screen IMMEDIATELY to prevent any button UI changes
       setIsBackupLoading(true);
@@ -1046,6 +1060,57 @@ export default function AppSettingsScreen() {
     });
   }, [noDataOverlayOpacity, noDataModalOpacity]);
 
+  const handleShowNoBackupDataModal = React.useCallback(() => {
+    setIsNoBackupDataModalOpen(true);
+    Animated.parallel([
+      Animated.timing(noBackupDataOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(noBackupDataModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [noBackupDataOverlayOpacity, noBackupDataModalOpacity]);
+
+  const handleDismissNoBackupDataModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(noBackupDataOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(noBackupDataModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNoBackupDataModalOpen(false);
+    });
+  }, [noBackupDataOverlayOpacity, noBackupDataModalOpacity]);
+
+  // Function to check if there's any data to backup
+  const checkForBackupData = React.useCallback(async (): Promise<boolean> => {
+    try {
+      const folders = await extractFoldersFromSQLite();
+      const decks = await extractDecksFromSQLite();
+      const flashcards = await extractFlashcardsFromSQLite();
+      const userFormEntries = await extractRecentUserFormEntriesFromSQLite();
+      
+      const hasData = folders.length > 0 || decks.length > 0 || flashcards.length > 0 || userFormEntries.length > 0;
+      console.log(`Backup data check: folders=${folders.length}, decks=${decks.length}, flashcards=${flashcards.length}, userFormEntries=${userFormEntries.length}, hasData=${hasData}`);
+      
+      return hasData;
+    } catch (error) {
+      console.error('Error checking for backup data:', error);
+      return false;
+    }
+  }, []);
+
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
         <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
@@ -1483,6 +1548,21 @@ export default function AppSettingsScreen() {
           Icon={ModalExclamationMarkIcon}
           buttons="single"
           onConfirm={handleDismissNoDataModal}
+        />
+
+        {/* No Backup Data Modal */}
+        <GreyOverlayBackground 
+          visible={isNoBackupDataModalOpen}
+          opacity={noBackupDataOverlayOpacity}
+          onPress={handleDismissNoBackupDataModal}
+        />
+        <GenericModal
+          visible={isNoBackupDataModalOpen}
+          opacity={noBackupDataModalOpacity}
+          text={language === 'Chinese' ? '没有数据可备份！' : 'No data to backup!'}
+          Icon={ModalExclamationMarkIcon}
+          buttons="single"
+          onConfirm={handleDismissNoBackupDataModal}
         />
 
     </View>

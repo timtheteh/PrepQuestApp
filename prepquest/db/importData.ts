@@ -518,8 +518,12 @@ async function replaceFoldersInLocalDatabase(
       return false;
     }
 
-    // Delete existing folders for the user
-    await db.runAsync('DELETE FROM folders WHERE userID = ?', [userID]);
+    // Start transaction for atomic operation
+    await db.runAsync('BEGIN TRANSACTION');
+
+    try {
+      // Delete existing folders for the user
+      await db.runAsync('DELETE FROM folders WHERE userID = ?', [userID]);
 
     if (folders.length === 0) {
       console.log('No folders to insert into local database');
@@ -532,7 +536,8 @@ async function replaceFoldersInLocalDatabase(
 
     for (let i = 0; i < folders.length; i += chunkSize) {
       if (isCancelled?.()) {
-        console.log('Local folder insertion cancelled by user');
+        console.log('Local folder insertion cancelled by user - rolling back transaction');
+        await db.runAsync('ROLLBACK');
         return false;
       }
 
@@ -557,8 +562,15 @@ async function replaceFoldersInLocalDatabase(
       reportProgress('inserting', 'Inserting folders into local database...', chunk.length);
     }
 
-    console.log(`Successfully inserted ${insertedCount} folders into local database`);
-    return true;
+      // Commit transaction if successful
+      await db.runAsync('COMMIT');
+      console.log(`Successfully inserted ${insertedCount} folders into local database`);
+      return true;
+    } catch (transactionError) {
+      // Rollback on any error within transaction
+      await db.runAsync('ROLLBACK');
+      throw transactionError;
+    }
   } catch (error) {
     console.error('Error replacing folders in local database:', error);
     return false;
@@ -581,8 +593,12 @@ async function replaceDecksInLocalDatabase(
       return false;
     }
 
-    // Delete existing decks for the user
-    await db.runAsync('DELETE FROM decks WHERE userID = ?', [userID]);
+    // Start transaction for atomic operation
+    await db.runAsync('BEGIN TRANSACTION');
+
+    try {
+      // Delete existing decks for the user
+      await db.runAsync('DELETE FROM decks WHERE userID = ?', [userID]);
 
     if (decks.length === 0) {
       console.log('No decks to insert into local database');
@@ -593,11 +609,12 @@ async function replaceDecksInLocalDatabase(
     const chunkSize = 50;
     let insertedCount = 0;
 
-    for (let i = 0; i < decks.length; i += chunkSize) {
-      if (isCancelled?.()) {
-        console.log('Local deck insertion cancelled by user');
-        return false;
-      }
+      for (let i = 0; i < decks.length; i += chunkSize) {
+        if (isCancelled?.()) {
+          console.log('Local deck insertion cancelled by user - rolling back transaction');
+          await db.runAsync('ROLLBACK');
+          return false;
+        }
 
       const chunk = decks.slice(i, i + chunkSize);
       
@@ -642,8 +659,15 @@ async function replaceDecksInLocalDatabase(
       reportProgress('inserting', 'Inserting decks into local database...', chunk.length);
     }
 
-    console.log(`Successfully inserted ${insertedCount} decks into local database`);
-    return true;
+      // Commit transaction if successful
+      await db.runAsync('COMMIT');
+      console.log(`Successfully inserted ${insertedCount} decks into local database`);
+      return true;
+    } catch (transactionError) {
+      // Rollback on any error within transaction
+      await db.runAsync('ROLLBACK');
+      throw transactionError;
+    }
   } catch (error) {
     console.error('Error replacing decks in local database:', error);
     return false;
@@ -666,8 +690,12 @@ async function replaceFlashcardsInLocalDatabase(
       return false;
     }
 
-    // Delete existing flashcards for the user
-    await db.runAsync('DELETE FROM flashcards WHERE userID = ?', [userID]);
+    // Start transaction for atomic operation
+    await db.runAsync('BEGIN TRANSACTION');
+
+    try {
+      // Delete existing flashcards for the user
+      await db.runAsync('DELETE FROM flashcards WHERE userID = ?', [userID]);
 
     if (flashcards.length === 0) {
       console.log('No flashcards to insert into local database');
@@ -678,11 +706,12 @@ async function replaceFlashcardsInLocalDatabase(
     const chunkSize = 25; // Smaller chunks for flashcards
     let insertedCount = 0;
 
-    for (let i = 0; i < flashcards.length; i += chunkSize) {
-      if (isCancelled?.()) {
-        console.log('Local flashcard insertion cancelled by user');
-        return false;
-      }
+      for (let i = 0; i < flashcards.length; i += chunkSize) {
+        if (isCancelled?.()) {
+          console.log('Local flashcard insertion cancelled by user - rolling back transaction');
+          await db.runAsync('ROLLBACK');
+          return false;
+        }
 
       const chunk = flashcards.slice(i, i + chunkSize);
       
@@ -757,8 +786,15 @@ async function replaceFlashcardsInLocalDatabase(
       await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    console.log(`Successfully inserted ${insertedCount} flashcards into local database`);
-    return true;
+      // Commit transaction if successful
+      await db.runAsync('COMMIT');
+      console.log(`Successfully inserted ${insertedCount} flashcards into local database`);
+      return true;
+    } catch (transactionError) {
+      // Rollback on any error within transaction
+      await db.runAsync('ROLLBACK');
+      throw transactionError;
+    }
   } catch (error) {
     console.error('Error replacing flashcards in local database:', error);
     return false;

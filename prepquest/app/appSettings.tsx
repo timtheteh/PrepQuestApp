@@ -205,6 +205,21 @@ export default function AppSettingsScreen() {
     } catch (error) {
       console.error('Error clearing backup progress data:', error);
     }
+    
+    // Start 5-second cooldown period to prevent immediate restart after network error
+    setIsCancelCooldownActive(true);
+    console.log('Starting 5-second cooldown after network error modal dismissal');
+    
+    // Clear any existing cooldown timer
+    if (cooldownTimerRef.current) {
+      clearTimeout(cooldownTimerRef.current);
+    }
+    
+    // Set timer to clear cooldown after 5 seconds
+    cooldownTimerRef.current = setTimeout(() => {
+      setIsCancelCooldownActive(false);
+      console.log('Cooldown period ended after network error modal dismissal - backup button re-enabled');
+    }, 5000);
   }, [networkErrorOverlayOpacity, networkErrorModalOpacity, clearBackupBackgroundTaskProgress]);
 
   const handleShowBackupLoadingNetworkErrorModal = React.useCallback(() => {

@@ -40,22 +40,22 @@ async function clearBackupProgress() {
 // Helper to determine if push notification should be sent
 function shouldSendPushNotification(): boolean {
   const currentAppState = AppState.currentState;
-  const isBackgroundServiceRunning = BackgroundService.isRunning();
   const isAppInBackground = currentAppState === 'background' || currentAppState === 'inactive';
   
-  const shouldSend = isAppInBackground || isBackgroundServiceRunning || currentAppState === 'unknown';
+  // Only send push notification if app is in background/inactive state
+  // Don't send if app is active (user is inside the app)
+  const shouldSend = isAppInBackground || currentAppState === 'unknown';
   
   console.log('Push notification check:', {
     currentAppState,
-    isBackgroundServiceRunning,
     isAppInBackground,
     shouldSend
   });
   
   // Send notification if:
-  // 1. App is in background/inactive state
-  // 2. Background service is running (indicating user left the app)
-  // 3. App state is unknown (fallback for reliability)
+  // 1. App is in background/inactive state (user left the app)
+  // 2. App state is unknown (fallback for reliability)
+  // Do NOT send if app is active (user is inside the app)
   return shouldSend;
 }
 

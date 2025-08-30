@@ -363,7 +363,7 @@ export async function uploadFlashcardsToSupabase(flashcards: BackupFlashcard[], 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
       let retries = 0;
-      const maxRetries = 3;
+      const maxRetries = 2;
 
       while (retries < maxRetries) {
         try {
@@ -667,7 +667,7 @@ async function uploadFlashcardsToSupabaseWithProgress(
       
       const chunk = flashcards.slice(i, i + chunkSize);
       let retries = 0;
-      const maxRetries = 3;
+      const maxRetries = 2;
 
       while (retries < maxRetries) {
         try {

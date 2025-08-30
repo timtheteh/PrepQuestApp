@@ -238,7 +238,7 @@ export async function importFoldersFromSupabase(
 
     // Retry logic for folder import
     let retries = 0;
-    const maxRetries = 3;
+    const maxRetries = 2;
 
     while (retries < maxRetries) {
       try {
@@ -306,7 +306,7 @@ export async function importDecksFromSupabase(
 
     // Retry logic for deck import
     let retries = 0;
-    const maxRetries = 3;
+    const maxRetries = 2;
 
     while (retries < maxRetries) {
       try {
@@ -420,7 +420,7 @@ export async function importFlashcardsFromSupabase(
 
       // Retry logic for batch import
       let retries = 0;
-      const maxRetries = 3;
+      const maxRetries = 2;
       let batchFlashcards: ImportedFlashcard[] = [];
 
       while (retries < maxRetries) {

@@ -19,6 +19,8 @@ import { useAuth } from '@clerk/clerk-expo';
 import { StripedProgressBar } from '@/components/general/StripedProgressBar';
 import { useBackupBackgroundTask } from '@/contexts/BackupBackgroundTaskContext';
 import { startBackupBackgroundTask, stopBackupBackgroundTask } from '@/utils/backupBackgroundTask';
+import { useImportBackgroundTask } from '@/contexts/ImportBackgroundTaskContext';
+import { startImportBackgroundTask, stopImportBackgroundTask } from '@/utils/importBackgroundTask';
 import { importDataFromCloud, ImportProgress } from '@/db/importData';
 import { extractFoldersFromSQLite, extractDecksFromSQLite, extractFlashcardsFromSQLite, extractRecentUserFormEntriesFromSQLite } from '@/db/backup';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,6 +100,20 @@ export default function AppSettingsScreen() {
     resetAutomaticallyCancelledFlag
   } = useBackupBackgroundTask();
   
+  // import progress state - now handled by background task context
+  const { 
+    isImportBackgroundTaskRunning, 
+    isImportCleanupInProgress,
+    isImportStopping,
+    importBackgroundTaskProgress, 
+    wasAutomaticallyCancelled: wasImportAutomaticallyCancelled,
+    startImportBackgroundTaskMonitoring,
+    forceStopImportBackgroundTask,
+    clearImportBackgroundTaskProgress,
+    resetImportForceStoppedFlag,
+    resetAutomaticallyCancelledFlag: resetImportAutomaticallyCancelledFlag
+  } = useImportBackgroundTask();
+  
   // backup loading state
   const [isBackupLoading, setIsBackupLoading] = React.useState(false);
   const backupLoadingOverlayOpacity = React.useRef(new Animated.Value(0)).current;
@@ -126,9 +142,7 @@ export default function AppSettingsScreen() {
   const [isCancelCooldownActive, setIsCancelCooldownActive] = React.useState(false);
   const cooldownTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Import process state
-  const [isImportRunning, setIsImportRunning] = React.useState(false);
-  const [importProgress, setImportProgress] = React.useState<ImportProgress | null>(null);
+  // Import process state - now handled by background task context
   const [isCancelImportModalOpen, setIsCancelImportModalOpen] = React.useState(false);
   const cancelImportOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const cancelImportModalOpacity = React.useRef(new Animated.Value(0)).current;
@@ -139,6 +153,9 @@ export default function AppSettingsScreen() {
   
   // Import cancellation flag
   const importCancelledRef = React.useRef(false);
+  
+  // local stopping state to ensure immediate UI feedback for import
+  const [isLocallyStoppingImport, setIsLocallyStoppingImport] = React.useState(false);
 
   // No data modal state
   const [isNoDataModalOpen, setIsNoDataModalOpen] = React.useState(false);
@@ -314,7 +331,7 @@ export default function AppSettingsScreen() {
 
   // Watch for import completion to show success modal
   React.useEffect(() => {
-    if (importProgress?.stage === 'inserting' && importProgress?.message === 'Import complete!') {
+    if (importBackgroundTaskProgress?.completed && importBackgroundTaskProgress?.success && !importBackgroundTaskProgress?.error && !importBackgroundTaskProgress?.networkError) {
       // If cancel import modal is open when import completes, dismiss it first
       if (isCancelImportModalOpen) {
         console.log('Import completed while cancel modal is open - dismissing cancel modal first');
@@ -325,12 +342,8 @@ export default function AppSettingsScreen() {
       
       // Show success modal when import completes
       handleShowSuccessModal('Import completed\nsuccessfully!');
-      
-      // Clean up import state
-      setIsImportRunning(false);
-      setImportProgress(null);
     }
-  }, [importProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
+  }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
 
   // Show success modal on page load if backup was completed
   React.useEffect(() => {
@@ -359,7 +372,7 @@ export default function AppSettingsScreen() {
 
   // Hide import loading screen when import starts running
   React.useEffect(() => {
-    if (isImportLoading && isImportRunning) {
+    if (isImportLoading && isImportBackgroundTaskRunning) {
       // Set isImportLoading to false IMMEDIATELY to prevent button flashing
       setIsImportLoading(false);
       
@@ -373,15 +386,15 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isImportRunning, isImportLoading, importLoadingOverlayOpacity]);
+  }, [isImportBackgroundTaskRunning, isImportLoading, importLoadingOverlayOpacity]);
 
   // Control button disable state based on backup and import status
   React.useEffect(() => {
-    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportRunning && !isImportLoading) {
+    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportBackgroundTaskRunning && !isImportLoading) {
       // Re-enable buttons when backup and import are completely done
       setShouldDisableOtherButtons(false);
     }
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportRunning, isImportLoading]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -866,30 +879,65 @@ export default function AppSettingsScreen() {
       // Small delay to ensure loading screen renders before any state changes
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // Reset import cancellation flag
-      importCancelledRef.current = false;
-      
-      // Start import process
-      setIsImportRunning(true);
-      setShouldDisableOtherButtons(true);
-      setImportProgress(null);
-      
-      console.log('Starting import process...');
-      
-      const result = await importDataFromCloud(
-        getToken,
-        (progress: ImportProgress) => {
-          setImportProgress(progress);
-        },
-        () => importCancelledRef.current
-      );
-      
-      if (!result.success) {
-        // Import failed - clean up and show error
-        setIsImportRunning(false);
-        setImportProgress(null);
-        setShouldDisableOtherButtons(false);
+      // Check if cleanup, stopping, or cooldown is in progress and wait for it to complete
+      if (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) {
+        console.log('Import cleanup in progress, waiting for completion...');
         
+        // Wait for cleanup/stopping to complete (max 10 seconds)
+        let waitCount = 0;
+        const maxWait = 100; // 10 seconds (100 * 100ms)
+        
+        while ((isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) && waitCount < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waitCount++;
+        }
+        
+        if (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) {
+          console.warn('Cleanup/stopping took too long, proceeding anyway');
+        } else {
+          console.log('Cleanup/stopping completed, proceeding with import');
+        }
+      }
+      
+      // Reset any force stopped flags from previous cancellations
+      resetImportForceStoppedFlag();
+      
+      // Reset automatic cancellation flag for clean state
+      resetImportAutomaticallyCancelledFlag();
+      
+      // Ensure clean state by clearing any residual progress data
+      await clearImportBackgroundTaskProgress();
+      
+      // Wait for cleanup/stopping to fully complete
+      if (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) {
+        console.log('Waiting for final cleanup/stopping completion...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // Verify clean state
+      try {
+        const progressCheck = await AsyncStorage.getItem('importDataBgTaskProgress');
+        if (progressCheck) {
+          console.warn('Warning: Found residual import progress before starting new import:', progressCheck);
+          // Force clear it
+          await AsyncStorage.removeItem('importDataBgTaskProgress');
+        } else {
+          console.log('Confirmed: Clean state before starting new import');
+        }
+      } catch (checkError) {
+        console.warn('Error checking import state:', checkError);
+      }
+      
+      // Start background task monitoring
+      startImportBackgroundTaskMonitoring();
+      
+      // Clear local stopping state since we're starting a new import
+      setIsLocallyStoppingImport(false);
+      
+      // Start the import background task
+      const success = await startImportBackgroundTask(getToken, language);
+      
+      if (!success) {
         // Hide loading screen
         Animated.timing(importLoadingOverlayOpacity, {
           toValue: 0,
@@ -899,30 +947,14 @@ export default function AppSettingsScreen() {
           setIsImportLoading(false);
         });
         
-        // Check if it was cancelled - no modal at all
-        if ((result as any).cancelled) {
-          console.log('Import was cancelled by user - no modal shown');
-          return;
-        }
-        
-        // Check if it's the specific "no data" case
-        if (result.message === 'NO_DATA_TO_IMPORT') {
-          handleShowNoDataModal();
-        } else {
-          Alert.alert(
-            strings[language].error,
-            result.message,
-            [{ text: strings[language].ok }]
-          );
-        }
+        Alert.alert(
+          strings[language].error,
+          'Failed to start import process',
+          [{ text: strings[language].ok }]
+        );
       }
-      // Success case is handled by the useEffect that watches importProgress
+      // If success, the loading screen will be hidden when isImportBackgroundTaskRunning becomes true
     } catch (error) {
-      // Import failed - clean up and show error
-      setIsImportRunning(false);
-      setImportProgress(null);
-      setShouldDisableOtherButtons(false);
-      
       // Hide loading screen
       Animated.timing(importLoadingOverlayOpacity, {
         toValue: 0,
@@ -932,18 +964,13 @@ export default function AppSettingsScreen() {
         setIsImportLoading(false);
       });
       
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage === 'NO_DATA_TO_IMPORT') {
-        handleShowNoDataModal();
-      } else {
-        Alert.alert(
-          strings[language].error,
-          `Import failed: ${errorMessage}`,
-          [{ text: strings[language].ok }]
-        );
-      }
+      Alert.alert(
+        strings[language].error,
+        `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: strings[language].ok }]
+      );
     }
-  }, [handleDismissLoadData, getToken, language]);
+  }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport]);
 
   const handleDeleteLocalStoragePress = React.useCallback(() => {
     setIsDeleteLocalStorageModalOpen(true);
@@ -1173,21 +1200,58 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissCancelImport();
       
-      // Set cancellation flag to stop the import process
-      importCancelledRef.current = true;
+      // IMMEDIATELY set local stopping state to prevent new import attempts
+      // This provides instant UI feedback before context state updates
+      setIsLocallyStoppingImport(true);
       
-      console.log('Import cancellation requested by user');
+      // Keep other buttons disabled during cancellation
+      setShouldDisableOtherButtons(true);
       
-      // Clean up import state
-      setIsImportRunning(false);
-      setImportProgress(null);
-      setShouldDisableOtherButtons(false);
+      console.log('User confirmed import cancellation - setting stopping state immediately');
       
-      console.log('Import process cancelled successfully');
+      // Force stop the import background task permanently
+      forceStopImportBackgroundTask();
+      
+      // Stop the actual background service
+      await stopImportBackgroundTask();
+      
+      // Clear the import progress data thoroughly
+      await clearImportBackgroundTaskProgress();
+      
+      // Additional cleanup: manually remove all import-related AsyncStorage keys
+      try {
+        await AsyncStorage.multiRemove([
+          'importDataBgTaskProgress',
+          'importProgress',
+          'importState'
+        ]);
+        console.log('Additional AsyncStorage cleanup completed');
+        
+        // Verify cleanup worked
+        const remainingProgress = await AsyncStorage.getItem('importDataBgTaskProgress');
+        if (remainingProgress) {
+          console.warn('Warning: import progress still exists after cleanup:', remainingProgress);
+        } else {
+          console.log('Confirmed: import progress completely cleared');
+        }
+      } catch (cleanupError) {
+        console.warn('Additional cleanup failed:', cleanupError);
+      }
+      
+      // Add a small delay to ensure all async operations complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('Import task cancelled successfully');
+      
     } catch (error) {
-      console.error('Error cancelling import process:', error);
+      console.error('Error cancelling import task:', error);
+      Alert.alert(
+        strings[language].error,
+        'Failed to cancel import task',
+        [{ text: strings[language].ok }]
+      );
     }
-  }, [handleDismissCancelImport]);
+  }, [handleDismissCancelImport, forceStopImportBackgroundTask, clearImportBackgroundTaskProgress, language]);
 
   const handleShowNoDataModal = React.useCallback(() => {
     setIsNoDataModalOpen(true);
@@ -1428,12 +1492,12 @@ export default function AppSettingsScreen() {
                     style={[
                       styles.cloudButton, 
                       { 
-                        backgroundColor: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning)) ? colors.unselectedText : colors.brandColor2,
-                        opacity: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning)) ? 0.6 : 1.0
+                        backgroundColor: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning)) ? colors.unselectedText : colors.brandColor2,
+                        opacity: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning)) ? 0.6 : 1.0
                       }
                     ]}
-                    onPress={(!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning)) ? undefined : handleBackupPress}
-                    disabled={isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning}
+                    onPress={(!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning)) ? undefined : handleBackupPress}
+                    disabled={isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning}
                   >
                     <View style={styles.buttonContent}>
                       <MaterialIcons name="cloud-upload" size={30} color="#fff" />
@@ -1442,7 +1506,7 @@ export default function AppSettingsScreen() {
                           ? strings[language].appSettingsPage.backupDataToCloud
                           : (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
                             ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
-                            : isImportRunning
+                            : isImportBackgroundTaskRunning
                               ? (language === 'Chinese' ? '导入进行中...' : 'Import in progress...')
                               : strings[language].appSettingsPage.backupDataToCloud
                         }
@@ -1458,7 +1522,7 @@ export default function AppSettingsScreen() {
                   <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
                   <Text style={[styles.descriptionText, { color: colors.text, fontFamily: Fonts.bodyItalicLight }]}>.</Text>
                 </Text>
-                {isImportRunning ? (
+                {isImportBackgroundTaskRunning ? (
                   <View style={{ 
                     alignItems: 'center',
                     marginTop: 20,
@@ -1472,9 +1536,9 @@ export default function AppSettingsScreen() {
                     }}>
                       <View style={{ flex: 1 }}>
                         <StripedProgressBar 
-                          progress={importProgress?.percentage || 0}
-                          currentItems={importProgress?.rowsImported || 0}
-                          totalItems={importProgress?.totalRows || 0}
+                          progress={importBackgroundTaskProgress?.percentage || 0}
+                          currentItems={importBackgroundTaskProgress?.rowsImported || 0}
+                          totalItems={importBackgroundTaskProgress?.totalRows || 0}
                           height={60}
                           borderRadius={30}
                           immediateProgress={false}
@@ -1497,9 +1561,9 @@ export default function AppSettingsScreen() {
                       textAlign: 'center',
                       paddingHorizontal: 20
                     }]}>
-                      {importProgress?.stage === 'counting'
+                      {importBackgroundTaskProgress?.status === 'counting'
                         ? (language === 'Chinese' ? '正在检查云端数据...' : "Checking data in cloud...\nPlease don't close this app otherwise import will end prematurely")
-                        : importProgress?.stage === 'importing'
+                        : importBackgroundTaskProgress?.status === 'importing'
                         ? (language === 'Chinese' ? '正在从云端导入数据...' : "Importing data from cloud...\nPlease don't close this app otherwise import will end prematurely")
                         : (language === 'Chinese' ? '正在更新本地数据库...' : "Updating local database...\nPlease don't close this app otherwise import will end prematurely")
                       }

@@ -2,6 +2,46 @@ import { db } from './index';
 import { createAuthenticatedSupabaseClient } from '../supabase/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Network error detection helper
+function isNetworkError(error: any): boolean {
+  if (!error) return false;
+  
+  // Check for common network error patterns
+  const errorMessage = error.message?.toLowerCase() || '';
+  const errorName = error.name?.toLowerCase() || '';
+  
+  // Common network error indicators
+  const networkErrorPatterns = [
+    'network',
+    'fetch',
+    'connection',
+    'timeout',
+    'unreachable',
+    'offline',
+    'no internet',
+    'dns',
+    'enotfound',
+    'econnrefused',
+    'econnreset',
+    'etimedout'
+  ];
+  
+  // Check error message and name for network patterns
+  const hasNetworkPattern = networkErrorPatterns.some(pattern => 
+    errorMessage.includes(pattern) || errorName.includes(pattern)
+  );
+  
+  // Check for specific error types
+  const isNetworkErrorType = error instanceof TypeError && errorMessage.includes('failed to fetch');
+  const isAbortError = error.name === 'AbortError';
+  
+  // Check for common HTTP status codes that indicate network issues
+  const networkStatusCodes = [0, 502, 503, 504];
+  const hasNetworkStatusCode = error.status && networkStatusCodes.includes(error.status);
+  
+  return hasNetworkPattern || isNetworkErrorType || hasNetworkStatusCode || isAbortError;
+}
+
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
   try {
@@ -811,7 +851,7 @@ export async function importDataFromCloud(
   getToken: TokenGetter,
   onProgress?: (progress: ImportProgress) => void,
   isCancelled?: () => boolean
-): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
+): Promise<{ success: boolean; message: string; cancelled?: boolean; isNetworkError?: boolean }> {
   try {
     console.log('Starting import process...');
 
@@ -949,6 +989,17 @@ export async function importDataFromCloud(
     };
   } catch (error) {
     console.error('Error during import process:', error);
+    
+    // Check if this is a network error
+    if (isNetworkError(error)) {
+      console.log('Network error detected during import');
+      return { 
+        success: false, 
+        message: 'Import cancelled due to network error! Check your network.',
+        isNetworkError: true
+      };
+    }
+    
     return {
       success: false,
       message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`

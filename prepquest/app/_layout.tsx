@@ -16,8 +16,10 @@ import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext'
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
 import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskContext';
+import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import { BackupTaskNotification } from '@/components/inAppNotifications/BackupTaskNotification';
+import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
 import NotificationService from '@/utils/notifications';
 import * as Notifications from 'expo-notifications';
 
@@ -53,7 +55,8 @@ const stopAllBackgroundTasks = async () => {
     // Clear all background task progress data
     const progressKeys = [
       'genAIDeckCreationBgTaskProgress',
-      'backupDataBgTaskProgress'
+      'backupDataBgTaskProgress',
+      'importDataBgTaskProgress'
     ];
     
     for (const key of progressKeys) {
@@ -286,6 +289,7 @@ function AppContent() {
           </Stack>
           <BackgroundTaskNotification />
           <BackupTaskNotification />
+          <ImportTaskNotification />
           <StatusBar style="auto" />
         </>
       )}
@@ -308,7 +312,9 @@ export default function RootLayout() {
           <CustomThemeProvider>
             <BackgroundTaskProvider>
               <BackupBackgroundTaskProvider>
-                <AppContent />
+                <ImportBackgroundTaskProvider>
+                  <AppContent />
+                </ImportBackgroundTaskProvider>
               </BackupBackgroundTaskProvider>
             </BackgroundTaskProvider>
           </CustomThemeProvider>

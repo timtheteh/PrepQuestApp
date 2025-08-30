@@ -208,6 +208,7 @@ export default function AppSettingsScreen() {
     
     // Start 5-second cooldown period to prevent immediate restart after network error
     setIsCancelCooldownActive(true);
+    setShouldDisableOtherButtons(true);
     console.log('Starting 5-second cooldown after network error modal dismissal');
     
     // Clear any existing cooldown timer
@@ -218,7 +219,8 @@ export default function AppSettingsScreen() {
     // Set timer to clear cooldown after 5 seconds
     cooldownTimerRef.current = setTimeout(() => {
       setIsCancelCooldownActive(false);
-      console.log('Cooldown period ended after network error modal dismissal - backup button re-enabled');
+      setShouldDisableOtherButtons(false);
+      console.log('Cooldown period ended after network error modal dismissal - all buttons re-enabled');
     }, 5000);
   }, [networkErrorOverlayOpacity, networkErrorModalOpacity, clearBackupBackgroundTaskProgress]);
 

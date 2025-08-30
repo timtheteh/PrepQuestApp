@@ -388,7 +388,7 @@ export const strings: Record<string, any> = {
       deleteAccount: 'Delete Account?',
       backupDescription: 'Backup your local storage to cloud regularly so that you can access your data on other devices\nand so that AIDecks can be generated based on your latest decks/flashcards.\n\nEach backup will replace the previous one. For more clarification, please refer to the FAQ in our ',
       website: 'website',
-      loadDataDescription: 'Import your existing data and progress from cloud if you logging in from another phone.\n\nEach import will replace your existing local storage. For more clarification, please refer to the FAQ in our ',
+      loadDataDescription: 'Only import data from cloud if you are sure that you want to replace your existing local storage, eg. when you have backed up your data to cloud successfully.\n\nFor more clarification, please refer to the FAQ in our ',
       clearLocalStorageDescription: 'This will delete all your local storage data and you will not be able to recover it. Please backup your data to cloud before clearing.',
       proceedWithCloudBackup: 'Proceed with\ncloud backup?',
       proceedWithCloudImport: 'Proceed with\ncloud import?',

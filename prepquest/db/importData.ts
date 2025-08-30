@@ -891,7 +891,7 @@ export async function importDataFromCloud(
       const percentage = Math.round((localProgressState.insertedRows / totalLocalRows) * 100);
       
       onProgress?.({
-        stage,
+        stage: 'inserting', // Always use 'inserting' stage for local database operations
         completed: localProgressState.insertedRows,
         total: totalLocalRows,
         message,

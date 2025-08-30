@@ -131,6 +131,10 @@ export default function AppSettingsScreen() {
   const cancelImportOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const cancelImportModalOpacity = React.useRef(new Animated.Value(0)).current;
   
+  // Import loading state
+  const [isImportLoading, setIsImportLoading] = React.useState(false);
+  const importLoadingOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  
   // Import cancellation flag
   const importCancelledRef = React.useRef(false);
 
@@ -175,7 +179,7 @@ export default function AppSettingsScreen() {
       }
       
       // Show success modal when import completes
-      handleShowSuccessModal('Import completed successfully!');
+      handleShowSuccessModal('Import completed\nsuccessfully!');
       
       // Clean up import state
       setIsImportRunning(false);
@@ -208,13 +212,31 @@ export default function AppSettingsScreen() {
     }
   }, [isBackupBackgroundTaskRunning, isBackupLoading, backupLoadingOverlayOpacity]);
 
+  // Hide import loading screen when import starts running
+  React.useEffect(() => {
+    if (isImportLoading && isImportRunning) {
+      // Set isImportLoading to false IMMEDIATELY to prevent button flashing
+      setIsImportLoading(false);
+      
+      // Enable button disabling only when progress bar becomes visible
+      setShouldDisableOtherButtons(true);
+      
+      // Then animate out the loading overlay
+      Animated.timing(importLoadingOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isImportRunning, isImportLoading, importLoadingOverlayOpacity]);
+
   // Control button disable state based on backup and import status
   React.useEffect(() => {
-    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportRunning) {
+    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportRunning && !isImportLoading) {
       // Re-enable buttons when backup and import are completely done
       setShouldDisableOtherButtons(false);
     }
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportRunning]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportRunning, isImportLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -657,6 +679,17 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissLoadData();
       
+      // Show loading screen IMMEDIATELY to prevent any button UI changes
+      setIsImportLoading(true);
+      Animated.timing(importLoadingOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      
+      // Small delay to ensure loading screen renders before any state changes
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       // Reset import cancellation flag
       importCancelledRef.current = false;
       
@@ -681,6 +714,15 @@ export default function AppSettingsScreen() {
         setImportProgress(null);
         setShouldDisableOtherButtons(false);
         
+        // Hide loading screen
+        Animated.timing(importLoadingOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsImportLoading(false);
+        });
+        
         Alert.alert(
           strings[language].error,
           result.message,
@@ -693,6 +735,15 @@ export default function AppSettingsScreen() {
       setIsImportRunning(false);
       setImportProgress(null);
       setShouldDisableOtherButtons(false);
+      
+      // Hide loading screen
+      Animated.timing(importLoadingOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsImportLoading(false);
+      });
       
       Alert.alert(
         strings[language].error,
@@ -1101,12 +1152,12 @@ export default function AppSettingsScreen() {
                     style={[
                       styles.cloudButton, 
                       { 
-                        backgroundColor: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive)) ? colors.unselectedText : colors.brandColor2,
-                        opacity: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive)) ? 0.6 : 1.0
+                        backgroundColor: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning)) ? colors.unselectedText : colors.brandColor2,
+                        opacity: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning)) ? 0.6 : 1.0
                       }
                     ]}
-                    onPress={(!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive)) ? undefined : handleBackupPress}
-                    disabled={isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive}
+                    onPress={(!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning)) ? undefined : handleBackupPress}
+                    disabled={isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportRunning}
                   >
                     <View style={styles.buttonContent}>
                       <MaterialIcons name="cloud-upload" size={30} color="#fff" />
@@ -1115,7 +1166,9 @@ export default function AppSettingsScreen() {
                           ? strings[language].appSettingsPage.backupDataToCloud
                           : (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
                             ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
-                            : strings[language].appSettingsPage.backupDataToCloud
+                            : isImportRunning
+                              ? (language === 'Chinese' ? '导入进行中...' : 'Import in progress...')
+                              : strings[language].appSettingsPage.backupDataToCloud
                         }
                       </Text>
                     </View>
@@ -1320,6 +1373,22 @@ export default function AppSettingsScreen() {
           </View>
         )}
 
+        {/* Import Loading Screen */}
+        <GreyOverlayBackground 
+          visible={isImportLoading}
+          opacity={importLoadingOverlayOpacity}
+        />
+        {isImportLoading && (
+          <View style={styles.loadingContainer}>
+            <LottieView
+              source={require('@/assets/animations/addDeckLoadingAnimation.json')}
+              autoPlay
+              loop
+              style={styles.loadingAnimation}
+            />
+          </View>
+        )}
+
         {/* Cancel Backup Modal */}
         <GreyOverlayBackground 
           visible={isCancelBackupModalOpen}
@@ -1345,7 +1414,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isCancelImportModalOpen}
           opacity={cancelImportModalOpacity}
-          text={language === 'Chinese' ? '取消导入' : 'Cancel Import'}
+          text={language === 'Chinese' ? '取消导入?' : 'Cancel Import?'}
           Icon={DeleteModalIcon}
           buttons="double"
           onCancel={handleDismissCancelImport}

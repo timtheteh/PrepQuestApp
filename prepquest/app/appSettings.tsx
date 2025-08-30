@@ -743,6 +743,12 @@ export default function AppSettingsScreen() {
           setIsImportLoading(false);
         });
         
+        // Check if it was cancelled - no modal at all
+        if ((result as any).cancelled) {
+          console.log('Import was cancelled by user - no modal shown');
+          return;
+        }
+        
         // Check if it's the specific "no data" case
         if (result.message === 'NO_DATA_TO_IMPORT') {
           handleShowNoDataModal();

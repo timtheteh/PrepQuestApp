@@ -811,7 +811,7 @@ export async function importDataFromCloud(
   getToken: TokenGetter,
   onProgress?: (progress: ImportProgress) => void,
   isCancelled?: () => boolean
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
   try {
     console.log('Starting import process...');
 
@@ -823,7 +823,7 @@ export async function importDataFromCloud(
 
     // Stage 1: Get total row counts
     onProgress?.({ stage: 'counting', completed: 0, total: 1, message: 'Checking data in cloud...' });
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
     
     const rowCounts = await getTotalRowCount(token);
     if (!rowCounts) {
@@ -858,25 +858,34 @@ export async function importDataFromCloud(
 
     // Stage 2: Import data from Supabase
     reportImportProgress('importing', 'Starting import from cloud...', 0);
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     const folders = await importFoldersFromSupabase(getToken, reportImportProgress, isCancelled);
     if (folders === null) {
+      if (isCancelled?.()) {
+        return { success: false, message: 'Import cancelled by user', cancelled: true };
+      }
       return { success: false, message: 'Failed to import folders from cloud' };
     }
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     const decks = await importDecksFromSupabase(getToken, reportImportProgress, isCancelled);
     if (decks === null) {
+      if (isCancelled?.()) {
+        return { success: false, message: 'Import cancelled by user', cancelled: true };
+      }
       return { success: false, message: 'Failed to import decks from cloud' };
     }
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     const flashcards = await importFlashcardsFromSupabase(getToken, reportImportProgress, isCancelled);
     if (flashcards === null) {
+      if (isCancelled?.()) {
+        return { success: false, message: 'Import cancelled by user', cancelled: true };
+      }
       return { success: false, message: 'Failed to import flashcards from cloud' };
     }
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     // Stage 3: Replace local database data
     const totalLocalRows = folders.length + decks.length + flashcards.length;
@@ -902,22 +911,31 @@ export async function importDataFromCloud(
     };
 
     reportLocalProgress('inserting', 'Starting local database update...', 0);
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     const foldersSuccess = await replaceFoldersInLocalDatabase(folders, reportLocalProgress, isCancelled);
     if (!foldersSuccess) {
+      if (isCancelled?.()) {
+        return { success: false, message: 'Import cancelled by user', cancelled: true };
+      }
       return { success: false, message: 'Failed to update local folders' };
     }
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     const decksSuccess = await replaceDecksInLocalDatabase(decks, reportLocalProgress, isCancelled);
     if (!decksSuccess) {
+      if (isCancelled?.()) {
+        return { success: false, message: 'Import cancelled by user', cancelled: true };
+      }
       return { success: false, message: 'Failed to update local decks' };
     }
-    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user' };
+    if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     const flashcardsSuccess = await replaceFlashcardsInLocalDatabase(flashcards, reportLocalProgress, isCancelled);
     if (!flashcardsSuccess) {
+      if (isCancelled?.()) {
+        return { success: false, message: 'Import cancelled by user', cancelled: true };
+      }
       return { success: false, message: 'Failed to update local flashcards' };
     }
 

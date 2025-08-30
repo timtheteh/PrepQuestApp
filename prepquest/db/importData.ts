@@ -527,6 +527,7 @@ async function replaceFoldersInLocalDatabase(
 
     if (folders.length === 0) {
       console.log('No folders to insert into local database');
+      await db.runAsync('COMMIT');
       return true;
     }
 
@@ -602,6 +603,7 @@ async function replaceDecksInLocalDatabase(
 
     if (decks.length === 0) {
       console.log('No decks to insert into local database');
+      await db.runAsync('COMMIT');
       return true;
     }
 
@@ -699,6 +701,7 @@ async function replaceFlashcardsInLocalDatabase(
 
     if (flashcards.length === 0) {
       console.log('No flashcards to insert into local database');
+      await db.runAsync('COMMIT');
       return true;
     }
 

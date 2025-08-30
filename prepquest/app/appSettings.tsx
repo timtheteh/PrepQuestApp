@@ -1498,10 +1498,10 @@ export default function AppSettingsScreen() {
                       paddingHorizontal: 20
                     }]}>
                       {importProgress?.stage === 'counting'
-                        ? (language === 'Chinese' ? '正在检查云端数据...' : 'Checking data in cloud...')
+                        ? (language === 'Chinese' ? '正在检查云端数据...' : "Checking data in cloud...\nPlease don't close this app otherwise import will end prematurely")
                         : importProgress?.stage === 'importing'
-                        ? (language === 'Chinese' ? '正在从云端导入数据...' : 'Importing data from cloud...')
-                        : (language === 'Chinese' ? '正在更新本地数据库...' : 'Updating local database...')
+                        ? (language === 'Chinese' ? '正在从云端导入数据...' : "Importing data from cloud...\nPlease don't close this app otherwise import will end prematurely")
+                        : (language === 'Chinese' ? '正在更新本地数据库...' : "Updating local database...\nPlease don't close this app otherwise import will end prematurely")
                       }
                     </Text>
                   </View>

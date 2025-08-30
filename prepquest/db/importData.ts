@@ -857,7 +857,6 @@ export async function importDataFromCloud(
     };
 
     // Stage 2: Import data from Supabase
-    reportImportProgress('importing', 'Starting import from cloud...', 0);
     if (isCancelled?.()) return { success: false, message: 'Import cancelled by user', cancelled: true };
 
     const folders = await importFoldersFromSupabase(getToken, reportImportProgress, isCancelled);

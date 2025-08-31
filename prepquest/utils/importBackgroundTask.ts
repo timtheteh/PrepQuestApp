@@ -218,6 +218,21 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
       return;
     }
     
+    // Check if there's no data to import
+    if (!result.success && result.message === 'NO_DATA_TO_IMPORT') {
+      console.log('No data to import from cloud');
+      await saveImportProgress({
+        status: 'noData',
+        inProgress: false,
+        completed: false,
+        noData: true,
+        timestamp: Date.now(),
+        message: result.message,
+        errorMessage: result.message
+      });
+      return;
+    }
+    
     // Check if the import result indicates network error
     if (!result.success && (result as any).isNetworkError) {
       console.log('Import cancelled due to network error');

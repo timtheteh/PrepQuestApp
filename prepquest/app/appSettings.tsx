@@ -197,6 +197,11 @@ export default function AppSettingsScreen() {
   const backupLoadingNetworkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const backupLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Import loading network error modal state
+  const [isImportLoadingNetworkErrorModalOpen, setIsImportLoadingNetworkErrorModalOpen] = React.useState(false);
+  const importLoadingNetworkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const importLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+
   // Handler functions
   const handleShowNetworkErrorModal = React.useCallback(() => {
     setIsNetworkErrorModalOpen(true);
@@ -290,6 +295,39 @@ export default function AppSettingsScreen() {
       setIsBackupLoadingNetworkErrorModalOpen(false);
     });
   }, [backupLoadingNetworkErrorOverlayOpacity, backupLoadingNetworkErrorModalOpacity]);
+
+  const handleShowImportLoadingNetworkErrorModal = React.useCallback(() => {
+    setIsImportLoadingNetworkErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(importLoadingNetworkErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(importLoadingNetworkErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [importLoadingNetworkErrorOverlayOpacity, importLoadingNetworkErrorModalOpacity]);
+
+  const handleDismissImportLoadingNetworkErrorModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(importLoadingNetworkErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(importLoadingNetworkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsImportLoadingNetworkErrorModalOpen(false);
+    });
+  }, [importLoadingNetworkErrorOverlayOpacity, importLoadingNetworkErrorModalOpacity]);
 
   const handleShowAutomaticCancellationModal = React.useCallback(() => {
     setIsAutomaticCancellationModalOpen(true);
@@ -428,6 +466,9 @@ export default function AppSettingsScreen() {
       
       // Show success modal when import completes (will stay open until manually dismissed)
       handleShowSuccessModal('Import completed!');
+    } else if (importBackgroundTaskProgress?.noData) {
+      // Show no data modal when there's no data to import
+      handleShowNoDataModal();
     }
   }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
 
@@ -1187,6 +1228,23 @@ export default function AppSettingsScreen() {
       // Clear local stopping state since we're starting a new import
       setIsLocallyStoppingImport(false);
       
+      // Check network connectivity before starting import
+      const isNetworkConnected = await checkNetworkConnectivity();
+      if (!isNetworkConnected) {
+        // Hide loading screen
+        Animated.timing(importLoadingOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsImportLoading(false);
+        });
+        
+        // Show network error modal
+        handleShowImportLoadingNetworkErrorModal();
+        return;
+      }
+      
       // Start the import background task
       const success = await startImportBackgroundTask(getToken, language);
       
@@ -1223,7 +1281,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport, isImportBackgroundTaskRunning, forceStopImportBackgroundTask, stopImportBackgroundTask]);
+  }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport, isImportBackgroundTaskRunning, forceStopImportBackgroundTask, stopImportBackgroundTask, checkNetworkConnectivity, handleShowImportLoadingNetworkErrorModal]);
 
   const handleDeleteLocalStoragePress = React.useCallback(() => {
     setIsDeleteLocalStorageModalOpen(true);
@@ -2097,6 +2155,21 @@ export default function AppSettingsScreen() {
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissBackupLoadingNetworkErrorModal}
+        />
+
+        {/* Import Loading Network Error Modal */}
+        <GreyOverlayBackground 
+          visible={isImportLoadingNetworkErrorModalOpen}
+          opacity={importLoadingNetworkErrorOverlayOpacity}
+          onPress={handleDismissImportLoadingNetworkErrorModal}
+        />
+        <GenericModal
+          visible={isImportLoadingNetworkErrorModalOpen}
+          opacity={importLoadingNetworkErrorModalOpacity}
+          text={language === 'Chinese' ? '导入因网络错误而无法启动！' : 'Import failed to start\ndue to network error!'}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissImportLoadingNetworkErrorModal}
         />
 
         {/* Navigation Guard Modal */}

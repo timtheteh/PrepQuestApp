@@ -127,6 +127,9 @@ export default function AppSettingsScreen() {
   // persistent backup completion state
   const [hasBackupCompleted, setHasBackupCompleted] = React.useState(false);
 
+  // persistent import completion state
+  const [hasImportCompleted, setHasImportCompleted] = React.useState(false);
+
   // cancel backup modal state
   const [isCancelBackupModalOpen, setIsCancelBackupModalOpen] = React.useState(false);
   const cancelBackupOverlayOpacity = React.useRef(new Animated.Value(0)).current;
@@ -412,6 +415,9 @@ export default function AppSettingsScreen() {
   // Watch for import completion to show success modal
   React.useEffect(() => {
     if (importBackgroundTaskProgress?.completed && importBackgroundTaskProgress?.success && !importBackgroundTaskProgress?.error && !importBackgroundTaskProgress?.networkError) {
+      // Set persistent import completion state
+      setHasImportCompleted(true);
+      
       // If cancel import modal is open when import completes, dismiss it first
       if (isCancelImportModalOpen) {
         console.log('Import completed while cancel modal is open - dismissing cancel modal first');
@@ -420,8 +426,8 @@ export default function AppSettingsScreen() {
         cancelImportModalOpacity.setValue(0);
       }
       
-      // Show success modal when import completes
-      handleShowSuccessModal('Import completed\nsuccessfully!');
+      // Show success modal when import completes (will stay open until manually dismissed)
+      handleShowSuccessModal('Import completed!');
     }
   }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
 
@@ -431,6 +437,13 @@ export default function AppSettingsScreen() {
       handleShowSuccessModal('Backup completed successfully!');
     }
   }, [hasBackupCompleted, isSuccessModalOpen]);
+
+  // Show success modal on page load if import was completed
+  React.useEffect(() => {
+    if (hasImportCompleted && !isSuccessModalOpen) {
+      handleShowSuccessModal('Import completed!');
+    }
+  }, [hasImportCompleted, isSuccessModalOpen]);
 
   // Hide loading screen when backup background task starts running
   React.useEffect(() => {
@@ -1142,6 +1155,9 @@ export default function AppSettingsScreen() {
       // Reset automatic cancellation flag for clean state
       resetImportAutomaticallyCancelledFlag();
       
+      // Reset import completion state for clean state
+      setHasImportCompleted(false);
+      
       // Ensure clean state by clearing any residual progress data
       await clearImportBackgroundTaskProgress();
       
@@ -1281,12 +1297,23 @@ export default function AppSettingsScreen() {
       // Clear the persistent backup completion state when user manually dismisses
       setHasBackupCompleted(false);
       
+      // Clear the persistent import completion state when user manually dismisses
+      setHasImportCompleted(false);
+      
       // Also clear the backup progress data from AsyncStorage to prevent it from showing again
       try {
         await AsyncStorage.removeItem('backupDataBgTaskProgress');
         console.log('Cleared backup progress data after user dismissed success modal');
       } catch (error) {
         console.error('Error clearing backup progress data:', error);
+      }
+      
+      // Also clear the import progress data from AsyncStorage to prevent it from showing again
+      try {
+        await AsyncStorage.removeItem('importDataBgTaskProgress');
+        console.log('Cleared import progress data after user dismissed success modal');
+      } catch (error) {
+        console.error('Error clearing import progress data:', error);
       }
     });
   }, [successOverlayOpacity, successModalOpacity]);
@@ -1372,6 +1399,9 @@ export default function AppSettingsScreen() {
       
       // Reset backup completion state
       setHasBackupCompleted(false);
+      
+      // Reset import completion state
+      setHasImportCompleted(false);
       
       // Add a small delay to ensure all async operations complete
       await new Promise(resolve => setTimeout(resolve, 100));

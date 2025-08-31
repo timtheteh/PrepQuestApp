@@ -1092,14 +1092,17 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissCancelBackup();
       
-      // IMMEDIATELY set local stopping state to prevent new backup attempts
+      // Wait for the modal dismissal animation to complete before setting state
+      await new Promise(resolve => setTimeout(resolve, 250));
+      
+      // Set local stopping state to prevent new backup attempts
       // This provides instant UI feedback before context state updates
       setIsLocallyStoppingBackup(true);
       
       // Keep other buttons disabled during cancellation and cooldown
       setShouldDisableOtherButtons(true);
       
-      console.log('User confirmed cancellation - setting stopping state immediately');
+      console.log('User confirmed cancellation - setting stopping state');
       
       // Force stop the backup background task permanently
       forceStopBackupBackgroundTask();
@@ -1200,14 +1203,17 @@ export default function AppSettingsScreen() {
       // Dismiss the confirmation modal first
       handleDismissCancelImport();
       
-      // IMMEDIATELY set local stopping state to prevent new import attempts
+      // Wait for the modal dismissal animation to complete before setting state
+      await new Promise(resolve => setTimeout(resolve, 250));
+      
+      // Set local stopping state to prevent new import attempts
       // This provides instant UI feedback before context state updates
       setIsLocallyStoppingImport(true);
       
       // Keep other buttons disabled during cancellation
       setShouldDisableOtherButtons(true);
       
-      console.log('User confirmed import cancellation - setting stopping state immediately');
+      console.log('User confirmed import cancellation - setting stopping state');
       
       // Force stop the import background task permanently
       forceStopImportBackgroundTask();

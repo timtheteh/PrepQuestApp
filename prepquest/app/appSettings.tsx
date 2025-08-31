@@ -241,31 +241,50 @@ export default function AppSettingsScreen() {
       setHasNetworkErrorModalBeenShown(false);
     });
     
-    // Clear the backup progress data when user dismisses network error modal
-    try {
-      await clearBackupBackgroundTaskProgress();
-      console.log('Cleared backup progress data after user dismissed network error modal');
-    } catch (error) {
-      console.error('Error clearing backup progress data:', error);
-    }
-    
-    // Start 5-second cooldown period to prevent immediate restart after network error
-    setIsCancelCooldownActive(true);
-    setShouldDisableOtherButtons(true);
-    console.log('Starting 5-second cooldown after network error modal dismissal');
-    
-    // Clear any existing cooldown timer
-    if (cooldownTimerRef.current) {
-      clearTimeout(cooldownTimerRef.current);
-    }
-    
-    // Set timer to clear cooldown after 5 seconds
-    cooldownTimerRef.current = setTimeout(() => {
-      setIsCancelCooldownActive(false);
+    // Handle different operations differently
+    if (networkErrorOperation === 'backup') {
+      // For backup network errors: clear backup progress and start cooldown
+      try {
+        await clearBackupBackgroundTaskProgress();
+        console.log('Cleared backup progress data after user dismissed network error modal');
+      } catch (error) {
+        console.error('Error clearing backup progress data:', error);
+      }
+      
+      // Start 5-second cooldown period to prevent immediate restart after backup network error
+      setIsCancelCooldownActive(true);
+      setShouldDisableOtherButtons(true);
+      console.log('Starting 5-second cooldown after backup network error modal dismissal');
+      
+      // Clear any existing cooldown timer
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+      }
+      
+      // Set timer to clear cooldown after 5 seconds
+      cooldownTimerRef.current = setTimeout(() => {
+        setIsCancelCooldownActive(false);
+        setShouldDisableOtherButtons(false);
+        console.log('Cooldown period ended after backup network error modal dismissal - all buttons re-enabled');
+      }, 5000);
+    } else {
+      // For import network errors: clear import progress and immediately enable all buttons
+      try {
+        await clearImportBackgroundTaskProgress();
+        console.log('Cleared import progress data after user dismissed network error modal');
+      } catch (error) {
+        console.error('Error clearing import progress data:', error);
+      }
+      
+      // Reset all import-related states to ensure buttons are fully enabled
+      setIsLocallyStoppingImport(false);
+      setIsImportCancelCooldownActive(false);
+      
+      // Immediately enable all buttons for import network errors
       setShouldDisableOtherButtons(false);
-      console.log('Cooldown period ended after network error modal dismissal - all buttons re-enabled');
-    }, 5000);
-  }, [networkErrorOverlayOpacity, networkErrorModalOpacity, clearBackupBackgroundTaskProgress]);
+      console.log('Import network error modal dismissed - all buttons immediately re-enabled');
+    }
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity, clearBackupBackgroundTaskProgress, clearImportBackgroundTaskProgress, networkErrorOperation]);
 
   const handleShowBackupLoadingNetworkErrorModal = React.useCallback(() => {
     setIsBackupLoadingNetworkErrorModalOpen(true);
@@ -1860,7 +1879,7 @@ export default function AppSettingsScreen() {
                       <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>
                         {isBackupLoading
                           ? strings[language].appSettingsPage.backupDataToCloud
-                          : shouldDisableOtherButtons && (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
+                          : (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
                             ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
                             : strings[language].appSettingsPage.backupDataToCloud
                         }
@@ -1940,7 +1959,7 @@ export default function AppSettingsScreen() {
                       <Text style={[styles.cloudButtonText, { 
                         fontFamily: Fonts.bodyMedium,
                       }]}>
-                        {shouldDisableOtherButtons && (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport || isImportCancelCooldownActive)
+                        {(isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport || isImportCancelCooldownActive)
                           ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
                           : strings[language].appSettingsPage.loadDataFromCloud
                         }

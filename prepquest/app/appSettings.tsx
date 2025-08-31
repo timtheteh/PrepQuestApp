@@ -103,8 +103,6 @@ export default function AppSettingsScreen() {
   // import progress state - now handled by background task context
   const { 
     isImportBackgroundTaskRunning, 
-    isImportCleanupInProgress,
-    isImportStopping,
     importBackgroundTaskProgress, 
     wasAutomaticallyCancelled: wasImportAutomaticallyCancelled,
     startImportBackgroundTaskMonitoring,
@@ -160,9 +158,6 @@ export default function AppSettingsScreen() {
   
   // Import cancellation flag
   const importCancelledRef = React.useRef(false);
-  
-  // local stopping state to ensure immediate UI feedback for import
-  const [isLocallyStoppingImport, setIsLocallyStoppingImport] = React.useState(false);
 
   // No data modal state
   const [isNoDataModalOpen, setIsNoDataModalOpen] = React.useState(false);
@@ -277,7 +272,6 @@ export default function AppSettingsScreen() {
       }
       
       // Reset all import-related states to ensure buttons are fully enabled
-      setIsLocallyStoppingImport(false);
       setIsImportCancelCooldownActive(false);
       
       // Immediately enable all buttons for import network errors
@@ -565,11 +559,11 @@ export default function AppSettingsScreen() {
 
   // Control button disable state based on backup and import status
   React.useEffect(() => {
-    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportBackgroundTaskRunning && !isImportCleanupInProgress && !isImportStopping && !isLocallyStoppingImport && !isImportCancelCooldownActive && !isImportLoading) {
+    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportBackgroundTaskRunning && !isImportCancelCooldownActive && !isImportLoading) {
       // Re-enable buttons when backup and import are completely done
       setShouldDisableOtherButtons(false);
     }
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport, isImportCancelCooldownActive, isImportLoading]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -653,9 +647,6 @@ export default function AppSettingsScreen() {
     if (wasImportAutomaticallyCancelled) {
       console.log('Detected automatic import cancellation - starting cooldown');
       
-      // Set local stopping state to provide UI feedback
-      setIsLocallyStoppingImport(true);
-      
       // Keep other buttons disabled during cooldown
       setShouldDisableOtherButtons(true);
       
@@ -671,7 +662,6 @@ export default function AppSettingsScreen() {
       // Set timer to clear cooldown after 5 seconds
       importCooldownTimerRef.current = setTimeout(() => {
         setIsImportCancelCooldownActive(false);
-        setIsLocallyStoppingImport(false);
         console.log('Cooldown period ended after automatic import cancellation - import button re-enabled');
       }, 5000);
       
@@ -1182,9 +1172,6 @@ export default function AppSettingsScreen() {
       if (isImportBackgroundTaskRunning) {
         console.log('Cancelling existing import task before starting new one...');
         
-        // Set local stopping state to prevent new import attempts
-        setIsLocallyStoppingImport(true);
-        
         // Force stop the import background task
         forceStopImportBackgroundTask();
         
@@ -1209,29 +1196,6 @@ export default function AppSettingsScreen() {
         // Wait for the cancellation to complete
         console.log('Waiting for existing import task cancellation to complete...');
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Clear local stopping state since we're about to start a new import
-        setIsLocallyStoppingImport(false);
-      }
-      
-      // Check if cleanup, stopping, or cooldown is in progress and wait for it to complete
-      if (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) {
-        console.log('Import cleanup in progress, waiting for completion...');
-        
-        // Wait for cleanup/stopping to complete (max 10 seconds)
-        let waitCount = 0;
-        const maxWait = 100; // 10 seconds (100 * 100ms)
-        
-        while ((isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) && waitCount < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          waitCount++;
-        }
-        
-        if (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) {
-          console.warn('Cleanup/stopping took too long, proceeding anyway');
-        } else {
-          console.log('Cleanup/stopping completed, proceeding with import');
-        }
       }
       
       // Reset any force stopped flags from previous cancellations
@@ -1246,11 +1210,7 @@ export default function AppSettingsScreen() {
       // Ensure clean state by clearing any residual progress data
       await clearImportBackgroundTaskProgress();
       
-      // Wait for cleanup/stopping to fully complete
-      if (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) {
-        console.log('Waiting for final cleanup/stopping completion...');
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+
       
       // Verify clean state
       try {
@@ -1268,9 +1228,6 @@ export default function AppSettingsScreen() {
       
       // Start background task monitoring
       startImportBackgroundTaskMonitoring();
-      
-      // Clear local stopping state since we're starting a new import
-      setIsLocallyStoppingImport(false);
       
       // Check network connectivity before starting import
       const isNetworkConnected = await checkNetworkConnectivity();
@@ -1325,7 +1282,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport, isImportBackgroundTaskRunning, forceStopImportBackgroundTask, stopImportBackgroundTask, checkNetworkConnectivity, handleShowImportLoadingNetworkErrorModal]);
+  }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportBackgroundTaskRunning, forceStopImportBackgroundTask, stopImportBackgroundTask, checkNetworkConnectivity, handleShowImportLoadingNetworkErrorModal]);
 
   const handleDeleteLocalStoragePress = React.useCallback(() => {
     setIsDeleteLocalStorageModalOpen(true);
@@ -1574,10 +1531,6 @@ export default function AppSettingsScreen() {
       
       // Wait for the modal dismissal animation to complete before setting state
       await new Promise(resolve => setTimeout(resolve, 250));
-      
-      // Set local stopping state to prevent new import attempts
-      // This provides instant UI feedback before context state updates
-      setIsLocallyStoppingImport(true);
       
       // Keep other buttons disabled during cancellation
       setShouldDisableOtherButtons(true);
@@ -1959,10 +1912,7 @@ export default function AppSettingsScreen() {
                       <Text style={[styles.cloudButtonText, { 
                         fontFamily: Fonts.bodyMedium,
                       }]}>
-                        {(isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport || isImportCancelCooldownActive)
-                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
-                          : strings[language].appSettingsPage.loadDataFromCloud
-                        }
+                        {strings[language].appSettingsPage.loadDataFromCloud}
                       </Text>
                     </View>
                   </TouchableOpacity>

@@ -142,6 +142,10 @@ export default function AppSettingsScreen() {
   const [isCancelCooldownActive, setIsCancelCooldownActive] = React.useState(false);
   const cooldownTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Import cooldown state after cancellation (5 second delay)
+  const [isImportCancelCooldownActive, setIsImportCancelCooldownActive] = React.useState(false);
+  const importCooldownTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Import process state - now handled by background task context
   const [isCancelImportModalOpen, setIsCancelImportModalOpen] = React.useState(false);
   const cancelImportOverlayOpacity = React.useRef(new Animated.Value(0)).current;
@@ -176,6 +180,11 @@ export default function AppSettingsScreen() {
   const [isAutomaticCancellationModalOpen, setIsAutomaticCancellationModalOpen] = React.useState(false);
   const automaticCancellationOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const automaticCancellationModalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // Import automatic cancellation modal state
+  const [isImportAutomaticCancellationModalOpen, setIsImportAutomaticCancellationModalOpen] = React.useState(false);
+  const importAutomaticCancellationOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const importAutomaticCancellationModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Track if network error modal has been shown to prevent dismissal by in-app notification
   const [hasNetworkErrorModalBeenShown, setHasNetworkErrorModalBeenShown] = React.useState(false);
@@ -312,6 +321,39 @@ export default function AppSettingsScreen() {
     });
   }, [automaticCancellationOverlayOpacity, automaticCancellationModalOpacity]);
 
+  const handleShowImportAutomaticCancellationModal = React.useCallback(() => {
+    setIsImportAutomaticCancellationModalOpen(true);
+    Animated.parallel([
+      Animated.timing(importAutomaticCancellationOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(importAutomaticCancellationModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [importAutomaticCancellationOverlayOpacity, importAutomaticCancellationModalOpacity]);
+
+  const handleDismissImportAutomaticCancellationModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(importAutomaticCancellationOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(importAutomaticCancellationModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsImportAutomaticCancellationModalOpen(false);
+    });
+  }, [importAutomaticCancellationOverlayOpacity, importAutomaticCancellationModalOpacity]);
+
   // Network connectivity check function
   const checkNetworkConnectivity = React.useCallback(async (): Promise<boolean> => {
     try {
@@ -428,11 +470,11 @@ export default function AppSettingsScreen() {
 
   // Control button disable state based on backup and import status
   React.useEffect(() => {
-    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportBackgroundTaskRunning && !isImportLoading) {
+    if (!isBackupBackgroundTaskRunning && !isBackupCleanupInProgress && !isBackupStopping && !isLocallyStoppingBackup && !isCancelCooldownActive && !isImportBackgroundTaskRunning && !isImportCleanupInProgress && !isImportStopping && !isLocallyStoppingImport && !isImportCancelCooldownActive && !isImportLoading) {
       // Re-enable buttons when backup and import are completely done
       setShouldDisableOtherButtons(false);
     }
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportLoading]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport, isImportCancelCooldownActive, isImportLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -466,6 +508,9 @@ export default function AppSettingsScreen() {
     return () => {
       if (cooldownTimerRef.current) {
         clearTimeout(cooldownTimerRef.current);
+      }
+      if (importCooldownTimerRef.current) {
+        clearTimeout(importCooldownTimerRef.current);
       }
     };
   }, []);
@@ -504,6 +549,41 @@ export default function AppSettingsScreen() {
       resetAutomaticallyCancelledFlag();
     }
   }, [wasAutomaticallyCancelled, resetAutomaticallyCancelledFlag, handleShowAutomaticCancellationModal]);
+
+  // Handle import automatic cancellation and trigger cooldown
+  React.useEffect(() => {
+    if (wasImportAutomaticallyCancelled) {
+      console.log('Detected automatic import cancellation - starting cooldown');
+      
+      // Set local stopping state to provide UI feedback
+      setIsLocallyStoppingImport(true);
+      
+      // Keep other buttons disabled during cooldown
+      setShouldDisableOtherButtons(true);
+      
+      // Start 5-second cooldown period to prevent immediate restart
+      setIsImportCancelCooldownActive(true);
+      console.log('Starting 5-second cooldown after automatic import cancellation');
+      
+      // Clear any existing cooldown timer
+      if (importCooldownTimerRef.current) {
+        clearTimeout(importCooldownTimerRef.current);
+      }
+      
+      // Set timer to clear cooldown after 5 seconds
+      importCooldownTimerRef.current = setTimeout(() => {
+        setIsImportCancelCooldownActive(false);
+        setIsLocallyStoppingImport(false);
+        console.log('Cooldown period ended after automatic import cancellation - import button re-enabled');
+      }, 5000);
+      
+      // Show persistent automatic cancellation modal
+      handleShowImportAutomaticCancellationModal();
+      
+      // Reset the automatic cancellation flag
+      resetImportAutomaticallyCancelledFlag();
+    }
+  }, [wasImportAutomaticallyCancelled, resetImportAutomaticallyCancelledFlag, handleShowImportAutomaticCancellationModal]);
 
   const loadNotificationsPreference = async () => {
     try {
@@ -1747,7 +1827,7 @@ export default function AppSettingsScreen() {
                       <Text style={[styles.cloudButtonText, { 
                         fontFamily: Fonts.bodyMedium,
                       }]}>
-                        {shouldDisableOtherButtons && (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport)
+                        {shouldDisableOtherButtons && (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport || isImportCancelCooldownActive)
                           ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
                           : strings[language].appSettingsPage.loadDataFromCloud
                         }
@@ -2017,6 +2097,21 @@ export default function AppSettingsScreen() {
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissAutomaticCancellationModal}
+        />
+
+        {/* Import Automatic Cancellation Modal */}
+        <GreyOverlayBackground 
+          visible={isImportAutomaticCancellationModalOpen}
+          opacity={importAutomaticCancellationOverlayOpacity}
+          onPress={handleDismissImportAutomaticCancellationModal}
+        />
+        <GenericModal
+          visible={isImportAutomaticCancellationModalOpen}
+          opacity={importAutomaticCancellationModalOpacity}
+          text={language === 'Chinese' ? '糟糕，导入任务已被取消！' : 'Oops import task has been cancelled!'}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissImportAutomaticCancellationModal}
         />
 
     </View>

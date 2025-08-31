@@ -242,6 +242,15 @@ export async function getTotalRowCount(token: string): Promise<{ folders: number
         decks: decksResult.error,
         flashcards: flashcardsResult.error
       });
+      
+      // Check if any of the errors are network errors and throw them
+      const errors = [foldersResult.error, decksResult.error, flashcardsResult.error].filter(Boolean);
+      for (const error of errors) {
+        if (isNetworkError(error)) {
+          throw error; // Re-throw network errors so they can be detected
+        }
+      }
+      
       return null;
     }
 
@@ -256,6 +265,12 @@ export async function getTotalRowCount(token: string): Promise<{ folders: number
     return counts;
   } catch (error) {
     console.error('Error in getTotalRowCount:', error);
+    
+    // Re-throw network errors so they can be detected by the main import function
+    if (isNetworkError(error)) {
+      throw error;
+    }
+    
     return null;
   }
 }

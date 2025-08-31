@@ -649,9 +649,53 @@ export default function AppSettingsScreen() {
   }, [language]);
 
 
+  // Navigation guard modal state
+  const [isNavigationGuardModalOpen, setIsNavigationGuardModalOpen] = React.useState(false);
+  const navigationGuardOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const navigationGuardModalOpacity = React.useRef(new Animated.Value(0)).current;
+
+  const handleShowNavigationGuardModal = React.useCallback(() => {
+    setIsNavigationGuardModalOpen(true);
+    Animated.parallel([
+      Animated.timing(navigationGuardOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(navigationGuardModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [navigationGuardOverlayOpacity, navigationGuardModalOpacity]);
+
+  const handleDismissNavigationGuardModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(navigationGuardOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(navigationGuardModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNavigationGuardModalOpen(false);
+    });
+  }, [navigationGuardOverlayOpacity, navigationGuardModalOpacity]);
+
   const handleBackPress = React.useCallback(() => {
+    // Check if import is running and prevent navigation
+    if (isImportBackgroundTaskRunning) {
+      handleShowNavigationGuardModal();
+      return;
+    }
+    
     router.back();
-  }, [router]);
+  }, [router, isImportBackgroundTaskRunning, handleShowNavigationGuardModal]);
 
   const handleBackupPress = React.useCallback(() => {
     setIsBackupModalOpen(true);
@@ -1825,6 +1869,21 @@ export default function AppSettingsScreen() {
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissBackupLoadingNetworkErrorModal}
+        />
+
+        {/* Navigation Guard Modal */}
+        <GreyOverlayBackground 
+          visible={isNavigationGuardModalOpen}
+          opacity={navigationGuardOverlayOpacity}
+          onPress={handleDismissNavigationGuardModal}
+        />
+        <GenericModal
+          visible={isNavigationGuardModalOpen}
+          opacity={navigationGuardModalOpacity}
+          text={language === 'Chinese' ? '请在导入过程中停留在此页面' : 'Please stay on this page\nduring the import process'}
+          Icon={ModalExclamationMarkIcon}
+          buttons="single"
+          onConfirm={handleDismissNavigationGuardModal}
         />
 
     </View>

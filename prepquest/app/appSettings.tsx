@@ -1914,6 +1914,8 @@ export default function AppSettingsScreen() {
                       }]}>
                         {shouldDisableOtherButtons && importBackgroundTaskProgress?.status === 'inserting' && !importBackgroundTaskProgress?.isCloudImportPhase
                           ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          : shouldDisableOtherButtons && importBackgroundTaskProgress?.status !== 'counting' && importBackgroundTaskProgress?.status !== 'importing' && importBackgroundTaskProgress?.status !== 'importStarted'
+                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
                           : strings[language].appSettingsPage.loadDataFromCloud
                         }
                       </Text>

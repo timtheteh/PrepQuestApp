@@ -1912,7 +1912,10 @@ export default function AppSettingsScreen() {
                       <Text style={[styles.cloudButtonText, { 
                         fontFamily: Fonts.bodyMedium,
                       }]}>
-                        {strings[language].appSettingsPage.loadDataFromCloud}
+                        {shouldDisableOtherButtons && importBackgroundTaskProgress?.status === 'inserting' && !importBackgroundTaskProgress?.isCloudImportPhase
+                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          : strings[language].appSettingsPage.loadDataFromCloud
+                        }
                       </Text>
                     </View>
                   </TouchableOpacity>

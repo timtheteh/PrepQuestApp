@@ -754,6 +754,42 @@ export default function AppSettingsScreen() {
       // Small delay to ensure loading screen renders before any state changes
       await new Promise(resolve => setTimeout(resolve, 50));
       
+      // Cancel any existing backup task to ensure clean state
+      if (isBackupBackgroundTaskRunning) {
+        console.log('Cancelling existing backup task before starting new one...');
+        
+        // Set local stopping state to prevent new backup attempts
+        setIsLocallyStoppingBackup(true);
+        
+        // Force stop the backup background task
+        forceStopBackupBackgroundTask();
+        
+        // Stop the actual background service
+        await stopBackupBackgroundTask();
+        
+        // Clear the backup progress data thoroughly
+        await clearBackupBackgroundTaskProgress();
+        
+        // Additional cleanup: manually remove all backup-related AsyncStorage keys
+        try {
+          await AsyncStorage.multiRemove([
+            'backupDataBgTaskProgress',
+            'backupProgress',
+            'backupState'
+          ]);
+          console.log('Additional AsyncStorage cleanup completed for existing backup task');
+        } catch (cleanupError) {
+          console.warn('Additional cleanup failed for existing backup task:', cleanupError);
+        }
+        
+        // Wait for the cancellation to complete
+        console.log('Waiting for existing backup task cancellation to complete...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Clear local stopping state since we're about to start a new backup
+        setIsLocallyStoppingBackup(false);
+      }
+      
       // Check if cleanup, stopping, or cooldown is in progress and wait for it to complete
       if (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) {
         console.log('Backup cleanup in progress, waiting for completion...');
@@ -872,7 +908,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, checkNetworkConnectivity, handleShowBackupLoadingNetworkErrorModal]);
+  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, checkNetworkConnectivity, handleShowBackupLoadingNetworkErrorModal, isBackupBackgroundTaskRunning, forceStopBackupBackgroundTask, stopBackupBackgroundTask]);
 
   const handleLoadDataPress = React.useCallback(() => {
     setIsLoadDataModalOpen(true);
@@ -922,6 +958,42 @@ export default function AppSettingsScreen() {
       
       // Small delay to ensure loading screen renders before any state changes
       await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Cancel any existing import task to ensure clean state
+      if (isImportBackgroundTaskRunning) {
+        console.log('Cancelling existing import task before starting new one...');
+        
+        // Set local stopping state to prevent new import attempts
+        setIsLocallyStoppingImport(true);
+        
+        // Force stop the import background task
+        forceStopImportBackgroundTask();
+        
+        // Stop the actual background service
+        await stopImportBackgroundTask();
+        
+        // Clear the import progress data thoroughly
+        await clearImportBackgroundTaskProgress();
+        
+        // Additional cleanup: manually remove all import-related AsyncStorage keys
+        try {
+          await AsyncStorage.multiRemove([
+            'importDataBgTaskProgress',
+            'importProgress',
+            'importState'
+          ]);
+          console.log('Additional AsyncStorage cleanup completed for existing import task');
+        } catch (cleanupError) {
+          console.warn('Additional cleanup failed for existing import task:', cleanupError);
+        }
+        
+        // Wait for the cancellation to complete
+        console.log('Waiting for existing import task cancellation to complete...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Clear local stopping state since we're about to start a new import
+        setIsLocallyStoppingImport(false);
+      }
       
       // Check if cleanup, stopping, or cooldown is in progress and wait for it to complete
       if (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport) {
@@ -1014,7 +1086,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport]);
+  }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportCleanupInProgress, isImportStopping, isLocallyStoppingImport, isImportBackgroundTaskRunning, forceStopImportBackgroundTask, stopImportBackgroundTask]);
 
   const handleDeleteLocalStoragePress = React.useCallback(() => {
     setIsDeleteLocalStorageModalOpen(true);

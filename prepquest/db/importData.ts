@@ -300,7 +300,8 @@ export async function importFoldersFromSupabase(
         const token = await getToken();
         if (!token) {
           console.error('Unable to get authentication token for importing folders');
-          return null;
+          // Throw an error so it can be detected as a network error
+          throw new Error('Unable to get authentication token for importing folders');
         }
 
         const authenticatedSupabase = await createAuthenticatedSupabaseClient(token);
@@ -376,7 +377,8 @@ export async function importDecksFromSupabase(
         const token = await getToken();
         if (!token) {
           console.error('Unable to get authentication token for importing decks');
-          return null;
+          // Throw an error so it can be detected as a network error
+          throw new Error('Unable to get authentication token for importing decks');
         }
 
         const authenticatedSupabase = await createAuthenticatedSupabaseClient(token);
@@ -440,7 +442,8 @@ export async function importFlashcardsFromSupabase(
     const token = await getToken();
     if (!token) {
       console.error('Unable to get authentication token for importing flashcards');
-      return null;
+      // Throw an error so it can be detected as a network error
+      throw new Error('Unable to get authentication token for importing flashcards');
     }
 
     if (isCancelled?.()) {
@@ -484,7 +487,8 @@ export async function importFlashcardsFromSupabase(
       const batchToken = await getToken();
       if (!batchToken) {
         console.error('Unable to get authentication token for flashcard batch');
-        return null;
+        // Throw an error so it can be detected as a network error
+        throw new Error('Unable to get authentication token for flashcard batch');
       }
 
       const batchSupabase = await createAuthenticatedSupabaseClient(batchToken);

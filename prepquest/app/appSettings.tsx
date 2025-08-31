@@ -1542,19 +1542,19 @@ export default function AppSettingsScreen() {
                     style={[
                       styles.cloudButton, 
                       { 
-                        backgroundColor: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning)) ? colors.unselectedText : colors.brandColor2,
-                        opacity: (!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning)) ? 0.6 : 1.0
+                        backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : colors.brandColor2,
+                        opacity: shouldDisableOtherButtons ? 0.6 : 1.0
                       }
                     ]}
-                    onPress={(!isBackupLoading && (isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning)) ? undefined : handleBackupPress}
-                    disabled={isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning}
+                    onPress={shouldDisableOtherButtons ? undefined : handleBackupPress}
+                    disabled={shouldDisableOtherButtons}
                   >
                     <View style={styles.buttonContent}>
                       <MaterialIcons name="cloud-upload" size={30} color="#fff" />
                       <Text style={[styles.cloudButtonText, { fontFamily: Fonts.bodyMedium }]}>
                         {isBackupLoading
                           ? strings[language].appSettingsPage.backupDataToCloud
-                          : (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
+                          : shouldDisableOtherButtons && (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
                             ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
                             : strings[language].appSettingsPage.backupDataToCloud
                         }
@@ -1633,7 +1633,12 @@ export default function AppSettingsScreen() {
                       <MaterialIcons name="cloud-download" size={30} color="#fff" />
                       <Text style={[styles.cloudButtonText, { 
                         fontFamily: Fonts.bodyMedium,
-                      }]}>{strings[language].appSettingsPage.loadDataFromCloud}</Text>
+                      }]}>
+                        {shouldDisableOtherButtons && (isImportCleanupInProgress || isImportStopping || isLocallyStoppingImport)
+                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          : strings[language].appSettingsPage.loadDataFromCloud
+                        }
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 )}

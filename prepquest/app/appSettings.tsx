@@ -172,6 +172,11 @@ export default function AppSettingsScreen() {
   const networkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const networkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Automatic cancellation modal state
+  const [isAutomaticCancellationModalOpen, setIsAutomaticCancellationModalOpen] = React.useState(false);
+  const automaticCancellationOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const automaticCancellationModalOpacity = React.useRef(new Animated.Value(0)).current;
+
   // Track if network error modal has been shown to prevent dismissal by in-app notification
   const [hasNetworkErrorModalBeenShown, setHasNetworkErrorModalBeenShown] = React.useState(false);
 
@@ -273,6 +278,39 @@ export default function AppSettingsScreen() {
       setIsBackupLoadingNetworkErrorModalOpen(false);
     });
   }, [backupLoadingNetworkErrorOverlayOpacity, backupLoadingNetworkErrorModalOpacity]);
+
+  const handleShowAutomaticCancellationModal = React.useCallback(() => {
+    setIsAutomaticCancellationModalOpen(true);
+    Animated.parallel([
+      Animated.timing(automaticCancellationOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(automaticCancellationModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [automaticCancellationOverlayOpacity, automaticCancellationModalOpacity]);
+
+  const handleDismissAutomaticCancellationModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(automaticCancellationOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(automaticCancellationModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsAutomaticCancellationModalOpen(false);
+    });
+  }, [automaticCancellationOverlayOpacity, automaticCancellationModalOpacity]);
 
   // Network connectivity check function
   const checkNetworkConnectivity = React.useCallback(async (): Promise<boolean> => {
@@ -459,10 +497,13 @@ export default function AppSettingsScreen() {
         console.log('Cooldown period ended after automatic cancellation - backup button re-enabled');
       }, 5000);
       
+      // Show persistent automatic cancellation modal
+      handleShowAutomaticCancellationModal();
+      
       // Reset the automatic cancellation flag
       resetAutomaticallyCancelledFlag();
     }
-  }, [wasAutomaticallyCancelled, resetAutomaticallyCancelledFlag]);
+  }, [wasAutomaticallyCancelled, resetAutomaticallyCancelledFlag, handleShowAutomaticCancellationModal]);
 
   const loadNotificationsPreference = async () => {
     try {
@@ -1961,6 +2002,21 @@ export default function AppSettingsScreen() {
           Icon={ModalExclamationMarkIcon}
           buttons="single"
           onConfirm={handleDismissNavigationGuardModal}
+        />
+
+        {/* Automatic Cancellation Modal */}
+        <GreyOverlayBackground 
+          visible={isAutomaticCancellationModalOpen}
+          opacity={automaticCancellationOverlayOpacity}
+          onPress={handleDismissAutomaticCancellationModal}
+        />
+        <GenericModal
+          visible={isAutomaticCancellationModalOpen}
+          opacity={automaticCancellationModalOpacity}
+          text={language === 'Chinese' ? '糟糕，备份任务已被取消！' : 'Oops backup task has been cancelled!'}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissAutomaticCancellationModal}
         />
 
     </View>

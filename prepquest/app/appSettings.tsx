@@ -1506,9 +1506,7 @@ export default function AppSettingsScreen() {
                           ? strings[language].appSettingsPage.backupDataToCloud
                           : (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
                             ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
-                            : isImportBackgroundTaskRunning
-                              ? (language === 'Chinese' ? '导入进行中...' : 'Import in progress...')
-                              : strings[language].appSettingsPage.backupDataToCloud
+                            : strings[language].appSettingsPage.backupDataToCloud
                         }
                       </Text>
                     </View>

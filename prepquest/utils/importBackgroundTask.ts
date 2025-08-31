@@ -174,8 +174,14 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
       return !isServiceRunning;
     };
 
+    // Track current import stage
+    let currentImportStage = 'counting';
+    
     // Start the import process with progress tracking and cancellation support
     const result = await importDataFromCloud(tokenGetter, (progress: ImportProgress) => {
+      // Update current stage
+      currentImportStage = progress.stage;
+      
       // Save progress updates
       saveImportProgress({
         status: progress.stage,
@@ -236,87 +242,103 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
     // Check if the import result indicates network error
     if (!result.success && (result as any).isNetworkError) {
       console.log('Import cancelled due to network error');
+      console.log('Current import stage:', currentImportStage);
+      
+      // Only show network error modal if the error occurred during cloud import phase
+      // (not during local database update phase)
+      const isCloudImportPhase = currentImportStage !== 'inserting';
+      console.log('Is cloud import phase:', isCloudImportPhase);
+      
       await saveImportProgress({
         status: 'networkError',
         inProgress: false,
         completed: false,
         networkError: true,
+        isCloudImportPhase: isCloudImportPhase, // Track if error occurred during cloud import
         timestamp: Date.now(),
         message: result.message,
         errorMessage: result.message
       });
       
-      // Check if we should send a push notification
-      if (shouldSendPushNotification()) {
-        try {
-          // Check notification permissions first
-          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
-          
-          if (permissionStatus === 'granted') {
-            console.log('Sending import network error notification (app in background)');
-            const title = language === 'Chinese' ? '导入已取消！' : 'Import cancelled!';
-            const body = language === 'Chinese' 
-              ? '糟糕，导入因网络错误而取消！' 
-              : 'Oops import has cancelled due to a network error!';
-            
-            const notificationId = await Notifications.scheduleNotificationAsync({
-              content: {
-                title,
-                body,
-                data: { type: 'import_network_error' },
-                sound: true,
-                priority: Notifications.AndroidNotificationPriority.HIGH,
-                autoDismiss: false,
-              },
-              trigger: null, // Send immediately
-            });
-            
-            console.log('Import network error notification sent successfully with ID:', notificationId);
-            
-            // Mark that notification was sent to prevent duplicate in-app notifications
-            await saveImportProgress({
-              status: 'networkError',
-              inProgress: false,
-              completed: false,
-              networkError: true,
-              notificationSent: true,
-              timestamp: Date.now(),
-              message: result.message,
-              errorMessage: result.message
-            });
-          } else {
-            console.log('Notification permissions not granted, cannot send push notification');
-          }
-        } catch (notificationError) {
-          console.error('Error sending import network error notification:', notificationError);
-          
-          // Fallback: try to send notification even if initial check failed
+      console.log('Saved import progress with network error, isCloudImportPhase:', isCloudImportPhase);
+      
+      // Only show network error modal/notification if the error occurred during cloud import phase
+      if (isCloudImportPhase) {
+        // Check if we should send a push notification
+        if (shouldSendPushNotification()) {
           try {
-            console.log('Attempting fallback import network error notification...');
-            const title = language === 'Chinese' ? '导入已取消！' : 'Import cancelled!';
-            const body = language === 'Chinese' 
-              ? '糟糕，导入因网络错误而取消！' 
-              : 'Oops import has cancelled due to a network error!';
+            // Check notification permissions first
+            const { status: permissionStatus } = await Notifications.getPermissionsAsync();
             
-            const notificationId = await Notifications.scheduleNotificationAsync({
-              content: {
-                title,
-                body,
-                data: { type: 'import_network_error' },
-                sound: true,
-                priority: Notifications.AndroidNotificationPriority.HIGH,
-                autoDismiss: false,
-              },
-              trigger: null, // Send immediately
-            });
+            if (permissionStatus === 'granted') {
+              console.log('Sending import network error notification (app in background)');
+              const title = language === 'Chinese' ? '导入已取消！' : 'Import cancelled!';
+              const body = language === 'Chinese' 
+                ? '糟糕，导入因网络错误而取消！' 
+                : 'Oops import has cancelled due to a network error!';
+              
+              const notificationId = await Notifications.scheduleNotificationAsync({
+                content: {
+                  title,
+                  body,
+                  data: { type: 'import_network_error' },
+                  sound: true,
+                  priority: Notifications.AndroidNotificationPriority.HIGH,
+                  autoDismiss: false,
+                },
+                trigger: null, // Send immediately
+              });
+              
+              console.log('Import network error notification sent successfully with ID:', notificationId);
+              
+              // Mark that notification was sent to prevent duplicate in-app notifications
+              await saveImportProgress({
+                status: 'networkError',
+                inProgress: false,
+                completed: false,
+                networkError: true,
+                isCloudImportPhase: isCloudImportPhase,
+                notificationSent: true,
+                timestamp: Date.now(),
+                message: result.message,
+                errorMessage: result.message
+              });
+            } else {
+              console.log('Notification permissions not granted, cannot send push notification');
+            }
+          } catch (notificationError) {
+            console.error('Error sending import network error notification:', notificationError);
             
-            console.log('Fallback import network error notification sent successfully with ID:', notificationId);
-          } catch (fallbackError) {
-            console.error('Fallback notification also failed:', fallbackError);
+            // Fallback: try to send notification even if initial check failed
+            try {
+              console.log('Attempting fallback import network error notification...');
+              const title = language === 'Chinese' ? '导入已取消！' : 'Import cancelled!';
+              const body = language === 'Chinese' 
+                ? '糟糕，导入因网络错误而取消！' 
+                : 'Oops import has cancelled due to a network error!';
+              
+              const notificationId = await Notifications.scheduleNotificationAsync({
+                content: {
+                  title,
+                  body,
+                  data: { type: 'import_network_error' },
+                  sound: true,
+                  priority: Notifications.AndroidNotificationPriority.HIGH,
+                  autoDismiss: false,
+                },
+                trigger: null, // Send immediately
+              });
+              
+              console.log('Fallback import network error notification sent successfully with ID:', notificationId);
+            } catch (fallbackError) {
+              console.error('Fallback notification also failed:', fallbackError);
+            }
           }
+        } else {
+          console.log('App is active, in-app notification will be shown instead');
         }
       } else {
-        console.log('App is active, in-app notification will be shown instead');
+        console.log('Network error occurred during local database update phase - not showing modal/notification');
       }
       return;
     }

@@ -191,6 +191,9 @@ export default function AppSettingsScreen() {
 
   // Track if network error modal has been shown to prevent dismissal by in-app notification
   const [hasNetworkErrorModalBeenShown, setHasNetworkErrorModalBeenShown] = React.useState(false);
+  
+  // Track which operation had a network error for modal text
+  const [networkErrorOperation, setNetworkErrorOperation] = React.useState<'backup' | 'import'>('backup');
 
   // Backup loading network error modal state
   const [isBackupLoadingNetworkErrorModalOpen, setIsBackupLoadingNetworkErrorModalOpen] = React.useState(false);
@@ -203,7 +206,8 @@ export default function AppSettingsScreen() {
   const importLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Handler functions
-  const handleShowNetworkErrorModal = React.useCallback(() => {
+  const handleShowNetworkErrorModal = React.useCallback((operation: 'backup' | 'import' = 'backup') => {
+    setNetworkErrorOperation(operation);
     setIsNetworkErrorModalOpen(true);
     setHasNetworkErrorModalBeenShown(true);
     Animated.parallel([
@@ -446,12 +450,23 @@ export default function AppSettingsScreen() {
       handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
     } else if (backupBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
       // Show persistent network error modal only if it hasn't been shown yet
-      handleShowNetworkErrorModal();
+      handleShowNetworkErrorModal('backup');
     }
   }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, hasNetworkErrorModalBeenShown]);
 
   // Watch for import completion to show success modal
   React.useEffect(() => {
+    console.log('Import completion effect triggered:', {
+      progress: importBackgroundTaskProgress,
+      hasProgress: !!importBackgroundTaskProgress,
+      completed: importBackgroundTaskProgress?.completed,
+      success: importBackgroundTaskProgress?.success,
+      error: importBackgroundTaskProgress?.error,
+      networkError: importBackgroundTaskProgress?.networkError,
+      isCloudImportPhase: importBackgroundTaskProgress?.isCloudImportPhase,
+      noData: importBackgroundTaskProgress?.noData
+    });
+    
     if (importBackgroundTaskProgress?.completed && importBackgroundTaskProgress?.success && !importBackgroundTaskProgress?.error && !importBackgroundTaskProgress?.networkError) {
       // Set persistent import completion state
       setHasImportCompleted(true);
@@ -468,7 +483,14 @@ export default function AppSettingsScreen() {
       handleShowSuccessModal('Import completed!');
     } else if (importBackgroundTaskProgress?.noData) {
       // Show no data modal when there's no data to import
+      console.log('Showing no data modal for import');
       handleShowNoDataModal();
+    } else if (importBackgroundTaskProgress?.networkError && importBackgroundTaskProgress?.isCloudImportPhase) {
+      // Show network error modal only if the error occurred during cloud import phase
+      console.log('Showing network error modal for import (cloud import phase)');
+      handleShowNetworkErrorModal('import');
+    } else if (importBackgroundTaskProgress?.networkError && !importBackgroundTaskProgress?.isCloudImportPhase) {
+      console.log('Network error occurred during local database phase - not showing modal');
     }
   }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
 
@@ -541,7 +563,10 @@ export default function AppSettingsScreen() {
         handleShowSuccessModal('Backup completed successfully!');
       } else if (data?.type === 'backup_network_error') {
         // Show persistent network error modal when user taps on network error notification
-        handleShowNetworkErrorModal();
+        handleShowNetworkErrorModal('backup');
+      } else if (data?.type === 'import_network_error') {
+        // Show persistent network error modal when user taps on import network error notification
+        handleShowNetworkErrorModal('import');
       }
     });
 
@@ -2136,7 +2161,10 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isNetworkErrorModalOpen}
           opacity={networkErrorModalOpacity}
-          text={language === 'Chinese' ? '备份因网络错误而取消！检查您的网络。' : 'Backup cancelled\ndue to network error!'}
+          text={language === 'Chinese' 
+            ? (networkErrorOperation === 'backup' ? '备份因网络错误而取消！检查您的网络。' : '导入因网络错误而取消！检查您的网络。')
+            : (networkErrorOperation === 'backup' ? 'Backup cancelled\ndue to network error!' : 'Import cancelled\ndue to network error!')
+          }
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissNetworkErrorModal}

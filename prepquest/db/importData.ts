@@ -311,6 +311,10 @@ export async function importFoldersFromSupabase(
         
         if (retries >= maxRetries) {
           console.error('Error importing folders from Supabase after retries:', error);
+          // Re-throw network errors so they can be detected by the main import function
+          if (isNetworkError(error)) {
+            throw error;
+          }
           return null;
         }
         
@@ -324,6 +328,10 @@ export async function importFoldersFromSupabase(
     return null; // Should never reach here
   } catch (error) {
     console.error('Error in importFoldersFromSupabase:', error);
+    // Re-throw network errors so they can be detected by the main import function
+    if (isNetworkError(error)) {
+      throw error;
+    }
     return null;
   }
 }
@@ -379,6 +387,10 @@ export async function importDecksFromSupabase(
         
         if (retries >= maxRetries) {
           console.error('Error importing decks from Supabase after retries:', error);
+          // Re-throw network errors so they can be detected by the main import function
+          if (isNetworkError(error)) {
+            throw error;
+          }
           return null;
         }
         
@@ -392,6 +404,10 @@ export async function importDecksFromSupabase(
     return null; // Should never reach here
   } catch (error) {
     console.error('Error in importDecksFromSupabase:', error);
+    // Re-throw network errors so they can be detected by the main import function
+    if (isNetworkError(error)) {
+      throw error;
+    }
     return null;
   }
 }
@@ -484,6 +500,10 @@ export async function importFlashcardsFromSupabase(
           
           if (retries >= maxRetries) {
             console.error(`Error importing flashcard batch ${offset}-${offset + batchSize} after ${maxRetries} retries:`, error);
+            // Re-throw network errors so they can be detected by the main import function
+            if (isNetworkError(error)) {
+              throw error;
+            }
             return null;
           }
           
@@ -536,6 +556,10 @@ export async function importFlashcardsFromSupabase(
     return allFlashcards;
   } catch (error) {
     console.error('Error in importFlashcardsFromSupabase:', error);
+    // Re-throw network errors so they can be detected by the main import function
+    if (isNetworkError(error)) {
+      throw error;
+    }
     return null;
   }
 }

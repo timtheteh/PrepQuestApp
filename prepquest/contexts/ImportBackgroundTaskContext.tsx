@@ -272,6 +272,8 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
             completed: progress.completed,
             status: progress.status,
             hasError: !!progress.error,
+            networkError: !!progress.networkError,
+            isCloudImportPhase: progress.isCloudImportPhase,
             timestamp: progress.timestamp,
             percentage: progress.percentage
           });
@@ -349,6 +351,12 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
               console.log('Import completed successfully - keeping progress for app settings page');
             } else if (progress.cancelled || progress.error || progress.networkError) {
               // Only clear progress for cancelled or failed imports
+              console.log('Scheduling import progress cleanup in 3 seconds for:', {
+                cancelled: progress.cancelled,
+                error: progress.error,
+                networkError: progress.networkError,
+                isCloudImportPhase: progress.isCloudImportPhase
+              });
               setTimeout(async () => {
                 try {
                   await clearImportBackgroundTaskProgress();

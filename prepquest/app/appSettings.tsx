@@ -1887,7 +1887,7 @@ export default function AppSettingsScreen() {
                       textAlign: 'center',
                       paddingHorizontal: 20
                     }]}>
-                      {importBackgroundTaskProgress?.status === 'counting'
+                      {importBackgroundTaskProgress?.status === 'importStarted' || importBackgroundTaskProgress?.status === 'counting'
                         ? (language === 'Chinese' ? '正在检查云端数据...' : "Checking data in cloud...\nPlease don't close this app otherwise import will end prematurely")
                         : importBackgroundTaskProgress?.status === 'importing'
                         ? (language === 'Chinese' ? '正在从云端导入数据...' : "Importing data from cloud...\nPlease don't close this app otherwise import will end prematurely")

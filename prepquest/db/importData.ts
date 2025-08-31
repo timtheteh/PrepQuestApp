@@ -23,7 +23,10 @@ function isNetworkError(error: any): boolean {
     'enotfound',
     'econnrefused',
     'econnreset',
-    'etimedout'
+    'etimedout',
+    'authentication',
+    'token',
+    'auth'
   ];
   
   // Check error message and name for network patterns

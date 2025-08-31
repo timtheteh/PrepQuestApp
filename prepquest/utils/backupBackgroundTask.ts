@@ -121,7 +121,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         return token;
       } catch (error) {
         console.error('Error getting token:', error);
-        return null;
+        // Re-throw the error so it can be detected as a network error
+        throw error;
       }
     };
     

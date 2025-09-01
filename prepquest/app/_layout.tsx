@@ -17,6 +17,7 @@ import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/Theme
 import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
 import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskContext';
 import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskContext';
+import { ClearDataBackgroundTaskProvider } from '@/contexts/ClearDataBackgroundTaskContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import { BackupTaskNotification } from '@/components/inAppNotifications/BackupTaskNotification';
 import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
@@ -56,7 +57,8 @@ const stopAllBackgroundTasks = async () => {
     const progressKeys = [
       'genAIDeckCreationBgTaskProgress',
       'backupDataBgTaskProgress',
-      'importDataBgTaskProgress'
+      'importDataBgTaskProgress',
+      'clearDataBgTaskProgress'
     ];
     
     for (const key of progressKeys) {
@@ -313,7 +315,9 @@ export default function RootLayout() {
             <BackgroundTaskProvider>
               <BackupBackgroundTaskProvider>
                 <ImportBackgroundTaskProvider>
-                  <AppContent />
+                  <ClearDataBackgroundTaskProvider>
+                    <AppContent />
+                  </ClearDataBackgroundTaskProvider>
                 </ImportBackgroundTaskProvider>
               </BackupBackgroundTaskProvider>
             </BackgroundTaskProvider>

@@ -11,7 +11,9 @@ const IMPORT_BG_TASK_PROGRESS_KEY = 'importDataBgTaskProgress';
 // Helper to save progress
 async function saveImportProgress(progress: any) {
   try {
+    console.log('saveImportProgress: Saving progress:', progress);
     await AsyncStorage.setItem(IMPORT_BG_TASK_PROGRESS_KEY, JSON.stringify(progress));
+    console.log('saveImportProgress: Progress saved successfully');
   } catch (e) { 
     console.error('Failed to save import progress', e); 
   }
@@ -21,7 +23,10 @@ async function saveImportProgress(progress: any) {
 async function loadImportProgress(): Promise<any | null> {
   try {
     const data = await AsyncStorage.getItem(IMPORT_BG_TASK_PROGRESS_KEY);
-    return data ? JSON.parse(data) : null;
+    console.log('loadImportProgress: Raw data from AsyncStorage:', data);
+    const result = data ? JSON.parse(data) : null;
+    console.log('loadImportProgress: Parsed result:', result);
+    return result;
   } catch (e) { 
     console.error('Failed to load import progress', e);
     return null; 
@@ -128,8 +133,11 @@ function isNetworkError(error: any): boolean {
 
 // The background task function for import data
 const importDataBackgroundTask = async (taskDataArguments: any) => {
+  console.log('=== IMPORT BACKGROUND TASK FUNCTION CALLED ===');
+  console.log('Import background task: Function started with arguments:', taskDataArguments);
   const { getToken, language } = taskDataArguments;
   
+  console.log('Import background task: Extracted getToken and language:', { hasGetToken: !!getToken, language });
   console.log('Import background task started');
   
   try {
@@ -139,15 +147,31 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
       return; 
     }
     
+    console.log('Import background task: Background service is running, proceeding with import');
+    
     // Save initial progress - import started
-    await saveImportProgress({
-      status: 'importStarted',
-      inProgress: true,
-      completed: false,
-      timestamp: Date.now(),
-      percentage: 0,
-      message: 'Starting import...'
-    });
+    console.log('Import background task: Saving initial progress with counting stage');
+    try {
+      const initialProgress = {
+        status: 'importStarted',
+        inProgress: true,
+        completed: false,
+        timestamp: Date.now(),
+        percentage: 0,
+        message: 'Starting import...',
+        stage: 'counting' // Set initial stage to counting
+      };
+      console.log('Import background task: About to save initial progress:', initialProgress);
+      await saveImportProgress(initialProgress);
+      console.log('Import background task: Initial progress saved successfully');
+      
+      // Verify the progress was saved
+      const savedProgress = await loadImportProgress();
+      console.log('Import background task: Verified saved progress:', savedProgress);
+    } catch (error) {
+      console.error('Import background task: Failed to save initial progress:', error);
+      // Continue anyway - this is not critical
+    }
     
     const stopKeepAlive = await updateImportProgressPeriodically({ inProgress: true });
     
@@ -174,27 +198,42 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
       }
       return !isServiceRunning;
     };
+    
+    console.log('Import background task: Cancellation checker created, BackgroundService running:', BackgroundService.isRunning());
 
     // Track current import stage
     let currentImportStage = 'counting';
     
     // Start the import process with progress tracking and cancellation support
+    console.log('Import background task: Starting importDataFromCloud with progress tracking');
+    console.log('Import background task: BackgroundService status before import:', BackgroundService.isRunning());
+    
     const result = await importDataFromCloud(tokenGetter, (progress: ImportProgress) => {
       // Update current stage
       currentImportStage = progress.stage;
+      console.log('Import background task: Progress callback triggered for stage:', progress.stage);
       
-      // Save progress updates
-      saveImportProgress({
-        status: progress.stage,
-        inProgress: true,
-        completed: false,
-        timestamp: Date.now(),
-        percentage: progress.percentage || 0,
-        message: progress.message,
-        rowsImported: progress.rowsImported,
-        totalRows: progress.totalRows
-      });
+      // Save progress updates with stage information
+      try {
+        saveImportProgress({
+          status: progress.stage,
+          stage: progress.stage, // Ensure stage is saved
+          inProgress: true,
+          completed: false,
+          timestamp: Date.now(),
+          percentage: progress.percentage || 0,
+          message: progress.message,
+          rowsImported: progress.rowsImported,
+          totalRows: progress.totalRows
+        });
+        console.log('Import background task: Progress saved for stage:', progress.stage);
+      } catch (error) {
+        console.error('Import background task: Failed to save progress for stage:', progress.stage, error);
+        // Continue anyway - this is not critical
+      }
     }, isCancelled);
+    
+    console.log('Import background task: importDataFromCloud completed, BackgroundService status:', BackgroundService.isRunning());
     
     stopKeepAlive();
     
@@ -522,6 +561,7 @@ export const startImportBackgroundTask = async (getToken: () => Promise<string |
     // Add a small delay to ensure AsyncStorage operations complete
     await new Promise(resolve => setTimeout(resolve, 100));
     
+    console.log('startImportBackgroundTask: Starting BackgroundService...');
     await BackgroundService.start(importDataBackgroundTask, {
       taskName: 'ImportData',
       taskTitle: language === 'Chinese' ? '导入数据' : 'Importing Data',
@@ -533,10 +573,14 @@ export const startImportBackgroundTask = async (getToken: () => Promise<string |
         language
       },
     });
+    console.log('startImportBackgroundTask: BackgroundService started successfully');
+    console.log('startImportBackgroundTask: BackgroundService.isRunning():', BackgroundService.isRunning());
 
     // Save initial progress immediately with explicit 0% and fresh state
+    console.log('startImportBackgroundTask: Saving initial progress from main function...');
     await saveImportProgress({
       status: 'importStarted',
+      stage: 'counting', // Set initial stage to counting
       inProgress: true,
       completed: false,
       cancelled: false,
@@ -547,6 +591,14 @@ export const startImportBackgroundTask = async (getToken: () => Promise<string |
       totalRows: 0,
       message: 'Starting import...'
     });
+    console.log('startImportBackgroundTask: Initial progress saved from main function');
+    
+    // Add a small delay to ensure the background task has started and saved its progress
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Verify the progress was saved
+    const verifyProgress = await loadImportProgress();
+    console.log('startImportBackgroundTask: Verified progress after delay:', verifyProgress);
 
     console.log('Fresh import task started successfully');
     return true;

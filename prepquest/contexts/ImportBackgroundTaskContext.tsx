@@ -262,6 +262,9 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
     // Reset force stopped flag when starting monitoring
     forceStoppedRef.current = false;
     
+    // Immediately check for existing progress when monitoring starts
+    console.log('ImportBackgroundTaskContext - Checking for existing progress immediately...');
+    
     const checkProgress = async () => {
       try {
         const progress = await loadImportBackgroundTaskProgress();
@@ -279,7 +282,7 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
           });
           
           // Clear stale progress data that might be causing issues
-          if (progress.inProgress && !progress.completed && !progress.error && !progress.networkError) {
+          if ((progress.inProgress || progress.stage === 'counting') && !progress.completed && !progress.error && !progress.networkError) {
             const now = Date.now();
             const progressTime = progress.timestamp || 0;
             const timeDiff = now - progressTime;
@@ -317,7 +320,26 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
           const timeDiff = now - progressTime;
           const isRecent = timeDiff < 30 * 1000; // 30 seconds
           
-          if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError && !forceStoppedRef.current) {
+          // Check if task is running - include counting stage as running
+          const isTaskRunning = progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError && !forceStoppedRef.current;
+          const isCountingStage = progress.stage === 'counting' && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError;
+          
+          console.log('ImportBackgroundTaskContext - Task running check:', {
+            isTaskRunning,
+            isCountingStage,
+            stage: progress.stage,
+            inProgress: progress.inProgress,
+            completed: progress.completed,
+            cancelled: progress.cancelled,
+            error: progress.error,
+            networkError: progress.networkError
+          });
+          
+          if (isTaskRunning || isCountingStage) {
+            console.log('ImportBackgroundTaskContext - Setting import as running');
+            if (!isImportBackgroundTaskRunningRef.current) {
+              console.log('ImportBackgroundTaskContext - Import state changed from NOT running to RUNNING');
+            }
             setIsImportBackgroundTaskRunning(true);
           } else if (progress.completed || progress.cancelled || progress.error || progress.networkError || forceStoppedRef.current) {
             // Task completed, cancelled, failed, or force stopped
@@ -389,11 +411,16 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
       }
     };
 
-    // Check immediately
+    // Check immediately and then repeatedly
     checkProgress();
     
     // Set up interval to check every 1 second
     monitoringIntervalRef.current = setInterval(checkProgress, 1000);
+    
+    // Also check again after a short delay to catch any progress that was just saved
+    setTimeout(() => {
+      checkProgress();
+    }, 100);
   }, []);
 
   // Stop monitoring
@@ -414,7 +441,8 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
       if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
         // App is foregrounded - check if there's an import background task running
         const progress = await loadImportBackgroundTaskProgress();
-        if (progress && progress.inProgress && !progress.completed) {
+        const isImportRunning = progress && (progress.inProgress || progress.stage === 'counting') && !progress.completed;
+        if (isImportRunning) {
           // Resume monitoring
           startImportBackgroundTaskMonitoring();
         }
@@ -441,7 +469,19 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
         }
       } else if (appStateRef.current === 'active' && nextAppState.match(/inactive|background/)) {
         // App is going to background - check if import is running
-        if (isImportBackgroundTaskRunningRef.current) {
+        console.log('App backgrounded - checking if import is running:', isImportBackgroundTaskRunningRef.current);
+        
+        // Check progress directly instead of relying on the ref which might not be updated yet
+        const currentProgress = await loadImportBackgroundTaskProgress();
+        const isImportActuallyRunning = currentProgress && (currentProgress.inProgress || currentProgress.stage === 'counting') && !currentProgress.completed && !currentProgress.cancelled && !currentProgress.error && !currentProgress.networkError;
+        
+        console.log('App backgrounded - direct progress check:', {
+          refValue: isImportBackgroundTaskRunningRef.current,
+          directCheck: isImportActuallyRunning,
+          progress: currentProgress ? { stage: currentProgress.stage, inProgress: currentProgress.inProgress, completed: currentProgress.completed } : null
+        });
+        
+        if (isImportBackgroundTaskRunningRef.current || isImportActuallyRunning) {
           console.log('App backgrounded during import - scheduling warning notification');
           
           // Clear any existing timers
@@ -458,26 +498,57 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
           // Schedule warning notification for 1 second after backgrounding
           backgroundWarningTimerRef.current = setTimeout(async () => {
             try {
+              console.log('Background warning notification timer fired - checking import status');
               // Double-check import is still running before sending notification
               const progress = await loadImportBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
-                const title = language === 'Chinese' ? '导入任务警告' : 'Come back soon!';
-                const body = language === 'Chinese' 
-                  ? '导入任务将在大约30秒内提前结束。请尽快回来！' 
-                  : 'Import task automatically ends in approximately 30 seconds!';
+              const isImportRunning = progress && (progress.inProgress || progress.stage === 'counting') && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError;
+              console.log('Background warning notification check:', {
+                progress: progress ? { 
+                  stage: progress.stage, 
+                  inProgress: progress.inProgress, 
+                  completed: progress.completed,
+                  status: progress.status,
+                  timestamp: progress.timestamp
+                } : null,
+                isImportRunning,
+                currentTime: Date.now()
+              });
+              if (isImportRunning) {
+                console.log('Background warning notification: Import is running, sending notification...');
                 
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title,
-                    body,
-                    data: { type: 'import_background_warning' },
-                    sound: true,
-                    priority: Notifications.AndroidNotificationPriority.HIGH,
-                  },
-                  trigger: null, // Send immediately
-                });
-                
-                console.log('Background warning notification sent successfully');
+                // Check notification permissions first
+                try {
+                  const { status: permissionStatus } = await Notifications.getPermissionsAsync();
+                  console.log('Background warning notification: Permission status:', permissionStatus);
+                  
+                  if (permissionStatus === 'granted') {
+                    const title = language === 'Chinese' ? '导入任务警告' : 'Come back soon!';
+                    const body = language === 'Chinese' 
+                      ? '导入任务将在大约30秒内提前结束。请尽快回来！' 
+                      : 'Import task automatically ends in approximately 30 seconds!';
+                    
+                    try {
+                      const notificationId = await Notifications.scheduleNotificationAsync({
+                        content: {
+                          title,
+                          body,
+                          data: { type: 'import_background_warning' },
+                          sound: true,
+                          priority: Notifications.AndroidNotificationPriority.HIGH,
+                        },
+                        trigger: null, // Send immediately
+                      });
+                      
+                      console.log('Background warning notification sent successfully with ID:', notificationId);
+                    } catch (notificationError) {
+                      console.error('Background warning notification: Failed to send notification:', notificationError);
+                    }
+                  } else {
+                    console.log('Background warning notification: Permission not granted, cannot send notification');
+                  }
+                } catch (permissionError) {
+                  console.error('Background warning notification: Error checking permissions:', permissionError);
+                }
               } else {
                 console.log('Import no longer running - skipping background warning notification');
               }
@@ -491,7 +562,8 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
             try {
               // Double-check import is still running before sending notification
               const progress = await loadImportBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
+              const isImportRunning = progress && (progress.inProgress || progress.stage === 'counting') && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError;
+              if (isImportRunning) {
                 const title = 'Import task cancelled!';
                 const body = 'Oops you were away for too long!';
                 
@@ -520,7 +592,8 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
             try {
               // Double-check import is still running before terminating
               const progress = await loadImportBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
+              const isImportRunning = progress && (progress.inProgress || progress.stage === 'counting') && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError;
+              if (isImportRunning) {
                 console.log('30 seconds elapsed in background - automatically terminating import task');
                 await automaticallyCancelImport();
               } else {
@@ -541,7 +614,8 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
     const clearStaleData = async () => {
       try {
         const progress = await loadImportBackgroundTaskProgress();
-        if (progress && progress.inProgress && !progress.completed) {
+        const isImportRunning = progress && (progress.inProgress || progress.stage === 'counting') && !progress.completed;
+        if (isImportRunning) {
           console.log('Clearing stale import background task data on app start');
           await clearImportBackgroundTaskProgress();
         }

@@ -188,6 +188,12 @@ export default function AppSettingsScreen() {
   // Local state to immediately show progress bar when starting clear data
   const [isLocallyStartingClearData, setIsLocallyStartingClearData] = React.useState(false);
   
+  // State to track when data restoration/rollback is happening
+  const [isDataRestorationInProgress, setIsDataRestorationInProgress] = React.useState(false);
+  
+  // State to track which process is blocking navigation
+  const [navigationBlockingProcess, setNavigationBlockingProcess] = React.useState<'import' | 'deletion' | null>(null);
+  
   // Reset local starting state when background task actually starts running
   React.useEffect(() => {
     if (isClearDataBackgroundTaskRunning && isLocallyStartingClearData) {
@@ -701,9 +707,9 @@ export default function AppSettingsScreen() {
 
   // Control button disable state based on backup, import, and clear data status
   React.useEffect(() => {
-    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isImportLoading || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData;
+    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isImportLoading || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress;
     setShouldDisableOtherButtons(shouldDisable);
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportLoading, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportLoading, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -824,32 +830,7 @@ export default function AppSettingsScreen() {
     }
   }, [wasImportAutomaticallyCancelled, resetImportAutomaticallyCancelledFlag, handleShowImportAutomaticCancellationModal]);
 
-  // Watch for clear data completion to show success modal
-  React.useEffect(() => {
-    if (clearDataBackgroundTaskProgress?.completed && clearDataBackgroundTaskProgress?.success && !clearDataBackgroundTaskProgress?.error && !clearDataBackgroundTaskProgress?.networkError) {
-      // Set persistent clear data completion state
-      setHasClearDataCompleted(true);
-      
-      // If cancel clear data modal is open when clear data completes, dismiss it first
-      if (isCancelClearDataModalOpen) {
-        console.log('Clear data completed while cancel modal is open - dismissing cancel modal first');
-        // Immediately dismiss cancel modal without animation to make it seamless
-        setIsCancelClearDataModalOpen(false);
-        cancelClearDataOverlayOpacity.setValue(0);
-        cancelClearDataModalOpacity.setValue(0);
-      }
-      
-      // Show success modal when clear data completes (will stay open until manually dismissed)
-      handleShowSuccessModal(clearDataBackgroundTaskProgress.message || 'Clear data completed successfully!');
-    } else if (clearDataBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
-      // Show persistent network error modal only if it hasn't been shown yet
-      handleShowNetworkErrorModal('clearData');
-    } else if (clearDataBackgroundTaskProgress?.noData) {
-      // Show no clear data modal when there's no data to clear
-      console.log('Showing no clear data modal');
-      handleShowNoClearDataModal();
-    }
-  }, [clearDataBackgroundTaskProgress, isCancelClearDataModalOpen, cancelClearDataOverlayOpacity, cancelClearDataModalOpacity, hasNetworkErrorModalBeenShown]);
+
 
   // Show success modal on page load if clear data was completed
   React.useEffect(() => {
@@ -1110,7 +1091,8 @@ export default function AppSettingsScreen() {
   const navigationGuardOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const navigationGuardModalOpacity = React.useRef(new Animated.Value(0)).current;
 
-  const handleShowNavigationGuardModal = React.useCallback(() => {
+  const handleShowNavigationGuardModal = React.useCallback((processType: 'import' | 'deletion') => {
+    setNavigationBlockingProcess(processType);
     setIsNavigationGuardModalOpen(true);
     Animated.parallel([
       Animated.timing(navigationGuardOverlayOpacity, {
@@ -1140,18 +1122,69 @@ export default function AppSettingsScreen() {
       })
     ]).start(() => {
       setIsNavigationGuardModalOpen(false);
+      setNavigationBlockingProcess(null);
     });
   }, [navigationGuardOverlayOpacity, navigationGuardModalOpacity]);
 
+  // Watch for clear data completion to show success modal
+  React.useEffect(() => {
+    if (clearDataBackgroundTaskProgress?.completed && clearDataBackgroundTaskProgress?.success && !clearDataBackgroundTaskProgress?.error && !clearDataBackgroundTaskProgress?.networkError) {
+      // Set persistent clear data completion state
+      setHasClearDataCompleted(true);
+      
+      // Reset restoration state to allow navigation
+      setIsDataRestorationInProgress(false);
+      
+      // If navigation guard modal is open when clear data completes, dismiss it first
+      if (isNavigationGuardModalOpen) {
+        console.log('Clear data completed while navigation guard modal is open - dismissing navigation guard modal first');
+        // Immediately dismiss navigation guard modal without animation to make it seamless
+        setIsNavigationGuardModalOpen(false);
+        navigationGuardOverlayOpacity.setValue(0);
+        navigationGuardModalOpacity.setValue(0);
+        setNavigationBlockingProcess(null);
+      }
+      
+      // If cancel clear data modal is open when clear data completes, dismiss it first
+      if (isCancelClearDataModalOpen) {
+        console.log('Clear data completed while cancel modal is open - dismissing cancel modal first');
+        // Immediately dismiss cancel modal without animation to make it seamless
+        setIsCancelClearDataModalOpen(false);
+        cancelClearDataOverlayOpacity.setValue(0);
+        cancelClearDataModalOpacity.setValue(0);
+      }
+      
+      // Show success modal when clear data completes (will stay open until manually dismissed)
+      handleShowSuccessModal(clearDataBackgroundTaskProgress.message || 'Clear data completed successfully!');
+    } else if (clearDataBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
+      // Show persistent network error modal only if it hasn't been shown yet
+      handleShowNetworkErrorModal('clearData');
+      // Reset restoration state to allow navigation
+      setIsDataRestorationInProgress(false);
+    } else if (clearDataBackgroundTaskProgress?.noData) {
+      // Show no clear data modal when there's no data to clear
+      console.log('Showing no clear data modal');
+      handleShowNoClearDataModal();
+      // Reset restoration state to allow navigation
+      setIsDataRestorationInProgress(false);
+    } else if (clearDataBackgroundTaskProgress?.error || clearDataBackgroundTaskProgress?.cancelled) {
+      // Reset restoration state to allow navigation for any other completion state
+      setIsDataRestorationInProgress(false);
+    }
+  }, [clearDataBackgroundTaskProgress, isCancelClearDataModalOpen, cancelClearDataOverlayOpacity, cancelClearDataModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, hasNetworkErrorModalBeenShown]);
+
   const handleBackPress = React.useCallback(() => {
     // Check if import or clear data is running and prevent navigation
-    if (isImportBackgroundTaskRunning || isClearDataBackgroundTaskRunning) {
-      handleShowNavigationGuardModal();
+    if (isImportBackgroundTaskRunning) {
+      handleShowNavigationGuardModal('import');
+      return;
+    } else if (isClearDataBackgroundTaskRunning || isLocallyStartingClearData || isDataRestorationInProgress) {
+      handleShowNavigationGuardModal('deletion');
       return;
     }
     
     router.back();
-  }, [router, isImportBackgroundTaskRunning, isClearDataBackgroundTaskRunning, handleShowNavigationGuardModal]);
+  }, [router, isImportBackgroundTaskRunning, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
 
   const handleBackupPress = React.useCallback(() => {
     setIsBackupModalOpen(true);
@@ -2043,6 +2076,9 @@ export default function AppSettingsScreen() {
       // Start cancellation immediately without waiting for modal dismissal
       console.log('User confirmed clear data cancellation - starting immediate cancellation');
       
+      // Set restoration state to prevent navigation during rollback
+      setIsDataRestorationInProgress(true);
+      
       // Force stop the clear data background task immediately
       forceStopClearDataBackgroundTask();
       
@@ -2116,6 +2152,9 @@ export default function AppSettingsScreen() {
       
       // Add a small delay to ensure all async operations complete
       await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Reset restoration state to allow navigation
+      setIsDataRestorationInProgress(false);
       
       console.log('Clear data task cancelled successfully');
       
@@ -2852,7 +2891,11 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isNavigationGuardModalOpen}
           opacity={navigationGuardModalOpacity}
-          text={language === 'Chinese' ? '请在导入过程中停留在此页面' : 'Please stay on this page\nduring the import process'}
+          text={
+            navigationBlockingProcess === 'import'
+              ? (language === 'Chinese' ? '请在导入过程中停留在此页面' : 'Please stay on this page\nduring the import process')
+              : (language === 'Chinese' ? '请在删除过程中停留在此页面' : 'Please stay on this page\nduring the deletion process')
+          }
           Icon={ModalExclamationMarkIcon}
           buttons="single"
           onConfirm={handleDismissNavigationGuardModal}

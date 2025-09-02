@@ -14,6 +14,7 @@ interface ClearDataBackgroundTaskContextType {
   isClearDataCleanupInProgress: boolean;
   isClearDataStopping: boolean;
   clearDataBackgroundTaskProgress: any | null;
+  setClearDataBackgroundTaskProgress: (progress: any | null) => void;
   wasAutomaticallyCancelled: boolean;
   startClearDataBackgroundTaskMonitoring: () => void;
   stopClearDataBackgroundTaskMonitoring: () => void;
@@ -603,6 +604,7 @@ export const ClearDataBackgroundTaskProvider: React.FC<ClearDataBackgroundTaskPr
     isClearDataCleanupInProgress,
     isClearDataStopping,
     clearDataBackgroundTaskProgress,
+    setClearDataBackgroundTaskProgress,
     wasAutomaticallyCancelled,
     startClearDataBackgroundTaskMonitoring,
     stopClearDataBackgroundTaskMonitoring,

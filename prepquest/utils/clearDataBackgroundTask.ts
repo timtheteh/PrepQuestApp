@@ -60,7 +60,7 @@ function shouldSendPushNotification(): boolean {
 }
 
 // Helper to update progress periodically during long operations
-async function updateClearDataProgressPeriodically(progressData: any, intervalMs: number = 5000) {
+async function updateClearDataProgressPeriodically(progressData: any, intervalMs: number = 1000) {
   const interval = setInterval(async () => {
     try {
       // Load current progress to preserve the most recent status
@@ -109,7 +109,29 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
       message: 'Starting clear data...'
     });
     
-    const stopKeepAlive = await updateClearDataProgressPeriodically({ inProgress: true });
+    // Start more frequent progress updates to keep the task alive and update progress in background
+    const stopKeepAlive = await updateClearDataProgressPeriodically({ inProgress: true }, 1000);
+    
+    // Send initial progress notification to keep task alive on Android/iOS
+    if (shouldSendPushNotification()) {
+      try {
+        const { status: permissionStatus } = await Notifications.getPermissionsAsync();
+        if (permissionStatus === 'granted') {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: language === 'Chinese' ? '数据删除进行中' : 'Data Deletion in Progress',
+              body: language === 'Chinese' ? '正在后台删除数据...' : 'Deleting data in background...',
+              data: { type: 'clear_data_progress', percentage: 0 },
+              sound: false,
+              priority: Notifications.AndroidNotificationPriority.LOW,
+            },
+            trigger: null,
+          });
+        }
+      } catch (error) {
+        console.log('Could not send initial progress notification:', error);
+      }
+    }
     
     // Create a cancellation checker function
     const isCancelled = () => {
@@ -121,7 +143,7 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
     };
 
     // Start the clear data process with progress tracking and cancellation support
-    const result = await clearLocalStorageData((progress: ClearDataProgress) => {
+    const result = await clearLocalStorageData(async (progress: ClearDataProgress) => {
       // Save progress updates
       saveClearDataProgress({
         status: progress.stage,
@@ -133,6 +155,33 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
         rowsProcessed: progress.rowsProcessed,
         totalRows: progress.totalRows
       });
+      
+      // Send progress notification to keep task alive and show progress
+      if (shouldSendPushNotification() && progress.percentage && progress.percentage > 0) {
+        try {
+          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
+          if (permissionStatus === 'granted') {
+            // Cancel previous progress notification
+            await Notifications.cancelAllScheduledNotificationsAsync();
+            
+            // Send new progress notification
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: language === 'Chinese' ? '数据删除进行中' : 'Data Deletion in Progress',
+                body: language === 'Chinese' 
+                  ? `删除进度: ${progress.percentage}%` 
+                  : `Deletion Progress: ${progress.percentage}%`,
+                data: { type: 'clear_data_progress', percentage: progress.percentage },
+                sound: false,
+                priority: Notifications.AndroidNotificationPriority.LOW,
+              },
+              trigger: null,
+            });
+          }
+        } catch (error) {
+          console.log('Could not send progress notification:', error);
+        }
+      }
     }, isCancelled);
     
     // Store backup data for potential rollback

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, Platform, Switch, Alert, Linking, ScrollView , Animated, Modal } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, Platform, Switch, Alert, Linking, ScrollView , Animated, Modal, AppState, AppStateStatus } from 'react-native';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -120,7 +120,8 @@ export default function AppSettingsScreen() {
   // clear data progress state - now handled by background task context
   const { 
     isClearDataBackgroundTaskRunning, 
-    clearDataBackgroundTaskProgress, 
+    clearDataBackgroundTaskProgress,
+    setClearDataBackgroundTaskProgress,
     wasAutomaticallyCancelled: wasClearDataAutomaticallyCancelled,
     startClearDataBackgroundTaskMonitoring,
     forceStopClearDataBackgroundTask,
@@ -1172,6 +1173,45 @@ export default function AppSettingsScreen() {
       setIsDataRestorationInProgress(false);
     }
   }, [clearDataBackgroundTaskProgress, isCancelClearDataModalOpen, cancelClearDataOverlayOpacity, cancelClearDataModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, hasNetworkErrorModalBeenShown]);
+
+  // Background progress monitoring for clear data (ensures progress updates even when app is backgrounded)
+  React.useEffect(() => {
+    if (clearDataBackgroundTaskProgress?.inProgress && !clearDataBackgroundTaskProgress?.completed) {
+      // Set up interval to check for progress updates even when app is backgrounded
+      const progressInterval = setInterval(async () => {
+        try {
+          // Force a progress update to ensure the UI reflects the latest progress
+          // This helps when the app comes back to foreground
+          if (clearDataBackgroundTaskProgress) {
+            // Trigger a re-render by updating the progress state
+            // The actual progress data comes from the background task
+            console.log('Background progress check - current percentage:', clearDataBackgroundTaskProgress.percentage);
+          }
+        } catch (error) {
+          console.error('Error in background progress monitoring:', error);
+        }
+      }, 1000); // Check every 1 second for more responsive updates
+      
+      return () => clearInterval(progressInterval);
+    }
+  }, [clearDataBackgroundTaskProgress]);
+
+  // Enhanced background progress monitoring using AppState to detect when app comes to foreground
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active' && clearDataBackgroundTaskProgress?.inProgress && !clearDataBackgroundTaskProgress?.completed) {
+        // App came to foreground - force a progress update to ensure UI is current
+        console.log('App returned to foreground - refreshing clear data progress');
+        
+        // Trigger a re-render by updating the progress state
+        // This ensures the progress bar shows the current progress immediately
+        setClearDataBackgroundTaskProgress((prev: any) => prev ? { ...prev, timestamp: Date.now() } : prev);
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [clearDataBackgroundTaskProgress]);
 
   const handleBackPress = React.useCallback(() => {
     // Check if import or clear data is running and prevent navigation

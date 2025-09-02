@@ -2038,21 +2038,7 @@ export default function AppSettingsScreen() {
     }
   }, [handleDismissCancelImport, forceStopImportBackgroundTask, clearImportBackgroundTaskProgress, language]);
 
-  const handleCancelClearDataPress = React.useCallback(() => {
-    setIsCancelClearDataModalOpen(true);
-    Animated.parallel([
-      Animated.timing(cancelClearDataOverlayOpacity, {
-        toValue: 0.5,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cancelClearDataModalOpacity, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, [cancelClearDataOverlayOpacity, cancelClearDataModalOpacity]);
+
 
   const handleDismissCancelClearData = React.useCallback(() => {
     Animated.parallel([
@@ -2574,27 +2560,16 @@ export default function AppSettingsScreen() {
                     <View style={{ 
                       width: '100%',
                       height: 60,
-                      flexDirection: 'row',
                       alignItems: 'center',
-                      gap: 12,
                     }}>
-                      <View style={{ flex: 1 }}>
-                        <StripedProgressBar 
-                          progress={clearDataBackgroundTaskProgress?.percentage || 0}
-                          currentItems={clearDataBackgroundTaskProgress?.rowsProcessed || 0}
-                          totalItems={clearDataBackgroundTaskProgress?.totalRows || 0}
-                          height={60}
-                          borderRadius={30}
-                          immediateProgress={false}
-                        />
-                      </View>
-                      <TouchableOpacity
-                        style={styles.cancelButton}
-                        onPress={handleCancelClearDataPress}
-                        activeOpacity={0.7}
-                      >
-                        <Entypo name="cross" size={40} color="#D7191C" />
-                      </TouchableOpacity>
+                      <StripedProgressBar 
+                        progress={clearDataBackgroundTaskProgress?.percentage || 0}
+                        currentItems={clearDataBackgroundTaskProgress?.rowsProcessed || 0}
+                        totalItems={clearDataBackgroundTaskProgress?.totalRows || 0}
+                        height={60}
+                        borderRadius={30}
+                        immediateProgress={false}
+                      />
                     </View>
                     <Text style={[{ 
                       color: colors.text, 

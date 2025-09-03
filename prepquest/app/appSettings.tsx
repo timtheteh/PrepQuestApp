@@ -334,7 +334,7 @@ export default function AppSettingsScreen() {
         console.log('Cooldown period ended after backup network error modal dismissal - all buttons re-enabled');
       }, 5000);
     } else if (networkErrorOperation === 'import') {
-      // For import network errors: clear import progress and immediately enable all buttons
+      // For import network errors: clear import progress but maintain cooldown mode
       try {
         await clearImportBackgroundTaskProgress();
         console.log('Cleared import progress data after user dismissed network error modal');
@@ -342,12 +342,9 @@ export default function AppSettingsScreen() {
         console.error('Error clearing import progress data:', error);
       }
       
-      // Reset all import-related states to ensure buttons are fully enabled
-      setIsImportCancelCooldownActive(false);
-      
-      // Immediately enable all buttons for import network errors
-      setShouldDisableOtherButtons(false);
-      console.log('Import network error modal dismissed - all buttons immediately re-enabled');
+      // Don't reset cooldown states - let the cooldown timer handle button re-enabling
+      // This prevents button flickering and maintains consistent button states
+      console.log('Import network error modal dismissed - maintaining cooldown mode to prevent button flickering');
     } else {
       // For clear data network errors: clear clear data progress and immediately enable all buttons
       try {
@@ -647,12 +644,32 @@ export default function AppSettingsScreen() {
       // Show no data modal when there's no data to import
       console.log('Showing no data modal for import');
       handleShowNoDataModal();
-    } else if (importBackgroundTaskProgress?.networkError && importBackgroundTaskProgress?.isCloudImportPhase) {
-      // Show network error modal only if the error occurred during cloud import phase
-      console.log('Showing network error modal for import (cloud import phase)');
+    } else if (importBackgroundTaskProgress?.networkError) {
+      // Show network error modal for any network error during import
+      console.log('Showing network error modal for import');
       handleShowNetworkErrorModal('import');
-    } else if (importBackgroundTaskProgress?.networkError && !importBackgroundTaskProgress?.isCloudImportPhase) {
-      console.log('Network error occurred during local database phase - not showing modal');
+      
+      // For network errors during cloud import phases, trigger cooldown mode
+      // This prevents button flickering and ensures proper button states
+      if (importBackgroundTaskProgress?.isCloudImportPhase !== false) {
+        console.log('Network error during cloud import phase - triggering cooldown mode');
+        
+        // Set import cancellation states to trigger cooldown mode
+        setIsImportCancelCooldownActive(true);
+        setShouldDisableOtherButtons(true);
+        
+        // Clear any existing cooldown timer
+        if (importCooldownTimerRef.current) {
+          clearTimeout(importCooldownTimerRef.current);
+        }
+        
+        // Set timer to clear cooldown after 5 seconds
+        importCooldownTimerRef.current = setTimeout(() => {
+          setIsImportCancelCooldownActive(false);
+          setShouldDisableOtherButtons(false);
+          console.log('Cooldown period ended after network error - import button re-enabled');
+        }, 5000);
+      }
     }
   }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
 

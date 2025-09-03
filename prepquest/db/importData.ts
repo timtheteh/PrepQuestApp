@@ -6,6 +6,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 function isNetworkError(error: any): boolean {
   if (!error) return false;
   
+  // Check for service errors (which should be treated as network errors)
+  if (error.isServiceError) {
+    return true;
+  }
+  
   // Check for common network error patterns
   const errorMessage = error.message?.toLowerCase() || '';
   const errorName = error.name?.toLowerCase() || '';
@@ -252,6 +257,16 @@ export async function getTotalRowCount(token: string): Promise<{ folders: number
         if (isNetworkError(error)) {
           throw error; // Re-throw network errors so they can be detected
         }
+      }
+      
+      // If we have errors but they're not network errors, treat them as service errors
+      // which should be treated as network errors for the purpose of showing the modal
+      const hasAnyError = foldersResult.error || decksResult.error || flashcardsResult.error;
+      if (hasAnyError) {
+        // Create a service error that will be detected as a network error
+        const serviceError = new Error('Import service temporarily unavailable. Please try again in a few minutes.');
+        (serviceError as any).isServiceError = true;
+        throw serviceError;
       }
       
       return null;
@@ -1036,9 +1051,19 @@ export async function importDataFromCloud(
   } catch (error) {
     console.error('Error during import process:', error);
     
-    // Check if this is a network error
+    // Check if this is a network error (including service errors)
     if (isNetworkError(error)) {
       console.log('Network error detected during import');
+      
+      // Check if this is a service error and provide a more specific message
+      if (error && typeof error === 'object' && (error as any).isServiceError) {
+        return { 
+          success: false, 
+          message: 'Import service temporarily unavailable. Please try again in a few minutes.',
+          isNetworkError: true
+        };
+      }
+      
       return { 
         success: false, 
         message: 'Import cancelled due to network error! Check your network.',

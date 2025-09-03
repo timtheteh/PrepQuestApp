@@ -95,6 +95,11 @@ async function updateImportProgressPeriodically(progressData: any, intervalMs: n
 function isNetworkError(error: any): boolean {
   if (!error) return false;
   
+  // Check for service errors (which should be treated as network errors)
+  if (error.isServiceError) {
+    return true;
+  }
+  
   // Check for common network error patterns
   const errorMessage = error.message?.toLowerCase() || '';
   const errorName = error.name?.toLowerCase() || '';

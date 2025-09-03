@@ -193,7 +193,7 @@ export default function AppSettingsScreen() {
   const [isDataRestorationInProgress, setIsDataRestorationInProgress] = React.useState(false);
   
   // State to track which process is blocking navigation
-  const [navigationBlockingProcess, setNavigationBlockingProcess] = React.useState<'import' | 'deletion' | null>(null);
+  const [navigationBlockingProcess, setNavigationBlockingProcess] = React.useState<'backup' | 'import' | 'deletion' | null>(null);
   
   // Reset local starting state when background task actually starts running
   React.useEffect(() => {
@@ -1092,7 +1092,7 @@ export default function AppSettingsScreen() {
   const navigationGuardOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const navigationGuardModalOpacity = React.useRef(new Animated.Value(0)).current;
 
-  const handleShowNavigationGuardModal = React.useCallback((processType: 'import' | 'deletion') => {
+  const handleShowNavigationGuardModal = React.useCallback((processType: 'backup' | 'import' | 'deletion') => {
     setNavigationBlockingProcess(processType);
     setIsNavigationGuardModalOpen(true);
     Animated.parallel([
@@ -1214,8 +1214,11 @@ export default function AppSettingsScreen() {
   }, [clearDataBackgroundTaskProgress]);
 
   const handleBackPress = React.useCallback(() => {
-    // Check if import or clear data is running and prevent navigation
-    if (isImportBackgroundTaskRunning) {
+    // Check if backup, import, or clear data is running and prevent navigation
+    if (isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup) {
+      handleShowNavigationGuardModal('backup');
+      return;
+    } else if (isImportBackgroundTaskRunning) {
       handleShowNavigationGuardModal('import');
       return;
     } else if (isClearDataBackgroundTaskRunning || isLocallyStartingClearData || isDataRestorationInProgress) {
@@ -1224,7 +1227,7 @@ export default function AppSettingsScreen() {
     }
     
     router.back();
-  }, [router, isImportBackgroundTaskRunning, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
+  }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isImportBackgroundTaskRunning, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
 
   const handleBackupPress = React.useCallback(() => {
     setIsBackupModalOpen(true);
@@ -2907,7 +2910,9 @@ export default function AppSettingsScreen() {
           visible={isNavigationGuardModalOpen}
           opacity={navigationGuardModalOpacity}
           text={
-            navigationBlockingProcess === 'import'
+            navigationBlockingProcess === 'backup'
+              ? (language === 'Chinese' ? '请在备份过程中停留在此页面' : 'Please stay on this page\nduring the backup process')
+              : navigationBlockingProcess === 'import'
               ? (language === 'Chinese' ? '请在导入过程中停留在此页面' : 'Please stay on this page\nduring the import process')
               : (language === 'Chinese' ? '请在删除过程中停留在此页面' : 'Please stay on this page\nduring the deletion process')
           }

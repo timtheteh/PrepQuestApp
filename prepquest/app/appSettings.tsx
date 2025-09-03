@@ -1215,7 +1215,7 @@ export default function AppSettingsScreen() {
 
   const handleBackPress = React.useCallback(() => {
     // Check if backup, import, or clear data is running and prevent navigation
-    if (isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup) {
+    if (isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) {
       handleShowNavigationGuardModal('backup');
       return;
     } else if (isImportBackgroundTaskRunning) {
@@ -1227,7 +1227,7 @@ export default function AppSettingsScreen() {
     }
     
     router.back();
-  }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isImportBackgroundTaskRunning, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
+  }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
 
   const handleBackupPress = React.useCallback(() => {
     setIsBackupModalOpen(true);

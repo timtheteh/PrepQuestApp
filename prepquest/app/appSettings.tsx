@@ -590,28 +590,7 @@ export default function AppSettingsScreen() {
     loadNotificationsPreference();
   }, []);
 
-  // Watch for backup completion to show success modal
-  React.useEffect(() => {
-    if (backupBackgroundTaskProgress?.completed && backupBackgroundTaskProgress?.success && !backupBackgroundTaskProgress?.error && !backupBackgroundTaskProgress?.networkError) {
-      // Set persistent backup completion state
-      setHasBackupCompleted(true);
-      
-      // If cancel backup modal is open when backup completes, dismiss it first
-      if (isCancelBackupModalOpen) {
-        console.log('Backup completed while cancel modal is open - dismissing cancel modal first');
-        // Immediately dismiss cancel modal without animation to make it seamless
-        setIsCancelBackupModalOpen(false);
-        cancelBackupOverlayOpacity.setValue(0);
-        cancelBackupModalOpacity.setValue(0);
-      }
-      
-      // Show success modal when backup completes (will stay open until manually dismissed)
-      handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
-    } else if (backupBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
-      // Show persistent network error modal only if it hasn't been shown yet
-      handleShowNetworkErrorModal('backup');
-    }
-  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, hasNetworkErrorModalBeenShown]);
+
 
   // Watch for import completion to show success modal
   React.useEffect(() => {
@@ -1187,6 +1166,39 @@ export default function AppSettingsScreen() {
       setIsDataRestorationInProgress(false);
     }
   }, [clearDataBackgroundTaskProgress, isCancelClearDataModalOpen, cancelClearDataOverlayOpacity, cancelClearDataModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, hasNetworkErrorModalBeenShown]);
+
+  // Watch for backup completion to show success modal
+  React.useEffect(() => {
+    if (backupBackgroundTaskProgress?.completed && backupBackgroundTaskProgress?.success && !backupBackgroundTaskProgress?.error && !backupBackgroundTaskProgress?.networkError) {
+      // Set persistent backup completion state
+      setHasBackupCompleted(true);
+      
+      // If cancel backup modal is open when backup completes, dismiss it first
+      if (isCancelBackupModalOpen) {
+        console.log('Backup completed while cancel modal is open - dismissing cancel modal first');
+        // Immediately dismiss cancel modal without animation to make it seamless
+        setIsCancelBackupModalOpen(false);
+        cancelBackupOverlayOpacity.setValue(0);
+        cancelBackupModalOpacity.setValue(0);
+      }
+      
+      // If navigation guard modal is open when backup completes, dismiss it first
+      if (isNavigationGuardModalOpen && navigationBlockingProcess === 'backup') {
+        console.log('Backup completed while navigation guard modal is open - dismissing navigation guard modal first');
+        // Immediately dismiss navigation guard modal without animation to make it seamless
+        setIsNavigationGuardModalOpen(false);
+        navigationGuardOverlayOpacity.setValue(0);
+        navigationGuardModalOpacity.setValue(0);
+        setNavigationBlockingProcess(null);
+      }
+      
+      // Show success modal when backup completes (will stay open until manually dismissed)
+      handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
+    } else if (backupBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
+      // Show persistent network error modal only if it hasn't been shown yet
+      handleShowNetworkErrorModal('backup');
+    }
+  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess, hasNetworkErrorModalBeenShown]);
 
   // Background progress monitoring for clear data (ensures progress updates even when app is backgrounded)
   React.useEffect(() => {

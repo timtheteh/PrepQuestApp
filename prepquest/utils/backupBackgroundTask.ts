@@ -407,19 +407,9 @@ export const startBackupBackgroundTask = async (getToken: () => Promise<string |
       },
     });
 
-    // Save initial progress immediately with explicit 0% and fresh state
-    await saveBackupProgress({
-      status: 'backupStarted',
-      inProgress: true,
-      completed: false,
-      cancelled: false,
-      error: false,
-      timestamp: Date.now(),
-      percentage: 0,
-      rowsUploaded: 0,
-      totalRows: 0,
-      message: 'Starting backup...'
-    });
+    // Don't save progress immediately to prevent button flickering
+    // Progress will be saved when the background task actually starts running
+    console.log('Background service started, progress will be saved when task begins');
 
     console.log('Fresh backup task started successfully');
     return true;

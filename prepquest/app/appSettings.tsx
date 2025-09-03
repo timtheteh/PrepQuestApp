@@ -673,11 +673,8 @@ export default function AppSettingsScreen() {
   // Hide loading screen when backup background task starts running
   React.useEffect(() => {
     if (isBackupLoading && isBackupBackgroundTaskRunning) {
-      // Set isBackupLoading to false IMMEDIATELY to prevent button flashing
+      // Set isBackupLoading to false to hide loading screen
       setIsBackupLoading(false);
-      
-      // Enable button disabling only when progress bar becomes visible
-      setShouldDisableOtherButtons(true);
       
       // Then animate out the loading overlay
       Animated.timing(backupLoadingOverlayOpacity, {
@@ -691,11 +688,8 @@ export default function AppSettingsScreen() {
   // Hide import loading screen when import starts running
   React.useEffect(() => {
     if (isImportLoading && isImportBackgroundTaskRunning) {
-      // Set isImportLoading to false IMMEDIATELY to prevent button flashing
+      // Set isImportLoading to false to hide loading screen
       setIsImportLoading(false);
-      
-      // Enable button disabling only when progress bar becomes visible
-      setShouldDisableOtherButtons(true);
       
       // Then animate out the loading overlay
       Animated.timing(importLoadingOverlayOpacity, {
@@ -708,9 +702,15 @@ export default function AppSettingsScreen() {
 
   // Control button disable state based on backup, import, and clear data status
   React.useEffect(() => {
-    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isImportLoading || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress;
-    setShouldDisableOtherButtons(shouldDisable);
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportLoading, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress]);
+    // Don't disable buttons during loading states - only disable when actual operations are running
+    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress;
+    
+    // Additional safety: never disable buttons during loading states
+    const isAnyLoading = isBackupLoading || isImportLoading || isClearDataLoading;
+    const finalShouldDisable = shouldDisable && !isAnyLoading;
+    
+    setShouldDisableOtherButtons(finalShouldDisable);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress, isBackupLoading, isImportLoading, isClearDataLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -843,11 +843,8 @@ export default function AppSettingsScreen() {
   // Hide clear data loading screen when clear data background task starts running
   React.useEffect(() => {
     if (isClearDataLoading && isClearDataBackgroundTaskRunning) {
-      // Set isClearDataLoading to false IMMEDIATELY to prevent button flashing
+      // Set isClearDataLoading to false to hide loading screen
       setIsClearDataLoading(false);
-      
-      // Enable button disabling only when progress bar becomes visible
-      setShouldDisableOtherButtons(true);
       
       // Then animate out the loading overlay
       Animated.timing(clearDataLoadingOverlayOpacity, {
@@ -1374,9 +1371,6 @@ export default function AppSettingsScreen() {
         console.warn('Error checking backup state:', checkError);
       }
       
-      // Start background task monitoring
-      startBackupBackgroundTaskMonitoring();
-      
       // Clear local stopping state and cooldown since we're starting a new backup
       setIsLocallyStoppingBackup(false);
       setIsCancelCooldownActive(false);
@@ -1422,7 +1416,17 @@ export default function AppSettingsScreen() {
           'Failed to start backup process',
           [{ text: strings[language].ok }]
         );
+        return;
       }
+      
+      // Start background task monitoring AFTER the task starts successfully
+      // This prevents the monitoring from detecting the running state before the loading screen hides
+      startBackupBackgroundTaskMonitoring();
+      
+      // Add a small delay to ensure the loading screen has time to hide
+      // before the monitoring detects the backup is running
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // If success, the loading screen will be hidden when isBackupBackgroundTaskRunning becomes true
     } catch (error) {
       // Hide loading screen

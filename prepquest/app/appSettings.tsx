@@ -703,14 +703,14 @@ export default function AppSettingsScreen() {
   // Control button disable state based on backup, import, and clear data status
   React.useEffect(() => {
     // Don't disable buttons during loading states - only disable when actual operations are running
-    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress;
+    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isImportStopping || isImportCleanupInProgress || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress;
     
     // Additional safety: never disable buttons during loading states
     const isAnyLoading = isBackupLoading || isImportLoading || isClearDataLoading;
     const finalShouldDisable = shouldDisable && !isAnyLoading;
     
     setShouldDisableOtherButtons(finalShouldDisable);
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress, isBackupLoading, isImportLoading, isClearDataLoading]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportStopping, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress, isBackupLoading, isImportLoading, isClearDataLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -1215,7 +1215,7 @@ export default function AppSettingsScreen() {
     if (isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) {
       handleShowNavigationGuardModal('backup');
       return;
-    } else if (isImportBackgroundTaskRunning) {
+    } else if (isImportBackgroundTaskRunning || isImportStopping || isImportCancelCooldownActive || isImportCleanupInProgress) {
       handleShowNavigationGuardModal('import');
       return;
     } else if (isClearDataBackgroundTaskRunning || isLocallyStartingClearData || isDataRestorationInProgress) {
@@ -1224,7 +1224,7 @@ export default function AppSettingsScreen() {
     }
     
     router.back();
-  }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
+  }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportStopping, isImportCancelCooldownActive, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
 
   const handleBackupPress = React.useCallback(() => {
     setIsBackupModalOpen(true);
@@ -2075,6 +2075,22 @@ export default function AppSettingsScreen() {
       
       console.log('Import task cancelled successfully');
       
+      // Start 5-second cooldown period to prevent immediate restart
+      setIsImportCancelCooldownActive(true);
+      console.log('Starting 5-second cooldown after import cancellation');
+      
+      // Clear any existing cooldown timer
+      if (importCooldownTimerRef.current) {
+        clearTimeout(importCooldownTimerRef.current);
+      }
+      
+      // Set timer to clear cooldown after 5 seconds
+      importCooldownTimerRef.current = setTimeout(() => {
+        setIsImportCancelCooldownActive(false);
+        setShouldDisableOtherButtons(false);
+        console.log('Cooldown period ended - import button re-enabled');
+      }, 5000);
+      
     } catch (error) {
       console.error('Error cancelling import task:', error);
       Alert.alert(
@@ -2583,7 +2599,7 @@ export default function AppSettingsScreen() {
                       <Text style={[styles.cloudButtonText, { 
                         fontFamily: Fonts.bodyMedium,
                       }]}>
-                        {(isImportStopping || isImportCancelCooldownActive)
+                        {(isImportStopping || isImportCancelCooldownActive || isImportCleanupInProgress) && !isImportLoading
                           ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
                           : strings[language].appSettingsPage.loadDataFromCloud
                         }

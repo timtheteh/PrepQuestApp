@@ -19,7 +19,7 @@ import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskCon
 import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskContext';
 import { ClearDataBackgroundTaskProvider } from '@/contexts/ClearDataBackgroundTaskContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
-import { BackupTaskNotification } from '@/components/inAppNotifications/BackupTaskNotification';
+
 import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
 import NotificationService from '@/utils/notifications';
 import * as Notifications from 'expo-notifications';
@@ -290,7 +290,6 @@ function AppContent() {
             />
           </Stack>
           <BackgroundTaskNotification />
-          <BackupTaskNotification />
           <ImportTaskNotification />
           <StatusBar style="auto" />
         </>

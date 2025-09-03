@@ -655,65 +655,7 @@ export default function AppSettingsScreen() {
 
 
 
-  // Watch for import completion to show success modal
-  React.useEffect(() => {
-    console.log('Import completion effect triggered:', {
-      progress: importBackgroundTaskProgress,
-      hasProgress: !!importBackgroundTaskProgress,
-      completed: importBackgroundTaskProgress?.completed,
-      success: importBackgroundTaskProgress?.success,
-      error: importBackgroundTaskProgress?.error,
-      networkError: importBackgroundTaskProgress?.networkError,
-      isCloudImportPhase: importBackgroundTaskProgress?.isCloudImportPhase,
-      noData: importBackgroundTaskProgress?.noData
-    });
-    
-    if (importBackgroundTaskProgress?.completed && importBackgroundTaskProgress?.success && !importBackgroundTaskProgress?.error && !importBackgroundTaskProgress?.networkError) {
-      // Set persistent import completion state
-      setHasImportCompleted(true);
-      
-      // If cancel import modal is open when import completes, dismiss it first
-      if (isCancelImportModalOpen) {
-        console.log('Import completed while cancel modal is open - dismissing cancel modal first');
-        setIsCancelImportModalOpen(false);
-        cancelImportOverlayOpacity.setValue(0);
-        cancelImportModalOpacity.setValue(0);
-      }
-      
-      // Show success modal when import completes (will stay open until manually dismissed)
-      handleShowSuccessModal('Import completed!');
-    } else if (importBackgroundTaskProgress?.noData) {
-      // Show no data modal when there's no data to import
-      console.log('Showing no data modal for import');
-      handleShowNoDataModal();
-    } else if (importBackgroundTaskProgress?.networkError) {
-      // Show network error modal for any network error during import
-      console.log('Showing network error modal for import');
-      handleShowNetworkErrorModal('import');
-      
-      // For network errors during cloud import phases, trigger cooldown mode
-      // This prevents button flickering and ensures proper button states
-      if (importBackgroundTaskProgress?.isCloudImportPhase !== false) {
-        console.log('Network error during cloud import phase - triggering cooldown mode');
-        
-        // Set import cancellation states to trigger cooldown mode
-        setIsImportCancelCooldownActive(true);
-        setShouldDisableOtherButtons(true);
-        
-        // Clear any existing cooldown timer
-        if (importCooldownTimerRef.current) {
-          clearTimeout(importCooldownTimerRef.current);
-        }
-        
-        // Set timer to clear cooldown after 5 seconds
-        importCooldownTimerRef.current = setTimeout(() => {
-          setIsImportCancelCooldownActive(false);
-          setShouldDisableOtherButtons(false);
-          console.log('Cooldown period ended after network error - import button re-enabled');
-        }, 5000);
-      }
-    }
-  }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity]);
+
 
   // Show success modal on page load if backup was completed
   React.useEffect(() => {
@@ -1281,6 +1223,76 @@ export default function AppSettingsScreen() {
       }
     }
   }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess, hasNetworkErrorModalBeenShown, handleShowBackupServiceBusyModal, handleShowNetworkErrorModal]);
+
+  // Watch for import completion to show success modal
+  React.useEffect(() => {
+    console.log('Import completion effect triggered:', {
+      progress: importBackgroundTaskProgress,
+      hasProgress: !!importBackgroundTaskProgress,
+      completed: importBackgroundTaskProgress?.completed,
+      success: importBackgroundTaskProgress?.success,
+      error: importBackgroundTaskProgress?.error,
+      networkError: importBackgroundTaskProgress?.networkError,
+      isCloudImportPhase: importBackgroundTaskProgress?.isCloudImportPhase,
+      noData: importBackgroundTaskProgress?.noData
+    });
+    
+    if (importBackgroundTaskProgress?.completed && importBackgroundTaskProgress?.success && !importBackgroundTaskProgress?.error && !importBackgroundTaskProgress?.networkError) {
+      // Set persistent import completion state
+      setHasImportCompleted(true);
+      
+      // If cancel import modal is open when import completes, dismiss it first
+      if (isCancelImportModalOpen) {
+        console.log('Import completed while cancel modal is open - dismissing cancel modal first');
+        setIsCancelImportModalOpen(false);
+        cancelImportOverlayOpacity.setValue(0);
+        cancelImportModalOpacity.setValue(0);
+      }
+      
+      // If navigation guard modal is open when import completes, dismiss it first
+      if (isNavigationGuardModalOpen && navigationBlockingProcess === 'import') {
+        console.log('Import completed while navigation guard modal is open - dismissing navigation guard modal first');
+        // Immediately dismiss navigation guard modal without animation to make it seamless
+        setIsNavigationGuardModalOpen(false);
+        navigationGuardOverlayOpacity.setValue(0);
+        navigationGuardModalOpacity.setValue(0);
+        setNavigationBlockingProcess(null);
+      }
+      
+      // Show success modal when import completes (will stay open until manually dismissed)
+      handleShowSuccessModal('Import completed!');
+    } else if (importBackgroundTaskProgress?.noData) {
+      // Show no data modal when there's no data to import
+      console.log('Showing no data modal for import');
+      handleShowNoDataModal();
+    } else if (importBackgroundTaskProgress?.networkError) {
+      // Show network error modal for any network error during import
+      console.log('Showing network error modal for import');
+      handleShowNetworkErrorModal('import');
+      
+      // For network errors during cloud import phases, trigger cooldown mode
+      // This prevents button flickering and ensures proper button states
+      if (importBackgroundTaskProgress?.isCloudImportPhase !== false) {
+        console.log('Network error during cloud import phase - triggering cooldown mode');
+        
+        // Set import cancellation states to trigger cooldown mode
+        setIsImportCancelCooldownActive(true);
+        setShouldDisableOtherButtons(true);
+        
+        // Clear any existing cooldown timer
+        if (importCooldownTimerRef.current) {
+          clearTimeout(importCooldownTimerRef.current);
+        }
+        
+        // Set timer to clear cooldown after 5 seconds
+        importCooldownTimerRef.current = setTimeout(() => {
+          setIsImportCancelCooldownActive(false);
+          setShouldDisableOtherButtons(false);
+          console.log('Cooldown period ended after network error - import button re-enabled');
+        }, 5000);
+      }
+    }
+  }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess]);
 
   // Background progress monitoring for clear data (ensures progress updates even when app is backgrounded)
   React.useEffect(() => {

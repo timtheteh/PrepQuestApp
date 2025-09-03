@@ -686,9 +686,9 @@ export default function AppSettingsScreen() {
     }
   }, [isBackupBackgroundTaskRunning, isBackupLoading, backupLoadingOverlayOpacity]);
 
-  // Hide import loading screen when import starts running
+  // Hide import loading screen when import starts running or completes
   React.useEffect(() => {
-    if (isImportLoading && isImportBackgroundTaskRunning) {
+    if (isImportLoading && (isImportBackgroundTaskRunning || importBackgroundTaskProgress?.completed)) {
       // Set isImportLoading to false to hide loading screen
       setIsImportLoading(false);
       
@@ -699,7 +699,7 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isImportBackgroundTaskRunning, isImportLoading, importLoadingOverlayOpacity]);
+  }, [isImportBackgroundTaskRunning, importBackgroundTaskProgress?.completed, isImportLoading, importLoadingOverlayOpacity]);
 
   // Control button disable state based on backup, import, and clear data status
   React.useEffect(() => {

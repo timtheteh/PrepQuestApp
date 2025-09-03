@@ -225,6 +225,11 @@ export default function AppSettingsScreen() {
   const networkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const networkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Backup service busy modal state
+  const [isBackupServiceBusyModalOpen, setIsBackupServiceBusyModalOpen] = React.useState(false);
+  const backupServiceBusyOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const backupServiceBusyModalOpacity = React.useRef(new Animated.Value(0)).current;
+
   // Automatic cancellation modal state
   const [isAutomaticCancellationModalOpen, setIsAutomaticCancellationModalOpen] = React.useState(false);
   const automaticCancellationOverlayOpacity = React.useRef(new Animated.Value(0)).current;
@@ -441,6 +446,64 @@ export default function AppSettingsScreen() {
       })
     ]).start();
   }, [clearDataLoadingNetworkErrorOverlayOpacity, clearDataLoadingNetworkErrorModalOpacity]);
+
+  const handleShowBackupServiceBusyModal = React.useCallback(() => {
+    setIsBackupServiceBusyModalOpen(true);
+    Animated.parallel([
+      Animated.timing(backupServiceBusyOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backupServiceBusyModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [backupServiceBusyOverlayOpacity, backupServiceBusyModalOpacity]);
+
+  const handleDismissBackupServiceBusyModal = React.useCallback(async () => {
+    Animated.parallel([
+      Animated.timing(backupServiceBusyOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backupServiceBusyModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(async () => {
+      setIsBackupServiceBusyModalOpen(false);
+      
+      // Clear backup progress and start cooldown after user dismisses backup service busy modal
+      try {
+        await clearBackupBackgroundTaskProgress();
+        console.log('Cleared backup progress data after user dismissed backup service busy modal');
+      } catch (error) {
+        console.error('Error clearing backup progress data:', error);
+      }
+      
+      // Start 5-second cooldown period to prevent immediate restart after backup service busy error
+      setIsCancelCooldownActive(true);
+      setShouldDisableOtherButtons(true);
+      console.log('Starting 5-second cooldown after backup service busy modal dismissal');
+      
+      // Clear any existing cooldown timer
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+      }
+      
+      // Set timer to clear cooldown after 5 seconds
+      cooldownTimerRef.current = setTimeout(() => {
+        setIsCancelCooldownActive(false);
+        setShouldDisableOtherButtons(false);
+        console.log('Cooldown period ended after backup service busy modal dismissal - all buttons re-enabled');
+      }, 5000);
+    });
+  }, [backupServiceBusyOverlayOpacity, backupServiceBusyModalOpacity, clearBackupBackgroundTaskProgress]);
 
   const handleDismissClearDataLoadingNetworkErrorModal = React.useCallback(() => {
     Animated.parallel([
@@ -720,6 +783,9 @@ export default function AppSettingsScreen() {
       } else if (data?.type === 'backup_network_error') {
         // Show persistent network error modal when user taps on network error notification
         handleShowNetworkErrorModal('backup');
+      } else if (data?.type === 'backup_service_busy') {
+        // Show persistent backup service busy modal when user taps on backup service busy notification
+        handleShowBackupServiceBusyModal();
       } else if (data?.type === 'import_network_error') {
         // Show persistent network error modal when user taps on import network error notification
         handleShowNetworkErrorModal('import');
@@ -735,7 +801,7 @@ export default function AppSettingsScreen() {
     });
 
     return () => subscription.remove();
-  }, [handleShowNetworkErrorModal]);
+  }, [handleShowNetworkErrorModal, handleShowBackupServiceBusyModal]);
 
   // Sync local stopping state with context stopping state
   React.useEffect(() => {
@@ -1197,8 +1263,24 @@ export default function AppSettingsScreen() {
     } else if (backupBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
       // Show persistent network error modal only if it hasn't been shown yet
       handleShowNetworkErrorModal('backup');
+    } else if (backupBackgroundTaskProgress?.error && !hasNetworkErrorModalBeenShown) {
+      // Check if this is a backup service busy error (PGRST002 schema cache error)
+      const errorMessage = backupBackgroundTaskProgress?.errorMessage || '';
+      const isBackupServiceBusy = backupBackgroundTaskProgress?.isBackupServiceBusy || 
+        errorMessage.includes('PGRST002') || 
+        errorMessage.includes('schema cache') || 
+        errorMessage.includes('Could not query the database for the schema cache');
+      
+      if (isBackupServiceBusy) {
+        // Show backup service busy modal for schema cache errors
+        handleShowBackupServiceBusyModal();
+        setHasNetworkErrorModalBeenShown(true); // Prevent showing other error modals
+      } else {
+        // Show generic network error modal for other errors
+        handleShowNetworkErrorModal('backup');
+      }
     }
-  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess, hasNetworkErrorModalBeenShown]);
+  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess, hasNetworkErrorModalBeenShown, handleShowBackupServiceBusyModal, handleShowNetworkErrorModal]);
 
   // Background progress monitoring for clear data (ensures progress updates even when app is backgrounded)
   React.useEffect(() => {
@@ -3059,6 +3141,21 @@ export default function AppSettingsScreen() {
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissClearDataAutomaticCancellationModal}
+        />
+
+        {/* Backup Service Busy Modal */}
+        <GreyOverlayBackground 
+          visible={isBackupServiceBusyModalOpen}
+          opacity={backupServiceBusyOverlayOpacity}
+          onPress={handleDismissBackupServiceBusyModal}
+        />
+        <GenericModal
+          visible={isBackupServiceBusyModalOpen}
+          opacity={backupServiceBusyModalOpacity}
+          text={language === 'Chinese' ? '备份服务暂时繁忙。请几分钟后再试。' : 'Backup service is temporarily busy. Please try again in a few minutes.'}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissBackupServiceBusyModal}
         />
 
         {/* Clear Data Task Notification */}

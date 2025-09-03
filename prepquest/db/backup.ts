@@ -706,6 +706,16 @@ async function uploadFlashcardsToSupabaseWithProgress(
             if (isNetworkError(error)) {
               throw error; // Propagate network errors up to main backup function
             }
+            // Check if this is a backup service busy error (PGRST002 schema cache error)
+            if (error && typeof error === 'object' && 'message' in error) {
+              const errorMessage = String(error.message);
+              if (errorMessage.includes('PGRST002') || errorMessage.includes('schema cache') || errorMessage.includes('Could not query the database for the schema cache')) {
+                // Create a custom error for backup service busy
+                const backupServiceBusyError = new Error(`Backup service is temporarily busy: ${errorMessage}`);
+                (backupServiceBusyError as any).isBackupServiceBusy = true;
+                throw backupServiceBusyError;
+              }
+            }
             return false;
           }
           
@@ -857,7 +867,7 @@ export async function backupDataToCloud(
   getToken: TokenGetter,
   onProgress?: (progress: BackupProgress) => void,
   isCancelled?: () => boolean
-): Promise<{ success: boolean; message: string; isNetworkError?: boolean }> {
+): Promise<{ success: boolean; message: string; isNetworkError?: boolean; isBackupServiceBusy?: boolean }> {
   try {
     console.log('Starting backup process...');
     
@@ -960,6 +970,16 @@ export async function backupDataToCloud(
     };
   } catch (error) {
     console.error('Error during backup process:', error);
+    
+    // Check if this is a backup service busy error
+    if (error && typeof error === 'object' && 'isBackupServiceBusy' in error) {
+      console.log('Backup service busy error detected during backup');
+      return { 
+        success: false, 
+        message: 'Backup service is temporarily busy. Please try again in a few minutes.',
+        isBackupServiceBusy: true
+      };
+    }
     
     // Check if this is a network error
     if (isNetworkError(error)) {

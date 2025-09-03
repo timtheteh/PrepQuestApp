@@ -179,6 +179,92 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       return;
     }
     
+    // Check if the backup result indicates backup service busy error
+    if (!result.success && (result as any).isBackupServiceBusy) {
+      console.log('Backup cancelled due to backup service busy error');
+      await saveBackupProgress({
+        status: 'error',
+        inProgress: false,
+        completed: false,
+        error: true,
+        isBackupServiceBusy: true,
+        timestamp: Date.now(),
+        message: result.message,
+        errorMessage: result.message
+      });
+      
+      // Check if we should send a push notification
+      if (shouldSendPushNotification()) {
+        try {
+          // Check notification permissions first
+          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
+          
+          if (permissionStatus === 'granted') {
+            console.log('Sending backup service busy notification (app in background)');
+            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
+            const body = language === 'Chinese' ? '备份服务暂时繁忙。请几分钟后再试。' : 'Backup service is temporarily busy. Please try again in a few minutes.';
+            
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: { type: 'backup_service_busy' },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null, // Send immediately
+            });
+            
+            console.log('Backup service busy notification sent successfully with ID:', notificationId);
+            
+            // Mark that notification was sent to prevent duplicate in-app notifications
+            await saveBackupProgress({
+              status: 'error',
+              inProgress: false,
+              completed: false,
+              error: true,
+              isBackupServiceBusy: true,
+              notificationSent: true,
+              timestamp: Date.now(),
+              message: result.message,
+              errorMessage: result.message
+            });
+          } else {
+            console.log('Notification permissions not granted, cannot send push notification');
+          }
+        } catch (notificationError) {
+          console.error('Error sending backup service busy notification:', notificationError);
+          
+          // Fallback: try to send notification even if initial check failed
+          try {
+            console.log('Attempting fallback backup service busy notification...');
+            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
+            const body = language === 'Chinese' ? '备份服务暂时繁忙。请几分钟后再试。' : 'Backup service is temporarily busy. Please try again in a few minutes.';
+            
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: { type: 'backup_service_busy' },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null, // Send immediately
+            });
+            
+            console.log('Fallback backup service busy notification sent successfully with ID:', notificationId);
+          } catch (fallbackError) {
+            console.error('Fallback notification also failed:', fallbackError);
+          }
+        }
+      } else {
+        console.log('App is active, in-app notification will be shown instead');
+      }
+      return;
+    }
+    
     // Check if the backup result indicates network error
     if (!result.success && (result as any).isNetworkError) {
       console.log('Backup cancelled due to network error');
@@ -352,18 +438,48 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         errorMessage: result.message,
         timestamp: Date.now()
       });
+      
+      // Check if this is a backup service busy error (PGRST002 schema cache error)
+      if (result.message && (result.message.includes('PGRST002') || result.message.includes('schema cache') || result.message.includes('Could not query the database for the schema cache'))) {
+        // Save additional flag for backup service busy error
+        await saveBackupProgress({
+          status: 'error',
+          inProgress: false,
+          completed: false,
+          error: true,
+          errorMessage: result.message,
+          isBackupServiceBusy: true,
+          timestamp: Date.now()
+        });
+      }
     }
     
   } catch (error) {
     console.error('Error in backup background task:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
     await saveBackupProgress({
       status: 'error',
       inProgress: false,
       completed: false,
       error: true,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorMessage: errorMessage,
       timestamp: Date.now()
     });
+    
+    // Check if this is a backup service busy error (PGRST002 schema cache error)
+    if (errorMessage.includes('PGRST002') || errorMessage.includes('schema cache') || errorMessage.includes('Could not query the database for the schema cache')) {
+      // Save additional flag for backup service busy error
+      await saveBackupProgress({
+        status: 'error',
+        inProgress: false,
+        completed: false,
+        error: true,
+        errorMessage: errorMessage,
+        isBackupServiceBusy: true,
+        timestamp: Date.now()
+      });
+    }
   }
 };
 

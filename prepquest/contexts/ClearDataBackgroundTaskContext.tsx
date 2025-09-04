@@ -191,90 +191,6 @@ export const ClearDataBackgroundTaskProvider: React.FC<ClearDataBackgroundTaskPr
     setWasAutomaticallyCancelled(false);
   }, []);
 
-  // Helper to automatically cancel clear data (replicates manual cancellation logic)
-  const automaticallyCancelClearData = React.useCallback(async () => {
-    try {
-      console.log('Automatically cancelling clear data after 30 seconds in background...');
-      
-      // Set the automatic cancellation flag
-      setWasAutomaticallyCancelled(true);
-      
-      // IMMEDIATELY set local stopping state to prevent new clear data attempts
-      // This provides instant UI feedback before context state updates
-      setIsClearDataStopping(true);
-      console.log('Automatic cancellation - setting stopping state immediately');
-      
-      // Force stop the clear data background task permanently
-      forceStopClearDataBackgroundTask();
-      
-      // Stop the actual background service
-      try {
-        const { stopClearDataBackgroundTask } = await import('../utils/clearDataBackgroundTask');
-        await stopClearDataBackgroundTask();
-      } catch (importError) {
-        console.error('Error importing stopClearDataBackgroundTask:', importError);
-      }
-      
-      // Attempt to restore data from backup if available
-      try {
-        const backupDataString = await AsyncStorage.getItem('clearDataBackupData');
-        if (backupDataString) {
-          console.log('Found backup data, attempting to restore...');
-          const backupData = JSON.parse(backupDataString);
-          
-          // Import the restore function
-          const { restoreDataFromBackup } = await import('../db/clearData');
-          
-          // Attempt to restore the data
-          const restoreSuccess = await restoreDataFromBackup(backupData, (progress: any) => {
-            console.log('Restore progress:', progress);
-          }, () => false); // No cancellation during automatic restore
-          
-          if (restoreSuccess) {
-            console.log('Data successfully restored from backup after automatic cancellation');
-          } else {
-            console.error('Failed to restore data from backup after automatic cancellation');
-          }
-        } else {
-          console.log('No backup data found for restoration');
-        }
-      } catch (restoreError) {
-        console.error('Error during data restoration after automatic cancellation:', restoreError);
-      }
-      
-      // Clear the clear data progress data thoroughly
-      await clearClearDataBackgroundTaskProgress();
-      
-      // Additional cleanup: manually remove all clear data-related AsyncStorage keys
-      try {
-        await AsyncStorage.multiRemove([
-          'clearDataBgTaskProgress',
-          'clearDataProgress',
-          'clearDataState',
-          'clearDataBackupData' // Also remove the backup data after restoration attempt
-        ]);
-        console.log('Additional AsyncStorage cleanup completed (automatic cancellation)');
-        
-        // Verify cleanup worked
-        const remainingProgress = await AsyncStorage.getItem('clearDataBgTaskProgress');
-        if (remainingProgress) {
-          console.warn('Warning: clear data progress still exists after automatic cleanup:', remainingProgress);
-        } else {
-          console.log('Confirmed: clear data progress completely cleared (automatic)');
-        }
-      } catch (cleanupError) {
-        console.warn('Additional cleanup failed (automatic):', cleanupError);
-      }
-      
-      // Add a small delay to ensure all async operations complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      console.log('Clear data task automatically cancelled successfully');
-      
-    } catch (error) {
-      console.error('Error automatically cancelling clear data task:', error);
-    }
-  }, [forceStopClearDataBackgroundTask, clearClearDataBackgroundTaskProgress]);
 
   // Start monitoring background task progress
   const startClearDataBackgroundTaskMonitoring = React.useCallback(() => {
@@ -462,7 +378,7 @@ export const ClearDataBackgroundTaskProvider: React.FC<ClearDataBackgroundTaskPr
       } else if (appStateRef.current === 'active' && nextAppState.match(/inactive|background/)) {
         // App is going to background - check if clear data is running
         if (isClearDataBackgroundTaskRunningRef.current) {
-          console.log('App backgrounded during clear data - scheduling warning notification');
+          console.log('App backgrounded during clear data - task will continue in background');
           
           // Clear any existing timers
           if (backgroundWarningTimerRef.current) {
@@ -474,82 +390,6 @@ export const ClearDataBackgroundTaskProvider: React.FC<ClearDataBackgroundTaskPr
           if (preTerminationNotificationTimerRef.current) {
             clearTimeout(preTerminationNotificationTimerRef.current);
           }
-          
-          // Schedule warning notification for 1 second after backgrounding
-          backgroundWarningTimerRef.current = setTimeout(async () => {
-            try {
-              // Double-check clear data is still running before sending notification
-              const progress = await loadClearDataBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                const title = language === 'Chinese' ? '清除任务警告' : 'Come back soon!';
-                const body = language === 'Chinese' 
-                  ? '清除任务将在大约30秒内提前结束。请尽快回来！' 
-                  : 'Clear data task automatically ends in approximately 30 seconds!';
-                
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title,
-                    body,
-                    data: { type: 'clear_data_background_warning' },
-                    sound: true,
-                    priority: Notifications.AndroidNotificationPriority.HIGH,
-                  },
-                  trigger: null, // Send immediately
-                });
-                
-                console.log('Background warning notification sent successfully');
-              } else {
-                console.log('Clear data no longer running - skipping background warning notification');
-              }
-            } catch (error) {
-              console.error('Error sending background warning notification:', error);
-            }
-          }, 1000); // 1 second delay
-          
-          // Schedule pre-termination notification for 29 seconds after backgrounding (1 second before termination)
-          preTerminationNotificationTimerRef.current = setTimeout(async () => {
-            try {
-              // Double-check clear data is still running before sending notification
-              const progress = await loadClearDataBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                const title = 'Clear data task cancelled!';
-                const body = 'Oops you were away for too long!';
-                
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title,
-                    body,
-                    data: { type: 'clear_data_pre_termination' },
-                    sound: true,
-                    priority: Notifications.AndroidNotificationPriority.HIGH,
-                  },
-                  trigger: null, // Send immediately
-                });
-                
-                console.log('Pre-termination notification sent successfully');
-              } else {
-                console.log('Clear data no longer running - skipping pre-termination notification');
-              }
-            } catch (error) {
-              console.error('Error sending pre-termination notification:', error);
-            }
-          }, 29000); // 29 second delay (1 second before 30-second termination)
-          
-          // Schedule automatic termination for 30 seconds after backgrounding
-          backgroundTerminationTimerRef.current = setTimeout(async () => {
-            try {
-              // Double-check clear data is still running before terminating
-              const progress = await loadClearDataBackgroundTaskProgress();
-              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                console.log('30 seconds elapsed in background - automatically terminating clear data task');
-                await automaticallyCancelClearData();
-              } else {
-                console.log('Clear data no longer running - skipping automatic termination');
-              }
-            } catch (error) {
-              console.error('Error during automatic clear data termination:', error);
-            }
-          }, 30000); // 30 second delay
         }
       }
       appStateRef.current = nextAppState;

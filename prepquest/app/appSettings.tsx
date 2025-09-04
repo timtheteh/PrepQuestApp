@@ -122,12 +122,10 @@ export default function AppSettingsScreen() {
     isClearDataBackgroundTaskRunning, 
     clearDataBackgroundTaskProgress,
     setClearDataBackgroundTaskProgress,
-    wasAutomaticallyCancelled: wasClearDataAutomaticallyCancelled,
     startClearDataBackgroundTaskMonitoring,
     forceStopClearDataBackgroundTask,
     clearClearDataBackgroundTaskProgress,
-    resetClearDataForceStoppedFlag,
-    resetAutomaticallyCancelledFlag: resetClearDataAutomaticallyCancelledFlag
+    resetClearDataForceStoppedFlag
   } = useClearDataBackgroundTask();
   
   // backup loading state
@@ -240,10 +238,6 @@ export default function AppSettingsScreen() {
   const importAutomaticCancellationOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const importAutomaticCancellationModalOpacity = React.useRef(new Animated.Value(0)).current;
 
-  // Clear data automatic cancellation modal state
-  const [isClearDataAutomaticCancellationModalOpen, setIsClearDataAutomaticCancellationModalOpen] = React.useState(false);
-  const clearDataAutomaticCancellationOverlayOpacity = React.useRef(new Animated.Value(0)).current;
-  const clearDataAutomaticCancellationModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Track if network error modal has been shown to prevent dismissal by in-app notification
   const [hasNetworkErrorModalBeenShown, setHasNetworkErrorModalBeenShown] = React.useState(false);
@@ -588,38 +582,6 @@ export default function AppSettingsScreen() {
     });
   }, [importAutomaticCancellationOverlayOpacity, importAutomaticCancellationModalOpacity]);
 
-  const handleShowClearDataAutomaticCancellationModal = React.useCallback(() => {
-    setIsClearDataAutomaticCancellationModalOpen(true);
-    Animated.parallel([
-      Animated.timing(clearDataAutomaticCancellationOverlayOpacity, {
-        toValue: 0.5,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(clearDataAutomaticCancellationModalOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, [clearDataAutomaticCancellationOverlayOpacity, clearDataAutomaticCancellationModalOpacity]);
-
-  const handleDismissClearDataAutomaticCancellationModal = React.useCallback(() => {
-    Animated.parallel([
-      Animated.timing(clearDataAutomaticCancellationOverlayOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(clearDataAutomaticCancellationModalOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start(() => {
-      setIsClearDataAutomaticCancellationModalOpen(false);
-    });
-  }, [clearDataAutomaticCancellationOverlayOpacity, clearDataAutomaticCancellationModalOpacity]);
 
   // Network connectivity check function
   const checkNetworkConnectivity = React.useCallback(async (): Promise<boolean> => {
@@ -706,12 +668,12 @@ export default function AppSettingsScreen() {
     // Don't disable buttons during loading states - only disable when actual operations are running
     const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isImportStopping || isImportCleanupInProgress || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress;
     
-    // Additional safety: never disable buttons during loading states
-    const isAnyLoading = isBackupLoading || isImportLoading || isClearDataLoading;
-    const finalShouldDisable = shouldDisable && !isAnyLoading;
+    // Additional safety: never disable buttons during backup/import loading states
+    const isNonClearDataLoading = isBackupLoading || isImportLoading;
+    const finalShouldDisable = shouldDisable && !isNonClearDataLoading;
     
     setShouldDisableOtherButtons(finalShouldDisable);
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportStopping, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress, isBackupLoading, isImportLoading, isClearDataLoading]);
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportStopping, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress, isBackupLoading, isImportLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -844,9 +806,9 @@ export default function AppSettingsScreen() {
     }
   }, [hasClearDataCompleted, isSuccessModalOpen]);
 
-  // Hide clear data loading screen when clear data background task starts running
+  // Hide clear data loading screen when task completes
   React.useEffect(() => {
-    if (isClearDataLoading && isClearDataBackgroundTaskRunning) {
+    if (isClearDataLoading && clearDataBackgroundTaskProgress?.completed) {
       // Set isClearDataLoading to false to hide loading screen
       setIsClearDataLoading(false);
       
@@ -857,42 +819,8 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isClearDataBackgroundTaskRunning, isClearDataLoading, clearDataLoadingOverlayOpacity]);
+  }, [clearDataBackgroundTaskProgress?.completed, isClearDataLoading, clearDataLoadingOverlayOpacity]);
 
-  // Handle clear data automatic cancellation and trigger cooldown
-  React.useEffect(() => {
-    if (wasClearDataAutomaticallyCancelled) {
-      console.log('Detected automatic clear data cancellation - starting cooldown');
-      
-      // Set local stopping state to provide UI feedback
-      setIsLocallyStoppingClearData(true);
-      
-      // Keep other buttons disabled during cooldown
-      setShouldDisableOtherButtons(true);
-      
-      // Start 5-second cooldown period to prevent immediate restart
-      setIsClearDataCancelCooldownActive(true);
-      console.log('Starting 5-second cooldown after automatic clear data cancellation');
-      
-      // Clear any existing cooldown timer
-      if (clearDataCooldownTimerRef.current) {
-        clearTimeout(clearDataCooldownTimerRef.current);
-      }
-      
-      // Set timer to clear cooldown after 5 seconds
-      clearDataCooldownTimerRef.current = setTimeout(() => {
-        setIsClearDataCancelCooldownActive(false);
-        setIsLocallyStoppingClearData(false);
-        console.log('Cooldown period ended after automatic clear data cancellation - clear data button re-enabled');
-      }, 5000);
-      
-      // Show persistent automatic cancellation modal
-      handleShowClearDataAutomaticCancellationModal();
-      
-      // Reset the automatic cancellation flag
-      resetClearDataAutomaticallyCancelledFlag();
-    }
-  }, [wasClearDataAutomaticallyCancelled, resetClearDataAutomaticallyCancelledFlag, handleShowClearDataAutomaticCancellationModal]);
 
   // Sync clear data local stopping state with context stopping state
   React.useEffect(() => {
@@ -1294,44 +1222,6 @@ export default function AppSettingsScreen() {
     }
   }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess]);
 
-  // Background progress monitoring for clear data (ensures progress updates even when app is backgrounded)
-  React.useEffect(() => {
-    if (clearDataBackgroundTaskProgress?.inProgress && !clearDataBackgroundTaskProgress?.completed) {
-      // Set up interval to check for progress updates even when app is backgrounded
-      const progressInterval = setInterval(async () => {
-        try {
-          // Force a progress update to ensure the UI reflects the latest progress
-          // This helps when the app comes back to foreground
-          if (clearDataBackgroundTaskProgress) {
-            // Trigger a re-render by updating the progress state
-            // The actual progress data comes from the background task
-            console.log('Background progress check - current percentage:', clearDataBackgroundTaskProgress.percentage);
-          }
-        } catch (error) {
-          console.error('Error in background progress monitoring:', error);
-        }
-      }, 1000); // Check every 1 second for more responsive updates
-      
-      return () => clearInterval(progressInterval);
-    }
-  }, [clearDataBackgroundTaskProgress]);
-
-  // Enhanced background progress monitoring using AppState to detect when app comes to foreground
-  React.useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active' && clearDataBackgroundTaskProgress?.inProgress && !clearDataBackgroundTaskProgress?.completed) {
-        // App came to foreground - force a progress update to ensure UI is current
-        console.log('App returned to foreground - refreshing clear data progress');
-        
-        // Trigger a re-render by updating the progress state
-        // This ensures the progress bar shows the current progress immediately
-        setClearDataBackgroundTaskProgress((prev: any) => prev ? { ...prev, timestamp: Date.now() } : prev);
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => subscription.remove();
-  }, [clearDataBackgroundTaskProgress]);
 
   const handleBackPress = React.useCallback(() => {
     // Check if backup, import, or clear data is running and prevent navigation
@@ -1805,8 +1695,6 @@ export default function AppSettingsScreen() {
       // Reset any force stopped flags from previous cancellations
       resetClearDataForceStoppedFlag();
       
-      // Reset automatic cancellation flag for clean state
-      resetClearDataAutomaticallyCancelledFlag();
       
       // Ensure clean state by clearing any residual progress data
       await clearClearDataBackgroundTaskProgress();
@@ -1825,14 +1713,6 @@ export default function AppSettingsScreen() {
         console.warn('Error checking clear data state:', checkError);
       }
       
-      // Check network connectivity before starting clear data
-      const isConnected = await checkNetworkConnectivity();
-      if (!isConnected) {
-        // Show network error modal
-        handleShowClearDataLoadingNetworkErrorModal();
-        return;
-      }
-      
       // Show loading screen first
       setIsClearDataLoading(true);
       Animated.timing(clearDataLoadingOverlayOpacity, {
@@ -1841,28 +1721,16 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       }).start();
       
-      // Wait for loading animation to complete (2 seconds)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Dismiss loading screen
-      Animated.timing(clearDataLoadingOverlayOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start(() => {
-        setIsClearDataLoading(false);
-      });
-      
-      // Small delay to ensure loading screen is dismissed
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Small delay to ensure loading screen renders before starting background task
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       // Start background task monitoring
       startClearDataBackgroundTaskMonitoring();
       
-      // Set local state immediately to show progress bar
+      // Set local state immediately to show that clear data is starting
       setIsLocallyStartingClearData(true);
       
-      // Start the clear data background task
+      // Start the clear data background task immediately
       const success = await startClearDataBackgroundTask(language);
       
       if (!success) {
@@ -1880,8 +1748,14 @@ export default function AppSettingsScreen() {
           'Failed to start clear data process',
           [{ text: strings[language].ok }]
         );
+        return;
       }
-      // If success, the loading screen will be hidden when isClearDataBackgroundTaskRunning becomes true
+      
+      // Add a small delay to ensure the background task has time to start
+      // before the monitoring detects the clear data is running
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // The loading screen will be hidden when isClearDataBackgroundTaskRunning becomes true
     } catch (error) {
       // Hide loading screen
       Animated.timing(clearDataLoadingOverlayOpacity, {
@@ -1898,7 +1772,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissClearData, language, startClearDataBackgroundTaskMonitoring, clearDataLoadingOverlayOpacity, resetClearDataForceStoppedFlag, clearClearDataBackgroundTaskProgress, isClearDataBackgroundTaskRunning, forceStopClearDataBackgroundTask, stopClearDataBackgroundTask, checkNetworkConnectivity, handleShowClearDataLoadingNetworkErrorModal]);
+  }, [handleDismissClearData, language, startClearDataBackgroundTaskMonitoring, clearDataLoadingOverlayOpacity, resetClearDataForceStoppedFlag, clearClearDataBackgroundTaskProgress, isClearDataBackgroundTaskRunning, forceStopClearDataBackgroundTask, stopClearDataBackgroundTask]);
 
   const handleDeleteLocalStoragePress = React.useCallback(() => {
     setIsDeleteLocalStorageModalOpen(true);
@@ -2738,69 +2612,31 @@ export default function AppSettingsScreen() {
                   <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
                   <Text style={[styles.descriptionText, { color: colors.text, fontFamily: Fonts.bodyItalicLight }]}>.</Text>
                 </Text>
-                {(isClearDataBackgroundTaskRunning || isLocallyStartingClearData) ? (
-                  <View style={{ 
-                    alignItems: 'center',
-                    marginTop: 20,
-                  }}>
-                    <View style={{ 
-                      width: '100%',
-                      height: 60,
-                      alignItems: 'center',
-                    }}>
-                      <StripedProgressBar 
-                        progress={clearDataBackgroundTaskProgress?.percentage || 0}
-                        currentItems={clearDataBackgroundTaskProgress?.rowsProcessed || 0}
-                        totalItems={clearDataBackgroundTaskProgress?.totalRows || 0}
-                        height={60}
-                        borderRadius={30}
-                        immediateProgress={false}
-                      />
-                    </View>
-                    <Text style={[{ 
-                      color: colors.text, 
+                <TouchableOpacity 
+                  style={[
+                    styles.cloudButton, 
+                    { 
+                      backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : colors.alertColor, 
+                      marginTop: 20,
+                      opacity: shouldDisableOtherButtons ? 0.6 : 1.0
+                    }
+                  ]}
+                  onPress={shouldDisableOtherButtons ? undefined : handleClearDataPress}
+                  disabled={shouldDisableOtherButtons}>
+                  <View style={styles.buttonContent}>
+                    <Ionicons name="trash" size={30} color="#fff" />
+                    <Text style={[styles.cloudButtonText, { 
                       fontFamily: Fonts.bodyMedium,
-                      fontSize: 14,
-                      opacity: 0.8,
-                      marginTop: 6,
-                      textAlign: 'center',
-                      paddingHorizontal: 20
                     }]}>
-                      {clearDataBackgroundTaskProgress?.status === 'backing_up'
-                        ? (language === 'Chinese' ? '正在备份当前数据...' : "Backing up current data...\nPlease don't close this app otherwise clear data will end prematurely")
-                        : clearDataBackgroundTaskProgress?.status === 'clearing'
-                        ? (language === 'Chinese' ? '正在清除本地数据...' : "Clearing local data...\nPlease don't close this app otherwise clear data will end prematurely")
-                        : (language === 'Chinese' ? '正在处理数据...' : "Processing data...\nPlease don't close this app otherwise clear data will end prematurely")
+                      {isClearDataLoading || isClearDataBackgroundTaskRunning
+                        ? (language === 'Chinese' ? '请稍等...' : 'Please wait...')
+                        : (isLocallyStoppingClearData || isClearDataCancelCooldownActive)
+                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          : strings[language].appSettingsPage.clearLocalStorageData
                       }
                     </Text>
                   </View>
-                ) : (
-                  <TouchableOpacity 
-                    style={[
-                      styles.cloudButton, 
-                      { 
-                        backgroundColor: shouldDisableOtherButtons ? colors.unselectedText : colors.alertColor, 
-                        marginTop: 20,
-                        opacity: shouldDisableOtherButtons ? 0.6 : 1.0
-                      }
-                    ]}
-                    onPress={shouldDisableOtherButtons ? undefined : handleClearDataPress}
-                    disabled={shouldDisableOtherButtons}>
-                    <View style={styles.buttonContent}>
-                      <Ionicons name="trash" size={30} color="#fff" />
-                      <Text style={[styles.cloudButtonText, { 
-                        fontFamily: Fonts.bodyMedium,
-                      }]}>
-                        {isClearDataLoading
-                          ? strings[language].appSettingsPage.clearLocalStorageData
-                          : (isLocallyStoppingClearData || isClearDataCancelCooldownActive)
-                            ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
-                            : strings[language].appSettingsPage.clearLocalStorageData
-                        }
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
+                </TouchableOpacity>
                 <Text style={[styles.descriptionText, { 
                    color: colors.text,
                    fontFamily: Fonts.bodyItalicLight,
@@ -3140,20 +2976,6 @@ export default function AppSettingsScreen() {
           onConfirm={handleDismissClearDataLoadingNetworkErrorModal}
         />
 
-        {/* Clear Data Automatic Cancellation Modal */}
-        <GreyOverlayBackground 
-          visible={isClearDataAutomaticCancellationModalOpen}
-          opacity={clearDataAutomaticCancellationOverlayOpacity}
-          onPress={handleDismissClearDataAutomaticCancellationModal}
-        />
-        <GenericModal
-          visible={isClearDataAutomaticCancellationModalOpen}
-          opacity={clearDataAutomaticCancellationModalOpacity}
-          text={language === 'Chinese' ? '糟糕，清除数据任务已被取消！' : 'Oops clear data task has been cancelled!'}
-          Icon={DeleteModalIcon}
-          buttons="single"
-          onConfirm={handleDismissClearDataAutomaticCancellationModal}
-        />
 
         {/* Backup Service Busy Modal */}
         <GreyOverlayBackground 

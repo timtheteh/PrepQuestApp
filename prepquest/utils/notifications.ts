@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { strings } from '../constants/strings';
 
 export interface NotificationData extends Record<string, unknown> {
-  type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created' | 'backup_completed';
+  type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created' | 'backup_completed' | 'clear_data_completed';
   deckId?: number;
   deckName?: string;
   flashcardCount?: number;

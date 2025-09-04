@@ -32,7 +32,7 @@ export interface ClearDataProgress {
 }
 
 // Progress reporting function type
-type ProgressReporter = (stage: string, message: string, rowsJustProcessed: number) => void;
+type ProgressReporter = (stage: string, message: string) => void;
 
 // Cancellation checker function type
 type CancellationChecker = () => boolean;
@@ -52,34 +52,16 @@ export async function backupCurrentData(
       return null;
     }
 
-    reportProgress('backing_up', 'Backing up current data...', 0);
+    reportProgress('backing_up', 'Backing up current data...');
     
-    // Backup folders
-    const folders = await db.getAllAsync(`
-      SELECT * FROM folders WHERE userID = ?
-      ORDER BY dateAdded ASC
-    `, [userID]);
-    
-    if (isCancelled?.()) return null;
-    reportProgress('backing_up', 'Backing up folders...', folders.length);
-    
-    // Backup decks
-    const decks = await db.getAllAsync(`
-      SELECT * FROM decks WHERE userID = ?
-      ORDER BY dateAdded ASC
-    `, [userID]);
+    // Backup all data
+    const [folders, decks, flashcards] = await Promise.all([
+      db.getAllAsync(`SELECT * FROM folders WHERE userID = ? ORDER BY dateAdded ASC`, [userID]),
+      db.getAllAsync(`SELECT * FROM decks WHERE userID = ? ORDER BY dateAdded ASC`, [userID]),
+      db.getAllAsync(`SELECT * FROM flashcards WHERE userID = ? ORDER BY flashcardID ASC`, [userID])
+    ]);
     
     if (isCancelled?.()) return null;
-    reportProgress('backing_up', 'Backing up decks...', decks.length);
-    
-    // Backup flashcards
-    const flashcards = await db.getAllAsync(`
-      SELECT * FROM flashcards WHERE userID = ?
-      ORDER BY flashcardID ASC
-    `, [userID]);
-    
-    if (isCancelled?.()) return null;
-    reportProgress('backing_up', 'Backing up flashcards...', flashcards.length);
     
     // Backup user form entries (keep 5 most recent for each type)
     const formMethods = ['genAIForm', 'fileUpload', 'manual', 'youtubeLink'];
@@ -96,7 +78,6 @@ export async function backupCurrentData(
       `, [userID, method]);
       
       allUserFormEntries.push(...result);
-      reportProgress('backing_up', `Backing up ${method} form entries...`, result.length);
     }
     
     const backupData: BackupData = {
@@ -129,50 +110,12 @@ async function clearFoldersData(
       return false;
     }
 
-    // Get count for progress tracking
-    const countResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM folders WHERE userID = ?
+    // Delete all folders for the user
+    const result = await db.runAsync(`
+      DELETE FROM folders WHERE userID = ?
     `, [userID]);
-    const totalFolders = (countResult as any).count || 0;
     
-    if (totalFolders === 0) {
-      console.log('No folders to clear');
-      return true;
-    }
-
-    // Delete folders in chunks for progress tracking
-    const chunkSize = 50;
-    let deletedCount = 0;
-    
-    while (deletedCount < totalFolders) {
-      if (isCancelled?.()) {
-        console.log('Folder clearing cancelled during chunk processing');
-        return false;
-      }
-      
-      const chunk = await db.getAllAsync(`
-        SELECT folderID FROM folders WHERE userID = ? 
-        ORDER BY dateAdded ASC 
-        LIMIT ? OFFSET ?
-      `, [userID, chunkSize, deletedCount]);
-      
-      if (chunk.length === 0) break;
-      
-      const folderIds = chunk.map((f: any) => f.folderID);
-      const folderIdsString = folderIds.join(',');
-      
-      await db.runAsync(`
-        DELETE FROM folders WHERE folderID IN (${folderIdsString}) AND userID = ?
-      `, [userID]);
-      
-      deletedCount += chunk.length;
-      reportProgress('clearing', `Clearing folders... (${deletedCount}/${totalFolders})`, chunk.length);
-      
-      // Small delay between chunks
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    
-    console.log(`Successfully cleared ${deletedCount} folders`);
+    console.log(`Successfully cleared folders`);
     return true;
   } catch (error) {
     console.error('Error clearing folders data:', error);
@@ -195,50 +138,12 @@ async function clearDecksData(
       return false;
     }
 
-    // Get count for progress tracking
-    const countResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM decks WHERE userID = ?
+    // Delete all decks for the user
+    const result = await db.runAsync(`
+      DELETE FROM decks WHERE userID = ?
     `, [userID]);
-    const totalDecks = (countResult as any).count || 0;
     
-    if (totalDecks === 0) {
-      console.log('No decks to clear');
-      return true;
-    }
-
-    // Delete decks in chunks for progress tracking
-    const chunkSize = 50;
-    let deletedCount = 0;
-    
-    while (deletedCount < totalDecks) {
-      if (isCancelled?.()) {
-        console.log('Deck clearing cancelled during chunk processing');
-        return false;
-      }
-      
-      const chunk = await db.getAllAsync(`
-        SELECT deckID FROM decks WHERE userID = ? 
-        ORDER BY dateAdded ASC 
-        LIMIT ? OFFSET ?
-      `, [userID, chunkSize, deletedCount]);
-      
-      if (chunk.length === 0) break;
-      
-      const deckIds = chunk.map((d: any) => d.deckID);
-      const deckIdsString = deckIds.join(',');
-      
-      await db.runAsync(`
-        DELETE FROM decks WHERE deckID IN (${deckIdsString}) AND userID = ?
-      `, [userID]);
-      
-      deletedCount += chunk.length;
-      reportProgress('clearing', `Clearing decks... (${deletedCount}/${totalDecks})`, chunk.length);
-      
-      // Small delay between chunks
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    
-    console.log(`Successfully cleared ${deletedCount} decks`);
+    console.log(`Successfully cleared decks`);
     return true;
   } catch (error) {
     console.error('Error clearing decks data:', error);
@@ -261,50 +166,12 @@ async function clearFlashcardsData(
       return false;
     }
 
-    // Get count for progress tracking
-    const countResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM flashcards WHERE userID = ?
+    // Delete all flashcards for the user
+    const result = await db.runAsync(`
+      DELETE FROM flashcards WHERE userID = ?
     `, [userID]);
-    const totalFlashcards = (countResult as any).count || 0;
     
-    if (totalFlashcards === 0) {
-      console.log('No flashcards to clear');
-      return true;
-    }
-
-    // Delete flashcards in chunks for progress tracking
-    const chunkSize = 100; // Larger chunks for flashcards
-    let deletedCount = 0;
-    
-    while (deletedCount < totalFlashcards) {
-      if (isCancelled?.()) {
-        console.log('Flashcard clearing cancelled during chunk processing');
-        return false;
-      }
-      
-      const chunk = await db.getAllAsync(`
-        SELECT flashcardID FROM flashcards WHERE userID = ? 
-        ORDER BY flashcardID ASC 
-        LIMIT ? OFFSET ?
-      `, [userID, chunkSize, deletedCount]);
-      
-      if (chunk.length === 0) break;
-      
-      const flashcardIds = chunk.map((f: any) => f.flashcardID);
-      const flashcardIdsString = flashcardIds.join(',');
-      
-      await db.runAsync(`
-        DELETE FROM flashcards WHERE flashcardID IN (${flashcardIdsString}) AND userID = ?
-      `, [userID]);
-      
-      deletedCount += chunk.length;
-      reportProgress('clearing', `Clearing flashcards... (${deletedCount}/${totalFlashcards})`, chunk.length);
-      
-      // Small delay between chunks
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    
-    console.log(`Successfully cleared ${deletedCount} flashcards`);
+    console.log(`Successfully cleared flashcards`);
     return true;
   } catch (error) {
     console.error('Error clearing flashcards data:', error);
@@ -325,17 +192,6 @@ async function clearUserFormEntriesData(
     if (isCancelled?.()) {
       console.log('User form entries clearing cancelled by user');
       return false;
-    }
-
-    // Get count for progress tracking
-    const countResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM userFormEntries WHERE userID = ?
-    `, [userID]);
-    const totalFormEntries = (countResult as any).count || 0;
-    
-    if (totalFormEntries === 0) {
-      console.log('No user form entries to clear');
-      return true;
     }
 
     // For each form method, keep only the 5 most recent entries
@@ -365,11 +221,7 @@ async function clearUserFormEntriesData(
         `, [userID]);
         
         totalDeleted += entriesToDelete.length;
-        reportProgress('clearing', `Clearing ${method} form entries...`, entriesToDelete.length);
       }
-      
-      // Small delay between methods
-      await new Promise(resolve => setTimeout(resolve, 50));
     }
     
     console.log(`Successfully cleared ${totalDeleted} user form entries (kept 5 most recent for each type)`);
@@ -394,7 +246,7 @@ export async function restoreDataFromBackup(
       return false;
     }
 
-    reportProgress('restoring', 'Restoring data from backup...', 0);
+    reportProgress('restoring', 'Restoring data from backup...');
     
     // Start transaction for atomic restoration
     await db.runAsync('BEGIN TRANSACTION');
@@ -421,7 +273,7 @@ export async function restoreDataFromBackup(
             folder.isFavorited
           ]);
         }
-        reportProgress('restoring', 'Restoring folders...', backupData.folders.length);
+        reportProgress('restoring', 'Restoring folders...');
       }
       
       // Restore decks
@@ -467,7 +319,7 @@ export async function restoreDataFromBackup(
             deck.AICardDesignIndex || null
           ]);
         }
-        reportProgress('restoring', 'Restoring decks...', backupData.decks.length);
+        reportProgress('restoring', 'Restoring decks...');
       }
       
       // Restore flashcards
@@ -504,7 +356,7 @@ export async function restoreDataFromBackup(
             flashcard.lastQuizzedDate || null
           ]);
         }
-        reportProgress('restoring', 'Restoring flashcards...', backupData.flashcards.length);
+        reportProgress('restoring', 'Restoring flashcards...');
       }
       
       // Restore user form entries
@@ -544,7 +396,7 @@ export async function restoreDataFromBackup(
             entry.interviewTopics || null
           ]);
         }
-        reportProgress('restoring', 'Restoring user form entries...', backupData.userFormEntries.length);
+        reportProgress('restoring', 'Restoring user form entries...');
       }
       
       // Commit transaction
@@ -574,7 +426,7 @@ export async function clearLocalStorageData(
   try {
     console.log('Starting clear local storage data process...');
     
-    // Calculate total rows for progress tracking (only deletion, not backup)
+    // Check if there's any data to clear
     const userID = await getCurrentUserID();
     
     const [foldersCount, decksCount, flashcardsCount, formEntriesCount] = await Promise.all([
@@ -590,52 +442,24 @@ export async function clearLocalStorageData(
       return { success: false, message: 'NO_DATA_TO_CLEAR' };
     }
     
-    // Progress tracking state - separate for backup and deletion
-    const progressState = {
-      totalRowsToDelete,
-      backupRowsProcessed: 0,
-      deletionRowsProcessed: 0
-    };
-    
-    // Progress reporting function for backup phase (doesn't count toward deletion percentage)
-    const reportBackupProgress: ProgressReporter = (stage: string, message: string, rowsJustProcessed: number = 0) => {
-      progressState.backupRowsProcessed += rowsJustProcessed;
-      // During backup, show 0-50% progress
-      const percentage = Math.min(50, Math.round((progressState.backupRowsProcessed / (progressState.backupRowsProcessed + totalRowsToDelete)) * 50));
-      
+    // Simple progress reporter
+    const reportProgress = (stage: string, message: string) => {
       onProgress?.({
-        stage: 'backing_up',
-        completed: progressState.backupRowsProcessed,
-        total: totalRowsToDelete,
+        stage,
+        completed: 0,
+        total: 0,
         message,
-        rowsProcessed: progressState.backupRowsProcessed,
-        totalRows: totalRowsToDelete,
-        percentage
-      });
-    };
-    
-    // Progress reporting function for deletion phase (counts toward deletion percentage)
-    const reportDeletionProgress: ProgressReporter = (stage: string, message: string, rowsJustProcessed: number = 0) => {
-      progressState.deletionRowsProcessed += rowsJustProcessed;
-      // During deletion, show 50-100% progress
-      const percentage = Math.min(100, 50 + Math.round((progressState.deletionRowsProcessed / totalRowsToDelete) * 50));
-      
-      onProgress?.({
-        stage: 'clearing',
-        completed: progressState.deletionRowsProcessed,
-        total: totalRowsToDelete,
-        message,
-        rowsProcessed: progressState.deletionRowsProcessed,
-        totalRows: totalRowsToDelete,
-        percentage
+        rowsProcessed: 0,
+        totalRows: 0,
+        percentage: 0
       });
     };
     
     // Stage 1: Backup current data
-    reportBackupProgress('backing_up', 'Backing up current data...', 0);
+    reportProgress('backing_up', 'Backing up current data...');
     if (isCancelled?.()) return { success: false, message: 'Clear data cancelled by user', cancelled: true };
     
-    backupData = await backupCurrentData(reportBackupProgress, isCancelled);
+    backupData = await backupCurrentData(reportProgress, isCancelled);
     if (!backupData) {
       if (isCancelled?.()) {
         return { success: false, message: 'Clear data cancelled by user', cancelled: true };
@@ -645,10 +469,10 @@ export async function clearLocalStorageData(
     if (isCancelled?.()) return { success: false, message: 'Clear data cancelled by user', cancelled: true };
     
     // Stage 2: Clear data
-    reportDeletionProgress('clearing', 'Starting data clearing...', 0);
+    reportProgress('clearing', 'Clearing local data...');
     if (isCancelled?.()) return { success: false, message: 'Clear data cancelled by user', cancelled: true };
     
-    const foldersSuccess = await clearFoldersData(reportDeletionProgress, isCancelled);
+    const foldersSuccess = await clearFoldersData(reportProgress, isCancelled);
     if (!foldersSuccess) {
       if (isCancelled?.()) {
         return { success: false, message: 'Clear data cancelled by user', cancelled: true };
@@ -657,7 +481,7 @@ export async function clearLocalStorageData(
     }
     if (isCancelled?.()) return { success: false, message: 'Clear data cancelled by user', cancelled: true };
     
-    const decksSuccess = await clearDecksData(reportDeletionProgress, isCancelled);
+    const decksSuccess = await clearDecksData(reportProgress, isCancelled);
     if (!decksSuccess) {
       if (isCancelled?.()) {
         return { success: false, message: 'Clear data cancelled by user', cancelled: true };
@@ -666,7 +490,7 @@ export async function clearLocalStorageData(
     }
     if (isCancelled?.()) return { success: false, message: 'Clear data cancelled by user', cancelled: true };
     
-    const flashcardsSuccess = await clearFlashcardsData(reportDeletionProgress, isCancelled);
+    const flashcardsSuccess = await clearFlashcardsData(reportProgress, isCancelled);
     if (!flashcardsSuccess) {
       if (isCancelled?.()) {
         return { success: false, message: 'Clear data cancelled by user', cancelled: true };
@@ -675,7 +499,7 @@ export async function clearLocalStorageData(
     }
     if (isCancelled?.()) return { success: false, message: 'Clear data cancelled by user', cancelled: true };
     
-    const formEntriesSuccess = await clearUserFormEntriesData(reportDeletionProgress, isCancelled);
+    const formEntriesSuccess = await clearUserFormEntriesData(reportProgress, isCancelled);
     if (!formEntriesSuccess) {
       if (isCancelled?.()) {
         return { success: false, message: 'Clear data cancelled by user', cancelled: true };
@@ -683,7 +507,7 @@ export async function clearLocalStorageData(
       return { success: false, message: 'Failed to clear user form entries data' };
     }
     
-    reportDeletionProgress('clearing', 'Clear data complete!', 0);
+    reportProgress('clearing', 'Clear data complete!');
     
     console.log(`Clear data completed successfully! Cleared ${totalRowsToDelete} total items.`);
     

@@ -99,7 +99,10 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
       return; 
     }
     
-    // Save initial progress - clear data started
+    // Record start time to ensure minimum 1 second duration
+    const startTime = Date.now();
+    
+    // Save initial progress - clear data starting immediately
     await saveClearDataProgress({
       status: 'clearDataStarted',
       inProgress: true,
@@ -112,27 +115,6 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
     // Start more frequent progress updates to keep the task alive and update progress in background
     const stopKeepAlive = await updateClearDataProgressPeriodically({ inProgress: true }, 1000);
     
-    // Send initial progress notification to keep task alive on Android/iOS
-    if (shouldSendPushNotification()) {
-      try {
-        const { status: permissionStatus } = await Notifications.getPermissionsAsync();
-        if (permissionStatus === 'granted') {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: language === 'Chinese' ? '数据删除进行中' : 'Data Deletion in Progress',
-              body: language === 'Chinese' ? '正在后台删除数据...' : 'Deleting data in background...',
-              data: { type: 'clear_data_progress', percentage: 0 },
-              sound: false,
-              priority: Notifications.AndroidNotificationPriority.LOW,
-            },
-            trigger: null,
-          });
-        }
-      } catch (error) {
-        console.log('Could not send initial progress notification:', error);
-      }
-    }
-    
     // Create a cancellation checker function
     const isCancelled = () => {
       const isServiceRunning = BackgroundService.isRunning();
@@ -144,45 +126,25 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
 
     // Start the clear data process with progress tracking and cancellation support
     const result = await clearLocalStorageData(async (progress: ClearDataProgress) => {
-      // Save progress updates
+      // Save progress updates for clear data task (no progress bar, just status)
       saveClearDataProgress({
         status: progress.stage,
         inProgress: true,
         completed: false,
         timestamp: Date.now(),
-        percentage: progress.percentage || 0,
-        message: progress.message,
-        rowsProcessed: progress.rowsProcessed,
-        totalRows: progress.totalRows
+        message: progress.message
       });
-      
-      // Send progress notification to keep task alive and show progress
-      if (shouldSendPushNotification() && progress.percentage && progress.percentage > 0) {
-        try {
-          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
-          if (permissionStatus === 'granted') {
-            // Cancel previous progress notification
-            await Notifications.cancelAllScheduledNotificationsAsync();
-            
-            // Send new progress notification
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: language === 'Chinese' ? '数据删除进行中' : 'Data Deletion in Progress',
-                body: language === 'Chinese' 
-                  ? `删除进度: ${progress.percentage}%` 
-                  : `Deletion Progress: ${progress.percentage}%`,
-                data: { type: 'clear_data_progress', percentage: progress.percentage },
-                sound: false,
-                priority: Notifications.AndroidNotificationPriority.LOW,
-              },
-              trigger: null,
-            });
-          }
-        } catch (error) {
-          console.log('Could not send progress notification:', error);
-        }
-      }
     }, isCancelled);
+    
+    // Ensure minimum 1 second duration before completing
+    const elapsedTime = Date.now() - startTime;
+    const minimumDuration = 1000; // 1 second
+    
+    if (elapsedTime < minimumDuration) {
+      const remainingTime = minimumDuration - elapsedTime;
+      console.log(`Clear data completed in ${elapsedTime}ms, waiting additional ${remainingTime}ms to meet minimum duration`);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+    }
     
     // Store backup data for potential rollback
     if (result.backupData) {

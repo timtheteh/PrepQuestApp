@@ -11,41 +11,116 @@ export async function deleteAllUserDataFromDatabase(userID: string): Promise<boo
   try {
     console.log(`Starting deletion of all data for user: ${userID}`);
     
+    // First, check if the database is accessible
+    try {
+      await db.getFirstAsync('SELECT 1');
+    } catch (dbError) {
+      console.error('Database not accessible:', dbError);
+      return false;
+    }
+    
+    // Check if required tables exist
+    const requiredTables = ['users', 'folders', 'decks', 'AIDecks', 'flashcards', 'AIFlashcards', 'userFormEntries'];
+    for (const tableName of requiredTables) {
+      try {
+        const result = await db.getFirstAsync(`SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`);
+        if (!result) {
+          console.warn(`Table ${tableName} does not exist in database`);
+        } else {
+          console.log(`Table ${tableName} exists in database`);
+        }
+      } catch (error) {
+        console.warn(`Error checking for table ${tableName}:`, error);
+      }
+    }
+    
+    // Check if there's any data to delete for this user
+    try {
+      const dataCounts = await getUserDataCounts(userID);
+      console.log(`Data counts for user ${userID}:`, dataCounts);
+      
+      const totalData = dataCounts.folders + dataCounts.decks + dataCounts.aiDecks + 
+                       dataCounts.flashcards + dataCounts.aiFlashcards + dataCounts.userFormEntries;
+      
+      if (totalData === 0) {
+        console.log(`No data found for user ${userID}, but proceeding with deletion anyway`);
+      } else {
+        console.log(`Found ${totalData} total data items for user ${userID}`);
+      }
+    } catch (error) {
+      console.warn(`Error checking data counts for user ${userID}:`, error);
+    }
+    
+    // Disable foreign key constraints to avoid issues during deletion
+    await db.execAsync('PRAGMA foreign_keys = OFF');
+    
     // Start a transaction to ensure data consistency
     await db.execAsync('BEGIN TRANSACTION');
     
     // Delete from all user-related tables in the correct order (respecting foreign key constraints)
+    // Use try-catch for each table deletion to handle missing tables gracefully
     
-    // 1. Delete flashcards first (they reference decks)
-    await db.runAsync(`DELETE FROM flashcards WHERE userID = ?`, [userID]);
-    console.log(`Deleted flashcards for user ${userID}`);
+    try {
+      // 1. Delete flashcards first (they reference decks)
+      await db.runAsync(`DELETE FROM flashcards WHERE userID = ?`, [userID]);
+      console.log(`Deleted flashcards for user ${userID}`);
+    } catch (error) {
+      console.warn(`Warning: Could not delete flashcards for user ${userID}:`, error);
+    }
     
-    // 2. Delete AI flashcards (they reference AI decks)
-    await db.runAsync(`DELETE FROM AIFlashcards WHERE userID = ?`, [userID]);
-    console.log(`Deleted AI flashcards for user ${userID}`);
+    try {
+      // 2. Delete AI flashcards (they reference AI decks)
+      await db.runAsync(`DELETE FROM AIFlashcards WHERE userID = ?`, [userID]);
+      console.log(`Deleted AI flashcards for user ${userID}`);
+    } catch (error) {
+      console.warn(`Warning: Could not delete AI flashcards for user ${userID}:`, error);
+    }
     
-    // 3. Delete decks
-    await db.runAsync(`DELETE FROM decks WHERE userID = ?`, [userID]);
-    console.log(`Deleted decks for user ${userID}`);
+    try {
+      // 3. Delete decks
+      await db.runAsync(`DELETE FROM decks WHERE userID = ?`, [userID]);
+      console.log(`Deleted decks for user ${userID}`);
+    } catch (error) {
+      console.warn(`Warning: Could not delete decks for user ${userID}:`, error);
+    }
     
-    // 4. Delete AI decks
-    await db.runAsync(`DELETE FROM AIDecks WHERE userID = ?`, [userID]);
-    console.log(`Deleted AI decks for user ${userID}`);
+    try {
+      // 4. Delete AI decks
+      await db.runAsync(`DELETE FROM AIDecks WHERE userID = ?`, [userID]);
+      console.log(`Deleted AI decks for user ${userID}`);
+    } catch (error) {
+      console.warn(`Warning: Could not delete AI decks for user ${userID}:`, error);
+    }
     
-    // 5. Delete folders
-    await db.runAsync(`DELETE FROM folders WHERE userID = ?`, [userID]);
-    console.log(`Deleted folders for user ${userID}`);
+    try {
+      // 5. Delete folders
+      await db.runAsync(`DELETE FROM folders WHERE userID = ?`, [userID]);
+      console.log(`Deleted folders for user ${userID}`);
+    } catch (error) {
+      console.warn(`Warning: Could not delete folders for user ${userID}:`, error);
+    }
     
-    // 6. Delete user form entries
-    await db.runAsync(`DELETE FROM userFormEntries WHERE userID = ?`, [userID]);
-    console.log(`Deleted user form entries for user ${userID}`);
+    try {
+      // 6. Delete user form entries
+      await db.runAsync(`DELETE FROM userFormEntries WHERE userID = ?`, [userID]);
+      console.log(`Deleted user form entries for user ${userID}`);
+    } catch (error) {
+      console.warn(`Warning: Could not delete user form entries for user ${userID}:`, error);
+    }
     
-    // 7. Delete user record
-    await db.runAsync(`DELETE FROM users WHERE userID = ?`, [userID]);
-    console.log(`Deleted user record for user ${userID}`);
+    try {
+      // 7. Delete user record
+      await db.runAsync(`DELETE FROM users WHERE userID = ?`, [userID]);
+      console.log(`Deleted user record for user ${userID}`);
+    } catch (error) {
+      console.warn(`Warning: Could not delete user record for user ${userID}:`, error);
+    }
     
     // Commit the transaction
     await db.execAsync('COMMIT');
+    
+    // Re-enable foreign key constraints
+    await db.execAsync('PRAGMA foreign_keys = ON');
     
     // Clear all relevant AsyncStorage data
     await clearUserDataFromAsyncStorage(userID);
@@ -59,6 +134,13 @@ export async function deleteAllUserDataFromDatabase(userID: string): Promise<boo
       await db.execAsync('ROLLBACK');
     } catch (rollbackError) {
       console.error('Error rolling back transaction:', rollbackError);
+    }
+    
+    // Re-enable foreign key constraints even on error
+    try {
+      await db.execAsync('PRAGMA foreign_keys = ON');
+    } catch (fkError) {
+      console.error('Error re-enabling foreign keys:', fkError);
     }
     
     console.error('Error deleting user data from database:', error);

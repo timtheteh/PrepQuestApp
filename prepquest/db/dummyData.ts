@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 
 // User ID variable - change this once to update all user references
-const DUMMY_USER_ID = 'user_32Hkkj3j1lIOtJRSJqYmQlAL94l';
+const DUMMY_USER_ID = 'user_32HplAziZL1F0YiNHsxwKlORbNb';
 
 export async function populateDummyData() {
   try {

@@ -23,6 +23,8 @@ import { useImportBackgroundTask } from '@/contexts/ImportBackgroundTaskContext'
 import { startImportBackgroundTask, stopImportBackgroundTask } from '@/utils/importBackgroundTask';
 import { useClearDataBackgroundTask } from '@/contexts/ClearDataBackgroundTaskContext';
 import { startClearDataBackgroundTask, stopClearDataBackgroundTask } from '@/utils/clearDataBackgroundTask';
+import { useDeleteAccountBackgroundTask } from '@/contexts/DeleteAccountBackgroundTaskContext';
+import { startDeleteAccountBackgroundTask, stopDeleteAccountBackgroundTask } from '@/utils/deleteAccountBackgroundTask';
 
 import { importDataFromCloud, ImportProgress } from '@/db/importData';
 import { extractFoldersFromSQLite, extractDecksFromSQLite, extractFlashcardsFromSQLite, extractRecentUserFormEntriesFromSQLite } from '@/db/backup';
@@ -129,6 +131,21 @@ export default function AppSettingsScreen() {
     resetClearDataForceStoppedFlag
   } = useClearDataBackgroundTask();
   
+  // delete account progress state - now handled by background task context
+  const { 
+    isDeleteAccountBackgroundTaskRunning, 
+    isDeleteAccountCleanupInProgress,
+    isDeleteAccountStopping,
+    deleteAccountBackgroundTaskProgress,
+    setDeleteAccountBackgroundTaskProgress,
+    wasAutomaticallyCancelled: wasDeleteAccountAutomaticallyCancelled,
+    startDeleteAccountBackgroundTaskMonitoring,
+    forceStopDeleteAccountBackgroundTask,
+    clearDeleteAccountBackgroundTaskProgress,
+    resetDeleteAccountForceStoppedFlag,
+    resetAutomaticallyCancelledFlag: resetDeleteAccountAutomaticallyCancelledFlag
+  } = useDeleteAccountBackgroundTask();
+  
   // backup loading state
   const [isBackupLoading, setIsBackupLoading] = React.useState(false);
   const backupLoadingOverlayOpacity = React.useRef(new Animated.Value(0)).current;
@@ -184,6 +201,10 @@ export default function AppSettingsScreen() {
   // Clear data loading state
   const [isClearDataLoading, setIsClearDataLoading] = React.useState(false);
   const clearDataLoadingOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  
+  // Delete account loading state
+  const [isDeleteAccountLoading, setIsDeleteAccountLoading] = React.useState(false);
+  const deleteAccountLoadingOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   
   // Local state to immediately show progress bar when starting clear data
   const [isLocallyStartingClearData, setIsLocallyStartingClearData] = React.useState(false);
@@ -268,6 +289,9 @@ export default function AppSettingsScreen() {
 
   // Clear data completion state
   const [hasClearDataCompleted, setHasClearDataCompleted] = React.useState(false);
+
+  // Delete account completion state
+  const [hasDeleteAccountCompleted, setHasDeleteAccountCompleted] = React.useState(false);
 
   // Clear data cooldown state
   const [isClearDataCancelCooldownActive, setIsClearDataCancelCooldownActive] = React.useState(false);
@@ -560,47 +584,79 @@ export default function AppSettingsScreen() {
       // Dismiss the modal first
       handleDismissDeleteAccount();
       
-      // Show loading state
+      // Disable all buttons IMMEDIATELY when user confirms deletion
       setShouldDisableOtherButtons(true);
       
-      // Wait for modal animation to complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Show loading screen IMMEDIATELY to prevent any button UI changes
+      setIsDeleteAccountLoading(true);
+      Animated.timing(deleteAccountLoadingOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
       
-      console.log('Starting account deletion process...');
+      // Small delay to ensure loading screen renders before any state changes
+      await new Promise(resolve => setTimeout(resolve, 50));
       
-      // Call the delete account function from auth context
-      const result = await deleteAccount();
+      // Get user ID for background task
+      const userID = await AsyncStorage.getItem('userID');
+      console.log('Retrieved userID for delete account:', userID);
       
-      if (result.success) {
-        console.log('Account deletion successful');
-        // User will be automatically redirected to login screen due to auth state change
-      } else {
-        console.error('Account deletion failed:', result.error);
+      if (!userID) {
+        console.error('No userID found in AsyncStorage for delete account');
+        // Hide loading screen
+        Animated.timing(deleteAccountLoadingOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsDeleteAccountLoading(false);
+        });
         
-        // Re-enable buttons
-        setShouldDisableOtherButtons(false);
-        
-        // Show error alert
-        Alert.alert(
-          strings[language].error,
-          result.error || 'Account deletion failed. Please try again.',
-          [{ text: strings[language].ok }]
-        );
+        console.error('No user ID found. Please try logging in again.');
+        return;
       }
+      
+      // Start background task monitoring
+      startDeleteAccountBackgroundTaskMonitoring();
+      
+      // Start the delete account background task
+      const success = await startDeleteAccountBackgroundTask(language, userID);
+      
+      if (!success) {
+        // Hide loading screen
+        Animated.timing(deleteAccountLoadingOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsDeleteAccountLoading(false);
+        });
+        
+        console.error('Failed to start account deletion process');
+        return;
+      }
+      
+      // Add a small delay to ensure the background task has time to start
+      // before the monitoring detects the delete account is running
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // The loading screen will be hidden when isDeleteAccountBackgroundTaskRunning becomes true
+      // After the background task completes, we'll call the actual Clerk deletion
+      
     } catch (error) {
-      console.error('Error during account deletion:', error);
+      // Hide loading screen
+      Animated.timing(deleteAccountLoadingOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsDeleteAccountLoading(false);
+      });
       
-      // Re-enable buttons
-      setShouldDisableOtherButtons(false);
-      
-      // Show error alert
-      Alert.alert(
-        strings[language].error,
-        `Account deletion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        [{ text: strings[language].ok }]
-      );
+      console.error('Account deletion failed:', error instanceof Error ? error.message : 'Unknown error');
     }
-  }, [handleDismissDeleteAccount, deleteAccount, language]);
+  }, [handleDismissDeleteAccount, language, startDeleteAccountBackgroundTaskMonitoring, deleteAccountLoadingOverlayOpacity]);
 
   const handleShowAutomaticCancellationModal = React.useCallback(() => {
     setIsAutomaticCancellationModalOpen(true);
@@ -749,17 +805,20 @@ export default function AppSettingsScreen() {
     }
   }, [isImportBackgroundTaskRunning, importBackgroundTaskProgress?.completed, isImportLoading, importLoadingOverlayOpacity]);
 
-  // Control button disable state based on backup, import, and clear data status
+  // Control button disable state based on backup, import, clear data, and delete account status
   React.useEffect(() => {
     // Don't disable buttons during loading states - only disable when actual operations are running
-    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isImportStopping || isImportCleanupInProgress || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress;
+    const shouldDisable = isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive || isImportBackgroundTaskRunning || isImportCancelCooldownActive || isImportStopping || isImportCleanupInProgress || isClearDataBackgroundTaskRunning || isClearDataCancelCooldownActive || isLocallyStoppingClearData || isLocallyStartingClearData || isDataRestorationInProgress || isDeleteAccountBackgroundTaskRunning || isDeleteAccountCleanupInProgress || isDeleteAccountStopping;
     
     // Additional safety: never disable buttons during backup/import loading states
     const isNonClearDataLoading = isBackupLoading || isImportLoading;
     const finalShouldDisable = shouldDisable && !isNonClearDataLoading;
     
-    setShouldDisableOtherButtons(finalShouldDisable);
-  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportStopping, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress, isBackupLoading, isImportLoading]);
+    // Only update if we're not in delete account loading state (to preserve immediate disable)
+    if (!isDeleteAccountLoading) {
+      setShouldDisableOtherButtons(finalShouldDisable);
+    }
+  }, [isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportCancelCooldownActive, isImportStopping, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isClearDataCancelCooldownActive, isLocallyStoppingClearData, isLocallyStartingClearData, isDataRestorationInProgress, isDeleteAccountBackgroundTaskRunning, isDeleteAccountCleanupInProgress, isDeleteAccountStopping, isBackupLoading, isImportLoading, isDeleteAccountLoading]);
 
   // Handle notification responses for backup completion
   React.useEffect(() => {
@@ -787,6 +846,11 @@ export default function AppSettingsScreen() {
       } else if (data?.type === 'clear_data_network_error') {
         // Show persistent network error modal when user taps on clear data network error notification
         handleShowNetworkErrorModal('clearData');
+      } else if (data?.type === 'delete_account_completed') {
+        // Set persistent delete account completion state
+        setHasDeleteAccountCompleted(true);
+        // Show success modal when user taps on delete account notification (will stay open until manually dismissed)
+        handleShowSuccessModal('Account deletion completed successfully!');
       }
     });
 
@@ -892,6 +956,13 @@ export default function AppSettingsScreen() {
     }
   }, [hasClearDataCompleted, isSuccessModalOpen]);
 
+  // Show success modal on page load if delete account was completed
+  React.useEffect(() => {
+    if (hasDeleteAccountCompleted && !isSuccessModalOpen) {
+      handleShowSuccessModal('Account deletion completed successfully!');
+    }
+  }, [hasDeleteAccountCompleted, isSuccessModalOpen]);
+
   // Hide clear data loading screen when task completes
   React.useEffect(() => {
     if (isClearDataLoading && clearDataBackgroundTaskProgress?.completed) {
@@ -906,6 +977,21 @@ export default function AppSettingsScreen() {
       }).start();
     }
   }, [clearDataBackgroundTaskProgress?.completed, isClearDataLoading, clearDataLoadingOverlayOpacity]);
+
+  // Hide delete account loading screen when task completes
+  React.useEffect(() => {
+    if (isDeleteAccountLoading && deleteAccountBackgroundTaskProgress?.completed) {
+      // Set isDeleteAccountLoading to false to hide loading screen
+      setIsDeleteAccountLoading(false);
+      
+      // Then animate out the loading overlay
+      Animated.timing(deleteAccountLoadingOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [deleteAccountBackgroundTaskProgress?.completed, isDeleteAccountLoading, deleteAccountLoadingOverlayOpacity]);
 
 
   // Sync clear data local stopping state with context stopping state
@@ -1308,9 +1394,36 @@ export default function AppSettingsScreen() {
     }
   }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess]);
 
+  // Watch for delete account completion to handle Clerk deletion
+  React.useEffect(() => {
+    if (deleteAccountBackgroundTaskProgress?.completed && deleteAccountBackgroundTaskProgress?.success && !deleteAccountBackgroundTaskProgress?.error && !deleteAccountBackgroundTaskProgress?.cancelled) {
+      // Local data deletion completed successfully, now delete from Clerk
+      console.log('Local data deletion completed, proceeding with Clerk account deletion...');
+      
+      // Call the delete account function from auth context to complete Clerk deletion
+      deleteAccount().then((result) => {
+        if (result.success) {
+          console.log('Account deletion successful');
+          // Set persistent delete account completion state
+          setHasDeleteAccountCompleted(true);
+          // User will be automatically redirected to login screen due to auth state change
+        } else {
+          console.error('Clerk account deletion failed:', result.error);
+          // No error modal for now - just log the error
+        }
+      }).catch((error) => {
+        console.error('Error during Clerk account deletion:', error);
+        // No error modal for now - just log the error
+      });
+    } else if (deleteAccountBackgroundTaskProgress?.error) {
+      // No error modal for now - just log the error
+      console.error('Delete account background task error:', deleteAccountBackgroundTaskProgress.errorMessage);
+    }
+  }, [deleteAccountBackgroundTaskProgress, deleteAccount, language]);
+
 
   const handleBackPress = React.useCallback(() => {
-    // Check if backup, import, or clear data is running and prevent navigation
+    // Check if backup, import, clear data, or delete account is running and prevent navigation
     if (isBackupBackgroundTaskRunning || isBackupCleanupInProgress || isBackupStopping || isLocallyStoppingBackup || isCancelCooldownActive) {
       handleShowNavigationGuardModal('backup');
       return;
@@ -1320,10 +1433,13 @@ export default function AppSettingsScreen() {
     } else if (isClearDataBackgroundTaskRunning || isLocallyStartingClearData || isDataRestorationInProgress) {
       handleShowNavigationGuardModal('deletion');
       return;
+    } else if (isDeleteAccountBackgroundTaskRunning || isDeleteAccountCleanupInProgress || isDeleteAccountStopping) {
+      handleShowNavigationGuardModal('deletion');
+      return;
     }
     
     router.back();
-  }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportStopping, isImportCancelCooldownActive, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, handleShowNavigationGuardModal]);
+  }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportStopping, isImportCancelCooldownActive, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, isDeleteAccountBackgroundTaskRunning, isDeleteAccountCleanupInProgress, isDeleteAccountStopping, handleShowNavigationGuardModal]);
 
   const handleBackupPress = React.useCallback(() => {
     setIsBackupModalOpen(true);
@@ -1938,6 +2054,9 @@ export default function AppSettingsScreen() {
       // Clear the persistent clear data completion state when user manually dismisses
       setHasClearDataCompleted(false);
       
+      // Clear the persistent delete account completion state when user manually dismisses
+      setHasDeleteAccountCompleted(false);
+      
       // Also clear the backup progress data from AsyncStorage to prevent it from showing again
       try {
         await AsyncStorage.removeItem('backupDataBgTaskProgress');
@@ -1960,6 +2079,14 @@ export default function AppSettingsScreen() {
         console.log('Cleared clear data progress data after user dismissed success modal');
       } catch (error) {
         console.error('Error clearing clear data progress data:', error);
+      }
+      
+      // Also clear the delete account progress data from AsyncStorage to prevent it from showing again
+      try {
+        await AsyncStorage.removeItem('deleteAccountBgTaskProgress');
+        console.log('Cleared delete account progress data after user dismissed success modal');
+      } catch (error) {
+        console.error('Error clearing delete account progress data:', error);
       }
     });
   }, [successOverlayOpacity, successModalOpacity]);
@@ -2743,7 +2870,14 @@ export default function AppSettingsScreen() {
                   <View style={styles.buttonContent}>
                     <Text style={[styles.cloudButtonText, { 
                       fontFamily: Fonts.bodyMedium,
-                    }]}>{strings[language].appSettingsPage.deleteAccount}</Text>
+                    }]}>
+                      {isDeleteAccountLoading || isDeleteAccountBackgroundTaskRunning
+                        ? (language === 'Chinese' ? '请稍等...' : 'Please wait...')
+                        : (isDeleteAccountStopping || isDeleteAccountCleanupInProgress)
+                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          : strings[language].appSettingsPage.deleteAccount
+                      }
+                    </Text>
                   </View>
                 </TouchableOpacity>
             </ScrollView>
@@ -2842,6 +2976,22 @@ export default function AppSettingsScreen() {
           opacity={clearDataLoadingOverlayOpacity}
         />
         {isClearDataLoading && (
+          <View style={styles.loadingContainer}>
+            <LottieView
+              source={require('@/assets/animations/addDeckLoadingAnimation.json')}
+              autoPlay
+              loop
+              style={styles.loadingAnimation}
+            />
+          </View>
+        )}
+
+        {/* Delete Account Loading Screen */}
+        <GreyOverlayBackground 
+          visible={isDeleteAccountLoading}
+          opacity={deleteAccountLoadingOverlayOpacity}
+        />
+        {isDeleteAccountLoading && (
           <View style={styles.loadingContainer}>
             <LottieView
               source={require('@/assets/animations/addDeckLoadingAnimation.json')}

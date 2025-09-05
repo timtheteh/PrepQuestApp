@@ -18,6 +18,7 @@ import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
 import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskContext';
 import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskContext';
 import { ClearDataBackgroundTaskProvider } from '@/contexts/ClearDataBackgroundTaskContext';
+import { DeleteAccountBackgroundTaskProvider } from '@/contexts/DeleteAccountBackgroundTaskContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 
 import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
@@ -58,7 +59,8 @@ const stopAllBackgroundTasks = async () => {
       'genAIDeckCreationBgTaskProgress',
       'backupDataBgTaskProgress',
       'importDataBgTaskProgress',
-      'clearDataBgTaskProgress'
+      'clearDataBgTaskProgress',
+      'deleteAccountBgTaskProgress'
     ];
     
     for (const key of progressKeys) {
@@ -315,7 +317,9 @@ export default function RootLayout() {
               <BackupBackgroundTaskProvider>
                 <ImportBackgroundTaskProvider>
                   <ClearDataBackgroundTaskProvider>
-                    <AppContent />
+                    <DeleteAccountBackgroundTaskProvider>
+                      <AppContent />
+                    </DeleteAccountBackgroundTaskProvider>
                   </ClearDataBackgroundTaskProvider>
                 </ImportBackgroundTaskProvider>
               </BackupBackgroundTaskProvider>

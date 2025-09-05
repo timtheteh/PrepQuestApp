@@ -343,34 +343,27 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
         };
       }
 
-      // First, delete all user data from local database
-      const { deleteAllUserDataFromDatabase } = await import('../db/deleteAccount');
-      const databaseCleanupSuccess = await deleteAllUserDataFromDatabase(clerkUserId);
+      // Note: Local data deletion is now handled by the background task
+      // This function only handles the Clerk account deletion
+      console.log('Deleting account from Clerk...');
       
-      if (!databaseCleanupSuccess) {
-        return {
-          success: false,
-          error: 'Failed to delete local user data',
-        };
-      }
-
-      // Then delete the account from Clerk
+      // Delete the account from Clerk
       await clerkUser.delete();
       
       // Clear local state
       setUser(null);
       setIsAuthenticated(false);
       
-      // Clear AsyncStorage (should already be cleared by deleteAllUserDataFromDatabase, but just to be safe)
+      // Clear AsyncStorage (should already be cleared by background task, but just to be safe)
       await AsyncStorage.removeItem('userID');
       
-      console.log('Account successfully deleted');
+      console.log('Clerk account successfully deleted');
       return {
         success: true,
       };
       
     } catch (error: any) {
-      console.error('Error deleting account:', error);
+      console.error('Error deleting Clerk account:', error);
       return {
         success: false,
         error: error.errors?.[0]?.message || error.message || 'Account deletion failed',

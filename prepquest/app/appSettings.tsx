@@ -260,6 +260,11 @@ export default function AppSettingsScreen() {
   const clearDataLoadingNetworkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const clearDataLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Delete account modal state
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = React.useState(false);
+  const deleteAccountOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const deleteAccountModalOpacity = React.useRef(new Animated.Value(0)).current;
+
   // Clear data completion state
   const [hasClearDataCompleted, setHasClearDataCompleted] = React.useState(false);
 
@@ -515,6 +520,45 @@ export default function AppSettingsScreen() {
       setIsClearDataLoadingNetworkErrorModalOpen(false);
     });
   }, [clearDataLoadingNetworkErrorOverlayOpacity, clearDataLoadingNetworkErrorModalOpacity]);
+
+  const handleDeleteAccountPress = React.useCallback(() => {
+    setIsDeleteAccountModalOpen(true);
+    Animated.parallel([
+      Animated.timing(deleteAccountOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteAccountModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [deleteAccountOverlayOpacity, deleteAccountModalOpacity]);
+
+  const handleDismissDeleteAccount = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(deleteAccountOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteAccountModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDeleteAccountModalOpen(false);
+    });
+  }, [deleteAccountOverlayOpacity, deleteAccountModalOpacity]);
+
+  const handleConfirmDeleteAccount = React.useCallback(() => {
+    // TODO: Implement delete account functionality
+    console.log('Delete account confirmed');
+    handleDismissDeleteAccount();
+  }, [handleDismissDeleteAccount]);
 
   const handleShowAutomaticCancellationModal = React.useCallback(() => {
     setIsAutomaticCancellationModalOpen(true);
@@ -2652,10 +2696,7 @@ export default function AppSettingsScreen() {
                       opacity: shouldDisableOtherButtons ? 0.6 : 1.0
                     }
                   ]}
-                  onPress={shouldDisableOtherButtons ? undefined : () => {
-                    // TODO: Implement delete account functionality
-                    console.log('Delete account pressed');
-                  }}
+                  onPress={shouldDisableOtherButtons ? undefined : handleDeleteAccountPress}
                   disabled={shouldDisableOtherButtons}>
                   <View style={styles.buttonContent}>
                     <Text style={[styles.cloudButtonText, { 
@@ -2992,8 +3033,21 @@ export default function AppSettingsScreen() {
           onConfirm={handleDismissBackupServiceBusyModal}
         />
 
-        {/* Clear Data Task Notification */}
-        
+        {/* Delete Account Modal */}
+        <GreyOverlayBackground 
+          visible={isDeleteAccountModalOpen}
+          opacity={deleteAccountOverlayOpacity}
+          onPress={handleDismissDeleteAccount}
+        />
+        <GenericModal
+          visible={isDeleteAccountModalOpen}
+          opacity={deleteAccountModalOpacity}
+          text={strings[language].appSettingsPage.confirmDeleteAccount}
+          Icon={DeleteModalIcon}
+          buttons="double"
+          onCancel={handleDismissDeleteAccount}
+          onConfirm={handleConfirmDeleteAccount}
+        />
 
     </View>
   );

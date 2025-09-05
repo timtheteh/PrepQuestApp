@@ -2,6 +2,9 @@ import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 
+// User ID variable - change this once to update all user references
+const DUMMY_USER_ID = 'user_32Hkkj3j1lIOtJRSJqYmQlAL94l';
+
 export async function populateDummyData() {
   try {
     console.log('📊 Starting to populate dummy data...');
@@ -18,7 +21,7 @@ export async function populateDummyData() {
     
     const userData = [
       {
-        userID: 'user_30PMYkuSIjxOb4NNiYju8mp3uuK',
+        userID: DUMMY_USER_ID,
         accumulatedDecksCreated: 200,
         accumulatedFlashcardsCreated: 1020,
         accumulatedStudyDecksCreated: 120,
@@ -147,7 +150,7 @@ export async function populateDummyData() {
     for (const folder of folderData) {
       await db.execAsync(`
         INSERT INTO folders (userID, folderName, dateAdded, lastModifiedDate, isFavorited)
-        VALUES ('user_30PMYkuSIjxOb4NNiYju8mp3uuK', '${folder.folderName}', '${folder.dateAdded}', '${folder.lastModifiedDate}', ${folder.isFavorited})
+        VALUES ('${DUMMY_USER_ID}', '${folder.folderName}', '${folder.dateAdded}', '${folder.lastModifiedDate}', ${folder.isFavorited})
       `);
     }
 
@@ -889,7 +892,7 @@ export async function populateDummyData() {
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${escapeSqlString(deck.deckName)}, ${escapeSqlString(deck.dateAdded)}, ${escapeSqlString(deck.lastModifiedDate)}, ${deck.isFavorited}, ${escapeSqlString(deck.deckType)}, ${escapeSqlString(deck.creationMethod)},
+          '${DUMMY_USER_ID}', ${escapeSqlString(deck.deckName)}, ${escapeSqlString(deck.dateAdded)}, ${escapeSqlString(deck.lastModifiedDate)}, ${deck.isFavorited}, ${escapeSqlString(deck.deckType)}, ${escapeSqlString(deck.creationMethod)},
           ${escapeSqlString(deck.lastStudiedDate)}, ${escapeSqlString(deck.lastQuizzedDate)}, ${deck.cardDesignIndex}, ${deck.isAIDeck}, ${escapeSqlString(deck.folderIDs)},
           ${escapeSqlString(deck.studyEducationLevel)}, ${escapeSqlString(deck.studySubjects)}, ${escapeSqlString(deck.studyTopicsSubtopics)}, ${escapeSqlString(deck.studyExamQuiz)},
           ${escapeSqlString(deck.interviewJobRole)}, ${escapeSqlString(deck.interviewType)}, ${escapeSqlString(deck.interviewCompany)}, ${escapeSqlString(deck.interviewExperienceLevel)}, ${escapeSqlString(deck.interviewTopics)}, ${escapeSqlString(deck.interviewCompanyIcon)}
@@ -1195,7 +1198,7 @@ export async function populateDummyData() {
             userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${flashcard.deckID}, ${escapeSqlString(flashcard.difficultyRating)}, ${escapeSqlString(flashcard.cognitiveQnType)}, ${flashcard.isFavorited}, ${escapeSqlString(flashcard.questionType)}, 
+            '${DUMMY_USER_ID}', ${flashcard.deckID}, ${escapeSqlString(flashcard.difficultyRating)}, ${escapeSqlString(flashcard.cognitiveQnType)}, ${flashcard.isFavorited}, ${escapeSqlString(flashcard.questionType)}, 
             ${escapeSqlString(flashcard.questionText)}, ${questionBlobHex},
             ${escapeSqlString(flashcard.answerType)}, ${escapeSqlString(flashcard.answerText)}, 
             ${escapeSqlString(flashcard.answerMCQ)}, ${answerBlobHex},
@@ -1296,7 +1299,7 @@ export async function populateDummyData() {
           studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
           interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
         ) VALUES (
-          'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
+          '${DUMMY_USER_ID}', ${escapeSqlString(aiDeck.deckName)}, ${escapeSqlString(aiDeck.dateAdded)}, ${escapeSqlString(aiDeck.lastModifiedDate)}, ${aiDeck.isFavorited}, ${escapeSqlString(aiDeck.deckType)}, ${escapeSqlString(aiDeck.creationMethod)},
           ${escapeSqlString(aiDeck.lastStudiedDate)}, ${escapeSqlString(aiDeck.lastQuizzedDate)}, ${aiDeck.cardDesignIndex}, ${aiDeck.isAIDeck}, ${escapeSqlString(aiDeck.folderIDs)},
           ${escapeSqlString(aiDeck.studyEducationLevel)}, ${escapeSqlString(aiDeck.studySubjects)}, ${escapeSqlString(aiDeck.studyTopicsSubtopics)}, ${escapeSqlString(aiDeck.studyExamQuiz)},
           ${escapeSqlString(aiDeck.interviewJobRole)}, ${escapeSqlString(aiDeck.interviewType)}, ${escapeSqlString(aiDeck.interviewCompany)}, ${escapeSqlString(aiDeck.interviewExperienceLevel)}, ${escapeSqlString(aiDeck.interviewTopics)}, ${escapeSqlString(aiDeck.interviewCompanyIcon)}
@@ -1575,7 +1578,7 @@ export async function populateDummyData() {
             userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
             answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
           ) VALUES (
-            'user_30PMYkuSIjxOb4NNiYju8mp3uuK', ${aiFlashcard.deckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
+            '${DUMMY_USER_ID}', ${aiFlashcard.deckID}, ${escapeSqlString(aiFlashcard.difficultyRating)}, ${escapeSqlString(aiFlashcard.cognitiveQnType)}, ${aiFlashcard.isFavorited}, ${escapeSqlString(aiFlashcard.questionType)}, 
             ${escapeSqlString(aiFlashcard.questionText)}, ${questionBlobHex},
             ${escapeSqlString(aiFlashcard.answerType)}, ${escapeSqlString(aiFlashcard.answerText)}, 
             ${escapeSqlString(aiFlashcard.answerMCQ)}, ${answerBlobHex},

@@ -37,6 +37,7 @@ interface ClerkAuthContextType {
   // Common methods
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  deleteAccount: () => Promise<AuthResult>;
 }
 
 const ClerkAuthContext = createContext<ClerkAuthContextType | undefined>(undefined);
@@ -333,6 +334,50 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
     }
   };
 
+  const deleteAccount = async (): Promise<AuthResult> => {
+    try {
+      if (!clerkUser || !clerkUserId) {
+        return {
+          success: false,
+          error: 'No user to delete',
+        };
+      }
+
+      // First, delete all user data from local database
+      const { deleteAllUserDataFromDatabase } = await import('../db/deleteAccount');
+      const databaseCleanupSuccess = await deleteAllUserDataFromDatabase(clerkUserId);
+      
+      if (!databaseCleanupSuccess) {
+        return {
+          success: false,
+          error: 'Failed to delete local user data',
+        };
+      }
+
+      // Then delete the account from Clerk
+      await clerkUser.delete();
+      
+      // Clear local state
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // Clear AsyncStorage (should already be cleared by deleteAllUserDataFromDatabase, but just to be safe)
+      await AsyncStorage.removeItem('userID');
+      
+      console.log('Account successfully deleted');
+      return {
+        success: true,
+      };
+      
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      return {
+        success: false,
+        error: error.errors?.[0]?.message || error.message || 'Account deletion failed',
+      };
+    }
+  };
+
   const value: ClerkAuthContextType = {
     user,
     isAuthenticated,
@@ -345,6 +390,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
     signInWithApple,
     signOut,
     refreshUser,
+    deleteAccount,
   };
 
   return (

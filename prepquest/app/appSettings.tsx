@@ -64,6 +64,7 @@ export default function AppSettingsScreen() {
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { getToken } = useAuth();
+  const { deleteAccount } = useHybridAuth();
   const [cameraAccessEnabled, setCameraAccessEnabled] = React.useState(false);
   const [galleryAccessEnabled, setGalleryAccessEnabled] = React.useState(false);
   const [micAccessEnabled, setMicAccessEnabled] = React.useState(false);
@@ -554,11 +555,52 @@ export default function AppSettingsScreen() {
     });
   }, [deleteAccountOverlayOpacity, deleteAccountModalOpacity]);
 
-  const handleConfirmDeleteAccount = React.useCallback(() => {
-    // TODO: Implement delete account functionality
-    console.log('Delete account confirmed');
-    handleDismissDeleteAccount();
-  }, [handleDismissDeleteAccount]);
+  const handleConfirmDeleteAccount = React.useCallback(async () => {
+    try {
+      // Dismiss the modal first
+      handleDismissDeleteAccount();
+      
+      // Show loading state
+      setShouldDisableOtherButtons(true);
+      
+      // Wait for modal animation to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      console.log('Starting account deletion process...');
+      
+      // Call the delete account function from auth context
+      const result = await deleteAccount();
+      
+      if (result.success) {
+        console.log('Account deletion successful');
+        // User will be automatically redirected to login screen due to auth state change
+      } else {
+        console.error('Account deletion failed:', result.error);
+        
+        // Re-enable buttons
+        setShouldDisableOtherButtons(false);
+        
+        // Show error alert
+        Alert.alert(
+          strings[language].error,
+          result.error || 'Account deletion failed. Please try again.',
+          [{ text: strings[language].ok }]
+        );
+      }
+    } catch (error) {
+      console.error('Error during account deletion:', error);
+      
+      // Re-enable buttons
+      setShouldDisableOtherButtons(false);
+      
+      // Show error alert
+      Alert.alert(
+        strings[language].error,
+        `Account deletion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: strings[language].ok }]
+      );
+    }
+  }, [handleDismissDeleteAccount, deleteAccount, language]);
 
   const handleShowAutomaticCancellationModal = React.useCallback(() => {
     setIsAutomaticCancellationModalOpen(true);

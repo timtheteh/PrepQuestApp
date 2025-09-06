@@ -963,11 +963,14 @@ export default function AppSettingsScreen() {
     }
   }, [hasDeleteAccountCompleted, isSuccessModalOpen]);
 
-  // Hide clear data loading screen when task completes
+  // Hide clear data loading screen when task completes or when no data is found
   React.useEffect(() => {
-    if (isClearDataLoading && clearDataBackgroundTaskProgress?.completed) {
+    if (isClearDataLoading && (clearDataBackgroundTaskProgress?.completed || clearDataBackgroundTaskProgress?.noData)) {
       // Set isClearDataLoading to false to hide loading screen
       setIsClearDataLoading(false);
+      
+      // Reset locally starting clear data state to re-enable buttons
+      setIsLocallyStartingClearData(false);
       
       // Then animate out the loading overlay
       Animated.timing(clearDataLoadingOverlayOpacity, {
@@ -976,7 +979,7 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       }).start();
     }
-  }, [clearDataBackgroundTaskProgress?.completed, isClearDataLoading, clearDataLoadingOverlayOpacity]);
+  }, [clearDataBackgroundTaskProgress?.completed, clearDataBackgroundTaskProgress?.noData, isClearDataLoading, clearDataLoadingOverlayOpacity]);
 
   // Hide delete account loading screen when task completes
   React.useEffect(() => {
@@ -1863,6 +1866,14 @@ export default function AppSettingsScreen() {
     try {
       // Dismiss the confirmation modal first
       handleDismissClearData();
+      
+      // Check if there's any data to clear BEFORE starting background task
+      const hasDataToClear = await checkForClearData();
+      if (!hasDataToClear) {
+        console.log('No data to clear - showing modal immediately');
+        handleShowNoClearDataModal();
+        return;
+      }
       
       // Cancel any existing clear data task to ensure clean state
       if (isClearDataBackgroundTaskRunning) {

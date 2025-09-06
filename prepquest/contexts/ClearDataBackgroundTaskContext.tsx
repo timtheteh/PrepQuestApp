@@ -259,10 +259,10 @@ export const ClearDataBackgroundTaskProvider: React.FC<ClearDataBackgroundTaskPr
           const timeDiff = now - progressTime;
           const isRecent = timeDiff < 30 * 1000; // 30 seconds
           
-          if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !forceStoppedRef.current) {
+          if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.noData && !forceStoppedRef.current) {
             setIsClearDataBackgroundTaskRunning(true);
-          } else if (progress.completed || progress.cancelled || progress.error || forceStoppedRef.current) {
-            // Task completed, cancelled, failed, or force stopped
+          } else if (progress.completed || progress.cancelled || progress.error || progress.noData || forceStoppedRef.current) {
+            // Task completed, cancelled, failed, no data, or force stopped
             setIsClearDataBackgroundTaskRunning(false);
             
             // Clear stopping state when clear data is no longer active

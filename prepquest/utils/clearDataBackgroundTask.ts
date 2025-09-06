@@ -1,9 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import { clearLocalStorageData, ClearDataProgress, restoreDataFromBackup } from '../db/clearData';
+import { db } from '../db/index';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
 import { AppState } from 'react-native';
+
+// Helper function to get current userID from AsyncStorage
+async function getCurrentUserID(): Promise<string> {
+  try {
+    const userID = await AsyncStorage.getItem('userID');
+    return userID || '1'; // Default to '1' if not found
+  } catch (error) {
+    console.error('Error getting userID from AsyncStorage:', error);
+    return '1'; // Default to '1' on error
+  }
+}
 
 // Progress key for clear data background task
 const CLEAR_DATA_BG_TASK_PROGRESS_KEY = 'clearDataBgTaskProgress';

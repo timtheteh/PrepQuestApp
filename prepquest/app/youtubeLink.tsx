@@ -355,6 +355,120 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       if (resp.ok) {
         const data = await resp.json();
         let f = data.flashcards?.flashcards ?? data.flashcards;
+        
+        // Handle case where API returns flashcards as raw string (when Edge Function parsing fails)
+        if (typeof f === 'string') {
+          try {
+            // Clean up the raw string - remove trailing ]\n and other artifacts
+            let cleanedString = f.trim();
+            
+            // Remove trailing ]
+            if (cleanedString.endsWith(']')) {
+              cleanedString = cleanedString.slice(0, -1);
+            }
+            
+            // Remove leading [ if present
+            if (cleanedString.startsWith('[')) {
+              cleanedString = cleanedString.slice(1);
+            }
+            
+            // Clean up any trailing whitespace/newlines
+            cleanedString = cleanedString.trim();
+            
+            // If it doesn't start with {, it might need array wrapping
+            if (!cleanedString.startsWith('{')) {
+              throw new Error('Invalid flashcard format - does not start with object');
+            }
+            
+            // Try to parse as single object first
+            let parsedFlashcards;
+            try {
+              parsedFlashcards = JSON.parse(cleanedString);
+              f = [parsedFlashcards]; // Wrap single object in array
+            } catch (singleParseError) {
+              // If single object parsing fails, try to split multiple objects
+              const objectStrings = [];
+              let currentObject = '';
+              let braceCount = 0;
+              let inString = false;
+              let escapeNext = false;
+              
+              for (let i = 0; i < cleanedString.length; i++) {
+                const char = cleanedString[i];
+                
+                if (escapeNext) {
+                  escapeNext = false;
+                  currentObject += char;
+                  continue;
+                }
+                
+                if (char === '\\') {
+                  escapeNext = true;
+                  currentObject += char;
+                  continue;
+                }
+                
+                if (char === '"' && !escapeNext) {
+                  inString = !inString;
+                }
+                
+                if (!inString) {
+                  if (char === '{') {
+                    braceCount++;
+                  } else if (char === '}') {
+                    braceCount--;
+                  }
+                }
+                
+                currentObject += char;
+                
+                // If we've closed a complete object and there's more content
+                if (!inString && braceCount === 0 && currentObject.trim().endsWith('}')) {
+                  objectStrings.push(currentObject.trim());
+                  currentObject = '';
+                  
+                  // Skip any whitespace and commas
+                  while (i + 1 < cleanedString.length && 
+                         (cleanedString[i + 1] === ' ' || 
+                          cleanedString[i + 1] === '\n' || 
+                          cleanedString[i + 1] === '\t' || 
+                          cleanedString[i + 1] === ',')) {
+                    i++;
+                  }
+                }
+              }
+              
+              // Add any remaining content
+              if (currentObject.trim()) {
+                objectStrings.push(currentObject.trim());
+              }
+              
+              // Parse each object
+              const parsedObjects = [];
+              for (const objStr of objectStrings) {
+                if (objStr.trim()) {
+                  try {
+                    const parsed = JSON.parse(objStr);
+                    parsedObjects.push(parsed);
+                  } catch (objError: any) {
+                    console.error('Failed to parse object in youtubeLink background task:', objStr, objError.message);
+                  }
+                }
+              }
+              
+              if (parsedObjects.length > 0) {
+                f = parsedObjects;
+              } else {
+                throw new Error('No valid flashcard objects found');
+              }
+            }
+          } catch (parseError) {
+            console.error('Failed to parse flashcards string in youtubeLink background task:', parseError);
+            console.error('Raw flashcards string:', f);
+            f = null;
+          }
+        }
+        
         if (f && !Array.isArray(f)) f = [f];
         flashcards = f;
       }

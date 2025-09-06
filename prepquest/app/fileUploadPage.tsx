@@ -320,6 +320,45 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       if (resp.ok) {
         const data = await resp.json();
         let f = data.flashcards?.flashcards ?? data.flashcards;
+        
+        // Handle case where API returns flashcards as raw string (when Edge Function parsing fails)
+        if (typeof f === 'string') {
+          try {
+            // Clean up the raw string - remove trailing ]\n and other artifacts
+            let cleanedString = f.trim();
+            
+            // Remove trailing ]
+            if (cleanedString.endsWith(']')) {
+              cleanedString = cleanedString.slice(0, -1);
+            }
+            
+            // Remove leading [ if present
+            if (cleanedString.startsWith('[')) {
+              cleanedString = cleanedString.slice(1);
+            }
+            
+            // Clean up any trailing whitespace/newlines
+            cleanedString = cleanedString.trim();
+            
+            // If it doesn't start with {, it might need array wrapping
+            if (cleanedString.startsWith('{')) {
+              // Try to parse as single object first
+              try {
+                const parsedFlashcards = JSON.parse(cleanedString);
+                f = [parsedFlashcards]; // Wrap single object in array
+              } catch (parseError) {
+                console.error('Failed to parse flashcards string in fileUpload background task:', parseError);
+                f = null;
+              }
+            } else {
+              f = null;
+            }
+          } catch (parseError) {
+            console.error('Failed to parse flashcards string in fileUpload background task:', parseError);
+            f = null;
+          }
+        }
+        
         if (f && !Array.isArray(f)) f = [f];
         flashcards = f;
       }
@@ -943,6 +982,45 @@ export default function FileUploadPage() {
       const data = await response.json();
       console.log("DATA >>>>>>>>>>>>>>>>> ", data);
       let flashcards = data.flashcards?.flashcards ?? data.flashcards;
+
+      // Handle case where API returns flashcards as raw string (when Edge Function parsing fails)
+      if (typeof flashcards === 'string') {
+        try {
+          // Clean up the raw string - remove trailing ]\n and other artifacts
+          let cleanedString = flashcards.trim();
+          
+          // Remove trailing ]
+          if (cleanedString.endsWith(']')) {
+            cleanedString = cleanedString.slice(0, -1);
+          }
+          
+          // Remove leading [ if present
+          if (cleanedString.startsWith('[')) {
+            cleanedString = cleanedString.slice(1);
+          }
+          
+          // Clean up any trailing whitespace/newlines
+          cleanedString = cleanedString.trim();
+          
+          // If it doesn't start with {, it might need array wrapping
+          if (cleanedString.startsWith('{')) {
+            // Try to parse as single object first
+            try {
+              const parsedFlashcards = JSON.parse(cleanedString);
+              flashcards = [parsedFlashcards]; // Wrap single object in array
+            } catch (parseError) {
+              console.error('Failed to parse flashcards string in fileUpload:', parseError);
+              throw new Error('Invalid flashcards format from API');
+            }
+          } else {
+            throw new Error('Invalid flashcard format - does not start with object');
+          }
+        } catch (parseError) {
+          console.error('Failed to parse flashcards string in fileUpload:', parseError);
+          console.error('Raw flashcards string:', flashcards);
+          throw new Error('Invalid flashcards format from API');
+        }
+      }
 
       // If it's a single object, wrap in array
       if (flashcards && !Array.isArray(flashcards)) {

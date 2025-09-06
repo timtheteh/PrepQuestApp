@@ -775,7 +775,13 @@ export default function GenAIFormPage() {
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
   const getTopBarAccountHeight = useTopBarAccountHeight();
-  const { startBackgroundTaskMonitoring, backgroundTaskProgress, forceStopBackgroundTask } = useBackgroundTask();
+  const { 
+    startBackgroundTaskMonitoring, 
+    backgroundTaskProgress, 
+    forceStopBackgroundTask, 
+    wasAutomaticallyCancelled, 
+    resetAutomaticallyCancelledFlag 
+  } = useBackgroundTask();
   // Status page state for GenAI deck creation
   const [showStatusPage, setShowStatusPage] = useState(false);
   const cancelCreationRef = useRef(false);
@@ -791,6 +797,28 @@ export default function GenAIFormPage() {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle automatic cancellation after 30 seconds in background
+  useEffect(() => {
+    // Check both the context flag and the progress data flag
+    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
+    
+    if (wasAutoCancelled) {
+      console.log('GenAI deck creation task was automatically cancelled - hiding status page');
+      
+      // Hide the status page immediately
+      setShowStatusPage(false);
+      
+      // Reset any loading states
+      setIsSuccessModalOpen(false);
+      setIsOptionalFieldsWarningModalOpen(false);
+      
+      // Reset the automatic cancellation flag
+      if (wasAutomaticallyCancelled) {
+        resetAutomaticallyCancelledFlag();
+      }
+    }
+  }, [wasAutomaticallyCancelled, backgroundTaskProgress?.automaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   // AppState logic to resume GenAI deck/flashcard creation if needed
   useEffect(() => {

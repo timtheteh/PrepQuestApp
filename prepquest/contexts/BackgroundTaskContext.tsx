@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
+import * as Notifications from 'expo-notifications';
 import NotificationService from '../utils/notifications';
 import { useLanguage } from './LanguageContext';
 
@@ -11,11 +12,13 @@ const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
 interface BackgroundTaskContextType {
   isBackgroundTaskRunning: boolean;
   backgroundTaskProgress: any | null;
+  wasAutomaticallyCancelled: boolean;
   startBackgroundTaskMonitoring: () => void;
   stopBackgroundTaskMonitoring: () => void;
   clearBackgroundTaskProgress: () => Promise<void>;
   forceStopBackgroundTask: () => void;
   resetForceStoppedFlag: () => void;
+  resetAutomaticallyCancelledFlag: () => void;
 }
 
 const BackgroundTaskContext = createContext<BackgroundTaskContextType | undefined>(undefined);
@@ -35,6 +38,7 @@ interface BackgroundTaskProviderProps {
 export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ children }) => {
   const [isBackgroundTaskRunning, setIsBackgroundTaskRunning] = useState(false);
   const [backgroundTaskProgress, setBackgroundTaskProgress] = useState<any | null>(null);
+  const [wasAutomaticallyCancelled, setWasAutomaticallyCancelled] = useState(false);
   const monitoringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const { language } = useLanguage();
@@ -51,6 +55,15 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   
   // Ref to track the last progress data to prevent duplicate updates
   const lastProgressRef = useRef<string | null>(null);
+  
+  // Ref to track background warning notification timer
+  const backgroundWarningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Ref to track automatic termination timer (30 seconds after backgrounding)
+  const backgroundTerminationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Ref to track pre-termination notification timer (1 second before termination)
+  const preTerminationNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Update ref whenever state changes
   React.useEffect(() => {
@@ -131,6 +144,83 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     console.log('Resetting force stopped flag...');
     forceStoppedRef.current = false;
   }, []);
+
+  // Helper to reset automatically cancelled flag
+  const resetAutomaticallyCancelledFlag = React.useCallback(() => {
+    console.log('Resetting automatically cancelled flag...');
+    setWasAutomaticallyCancelled(false);
+  }, []);
+
+  // Helper to automatically cancel deck creation task (replicates manual cancellation logic)
+  const automaticallyCancelDeckCreationTask = React.useCallback(async () => {
+    try {
+      console.log('Automatically cancelling deck creation task after 30 seconds in background...');
+      
+      // Set the automatic cancellation flag FIRST
+      setWasAutomaticallyCancelled(true);
+      
+      // Stop the actual background service
+      try {
+        if (BackgroundService.isRunning()) {
+          await BackgroundService.stop();
+          console.log('Background service stopped during automatic cancellation');
+        }
+      } catch (serviceError) {
+        console.error('Error stopping background service during automatic cancellation:', serviceError);
+      }
+      
+      // Update progress to indicate cancellation instead of clearing it immediately
+      try {
+        const currentProgress = await loadBackgroundTaskProgress();
+        if (currentProgress) {
+          const cancelledProgress = {
+            ...currentProgress,
+            inProgress: false,
+            completed: false,
+            cancelled: true,
+            automaticallyCancelled: true,
+            timestamp: Date.now()
+          };
+          
+          // Save the cancelled progress so UI can detect it
+          await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(cancelledProgress));
+          setBackgroundTaskProgress(cancelledProgress);
+          console.log('Updated progress to indicate automatic cancellation');
+        }
+      } catch (progressError) {
+        console.error('Error updating progress for automatic cancellation:', progressError);
+      }
+      
+      // Force stop the background task permanently (this will update context state)
+      forceStopBackgroundTask();
+      
+      // Additional cleanup: manually remove other deck creation related AsyncStorage keys
+      try {
+        await AsyncStorage.multiRemove([
+          'deckCreationProgress',
+          'deckCreationState'
+        ]);
+        console.log('Additional AsyncStorage cleanup completed (automatic cancellation)');
+      } catch (cleanupError) {
+        console.warn('Additional cleanup failed (automatic):', cleanupError);
+      }
+      
+      // Delay the final progress cleanup to give UI components time to react
+      setTimeout(async () => {
+        try {
+          console.log('Performing delayed cleanup after automatic cancellation...');
+          await clearBackgroundTaskProgress();
+        } catch (error) {
+          console.error('Error in delayed cleanup after automatic cancellation:', error);
+        }
+      }, 2000); // 2 second delay to allow UI components to detect the cancellation
+      
+      console.log('Deck creation task automatically cancelled successfully');
+      
+    } catch (error) {
+      console.error('Error automatically cancelling deck creation task:', error);
+    }
+  }, [forceStopBackgroundTask, clearBackgroundTaskProgress, loadBackgroundTaskProgress]);
 
   // Helper to send completion notification
   const sendCompletionNotification = React.useCallback(async (progress: any) => {
@@ -248,11 +338,34 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
           
           // More robust logic: if progress exists and is marked as in progress, consider it running
           // Only mark as not running if explicitly completed, cancelled, or has an error
-          if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !forceStoppedRef.current) {
+          // CRITICAL: Never mark as running if task is completed, cancelled, automatically cancelled, or has error
+          if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.automaticallyCancelled && !progress.error && !forceStoppedRef.current) {
+            console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = TRUE (task in progress)');
             setIsBackgroundTaskRunning(true);
-          } else if (progress.completed || progress.cancelled || progress.error || forceStoppedRef.current) {
-            // Task completed, cancelled, failed, or force stopped
+          } else if (progress.completed || progress.cancelled || progress.automaticallyCancelled || progress.error || forceStoppedRef.current) {
+            // Task completed, cancelled, automatically cancelled, failed, or force stopped
+            console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = FALSE (task completed/cancelled/error)', {
+              completed: progress.completed,
+              cancelled: progress.cancelled,
+              automaticallyCancelled: progress.automaticallyCancelled,
+              error: progress.error,
+              forceStoppedRef: forceStoppedRef.current
+            });
             setIsBackgroundTaskRunning(false);
+            
+            // Clear any pending termination timer since task is no longer running
+            if (backgroundTerminationTimerRef.current) {
+              clearTimeout(backgroundTerminationTimerRef.current);
+              backgroundTerminationTimerRef.current = null;
+              console.log('Cleared background termination timer - task no longer running');
+            }
+            
+            // Clear any pending pre-termination notification timer since task is no longer running
+            if (preTerminationNotificationTimerRef.current) {
+              clearTimeout(preTerminationNotificationTimerRef.current);
+              preTerminationNotificationTimerRef.current = null;
+              console.log('Cleared pre-termination notification timer - task no longer running');
+            }
             
             // Send notification if task completed successfully and app is in background
             // Only send if app is not active (background/closed) and notification hasn't been sent
@@ -306,9 +419,19 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
           } else {
             // If progress exists but doesn't have inProgress flag, check if it's recent
             // This handles edge cases where progress might exist but not be properly marked
-            if (isRecent && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
+            // IMPORTANT: Never set running=true if task is completed, even if recent
+            if (isRecent && !progress.completed && !progress.error && !progress.cancelled && !progress.automaticallyCancelled && !forceStoppedRef.current) {
+              console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = TRUE (fallback - recent progress without inProgress flag)');
               setIsBackgroundTaskRunning(true);
             } else {
+              console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = FALSE (fallback - not recent or completed/cancelled/error)', {
+                isRecent,
+                completed: progress.completed,
+                error: progress.error,
+                cancelled: progress.cancelled,
+                automaticallyCancelled: progress.automaticallyCancelled,
+                forceStoppedRef: forceStoppedRef.current
+              });
               setIsBackgroundTaskRunning(false);
             }
           }
@@ -350,6 +473,119 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
           // Resume monitoring
           startBackgroundTaskMonitoring();
         }
+        
+        // Clear any pending background warning notification
+        if (backgroundWarningTimerRef.current) {
+          clearTimeout(backgroundWarningTimerRef.current);
+          backgroundWarningTimerRef.current = null;
+          console.log('Cleared background warning notification - app returned to foreground');
+        }
+        
+        // Clear any pending background termination timer
+        if (backgroundTerminationTimerRef.current) {
+          clearTimeout(backgroundTerminationTimerRef.current);
+          backgroundTerminationTimerRef.current = null;
+          console.log('Cleared background termination timer - app returned to foreground');
+        }
+        
+        // Clear any pending pre-termination notification timer
+        if (preTerminationNotificationTimerRef.current) {
+          clearTimeout(preTerminationNotificationTimerRef.current);
+          preTerminationNotificationTimerRef.current = null;
+          console.log('Cleared pre-termination notification timer - app returned to foreground');
+        }
+      } else if (appStateRef.current === 'active' && nextAppState.match(/inactive|background/)) {
+        // App is going to background - check if deck creation task is running
+        if (isBackgroundTaskRunningRef.current) {
+          console.log('App backgrounded during deck creation task - scheduling warning notification');
+          
+          // Clear any existing timers
+          if (backgroundWarningTimerRef.current) {
+            clearTimeout(backgroundWarningTimerRef.current);
+          }
+          if (backgroundTerminationTimerRef.current) {
+            clearTimeout(backgroundTerminationTimerRef.current);
+          }
+          if (preTerminationNotificationTimerRef.current) {
+            clearTimeout(preTerminationNotificationTimerRef.current);
+          }
+          
+          // Schedule warning notification for 1 second after backgrounding
+          backgroundWarningTimerRef.current = setTimeout(async () => {
+            try {
+              // Double-check deck creation task is still running before sending notification
+              const progress = await loadBackgroundTaskProgress();
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+                const title = language === 'Chinese' ? '任务警告' : 'Come back soon!';
+                const body = language === 'Chinese' 
+                  ? '任务将在大约30秒内提前结束。请尽快回来！' 
+                  : 'Task ends in approximately 30 seconds!';
+                
+                await Notifications.scheduleNotificationAsync({
+                  content: {
+                    title,
+                    body,
+                    data: { type: 'deck_creation_background_warning' },
+                    sound: true,
+                    priority: Notifications.AndroidNotificationPriority.HIGH,
+                  },
+                  trigger: null, // Send immediately
+                });
+                
+                console.log('Background warning notification sent successfully');
+              } else {
+                console.log('Deck creation task no longer running - skipping background warning notification');
+              }
+            } catch (error) {
+              console.error('Error sending background warning notification:', error);
+            }
+          }, 1000); // 1 second delay
+          
+          // Schedule pre-termination notification for 29 seconds after backgrounding (1 second before termination)
+          preTerminationNotificationTimerRef.current = setTimeout(async () => {
+            try {
+              // Double-check deck creation task is still running before sending notification
+              const progress = await loadBackgroundTaskProgress();
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+                const title = language === 'Chinese' ? '任务已结束！' : 'Oops! Task has ended.';
+                const body = language === 'Chinese' ? '糟糕，你离开太久了！' : 'You were away for too long!';
+                
+                await Notifications.scheduleNotificationAsync({
+                  content: {
+                    title,
+                    body,
+                    data: { type: 'deck_creation_pre_termination' },
+                    sound: true,
+                    priority: Notifications.AndroidNotificationPriority.HIGH,
+                  },
+                  trigger: null, // Send immediately
+                });
+                
+                console.log('Pre-termination notification sent successfully');
+              } else {
+                console.log('Deck creation task no longer running - skipping pre-termination notification');
+              }
+            } catch (error) {
+              console.error('Error sending pre-termination notification:', error);
+            }
+          }, 29000); // 29 second delay (1 second before 30-second termination)
+          
+          // Schedule automatic termination for 30 seconds after backgrounding
+          backgroundTerminationTimerRef.current = setTimeout(async () => {
+            try {
+              // Double-check deck creation task is still running before terminating
+              const progress = await loadBackgroundTaskProgress();
+              if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
+                console.log('30 seconds elapsed in background - automatically terminating deck creation task');
+                await automaticallyCancelDeckCreationTask();
+              } else {
+                console.log('Deck creation task no longer running - skipping automatic termination');
+              }
+            } catch (error) {
+              console.error('Error during automatic deck creation task termination:', error);
+            }
+          }, 30000); // 30 second delay
+        }
       }
       appStateRef.current = nextAppState;
     };
@@ -377,17 +613,37 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     return () => {
       subscription.remove();
       stopBackgroundTaskMonitoring();
+      
+      // Clear background warning timer on cleanup
+      if (backgroundWarningTimerRef.current) {
+        clearTimeout(backgroundWarningTimerRef.current);
+        backgroundWarningTimerRef.current = null;
+      }
+      
+      // Clear background termination timer on cleanup
+      if (backgroundTerminationTimerRef.current) {
+        clearTimeout(backgroundTerminationTimerRef.current);
+        backgroundTerminationTimerRef.current = null;
+      }
+      
+      // Clear pre-termination notification timer on cleanup
+      if (preTerminationNotificationTimerRef.current) {
+        clearTimeout(preTerminationNotificationTimerRef.current);
+        preTerminationNotificationTimerRef.current = null;
+      }
     };
   }, [startBackgroundTaskMonitoring, stopBackgroundTaskMonitoring]);
 
   const value: BackgroundTaskContextType = {
     isBackgroundTaskRunning,
     backgroundTaskProgress,
+    wasAutomaticallyCancelled,
     startBackgroundTaskMonitoring,
     stopBackgroundTaskMonitoring,
     clearBackgroundTaskProgress,
     forceStopBackgroundTask,
     resetForceStoppedFlag,
+    resetAutomaticallyCancelledFlag,
   };
 
   return (

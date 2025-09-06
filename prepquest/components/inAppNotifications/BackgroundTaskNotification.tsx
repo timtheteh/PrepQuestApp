@@ -13,7 +13,7 @@ interface BackgroundTaskNotificationProps {
 export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProps> = ({ 
   onViewResults 
 }) => {
-  const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress } = useBackgroundTask();
+  const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress, wasAutomaticallyCancelled } = useBackgroundTask();
   const { language } = useLanguage();
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');

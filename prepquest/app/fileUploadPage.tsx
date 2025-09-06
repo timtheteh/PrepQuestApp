@@ -781,7 +781,13 @@ export default function FileUploadPage() {
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const isMinimizingRef = useRef(false);
-  const { startBackgroundTaskMonitoring, backgroundTaskProgress, forceStopBackgroundTask } = useBackgroundTask();
+  const { 
+    startBackgroundTaskMonitoring, 
+    backgroundTaskProgress, 
+    forceStopBackgroundTask, 
+    wasAutomaticallyCancelled, 
+    resetAutomaticallyCancelledFlag 
+  } = useBackgroundTask();
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -1057,6 +1063,29 @@ export default function FileUploadPage() {
     const timer = setTimeout(() => setIsReady(true), 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle automatic cancellation after 30 seconds in background
+  useEffect(() => {
+    // Check both the context flag and the progress data flag
+    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
+    
+    if (wasAutoCancelled) {
+      console.log('File upload deck creation task was automatically cancelled - hiding status page');
+      
+      // Hide the status page immediately
+      setShowStatusPage(false);
+      
+      // Reset any loading states
+      setIsSuccessModalOpen(false);
+      setIsFileUploading(false);
+      setUploadProgress(0);
+      
+      // Reset the automatic cancellation flag
+      if (wasAutomaticallyCancelled) {
+        resetAutomaticallyCancelledFlag();
+      }
+    }
+  }, [wasAutomaticallyCancelled, backgroundTaskProgress?.automaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   // Resume background task on app foreground (mirrors genAIForm)
   useEffect(() => {

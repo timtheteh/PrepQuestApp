@@ -586,7 +586,13 @@ export default function YouTubeLinkPage() {
   const { language } = useLanguage();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const getTopBarAccountHeight = useTopBarAccountHeight();
-  const { startBackgroundTaskMonitoring, backgroundTaskProgress, forceStopBackgroundTask } = useBackgroundTask();
+  const { 
+    startBackgroundTaskMonitoring, 
+    backgroundTaskProgress, 
+    forceStopBackgroundTask, 
+    wasAutomaticallyCancelled, 
+    resetAutomaticallyCancelledFlag 
+  } = useBackgroundTask();
   const [showStatusPage, setShowStatusPage] = useState(false);
   const [statusFetchingTranscript, setStatusFetchingTranscript] = useState(false);
   const [statusGeneratingFlashcards, setStatusGeneratingFlashcards] = useState(false);
@@ -624,6 +630,30 @@ export default function YouTubeLinkPage() {
     const timer = setTimeout(() => setIsReady(true), 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle automatic cancellation after 30 seconds in background
+  useEffect(() => {
+    // Check both the context flag and the progress data flag
+    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
+    
+    if (wasAutoCancelled) {
+      console.log('YouTube link deck creation task was automatically cancelled - hiding status page');
+      
+      // Hide the status page immediately
+      setShowStatusPage(false);
+      
+      // Reset any loading states
+      setStatusFetchingTranscript(false);
+      setStatusGeneratingFlashcards(false);
+      setStatusAddingDeckAndFlashcards(false);
+      setIsSuccessModalOpen(false);
+      
+      // Reset the automatic cancellation flag
+      if (wasAutomaticallyCancelled) {
+        resetAutomaticallyCancelledFlag();
+      }
+    }
+  }, [wasAutomaticallyCancelled, backgroundTaskProgress?.automaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(

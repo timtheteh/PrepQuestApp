@@ -292,7 +292,12 @@ export default function ManualAddDeckPage() {
   const { language } = useLanguage();
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const getTopBarAccountHeight = useTopBarAccountHeight();
-  const { startBackgroundTaskMonitoring, backgroundTaskProgress } = useBackgroundTask();
+  const { 
+    startBackgroundTaskMonitoring, 
+    backgroundTaskProgress, 
+    wasAutomaticallyCancelled, 
+    resetAutomaticallyCancelledFlag 
+  } = useBackgroundTask();
 
   // Sync background manualAdd progress to loading UI
   useEffect(() => {
@@ -347,6 +352,30 @@ export default function ManualAddDeckPage() {
     const timer = setTimeout(() => setIsReady(true), 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle automatic cancellation after 30 seconds in background
+  useEffect(() => {
+    // Check both the context flag and the progress data flag
+    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
+    
+    if (wasAutoCancelled) {
+      console.log('Manual add deck creation task was automatically cancelled - hiding loading page');
+      
+      // Hide the loading page immediately
+      setShowLoadingPage(false);
+      
+      // Reset any loading states
+      setLoadingCurrent(0);
+      setLoadingTotal(0);
+      setLoadingProgress(0);
+      setIsSuccessModalOpen(false);
+      
+      // Reset the automatic cancellation flag
+      if (wasAutomaticallyCancelled) {
+        resetAutomaticallyCancelledFlag();
+      }
+    }
+  }, [wasAutomaticallyCancelled, backgroundTaskProgress?.automaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   // Debug logging for received parameters
   useEffect(() => {

@@ -1267,16 +1267,44 @@ export default function AppSettingsScreen() {
       // Reset restoration state to allow navigation
       setIsDataRestorationInProgress(false);
     } else if (clearDataBackgroundTaskProgress?.noData) {
-      // Show no clear data modal when there's no data to clear
-      console.log('Showing no clear data modal');
-      handleShowNoClearDataModal();
+      // Check if this is recent no data progress (not stale)
+      const now = Date.now();
+      const progressTime = clearDataBackgroundTaskProgress.timestamp || 0;
+      const timeDiff = now - progressTime;
+      
+      // Only show modal if progress is recent (within 30 seconds)
+      if (timeDiff < 30 * 1000) {
+        console.log('Showing no clear data modal for recent progress');
+        handleShowNoClearDataModal();
+        // Clear the progress data after showing modal to prevent re-triggering
+        setTimeout(async () => {
+          try {
+            await clearClearDataBackgroundTaskProgress();
+            console.log('Cleared no data progress after showing modal');
+          } catch (error) {
+            console.error('Error clearing no data progress:', error);
+          }
+        }, 100);
+      } else {
+        console.log('Ignoring stale no data progress (older than 30 seconds)');
+        // Clear stale progress data
+        setTimeout(async () => {
+          try {
+            await clearClearDataBackgroundTaskProgress();
+            console.log('Cleared stale no data progress');
+          } catch (error) {
+            console.error('Error clearing stale no data progress:', error);
+          }
+        }, 100);
+      }
+      
       // Reset restoration state to allow navigation
       setIsDataRestorationInProgress(false);
     } else if (clearDataBackgroundTaskProgress?.error || clearDataBackgroundTaskProgress?.cancelled) {
       // Reset restoration state to allow navigation for any other completion state
       setIsDataRestorationInProgress(false);
     }
-  }, [clearDataBackgroundTaskProgress, isCancelClearDataModalOpen, cancelClearDataOverlayOpacity, cancelClearDataModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, hasNetworkErrorModalBeenShown]);
+  }, [clearDataBackgroundTaskProgress, isCancelClearDataModalOpen, cancelClearDataOverlayOpacity, cancelClearDataModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, hasNetworkErrorModalBeenShown, clearClearDataBackgroundTaskProgress]);
 
   // Watch for backup completion to show success modal
   React.useEffect(() => {

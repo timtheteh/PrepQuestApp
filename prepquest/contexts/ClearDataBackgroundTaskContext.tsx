@@ -222,14 +222,15 @@ export const ClearDataBackgroundTaskProvider: React.FC<ClearDataBackgroundTaskPr
           });
           
           // Clear stale progress data that might be causing issues
-          if (progress.inProgress && !progress.completed && !progress.error) {
+          if ((progress.inProgress && !progress.completed && !progress.error) || progress.noData) {
             const now = Date.now();
             const progressTime = progress.timestamp || 0;
             const timeDiff = now - progressTime;
             
-            // If the progress is older than 10 minutes, consider it stale
-            if (timeDiff > 10 * 60 * 1000) {
-              console.log('Clearing stale clear data background task progress data (older than 10 minutes)');
+            // If the progress is older than 10 minutes (or 30 seconds for noData), consider it stale
+            const staleThreshold = progress.noData ? 30 * 1000 : 10 * 60 * 1000; // 30 seconds for noData, 10 minutes for others
+            if (timeDiff > staleThreshold) {
+              console.log(`Clearing stale clear data background task progress data (older than ${progress.noData ? '30 seconds' : '10 minutes'})`);
               await clearClearDataBackgroundTaskProgress();
               return;
             }
@@ -401,9 +402,19 @@ export const ClearDataBackgroundTaskProvider: React.FC<ClearDataBackgroundTaskPr
     const clearStaleData = async () => {
       try {
         const progress = await loadClearDataBackgroundTaskProgress();
-        if (progress && progress.inProgress && !progress.completed) {
-          console.log('Clearing stale clear data background task data on app start');
-          await clearClearDataBackgroundTaskProgress();
+        if (progress) {
+          const now = Date.now();
+          const progressTime = progress.timestamp || 0;
+          const timeDiff = now - progressTime;
+          
+          // Clear stale inProgress data or any noData data (regardless of age)
+          if ((progress.inProgress && !progress.completed) || progress.noData) {
+            const staleThreshold = progress.noData ? 0 : 10 * 60 * 1000; // Clear noData immediately, inProgress after 10 minutes
+            if (timeDiff > staleThreshold) {
+              console.log('Clearing stale clear data background task data on app start');
+              await clearClearDataBackgroundTaskProgress();
+            }
+          }
         }
       } catch (error) {
         console.error('Error clearing stale clear data background task data:', error);

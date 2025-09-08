@@ -40,6 +40,26 @@ async function getCurrentUserID(): Promise<string> {
   }
 }
 
+// Helper function to check network connectivity
+async function checkNetworkConnectivity(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch('https://www.google.com', {
+      method: 'HEAD',
+      cache: 'no-cache',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    console.error('Network connectivity check failed:', error);
+    return false;
+  }
+}
+
 // --- Background Task Logic for GenAI Deck/Flashcard Creation ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
 
@@ -666,7 +686,7 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
 // Error messages for network/API errors
 const ERROR_MESSAGES = {
   network: {
-    English: 'Network error. Please check your connection and try again.',
+    English: 'Network error!',
     Chinese: '网络错误。请检查您的连接并重试。'
   },
   400: {
@@ -770,6 +790,8 @@ export default function GenAIFormPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isOptionalFieldsWarningModalOpen, setIsOptionalFieldsWarningModalOpen] = useState(false);
   const optionalFieldsWarningModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
+  const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -1045,6 +1067,23 @@ export default function GenAIFormPage() {
       ]).start();
     }
   }, [isOptionalFieldsWarningModalOpen]);
+
+  useEffect(() => {
+    if (isNetworkErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(networkErrorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isNetworkErrorModalOpen]);
 
   useEffect(() => {
     // Set initial mode animation when component mounts
@@ -1645,6 +1684,28 @@ export default function GenAIFormPage() {
   };
 
   const handleSuccessConfirm = async () => {
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      // Hide success modal and show network error modal
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successModalOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsSuccessModalOpen(false);
+        setIsNetworkErrorModalOpen(true);
+      });
+      return;
+    }
+
     cancelCreationRef.current = false;
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -1856,6 +1917,28 @@ export default function GenAIFormPage() {
   };
 
   const handleOptionalFieldsWarningConfirm = async () => {
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      // Hide optional fields warning modal and show network error modal
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(optionalFieldsWarningModalOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsOptionalFieldsWarningModalOpen(false);
+        setIsNetworkErrorModalOpen(true);
+      });
+      return;
+    }
+
     cancelCreationRef.current = false;
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -2091,6 +2174,23 @@ export default function GenAIFormPage() {
       })
     ]).start(() => {
       setIsOptionalFieldsWarningModalOpen(false);
+    });
+  };
+
+  const handleDismissNetworkErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNetworkErrorModalOpen(false);
     });
   };
 
@@ -2394,9 +2494,9 @@ export default function GenAIFormPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isRecentFormModalOpen || isBackConfirmationModalOpen || isErrorModalOpen || isSuccessModalOpen || isOptionalFieldsWarningModalOpen}
+        visible={isHelpModalOpen || isRecentFormModalOpen || isBackConfirmationModalOpen || isErrorModalOpen || isSuccessModalOpen || isOptionalFieldsWarningModalOpen || isNetworkErrorModalOpen}
         opacity={overlayOpacity}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : handleOptionalFieldsWarningCancel))))}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isOptionalFieldsWarningModalOpen ? handleOptionalFieldsWarningCancel : handleDismissNetworkErrorModal)))))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -2490,6 +2590,14 @@ export default function GenAIFormPage() {
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
+      />
+      <GenericModal
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorModalOpacity}
+        text={ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English}
+        buttons="single"
+        onConfirm={handleDismissNetworkErrorModal}
+        Icon={DeleteModalIcon}
       />
       
       <Toast

@@ -691,6 +691,26 @@ async function extractXlsxTextAndImages(xlsxUri: string) {
   return { text: allText, images: savedImages };
 }
 
+// Helper function to check network connectivity
+async function checkNetworkConnectivity(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch('https://www.google.com', {
+      method: 'HEAD',
+      cache: 'no-cache',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    console.error('Network connectivity check failed:', error);
+    return false;
+  }
+}
+
 // Utility: Resize and compress image to fit Claude API limits
 async function prepareImageForUpload(uri: string): Promise<string> {
   // Resize to max 1568px on the long edge, compress to JPEG
@@ -762,6 +782,8 @@ export default function FileUploadPage() {
   const successModalOpacity = useRef(new Animated.Value(0)).current;
   const [isBackConfirmationModalOpen, setIsBackConfirmationModalOpen] = useState(false);
   const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
+  const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
@@ -799,7 +821,7 @@ export default function FileUploadPage() {
     // Error messages for network/API errors
   const ERROR_MESSAGES = {
     network: {
-      English: 'Network error. Please check your connection and try again.',
+      English: 'Network error!',
       Chinese: '网络错误。请检查您的连接并重试。'
     },
     400: {
@@ -1261,6 +1283,23 @@ export default function FileUploadPage() {
     }
   }, [isBackConfirmationModalOpen]);
 
+  useEffect(() => {
+    if (isNetworkErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(networkErrorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isNetworkErrorModalOpen]);
+
   // Reset state when component mounts or when navigating back
   useEffect(() => {
     // Reset abort controller and cancel flag
@@ -1495,6 +1534,28 @@ export default function FileUploadPage() {
   };
 
   const handleSuccessConfirm = async () => {
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      // Hide success modal and show network error modal
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successModalOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setIsSuccessModalOpen(false);
+        setIsNetworkErrorModalOpen(true);
+      });
+      return;
+    }
+
     // Check if we should cancel before starting
     if (cancelCreationRef.current) {
       console.log('Request cancelled before starting handleSuccessConfirm');
@@ -1590,6 +1651,23 @@ export default function FileUploadPage() {
       })
     ]).start(() => {
       setIsBackConfirmationModalOpen(false);
+    });
+  };
+
+  const handleDismissNetworkErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNetworkErrorModalOpen(false);
     });
   };
 
@@ -2103,9 +2181,9 @@ export default function FileUploadPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen || isBackConfirmationModalOpen}
-        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : (isBackConfirmationModalOpen ? overlayOpacity : aiHelpOverlayOpacity))))}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : handleDismissAIHelp))))}
+        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen || isBackConfirmationModalOpen || isNetworkErrorModalOpen}
+        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : (isBackConfirmationModalOpen ? overlayOpacity : (isNetworkErrorModalOpen ? overlayOpacity : aiHelpOverlayOpacity)))))}
+        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isNetworkErrorModalOpen ? handleDismissNetworkErrorModal : handleDismissAIHelp)))))}
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -2177,6 +2255,14 @@ export default function FileUploadPage() {
         }}
         textMarginBottom={40}
         contentMarginTop={-10}
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorModalOpacity}
+        text={ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English}
+        buttons="single"
+        onConfirm={handleDismissNetworkErrorModal}
         Icon={DeleteModalIcon}
       />
       

@@ -134,6 +134,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
           preservedNotificationDataRef.current = {
             deckName: backgroundTaskProgress.formData?.deckName || backgroundTaskProgress.deckName || backgroundTaskProgress.notificationDeckName,
             isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
+            networkError: backgroundTaskProgress.networkError,
             type: 'error'
           };
           // Defer state updates and animations until after insertion/layout phase
@@ -210,6 +211,11 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
     const isSuccess = notificationType === 'success';
     
     if (!isSuccess) {
+      // Check if this is a network error
+      const isNetworkError = backgroundTaskProgress?.networkError || notificationData?.networkError;
+      if (isNetworkError) {
+        return language === 'Chinese' ? '网络错误，任务已取消' : 'Network error occurred, task cancelled';
+      }
       return language === 'Chinese' ? '创建过程中出现错误' : 'An error occurred during creation';
     }
     

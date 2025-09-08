@@ -362,7 +362,20 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         if (f && !Array.isArray(f)) f = [f];
         flashcards = f;
       }
-    } catch (_) {}
+    } catch (networkError) {
+      console.error('Network error during file upload GenAI flashcard generation:', networkError);
+      // Save error state
+      await saveDeckCreationProgress({
+        taskType: 'fileUpload',
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData: { deckName },
+        createdDeckId, createdFlashcardIds,
+        status: 'networkError', inProgress: false, error: true, networkError: true, 
+        errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
+      });
+      stopKeepAlive();
+      throw new Error('NETWORK_ERROR');
+    }
 
     if (!flashcards || flashcards.length === 0) {
       stopKeepAlive();
@@ -426,9 +439,24 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     });
 
     stopKeepAlive();
-  } catch (error) {
+  } catch (error: any) {
     console.error('File upload background task error:', error);
-    await saveDeckCreationProgress({ taskType: 'fileUpload', inProgress: false, error: true, timestamp: Date.now() });
+    
+    // Check if this is a network error
+    const isNetworkError = error.message === 'NETWORK_ERROR' || error.name === 'TypeError' || error.code === 'NETWORK_ERROR';
+    
+    await saveDeckCreationProgress({ 
+      taskType: 'fileUpload', 
+      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+      formData: { deckName },
+      createdDeckId, createdFlashcardIds,
+      status: isNetworkError ? 'networkError' : 'error',
+      inProgress: false, 
+      error: true, 
+      networkError: isNetworkError,
+      errorMessage: isNetworkError ? 'Network error occurred during task execution' : error.message,
+      timestamp: Date.now() 
+    });
   }
 };
 

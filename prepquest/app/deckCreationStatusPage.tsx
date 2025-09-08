@@ -74,6 +74,15 @@ export default function DeckCreationStatusPage({
       }, 1000); // Short delay to show final completion state
     }
     
+    // Check if there's a network error - if so, dismiss immediately like cancel
+    if (backgroundTaskProgress && backgroundTaskProgress.networkError && !hasNavigatedRef.current) {
+      console.log('DeckCreationStatusPage - Network error detected, dismissing status page');
+      hasNavigatedRef.current = true;
+      // Immediately dismiss like cancel button
+      handleCancel();
+      return;
+    }
+    
     if (backgroundTaskProgress) {
       console.log('DeckCreationStatusPage - Background task progress update:', backgroundTaskProgress.status);
       console.log('DeckCreationStatusPage - Full background task progress:', backgroundTaskProgress);

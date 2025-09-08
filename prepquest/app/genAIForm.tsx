@@ -197,7 +197,14 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         console.log('Request was cancelled');
         return;
       }
-      throw networkError;
+      // Handle network error - save error state and throw with network error flag
+      console.error('Network error during GenAI flashcard generation:', networkError);
+      await saveGenAIDeckCreationProgress({
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData, prompt, createdDeckId, createdFlashcardIds, 
+        status: 'networkError', inProgress: false, error: true, networkError: true, timestamp: Date.now()
+      });
+      throw new Error('NETWORK_ERROR');
     }
     
     // Stop periodic updates after API call completes
@@ -654,11 +661,20 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
   } catch (e: any) {
     console.error('Background task error:', e);
     console.error('Error stack:', e.stack);
+    
+    // Check if this is a network error
+    const isNetworkError = e.message === 'NETWORK_ERROR' || e.name === 'TypeError' || e.code === 'NETWORK_ERROR';
+    
     // Save progress on error
     await saveGenAIDeckCreationProgress({
       mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
       formData, prompt, createdDeckId, createdFlashcardIds, 
-      inProgress: true, error: e.message, timestamp: Date.now()
+      status: isNetworkError ? 'networkError' : 'error',
+      inProgress: false, 
+      error: true, 
+      networkError: isNetworkError,
+      errorMessage: isNetworkError ? 'Network error occurred during task execution' : e.message, 
+      timestamp: Date.now()
     });
     console.log('Error progress saved to AsyncStorage');
     throw e;

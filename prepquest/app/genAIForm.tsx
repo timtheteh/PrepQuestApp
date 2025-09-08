@@ -662,8 +662,21 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     console.error('Background task error:', e);
     console.error('Error stack:', e.stack);
     
-    // Check if this is a network error
-    const isNetworkError = e.message === 'NETWORK_ERROR' || e.name === 'TypeError' || e.code === 'NETWORK_ERROR';
+    // Check if this is a network error - be more comprehensive in detection
+    const errorMessage = e?.message || String(e);
+    const isNetworkError = 
+      e instanceof TypeError || 
+        (e as any)?.name === 'TypeError' || 
+        (e as any)?.code === 'NETWORK_ERROR' ||
+        errorMessage.includes('Network request failed') ||
+        errorMessage.includes('The Internet connection appears to be offline') ||
+        errorMessage.includes('Could not connect to the server') ||
+        errorMessage.includes('network error') ||
+        errorMessage.includes('fetch failed') ||
+        errorMessage.includes('connection') ||
+        (e as any)?.code === 'ENOTFOUND' ||
+        (e as any)?.code === 'ECONNREFUSED' ||
+        (e as any)?.code === 'ETIMEDOUT';
     
     // Save progress on error
     await saveGenAIDeckCreationProgress({

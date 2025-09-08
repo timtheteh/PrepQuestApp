@@ -165,19 +165,56 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
           name: selectedFile.name,
           type: selectedFile.mimeType || 'application/pdf',
         } as any);
+        // Add timeout to PDF caption fetch
+        const controller = new AbortController();
+        
         const resp = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/pdfCaptionClaude`, {
           method: 'POST',
           body: formData,
           headers: {
             'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
           },
+          signal: controller.signal
         });
         if (resp.ok) {
           const j = await resp.json();
           pdfCaptionClaudeCaption = j.caption;
         }
       } catch (e) {
-        // Ignore caption failure; proceed without it
+        // Check if this is a network error - be more comprehensive in detection
+        const errorMessage = (e as any)?.message || String(e);
+        const isNetworkError = 
+          e instanceof TypeError || 
+          (e as any)?.name === 'TypeError' || 
+          (e as any)?.name === 'AbortError' ||
+          (e as any)?.code === 'NETWORK_ERROR' ||
+          errorMessage.includes('Network request failed') ||
+          errorMessage.includes('The Internet connection appears to be offline') ||
+          errorMessage.includes('Could not connect to the server') ||
+          errorMessage.includes('The request was aborted') ||
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('Load failed') ||
+          errorMessage.includes('network error') ||
+          errorMessage.includes('fetch failed') ||
+          errorMessage.includes('connection') ||
+          (e as any)?.code === 'ENOTFOUND' ||
+          (e as any)?.code === 'ECONNREFUSED' ||
+          (e as any)?.code === 'ETIMEDOUT';
+        
+        if (isNetworkError) {
+          console.error('Network error during PDF caption fetch:', e);
+          await saveDeckCreationProgress({
+            taskType: 'fileUpload',
+            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+            formData: { deckName },
+            createdDeckId, createdFlashcardIds,
+            status: 'networkError', inProgress: false, error: true, networkError: true, 
+            errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
+          });
+          stopKeepAlive();
+          throw new Error('NETWORK_ERROR');
+        }
+        // Ignore other caption failures; proceed without it
       }
     }
 
@@ -196,19 +233,61 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
             type: uri.endsWith('.png') ? 'image/png' : 'image/jpeg',
           } as any);
         }
+        // Add timeout to image caption fetch
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.log('🚨 IMAGE CAPTION FETCH TIMEOUT - FORCING NETWORK ERROR');
+          controller.abort();
+        }, 5000); // 5 second timeout
+        
         const resp = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/imageCaptionClaude`, {
           method: 'POST',
           body: formData,
           headers: {
             'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
           },
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (resp.ok) {
           const j = await resp.json();
           imageCaptionClaudeCaption = j.caption;
         }
       } catch (e) {
-        // Ignore caption failure; proceed without it
+        // Check if this is a network error - be more comprehensive in detection
+        const errorMessage = (e as any)?.message || String(e);
+        const isNetworkError = 
+          e instanceof TypeError || 
+          (e as any)?.name === 'TypeError' || 
+          (e as any)?.name === 'AbortError' ||
+          (e as any)?.code === 'NETWORK_ERROR' ||
+          errorMessage.includes('Network request failed') ||
+          errorMessage.includes('The Internet connection appears to be offline') ||
+          errorMessage.includes('Could not connect to the server') ||
+          errorMessage.includes('The request was aborted') ||
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('Load failed') ||
+          errorMessage.includes('network error') ||
+          errorMessage.includes('fetch failed') ||
+          errorMessage.includes('connection') ||
+          (e as any)?.code === 'ENOTFOUND' ||
+          (e as any)?.code === 'ECONNREFUSED' ||
+          (e as any)?.code === 'ETIMEDOUT';
+        
+        if (isNetworkError) {
+          console.error('Network error during image caption fetch:', e);
+          await saveDeckCreationProgress({
+            taskType: 'fileUpload',
+            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+            formData: { deckName },
+            createdDeckId, createdFlashcardIds,
+            status: 'networkError', inProgress: false, error: true, networkError: true, 
+            errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
+          });
+          stopKeepAlive();
+          throw new Error('NETWORK_ERROR');
+        }
+        // Ignore other caption failures; proceed without it
       }
     }
 
@@ -442,8 +521,22 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
   } catch (error: any) {
     console.error('File upload background task error:', error);
     
-    // Check if this is a network error
-    const isNetworkError = error.message === 'NETWORK_ERROR' || error.name === 'TypeError' || error.code === 'NETWORK_ERROR';
+    // Check if this is a network error - be more comprehensive in detection
+    const errorMessage = error?.message || String(error);
+    const isNetworkError = 
+      error instanceof TypeError || 
+      (error as any)?.name === 'TypeError' || 
+      (error as any)?.name === 'AbortError' ||
+      (error as any)?.code === 'NETWORK_ERROR' ||
+      error.message === 'NETWORK_ERROR' ||
+      errorMessage.includes('Network request failed') ||
+      errorMessage.includes('The Internet connection appears to be offline') ||
+      errorMessage.includes('network error') ||
+      errorMessage.includes('fetch failed') ||
+      errorMessage.includes('connection') ||
+      (error as any)?.code === 'ENOTFOUND' ||
+      (error as any)?.code === 'ECONNREFUSED' ||
+      (error as any)?.code === 'ETIMEDOUT';
     
     await saveDeckCreationProgress({ 
       taskType: 'fileUpload', 

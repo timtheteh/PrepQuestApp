@@ -75,8 +75,24 @@ export default function DeckCreationStatusPage({
     }
     
     // Check if there's a network error - if so, dismiss immediately like cancel
+    console.log('🔍 DeckCreationStatusPage - Checking for network error:', {
+      hasProgress: !!backgroundTaskProgress,
+      networkError: backgroundTaskProgress?.networkError,
+      status: backgroundTaskProgress?.status,
+      hasNavigated: hasNavigatedRef.current
+    });
+    
     if (backgroundTaskProgress && backgroundTaskProgress.networkError && !hasNavigatedRef.current) {
-      console.log('DeckCreationStatusPage - Network error detected, dismissing status page');
+      console.log('🚨 DeckCreationStatusPage - NETWORK ERROR DETECTED! DISMISSING STATUS PAGE IMMEDIATELY!');
+      hasNavigatedRef.current = true;
+      // Immediately dismiss like cancel button
+      handleCancel();
+      return;
+    }
+    
+    // ALSO check for networkError status string
+    if (backgroundTaskProgress && backgroundTaskProgress.status === 'networkError' && !hasNavigatedRef.current) {
+      console.log('🚨 DeckCreationStatusPage - NETWORK ERROR STATUS DETECTED! DISMISSING STATUS PAGE IMMEDIATELY!');
       hasNavigatedRef.current = true;
       // Immediately dismiss like cancel button
       handleCancel();

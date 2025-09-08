@@ -109,7 +109,7 @@ const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { you
 async function checkNetworkConnectivity(): Promise<boolean> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
     
     const response = await fetch('https://www.google.com', {
       method: 'HEAD',

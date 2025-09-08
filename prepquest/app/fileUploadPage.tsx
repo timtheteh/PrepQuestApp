@@ -235,10 +235,6 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         }
         // Add timeout to image caption fetch
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log('🚨 IMAGE CAPTION FETCH TIMEOUT - FORCING NETWORK ERROR');
-          controller.abort();
-        }, 5000); // 5 second timeout
         
         const resp = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/imageCaptionClaude`, {
           method: 'POST',
@@ -248,7 +244,6 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
           },
           signal: controller.signal
         });
-        clearTimeout(timeoutId);
         if (resp.ok) {
           const j = await resp.json();
           imageCaptionClaudeCaption = j.caption;

@@ -202,7 +202,7 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
           (e as any)?.code === 'ETIMEDOUT';
         
         if (isNetworkError) {
-          console.error('Network error during PDF caption fetch:', e);
+          console.error('🚨 NETWORK ERROR during PDF caption fetch:', e);
           await saveDeckCreationProgress({
             taskType: 'fileUpload',
             mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
@@ -213,8 +213,10 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
           });
           stopKeepAlive();
           throw new Error('NETWORK_ERROR');
+        } else {
+          console.log('Non-network error during PDF caption fetch, continuing:', e);
+          // Not a network error, continue without caption
         }
-        // Ignore other caption failures; proceed without it
       }
     }
 
@@ -270,7 +272,7 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
           (e as any)?.code === 'ETIMEDOUT';
         
         if (isNetworkError) {
-          console.error('Network error during image caption fetch:', e);
+          console.error('🚨 NETWORK ERROR during image caption fetch:', e);
           await saveDeckCreationProgress({
             taskType: 'fileUpload',
             mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
@@ -281,8 +283,10 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
           });
           stopKeepAlive();
           throw new Error('NETWORK_ERROR');
+        } else {
+          console.log('Non-network error during image caption fetch, continuing:', e);
+          // Not a network error, continue without caption
         }
-        // Ignore other caption failures; proceed without it
       }
     }
 
@@ -516,6 +520,12 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
   } catch (error: any) {
     console.error('File upload background task error:', error);
     
+    // If this is already a NETWORK_ERROR that was thrown from a previous stage, don't re-process it
+    if (error.message === 'NETWORK_ERROR') {
+      console.log('🚨 NETWORK_ERROR already processed by previous stage, not re-processing');
+      return; // Exit without saving progress again
+    }
+    
     // Check if this is a network error - be more comprehensive in detection
     const errorMessage = error?.message || String(error);
     const isNetworkError = 
@@ -523,9 +533,12 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       (error as any)?.name === 'TypeError' || 
       (error as any)?.name === 'AbortError' ||
       (error as any)?.code === 'NETWORK_ERROR' ||
-      error.message === 'NETWORK_ERROR' ||
       errorMessage.includes('Network request failed') ||
       errorMessage.includes('The Internet connection appears to be offline') ||
+      errorMessage.includes('Could not connect to the server') ||
+      errorMessage.includes('The request was aborted') ||
+      errorMessage.includes('Failed to fetch') ||
+      errorMessage.includes('Load failed') ||
       errorMessage.includes('network error') ||
       errorMessage.includes('fetch failed') ||
       errorMessage.includes('connection') ||
@@ -533,18 +546,35 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       (error as any)?.code === 'ECONNREFUSED' ||
       (error as any)?.code === 'ETIMEDOUT';
     
-    await saveDeckCreationProgress({ 
-      taskType: 'fileUpload', 
-      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-      formData: { deckName },
-      createdDeckId, createdFlashcardIds,
-      status: isNetworkError ? 'networkError' : 'error',
-      inProgress: false, 
-      error: true, 
-      networkError: isNetworkError,
-      errorMessage: isNetworkError ? 'Network error occurred during task execution' : error.message,
-      timestamp: Date.now() 
-    });
+    if (isNetworkError) {
+      console.log('🚨 NETWORK ERROR detected in main catch block, saving progress');
+      await saveDeckCreationProgress({ 
+        taskType: 'fileUpload', 
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData: { deckName },
+        createdDeckId, createdFlashcardIds,
+        status: 'networkError',
+        inProgress: false, 
+        error: true, 
+        networkError: true,
+        errorMessage: 'Network error occurred during task execution',
+        timestamp: Date.now() 
+      });
+    } else {
+      console.log('Non-network error in main catch block, saving as general error');
+      await saveDeckCreationProgress({ 
+        taskType: 'fileUpload', 
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData: { deckName },
+        createdDeckId, createdFlashcardIds,
+        status: 'error',
+        inProgress: false, 
+        error: true, 
+        networkError: false,
+        errorMessage: error.message,
+        timestamp: Date.now() 
+      });
+    }
   }
 };
 

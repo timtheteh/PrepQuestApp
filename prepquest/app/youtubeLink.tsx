@@ -281,24 +281,43 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         }
       }
       } catch (e) {
-        // AGGRESSIVE NETWORK ERROR DETECTION - ASSUME ALL ERRORS ARE NETWORK ERRORS
-        console.error('🚨 ERROR during YouTube transcript fetch - TREATING AS NETWORK ERROR:', e);
-        console.error('🚨 ERROR TYPE:', typeof e, 'CONSTRUCTOR:', e?.constructor?.name);
-        console.error('🚨 ERROR MESSAGE:', (e as any)?.message || String(e));
+        // Check if this is actually a network error
+        const errorMessage = (e as any)?.message || String(e);
+        const isNetworkError = 
+          e instanceof TypeError || 
+          (e as any)?.name === 'TypeError' || 
+          (e as any)?.name === 'AbortError' ||
+          (e as any)?.code === 'NETWORK_ERROR' ||
+          errorMessage.includes('Network request failed') ||
+          errorMessage.includes('The Internet connection appears to be offline') ||
+          errorMessage.includes('Could not connect to the server') ||
+          errorMessage.includes('The request was aborted') ||
+          errorMessage.includes('network error') ||
+          errorMessage.includes('fetch failed') ||
+          errorMessage.includes('connection') ||
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('Load failed') ||
+          (e as any)?.code === 'ENOTFOUND' ||
+          (e as any)?.code === 'ECONNREFUSED' ||
+          (e as any)?.code === 'ETIMEDOUT';
         
-        // FORCE NETWORK ERROR STATUS IMMEDIATELY
-        console.log('🚨 FORCING NETWORK ERROR STATUS FOR TRANSCRIPT FETCH');
-        await saveDeckCreationProgress({
-          taskType: 'youtubeLink',
-          mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-          formData: { deckName },
-          createdDeckId, createdFlashcardIds,
-          status: 'networkError', inProgress: false, error: true, networkError: true, 
-          errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
-        });
-        console.log('🚨 NETWORK ERROR PROGRESS SAVED - STOPPING TASK');
-        stopKeepAlive();
-        throw new Error('NETWORK_ERROR');
+        if (isNetworkError) {
+          console.error('🚨 NETWORK ERROR during YouTube transcript fetch:', e);
+          console.error('🚨 ERROR MESSAGE:', errorMessage);
+          await saveDeckCreationProgress({
+            taskType: 'youtubeLink',
+            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+            formData: { deckName },
+            createdDeckId, createdFlashcardIds,
+            status: 'networkError', inProgress: false, error: true, networkError: true, 
+            errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
+          });
+          stopKeepAlive();
+          throw new Error('NETWORK_ERROR');
+        } else {
+          console.log('Non-network error during YouTube transcript fetch, continuing:', e);
+          // Not a network error, continue without transcript
+        }
       }
 
     if (!transcript || transcript.trim() === '') {
@@ -398,10 +417,6 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     try {
       // Add timeout to GenAI fetch as well
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log('🚨 YOUTUBE GENAI FETCH TIMEOUT - FORCING NETWORK ERROR');
-        controller.abort();
-      }, 10000); // 10 second timeout
       
       const resp = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
         method: 'POST',
@@ -412,7 +427,6 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         body: JSON.stringify({ prompt }),
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
       
       if (resp.ok) {
         const data = await resp.json();
@@ -535,24 +549,44 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         flashcards = f;
       }
     } catch (fetchError) {
-      // AGGRESSIVE NETWORK ERROR DETECTION - ASSUME ALL ERRORS ARE NETWORK ERRORS
-      console.error('🚨 ERROR during YouTube GenAI flashcard generation - TREATING AS NETWORK ERROR:', fetchError);
-      console.error('🚨 ERROR TYPE:', typeof fetchError, 'CONSTRUCTOR:', fetchError?.constructor?.name);
-      console.error('🚨 ERROR MESSAGE:', (fetchError as any)?.message || String(fetchError));
+      // Check if this is actually a network error
+      const errorMessage = (fetchError as any)?.message || String(fetchError);
+      const isNetworkError = 
+        fetchError instanceof TypeError || 
+        (fetchError as any)?.name === 'TypeError' || 
+        (fetchError as any)?.name === 'AbortError' ||
+        (fetchError as any)?.code === 'NETWORK_ERROR' ||
+        errorMessage.includes('Network request failed') ||
+        errorMessage.includes('The Internet connection appears to be offline') ||
+        errorMessage.includes('Could not connect to the server') ||
+        errorMessage.includes('The request was aborted') ||
+        errorMessage.includes('network error') ||
+        errorMessage.includes('fetch failed') ||
+        errorMessage.includes('connection') ||
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('Load failed') ||
+        (fetchError as any)?.code === 'ENOTFOUND' ||
+        (fetchError as any)?.code === 'ECONNREFUSED' ||
+        (fetchError as any)?.code === 'ETIMEDOUT';
       
-      // FORCE NETWORK ERROR STATUS IMMEDIATELY
-      console.log('🚨 FORCING NETWORK ERROR STATUS FOR GENAI FETCH');
-      await saveDeckCreationProgress({
-        taskType: 'youtubeLink',
-        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-        formData: { deckName },
-        createdDeckId, createdFlashcardIds,
-        status: 'networkError', inProgress: false, error: true, networkError: true, 
-        errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
-      });
-      console.log('🚨 NETWORK ERROR PROGRESS SAVED - STOPPING TASK');
-      stopKeepAlive();
-      throw new Error('NETWORK_ERROR');
+      if (isNetworkError) {
+        console.error('🚨 NETWORK ERROR during YouTube GenAI flashcard generation:', fetchError);
+        console.error('🚨 ERROR MESSAGE:', errorMessage);
+        await saveDeckCreationProgress({
+          taskType: 'youtubeLink',
+          mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+          formData: { deckName },
+          createdDeckId, createdFlashcardIds,
+          status: 'networkError', inProgress: false, error: true, networkError: true, 
+          errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
+        });
+        stopKeepAlive();
+        throw new Error('NETWORK_ERROR');
+      } else {
+        console.log('Non-network error during YouTube GenAI flashcard generation, bubbling up:', fetchError);
+        // Not a network error, let it bubble up to the main catch handler
+        throw fetchError;
+      }
     }
 
     if (!flashcards || flashcards.length === 0) {
@@ -620,6 +654,12 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
   } catch (error: any) {
     console.error('YouTube link background task error:', error);
     
+    // If this is already a NETWORK_ERROR that was thrown from a previous stage, don't re-process it
+    if (error.message === 'NETWORK_ERROR') {
+      console.log('🚨 NETWORK_ERROR already processed by previous stage, not re-processing');
+      return; // Exit without saving progress again
+    }
+    
     // Check if this is a network error - be more comprehensive in detection
     const errorMessage = error?.message || String(error);
     const isNetworkError = 
@@ -627,7 +667,6 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       (error as any)?.name === 'TypeError' || 
       (error as any)?.name === 'AbortError' ||
       (error as any)?.code === 'NETWORK_ERROR' ||
-      error.message === 'NETWORK_ERROR' ||
       errorMessage.includes('Network request failed') ||
       errorMessage.includes('The Internet connection appears to be offline') ||
       errorMessage.includes('Could not connect to the server') ||
@@ -641,18 +680,35 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       (error as any)?.code === 'ECONNREFUSED' ||
       (error as any)?.code === 'ETIMEDOUT';
     
-    await saveDeckCreationProgress({ 
-      taskType: 'youtubeLink', 
-      mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-      formData: { deckName },
-      createdDeckId, createdFlashcardIds,
-      status: isNetworkError ? 'networkError' : 'error',
-      inProgress: false, 
-      error: true, 
-      networkError: isNetworkError,
-      errorMessage: isNetworkError ? 'Network error occurred during task execution' : error.message,
-      timestamp: Date.now() 
-    });
+    if (isNetworkError) {
+      console.log('🚨 NETWORK ERROR detected in main catch block, saving progress');
+      await saveDeckCreationProgress({ 
+        taskType: 'youtubeLink', 
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData: { deckName },
+        createdDeckId, createdFlashcardIds,
+        status: 'networkError',
+        inProgress: false, 
+        error: true, 
+        networkError: true,
+        errorMessage: 'Network error occurred during task execution',
+        timestamp: Date.now() 
+      });
+    } else {
+      console.log('Non-network error in main catch block, saving as general error');
+      await saveDeckCreationProgress({ 
+        taskType: 'youtubeLink', 
+        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
+        formData: { deckName },
+        createdDeckId, createdFlashcardIds,
+        status: 'error',
+        inProgress: false, 
+        error: true, 
+        networkError: false,
+        errorMessage: error.message,
+        timestamp: Date.now() 
+      });
+    }
   }
 };
 

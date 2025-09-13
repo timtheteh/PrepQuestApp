@@ -256,7 +256,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     try {
       const endpoint = process.env.EXPO_PUBLIC_YOUTUBE_TRANSCRIPT_API_ENDPOINT as string | undefined;
       if (endpoint) {
-        const url = `${endpoint}?video_url=${encodeURIComponent(youtubeLink)}`;
+        const url = `${endpoint}?video_url=${encodeURIComponent(youtubeLink)}&t=${Date.now()}`;
         
         // Add timeout to force network error detection
         const controller = new AbortController();
@@ -264,7 +264,8 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         try {
           const resp = await fetch(url, { 
             method: 'GET',
-            signal: controller.signal
+            signal: controller.signal,
+            cache: 'no-store' // <--- force network request
           });
           
           if (!resp.ok) {

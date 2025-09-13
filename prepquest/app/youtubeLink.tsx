@@ -267,14 +267,17 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
             signal: controller.signal
           });
           
-          if (resp.ok) {
-            const contentType = resp.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-              const data = await resp.json();
-              transcript = data?.transcript || data?.text || data?.caption || (typeof data === 'string' ? data : JSON.stringify(data));
-            } else {
-              transcript = await resp.text();
-            }
+          if (!resp.ok) {
+            const body = await resp.text().catch(() => '');
+            throw new Error(`NETWORK_ERROR: ${resp.status} ${resp.statusText} - ${body}`);
+          }
+          
+          const contentType = resp.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await resp.json();
+            transcript = data?.transcript || data?.text || data?.caption || (typeof data === 'string' ? data : JSON.stringify(data));
+          } else {
+            transcript = await resp.text();
           }
         } catch (fetchError) {
           throw fetchError; // This will be caught by the outer catch
@@ -288,6 +291,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
           (e as any)?.name === 'TypeError' || 
           (e as any)?.name === 'AbortError' ||
           (e as any)?.code === 'NETWORK_ERROR' ||
+          errorMessage.includes('NETWORK_ERROR') ||
           errorMessage.includes('Network request failed') ||
           errorMessage.includes('The Internet connection appears to be offline') ||
           errorMessage.includes('Could not connect to the server') ||

@@ -16,9 +16,10 @@ interface BackgroundTaskContextType {
   startBackgroundTaskMonitoring: () => void;
   stopBackgroundTaskMonitoring: () => void;
   clearBackgroundTaskProgress: () => Promise<void>;
-  forceStopBackgroundTask: () => void;
+  forceStopBackgroundTask: (preserveProgressForNotification?: boolean) => void;
   resetForceStoppedFlag: () => void;
   resetAutomaticallyCancelledFlag: () => void;
+  cancelDeckCreationTaskDueToNetworkError: () => Promise<void>;
 }
 
 const BackgroundTaskContext = createContext<BackgroundTaskContextType | undefined>(undefined);
@@ -116,8 +117,8 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   };
 
   // Helper to force stop background task immediately
-  const forceStopBackgroundTask = React.useCallback(() => {
-    console.log('Force stopping background task...');
+  const forceStopBackgroundTask = React.useCallback((preserveProgressForNotification = false) => {
+    console.log('Force stopping background task...', { preserveProgressForNotification });
     console.log('Before force stop - isBackgroundTaskRunning:', isBackgroundTaskRunningRef.current);
     
     // Set force stopped flag
@@ -134,7 +135,11 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     
     // Force immediate state update
     setIsBackgroundTaskRunning(false);
-    setBackgroundTaskProgress(null);
+    
+    // Only clear progress immediately if we're not preserving it for notification
+    if (!preserveProgressForNotification) {
+      setBackgroundTaskProgress(null);
+    }
     
     console.log('After force stop - isBackgroundTaskRunning should be false');
   }, []);
@@ -179,6 +184,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
             completed: false,
             cancelled: true,
             automaticallyCancelled: true,
+            error: true, // Add this flag for in-app notification
             timestamp: Date.now()
           };
           
@@ -191,8 +197,8 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
         console.error('Error updating progress for automatic cancellation:', progressError);
       }
       
-      // Force stop the background task permanently (this will update context state)
-      forceStopBackgroundTask();
+      // Force stop the background task but preserve progress for notification
+      forceStopBackgroundTask(true);
       
       // Additional cleanup: manually remove other deck creation related AsyncStorage keys
       try {
@@ -205,7 +211,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
         console.warn('Additional cleanup failed (automatic):', cleanupError);
       }
       
-      // Delay the final progress cleanup to give UI components time to react
+      // Delay the final progress cleanup to give UI components time to react and show notification
       setTimeout(async () => {
         try {
           console.log('Performing delayed cleanup after automatic cancellation...');
@@ -219,6 +225,79 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
       
     } catch (error) {
       console.error('Error automatically cancelling deck creation task:', error);
+    }
+  }, [forceStopBackgroundTask, clearBackgroundTaskProgress, loadBackgroundTaskProgress]);
+
+  // Helper to cancel deck creation task due to network error (similar to automatic cancellation)
+  const cancelDeckCreationTaskDueToNetworkError = React.useCallback(async () => {
+    try {
+      console.log('Cancelling deck creation task due to network error...');
+      
+      // Set the automatic cancellation flag FIRST (reuse the same flag for consistency)
+      setWasAutomaticallyCancelled(true);
+      
+      // Stop the actual background service
+      try {
+        if (BackgroundService.isRunning()) {
+          await BackgroundService.stop();
+          console.log('Background service stopped during network error cancellation');
+        }
+      } catch (serviceError) {
+        console.error('Error stopping background service during network error cancellation:', serviceError);
+      }
+      
+      // Update progress to indicate network error cancellation instead of clearing it immediately
+      try {
+        const currentProgress = await loadBackgroundTaskProgress();
+        if (currentProgress) {
+          const cancelledProgress = {
+            ...currentProgress,
+            inProgress: false,
+            completed: false,
+            cancelled: true,
+            networkErrorCancelled: true,
+            networkError: true, // Add this flag for in-app notification
+            error: true, // Add this flag for error state
+            timestamp: Date.now()
+          };
+          
+          // Save the cancelled progress so UI can detect it
+          await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(cancelledProgress));
+          setBackgroundTaskProgress(cancelledProgress);
+          console.log('Updated progress to indicate network error cancellation');
+        }
+      } catch (progressError) {
+        console.error('Error updating progress for network error cancellation:', progressError);
+      }
+      
+      // Force stop the background task but preserve progress for notification
+      forceStopBackgroundTask(true);
+      
+      // Additional cleanup: manually remove other deck creation related AsyncStorage keys
+      try {
+        await AsyncStorage.multiRemove([
+          'deckCreationProgress',
+          'deckCreationState'
+        ]);
+        console.log('Additional AsyncStorage cleanup completed (network error cancellation)');
+      } catch (cleanupError) {
+        console.warn('Additional cleanup failed (network error):', cleanupError);
+      }
+      
+      // Delay the final progress cleanup to give UI components time to react and show notification
+      setTimeout(async () => {
+        try {
+          console.log('Performing delayed cleanup after network error cancellation...');
+          await clearBackgroundTaskProgress();
+        } catch (error) {
+          console.error('Error in delayed cleanup after network error cancellation:', error);
+        }
+      }, 2000); // 2 second delay to allow UI components to detect the cancellation and show notification
+      
+      console.log('Deck creation task cancelled due to network error successfully');
+      
+    } catch (error) {
+      console.error('Error cancelling deck creation task due to network error:', error);
     }
   }, [forceStopBackgroundTask, clearBackgroundTaskProgress, loadBackgroundTaskProgress]);
 
@@ -277,6 +356,13 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     
     // Reset force stopped flag when starting monitoring
     forceStoppedRef.current = false;
+    
+    // Reset automatically cancelled flag when starting monitoring (for new tasks)
+    setWasAutomaticallyCancelled(false);
+    
+    // Clear any existing progress data to prevent interference from previous tasks
+    console.log('🧹 BackgroundTaskContext - Clearing existing progress data before starting new task');
+    setBackgroundTaskProgress(null);
     
     const checkProgress = async () => {
       try {
@@ -568,7 +654,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
             } catch (error) {
               console.error('Error sending pre-termination notification:', error);
             }
-          }, 29000); // 29 second delay (1 second before 30-second termination)
+          }, 59000); // 29 second delay (1 second before 30-second termination)
           
           // Schedule automatic termination for 30 seconds after backgrounding
           backgroundTerminationTimerRef.current = setTimeout(async () => {
@@ -584,7 +670,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
             } catch (error) {
               console.error('Error during automatic deck creation task termination:', error);
             }
-          }, 30000); // 30 second delay
+          }, 60000); // 30 second delay
         }
       }
       appStateRef.current = nextAppState;
@@ -644,6 +730,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     forceStopBackgroundTask,
     resetForceStoppedFlag,
     resetAutomaticallyCancelledFlag,
+    cancelDeckCreationTaskDueToNetworkError,
   };
 
   return (

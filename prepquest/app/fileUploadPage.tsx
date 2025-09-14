@@ -28,6 +28,7 @@ import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import * as mammoth from 'mammoth';
 import * as FileSystem from 'expo-file-system';
+import NotificationService from '@/utils/notifications';
 import JSZip from 'jszip';
 // @ts-ignore
 import * as XLSX from 'xlsx'; // Use CommonJS import for React Native compatibility
@@ -112,6 +113,8 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     uploadedFileName,
     extractedText,
     imageUris = [],
+    // Network error cancellation function
+    cancelDeckCreationTaskDueToNetworkError,
   } = taskDataArguments;
 
   let createdDeckId: number | null = null;
@@ -203,14 +206,28 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         
         if (isNetworkError) {
           console.error('🚨 NETWORK ERROR during PDF caption fetch:', e);
-          await saveDeckCreationProgress({
-            taskType: 'fileUpload',
-            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-            formData: { deckName },
-            createdDeckId, createdFlashcardIds,
-            status: 'networkError', inProgress: false, error: true, networkError: true, 
-            errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
-          });
+          
+          // Check if app is in background and send notification immediately
+          const currentAppState = AppState.currentState;
+          if (currentAppState !== 'active') {
+            console.log('App is in background - sending network error notification immediately');
+            try {
+              const notificationService = NotificationService.getInstance();
+              await notificationService.sendNetworkErrorCancelledNotification(
+                deckName,
+                language
+              );
+              console.log('Network error notification sent immediately from background task');
+            } catch (error) {
+              console.error('Error sending immediate network error notification:', error);
+            }
+          }
+          
+          // Call the network error cancellation function
+          if (cancelDeckCreationTaskDueToNetworkError) {
+            await cancelDeckCreationTaskDueToNetworkError();
+          }
+          
           stopKeepAlive();
           throw new Error('NETWORK_ERROR');
         } else {
@@ -273,14 +290,28 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         
         if (isNetworkError) {
           console.error('🚨 NETWORK ERROR during image caption fetch:', e);
-          await saveDeckCreationProgress({
-            taskType: 'fileUpload',
-            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-            formData: { deckName },
-            createdDeckId, createdFlashcardIds,
-            status: 'networkError', inProgress: false, error: true, networkError: true, 
-            errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
-          });
+          
+          // Check if app is in background and send notification immediately
+          const currentAppState = AppState.currentState;
+          if (currentAppState !== 'active') {
+            console.log('App is in background - sending network error notification immediately');
+            try {
+              const notificationService = NotificationService.getInstance();
+              await notificationService.sendNetworkErrorCancelledNotification(
+                deckName,
+                language
+              );
+              console.log('Network error notification sent immediately from background task');
+            } catch (error) {
+              console.error('Error sending immediate network error notification:', error);
+            }
+          }
+          
+          // Call the network error cancellation function
+          if (cancelDeckCreationTaskDueToNetworkError) {
+            await cancelDeckCreationTaskDueToNetworkError();
+          }
+          
           stopKeepAlive();
           throw new Error('NETWORK_ERROR');
         } else {
@@ -442,15 +473,28 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       }
     } catch (networkError) {
       console.error('Network error during file upload GenAI flashcard generation:', networkError);
-      // Save error state
-      await saveDeckCreationProgress({
-        taskType: 'fileUpload',
-        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-        formData: { deckName },
-        createdDeckId, createdFlashcardIds,
-        status: 'networkError', inProgress: false, error: true, networkError: true, 
-        errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
-      });
+      
+      // Check if app is in background and send notification immediately
+      const currentAppState = AppState.currentState;
+      if (currentAppState !== 'active') {
+        console.log('App is in background - sending network error notification immediately');
+        try {
+          const notificationService = NotificationService.getInstance();
+          await notificationService.sendNetworkErrorCancelledNotification(
+            deckName,
+            language
+          );
+          console.log('Network error notification sent immediately from background task');
+        } catch (error) {
+          console.error('Error sending immediate network error notification:', error);
+        }
+      }
+      
+      // Call the network error cancellation function
+      if (cancelDeckCreationTaskDueToNetworkError) {
+        await cancelDeckCreationTaskDueToNetworkError();
+      }
+      
       stopKeepAlive();
       throw new Error('NETWORK_ERROR');
     }
@@ -548,6 +592,28 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     
     if (isNetworkError) {
       console.log('🚨 NETWORK ERROR detected in main catch block, saving progress');
+      
+      // Check if app is in background and send notification immediately
+      const currentAppState = AppState.currentState;
+      if (currentAppState !== 'active') {
+        console.log('App is in background - sending network error notification immediately');
+        try {
+          const notificationService = NotificationService.getInstance();
+          await notificationService.sendNetworkErrorCancelledNotification(
+            deckName,
+            language
+          );
+          console.log('Network error notification sent immediately from background task');
+        } catch (error) {
+          console.error('Error sending immediate network error notification:', error);
+        }
+      }
+      
+      // Call the network error cancellation function
+      if (cancelDeckCreationTaskDueToNetworkError) {
+        await cancelDeckCreationTaskDueToNetworkError();
+      }
+      
       await saveDeckCreationProgress({ 
         taskType: 'fileUpload', 
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
@@ -954,7 +1020,8 @@ export default function FileUploadPage() {
     backgroundTaskProgress, 
     forceStopBackgroundTask, 
     wasAutomaticallyCancelled, 
-    resetAutomaticallyCancelledFlag 
+    resetAutomaticallyCancelledFlag,
+    cancelDeckCreationTaskDueToNetworkError
   } = useBackgroundTask();
 
   const screenHeight = Dimensions.get('window').height;
@@ -1232,28 +1299,6 @@ export default function FileUploadPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle automatic cancellation after 30 seconds in background
-  useEffect(() => {
-    // Check both the context flag and the progress data flag
-    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
-    
-    if (wasAutoCancelled) {
-      console.log('File upload deck creation task was automatically cancelled - hiding status page');
-      
-      // Hide the status page immediately
-      setShowStatusPage(false);
-      
-      // Reset any loading states
-      setIsSuccessModalOpen(false);
-      setIsFileUploading(false);
-      setUploadProgress(0);
-      
-      // Reset the automatic cancellation flag
-      if (wasAutomaticallyCancelled) {
-        resetAutomaticallyCancelledFlag();
-      }
-    }
-  }, [wasAutomaticallyCancelled, backgroundTaskProgress?.automaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   // Resume background task on app foreground (mirrors genAIForm)
   useEffect(() => {
@@ -1273,7 +1318,10 @@ export default function FileUploadPage() {
                 taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
                 taskIcon: { name: 'ic_launcher', type: 'mipmap' },
                 color: '#44B88A',
-                parameters: progress,
+                parameters: {
+                  ...progress,
+                  cancelDeckCreationTaskDueToNetworkError
+                },
               });
             } catch (e) {
               console.error('Failed to resume file upload background task:', e);
@@ -1755,7 +1803,10 @@ export default function FileUploadPage() {
           taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
           taskIcon: { name: 'ic_launcher', type: 'mipmap' },
           color: '#44B88A',
-          parameters: params,
+          parameters: {
+            ...params,
+            cancelDeckCreationTaskDueToNetworkError
+          },
         });
       } catch (error) {
         console.error('Failed to start background task (file upload):', error);
@@ -1766,6 +1817,10 @@ export default function FileUploadPage() {
 
       // Show status page; actual progress will stream from BackgroundTaskContext
       setIsSuccessModalOpen(false);
+      
+      // Reset the automatically cancelled flag before showing status page
+      resetAutomaticallyCancelledFlag();
+      
       setShowStatusPage(true);
       setStatusExtractingInformationFromFiles(false);
       setStatusGeneratingFlashcards(false);
@@ -2104,20 +2159,53 @@ export default function FileUploadPage() {
         onCancel={async () => {
           cancelCreationRef.current = true;
           
+          // Update progress to indicate manual cancellation instead of clearing it immediately
+          try {
+            const currentProgress = await loadDeckCreationProgress();
+            if (currentProgress) {
+              const cancelledProgress = {
+                ...currentProgress,
+                inProgress: false,
+                completed: false,
+                cancelled: true,
+                manuallyCancelled: true,
+                error: true, // Add this flag for in-app notification
+                timestamp: Date.now()
+              };
+              
+              // Save the cancelled progress so UI can detect it
+              await saveDeckCreationProgress(cancelledProgress);
+              console.log('Updated progress to indicate manual cancellation');
+            }
+          } catch (progressError) {
+            console.error('Error updating progress for manual cancellation:', progressError);
+          }
+          
           // Abort any ongoing fetch requests
           if (abortControllerRef.current) {
             abortControllerRef.current.abort();
             abortControllerRef.current = null;
           }
           
-          // Stop background service and clear progress
+          // Stop background service but preserve progress for notification
           try {
-            forceStopBackgroundTask();
             await BackgroundService.stop();
-            await clearDeckCreationProgress();
           } catch (error) {
-            console.error('Error stopping background task (file upload):', error);
+            console.error('Error stopping background service:', error);
           }
+          
+          // Force stop the background task but preserve progress for notification
+          forceStopBackgroundTask(true);
+          
+          // Delay the final progress cleanup to give UI components time to react and show notification
+          setTimeout(async () => {
+            try {
+              console.log('Performing delayed cleanup after manual cancellation...');
+              await clearDeckCreationProgress();
+            } catch (error) {
+              console.error('Error in delayed cleanup after manual cancellation:', error);
+            }
+          }, 5000); // 5 second delay to allow UI components to detect the cancellation and show notification
           
           setShowStatusPage(false);
           try {

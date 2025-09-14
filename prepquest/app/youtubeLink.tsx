@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { getUserQuestionSettings } from '@/db/users';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import NotificationService from '@/utils/notifications';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
   <Svg 
@@ -125,37 +126,6 @@ async function checkNetworkConnectivity(): Promise<boolean> {
   }
 }
 
-// Helper: fetch transcript text for a YouTube URL
-async function fetchYouTubeTranscript(videoUrl: string): Promise<string | null> {
-  try {
-    const endpoint = process.env.EXPO_PUBLIC_YOUTUBE_TRANSCRIPT_API_ENDPOINT as string | undefined;
-    if (!endpoint) {
-      return null;
-    }
-    const url = `${endpoint}?video_url=${encodeURIComponent(videoUrl)}`;
-    console.log('Fetching transcript from:', url);
-    const resp = await fetch(url, { method: 'GET' });
-    if (!resp.ok) return null;
-    const contentType = resp.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      const data = await resp.json();
-      // Try common keys; fallback to stringified JSON if needed
-      return (
-        data?.transcript ||
-        data?.text ||
-        data?.caption ||
-        (typeof data === 'string' ? data : JSON.stringify(data))
-      );
-    }
-    // Fallback to raw text (read once)
-    const text = await resp.text();
-    console.log('Response:', text);
-    return text;
-  } catch (e) {
-    return null;
-  }
-}
-
 // --- Background Task Progress Helpers (reuse same key as GenAI form) ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
 
@@ -222,6 +192,8 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     numberOfQuestions,
     isAIGenerate,
     youtubeLink,
+    // Network error cancellation function
+    cancelDeckCreationTaskDueToNetworkError,
   } = taskDataArguments;
 
   let createdDeckId: number | null = null;
@@ -309,14 +281,28 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         if (isNetworkError) {
           console.error('🚨 NETWORK ERROR during YouTube transcript fetch:', e);
           console.error('🚨 ERROR MESSAGE:', errorMessage);
-          await saveDeckCreationProgress({
-            taskType: 'youtubeLink',
-            mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-            formData: { deckName },
-            createdDeckId, createdFlashcardIds,
-            status: 'networkError', inProgress: false, error: true, networkError: true, 
-            errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
-          });
+          
+          // Check if app is in background and send notification immediately
+          const currentAppState = AppState.currentState;
+          if (currentAppState !== 'active') {
+            console.log('App is in background - sending network error notification immediately');
+            try {
+              const notificationService = NotificationService.getInstance();
+              await notificationService.sendNetworkErrorCancelledNotification(
+                deckName,
+                language
+              );
+              console.log('Network error notification sent immediately from background task');
+            } catch (error) {
+              console.error('Error sending immediate network error notification:', error);
+            }
+          }
+          
+          // Call the network error cancellation function
+          if (cancelDeckCreationTaskDueToNetworkError) {
+            await cancelDeckCreationTaskDueToNetworkError();
+          }
+          
           stopKeepAlive();
           throw new Error('NETWORK_ERROR');
         } else {
@@ -577,14 +563,28 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       if (isNetworkError) {
         console.error('🚨 NETWORK ERROR during YouTube GenAI flashcard generation:', fetchError);
         console.error('🚨 ERROR MESSAGE:', errorMessage);
-        await saveDeckCreationProgress({
-          taskType: 'youtubeLink',
-          mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-          formData: { deckName },
-          createdDeckId, createdFlashcardIds,
-          status: 'networkError', inProgress: false, error: true, networkError: true, 
-          errorMessage: 'Network error occurred during task execution', timestamp: Date.now(),
-        });
+        
+        // Check if app is in background and send notification immediately
+        const currentAppState = AppState.currentState;
+        if (currentAppState !== 'active') {
+          console.log('App is in background - sending network error notification immediately');
+          try {
+            const notificationService = NotificationService.getInstance();
+            await notificationService.sendNetworkErrorCancelledNotification(
+              deckName,
+              language
+            );
+            console.log('Network error notification sent immediately from background task');
+          } catch (error) {
+            console.error('Error sending immediate network error notification:', error);
+          }
+        }
+        
+        // Call the network error cancellation function
+        if (cancelDeckCreationTaskDueToNetworkError) {
+          await cancelDeckCreationTaskDueToNetworkError();
+        }
+        
         stopKeepAlive();
         throw new Error('NETWORK_ERROR');
       } else {
@@ -687,6 +687,28 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     
     if (isNetworkError) {
       console.log('🚨 NETWORK ERROR detected in main catch block, saving progress');
+      
+      // Check if app is in background and send notification immediately
+      const currentAppState = AppState.currentState;
+      if (currentAppState !== 'active') {
+        console.log('App is in background - sending network error notification immediately');
+        try {
+          const notificationService = NotificationService.getInstance();
+          await notificationService.sendNetworkErrorCancelledNotification(
+            deckName,
+            language
+          );
+          console.log('Network error notification sent immediately from background task');
+        } catch (error) {
+          console.error('Error sending immediate network error notification:', error);
+        }
+      }
+      
+      // Call the network error cancellation function
+      if (cancelDeckCreationTaskDueToNetworkError) {
+        await cancelDeckCreationTaskDueToNetworkError();
+      }
+      
       await saveDeckCreationProgress({ 
         taskType: 'youtubeLink', 
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
@@ -768,7 +790,8 @@ export default function YouTubeLinkPage() {
     backgroundTaskProgress, 
     forceStopBackgroundTask, 
     wasAutomaticallyCancelled, 
-    resetAutomaticallyCancelledFlag 
+    resetAutomaticallyCancelledFlag,
+    cancelDeckCreationTaskDueToNetworkError
   } = useBackgroundTask();
   const [showStatusPage, setShowStatusPage] = useState(false);
   const [statusFetchingTranscript, setStatusFetchingTranscript] = useState(false);
@@ -808,29 +831,6 @@ export default function YouTubeLinkPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle automatic cancellation after 30 seconds in background
-  useEffect(() => {
-    // Check both the context flag and the progress data flag
-    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
-    
-    if (wasAutoCancelled) {
-      console.log('YouTube link deck creation task was automatically cancelled - hiding status page');
-      
-      // Hide the status page immediately
-      setShowStatusPage(false);
-      
-      // Reset any loading states
-      setStatusFetchingTranscript(false);
-      setStatusGeneratingFlashcards(false);
-      setStatusAddingDeckAndFlashcards(false);
-      setIsSuccessModalOpen(false);
-      
-      // Reset the automatic cancellation flag
-      if (wasAutomaticallyCancelled) {
-        resetAutomaticallyCancelledFlag();
-      }
-    }
-  }, [wasAutomaticallyCancelled, backgroundTaskProgress?.automaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -973,7 +973,10 @@ export default function YouTubeLinkPage() {
                 taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
                 taskIcon: { name: 'ic_launcher', type: 'mipmap' },
                 color: '#44B88A',
-                parameters: progress,
+                parameters: {
+                  ...progress,
+                  cancelDeckCreationTaskDueToNetworkError
+                },
               });
             } catch (e) {
               console.error('Failed to resume youtube link background task:', e);
@@ -1240,7 +1243,10 @@ export default function YouTubeLinkPage() {
           taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
           taskIcon: { name: 'ic_launcher', type: 'mipmap' },
           color: '#44B88A',
-          parameters: params,
+          parameters: {
+            ...params,
+            cancelDeckCreationTaskDueToNetworkError
+          },
         });
       } catch (error) {
         console.error('Failed to start background task (youtube link):', error);
@@ -1250,6 +1256,10 @@ export default function YouTubeLinkPage() {
       }
 
       // Show status page; actual progress will stream from BackgroundTaskContext
+      
+      // Reset the automatically cancelled flag before showing status page
+      resetAutomaticallyCancelledFlag();
+      
       setShowStatusPage(true);
       setStatusFetchingTranscript(false);
       setStatusGeneratingFlashcards(false);
@@ -1414,18 +1424,52 @@ export default function YouTubeLinkPage() {
         onCancel={async () => {
           cancelCreationRef.current = true;
 
+          // Update progress to indicate manual cancellation instead of clearing it immediately
+          try {
+            const currentProgress = await loadDeckCreationProgress();
+            if (currentProgress) {
+              const cancelledProgress = {
+                ...currentProgress,
+                inProgress: false,
+                completed: false,
+                cancelled: true,
+                manuallyCancelled: true,
+                error: true, // Add this flag for in-app notification
+                timestamp: Date.now()
+              };
+              
+              // Save the cancelled progress so UI can detect it
+              await saveDeckCreationProgress(cancelledProgress);
+              console.log('Updated progress to indicate manual cancellation');
+            }
+          } catch (progressError) {
+            console.error('Error updating progress for manual cancellation:', progressError);
+          }
+
           if (abortControllerRef.current) {
             abortControllerRef.current.abort();
             abortControllerRef.current = null;
           }
 
+          // Stop background service but preserve progress for notification
           try {
-            forceStopBackgroundTask();
             await BackgroundService.stop();
-            await clearDeckCreationProgress();
           } catch (error) {
-            console.error('Error stopping background task (youtube link):', error);
+            console.error('Error stopping background service:', error);
           }
+          
+          // Force stop the background task but preserve progress for notification
+          forceStopBackgroundTask(true);
+          
+          // Delay the final progress cleanup to give UI components time to react and show notification
+          setTimeout(async () => {
+            try {
+              console.log('Performing delayed cleanup after manual cancellation...');
+              await clearDeckCreationProgress();
+            } catch (error) {
+              console.error('Error in delayed cleanup after manual cancellation:', error);
+            }
+          }, 5000); // 5 second delay to allow UI components to detect the cancellation and show notification
 
           setShowStatusPage(false);
           try {

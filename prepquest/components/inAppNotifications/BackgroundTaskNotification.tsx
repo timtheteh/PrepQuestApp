@@ -125,8 +125,8 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
               hideNotification();
             }, 5000);
           });
-        } else if (hasError) {
-          // Task failed
+        } else if (hasError || backgroundTaskProgress.cancelled || backgroundTaskProgress.automaticallyCancelled || backgroundTaskProgress.networkErrorCancelled || backgroundTaskProgress.manuallyCancelled) {
+          // Task failed or was cancelled
           console.log('Showing error notification for task:', taskId);
           lastCompletedTaskRef.current = taskId;
           processedProgressRef.current = progressId;
@@ -135,6 +135,9 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             deckName: backgroundTaskProgress.formData?.deckName || backgroundTaskProgress.deckName || backgroundTaskProgress.notificationDeckName,
             isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
             networkError: backgroundTaskProgress.networkError,
+            automaticallyCancelled: backgroundTaskProgress.automaticallyCancelled,
+            networkErrorCancelled: backgroundTaskProgress.networkErrorCancelled,
+            manuallyCancelled: backgroundTaskProgress.manuallyCancelled,
             type: 'error'
           };
           // Defer state updates and animations until after insertion/layout phase
@@ -216,6 +219,25 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
       if (isNetworkError) {
         return language === 'Chinese' ? '网络错误，任务已取消' : 'Network error occurred, task cancelled';
       }
+      
+      // Check if this is an automatic cancellation (30-second timeout)
+      const isAutomaticCancellation = backgroundTaskProgress?.automaticallyCancelled || notificationData?.automaticallyCancelled;
+      if (isAutomaticCancellation) {
+        return language === 'Chinese' ? '任务已取消（超时）' : 'Task cancelled (timeout)';
+      }
+      
+      // Check if this is a manual cancellation
+      const isManualCancellation = backgroundTaskProgress?.manuallyCancelled || notificationData?.manuallyCancelled;
+      if (isManualCancellation) {
+        return language === 'Chinese' ? '任务已取消' : 'Task cancelled';
+      }
+      
+      // Check if this is a general cancellation
+      const isCancelled = backgroundTaskProgress?.cancelled || backgroundTaskProgress?.networkErrorCancelled;
+      if (isCancelled) {
+        return language === 'Chinese' ? '任务已取消' : 'Task cancelled';
+      }
+      
       return language === 'Chinese' ? '创建过程中出现错误' : 'An error occurred during creation';
     }
     

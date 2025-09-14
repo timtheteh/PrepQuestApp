@@ -132,7 +132,8 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     isInViewFlashcardsPage,
     formData,
     prompt,
-    startIndex 
+    startIndex,
+    cancelDeckCreationTaskDueToNetworkError
   } = taskDataArguments;
   
   let createdDeckId: number | null = null;
@@ -197,13 +198,45 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         console.log('Request was cancelled');
         return;
       }
-      // Handle network error - save error state and throw with network error flag
+      // Handle network error - call cancellation function and send notification
       console.error('Network error during GenAI flashcard generation:', networkError);
-      await saveGenAIDeckCreationProgress({
-        mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
-        formData, prompt, createdDeckId, createdFlashcardIds, 
-        status: 'networkError', inProgress: false, error: true, networkError: true, timestamp: Date.now()
-      });
+      
+      // Check if app is in background and send notification immediately
+      const currentAppState = AppState.currentState;
+      if (currentAppState !== 'active') {
+        console.log('App is in background - sending network error notification immediately');
+        try {
+          const notificationService = NotificationService.getInstance();
+          
+          // Get user language from database
+          let userLanguage = 'English';
+          try {
+            const userID = await getCurrentUserID();
+            if (userID) {
+              const result = await db.getFirstAsync(`SELECT language FROM users WHERE userID = ?`, [userID]) as any;
+              if (result && result.language && typeof result.language === 'string') {
+                userLanguage = result.language;
+              }
+            }
+          } catch (e) {
+            console.log('Could not get user language, defaulting to English');
+          }
+          
+          await notificationService.sendNetworkErrorCancelledNotification(
+            formData.deckName,
+            userLanguage
+          );
+          console.log('Network error notification sent immediately from background task');
+        } catch (error) {
+          console.error('Error sending immediate network error notification:', error);
+        }
+      }
+      
+      // Call the network error cancellation function
+      if (cancelDeckCreationTaskDueToNetworkError) {
+        await cancelDeckCreationTaskDueToNetworkError();
+      }
+      
       throw new Error('NETWORK_ERROR');
     }
     
@@ -831,7 +864,8 @@ export default function GenAIFormPage() {
     backgroundTaskProgress, 
     forceStopBackgroundTask, 
     wasAutomaticallyCancelled, 
-    resetAutomaticallyCancelledFlag 
+    resetAutomaticallyCancelledFlag,
+    cancelDeckCreationTaskDueToNetworkError
   } = useBackgroundTask();
   // Status page state for GenAI deck creation
   const [showStatusPage, setShowStatusPage] = useState(false);
@@ -849,27 +883,6 @@ export default function GenAIFormPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle automatic cancellation after 30 seconds in background
-  useEffect(() => {
-    // Check both the context flag and the progress data flag
-    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
-    
-    if (wasAutoCancelled) {
-      console.log('GenAI deck creation task was automatically cancelled - hiding status page');
-      
-      // Hide the status page immediately
-      setShowStatusPage(false);
-      
-      // Reset any loading states
-      setIsSuccessModalOpen(false);
-      setIsOptionalFieldsWarningModalOpen(false);
-      
-      // Reset the automatic cancellation flag
-      if (wasAutomaticallyCancelled) {
-        resetAutomaticallyCancelledFlag();
-      }
-    }
-  }, [wasAutomaticallyCancelled, backgroundTaskProgress?.automaticallyCancelled, resetAutomaticallyCancelledFlag]);
 
   // AppState logic to resume GenAI deck/flashcard creation if needed
   useEffect(() => {
@@ -917,7 +930,8 @@ export default function GenAIFormPage() {
                   isInViewDecksInFolderPage, 
                   isInViewFlashcardsPage,
                   formData,
-                  prompt
+                  prompt,
+                  cancelDeckCreationTaskDueToNetworkError
                 },
               });
             } catch (error) {
@@ -1396,11 +1410,43 @@ export default function GenAIFormPage() {
   const handleDismissSuccessModal = async () => {
     // Cancel any running background task when user clicks "No"
     try {
-      // Immediately stop the background task to hide loading animation
-      forceStopBackgroundTask();
+      // Update progress to indicate manual cancellation instead of clearing it immediately
+      try {
+        const currentProgress = await loadGenAIDeckCreationProgress();
+        if (currentProgress) {
+          const cancelledProgress = {
+            ...currentProgress,
+            inProgress: false,
+            completed: false,
+            cancelled: true,
+            manuallyCancelled: true,
+            error: true, // Add this flag for in-app notification
+            timestamp: Date.now()
+          };
+          
+          // Save the cancelled progress so UI can detect it
+          await saveGenAIDeckCreationProgress(cancelledProgress);
+          console.log('Updated progress to indicate manual cancellation');
+        }
+      } catch (progressError) {
+        console.error('Error updating progress for manual cancellation:', progressError);
+      }
       
+      // Stop background service but preserve progress for notification
       await BackgroundService.stop();
-      await clearGenAIDeckCreationProgress();
+      
+      // Force stop the background task but preserve progress for notification
+      forceStopBackgroundTask(true);
+      
+      // Delay the final progress cleanup to give UI components time to react and show notification
+      setTimeout(async () => {
+        try {
+          console.log('Performing delayed cleanup after manual cancellation...');
+          await clearGenAIDeckCreationProgress();
+        } catch (error) {
+          console.error('Error in delayed cleanup after manual cancellation:', error);
+        }
+      }, 5000); // 5 second delay to allow UI components to detect the cancellation and show notification
     } catch (error) {
       console.error('Error stopping background task on dismiss:', error);
     }
@@ -1912,7 +1958,8 @@ export default function GenAIFormPage() {
             isInViewDecksInFolderPage, 
             isInViewFlashcardsPage,
             formData,
-            prompt
+            prompt,
+            cancelDeckCreationTaskDueToNetworkError
           },
         });
 
@@ -2145,7 +2192,8 @@ export default function GenAIFormPage() {
             isInViewDecksInFolderPage, 
             isInViewFlashcardsPage,
             formData,
-            prompt
+            prompt,
+            cancelDeckCreationTaskDueToNetworkError
           },
         });
 
@@ -2181,11 +2229,43 @@ export default function GenAIFormPage() {
   const handleOptionalFieldsWarningCancel = async () => {
     // Cancel any running background task when user clicks "No"
     try {
-      // Immediately stop the background task to hide loading animation
-      forceStopBackgroundTask();
+      // Update progress to indicate manual cancellation instead of clearing it immediately
+      try {
+        const currentProgress = await loadGenAIDeckCreationProgress();
+        if (currentProgress) {
+          const cancelledProgress = {
+            ...currentProgress,
+            inProgress: false,
+            completed: false,
+            cancelled: true,
+            manuallyCancelled: true,
+            error: true, // Add this flag for in-app notification
+            timestamp: Date.now()
+          };
+          
+          // Save the cancelled progress so UI can detect it
+          await saveGenAIDeckCreationProgress(cancelledProgress);
+          console.log('Updated progress to indicate manual cancellation');
+        }
+      } catch (progressError) {
+        console.error('Error updating progress for manual cancellation:', progressError);
+      }
       
+      // Stop background service but preserve progress for notification
       await BackgroundService.stop();
-      await clearGenAIDeckCreationProgress();
+      
+      // Force stop the background task but preserve progress for notification
+      forceStopBackgroundTask(true);
+      
+      // Delay the final progress cleanup to give UI components time to react and show notification
+      setTimeout(async () => {
+        try {
+          console.log('Performing delayed cleanup after manual cancellation...');
+          await clearGenAIDeckCreationProgress();
+        } catch (error) {
+          console.error('Error in delayed cleanup after manual cancellation:', error);
+        }
+      }, 5000); // 5 second delay to allow UI components to detect the cancellation and show notification
     } catch (error) {
       console.error('Error stopping background task on dismiss:', error);
     }
@@ -2267,8 +2347,27 @@ export default function GenAIFormPage() {
         onCancel={async () => {
           cancelCreationRef.current = true;
           
-          // Immediately stop the background task to hide loading animation
-          forceStopBackgroundTask();
+          // Update progress to indicate manual cancellation instead of clearing it immediately
+          try {
+            const currentProgress = await loadGenAIDeckCreationProgress();
+            if (currentProgress) {
+              const cancelledProgress = {
+                ...currentProgress,
+                inProgress: false,
+                completed: false,
+                cancelled: true,
+                manuallyCancelled: true,
+                error: true, // Add this flag for in-app notification
+                timestamp: Date.now()
+              };
+              
+              // Save the cancelled progress so UI can detect it
+              await saveGenAIDeckCreationProgress(cancelledProgress);
+              console.log('Updated progress to indicate manual cancellation');
+            }
+          } catch (progressError) {
+            console.error('Error updating progress for manual cancellation:', progressError);
+          }
           
           // Abort any ongoing fetch requests
           if (abortControllerRef.current) {
@@ -2276,13 +2375,15 @@ export default function GenAIFormPage() {
             abortControllerRef.current = null;
           }
           
-          // Stop background service and clear progress immediately
+          // Stop background service but preserve progress for notification
           try {
             await BackgroundService.stop();
-            await clearGenAIDeckCreationProgress();
           } catch (error) {
             console.error('Error stopping background service:', error);
           }
+          
+          // Force stop the background task but preserve progress for notification
+          forceStopBackgroundTask(true);
           
           // Set minimizing flag to false to ensure cleanup doesn't interfere
           isMinimizingRef.current = false;
@@ -2300,6 +2401,16 @@ export default function GenAIFormPage() {
           } catch (error) {
             console.error('Error cleaning up partially created data:', error);
           }
+
+          // Delay the final progress cleanup to give UI components time to react and show notification
+          setTimeout(async () => {
+            try {
+              console.log('Performing delayed cleanup after manual cancellation...');
+              await clearGenAIDeckCreationProgress();
+            } catch (error) {
+              console.error('Error in delayed cleanup after manual cancellation:', error);
+            }
+          }, 5000); // 5 second delay to allow UI components to detect the cancellation and show notification
 
           router.back();
         }}

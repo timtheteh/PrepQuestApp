@@ -28,13 +28,14 @@ export default function DeckCreationStatusPage({
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { backgroundTaskProgress, forceStopBackgroundTask } = useBackgroundTask();
+  const { backgroundTaskProgress, forceStopBackgroundTask, wasAutomaticallyCancelled, resetAutomaticallyCancelledFlag } = useBackgroundTask();
   const [currentStatusRows, setCurrentStatusRows] = useState<{ done: boolean, label: string }[]>([]);
   const [currentIsInViewFlashcardsPage, setCurrentIsInViewFlashcardsPage] = useState(false);
   const [deckName, setDeckName] = useState<string>('');
   const cancelCreationRef = useRef(false);
   const hasNavigatedRef = useRef(false);
   const lastProgressRef = useRef<any>(null);
+  const isNewTaskRef = useRef(true); // Track if this is a new task
 
   // Helper to clear GenAI deck creation progress
   const clearGenAIDeckCreationProgress = async () => {
@@ -44,6 +45,18 @@ export default function DeckCreationStatusPage({
       console.error('Failed to clear GenAI deck creation progress', e);
     }
   };
+
+  // Reset the automatically cancelled flag when component mounts (for new tasks)
+  useEffect(() => {
+    console.log('🚀 DeckCreationStatusPage - Component mounted, resetting automatically cancelled flag');
+    console.log('🚀 Initial state check:', {
+      wasAutomaticallyCancelled,
+      hasBackgroundTaskProgress: !!backgroundTaskProgress,
+      backgroundTaskProgressKeys: backgroundTaskProgress ? Object.keys(backgroundTaskProgress) : [],
+      hasNavigated: hasNavigatedRef.current
+    });
+    resetAutomaticallyCancelledFlag();
+  }, []);
 
   // Initialize status rows from props or params (only if no background task is running)
   useEffect(() => {
@@ -65,9 +78,24 @@ export default function DeckCreationStatusPage({
 
   // Update status rows based on background task progress
   useEffect(() => {
+    console.log('🔄 DeckCreationStatusPage - useEffect triggered with:', {
+      hasBackgroundTaskProgress: !!backgroundTaskProgress,
+      wasAutomaticallyCancelled,
+      hasNavigated: hasNavigatedRef.current,
+      progressKeys: backgroundTaskProgress ? Object.keys(backgroundTaskProgress) : [],
+      progressData: backgroundTaskProgress ? {
+        networkError: backgroundTaskProgress.networkError,
+        status: backgroundTaskProgress.status,
+        automaticallyCancelled: backgroundTaskProgress.automaticallyCancelled,
+        cancelled: backgroundTaskProgress.cancelled,
+        completed: backgroundTaskProgress.completed,
+        error: backgroundTaskProgress.error
+      } : null
+    });
+    
     // Check if we had completed progress that is now cleared (progress went from completed to null)
     if (!backgroundTaskProgress && lastProgressRef.current && lastProgressRef.current.completed && !lastProgressRef.current.error && !lastProgressRef.current.cancelled && !hasNavigatedRef.current) {
-      console.log('DeckCreationStatusPage - Detected completion followed by clearing, navigating back');
+      console.log('✅ DeckCreationStatusPage - Detected completion followed by clearing, navigating back');
       hasNavigatedRef.current = true;
       setTimeout(() => {
         router.back();
@@ -75,15 +103,10 @@ export default function DeckCreationStatusPage({
     }
     
     // Check if there's a network error - if so, dismiss immediately like cancel
-    console.log('🔍 DeckCreationStatusPage - Checking for network error:', {
-      hasProgress: !!backgroundTaskProgress,
-      networkError: backgroundTaskProgress?.networkError,
-      status: backgroundTaskProgress?.status,
-      hasNavigated: hasNavigatedRef.current
-    });
-    
-    if (backgroundTaskProgress && backgroundTaskProgress.networkError && !hasNavigatedRef.current) {
+    // BUT only if this is not a new task (to prevent auto-minimization of new tasks)
+    if (backgroundTaskProgress && backgroundTaskProgress.networkError && !hasNavigatedRef.current && !isNewTaskRef.current) {
       console.log('🚨 DeckCreationStatusPage - NETWORK ERROR DETECTED! DISMISSING STATUS PAGE IMMEDIATELY!');
+      console.log('🚨 Network error details:', backgroundTaskProgress.networkError);
       hasNavigatedRef.current = true;
       // Immediately dismiss like cancel button
       handleCancel();
@@ -91,9 +114,31 @@ export default function DeckCreationStatusPage({
     }
     
     // ALSO check for networkError status string
-    if (backgroundTaskProgress && backgroundTaskProgress.status === 'networkError' && !hasNavigatedRef.current) {
+    if (backgroundTaskProgress && backgroundTaskProgress.status === 'networkError' && !hasNavigatedRef.current && !isNewTaskRef.current) {
       console.log('🚨 DeckCreationStatusPage - NETWORK ERROR STATUS DETECTED! DISMISSING STATUS PAGE IMMEDIATELY!');
+      console.log('🚨 Network error status:', backgroundTaskProgress.status);
       hasNavigatedRef.current = true;
+      // Immediately dismiss like cancel button
+      handleCancel();
+      return;
+    }
+    
+    // Check if task was automatically cancelled (30-second timeout)
+    // BUT only if this is not a new task (to prevent auto-minimization of new tasks)
+    const wasAutoCancelled = wasAutomaticallyCancelled || (backgroundTaskProgress?.automaticallyCancelled === true);
+    if (wasAutoCancelled && !hasNavigatedRef.current && !isNewTaskRef.current) {
+      console.log('🚨 DeckCreationStatusPage - AUTOMATIC CANCELLATION DETECTED! DISMISSING STATUS PAGE IMMEDIATELY!');
+      console.log('🚨 Auto cancellation details:', {
+        wasAutomaticallyCancelled,
+        progressAutomaticallyCancelled: backgroundTaskProgress?.automaticallyCancelled
+      });
+      hasNavigatedRef.current = true;
+      
+      // Reset the automatic cancellation flag
+      if (wasAutomaticallyCancelled) {
+        resetAutomaticallyCancelledFlag();
+      }
+      
       // Immediately dismiss like cancel button
       handleCancel();
       return;
@@ -102,6 +147,12 @@ export default function DeckCreationStatusPage({
     if (backgroundTaskProgress) {
       console.log('DeckCreationStatusPage - Background task progress update:', backgroundTaskProgress.status);
       console.log('DeckCreationStatusPage - Full background task progress:', backgroundTaskProgress);
+      
+      // Mark that we're no longer in a "new task" state once we have actual progress
+      if (isNewTaskRef.current && backgroundTaskProgress.inProgress) {
+        console.log('📝 DeckCreationStatusPage - Marking as no longer new task (progress received)');
+        isNewTaskRef.current = false;
+      }
       
       // Store current progress for transition detection
       lastProgressRef.current = backgroundTaskProgress;
@@ -251,6 +302,7 @@ export default function DeckCreationStatusPage({
     return () => {
       hasNavigatedRef.current = false;
       lastProgressRef.current = null;
+      isNewTaskRef.current = true; // Reset for next time
     };
   }, []);
 
@@ -311,16 +363,36 @@ export default function DeckCreationStatusPage({
       console.log('DeckCreationStatusPage - Cancelling background task...');
       cancelCreationRef.current = true;
       
-      // Immediately stop the background task to hide loading animation
-      forceStopBackgroundTask();
+      // Update progress to indicate manual cancellation instead of clearing it immediately
+      try {
+        if (backgroundTaskProgress) {
+          const cancelledProgress = {
+            ...backgroundTaskProgress,
+            inProgress: false,
+            completed: false,
+            cancelled: true,
+            manuallyCancelled: true,
+            error: true, // Add this flag for in-app notification
+            timestamp: Date.now()
+          };
+          
+          // Save the cancelled progress so UI can detect it
+          await AsyncStorage.setItem('genAIDeckCreationBgTaskProgress', JSON.stringify(cancelledProgress));
+          console.log('Updated progress to indicate manual cancellation');
+        }
+      } catch (progressError) {
+        console.error('Error updating progress for manual cancellation:', progressError);
+      }
       
-      // Stop background service and clear progress immediately
+      // Stop background service but preserve progress for notification
       try {
         await BackgroundService.stop();
-        await clearGenAIDeckCreationProgress();
       } catch (error) {
         console.error('Error stopping background service:', error);
       }
+      
+      // Force stop the background task but preserve progress for notification
+      forceStopBackgroundTask(true);
       
       // Clean up any partially created data
       try {
@@ -333,6 +405,16 @@ export default function DeckCreationStatusPage({
       } catch (error) {
         console.error('Error cleaning up partially created data:', error);
       }
+
+      // Delay the final progress cleanup to give UI components time to react and show notification
+      setTimeout(async () => {
+        try {
+          console.log('Performing delayed cleanup after manual cancellation...');
+          await clearGenAIDeckCreationProgress();
+        } catch (error) {
+          console.error('Error in delayed cleanup after manual cancellation:', error);
+        }
+      }, 5000); // 5 second delay to allow UI components to detect the cancellation and show notification
 
       // Navigate back
       router.back();

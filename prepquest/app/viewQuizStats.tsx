@@ -13,6 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { loadQuizStatsForView, type QuizStats } from '@/db/decks';
+import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 
 // Memoized child components to prevent unnecessary re-renders
 const MemoizedText = React.memo(({ style, children }: { style: any; children: React.ReactNode }) => (
@@ -233,6 +234,9 @@ export default function ViewQuizStatsModal() {
           </MemoizedTouchableOpacity>
         </View>
       )}
+
+      {/* In-app notifications */}
+      <BackgroundTaskNotification />
     </View>
   );
 }

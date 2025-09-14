@@ -43,6 +43,7 @@ import {
 } from '@/db/decks';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
+import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -3240,6 +3241,9 @@ export default function FlashcardViewPage() {
           ]).start(() => setShowEndQuizModal(false));
         }}
       />
+
+      {/* In-app notifications */}
+      <BackgroundTaskNotification />
     </View>
   )
   );

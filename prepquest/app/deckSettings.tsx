@@ -15,6 +15,7 @@ import { useTopBarAccountHeight } from '@/hooks/heights';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
+import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 
 // Local component for title and toggle row
 const TitleToggleRow = React.memo(({ text, value, onValueChange, styles }: { text: string; value: boolean; onValueChange: (value: boolean) => void; styles: any }) => {
@@ -632,6 +633,9 @@ export default function DeckSettingsPage() {
         }}
         Icon={HelpIconFilled}
       />
+
+      {/* In-app notifications */}
+      <BackgroundTaskNotification />
     </View>
   );
 }

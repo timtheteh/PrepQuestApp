@@ -36,6 +36,7 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 
 
 const TitleToggleRow = React.memo(({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
@@ -3361,6 +3362,8 @@ export default function AppSettingsScreen() {
           onConfirm={handleDismissDeckCreationBlockingModal}
         />
 
+        {/* In-app notifications */}
+        <BackgroundTaskNotification />
     </View>
   );
 }

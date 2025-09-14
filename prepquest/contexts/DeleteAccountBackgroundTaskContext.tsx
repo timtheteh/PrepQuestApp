@@ -106,7 +106,9 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
       console.log('Starting delete account progress cleanup...');
       
       // Set cleanup flags to prevent new operations and notifications
-      setIsDeleteAccountCleanupInProgress(true);
+      setTimeout(() => {
+        setIsDeleteAccountCleanupInProgress(true);
+      }, 0);
       isClearingProgressRef.current = true;
       
       // Mark task as completed before clearing
@@ -121,8 +123,10 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
       
       // Complete cleanup with proper sequencing
       await AsyncStorage.removeItem(DELETE_ACCOUNT_BG_TASK_PROGRESS_KEY);
-      setDeleteAccountBackgroundTaskProgress(null);
-      setIsDeleteAccountBackgroundTaskRunning(false);
+      setTimeout(() => {
+        setDeleteAccountBackgroundTaskProgress(null);
+        setIsDeleteAccountBackgroundTaskRunning(false);
+      }, 0);
       
       // Reset last progress ref to allow future updates
       lastProgressRef.current = null;
@@ -135,8 +139,10 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
       // Reset cleanup flags
       setTimeout(() => {
         isClearingProgressRef.current = false;
-        setIsDeleteAccountCleanupInProgress(false);
-        setIsDeleteAccountStopping(false);
+        setTimeout(() => {
+          setIsDeleteAccountCleanupInProgress(false);
+          setIsDeleteAccountStopping(false);
+        }, 0);
         console.log('Delete account cleanup state reset - ready for new delete account');
       }, 100);
       
@@ -144,8 +150,10 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
       console.error('Failed to clear delete account background task progress', e);
       // Reset cleanup flags on error
       isClearingProgressRef.current = false;
-      setIsDeleteAccountCleanupInProgress(false);
-      setIsDeleteAccountStopping(false);
+      setTimeout(() => {
+        setIsDeleteAccountCleanupInProgress(false);
+        setIsDeleteAccountStopping(false);
+      }, 0);
     }
   };
 
@@ -155,10 +163,12 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
     console.log('Before force stop - isDeleteAccountBackgroundTaskRunning:', isDeleteAccountBackgroundTaskRunningRef.current);
     
     // Set stopping state to prevent new delete account attempts during shutdown
-    setIsDeleteAccountStopping(true);
-    
-    // Set cleanup in progress to prevent new operations
-    setIsDeleteAccountCleanupInProgress(true);
+    setTimeout(() => {
+      setIsDeleteAccountStopping(true);
+      
+      // Set cleanup in progress to prevent new operations
+      setIsDeleteAccountCleanupInProgress(true);
+    }, 0);
     
     // Set force stopped flag
     forceStoppedRef.current = true;
@@ -173,8 +183,10 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
     isDeleteAccountBackgroundTaskRunningRef.current = false;
     
     // Force immediate state update
-    setIsDeleteAccountBackgroundTaskRunning(false);
-    setDeleteAccountBackgroundTaskProgress(null);
+    setTimeout(() => {
+      setIsDeleteAccountBackgroundTaskRunning(false);
+      setDeleteAccountBackgroundTaskProgress(null);
+    }, 0);
     
     console.log('After force stop - delete account is now in stopping phase');
   }, []);
@@ -259,16 +271,20 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
           const isRecent = timeDiff < 30 * 1000; // 30 seconds
           
           if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !forceStoppedRef.current) {
-            setIsDeleteAccountBackgroundTaskRunning(true);
+            setTimeout(() => {
+              setIsDeleteAccountBackgroundTaskRunning(true);
+            }, 0);
           } else if (progress.completed || progress.cancelled || progress.error || forceStoppedRef.current) {
             // Task completed, cancelled, failed, or force stopped
-            setIsDeleteAccountBackgroundTaskRunning(false);
-            
-            // Clear stopping state when delete account is no longer active
-            if (isDeleteAccountStoppingRef.current) {
-              console.log('Delete account no longer running - clearing stopping state');
-              setIsDeleteAccountStopping(false);
-            }
+            setTimeout(() => {
+              setIsDeleteAccountBackgroundTaskRunning(false);
+              
+              // Clear stopping state when delete account is no longer active
+              if (isDeleteAccountStoppingRef.current) {
+                console.log('Delete account no longer running - clearing stopping state');
+                setIsDeleteAccountStopping(false);
+              }
+            }, 0);
             
             // Clear any pending termination timer since delete account is no longer running
             if (backgroundTerminationTimerRef.current) {
@@ -304,20 +320,26 @@ export const DeleteAccountBackgroundTaskProvider: React.FC<DeleteAccountBackgrou
           } else {
             // If progress exists but doesn't have inProgress flag, check if it's recent
             if (isRecent && !progress.error && !progress.cancelled && !forceStoppedRef.current) {
-              setIsDeleteAccountBackgroundTaskRunning(true);
+              setTimeout(() => {
+                setIsDeleteAccountBackgroundTaskRunning(true);
+              }, 0);
             } else {
-              setIsDeleteAccountBackgroundTaskRunning(false);
+              setTimeout(() => {
+                setIsDeleteAccountBackgroundTaskRunning(false);
+              }, 0);
             }
           }
         } else {
-          setIsDeleteAccountBackgroundTaskRunning(false);
-          setDeleteAccountBackgroundTaskProgress(null);
-          
-          // Clear stopping state when no progress data exists
-          if (isDeleteAccountStoppingRef.current) {
-            console.log('No delete account progress - clearing stopping state');
-            setIsDeleteAccountStopping(false);
-          }
+          setTimeout(() => {
+            setIsDeleteAccountBackgroundTaskRunning(false);
+            setDeleteAccountBackgroundTaskProgress(null);
+            
+            // Clear stopping state when no progress data exists
+            if (isDeleteAccountStoppingRef.current) {
+              console.log('No delete account progress - clearing stopping state');
+              setIsDeleteAccountStopping(false);
+            }
+          }, 0);
         }
       } catch (error) {
         console.error('Error checking delete account background task progress:', error);

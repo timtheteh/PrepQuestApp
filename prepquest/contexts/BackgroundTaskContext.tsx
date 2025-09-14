@@ -13,6 +13,7 @@ interface BackgroundTaskContextType {
   isBackgroundTaskRunning: boolean;
   backgroundTaskProgress: any | null;
   wasAutomaticallyCancelled: boolean;
+  isNotificationDismissed: boolean;
   startBackgroundTaskMonitoring: () => void;
   stopBackgroundTaskMonitoring: () => void;
   clearBackgroundTaskProgress: () => Promise<void>;
@@ -20,6 +21,8 @@ interface BackgroundTaskContextType {
   resetForceStoppedFlag: () => void;
   resetAutomaticallyCancelledFlag: () => void;
   cancelDeckCreationTaskDueToNetworkError: () => Promise<void>;
+  dismissNotification: () => void;
+  resetNotificationDismissed: () => void;
 }
 
 const BackgroundTaskContext = createContext<BackgroundTaskContextType | undefined>(undefined);
@@ -40,6 +43,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   const [isBackgroundTaskRunning, setIsBackgroundTaskRunning] = useState(false);
   const [backgroundTaskProgress, setBackgroundTaskProgress] = useState<any | null>(null);
   const [wasAutomaticallyCancelled, setWasAutomaticallyCancelled] = useState(false);
+  const [isNotificationDismissed, setIsNotificationDismissed] = useState(false);
   const monitoringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const { language } = useLanguage();
@@ -99,8 +103,10 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
       }
       
       await AsyncStorage.removeItem(BG_TASK_PROGRESS_KEY);
-      setBackgroundTaskProgress(null);
-      setIsBackgroundTaskRunning(false);
+      setTimeout(() => {
+        setBackgroundTaskProgress(null);
+        setIsBackgroundTaskRunning(false);
+      }, 0);
       
       // Reset clearing flag after a short delay
       setTimeout(() => {
@@ -134,12 +140,14 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     isBackgroundTaskRunningRef.current = false;
     
     // Force immediate state update
-    setIsBackgroundTaskRunning(false);
-    
-    // Only clear progress immediately if we're not preserving it for notification
-    if (!preserveProgressForNotification) {
-      setBackgroundTaskProgress(null);
-    }
+    setTimeout(() => {
+      setIsBackgroundTaskRunning(false);
+      
+      // Only clear progress immediately if we're not preserving it for notification
+      if (!preserveProgressForNotification) {
+        setBackgroundTaskProgress(null);
+      }
+    }, 0);
     
     console.log('After force stop - isBackgroundTaskRunning should be false');
   }, []);
@@ -358,11 +366,13 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     forceStoppedRef.current = false;
     
     // Reset automatically cancelled flag when starting monitoring (for new tasks)
-    setWasAutomaticallyCancelled(false);
-    
-    // Clear any existing progress data to prevent interference from previous tasks
-    console.log('🧹 BackgroundTaskContext - Clearing existing progress data before starting new task');
-    setBackgroundTaskProgress(null);
+    setTimeout(() => {
+      setWasAutomaticallyCancelled(false);
+      
+      // Clear any existing progress data to prevent interference from previous tasks
+      console.log('🧹 BackgroundTaskContext - Clearing existing progress data before starting new task');
+      setBackgroundTaskProgress(null);
+    }, 0);
     
     const checkProgress = async () => {
       try {
@@ -427,7 +437,12 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
           // CRITICAL: Never mark as running if task is completed, cancelled, automatically cancelled, or has error
           if (progress.inProgress && !progress.completed && !progress.cancelled && !progress.automaticallyCancelled && !progress.error && !forceStoppedRef.current) {
             console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = TRUE (task in progress)');
-            setIsBackgroundTaskRunning(true);
+            // Defer state updates to avoid insertion effect conflicts
+            setTimeout(() => {
+              setIsBackgroundTaskRunning(true);
+              // Reset notification dismissed state when task starts
+              setIsNotificationDismissed(false);
+            }, 0);
           } else if (progress.completed || progress.cancelled || progress.automaticallyCancelled || progress.error || forceStoppedRef.current) {
             // Task completed, cancelled, automatically cancelled, failed, or force stopped
             console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = FALSE (task completed/cancelled/error)', {
@@ -437,7 +452,9 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
               error: progress.error,
               forceStoppedRef: forceStoppedRef.current
             });
-            setIsBackgroundTaskRunning(false);
+            setTimeout(() => {
+              setIsBackgroundTaskRunning(false);
+            }, 0);
             
             // Clear any pending termination timer since task is no longer running
             if (backgroundTerminationTimerRef.current) {
@@ -508,7 +525,11 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
             // IMPORTANT: Never set running=true if task is completed, even if recent
             if (isRecent && !progress.completed && !progress.error && !progress.cancelled && !progress.automaticallyCancelled && !forceStoppedRef.current) {
               console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = TRUE (fallback - recent progress without inProgress flag)');
-              setIsBackgroundTaskRunning(true);
+              setTimeout(() => {
+                setIsBackgroundTaskRunning(true);
+                // Reset notification dismissed state when task starts
+                setIsNotificationDismissed(false);
+              }, 0);
             } else {
               console.log('BackgroundTaskContext: Setting isBackgroundTaskRunning = FALSE (fallback - not recent or completed/cancelled/error)', {
                 isRecent,
@@ -518,12 +539,16 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
                 automaticallyCancelled: progress.automaticallyCancelled,
                 forceStoppedRef: forceStoppedRef.current
               });
-              setIsBackgroundTaskRunning(false);
+              setTimeout(() => {
+                setIsBackgroundTaskRunning(false);
+              }, 0);
             }
           }
         } else {
-          setIsBackgroundTaskRunning(false);
-          setBackgroundTaskProgress(null);
+          setTimeout(() => {
+            setIsBackgroundTaskRunning(false);
+            setBackgroundTaskProgress(null);
+          }, 0);
         }
       } catch (error) {
         console.error('Error checking background task progress:', error);
@@ -720,10 +745,27 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     };
   }, [startBackgroundTaskMonitoring, stopBackgroundTaskMonitoring]);
 
+  // Function to dismiss notification globally
+  const dismissNotification = React.useCallback(() => {
+    console.log('Dismissing notification globally...');
+    setTimeout(() => {
+      setIsNotificationDismissed(true);
+    }, 0);
+  }, []);
+
+  // Function to reset notification dismissed state
+  const resetNotificationDismissed = React.useCallback(() => {
+    console.log('Resetting notification dismissed state...');
+    setTimeout(() => {
+      setIsNotificationDismissed(false);
+    }, 0);
+  }, []);
+
   const value: BackgroundTaskContextType = {
     isBackgroundTaskRunning,
     backgroundTaskProgress,
     wasAutomaticallyCancelled,
+    isNotificationDismissed,
     startBackgroundTaskMonitoring,
     stopBackgroundTaskMonitoring,
     clearBackgroundTaskProgress,
@@ -731,6 +773,8 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     resetForceStoppedFlag,
     resetAutomaticallyCancelledFlag,
     cancelDeckCreationTaskDueToNetworkError,
+    dismissNotification,
+    resetNotificationDismissed,
   };
 
   return (

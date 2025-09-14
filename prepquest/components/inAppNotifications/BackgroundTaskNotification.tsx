@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, InteractionManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -13,7 +13,7 @@ interface BackgroundTaskNotificationProps {
 export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProps> = ({ 
   onViewResults 
 }) => {
-  const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress, wasAutomaticallyCancelled } = useBackgroundTask();
+  const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress, wasAutomaticallyCancelled, isNotificationDismissed, dismissNotification } = useBackgroundTask();
   const { language } = useLanguage();
   const [showNotification, setShowNotification] = useState(false);
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
@@ -92,8 +92,8 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
       
       console.log('BackgroundTaskNotification - Task ID:', taskId);
       
-      // Only show notification if we haven't shown one for this specific task completion
-      if (lastCompletedTaskRef.current !== taskId && !showNotification) {
+      // Only show notification if we haven't shown one for this specific task completion and it hasn't been globally dismissed
+      if (lastCompletedTaskRef.current !== taskId && !showNotification && !isNotificationDismissed) {
         if (isCompleted && !hasError) {
           // Task completed successfully
           console.log('Showing success notification for task:', taskId);
@@ -105,8 +105,8 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
             type: 'success'
           };
-          // Defer state updates and animations until after insertion/layout phase
-          InteractionManager.runAfterInteractions(() => {
+          // Defer state updates and animations to avoid insertion effect conflicts
+          setTimeout(() => {
             setNotificationType('success');
             setShowNotification(true);
             Animated.parallel([
@@ -124,7 +124,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             setTimeout(() => {
               hideNotification();
             }, 5000);
-          });
+          }, 0);
         } else if (hasError || backgroundTaskProgress.cancelled || backgroundTaskProgress.automaticallyCancelled || backgroundTaskProgress.networkErrorCancelled || backgroundTaskProgress.manuallyCancelled) {
           // Task failed or was cancelled
           console.log('Showing error notification for task:', taskId);
@@ -140,8 +140,8 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             manuallyCancelled: backgroundTaskProgress.manuallyCancelled,
             type: 'error'
           };
-          // Defer state updates and animations until after insertion/layout phase
-          InteractionManager.runAfterInteractions(() => {
+          // Defer state updates and animations to avoid insertion effect conflicts
+          setTimeout(() => {
             setNotificationType('error');
             setShowNotification(true);
             Animated.parallel([
@@ -159,13 +159,26 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             setTimeout(() => {
               hideNotification();
             }, 5000);
-          });
+          }, 0);
         }
       } else {
         console.log('Skipping duplicate notification for task:', taskId);
       }
     }
   }, [isBackgroundTaskRunning, backgroundTaskProgress]);
+
+  // Effect to hide notification when globally dismissed
+  useEffect(() => {
+    if (isNotificationDismissed && showNotification) {
+      console.log('Hiding notification due to global dismissal');
+      // Directly set the notification to hidden without calling hideNotification
+      setShowNotification(false);
+      // Reset the refs to allow future notifications for different tasks
+      lastCompletedTaskRef.current = null;
+      processedProgressRef.current = null;
+      preservedNotificationDataRef.current = null;
+    }
+  }, [isNotificationDismissed, showNotification]);
 
   const hideNotification = () => {
     Animated.parallel([
@@ -180,17 +193,20 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setShowNotification(false);
-      // Don't clear progress immediately to prevent duplicate notifications
-      // The progress will be cleared by the BackgroundTaskContext when appropriate
-      // Reset the refs to allow future notifications for different tasks
-      lastCompletedTaskRef.current = null;
-      processedProgressRef.current = null;
-      preservedNotificationDataRef.current = null;
+      setTimeout(() => {
+        setShowNotification(false);
+        // Don't clear progress immediately to prevent duplicate notifications
+        // The progress will be cleared by the BackgroundTaskContext when appropriate
+        // Reset the refs to allow future notifications for different tasks
+        lastCompletedTaskRef.current = null;
+        processedProgressRef.current = null;
+        preservedNotificationDataRef.current = null;
+      }, 0);
     });
   };
 
   const handleViewResults = () => {
+    dismissNotification();
     hideNotification();
     if (onViewResults) {
       onViewResults();
@@ -309,7 +325,10 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             </Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.dismissButton} onPress={hideNotification}>
+        <TouchableOpacity style={styles.dismissButton} onPress={() => {
+          dismissNotification();
+          hideNotification();
+        }}>
           <Text style={styles.dismissButtonText}>×</Text>
         </TouchableOpacity>
       </View>

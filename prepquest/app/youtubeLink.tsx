@@ -79,6 +79,11 @@ const STRINGS = {
   greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
   leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
   networkError: { English: 'Network error!', Chinese: '网络错误。请检查您的连接并重试。' },
+  transcriptsDisabled: { English: 'Transcripts are disabled for this video.', Chinese: '此视频的字幕已禁用。' },
+  noTranscriptFound: { English: 'No transcript found for this video in any language.', Chinese: '未找到此视频的任何语言字幕。' },
+  videoUnavailable: { English: 'The video is unavailable (private, removed, or region/age restricted).', Chinese: '视频不可用（私人、已删除或地区/年龄限制）。' },
+  requestBlocked: { English: 'Request blocked by YouTube (possible IP ban).', Chinese: '请求被YouTube阻止（可能IP被封禁）。' },
+  transcriptFetchFailed: { English: 'Failed to fetch transcript from YouTube.', Chinese: '无法从YouTube获取字幕。' },
 };
 
 const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { youtubeLink: string; setYoutubeLink: (text: string) => void; language: 'English' | 'Chinese' }) => {
@@ -194,6 +199,8 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     youtubeLink,
     // Network error cancellation function
     cancelDeckCreationTaskDueToNetworkError,
+    // Transcript error cancellation function
+    cancelDeckCreationTaskDueToTranscriptError,
   } = taskDataArguments;
 
   let createdDeckId: number | null = null;
@@ -246,6 +253,37 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
           clearTimeout(timeoutId); // Clear timeout if request completes successfully
           
           if (!resp.ok) {
+            const contentType = resp.headers.get('content-type') || '';
+            let errorData: any = null;
+            
+            // Try to parse error response as JSON
+            if (contentType.includes('application/json')) {
+              try {
+                errorData = await resp.json();
+              } catch (jsonError) {
+                console.error('Failed to parse error response as JSON:', jsonError);
+              }
+            }
+            
+            // Check for specific YouTube transcript errors
+            if (errorData?.error) {
+              const errorMessage = errorData.error;
+              
+              // Map backend error messages to our error types
+              if (errorMessage.includes('Transcripts are disabled for this video')) {
+                throw new Error('TRANSCRIPTS_DISABLED');
+              } else if (errorMessage.includes('No transcript found for this video')) {
+                throw new Error('NO_TRANSCRIPT_FOUND');
+              } else if (errorMessage.includes('The video is unavailable')) {
+                throw new Error('VIDEO_UNAVAILABLE');
+              } else if (errorMessage.includes('Request blocked by YouTube')) {
+                throw new Error('REQUEST_BLOCKED');
+              } else if (errorMessage.includes('Failed to fetch transcript')) {
+                throw new Error('TRANSCRIPT_FETCH_FAILED');
+              }
+            }
+            
+            // If not a specific YouTube error, treat as network error
             const body = await resp.text().catch(() => '');
             throw new Error(`NETWORK_ERROR: ${resp.status} ${resp.statusText} - ${body}`);
           }
@@ -263,8 +301,69 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         }
       }
       } catch (e) {
-        // Check if this is actually a network error or timeout
         const errorMessage = (e as any)?.message || String(e);
+        
+        // Check for specific YouTube transcript errors first
+        const isTranscriptError = 
+          errorMessage === 'TRANSCRIPTS_DISABLED' ||
+          errorMessage === 'NO_TRANSCRIPT_FOUND' ||
+          errorMessage === 'VIDEO_UNAVAILABLE' ||
+          errorMessage === 'REQUEST_BLOCKED' ||
+          errorMessage === 'TRANSCRIPT_FETCH_FAILED';
+        
+        if (isTranscriptError) {
+          console.error('🚨 YOUTUBE TRANSCRIPT ERROR:', errorMessage);
+          
+          // Determine the specific error message to show
+          let transcriptErrorMessage = '';
+          const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
+          switch (errorMessage) {
+            case 'TRANSCRIPTS_DISABLED':
+              transcriptErrorMessage = STRINGS.transcriptsDisabled[lang];
+              break;
+            case 'NO_TRANSCRIPT_FOUND':
+              transcriptErrorMessage = STRINGS.noTranscriptFound[lang];
+              break;
+            case 'VIDEO_UNAVAILABLE':
+              transcriptErrorMessage = STRINGS.videoUnavailable[lang];
+              break;
+            case 'REQUEST_BLOCKED':
+              transcriptErrorMessage = STRINGS.requestBlocked[lang];
+              break;
+            case 'TRANSCRIPT_FETCH_FAILED':
+              transcriptErrorMessage = STRINGS.transcriptFetchFailed[lang];
+              break;
+            default:
+              transcriptErrorMessage = STRINGS.transcriptFetchFailed[lang];
+          }
+          
+          // Check if app is in background and send notification immediately
+          const currentAppState = AppState.currentState;
+          if (currentAppState !== 'active') {
+            console.log('App is in background - sending transcript error notification immediately');
+            try {
+              const notificationService = NotificationService.getInstance();
+              await notificationService.sendTranscriptErrorCancelledNotification(
+                deckName,
+                transcriptErrorMessage,
+                language
+              );
+              console.log('Transcript error notification sent immediately from background task');
+            } catch (error) {
+              console.error('Error sending immediate transcript error notification:', error);
+            }
+          }
+          
+          // Call the transcript error cancellation function
+          if (cancelDeckCreationTaskDueToTranscriptError) {
+            await cancelDeckCreationTaskDueToTranscriptError(transcriptErrorMessage);
+          }
+          
+          stopKeepAlive();
+          throw new Error('TRANSCRIPT_ERROR');
+        }
+        
+        // Check if this is actually a network error or timeout
         const isNetworkError = 
           e instanceof TypeError || 
           (e as any)?.name === 'TypeError' || 
@@ -673,9 +772,14 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
   } catch (error: any) {
     console.error('YouTube link background task error:', error);
     
-    // If this is already a NETWORK_ERROR that was thrown from a previous stage, don't re-process it
+    // If this is already a NETWORK_ERROR or TRANSCRIPT_ERROR that was thrown from a previous stage, don't re-process it
     if (error.message === 'NETWORK_ERROR') {
       console.log('🚨 NETWORK_ERROR already processed by previous stage, not re-processing');
+      return; // Exit without saving progress again
+    }
+    
+    if (error.message === 'TRANSCRIPT_ERROR') {
+      console.log('🚨 TRANSCRIPT_ERROR already processed by previous stage, not re-processing');
       return; // Exit without saving progress again
     }
     
@@ -805,7 +909,8 @@ export default function YouTubeLinkPage() {
     forceStopBackgroundTask, 
     wasAutomaticallyCancelled, 
     resetAutomaticallyCancelledFlag,
-    cancelDeckCreationTaskDueToNetworkError
+    cancelDeckCreationTaskDueToNetworkError,
+    cancelDeckCreationTaskDueToTranscriptError
   } = useBackgroundTask();
   const [showStatusPage, setShowStatusPage] = useState(false);
   const [statusFetchingTranscript, setStatusFetchingTranscript] = useState(false);
@@ -989,7 +1094,8 @@ export default function YouTubeLinkPage() {
                 color: '#44B88A',
                 parameters: {
                   ...progress,
-                  cancelDeckCreationTaskDueToNetworkError
+                  cancelDeckCreationTaskDueToNetworkError,
+                  cancelDeckCreationTaskDueToTranscriptError
                 },
               });
             } catch (e) {
@@ -1017,6 +1123,20 @@ export default function YouTubeLinkPage() {
         networkErrorCancelled: backgroundTaskProgress.networkErrorCancelled,
         wasAutomaticallyCancelled
       });
+
+      // Handle transcript error cancellation
+      if (backgroundTaskProgress.transcriptError || backgroundTaskProgress.transcriptErrorCancelled) {
+        console.log('YouTube Link - Detected transcript error cancellation, navigating back to form');
+        setShowStatusPage(false);
+        setStatusFetchingTranscript(false);
+        setStatusGeneratingFlashcards(false);
+        setStatusAddingDeckAndFlashcards(false);
+        setCreatedDeckId(null);
+        setCreatedFlashcardIds([]);
+        // Reset the automatically cancelled flag
+        resetAutomaticallyCancelledFlag();
+        return;
+      }
 
       // Handle network error cancellation (including timeout)
       if (backgroundTaskProgress.networkError || backgroundTaskProgress.networkErrorCancelled) {
@@ -1320,7 +1440,8 @@ export default function YouTubeLinkPage() {
           color: '#44B88A',
           parameters: {
             ...params,
-            cancelDeckCreationTaskDueToNetworkError
+            cancelDeckCreationTaskDueToNetworkError,
+            cancelDeckCreationTaskDueToTranscriptError
           },
         });
       } catch (error) {

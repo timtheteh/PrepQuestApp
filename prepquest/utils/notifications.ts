@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { strings } from '../constants/strings';
 
 export interface NotificationData extends Record<string, unknown> {
-  type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created' | 'backup_completed' | 'clear_data_completed' | 'network_error_cancelled';
+  type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created' | 'backup_completed' | 'clear_data_completed' | 'network_error_cancelled' | 'transcript_error_cancelled';
   deckId?: number;
   deckName?: string;
   flashcardCount?: number;
@@ -235,6 +235,25 @@ class NotificationService {
 
     await this.sendLocalNotification(title, body, {
       type: 'network_error_cancelled',
+      deckName,
+    });
+  }
+
+  async sendTranscriptErrorCancelledNotification(
+    deckName: string,
+    errorMessage: string,
+    language: string
+  ): Promise<void> {
+    const title = language === 'Chinese'
+      ? '任务已取消！'
+      : 'Task Cancelled!';
+    
+    const body = language === 'Chinese'
+      ? `由于YouTube字幕错误，卡组"${deckName}"的创建任务已取消：${errorMessage}`
+      : `Deck creation task for "${deckName}" was cancelled due to YouTube transcript error: ${errorMessage}`;
+
+    await this.sendLocalNotification(title, body, {
+      type: 'transcript_error_cancelled',
       deckName,
     });
   }

@@ -21,6 +21,7 @@ interface BackgroundTaskContextType {
   resetForceStoppedFlag: () => void;
   resetAutomaticallyCancelledFlag: () => void;
   cancelDeckCreationTaskDueToNetworkError: () => Promise<void>;
+  cancelDeckCreationTaskDueToTranscriptError: (errorMessage: string) => Promise<void>;
   dismissNotification: () => void;
   resetNotificationDismissed: () => void;
 }
@@ -306,6 +307,80 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
       
     } catch (error) {
       console.error('Error cancelling deck creation task due to network error:', error);
+    }
+  }, [forceStopBackgroundTask, clearBackgroundTaskProgress, loadBackgroundTaskProgress]);
+
+  // Helper to cancel deck creation task due to transcript error (similar to network error cancellation)
+  const cancelDeckCreationTaskDueToTranscriptError = React.useCallback(async (errorMessage: string) => {
+    try {
+      console.log('Cancelling deck creation task due to transcript error...');
+      
+      // Set the automatic cancellation flag FIRST (reuse the same flag for consistency)
+      setWasAutomaticallyCancelled(true);
+      
+      // Stop the actual background service
+      try {
+        if (BackgroundService.isRunning()) {
+          await BackgroundService.stop();
+          console.log('Background service stopped during transcript error cancellation');
+        }
+      } catch (serviceError) {
+        console.error('Error stopping background service during transcript error cancellation:', serviceError);
+      }
+      
+      // Update progress to indicate transcript error cancellation instead of clearing it immediately
+      try {
+        const currentProgress = await loadBackgroundTaskProgress();
+        if (currentProgress) {
+          const cancelledProgress = {
+            ...currentProgress,
+            inProgress: false,
+            completed: false,
+            cancelled: true,
+            transcriptErrorCancelled: true,
+            transcriptError: true, // Add this flag for in-app notification
+            error: true, // Add this flag for error state
+            errorMessage: errorMessage, // Store the specific error message
+            timestamp: Date.now()
+          };
+          
+          // Save the cancelled progress so UI can detect it
+          await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(cancelledProgress));
+          setBackgroundTaskProgress(cancelledProgress);
+          console.log('Updated progress to indicate transcript error cancellation');
+        }
+      } catch (progressError) {
+        console.error('Error updating progress for transcript error cancellation:', progressError);
+      }
+      
+      // Force stop the background task but preserve progress for notification
+      forceStopBackgroundTask(true);
+      
+      // Additional cleanup: manually remove other deck creation related AsyncStorage keys
+      try {
+        await AsyncStorage.multiRemove([
+          'deckCreationProgress',
+          'deckCreationState'
+        ]);
+        console.log('Additional AsyncStorage cleanup completed (transcript error cancellation)');
+      } catch (cleanupError) {
+        console.warn('Additional cleanup failed (transcript error):', cleanupError);
+      }
+      
+      // Delay the final progress cleanup to give UI components time to react and show notification
+      setTimeout(async () => {
+        try {
+          console.log('Performing delayed cleanup after transcript error cancellation...');
+          await clearBackgroundTaskProgress();
+        } catch (error) {
+          console.error('Error in delayed cleanup after transcript error cancellation:', error);
+        }
+      }, 2000); // 2 second delay to allow UI components to detect the cancellation and show notification
+      
+      console.log('Deck creation task cancelled due to transcript error successfully');
+      
+    } catch (error) {
+      console.error('Error cancelling deck creation task due to transcript error:', error);
     }
   }, [forceStopBackgroundTask, clearBackgroundTaskProgress, loadBackgroundTaskProgress]);
 
@@ -773,6 +848,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     resetForceStoppedFlag,
     resetAutomaticallyCancelledFlag,
     cancelDeckCreationTaskDueToNetworkError,
+    cancelDeckCreationTaskDueToTranscriptError,
     dismissNotification,
     resetNotificationDismissed,
   };

@@ -125,7 +125,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
               hideNotification();
             }, 5000);
           }, 0);
-        } else if (hasError || backgroundTaskProgress.cancelled || backgroundTaskProgress.automaticallyCancelled || backgroundTaskProgress.networkErrorCancelled || backgroundTaskProgress.manuallyCancelled) {
+        } else if (hasError || backgroundTaskProgress.cancelled || backgroundTaskProgress.automaticallyCancelled || backgroundTaskProgress.networkErrorCancelled || backgroundTaskProgress.manuallyCancelled || backgroundTaskProgress.transcriptError || backgroundTaskProgress.transcriptErrorCancelled) {
           // Task failed or was cancelled
           console.log('Showing error notification for task:', taskId);
           lastCompletedTaskRef.current = taskId;
@@ -135,6 +135,9 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             deckName: backgroundTaskProgress.formData?.deckName || backgroundTaskProgress.deckName || backgroundTaskProgress.notificationDeckName,
             isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
             networkError: backgroundTaskProgress.networkError,
+            transcriptError: backgroundTaskProgress.transcriptError,
+            transcriptErrorCancelled: backgroundTaskProgress.transcriptErrorCancelled,
+            errorMessage: backgroundTaskProgress.errorMessage,
             automaticallyCancelled: backgroundTaskProgress.automaticallyCancelled,
             networkErrorCancelled: backgroundTaskProgress.networkErrorCancelled,
             manuallyCancelled: backgroundTaskProgress.manuallyCancelled,
@@ -230,6 +233,18 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
     const isSuccess = notificationType === 'success';
     
     if (!isSuccess) {
+      // Check if this is a transcript error (YouTube-specific)
+      const isTranscriptError = backgroundTaskProgress?.transcriptError || notificationData?.transcriptError;
+      const isTranscriptErrorCancelled = backgroundTaskProgress?.transcriptErrorCancelled || notificationData?.transcriptErrorCancelled;
+      if (isTranscriptError || isTranscriptErrorCancelled) {
+        // Use the specific error message from the background task
+        const transcriptErrorMessage = backgroundTaskProgress?.errorMessage || notificationData?.errorMessage;
+        if (transcriptErrorMessage) {
+          return transcriptErrorMessage;
+        }
+        return language === 'Chinese' ? 'YouTube字幕获取失败' : 'YouTube transcript fetch failed';
+      }
+      
       // Check if this is a network error
       const isNetworkError = backgroundTaskProgress?.networkError || notificationData?.networkError;
       if (isNetworkError) {

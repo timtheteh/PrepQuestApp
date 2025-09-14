@@ -25,6 +25,7 @@ import { useClearDataBackgroundTask } from '@/contexts/ClearDataBackgroundTaskCo
 import { startClearDataBackgroundTask, stopClearDataBackgroundTask } from '@/utils/clearDataBackgroundTask';
 import { useDeleteAccountBackgroundTask } from '@/contexts/DeleteAccountBackgroundTaskContext';
 import { startDeleteAccountBackgroundTask, stopDeleteAccountBackgroundTask } from '@/utils/deleteAccountBackgroundTask';
+import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 
 import { importDataFromCloud, ImportProgress } from '@/db/importData';
 import { extractFoldersFromSQLite, extractDecksFromSQLite, extractFlashcardsFromSQLite, extractRecentUserFormEntriesFromSQLite } from '@/db/backup';
@@ -145,6 +146,9 @@ export default function AppSettingsScreen() {
     resetDeleteAccountForceStoppedFlag,
     resetAutomaticallyCancelledFlag: resetDeleteAccountAutomaticallyCancelledFlag
   } = useDeleteAccountBackgroundTask();
+  
+  // deck creation background task state
+  const { isBackgroundTaskRunning } = useBackgroundTask();
   
   // backup loading state
   const [isBackupLoading, setIsBackupLoading] = React.useState(false);
@@ -287,6 +291,11 @@ export default function AppSettingsScreen() {
   const deleteAccountOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const deleteAccountModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Deck creation blocking modal state
+  const [isDeckCreationBlockingModalOpen, setIsDeckCreationBlockingModalOpen] = React.useState(false);
+  const deckCreationBlockingOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const deckCreationBlockingModalOpacity = React.useRef(new Animated.Value(0)).current;
+
   // Clear data completion state
   const [hasClearDataCompleted, setHasClearDataCompleted] = React.useState(false);
 
@@ -301,6 +310,39 @@ export default function AppSettingsScreen() {
   const [isLocallyStoppingClearData, setIsLocallyStoppingClearData] = React.useState(false);
 
   // Handler functions
+  const handleShowDeckCreationBlockingModal = React.useCallback(() => {
+    setIsDeckCreationBlockingModalOpen(true);
+    Animated.parallel([
+      Animated.timing(deckCreationBlockingOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deckCreationBlockingModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [deckCreationBlockingOverlayOpacity, deckCreationBlockingModalOpacity]);
+
+  const handleDismissDeckCreationBlockingModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(deckCreationBlockingOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deckCreationBlockingModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDeckCreationBlockingModalOpen(false);
+    });
+  }, [deckCreationBlockingOverlayOpacity, deckCreationBlockingModalOpacity]);
+
   const handleShowNetworkErrorModal = React.useCallback((operation: 'backup' | 'import' | 'clearData' = 'backup') => {
     setNetworkErrorOperation(operation);
     setIsNetworkErrorModalOpen(true);
@@ -547,6 +589,12 @@ export default function AppSettingsScreen() {
   }, [clearDataLoadingNetworkErrorOverlayOpacity, clearDataLoadingNetworkErrorModalOpacity]);
 
   const handleDeleteAccountPress = React.useCallback(() => {
+    // Check if deck creation is running
+    if (isBackgroundTaskRunning) {
+      handleShowDeckCreationBlockingModal();
+      return;
+    }
+    
     setIsDeleteAccountModalOpen(true);
     Animated.parallel([
       Animated.timing(deleteAccountOverlayOpacity, {
@@ -560,7 +608,7 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  }, [deleteAccountOverlayOpacity, deleteAccountModalOpacity]);
+  }, [deleteAccountOverlayOpacity, deleteAccountModalOpacity, isBackgroundTaskRunning, handleShowDeckCreationBlockingModal]);
 
   const handleDismissDeleteAccount = React.useCallback(() => {
     Animated.parallel([
@@ -1473,6 +1521,12 @@ export default function AppSettingsScreen() {
   }, [router, isBackupBackgroundTaskRunning, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, isImportBackgroundTaskRunning, isImportStopping, isImportCancelCooldownActive, isImportCleanupInProgress, isClearDataBackgroundTaskRunning, isLocallyStartingClearData, isDataRestorationInProgress, isDeleteAccountBackgroundTaskRunning, isDeleteAccountCleanupInProgress, isDeleteAccountStopping, handleShowNavigationGuardModal]);
 
   const handleBackupPress = React.useCallback(() => {
+    // Check if deck creation is running
+    if (isBackgroundTaskRunning) {
+      handleShowDeckCreationBlockingModal();
+      return;
+    }
+    
     setIsBackupModalOpen(true);
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -1486,7 +1540,7 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  }, [overlayOpacity, modalOpacity]);
+  }, [overlayOpacity, modalOpacity, isBackgroundTaskRunning, handleShowDeckCreationBlockingModal]);
 
   const handleDismissBackup = React.useCallback(() => {
     Animated.parallel([
@@ -1693,6 +1747,12 @@ export default function AppSettingsScreen() {
   }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, checkNetworkConnectivity, handleShowBackupLoadingNetworkErrorModal, isBackupBackgroundTaskRunning, forceStopBackupBackgroundTask, stopBackupBackgroundTask]);
 
   const handleLoadDataPress = React.useCallback(() => {
+    // Check if deck creation is running
+    if (isBackgroundTaskRunning) {
+      handleShowDeckCreationBlockingModal();
+      return;
+    }
+    
     setIsLoadDataModalOpen(true);
     Animated.parallel([
       Animated.timing(loadDataOverlayOpacity, {
@@ -1704,9 +1764,9 @@ export default function AppSettingsScreen() {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
-      })    
+      })
     ]).start();
-  }, [loadDataOverlayOpacity, loadDataModalOpacity]);
+  }, [loadDataOverlayOpacity, loadDataModalOpacity, isBackgroundTaskRunning, handleShowDeckCreationBlockingModal]);
   
   const handleDismissLoadData = React.useCallback(() => {
     Animated.parallel([
@@ -1858,6 +1918,12 @@ export default function AppSettingsScreen() {
   }, [handleDismissLoadData, language, getToken, startImportBackgroundTaskMonitoring, importLoadingOverlayOpacity, resetImportForceStoppedFlag, clearImportBackgroundTaskProgress, isImportBackgroundTaskRunning, forceStopImportBackgroundTask, stopImportBackgroundTask, checkNetworkConnectivity, handleShowImportLoadingNetworkErrorModal]);
 
   const handleClearDataPress = React.useCallback(() => {
+    // Check if deck creation is running
+    if (isBackgroundTaskRunning) {
+      handleShowDeckCreationBlockingModal();
+      return;
+    }
+    
     setIsDeleteLocalStorageModalOpen(true);
     Animated.parallel([
       Animated.timing(deleteLocalStorageOverlayOpacity, {
@@ -1871,7 +1937,7 @@ export default function AppSettingsScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  }, [deleteLocalStorageOverlayOpacity, deleteLocalStorageModalOpacity]);
+  }, [deleteLocalStorageOverlayOpacity, deleteLocalStorageModalOpacity, isBackgroundTaskRunning, handleShowDeckCreationBlockingModal]);
 
   const handleDismissClearData = React.useCallback(() => {
     Animated.parallel([
@@ -3278,6 +3344,21 @@ export default function AppSettingsScreen() {
           buttons="double"
           onCancel={handleDismissDeleteAccount}
           onConfirm={handleConfirmDeleteAccount}
+        />
+
+        {/* Deck Creation Blocking Modal */}
+        <GreyOverlayBackground 
+          visible={isDeckCreationBlockingModalOpen}
+          opacity={deckCreationBlockingOverlayOpacity}
+          onPress={handleDismissDeckCreationBlockingModal}
+        />
+        <GenericModal
+          visible={isDeckCreationBlockingModalOpen}
+          opacity={deckCreationBlockingModalOpacity}
+          text={strings[language].appSettingsPage.deckCreationInProgress}
+          Icon={ModalExclamationMarkIcon}
+          buttons="single"
+          onConfirm={handleDismissDeckCreationBlockingModal}
         />
 
     </View>

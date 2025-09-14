@@ -230,8 +230,11 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       if (endpoint) {
         const url = `${endpoint}?video_url=${encodeURIComponent(youtubeLink)}&t=${Date.now()}`;
         
-        // Add timeout to force network error detection
+        // Add 20-second timeout for transcript fetching
         const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 20000); // 20 seconds timeout
         
         try {
           const resp = await fetch(url, { 
@@ -239,6 +242,8 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
             signal: controller.signal,
             cache: 'no-store' // <--- force network request
           });
+          
+          clearTimeout(timeoutId); // Clear timeout if request completes successfully
           
           if (!resp.ok) {
             const body = await resp.text().catch(() => '');
@@ -253,11 +258,12 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
             transcript = await resp.text();
           }
         } catch (fetchError) {
+          clearTimeout(timeoutId); // Clear timeout in case of error
           throw fetchError; // This will be caught by the outer catch
         }
       }
       } catch (e) {
-        // Check if this is actually a network error
+        // Check if this is actually a network error or timeout
         const errorMessage = (e as any)?.message || String(e);
         const isNetworkError = 
           e instanceof TypeError || 
@@ -278,9 +284,17 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
           (e as any)?.code === 'ECONNREFUSED' ||
           (e as any)?.code === 'ETIMEDOUT';
         
+        // Check if this is specifically a timeout error (20-second limit reached)
+        const isTimeoutError = (e as any)?.name === 'AbortError' && errorMessage.includes('The request was aborted');
+        
         if (isNetworkError) {
-          console.error('🚨 NETWORK ERROR during YouTube transcript fetch:', e);
-          console.error('🚨 ERROR MESSAGE:', errorMessage);
+          if (isTimeoutError) {
+            console.error('🚨 TIMEOUT ERROR during YouTube transcript fetch (20 seconds exceeded):', e);
+            console.error('🚨 ERROR MESSAGE:', errorMessage);
+          } else {
+            console.error('🚨 NETWORK ERROR during YouTube transcript fetch:', e);
+            console.error('🚨 ERROR MESSAGE:', errorMessage);
+          }
           
           // Check if app is in background and send notification immediately
           const currentAppState = AppState.currentState;
@@ -991,6 +1005,67 @@ export default function YouTubeLinkPage() {
     const sub = AppState.addEventListener('change', handleAppStateChange);
     return () => sub.remove();
   }, [language]);
+
+  // Monitor background task progress to handle cancellation
+  useEffect(() => {
+    if (showStatusPage && backgroundTaskProgress) {
+      console.log('YouTube Link - Background task progress update:', {
+        inProgress: backgroundTaskProgress.inProgress,
+        completed: backgroundTaskProgress.completed,
+        cancelled: backgroundTaskProgress.cancelled,
+        networkError: backgroundTaskProgress.networkError,
+        networkErrorCancelled: backgroundTaskProgress.networkErrorCancelled,
+        wasAutomaticallyCancelled
+      });
+
+      // Handle network error cancellation (including timeout)
+      if (backgroundTaskProgress.networkError || backgroundTaskProgress.networkErrorCancelled) {
+        console.log('YouTube Link - Detected network error cancellation, navigating back to form');
+        setShowStatusPage(false);
+        setStatusFetchingTranscript(false);
+        setStatusGeneratingFlashcards(false);
+        setStatusAddingDeckAndFlashcards(false);
+        setCreatedDeckId(null);
+        setCreatedFlashcardIds([]);
+        // Reset the automatically cancelled flag
+        resetAutomaticallyCancelledFlag();
+        return;
+      }
+
+      // Handle other types of cancellation
+      if (backgroundTaskProgress.cancelled && !backgroundTaskProgress.completed) {
+        console.log('YouTube Link - Detected task cancellation, navigating back to form');
+        setShowStatusPage(false);
+        setStatusFetchingTranscript(false);
+        setStatusGeneratingFlashcards(false);
+        setStatusAddingDeckAndFlashcards(false);
+        setCreatedDeckId(null);
+        setCreatedFlashcardIds([]);
+        // Reset the automatically cancelled flag
+        resetAutomaticallyCancelledFlag();
+        return;
+      }
+
+      // Handle completion
+      if (backgroundTaskProgress.completed && !backgroundTaskProgress.error) {
+        console.log('YouTube Link - Task completed successfully');
+        setStatusFetchingTranscript(true);
+        setStatusGeneratingFlashcards(true);
+        setStatusAddingDeckAndFlashcards(true);
+        // Navigate back after a short delay to show completion
+        setTimeout(() => {
+          setShowStatusPage(false);
+          setStatusFetchingTranscript(false);
+          setStatusGeneratingFlashcards(false);
+          setStatusAddingDeckAndFlashcards(false);
+          setCreatedDeckId(null);
+          setCreatedFlashcardIds([]);
+          router.back();
+        }, 2000);
+        return;
+      }
+    }
+  }, [backgroundTaskProgress, showStatusPage, wasAutomaticallyCancelled, resetAutomaticallyCancelledFlag, router]);
 
   // Cleanup on unmount
   useEffect(() => {

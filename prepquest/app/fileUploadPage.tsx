@@ -42,6 +42,40 @@ import BackgroundService from 'react-native-background-actions';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// --- File Size Limits ---
+// Option 1: Current limits (recommended for optimal performance)
+const FILE_SIZE_LIMITS = {
+  PDF: 50 * 1024 * 1024, // 50MB for PDFs
+  DOCX: 25 * 1024 * 1024, // 25MB for Word docs
+  PPTX: 30 * 1024 * 1024, // 30MB for PowerPoint
+  XLSX: 20 * 1024 * 1024, // 20MB for Excel
+  TXT: 10 * 1024 * 1024,  // 10MB for text files
+  IMAGE: 10 * 1024 * 1024, // 10MB for images
+  DEFAULT: 25 * 1024 * 1024 // 25MB default
+};
+
+// Option 2: Generalized limits (if you prefer simplicity)
+// const FILE_SIZE_LIMITS = {
+//   PDF: 30 * 1024 * 1024, // 30MB for PDFs
+//   DOCX: 30 * 1024 * 1024, // 30MB for Word docs
+//   PPTX: 30 * 1024 * 1024, // 30MB for PowerPoint
+//   XLSX: 30 * 1024 * 1024, // 30MB for Excel
+//   TXT: 30 * 1024 * 1024,  // 30MB for text files
+//   IMAGE: 30 * 1024 * 1024, // 30MB for images
+//   DEFAULT: 30 * 1024 * 1024 // 30MB default
+// };
+
+// Absolute maximum limits (use only if needed for specific use cases)
+const ABSOLUTE_MAX_FILE_SIZE_LIMITS = {
+  PDF: 100 * 1024 * 1024,    // 100MB
+  DOCX: 50 * 1024 * 1024,    // 50MB
+  PPTX: 75 * 1024 * 1024,    // 75MB
+  XLSX: 40 * 1024 * 1024,    // 40MB
+  TXT: 25 * 1024 * 1024,     // 25MB
+  IMAGE: 25 * 1024 * 1024,   // 25MB
+  DEFAULT: 50 * 1024 * 1024  // 50MB
+};
+
 // --- Background Task Progress Helpers (reuse same key as GenAI form) ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
 
@@ -716,7 +750,7 @@ const FileUploadMainSection = ({
         <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
           {isUploadSuccess 
             ? `${uploadType === 'image' ? (language === 'Chinese' ? '图片' : 'Image') : (language === 'Chinese' ? '文件' : 'File')} ${language === 'Chinese' ? '上传成功！' : 'uploaded successfully!'}\n${uploadType === 'file' ? (language === 'Chinese' ? `文件：${uploadedFileName}` : `File: ${uploadedFileName}`) : ''}`
-            : language === 'Chinese' ? '支持的文件格式：.docx, .txt, .pptx,\n.xlsx, .pdf, images' : 'Supported file formats: .docx, .txt,\n.pptx, .xlsx, .pdf, images'
+            : STRINGS.supportedFiles[language]
           }
         </Text>
         <PrimaryButton 
@@ -756,7 +790,7 @@ const STRINGS = {
   numQuestions: { English: '3. Number of questions:', Chinese: '3. 题目数量：' },
   uploadTitle: { English: 'Upload any file document to generate a new deck!', Chinese: '上传任意文件以生成新卡组！' },
   browseFiles: { English: 'Browse\nFiles', Chinese: '浏览\n文件' },
-  supportedFiles: { English: 'Word documents, Text documents, Powerpoint files, Excel sheets, Pdf files, Anki Decks', Chinese: 'Word文档，文本文件，PPT，Excel表格，PDF文件，Anki卡组' },
+  supportedFiles: { English: 'Word documents (25MB), Text files (10MB), PowerPoint (30MB), Excel (20MB), PDF files (50MB), Images (10MB)', Chinese: 'Word文档(25MB)，文本文件(10MB)，PPT(30MB)，Excel(20MB)，PDF文件(50MB)，图片(10MB)' },
   imageUploaded: { English: 'Image uploaded successfully!', Chinese: '图片上传成功！' },
   fileUploaded: { English: 'File uploaded successfully!', Chinese: '文件上传成功！' },
   fileLabel: { English: 'File:', Chinese: '文件：' },
@@ -772,6 +806,9 @@ const STRINGS = {
   useRecent: { English: ['Use most recent', 'form entry?'], Chinese: ['使用最近的', '表单记录？'] },
   greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
   leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
+  fileSizeExceeded: { English: 'File size too large', Chinese: '文件大小超出限制' },
+  fileSizeLimit: { English: 'Maximum file size is', Chinese: '最大文件大小为' },
+  pleaseChooseSmallerFile: { English: 'Please choose a smaller file.', Chinese: '请选择较小的文件。' },
 };
 
 // Utility: Save base64 image to file
@@ -901,6 +938,38 @@ async function extractXlsxTextAndImages(xlsxUri: string) {
     }
   }
   return { text: allText, images: savedImages };
+}
+
+// Helper function to check file size limits
+function getFileSizeLimit(fileName: string): number {
+  const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+  
+  switch (extension) {
+    case '.pdf':
+      return FILE_SIZE_LIMITS.PDF;
+    case '.docx':
+      return FILE_SIZE_LIMITS.DOCX;
+    case '.pptx':
+      return FILE_SIZE_LIMITS.PPTX;
+    case '.xlsx':
+      return FILE_SIZE_LIMITS.XLSX;
+    case '.txt':
+      return FILE_SIZE_LIMITS.TXT;
+    case '.jpg':
+    case '.jpeg':
+    case '.png':
+      return FILE_SIZE_LIMITS.IMAGE;
+    default:
+      return FILE_SIZE_LIMITS.DEFAULT;
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // Helper function to check network connectivity
@@ -1923,6 +1992,16 @@ export default function FileUploadPage() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         let selectedImage = result.assets[0];
         
+        // Check file size limit for images
+        const maxSize = FILE_SIZE_LIMITS.IMAGE;
+        if (selectedImage.fileSize && selectedImage.fileSize > maxSize) {
+          const sizeLimitText = formatFileSize(maxSize);
+          const errorMessage = `${STRINGS.fileSizeExceeded[lang]}!\n${STRINGS.fileSizeLimit[lang]} ${sizeLimitText}.\n${STRINGS.pleaseChooseSmallerFile[lang]}`;
+          setShowToast(true);
+          setToastMessage(errorMessage);
+          return;
+        }
+        
         // Start loading state
         setIsFileUploading(true);
         setUploadProgress(30);
@@ -1972,6 +2051,16 @@ export default function FileUploadPage() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         let capturedImage = result.assets[0];
         
+        // Check file size limit for images
+        const maxSize = FILE_SIZE_LIMITS.IMAGE;
+        if (capturedImage.fileSize && capturedImage.fileSize > maxSize) {
+          const sizeLimitText = formatFileSize(maxSize);
+          const errorMessage = `${STRINGS.fileSizeExceeded[lang]}!\n${STRINGS.fileSizeLimit[lang]} ${sizeLimitText}.\n${STRINGS.pleaseChooseSmallerFile[lang]}`;
+          setShowToast(true);
+          setToastMessage(errorMessage);
+          return;
+        }
+        
         // Start loading state
         setIsFileUploading(true);
         setUploadProgress(30);
@@ -2019,6 +2108,16 @@ export default function FileUploadPage() {
         if (!supportedExtensions.includes(fileExtension)) {
           setShowToast(true);
           setToastMessage(language === 'Chinese' ? '不支持的文件类型' : 'Invalid file type');
+          return;
+        }
+        
+        // Check file size limit
+        const maxSize = getFileSizeLimit(selected.name);
+        if (selected.size && selected.size > maxSize) {
+          const sizeLimitText = formatFileSize(maxSize);
+          const errorMessage = `${STRINGS.fileSizeExceeded[lang]}!\n${STRINGS.fileSizeLimit[lang]} ${sizeLimitText}.\n${STRINGS.pleaseChooseSmallerFile[lang]}`;
+          setShowToast(true);
+          setToastMessage(errorMessage);
           return;
         }
         

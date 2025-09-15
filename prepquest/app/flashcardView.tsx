@@ -528,10 +528,13 @@ async function playAudio(uri: any) {
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
         shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: true,
+        playThroughEarpieceAndroid: false, // Use speaker instead of earpiece for better volume
       });
       
-      const { sound } = await Audio.Sound.createAsync({ uri });
+      const { sound } = await Audio.Sound.createAsync({ uri }, { 
+        volume: 1.0, // Set maximum volume
+        shouldPlay: false, // Don't auto-play, we'll call playAsync manually
+      });
       await sound.setVolumeAsync(1.0); // Set volume to maximum (1.0)
       await sound.playAsync();
       
@@ -1047,7 +1050,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
         shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: true,
+        playThroughEarpieceAndroid: false, // Use speaker instead of earpiece for better volume
       });
       if (!isAudioPlaying) {
         // Play or resume
@@ -1069,8 +1072,13 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               }
             }
           }
-          const { sound } = await Audio.Sound.createAsync(source, { positionMillis: audioPosition });
+          const { sound } = await Audio.Sound.createAsync(source, { 
+            positionMillis: audioPosition,
+            volume: 1.0, // Set maximum volume
+            shouldPlay: false, // Don't auto-play, we'll call playAsync manually
+          });
           audioSoundRef.current = sound;
+          await sound.setVolumeAsync(1.0); // Ensure maximum volume
           sound.setOnPlaybackStatusUpdate((status) => {
             if (status.isLoaded && status.didJustFinish) {
               setIsAudioPlaying(false);
@@ -2494,7 +2502,7 @@ export default function FlashcardViewPage() {
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
         shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: true,
+        playThroughEarpieceAndroid: false, // Use speaker instead of earpiece for better volume
       });
       await Speech.stop();
       if (isFlipped) {

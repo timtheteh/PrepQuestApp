@@ -37,7 +37,7 @@ export default function AccountScreen() {
   const screenWidth = Dimensions.get('window').width;
   
   // Scale factor for responsive design - using iPhone 14 Pro Max (430px) as reference for more subtle scaling
-  const REFERENCE_WIDTH = 500;
+  const REFERENCE_WIDTH = 480;
   const scaleFactor = Math.min(screenWidth / REFERENCE_WIDTH, 1.1); // Cap at 1.1x for very large screens
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
@@ -283,6 +283,41 @@ export default function AccountScreen() {
       width: 24 * scaleFactor,
       height: 24 * scaleFactor,
     },
+    // Stats content scaling
+    statsContent: {
+      ...styles.statsContent,
+      marginTop: -20 * scaleFactor,
+    },
+    statCard: {
+      ...styles.statCard,
+      width: 152 * scaleFactor,
+      height: 170 * scaleFactor,
+    },
+    statCardBackground: {
+      ...styles.statCardBackground,
+      width: 152 * scaleFactor,
+      height: 170 * scaleFactor,
+    },
+    statCardOverlay: {
+      ...styles.statCardOverlay,
+      width: 152 * scaleFactor,
+      height: 160 * scaleFactor,
+    },
+    statNumber: {
+      ...styles.statNumber,
+      fontSize: 48 * scaleFactor,
+      marginTop: -15 * scaleFactor,
+    },
+    statLabel: {
+      ...styles.statLabel,
+      fontSize: 20 * scaleFactor,
+      marginTop: 10 * scaleFactor,
+    },
+    statsRow: {
+      ...styles.statsRow,
+      marginTop: 18 * scaleFactor,
+      paddingHorizontal: 5 * scaleFactor,
+    },
   }), [scaleFactor]);
 
 
@@ -323,7 +358,7 @@ export default function AccountScreen() {
       </View>
       
       {/* Fixed Info Column */}
-      <View style={[styles.infoColumn, { marginTop: '10%', marginBottom: '15%' }]}> 
+      <View style={[styles.infoColumn, { marginTop: '4%', marginBottom: '10%' }]}> 
         <View style={styles.infoRow}>
           <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].username}</Text>
           <Text style={[styles.infoValue, { color: themeColors.text }]}>{displayUser?.email || strings[language].notAvailable}</Text>
@@ -501,69 +536,69 @@ export default function AccountScreen() {
               }
             ]}
           >
-            <View style={styles.statsContent}>
+            <View style={scaledStyles.statsContent}>
               <View style={styles.statsGrid}>
                 {/* First Row */}
-                <View style={styles.statsRow}>
+                <View style={scaledStyles.statsRow}>
                   {/* GenAI Form Requests */}
-                  <View style={styles.statCard}>
+                  <View style={scaledStyles.statCard}>
                     <Image 
                       source={require('@/assets/images/meshBackground1.png')} 
-                      style={styles.statCardBackground}
+                      style={scaledStyles.statCardBackground}
                       resizeMode="contain"
                     />
-                    <View style={styles.statCardOverlay}>
+                    <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[styles.statNumber, { color: themeColors.text }]}>5/10</Text>
-                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].genAIFormRequests}</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>5/10</Text>
+                        <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].genAIFormRequests}</Text>
                       </View>
                     </View>
                   </View>
                   
                   {/* File Upload Form Requests */}
-                  <View style={styles.statCard}>
+                  <View style={scaledStyles.statCard}>
                     <Image 
                       source={require('@/assets/images/meshBackground2.png')} 
-                      style={styles.statCardBackground}
+                      style={scaledStyles.statCardBackground}
                       resizeMode="contain"
                     />
-                    <View style={styles.statCardOverlay}>
+                    <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[styles.statNumber, { color: themeColors.text }]}>4/10</Text>
-                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].fileUploadFormRequests}</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>4/10</Text>
+                        <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].fileUploadFormRequests}</Text>
                       </View>
                     </View>
                   </View>
                 </View>
                 
                 {/* Second Row */}
-                <View style={styles.statsRow}>
+                <View style={scaledStyles.statsRow}>
                   {/* Youtube Link Form Requests */}
-                  <View style={styles.statCard}>
+                  <View style={scaledStyles.statCard}>
                     <Image 
                       source={require('@/assets/images/meshBackground3.png')} 
-                      style={styles.statCardBackground}
+                      style={scaledStyles.statCardBackground}
                       resizeMode="contain"
                     />
-                    <View style={styles.statCardOverlay}>
+                    <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[styles.statNumber, { color: themeColors.text }]}>3/10</Text>
-                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].youtubeLinkFormRequests}</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>3/10</Text>
+                        <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].youtubeLinkFormRequests}</Text>
                       </View>
                     </View>
                   </View>
                   
                   {/* AI Chat Feedback Requests */}
-                  <View style={styles.statCard}>
+                  <View style={scaledStyles.statCard}>
                     <Image 
                       source={require('@/assets/images/meshBackground4.png')} 
-                      style={styles.statCardBackground}
+                      style={scaledStyles.statCardBackground}
                       resizeMode="contain"
                     />
-                    <View style={styles.statCardOverlay}>
+                    <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[styles.statNumber, { color: themeColors.text }]}>2/10</Text>
-                        <Text style={[styles.statLabel, { color: themeColors.text }]}>{strings[language].aiChatFeedbackRequests}</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>2/10</Text>
+                        <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].aiChatFeedbackRequests}</Text>
                       </View>
                     </View>
                   </View>

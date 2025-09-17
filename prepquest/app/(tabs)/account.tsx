@@ -35,6 +35,10 @@ export default function AccountScreen() {
   const [currentView, setCurrentView] = useState<'profile' | 'stats'>('profile');
   const screenHeight = Dimensions.get('window').height;
   const screenWidth = Dimensions.get('window').width;
+  
+  // Scale factor for responsive design - using iPhone 14 Pro Max (430px) as reference for more subtle scaling
+  const REFERENCE_WIDTH = 500;
+  const scaleFactor = Math.min(screenWidth / REFERENCE_WIDTH, 1.1); // Cap at 1.1x for very large screens
   const router = useRouter();
   const { language, reloadLanguage } = useLanguage();
   const { signOut, user } = useHybridAuth();
@@ -252,6 +256,35 @@ export default function AccountScreen() {
     },
   }), [themeColors.brandColor1, themeColors.background]);
 
+  // Scaled styles - memoized to prevent recreation
+  const scaledStyles = useMemo(() => ({
+    grapeBunchContainer: {
+      ...styles.grapeBunchContainer,
+      width: 350 * scaleFactor,
+      height: 350 * scaleFactor,
+    },
+    grapeCircle: {
+      ...styles.grapeCircle,
+      width: 140 * scaleFactor,
+      height: 140 * scaleFactor,
+      borderRadius: 70 * scaleFactor,
+    },
+    stem: {
+      ...styles.stem,
+      width: 60 * scaleFactor,
+      height: 60 * scaleFactor,
+    },
+    grapeMenuText: {
+      ...styles.grapeMenuText,
+      fontSize: 16 * scaleFactor,
+    },
+    diamondImage: {
+      ...styles.diamondImage,
+      width: 24 * scaleFactor,
+      height: 24 * scaleFactor,
+    },
+  }), [scaleFactor]);
+
 
 
 
@@ -318,12 +351,11 @@ export default function AccountScreen() {
             ]}
           >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <View style={styles.grapeBunchContainer}>
+              <View style={scaledStyles.grapeBunchContainer}>
                 {/* Stem (behind) */}
                 <GrapeStem
                   style={[
-                    styles.grapeCircle,
-                    styles.stem,
+                    scaledStyles.stem,
                     { ...(grapePositions.stem as any), 
                       zIndex: 6 } as any
                   ]}
@@ -334,16 +366,16 @@ export default function AccountScreen() {
                   onPressIn={() => setWebsitePressed(true)}
                   onPressOut={() => setWebsitePressed(false)}
                   style={[
-                    styles.grapeCircle,
+                    scaledStyles.grapeCircle,
                     { backgroundColor: websitePressed ? '#8684FF' : '#685CDD', 
                       position: 'absolute', 
                       ...(grapePositions.website as any), 
                       zIndex: 7,
-                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                      transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]
                     } as any
                   ]}
                 >
-                  <Text style={[styles.grapeMenuText, {marginLeft: -48, marginBottom: 15, textAlign: 'center'}]}>{strings[language].website}</Text>
+                  <Text style={[scaledStyles.grapeMenuText, {marginLeft: -48 * scaleFactor, marginBottom: 15 * scaleFactor, textAlign: 'center'}]}>{strings[language].website}</Text>
                 </TouchableOpacity>
                 {/* Rate & Review button (behind) */}
                 <TouchableOpacity
@@ -351,16 +383,16 @@ export default function AccountScreen() {
                   onPressIn={() => setRatePressed(true)}
                   onPressOut={() => setRatePressed(false)}
                   style={[
-                    styles.grapeCircle,
+                    scaledStyles.grapeCircle,
                     { backgroundColor: ratePressed ? '#8684FF' : '#4F41D8', 
                       position: 'absolute', 
                       ...(grapePositions.rate as any), 
                       zIndex: 8,
-                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                      transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]
                     } as any
                   ]}
                 >
-                  <Text style={[styles.grapeMenuText, {marginLeft: 25, marginBottom: 15, textAlign: 'center'}]}>{strings[language].rateAndReview}</Text>
+                  <Text style={[scaledStyles.grapeMenuText, {marginLeft: 25 * scaleFactor, marginBottom: 15 * scaleFactor, textAlign: 'center'}]}>{strings[language].rateAndReview}</Text>
                 </TouchableOpacity>
                 {/* Share button (behind) */}
                 <TouchableOpacity
@@ -369,14 +401,14 @@ export default function AccountScreen() {
                   onPressOut={() => setSharePressed(false)}
                   onPress={handleShare}
                   style={[
-                    styles.grapeCircle,
+                    scaledStyles.grapeCircle,
                     { backgroundColor: sharePressed ? '#8684FF' : '#685CDD', 
                       position: 'absolute', ...(grapePositions.share as any), 
                       zIndex: 9, 
-                      transform: [{ translateX: -70 }, { translateY: -70 }]} as any
+                      transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]} as any
                   ]}
                 >
-                  <Text style={[styles.grapeMenuText, {marginLeft: 15, marginTop: 5, textAlign: 'center'}]}>{strings[language].share}</Text>
+                  <Text style={[scaledStyles.grapeMenuText, {marginLeft: 15 * scaleFactor, marginTop: 5 * scaleFactor, textAlign: 'center'}]}>{strings[language].share}</Text>
                 </TouchableOpacity>
                 {/* T&C button (behind) */}
                 <TouchableOpacity
@@ -384,14 +416,14 @@ export default function AccountScreen() {
                   onPressIn={() => setTCPressed(true)}
                   onPressOut={() => setTCPressed(false)}
                   style={[
-                    styles.grapeCircle,
+                    scaledStyles.grapeCircle,
                     { backgroundColor: tcPressed ? '#8684FF' : '#4F41D8', 
                       position: 'absolute', ...(grapePositions.tc as any), 
                       zIndex: 9, 
-                      transform: [{ translateX: -70 }, { translateY: -70 }]} as any
+                      transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]} as any
                   ]}
                 >
-                  <Text style={[styles.grapeMenuText, {marginRight: 22, textAlign: 'center'}]}>{strings[language].termsAndConditions}</Text>
+                  <Text style={[scaledStyles.grapeMenuText, {marginRight: 22 * scaleFactor, textAlign: 'center'}]}>{strings[language].termsAndConditions}</Text>
                 </TouchableOpacity>
                 {/* App Settings button (behind) */}
                 <TouchableOpacity
@@ -400,16 +432,16 @@ export default function AccountScreen() {
                   onPressOut={() => setAppSettingsPressed(false)}
                   onPress={handleAppSettingsPress}
                   style={[
-                    styles.grapeCircle,
+                    scaledStyles.grapeCircle,
                     { backgroundColor: appSettingsPressed ? '#8684FF' : '#3B30A7', 
                       position: 'absolute', 
                       ...(grapePositions.app as any), 
                       zIndex: 8, 
-                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                      transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]
                     } as any
                   ]}
                 >
-                  <Text style={[styles.grapeMenuText, {marginTop: 50, textAlign: 'center'}]}>{strings[language].appSettings}</Text>
+                  <Text style={[scaledStyles.grapeMenuText, {marginTop: 50 * scaleFactor, textAlign: 'center'}]}>{strings[language].appSettings}</Text>
                 </TouchableOpacity>
                 {/* Deck Settings button (behind) */}
                 <TouchableOpacity
@@ -418,33 +450,33 @@ export default function AccountScreen() {
                   onPressOut={() => setDeckSettingsPressed(false)}
                   onPress={handleDeckSettingsPress}
                   style={[
-                    styles.grapeCircle,
+                    scaledStyles.grapeCircle,
                     { backgroundColor: deckSettingsPressed ? '#8684FF' : '#3B30A7', 
                       position: 'absolute', 
                       ...(grapePositions.deck as any), 
                       zIndex: 8,
-                      transform: [{ translateX: -70 }, { translateY: -70 }]
+                      transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]
                     } as any
                   ]}
                 >
-                  <Text style={[styles.grapeMenuText, {marginBottom: 48, textAlign: 'center'}]}>{strings[language].deckSettings}</Text>
+                  <Text style={[scaledStyles.grapeMenuText, {marginBottom: 48 * scaleFactor, textAlign: 'center'}]}>{strings[language].deckSettings}</Text>
                 </TouchableOpacity>
                 {/* Upgrade button (on top) */}
                 <TouchableOpacity
                   activeOpacity={1}
                   onPressIn={() => setUpgradePressed(true)}
                   onPressOut={() => setUpgradePressed(false)}
-                  style={[styles.grapeCircle, 
+                  style={[scaledStyles.grapeCircle, 
                     { backgroundColor: upgradePressed ? '#8684FF' : '#685CDD', 
                       position: 'absolute', 
                       ...(grapePositions.upgrade as any), 
                       zIndex: 10, 
-                      transform: [{ translateX: -70 }, { translateY: -70 }] } as any]}
+                      transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }] } as any]}
                 >
-                  <Text style={styles.grapeMenuText}>{strings[language].upgrade}</Text>
+                  <Text style={scaledStyles.grapeMenuText}>{strings[language].upgrade}</Text>
                   <Image 
                     source={require('@/assets/images/Diamond.png')} 
-                    style={styles.diamondImage}
+                    style={scaledStyles.diamondImage}
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
@@ -557,6 +589,7 @@ export default function AccountScreen() {
     lightButtonOpacity,
     darkButtonOpacity,
     themeStyles.profileCircle,
+    scaledStyles,
     themeColors.text,
     themeColors.unselectedText,
     displayUser?.email,
@@ -582,7 +615,8 @@ export default function AccountScreen() {
     setUpgradePressed,
     onSwipeHandlerStateChange,
     swipeAnim,
-    screenWidth
+    screenWidth,
+    scaleFactor
   ]);
 
 

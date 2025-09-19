@@ -19,7 +19,7 @@ interface AIPromptModalProps {
   sourcePage?: string;
 }
 
-const EMPTY_STATE_ANIMATION = require('@/assets/animations/EmptyState2.json');
+const EMPTY_STATE_ANIMATION = require('@/assets/animations/EmptyState1.json');
 
 const ANIMATION_CONFIG = {
   toValue: 0,

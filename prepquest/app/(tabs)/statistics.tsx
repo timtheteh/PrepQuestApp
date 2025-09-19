@@ -1,15 +1,7 @@
 import { Dimensions, View, ScrollView, Animated } from 'react-native';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ReviewLineGraph } from '@/components/statsComponents/ReviewLineGraph';
-import { BreakdownOfDecksFlashcards } from '@/components/statsComponents/BreakdownOfDecksFlashcards';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { MoreDetailsStats } from '@/components/statsComponents/MoreDetailsStats';
-import { GradeChart } from '@/components/statsComponents/GradeChart'; 
-import { AverageGradeThermometer } from '@/components/statsComponents/AverageGradeThermometer';
-import BreakdownByDifficultyPie from '@/components/statsComponents/BreakdownByDifficulty';
-import { SpeedChart } from '@/components/statsComponents/SpeedChart';
-import AverageSpeedTotal from '@/components/statsComponents/AverageSpeedTotal';
 import { getAverageGradeAllTime, getDifficultyBreakdown, getAverageTimeAllTime } from '@/db/grades';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarStatisticsHeight } from '@/hooks/heights';
@@ -19,7 +11,30 @@ import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getAnimationConfig } from '@/utils/animationConfig';
 
-export default function StatisticsScreen() {
+// Lazy load heavy components for better performance
+const ReviewLineGraph = lazy(() => import('@/components/statsComponents/ReviewLineGraph').then(module => ({ default: module.ReviewLineGraph })));
+const BreakdownOfDecksFlashcards = lazy(() => import('@/components/statsComponents/BreakdownOfDecksFlashcards').then(module => ({ default: module.BreakdownOfDecksFlashcards })));
+const MoreDetailsStats = lazy(() => import('@/components/statsComponents/MoreDetailsStats').then(module => ({ default: module.MoreDetailsStats })));
+const GradeChart = lazy(() => import('@/components/statsComponents/GradeChart').then(module => ({ default: module.GradeChart })));
+const AverageGradeThermometer = lazy(() => import('@/components/statsComponents/AverageGradeThermometer').then(module => ({ default: module.AverageGradeThermometer })));
+const BreakdownByDifficultyPie = lazy(() => import('@/components/statsComponents/BreakdownByDifficulty'));
+const SpeedChart = lazy(() => import('@/components/statsComponents/SpeedChart').then(module => ({ default: module.SpeedChart })));
+const AverageSpeedTotal = lazy(() => import('@/components/statsComponents/AverageSpeedTotal'));
+
+// Loading fallback component
+const ComponentLoader = React.memo(({ height = 200 }: { height?: number }) => {
+  const { theme } = useTheme();
+  return (
+    <View style={{ 
+      height, 
+      backgroundColor: Colors[theme].background, 
+      justifyContent: 'center', 
+      alignItems: 'center' 
+    }} />
+  );
+});
+
+const StatisticsScreen = React.memo(() => {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const [isPerformance, setIsPerformance] = useState(false);
@@ -38,22 +53,51 @@ export default function StatisticsScreen() {
   const [isLoadingDifficultyBreakdown, setIsLoadingDifficultyBreakdown] = useState(true);
   const [averageTime, setAverageTime] = useState(0);
   const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
-  const [isLoadingScreen, setIsLoadingScreen] = useState(false);
+  const [shouldLoadDecksComponents, setShouldLoadDecksComponents] = useState(false);
+  const [shouldLoadPerformanceComponents, setShouldLoadPerformanceComponents] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
-  const loadingScreenAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
   const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
 
   // Get performance-based animation config
   const animationConfig = useMemo(() => getAnimationConfig(), []);
 
-  // Memoized data fetching functions to prevent recreation on every render
+  // Data cache with timestamps
+  const dataCache = useRef<{
+    averageGrade?: { data: number; timestamp: number };
+    difficultyBreakdown?: { data: any; timestamp: number };
+    averageTime?: { data: number; timestamp: number };
+  }>({});
+  
+  // Cache duration: 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000;
+  
+  // Check if cached data is still valid
+  const isCacheValid = (timestamp: number) => {
+    return Date.now() - timestamp < CACHE_DURATION;
+  };
+
+  // Memoized data fetching functions with caching
   const fetchAverageGrade = useCallback(async () => {
     try {
       setIsLoadingAverageGrade(true);
+      
+      // Check cache first
+      if (dataCache.current.averageGrade && isCacheValid(dataCache.current.averageGrade.timestamp)) {
+        setAverageGrade(dataCache.current.averageGrade.data);
+        setIsLoadingAverageGrade(false);
+        return;
+      }
+      
       const grade = await getAverageGradeAllTime();
       setAverageGrade(grade);
+      
+      // Cache the result
+      dataCache.current.averageGrade = {
+        data: grade,
+        timestamp: Date.now()
+      };
     } catch (error) {
       console.error('Error fetching average grade:', error);
       setAverageGrade(0);
@@ -65,8 +109,22 @@ export default function StatisticsScreen() {
   const fetchDifficultyBreakdown = useCallback(async () => {
     try {
       setIsLoadingDifficultyBreakdown(true);
+      
+      // Check cache first
+      if (dataCache.current.difficultyBreakdown && isCacheValid(dataCache.current.difficultyBreakdown.timestamp)) {
+        setDifficultyBreakdown(dataCache.current.difficultyBreakdown.data);
+        setIsLoadingDifficultyBreakdown(false);
+        return;
+      }
+      
       const breakdown = await getDifficultyBreakdown();
       setDifficultyBreakdown(breakdown);
+      
+      // Cache the result
+      dataCache.current.difficultyBreakdown = {
+        data: breakdown,
+        timestamp: Date.now()
+      };
     } catch (error) {
       console.error('Error fetching difficulty breakdown:', error);
       setDifficultyBreakdown({
@@ -83,8 +141,22 @@ export default function StatisticsScreen() {
   const fetchAverageTime = useCallback(async () => {
     try {
       setIsLoadingAverageTime(true);
+      
+      // Check cache first
+      if (dataCache.current.averageTime && isCacheValid(dataCache.current.averageTime.timestamp)) {
+        setAverageTime(dataCache.current.averageTime.data);
+        setIsLoadingAverageTime(false);
+        return;
+      }
+      
       const time = await getAverageTimeAllTime();
       setAverageTime(time);
+      
+      // Cache the result
+      dataCache.current.averageTime = {
+        data: time,
+        timestamp: Date.now()
+      };
     } catch (error) {
       console.error('Error fetching average time:', error);
       setAverageTime(0);
@@ -93,46 +165,49 @@ export default function StatisticsScreen() {
     }
   }, []);
 
+  // Optimized data fetching - only fetch when needed
+  const fetchDataForPerformanceTab = useCallback(async () => {
+    // Only fetch performance-specific data when switching to performance tab
+    await Promise.all([
+      fetchAverageGrade(),
+      fetchDifficultyBreakdown(),
+      fetchAverageTime()
+    ]);
+  }, [fetchAverageGrade, fetchDifficultyBreakdown, fetchAverageTime]);
+
   useEffect(() => {
     if (isFocused) {
-      // Optimize loading experience - reduce loading screen time for better performance
-      setIsLoadingScreen(true);
-      loadingScreenAnim.setValue(1);
+      // Reset component loading states
+      setShouldLoadDecksComponents(false);
+      setShouldLoadPerformanceComponents(false);
       
-      setDisableToggleAnimation(true);
+      // Optimize loading experience - show screen immediately without data loading
+      setDisableToggleAnimation(false);
       setIsPerformance(false);
       
-      // Fetch data in parallel for better performance
-      Promise.all([
-        fetchAverageGrade(),
-        fetchDifficultyBreakdown(),
-        fetchAverageTime()
-      ]).finally(() => {
-        // Reduced loading screen time for better UX
-        setTimeout(() => {
-          setIsLoadingScreen(false);
-          Animated.timing(loadingScreenAnim, {
-            toValue: 0,
-            duration: animationConfig.duration, // Use performance-based duration
-            useNativeDriver: true,
-          }).start();
-          
-          setDisableToggleAnimation(false);
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: animationConfig.duration, // Use performance-based duration
-            useNativeDriver: true,
-          }).start();
-        }, 50); // Reduced from 100ms to 50ms
-      });
+      // Immediate screen display
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: animationConfig.duration, // Use performance-based duration
+        useNativeDriver: true,
+      }).start();
+      
+      // Load initial components after a short delay for better perceived performance
+      setTimeout(() => {
+        setShouldLoadDecksComponents(true);
+      }, 50); // Reduced delay for faster initial load
     } else {
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: animationConfig.duration, // Use performance-based duration
         useNativeDriver: true,
       }).start();
+      
+      // Reset component loading states when screen loses focus
+      setShouldLoadDecksComponents(false);
+      setShouldLoadPerformanceComponents(false);
     }
-  }, [isFocused, fetchAverageGrade, fetchDifficultyBreakdown, fetchAverageTime, animationConfig]);
+  }, [isFocused, animationConfig]);
 
   // Optimized fade animation for Decks/Performance toggle
   const handleToggle = useCallback((val: boolean) => {
@@ -147,15 +222,23 @@ export default function StatisticsScreen() {
         // Reset both sections to Decks state
         setBreakdownKey(prev => prev + 1);
         setMoreDetailsState(0);
+        // Ensure decks components are loaded
+        setShouldLoadDecksComponents(true);
       } else {
-        Animated.timing(contentFadeAnim, {
-          toValue: 1,
-          duration: animationConfig.duration, // Use performance-based duration
-          useNativeDriver: true,
-        }).start();
+        // Load performance components and fetch data when switching to performance tab
+        setShouldLoadPerformanceComponents(true);
+        
+        // Fetch performance data in background
+        fetchDataForPerformanceTab().finally(() => {
+          Animated.timing(contentFadeAnim, {
+            toValue: 1,
+            duration: animationConfig.duration, // Use performance-based duration
+            useNativeDriver: true,
+          }).start();
+        });
       }
     });
-  }, [contentFadeAnim, animationConfig]);
+  }, [contentFadeAnim, animationConfig, fetchDataForPerformanceTab]);
 
   // Optimized callback for ReviewLineGraph to trigger fade-in after content is ready
   const handleDecksContentReady = useCallback(() => {
@@ -175,16 +258,6 @@ export default function StatisticsScreen() {
     backgroundColor: Colors[theme].background 
   }), [theme]);
 
-  const loadingOverlayStyle = useMemo(() => ({ 
-    position: 'absolute' as const, 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0, 
-    backgroundColor: Colors[theme].background, 
-    zIndex: 1000,
-    opacity: loadingScreenAnim
-  }), [theme, loadingScreenAnim]);
 
   const animatedContainerStyle = useMemo(() => ({ 
     flex: 1, 
@@ -219,11 +292,6 @@ export default function StatisticsScreen() {
 
   return (
     <View style={containerStyle}>
-      {/* Loading screen overlay */}
-      {isLoadingScreen && (
-        <Animated.View style={loadingOverlayStyle} />
-      )}
-      
       <Animated.View style={animatedContainerStyle}>
         <View style={headerContainerStyle}>
           <RoundedContainer
@@ -243,11 +311,17 @@ export default function StatisticsScreen() {
               showsVerticalScrollIndicator={false}
               removeClippedSubviews={true} // Optimize for performance
             >
-              {/* ReviewSection */}
-              <ReviewLineGraph onContentReady={handleDecksContentReady} />
-              {/* breakdown section */}
-              <BreakdownOfDecksFlashcards key={breakdownKey} />
-              <MoreDetailsStats selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
+              {shouldLoadDecksComponents ? (
+                <Suspense fallback={<ComponentLoader height={300} />}>
+                  {/* ReviewSection */}
+                  <ReviewLineGraph onContentReady={handleDecksContentReady} />
+                  {/* breakdown section */}
+                  <BreakdownOfDecksFlashcards key={breakdownKey} />
+                  <MoreDetailsStats selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
+                </Suspense>
+              ) : (
+                <ComponentLoader height={600} />
+              )}
             </ScrollView>
           )}
           {isPerformance && (
@@ -256,11 +330,17 @@ export default function StatisticsScreen() {
               showsVerticalScrollIndicator={false}
               removeClippedSubviews={true} // Optimize for performance
             >
-              <GradeChart />
-              <AverageGradeThermometer score={averageGrade} />
-              <BreakdownByDifficultyPie breakdown={difficultyBreakdown} />
-              <SpeedChart />
-              <AverageSpeedTotal averageTime={averageTime} />
+              {shouldLoadPerformanceComponents ? (
+                <Suspense fallback={<ComponentLoader height={300} />}>
+                  <GradeChart />
+                  <AverageGradeThermometer score={averageGrade} />
+                  <BreakdownByDifficultyPie breakdown={difficultyBreakdown} />
+                  <SpeedChart />
+                  <AverageSpeedTotal averageTime={averageTime} />
+                </Suspense>
+              ) : (
+                <ComponentLoader height={600} />
+              )}
             </ScrollView>
           )}
         </Animated.View>
@@ -268,4 +348,6 @@ export default function StatisticsScreen() {
       </Animated.View>
     </View>
   );
-} 
+});
+
+export default StatisticsScreen;

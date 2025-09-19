@@ -1266,7 +1266,7 @@ export default function FoldersScreen() {
           {shouldShowAnimation && (
             <LottieView
               key="folders-empty-state"
-              source={require('@/assets/animations/EmptyState3.json')}
+              source={require('@/assets/animations/EmptyState2.json')}
               autoPlay
               loop
               style={styles.emptyStateAnimation}

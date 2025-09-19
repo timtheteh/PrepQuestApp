@@ -947,7 +947,7 @@ export default function DecksScreen() {
           {shouldShowStudyAnimation && (
           <LottieView
             key="study-empty-state"
-            source={require('@/assets/animations/EmptyState3.json')}
+            source={require('@/assets/animations/EmptyState2.json')}
             autoPlay
             loop
             style={styles.emptyStateAnimation}
@@ -1009,7 +1009,7 @@ export default function DecksScreen() {
           {shouldShowInterviewAnimation && (
           <LottieView
             key="interview-empty-state"
-            source={require('@/assets/animations/EmptyState3.json')}
+            source={require('@/assets/animations/EmptyState2.json')}
             autoPlay
             loop
             style={styles.emptyStateAnimation}

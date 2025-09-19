@@ -870,7 +870,7 @@ export default function ViewDecksInFolderScreen() {
         <View style={styles.emptyStateContainer}>
           <LottieView
             key="folder-empty-state"
-            source={require('@/assets/animations/EmptyState3.json')}
+            source={require('@/assets/animations/EmptyState2.json')}
             autoPlay
             loop
             style={styles.emptyStateAnimation}

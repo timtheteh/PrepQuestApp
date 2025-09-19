@@ -1297,7 +1297,7 @@ export default function FavoritesScreen() {
           {shouldShowDeckAnimation && (
             <LottieView
               key="fav-deck-empty-state"
-              source={require('@/assets/animations/EmptyState3.json')}
+              source={require('@/assets/animations/EmptyState2.json')}
               autoPlay
               loop
               style={styles.emptyStateAnimation}
@@ -1369,7 +1369,7 @@ export default function FavoritesScreen() {
           {shouldShowFolderAnimation && (
             <LottieView
               key="fav-folder-empty-state"
-              source={require('@/assets/animations/EmptyState3.json')}
+              source={require('@/assets/animations/EmptyState2.json')}
               autoPlay
               loop
               style={styles.emptyStateAnimation}

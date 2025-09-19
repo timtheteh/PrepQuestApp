@@ -8,6 +8,7 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { getAnimationConfig } from '@/utils/animationConfig';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LARGE_SCREEN_THRESHOLD = 390; // iPhone 14 width as reference point
@@ -82,6 +83,9 @@ export const Card = React.memo(({
   const [showProgressRow, setShowProgressRow] = useState(showProgress);
   const progressAnim = useRef(new Animated.Value(showProgress ? 1 : 0)).current;
 
+  // Get performance-based animation config
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
+
   useEffect(() => {
     if (isSelectMode) {
       setShowSelectPill(true);
@@ -89,52 +93,52 @@ export const Card = React.memo(({
         Animated.parallel([
           Animated.timing(selectPillAnim, {
             toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
+            duration: animationConfig.duration,
+            useNativeDriver: animationConfig.useNativeDriver,
           }),
           Animated.timing(unselectPillAnim, {
             toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
+            duration: animationConfig.duration,
+            useNativeDriver: animationConfig.useNativeDriver,
           }),
         ]).start();
-      }, 50);
+      }, animationConfig.staggerDelay / 2);
     } else {
       Animated.parallel([
         Animated.timing(selectPillAnim, {
           toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
+          duration: animationConfig.duration,
+          useNativeDriver: animationConfig.useNativeDriver,
         }),
         Animated.timing(unselectPillAnim, {
           toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
+          duration: animationConfig.duration,
+          useNativeDriver: animationConfig.useNativeDriver,
         }),
       ]).start(() => {
-        setTimeout(() => setShowSelectPill(false), 50);
+        setTimeout(() => setShowSelectPill(false), animationConfig.staggerDelay / 2);
       });
     }
-  }, [isSelectMode]);
+  }, [isSelectMode, animationConfig]);
 
   useEffect(() => {
     if (showProgress) {
       setShowProgressRow(true);
       Animated.timing(progressAnim, {
         toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
+        duration: animationConfig.duration,
+        useNativeDriver: animationConfig.useNativeDriver,
       }).start();
     } else {
       Animated.timing(progressAnim, {
         toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
+        duration: animationConfig.duration,
+        useNativeDriver: animationConfig.useNativeDriver,
       }).start(() => {
-        setTimeout(() => setShowProgressRow(false), 50);
+        setTimeout(() => setShowProgressRow(false), animationConfig.staggerDelay / 2);
       });
     }
-  }, [showProgress]);
+  }, [showProgress, animationConfig]);
 
   const containerStyle = useMemo(() => ({
     width: containerWidthPercentage.interpolate({

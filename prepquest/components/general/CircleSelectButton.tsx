@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -22,27 +22,36 @@ export const CircleSelectButton = React.memo(({
   const { theme } = useTheme();
   const colors = Colors[theme];
   
-  const handlePress = () => {
-    if (onPress) {
-      onPress();
-    }
-  };
+  // Memoize the handlePress function to prevent unnecessary re-renders
+  const handlePress = useMemo(() => {
+    return () => {
+      if (onPress) {
+        onPress();
+      }
+    };
+  }, [onPress]);
+  
+  // Memoize the animated style to prevent recreation on every render
+  const animatedStyle = useMemo(() => [
+    styles.container,
+    opacity !== undefined && { opacity },
+    style
+  ], [opacity, style]);
+  
+  // Memoize the circle style to prevent recreation
+  const circleStyle = useMemo(() => [
+    styles.circle,
+    selected && styles.selected
+  ], [selected]);
   
   return (
-    <Animated.View style={[
-      styles.container,
-      opacity !== undefined && { opacity },
-      style
-    ]}>
+    <Animated.View style={animatedStyle}>
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
         style={styles.button}
       >
-        <View style={[
-          styles.circle,
-          selected && styles.selected
-        ]}>
+        <View style={circleStyle}>
           {selected && (
             <Feather name="check" size={18} color={colors.background} />
           )}

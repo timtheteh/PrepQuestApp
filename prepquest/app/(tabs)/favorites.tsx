@@ -26,6 +26,7 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
+import { getAnimationConfig } from '@/utils/animationConfig';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -114,7 +115,7 @@ export default function FavoritesScreen() {
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
 
-  const selectUnselectedDuration = 300;
+  const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
 
   // Define opacity interpolations
   const studyOpacity = fadeAnim.interpolate({
@@ -302,43 +303,105 @@ export default function FavoritesScreen() {
   const handleSelect = useCallback(() => {
     setIsSelectMode(true);
     
-    Animated.parallel([
-      Animated.timing(shiftAnim, {
-        toValue: SHIFT_DISTANCE,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }),
-      Animated.timing(marginAnim, {
-        toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-        duration: selectUnselectedDuration,
-        useNativeDriver: false,
-      }),
-      Animated.timing(actionRowOpacity, {
-        toValue: 1,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }),
-      Animated.timing(selectTextAnim, {
-        toValue: 1,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fabOpacity, {
-        toValue: 0,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardWidthPercentage, {
-        toValue: 85,
-        duration: selectUnselectedDuration,
-        useNativeDriver: false,
-      }),
-      Animated.timing(circleButtonOpacity, {
-        toValue: 1,
-        duration: selectUnselectedDuration,
-        useNativeDriver: true,
-      })
-    ]).start();
+    const animationConfig = getAnimationConfig();
+    
+    // Use staggered animations for low-end devices to reduce load
+    if (animationConfig.maxParallelAnimations < 7) {
+      // Stagger animations in groups for low-end devices
+      const group1 = [
+        Animated.timing(shiftAnim, {
+          toValue: SHIFT_DISTANCE,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(actionRowOpacity, {
+          toValue: 1,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(selectTextAnim, {
+          toValue: 1,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+      ];
+      
+      const group2 = [
+        Animated.timing(marginAnim, {
+          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          duration: selectUnselectedDuration,
+          useNativeDriver: false,
+        }),
+        Animated.timing(fabOpacity, {
+          toValue: 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(circleButtonOpacity, {
+          toValue: 1,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+      ];
+      
+      const group3 = [
+        Animated.timing(cardWidthPercentage, {
+          toValue: 85,
+          duration: selectUnselectedDuration,
+          useNativeDriver: false,
+        }),
+      ];
+      
+      // Run groups with slight stagger
+      Animated.parallel(group1).start(() => {
+        setTimeout(() => {
+          Animated.parallel(group2).start(() => {
+            setTimeout(() => {
+              Animated.parallel(group3).start();
+            }, animationConfig.staggerDelay);
+          });
+        }, animationConfig.staggerDelay);
+      });
+    } else {
+      // Use all parallel animations for high-end devices
+      Animated.parallel([
+        Animated.timing(shiftAnim, {
+          toValue: SHIFT_DISTANCE,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(marginAnim, {
+          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          duration: selectUnselectedDuration,
+          useNativeDriver: false,
+        }),
+        Animated.timing(actionRowOpacity, {
+          toValue: 1,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(selectTextAnim, {
+          toValue: 1,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fabOpacity, {
+          toValue: 0,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardWidthPercentage, {
+          toValue: 85,
+          duration: selectUnselectedDuration,
+          useNativeDriver: false,
+        }),
+        Animated.timing(circleButtonOpacity, {
+          toValue: 1,
+          duration: selectUnselectedDuration,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
   }, [setIsSelectMode, shiftAnim, marginAnim, actionRowOpacity, selectTextAnim, fabOpacity, cardWidthPercentage, circleButtonOpacity, selectUnselectedDuration]);
 
   const handleCancel = useCallback(() => {

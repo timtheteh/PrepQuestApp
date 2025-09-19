@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { getAnimationConfig } from '@/utils/animationConfig';
 
 interface BreakdownOfDecksFlashcardsProps {
   onContentReady?: () => void;
@@ -25,7 +26,8 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
 };
 
 const BOUNCE_SPEED = 2.0; // slightly faster speed
-const FPS = 60;
+const HIGH_END_FPS = 60;
+const LOW_END_FPS = 30; // Reduced FPS for low-end devices
 
 // Mapping for category labels to Chinese/English
 const CATEGORY_LABELS: Record<string, { en: string; zh: string }> = {
@@ -53,6 +55,14 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   const containerWidth = screenWidth;
   const isFocused = useIsFocused();
 
+  // Get performance-based animation config
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
+  
+  // Performance-based FPS selection
+  const fps = useMemo(() => {
+    return animationConfig.duration <= 100 ? LOW_END_FPS : HIGH_END_FPS;
+  }, [animationConfig]);
+
   // Bubble sizes (relative to value or percent)
   const maxRadius = 80;
   const minRadius = 40;
@@ -75,25 +85,31 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   const worldRef = useRef<any>(null);
   const intervalRef = useRef<any>(null);
 
-  // Function to load data
-  const loadData = async () => {
+  // Memoized function to load data
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const { decksData: fetchedDecksData, flashcardsData: fetchedFlashcardsData } = await fetchBreakdownData();
       setDecksData(fetchedDecksData);
       setFlashcardsData(fetchedFlashcardsData);
     } catch (error) {
+      console.error('Error loading breakdown data:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Fetch data on component mount and when screen comes into focus
   useEffect(() => {
     loadData();
-  }, [isFocused]); // Refresh data when screen comes into focus
+  }, [isFocused, loadData]); // Refresh data when screen comes into focus
 
   useEffect(() => {
+    // Skip physics engine for empty data or low-end devices with too many bubbles
+    if (data.length === 0 || (animationConfig.duration <= 100 && data.length > 6)) {
+      return;
+    }
+
     // Clean up previous engine if any
     if (engineRef.current) {
       Engine.clear(engineRef.current);
@@ -103,8 +119,13 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
 
-    // Create engine and world
-    const engine = Engine.create({ enableSleeping: false });
+    // Create engine and world with optimized settings for low-end devices
+    const engine = Engine.create({ 
+      enableSleeping: animationConfig.duration <= 100, // Enable sleeping for low-end devices
+      timing: {
+        timeScale: animationConfig.duration <= 100 ? 0.5 : 1.0 // Slower physics for low-end devices
+      }
+    });
     const world = engine.world;
     engine.gravity.y = 0;
     engine.gravity.x = 0;
@@ -163,19 +184,20 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       }
       
       const body = Bodies.circle(x, y, radius, {
-        restitution: 0.8, // Reduced restitution to prevent excessive bouncing
-        friction: 0.1, // Added slight friction
-        frictionAir: 0.01, // Added slight air resistance
+        restitution: animationConfig.duration <= 100 ? 0.6 : 0.8, // Lower restitution for low-end devices
+        friction: animationConfig.duration <= 100 ? 0.3 : 0.1, // Higher friction for low-end devices
+        frictionAir: animationConfig.duration <= 100 ? 0.05 : 0.01, // Higher air resistance for low-end devices
         label: d.label,
         render: { fillStyle: d.color },
-        sleepingAllowed: false,
+        sleepingAllowed: animationConfig.duration <= 100, // Allow sleeping for low-end devices
       });
       
-      // Give a random slow velocity
+      // Give a random slow velocity (reduced for low-end devices)
       const angle = Math.random() * 2 * Math.PI;
+      const speed = animationConfig.duration <= 100 ? BOUNCE_SPEED * 0.7 : BOUNCE_SPEED;
       Body.setVelocity(body, {
-        x: Math.cos(angle) * BOUNCE_SPEED,
-        y: Math.sin(angle) * BOUNCE_SPEED,
+        x: Math.cos(angle) * speed,
+        y: Math.sin(angle) * speed,
       });
       return body;
     });
@@ -212,44 +234,62 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     ];
     World.add(world, walls);
 
-    // Update positions on each tick with improved boundary enforcement
+    // Optimized update loop with performance-based settings
+    let frameCount = 0;
     intervalRef.current = setInterval(() => {
-      Engine.update(engine, 1000 / FPS);
+      Engine.update(engine, 1000 / fps);
       
-      // Improved boundary enforcement and velocity control
-      bodiesRef.current.forEach(b => {
-        const radius = b.circleRadius;
-        
-        // Enforce boundaries - if bubble escapes, bring it back
-        if (b.position.x - radius < 0) {
-          Body.setPosition(b, { x: radius, y: b.position.y });
-          Body.setVelocity(b, { x: Math.abs(b.velocity.x), y: b.velocity.y });
-        }
-        if (b.position.x + radius > containerWidth) {
-          Body.setPosition(b, { x: containerWidth - radius, y: b.position.y });
-          Body.setVelocity(b, { x: -Math.abs(b.velocity.x), y: b.velocity.y });
-        }
-        if (b.position.y - radius < 0) {
-          Body.setPosition(b, { x: b.position.x, y: radius });
-          Body.setVelocity(b, { x: b.velocity.x, y: Math.abs(b.velocity.y) });
-        }
-        if (b.position.y + radius > containerHeight) {
-          Body.setPosition(b, { x: b.position.x, y: containerHeight - radius });
-          Body.setVelocity(b, { x: b.velocity.x, y: -Math.abs(b.velocity.y) });
-        }
-        
-        // Maintain constant speed
-        const vx = b.velocity.x;
-        const vy = b.velocity.y;
-        const speed = Math.sqrt(vx * vx + vy * vy);
-        if (Math.abs(speed - BOUNCE_SPEED) > 0.1) { // Only update if significantly different
-          const scale = BOUNCE_SPEED / speed;
-          Body.setVelocity(b, { x: vx * scale, y: vy * scale });
-        }
-      });
+      // Skip expensive calculations for low-end devices on some frames
+      const shouldUpdateBoundaries = animationConfig.duration > 100 || frameCount % 3 === 0;
+      const shouldUpdateVelocity = animationConfig.duration > 100 || frameCount % 5 === 0;
       
-      setPositions(bodiesRef.current.map(b => ({ x: b.position.x, y: b.position.y, r: b.circleRadius })));
-    }, 1000 / FPS);
+      if (shouldUpdateBoundaries || shouldUpdateVelocity) {
+        // Optimized boundary enforcement and velocity control
+        bodiesRef.current.forEach(b => {
+          const radius = b.circleRadius;
+          
+          // Enforce boundaries - if bubble escapes, bring it back
+          if (shouldUpdateBoundaries) {
+            if (b.position.x - radius < 0) {
+              Body.setPosition(b, { x: radius, y: b.position.y });
+              Body.setVelocity(b, { x: Math.abs(b.velocity.x), y: b.velocity.y });
+            }
+            if (b.position.x + radius > containerWidth) {
+              Body.setPosition(b, { x: containerWidth - radius, y: b.position.y });
+              Body.setVelocity(b, { x: -Math.abs(b.velocity.x), y: b.velocity.y });
+            }
+            if (b.position.y - radius < 0) {
+              Body.setPosition(b, { x: b.position.x, y: radius });
+              Body.setVelocity(b, { x: b.velocity.x, y: Math.abs(b.velocity.y) });
+            }
+            if (b.position.y + radius > containerHeight) {
+              Body.setPosition(b, { x: b.position.x, y: containerHeight - radius });
+              Body.setVelocity(b, { x: b.velocity.x, y: -Math.abs(b.velocity.y) });
+            }
+          }
+          
+          // Maintain constant speed (less frequent for low-end devices)
+          if (shouldUpdateVelocity) {
+            const vx = b.velocity.x;
+            const vy = b.velocity.y;
+            const speed = Math.sqrt(vx * vx + vy * vy);
+            const targetSpeed = animationConfig.duration <= 100 ? BOUNCE_SPEED * 0.7 : BOUNCE_SPEED;
+            if (Math.abs(speed - targetSpeed) > 0.1) {
+              const scale = targetSpeed / speed;
+              Body.setVelocity(b, { x: vx * scale, y: vy * scale });
+            }
+          }
+        });
+      }
+      
+      // Update positions less frequently for low-end devices
+      const shouldUpdatePositions = animationConfig.duration > 100 || frameCount % 2 === 0;
+      if (shouldUpdatePositions) {
+        setPositions(bodiesRef.current.map(b => ({ x: b.position.x, y: b.position.y, r: b.circleRadius })));
+      }
+      
+      frameCount++;
+    }, 1000 / fps);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -259,26 +299,47 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       worldRef.current = null;
     };
      
-  }, [data, getRadius, containerWidth, containerHeight]);
+  }, [data, getRadius, containerWidth, containerHeight, fps, animationConfig]);
 
-  // Fade out, then switch data, then fade in
+  // Optimized fade animation with performance-based durations
   useEffect(() => {
     if (isFlashcards === renderedIsFlashcards) return;
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 180,
+      duration: animationConfig.duration, // Use performance-based duration
       useNativeDriver: true,
     }).start(() => {
       setRenderedIsFlashcards(isFlashcards);
       fadeAnim.setValue(0);
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 300,
+        duration: animationConfig.duration * 1.5, // Slightly longer fade in
         useNativeDriver: true,
       }).start();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFlashcards]);
+  }, [isFlashcards, fadeAnim, animationConfig]);
+
+  // Memoized static bubble positions for low-end devices
+  const staticPositions = useMemo(() => {
+    if (data.length === 0) return [];
+    
+    // Create static grid positions for low-end devices
+    const cols = Math.min(3, Math.ceil(Math.sqrt(data.length)));
+    const rows = Math.ceil(data.length / cols);
+    const cellWidth = containerWidth / cols;
+    const cellHeight = containerHeight / rows;
+    
+    return data.map((d, i) => {
+      const radius = getRadius(d.value);
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      return {
+        x: col * cellWidth + cellWidth / 2,
+        y: row * cellHeight + cellHeight / 2,
+        r: radius
+      };
+    });
+  }, [data, getRadius, containerWidth, containerHeight]);
 
   // Show loading or empty state
   if (isLoading) {
@@ -339,7 +400,11 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
         <Animated.View style={{ flex: 1, width: '100%', height: '100%', opacity: fadeAnim }}>
           {data.map((d: BreakdownDatum, i: number) => {
             const radius = getRadius(d.value);
-            const pos = positions[i] || { x: containerWidth / 2, y: containerHeight / 2 };
+            // Use static positions for low-end devices or when physics engine is disabled
+            const pos = (animationConfig.duration <= 100 && data.length > 6) || positions.length === 0 
+              ? staticPositions[i] || { x: containerWidth / 2, y: containerHeight / 2 }
+              : positions[i] || { x: containerWidth / 2, y: containerHeight / 2 };
+            
             return (
               <View
                 key={d.label}

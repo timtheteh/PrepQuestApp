@@ -7,9 +7,14 @@ import { AIPromptModal } from '@/components/AIDecks/AIPromptModal';
 import { AddDeckModal } from '@/components/addDeckModal/AddDeckModal';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { MenuContext } from '@/contexts/MenuContext';
+import { SlidingMenuContext } from '@/contexts/SlidingMenuContext';
+import { ModalContext } from '@/contexts/ModalContext';
+import { AppStateContext } from '@/contexts/AppStateContext';
+import { ActionHandlersContext } from '@/contexts/ActionHandlersContext';
 import { useState, useRef, useCallback, RefObject, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { ANIMATION_CONFIGS } from '@/constants/AnimationConfigs';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import ModalExclamationMarkIcon from '@/assets/icons/generalIcons/modalExclamationMarkIcon.svg';
 import LottieView from 'lottie-react-native';
@@ -67,8 +72,6 @@ export default function TabLayout() {
   const decksAlreadyInFoldersModalOpacity = useRef(new Animated.Value(0)).current;
   const [showGlobalLoadingOverlay, setShowGlobalLoadingOverlay] = useState(false);
   const globalLoadingOverlayRef = useRef<LottieView>(null);
-  const slidingMenuDuration = 300;
-  const overlayDuration = 200;
   const { language } = useLanguage();
 
   // Memoized loading animation source
@@ -95,24 +98,9 @@ export default function TabLayout() {
     alignItems: 'center' as const,
   }), []);
 
-  // Memoize animation configurations to prevent recreation on every render
-  const animationConfigs = useMemo(() => ({
-    overlay: {
-      toValue: 0,
-      duration: overlayDuration,
-      useNativeDriver: true,
-    },
-    slidingMenu: {
-      toValue: 0,
-      duration: slidingMenuDuration,
-      useNativeDriver: true,
-    },
-    menuTranslate: {
-      toValue: -171,
-      duration: slidingMenuDuration,
-      useNativeDriver: true,
-    }
-  }), [overlayDuration, slidingMenuDuration]);
+  // Memoized string values to prevent recreation on every render
+  const deleteModalText = useMemo(() => strings[language].deleteDecksConfirmation, [language]);
+  const noSelectionModalSubtitle = useMemo(() => strings[language].noSelectionSubtitle, [language]);
 
   // Handle global loading overlay animation
   useEffect(() => {
@@ -131,56 +119,56 @@ export default function TabLayout() {
   const handleDismissMenu = useCallback(() => {
     if (isAIPromptOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(aiPromptOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(aiPromptOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsAIPromptOpen(false);
       });
     } else if (isAddDeckOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(addDeckOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(addDeckOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsAddDeckOpen(false);
       });
     } else if (isTrashModalOpenInDecksPage) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(trashModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(trashModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsTrashModalOpenInDecksPage(false);
       });
     } else if (isNoSelectionModalOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(noSelectionModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(noSelectionModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsNoSelectionModalOpen(false);
       });
     } else if (isAddToFoldersModalOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(addToFoldersModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(addToFoldersModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsAddToFoldersModalOpen(false);
       });
     } else if (isMoveToFoldersModalOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(moveToFoldersModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(moveToFoldersModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsMoveToFoldersModalOpen(false);
       });
     } else if (isUnfavoriteModalOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(unfavoriteModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(unfavoriteModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsUnfavoriteModalOpen(false);
@@ -191,8 +179,8 @@ export default function TabLayout() {
         setOnSubmitCustomFormModalClose(null);
       }
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(submitCustomFormModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(submitCustomFormModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsSubmitCustomFormModalOpen(false);
@@ -203,8 +191,8 @@ export default function TabLayout() {
         setOnDeckDetailsDeleteModalDismiss(null);
       }
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(deckDetailsDeleteModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(deckDetailsDeleteModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsDeckDetailsDeleteModalOpen(false);
@@ -215,38 +203,38 @@ export default function TabLayout() {
         setOnDeckDetailsSaveModalDismiss(null);
       }
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(deckDetailsSaveModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(deckDetailsSaveModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsDeckDetailsSaveModalOpen(false);
       });
     } else if (isDeleteFolderModalOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(deleteFolderModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(deleteFolderModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsDeleteFolderModalOpen(false);
       });
     } else if (isDecksAlreadyInFoldersModalOpen) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.overlay),
-        Animated.timing(decksAlreadyInFoldersModalOpacity, animationConfigs.overlay)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.overlay),
+        Animated.timing(decksAlreadyInFoldersModalOpacity, ANIMATION_CONFIGS.overlay)
       ]).start(() => {
         setIsMenuOpen(false);
         setIsDecksAlreadyInFoldersModalOpen(false);
       });
     } else if (showSlidingMenu) {
       Animated.parallel([
-        Animated.timing(menuOverlayOpacity, animationConfigs.slidingMenu),
-        Animated.timing(menuTranslateX, animationConfigs.menuTranslate)
+        Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.slidingMenu),
+        Animated.timing(menuTranslateX, ANIMATION_CONFIGS.menuTranslateHide)
       ]).start(() => {
         setIsMenuOpen(false);
         setShowSlidingMenu(false);
       });
     } else {
-      Animated.timing(menuOverlayOpacity, animationConfigs.slidingMenu).start(() => {
+      Animated.timing(menuOverlayOpacity, ANIMATION_CONFIGS.slidingMenu).start(() => {
         setIsMenuOpen(false);
       });
     }
@@ -264,199 +252,156 @@ export default function TabLayout() {
     isDeckDetailsSaveModalOpen, 
     onDeckDetailsSaveModalDismiss,
     isDeleteFolderModalOpen,
-    isDecksAlreadyInFoldersModalOpen,
-    animationConfigs]);
+    isDecksAlreadyInFoldersModalOpen]);
 
   const handleFolderPress = useCallback(() => {
     handleDismissMenu();
     navbarRef.current?.resetAnimation();
   }, [handleDismissMenu]);
 
-  // Memoize the MenuContext value to prevent unnecessary re-renders of consuming components
-  const menuContextValue = useMemo(() => ({ 
-    isMenuOpen, 
-    menuOverlayOpacity, 
+  // Create optimized context providers with focused concerns
+  const slidingMenuContextValue = useMemo(() => ({
+    isMenuOpen,
+    menuOverlayOpacity,
     menuTranslateX,
     setIsMenuOpen,
     handleDismissMenu,
     showSlidingMenu,
     setShowSlidingMenu,
+    navbarRef,
+  }), [isMenuOpen, menuOverlayOpacity, menuTranslateX, handleDismissMenu, showSlidingMenu]);
+
+  const modalContextValue = useMemo(() => ({
     isAIPromptOpen,
     setIsAIPromptOpen,
     aiPromptOpacity,
     isAddDeckOpen,
     setIsAddDeckOpen,
     addDeckOpacity,
-    currentMode,
-    setCurrentMode,
     isTrashModalOpenInDecksPage,
     setIsTrashModalOpenInDecksPage,
     trashModalOpacity,
     isNoSelectionModalOpen,
     setIsNoSelectionModalOpen,
     noSelectionModalOpacity,
-    handleDeletion,
-    setHandleDeletion,
-    navbarRef,
-    deleteModalText: strings[language].deleteDecksConfirmation,
-    setDeleteModalText: () => {},
     isAddToFoldersModalOpen,
     setIsAddToFoldersModalOpen,
     addToFoldersModalOpacity,
     isMoveToFoldersModalOpen,
     setIsMoveToFoldersModalOpen,
     moveToFoldersModalOpacity,
-    isInFavoritesPage,
-    setIsInFavoritesPage,
-    isInFoldersPage,
-    setIsInFoldersPage,
-    isInViewFlashcardsPage,
-    setIsInViewFlashcardsPage,
-    isInViewDecksInFolderPage,
-    setIsInViewDecksInFolderPage,
-    noSelectionModalSubtitle: strings[language].noSelectionSubtitle,
-    setNoSelectionModalSubtitle: () => {},
-    sourcePageForFolders,
-    setSourcePageForFolders,
     isUnfavoriteModalOpen,
     setIsUnfavoriteModalOpen,
     unfavoriteModalOpacity,
-    unfavoriteModalText,
-    setUnfavoriteModalText,
-    handleUnfavorite,
-    setHandleUnfavorite,
-    currentDeckId,
-    setCurrentDeckId,
-    currentFolderId,
-    setCurrentFolderId,
-    currentFolderTitle,
-    setCurrentFolderTitle,
-    currentSourcePage,
-    setCurrentSourcePage,
-    currentDeckType,
-    setCurrentDeckType,
     isSubmitCustomFormModalOpen,
     setIsSubmitCustomFormModalOpen,
     submitCustomFormModalOpacity,
-    onSubmitCustomFormModalClose,
-    setOnSubmitCustomFormModalClose,
     isDeckDetailsDeleteModalOpen,
     setIsDeckDetailsDeleteModalOpen,
     deckDetailsDeleteModalOpacity,
-    handleDeckDetailsDeletion,
-    setHandleDeckDetailsDeletion,
-    onDeckDetailsDeleteModalDismiss,
-    setOnDeckDetailsDeleteModalDismiss,
-    isDeckDetailsSaveModalOpen,
-    setIsDeckDetailsSaveModalOpen,
-        deckDetailsSaveModalOpacity,
-    setOnDeckDetailsSaveModalDismiss,
-    onDeckDetailsSaveModalDismiss,
-    isDeleteFolderModalOpen,
-    setIsDeleteFolderModalOpen,
-    deleteFolderModalOpacity,
-    handleDeleteFolder,
-    setHandleDeleteFolder,
-    isDecksAlreadyInFoldersModalOpen,
-    setIsDecksAlreadyInFoldersModalOpen,
-    decksAlreadyInFoldersModalOpacity,
-    deckDetailsSaveModalType,
-    setDeckDetailsSaveModalType,
-    showGlobalLoadingOverlay,
-    setShowGlobalLoadingOverlay,
-  }), [
-    isMenuOpen, 
-    menuOverlayOpacity, 
-    menuTranslateX,
-    setIsMenuOpen,
-    handleDismissMenu,
-    showSlidingMenu,
-    setShowSlidingMenu,
-    isAIPromptOpen,
-    setIsAIPromptOpen,
-    aiPromptOpacity,
-    isAddDeckOpen,
-    setIsAddDeckOpen,
-    addDeckOpacity,
-    currentMode,
-    setCurrentMode,
-    isTrashModalOpenInDecksPage,
-    setIsTrashModalOpenInDecksPage,
-    trashModalOpacity,
-    isNoSelectionModalOpen,
-    setIsNoSelectionModalOpen,
-    noSelectionModalOpacity,
-    handleDeletion,
-    setHandleDeletion,
-    navbarRef,
-    language,
-    isAddToFoldersModalOpen,
-    setIsAddToFoldersModalOpen,
-    addToFoldersModalOpacity,
-    isMoveToFoldersModalOpen,
-    setIsMoveToFoldersModalOpen,
-    moveToFoldersModalOpacity,
-    isInFavoritesPage,
-    setIsInFavoritesPage,
-    isInFoldersPage,
-    setIsInFoldersPage,
-    isInViewFlashcardsPage,
-    setIsInViewFlashcardsPage,
-    isInViewDecksInFolderPage,
-    setIsInViewDecksInFolderPage,
-    sourcePageForFolders,
-    setSourcePageForFolders,
-    isUnfavoriteModalOpen,
-    setIsUnfavoriteModalOpen,
-    unfavoriteModalOpacity,
-    unfavoriteModalText,
-    setUnfavoriteModalText,
-    handleUnfavorite,
-    setHandleUnfavorite,
-    currentDeckId,
-    setCurrentDeckId,
-    currentFolderId,
-    setCurrentFolderId,
-    currentFolderTitle,
-    setCurrentFolderTitle,
-    currentSourcePage,
-    setCurrentSourcePage,
-    currentDeckType,
-    setCurrentDeckType,
-    isSubmitCustomFormModalOpen,
-    setIsSubmitCustomFormModalOpen,
-    submitCustomFormModalOpacity,
-    onSubmitCustomFormModalClose,
-    setOnSubmitCustomFormModalClose,
-    isDeckDetailsDeleteModalOpen,
-    setIsDeckDetailsDeleteModalOpen,
-    deckDetailsDeleteModalOpacity,
-    handleDeckDetailsDeletion,
-    setHandleDeckDetailsDeletion,
-    onDeckDetailsDeleteModalDismiss,
-    setOnDeckDetailsDeleteModalDismiss,
     isDeckDetailsSaveModalOpen,
     setIsDeckDetailsSaveModalOpen,
     deckDetailsSaveModalOpacity,
-    setOnDeckDetailsSaveModalDismiss,
-    onDeckDetailsSaveModalDismiss,
     isDeleteFolderModalOpen,
     setIsDeleteFolderModalOpen,
     deleteFolderModalOpacity,
-    handleDeleteFolder,
-    setHandleDeleteFolder,
     isDecksAlreadyInFoldersModalOpen,
     setIsDecksAlreadyInFoldersModalOpen,
     decksAlreadyInFoldersModalOpacity,
-    deckDetailsSaveModalType,
-    setDeckDetailsSaveModalType,
     showGlobalLoadingOverlay,
     setShowGlobalLoadingOverlay,
+  }), [
+    isAIPromptOpen, aiPromptOpacity,
+    isAddDeckOpen, addDeckOpacity,
+    isTrashModalOpenInDecksPage, trashModalOpacity,
+    isNoSelectionModalOpen, noSelectionModalOpacity,
+    isAddToFoldersModalOpen, addToFoldersModalOpacity,
+    isMoveToFoldersModalOpen, moveToFoldersModalOpacity,
+    isUnfavoriteModalOpen, unfavoriteModalOpacity,
+    isSubmitCustomFormModalOpen, submitCustomFormModalOpacity,
+    isDeckDetailsDeleteModalOpen, deckDetailsDeleteModalOpacity,
+    isDeckDetailsSaveModalOpen, deckDetailsSaveModalOpacity,
+    isDeleteFolderModalOpen, deleteFolderModalOpacity,
+    isDecksAlreadyInFoldersModalOpen, decksAlreadyInFoldersModalOpacity,
+    showGlobalLoadingOverlay
   ]);
 
+  const appStateContextValue = useMemo(() => ({
+    currentMode,
+    setCurrentMode,
+    isInFavoritesPage,
+    setIsInFavoritesPage,
+    isInFoldersPage,
+    setIsInFoldersPage,
+    isInViewFlashcardsPage,
+    setIsInViewFlashcardsPage,
+    isInViewDecksInFolderPage,
+    setIsInViewDecksInFolderPage,
+    sourcePageForFolders,
+    setSourcePageForFolders,
+    currentDeckId,
+    setCurrentDeckId,
+    currentFolderId,
+    setCurrentFolderId,
+    currentFolderTitle,
+    setCurrentFolderTitle,
+    currentSourcePage,
+    setCurrentSourcePage,
+    currentDeckType,
+    setCurrentDeckType,
+    deckDetailsSaveModalType,
+    setDeckDetailsSaveModalType,
+  }), [
+    currentMode, isInFavoritesPage, isInFoldersPage, 
+    isInViewFlashcardsPage, isInViewDecksInFolderPage,
+    sourcePageForFolders, currentDeckId, currentFolderId,
+    currentFolderTitle, currentSourcePage, currentDeckType,
+    deckDetailsSaveModalType
+  ]);
+
+  const actionHandlersContextValue = useMemo(() => ({
+    handleDeletion,
+    setHandleDeletion,
+    handleUnfavorite,
+    setHandleUnfavorite,
+    handleDeckDetailsDeletion,
+    setHandleDeckDetailsDeletion,
+    handleDeleteFolder,
+    setHandleDeleteFolder,
+    onSubmitCustomFormModalClose,
+    setOnSubmitCustomFormModalClose,
+    onDeckDetailsDeleteModalDismiss,
+    setOnDeckDetailsDeleteModalDismiss,
+    onDeckDetailsSaveModalDismiss,
+    setOnDeckDetailsSaveModalDismiss,
+    deleteModalText,
+    setDeleteModalText: () => {},
+    noSelectionModalSubtitle,
+    setNoSelectionModalSubtitle: () => {},
+    unfavoriteModalText,
+    setUnfavoriteModalText,
+  }), [
+    handleDeletion, handleUnfavorite, handleDeckDetailsDeletion,
+    handleDeleteFolder, onSubmitCustomFormModalClose,
+    onDeckDetailsDeleteModalDismiss, onDeckDetailsSaveModalDismiss,
+    deleteModalText, noSelectionModalSubtitle, unfavoriteModalText
+  ]);
+
+  // Legacy context value for backward compatibility
+  const menuContextValue = useMemo(() => ({ 
+    ...slidingMenuContextValue,
+    ...modalContextValue,
+    ...appStateContextValue,
+    ...actionHandlersContextValue,
+  }), [slidingMenuContextValue, modalContextValue, appStateContextValue, actionHandlersContextValue]);
+
   return (
-    <MenuContext.Provider value={menuContextValue}>
-      <View style={styles.container}>
+    <SlidingMenuContext.Provider value={slidingMenuContextValue}>
+      <ModalContext.Provider value={modalContextValue}>
+        <AppStateContext.Provider value={appStateContextValue}>
+          <ActionHandlersContext.Provider value={actionHandlersContextValue}>
+            <MenuContext.Provider value={menuContextValue}>
+              <View style={styles.container}>
         <Tabs
           screenOptions={{
             headerShown: false,
@@ -780,8 +725,12 @@ export default function TabLayout() {
             </View>
           </View>
         )}
-      </View>
-    </MenuContext.Provider>
+              </View>
+            </MenuContext.Provider>
+          </ActionHandlersContext.Provider>
+        </AppStateContext.Provider>
+      </ModalContext.Provider>
+    </SlidingMenuContext.Provider>
   );
 }
 

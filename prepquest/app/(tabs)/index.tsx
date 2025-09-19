@@ -734,12 +734,12 @@ export default function DecksScreen() {
       Animated.parallel([
         Animated.timing(menuOverlayOpacity, {
           toValue: 0.4,
-          duration: slidingMenuDuration,
+          duration: 250, // Optimized for Android
           useNativeDriver: true,
         }),
         Animated.timing(noSelectionModalOpacity, {
           toValue: 1,
-          duration: slidingMenuDuration,
+          duration: 250, // Optimized for Android
           useNativeDriver: true,
         })
       ]).start();
@@ -800,12 +800,12 @@ export default function DecksScreen() {
         Animated.parallel([
           Animated.timing(menuOverlayOpacity, {
             toValue: 0.4,
-            duration: slidingMenuDuration,
+            duration: 250, // Optimized for Android
             useNativeDriver: true,
           }),
           Animated.timing(trashModalOpacity, {
             toValue: 1,
-            duration: slidingMenuDuration,
+            duration: 250, // Optimized for Android
             useNativeDriver: true,
           })
         ]).start();
@@ -1068,20 +1068,18 @@ export default function DecksScreen() {
     [isSearching, searchedInterviewDecks.length, filteredInterviewDecksByDate.length]
   );
 
-  const slidingMenuDuration = 300;
-
   const handleMenuPress = () => {
     setIsMenuOpen(true);
     setShowSlidingMenu(true);
     Animated.parallel([
       Animated.timing(menuOverlayOpacity, {
         toValue: 0.4,
-        duration: slidingMenuDuration,
+        duration: 250, // Optimized for Android
         useNativeDriver: true,
       }),
       Animated.timing(menuTranslateX, {
         toValue: 0,
-        duration: slidingMenuDuration,
+        duration: 250, // Optimized for Android
         useNativeDriver: true,
       })
     ]).start();
@@ -1091,7 +1089,7 @@ export default function DecksScreen() {
     setIsMenuOpen(true);
     Animated.timing(menuOverlayOpacity, {
       toValue: 0.4,
-      duration: slidingMenuDuration,
+      duration: 250, // Optimized for Android
       useNativeDriver: true,
     }).start();
   };

@@ -350,7 +350,7 @@ export default function ViewDecksInFolderScreen() {
     }
   }, [sourcePage, router, navbarRef]);
 
-  const slidingMenuDuration = 300;
+  const slidingMenuDuration = 250; // Optimized for Android
 
   const handleSelectAll = useCallback(() => {
       const allDeckIndices = new Set(Array.from({ length: decks.length }, (_, i) => i));

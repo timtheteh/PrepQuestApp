@@ -81,12 +81,12 @@ export const FloatingActionButton = ({
     Animated.parallel([
       Animated.timing(menuOverlayOpacity, {
         toValue: 0.5,
-        duration: 300,
+        duration: 250, // Optimized for Android
         useNativeDriver: true,
       }),
       Animated.timing(addDeckOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: 250, // Optimized for Android
         useNativeDriver: true,
       })
     ]).start();

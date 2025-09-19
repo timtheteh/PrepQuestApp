@@ -24,8 +24,64 @@ const LargeMeshBackground4 = require('@/assets/awardsBackgrounds/LargeMeshBackgr
 const CELL_HEIGHT = 90; // or any value you prefer
 const ICON_SIZE = 70;   // make icons larger to match cell size
 
-const NumberPicker = ({ value, setValue, min, max, themeColors }: { value: number, setValue: (v: number) => void, min: number, max: number, themeColors: any }) => {
-  const numbers = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+const NumberPickerItem = React.memo(({ num, idx, scrollX, themeColors, ITEM_WIDTH }: {
+  num: number;
+  idx: number;
+  scrollX: Animated.Value;
+  themeColors: any;
+  ITEM_WIDTH: number;
+}) => {
+  // Pre-calculate input range to avoid recalculation
+  const inputRange = useMemo(() => [
+    (idx - 2) * ITEM_WIDTH,
+    (idx - 1) * ITEM_WIDTH,
+    idx * ITEM_WIDTH,
+    (idx + 1) * ITEM_WIDTH,
+    (idx + 2) * ITEM_WIDTH,
+  ], [idx, ITEM_WIDTH]);
+  
+  const fontSize = scrollX.interpolate({
+    inputRange,
+    outputRange: [16, 18, 24, 18, 16],
+    extrapolate: 'clamp',
+  });
+  const opacity = scrollX.interpolate({
+    inputRange,
+    outputRange: [0.1, 0.3, 1, 0.3, 0.1],
+    extrapolate: 'clamp',
+  });
+  const color = scrollX.interpolate({
+    inputRange,
+    outputRange: [themeColors.unselectedText, '#888', themeColors.text, '#888', themeColors.unselectedText],
+    extrapolate: 'clamp',
+  });
+  const fontWeight = scrollX.interpolate({
+    inputRange,
+    outputRange: Platform.OS === "ios" ? ["400", "400", "700", "400", "400"] : ["400", "400", "400", "400", "400"],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <Animated.View
+      style={{ width: ITEM_WIDTH, alignItems: 'center', justifyContent: 'center' }}
+    >
+      <Animated.Text
+        style={{
+          fontFamily: Fonts.bodyMedium,
+          fontSize,
+          color,
+          opacity,
+          fontWeight,
+        }}
+      >
+        {num}
+      </Animated.Text>
+    </Animated.View>
+  );
+});
+
+const NumberPicker = React.memo(({ value, setValue, min, max, themeColors }: { value: number, setValue: (v: number) => void, min: number, max: number, themeColors: any }) => {
+  const numbers = useMemo(() => Array.from({ length: max - min + 1 }, (_, i) => min + i), [min, max]);
   const ITEM_WIDTH = 40;
   const scrollRef = React.useRef<ScrollView>(null);
   const [scrolling, setScrolling] = React.useState(false);
@@ -54,12 +110,12 @@ const NumberPicker = ({ value, setValue, min, max, themeColors }: { value: numbe
   );
 
   // When scroll ends, ensure value is snapped
-  const handleMomentumScrollEnd = (e: any) => {
+  const handleMomentumScrollEnd = useCallback((e: any) => {
     setScrolling(false);
     const x = e.nativeEvent.contentOffset.x;
     const idx = Math.round(x / ITEM_WIDTH);
     setValue(numbers[idx]);
-  };
+  }, [numbers, setValue, ITEM_WIDTH]);
 
   return (
     <View style={{ width: ITEM_WIDTH * 3, alignItems: 'center', justifyContent: 'center' }}>
@@ -76,61 +132,22 @@ const NumberPicker = ({ value, setValue, min, max, themeColors }: { value: numbe
         scrollEventThrottle={16}
         bounces={false}
       >
-        {numbers.map((num, idx) => {
-          // Calculate animated distance from center
-          const inputRange = useMemo(() => [
-            (idx - 2) * ITEM_WIDTH,
-            (idx - 1) * ITEM_WIDTH,
-            idx * ITEM_WIDTH,
-            (idx + 1) * ITEM_WIDTH,
-            (idx + 2) * ITEM_WIDTH,
-          ], [idx, ITEM_WIDTH]);
-          
-          const fontSize = scrollX.interpolate({
-            inputRange,
-            outputRange: [16, 18, 24, 18, 16],
-            extrapolate: 'clamp',
-          });
-          const opacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.1, 0.3, 1, 0.3, 0.1],
-            extrapolate: 'clamp',
-          });
-          const color = scrollX.interpolate({
-            inputRange,
-            outputRange: [themeColors.unselectedText, '#888', themeColors.text, '#888', themeColors.unselectedText],
-            extrapolate: 'clamp',
-          });
-          const fontWeight = scrollX.interpolate({
-            inputRange,
-            outputRange: Platform.OS === "ios" ? ["400", "400", "700", "400", "400"] : ["400", "400", "400", "400", "400"],
-            extrapolate: 'clamp',
-          });
-          return (
-            <Animated.View
-              key={num}
-              style={{ width: ITEM_WIDTH, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Animated.Text
-                style={{
-                  fontFamily: Fonts.bodyMedium,
-                  fontSize,
-                  color,
-                  opacity,
-                  fontWeight,
-                }}
-              >
-                {num}
-              </Animated.Text>
-            </Animated.View>
-          );
-        })}
+        {numbers.map((num, idx) => (
+          <NumberPickerItem
+            key={num}
+            num={num}
+            idx={idx}
+            scrollX={scrollX}
+            themeColors={themeColors}
+            ITEM_WIDTH={ITEM_WIDTH}
+          />
+        ))}
       </Animated.ScrollView>
     </View>
   );
-};
+});
 
-const CustomGoalForm = ({ setScrollEnabled, themeColors }: { setScrollEnabled?: (enabled: boolean) => void, themeColors: any }) => {
+const CustomGoalForm = React.memo(({ setScrollEnabled, themeColors }: { setScrollEnabled?: (enabled: boolean) => void, themeColors: any }) => {
   const { language } = useLanguage();
   const [decks, setDecks] = useState(3);
   const [days, setDays] = useState(5);
@@ -313,9 +330,9 @@ const CustomGoalForm = ({ setScrollEnabled, themeColors }: { setScrollEnabled?: 
       
     </View>
   );
-}
+});
 
-const StreakCalendarStats = ({ themeColors }: { themeColors: any }) => {
+const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) => {
   const { language } = useLanguage();
   const [streakData, setStreakData] = useState<LongestStreakData>({
     streakLength: 0,
@@ -416,7 +433,7 @@ const StreakCalendarStats = ({ themeColors }: { themeColors: any }) => {
       </View>
     </View>
   );
-};
+});
 
 // Utility to get streak info for each studied date
 const getStreakInfo = (studiedArr: string[]): { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' } => {
@@ -474,7 +491,82 @@ const memoizedGetStreakInfo = (studiedArr: string[]) => {
   return useMemo(() => getStreakInfo(studiedArr), [studiedArr]);
 };
 
-const StreakCalendar = () => {
+// Memoized day component for better performance
+const CalendarDay = React.memo(({ date, state, streakInfo, today }: {
+  date: any;
+  state: string;
+  streakInfo: { [date: string]: 'start' | 'middle' | 'end' | 'single' | 'studied' };
+  today: string;
+}) => {
+  if (!date) return null;
+  
+  const dateStr = date.dateString;
+  const info = streakInfo[dateStr];
+  
+  // Pre-calculate all conditions to avoid repeated checks
+  const isStreak = info === 'start' || info === 'middle' || info === 'end';
+  const isStudiedOnly = info === 'studied';
+  const isToday = dateStr === today;
+  const isDisabled = state === 'disabled';
+  
+  // Pre-calculate styles
+  const circleStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    width: 28,
+    height: 28,
+    backgroundColor: isStreak ? '#5bcfff' : '#FFCE51',
+    borderRadius: 99,
+    top: 4,
+    left: 4,
+    zIndex: 1,
+  }), [isStreak]);
+
+  const textStyle = useMemo(() => ({
+    color: isToday ? '#4F41D8' : (isDisabled ? '#d9e1e8' : '#2d4150'),
+    fontFamily: Fonts.bodyMedium,
+    fontSize: 16,
+    zIndex: 3,
+    fontWeight: isToday ? 'bold' as const : 'normal' as const,
+    ...(isToday && {
+      borderWidth: 2,
+      borderColor: '#4F41D8',
+      borderRadius: 28,
+      width: 28,
+      height: 28,
+      textAlign: 'center' as const,
+      textAlignVertical: 'center' as const,
+      lineHeight: 20,
+    }),
+  }), [isToday, isDisabled]);
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', width: 36, height: 36, position: 'relative' }}>
+      {/* Circle for studied or streak */}
+      {(isStreak || isStudiedOnly) && <View style={circleStyle} />}
+      
+      {/* Fire icon for streak */}
+      {isStreak && (
+        <FireIcon
+          width={16}
+          height={16}
+          style={{
+            position: 'absolute',
+            top: -8,
+            left: 10,
+            zIndex: 2,
+          }}
+        />
+      )}
+      
+      {/* Date number */}
+      <Text style={textStyle}>
+        {date.day}
+      </Text>
+    </View>
+  );
+});
+
+const StreakCalendar = React.memo(() => {
   const [studiedDates, setStudiedDates] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
@@ -514,114 +606,46 @@ const StreakCalendar = () => {
   // Memoize today's date to prevent recalculation for every calendar day
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
+  // Memoized calendar theme to prevent recreating object
+  const calendarTheme = useMemo(() => ({
+    backgroundColor: '#ffffff',
+    calendarBackground: '#ffffff',
+    textSectionTitleColor: '#b6c1cd',
+    selectedDayBackgroundColor: '#4F41D8',
+    selectedDayTextColor: '#ffffff',
+    todayTextColor: '#4F41D8',
+    dayTextColor: '#2d4150',
+    textDisabledColor: '#d9e1e8',
+    dotColor: '#FFCE51',
+    monthTextColor: '#000000',
+    textMonthFontFamily: Fonts.bodyMedium,
+    textDayHeaderFontFamily: Fonts.bodyMedium,
+    textDayFontFamily: Fonts.bodyMedium,
+    textDayHeaderFontSize: 14,
+    textMonthFontSize: 20,
+    arrowColor: '#000000',
+  }), []);
+
+  const dayComponent = useCallback(({ date, state }: any) => (
+    <CalendarDay
+      date={date}
+      state={state}
+      streakInfo={streakInfo}
+      today={today}
+    />
+  ), [streakInfo, today]);
+
   return (
     <View style={{ marginTop: 30, width: '100%', paddingHorizontal: 16 }}>
       <Calendar
         markingType={'custom'}
         disableAllTouchEventsForDisabledDays={true}
-        dayComponent={({ date, state }) => {
-          if (!date) return null;
-          const dateStr = date.dateString;
-          const info = streakInfo[dateStr];
-          
-          // Memoize expensive calculations for each day
-          const dayCalculations = useMemo(() => {
-            const isStreak = info === 'start' || info === 'middle' || info === 'end';
-            const isStreakStart = info === 'start';
-            const isStreakEnd = info === 'end';
-            const isStreakMiddle = info === 'middle';
-            const isStudiedOnly = info === 'studied';
-            const isToday = dateStr === today;
-            
-            return {
-              isStreak,
-              isStreakStart,
-              isStreakEnd,
-              isStreakMiddle,
-              isStudiedOnly,
-              isToday
-            };
-          }, [info, dateStr, today]);
-          
-          const { isStreak, isStreakStart, isStreakEnd, isStreakMiddle, isStudiedOnly, isToday } = dayCalculations;
-          
-          return (
-            <View style={{ alignItems: 'center', justifyContent: 'center', width: 36, height: 36, position: 'relative' }}>
-              {/* Yellow circle for studied or streak */}
-              {(isStreak || isStudiedOnly) && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    width: 28,
-                    height: 28,
-                    backgroundColor: isStreak? '#5bcfff' : '#FFCE51',
-                    borderRadius: 99,
-                    top: 4,
-                    left: 4,
-                    zIndex: 1,
-                  }}
-                />
-              )}
-              {/* Fire icon for streak */}
-              {isStreak && (
-                <FireIcon
-                  width={16}
-                  height={16}
-                  style={{
-                    position: 'absolute',
-                    top: -8,
-                    left: 10,
-                    zIndex: 2,
-                  }}
-                />
-              )}
-              {/* Date number */}
-              <Text
-                style={{
-                  color: isToday ? '#4F41D8' : (state === 'disabled' ? '#d9e1e8' : '#2d4150'),
-                  fontFamily: Fonts.bodyMedium,
-                  fontSize: 16,
-                  zIndex: 3,
-                  fontWeight: isToday ? 'bold' : 'normal',
-                  ...(isToday && {
-                    borderWidth: 2,
-                    borderColor: '#4F41D8',
-                    borderRadius: 28,
-                    width: 28,
-                    height: 28,
-                    textAlign: 'center',
-                    textAlignVertical: 'center',
-                    lineHeight: 20,
-                  }),
-                }}
-              >
-                {date.day}
-              </Text>
-            </View>
-          );
-        }}
-        theme={{
-          backgroundColor: '#ffffff',
-          calendarBackground: '#ffffff',
-          textSectionTitleColor: '#b6c1cd',
-          selectedDayBackgroundColor: '#4F41D8',
-          selectedDayTextColor: '#ffffff',
-          todayTextColor: '#4F41D8',
-          dayTextColor: '#2d4150',
-          textDisabledColor: '#d9e1e8',
-          dotColor: '#FFCE51',
-          monthTextColor: '#000000',
-          textMonthFontFamily: Fonts.bodyMedium,
-          textDayHeaderFontFamily: Fonts.bodyMedium,
-          textDayFontFamily: Fonts.bodyMedium,
-          textDayHeaderFontSize: 14,
-          textMonthFontSize: 20,
-          arrowColor: '#000000',
-        }}
+        dayComponent={dayComponent}
+        theme={calendarTheme}
       />
     </View>
   );
-};
+});
 
 interface BadgeData {
   badgeTitle: string;
@@ -631,34 +655,49 @@ interface BadgeData {
   badgeExpiryDate?: string;
 }
 
-const Badge = ({ title, image, achieved, themeColors }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any }) => {
+// Pre-calculate hexagon points to avoid recalculation
+const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) => {
+  const getHexPoints = (radius: number, cx: number, cy: number) =>
+    Array.from({ length: 6 }, (_, i) => {
+      const angle = Math.PI / 3 * i - Math.PI / 2;
+      return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
+    });
+  
+  // Outer (border) hexagon
+  const outerRadius = size / 2;
+  const outerPoints = getHexPoints(outerRadius, svgSize / 2, svgSize / 2);
+  
+  // Inner (fill) hexagon
+  const innerRadius = outerRadius - borderWidth;
+  const innerPoints = getHexPoints(innerRadius, svgSize / 2, svgSize / 2);
+  
+  const outerStr = outerPoints.map(p => p.join(",")).join(" ");
+  const innerStr = innerPoints.map(p => p.join(",")).join(" ");
+  
+  return { outerPointsStr: outerStr, innerPointsStr: innerStr };
+};
+
+// Cache hexagon calculations
+const hexagonCache = new Map<string, { outerPointsStr: string, innerPointsStr: string }>();
+
+const Badge = React.memo(({ title, image, achieved, themeColors }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any }) => {
   const size = 120;
-  const borderWidth = 3; // visually thick border
-  const padding = borderWidth; // padding to prevent clipping
+  const borderWidth = 3;
+  const padding = borderWidth;
   const svgSize = size + 2 * padding;
   
-  // Memoize hexagon calculations
+  // Use cached hexagon calculations
   const { outerPointsStr, innerPointsStr } = useMemo(() => {
-    // Hexagon math
-    const getHexPoints = (radius: number, cx: number, cy: number) =>
-      Array.from({ length: 6 }, (_, i) => {
-        const angle = Math.PI / 3 * i - Math.PI / 2;
-        return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
-      });
-    
-    // Outer (border) hexagon
-    const outerRadius = size / 2;
-    const outerPoints = getHexPoints(outerRadius, svgSize / 2, svgSize / 2);
-    
-    // Inner (fill) hexagon
-    const innerRadius = outerRadius - borderWidth;
-    const innerPoints = getHexPoints(innerRadius, svgSize / 2, svgSize / 2);
-    
-    const outerStr = outerPoints.map(p => p.join(",")).join(" ");
-    const innerStr = innerPoints.map(p => p.join(",")).join(" ");
-    
-    return { outerPointsStr: outerStr, innerPointsStr: innerStr };
+    const cacheKey = `${size}-${borderWidth}-${svgSize}`;
+    if (!hexagonCache.has(cacheKey)) {
+      hexagonCache.set(cacheKey, getHexagonPoints(size, borderWidth, svgSize));
+    }
+    return hexagonCache.get(cacheKey)!;
   }, [size, borderWidth, svgSize]);
+
+  // Generate unique clipPath ID to avoid conflicts
+  const clipPathId = useMemo(() => `hexClip-${Math.random().toString(36).substr(2, 9)}`, []);
+
   return (
     <View style={{ alignItems: 'center', width: svgSize }}>
       <Svg width={svgSize} height={svgSize} style={{ transform: [{ rotate: '90deg' }] }}>
@@ -671,7 +710,7 @@ const Badge = ({ title, image, achieved, themeColors }: { title: string, image?:
         {image ? (
           <>
             <Defs>
-              <ClipPath id="hexClipSmall">
+              <ClipPath id={clipPathId}>
                 <Polygon points={innerPointsStr} />
               </ClipPath>
             </Defs>
@@ -680,7 +719,7 @@ const Badge = ({ title, image, achieved, themeColors }: { title: string, image?:
               width={svgSize}
               height={svgSize}
               preserveAspectRatio="xMidYMid slice"
-              clipPath="url(#hexClipSmall)"
+              clipPath={`url(#${clipPathId})`}
             />
           </>
         ) : (
@@ -708,7 +747,7 @@ const Badge = ({ title, image, achieved, themeColors }: { title: string, image?:
       </Text>
     </View>
   );
-};
+});
 
 // Update BadgeWall props
 type BadgeWallProps = {
@@ -717,7 +756,33 @@ type BadgeWallProps = {
   title: string,
 };
 
-const BadgeWall = ({ badges, backgroundImage, title, themeColors }: BadgeWallProps & { themeColors: any }) => {
+// Memoized BadgeRow component for better performance
+const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], themeColors: any }) => (
+  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+    <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingRight: 20 }}>
+      {row[0] && (
+        <Badge
+          title={row[0].badgeTitle}
+          achieved={row[0].achieved}
+          image={row[0].badgeImage}
+          themeColors={themeColors}
+        />
+      )}
+    </View>
+    <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingLeft: 20 }}>
+      {row[1] && (
+        <Badge
+          title={row[1].badgeTitle}
+          achieved={row[1].achieved}
+          image={row[1].badgeImage}
+          themeColors={themeColors}
+        />
+      )}
+    </View>
+  </View>
+));
+
+const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: BadgeWallProps & { themeColors: any }) => {
   const { language } = useLanguage();
   const [viewAll, setViewAll] = useState(false);
   
@@ -744,7 +809,9 @@ const BadgeWall = ({ badges, backgroundImage, title, themeColors }: BadgeWallPro
     
     return { sortedBadges: sorted, badgeRows: rows, collapsedHeight: collapsed, expandedHeight: expanded };
   }, [badges]);
+
   const anim = useRef(new Animated.Value(collapsedHeight)).current;
+  
   useEffect(() => {
     Animated.timing(anim, {
       toValue: viewAll ? expandedHeight : collapsedHeight,
@@ -752,84 +819,83 @@ const BadgeWall = ({ badges, backgroundImage, title, themeColors }: BadgeWallPro
       useNativeDriver: false,
     }).start();
   }, [viewAll, expandedHeight, collapsedHeight]);
+
+  // Only render the rows that are visible (lazy loading for collapsed state)
+  const visibleRows = useMemo(() => {
+    return viewAll ? badgeRows : badgeRows.slice(0, 2);
+  }, [badgeRows, viewAll]);
+
+  const toggleViewAll = useCallback(() => setViewAll(v => !v), []);
+
+  // Memoize styles
+  const containerStyle = useMemo(() => ({
+    width: '100%' as const,
+    borderRadius: 30,
+    overflow: 'hidden' as const,
+    backgroundColor: '#fff',
+    flexDirection: 'column' as const,
+    justifyContent: 'space-between' as const,
+  }), []);
+
+  const backgroundImageStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    width: '100%' as const,
+    height: '100%' as const,
+    resizeMode: 'cover' as const,
+  }), []);
+
+  const titleStyle = useMemo(() => ({
+    fontFamily: Fonts.title,
+    fontSize: 36,
+    color: themeColors.text,
+    marginBottom: 10,
+    textAlign: 'center' as const,
+  }), [themeColors.text]);
+
+  const buttonStyle = useMemo(() => ({
+    width: 100,
+    height: 48,
+    backgroundColor: themeColors.brandColor2,
+    borderRadius: 10,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  }), [themeColors.brandColor2]);
+
+  const buttonTextStyle = useMemo(() => ({
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: Fonts.bodyMedium,
+    textAlign: 'center' as const,
+  }), []);
+
   return (
-    <View
-      style={{
-        width: '100%',
-        borderRadius: 30,
-        overflow: 'hidden',
-        backgroundColor: '#fff',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-      }}
-    >
+    <View style={containerStyle}>
       {/* Background image */}
-      <RNImage
-        source={backgroundImage}
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          resizeMode: 'cover',
-        }}
-      />
+      <RNImage source={backgroundImage} style={backgroundImageStyle} />
+      
       {/* Content column */}
       <View style={{ margin: 10, flex: 1 }}>
-        <Text style={{ fontFamily: Fonts.title, fontSize: 36, color: themeColors.text, marginBottom: 10, textAlign: 'center' }}>
-          {title}
-        </Text>
+        <Text style={titleStyle}>{title}</Text>
+        
         {/* Animated badge grid */}
         <Animated.View style={{ width: '100%', height: anim, overflow: 'hidden' }}>
-          {(viewAll ? badgeRows : badgeRows.slice(0, 2)).map((row, idx) => (
-            <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-              <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingRight: 20 }}>
-                {row[0] && (
-                  <Badge
-                    title={row[0].badgeTitle}
-                    achieved={row[0].achieved}
-                    image={row[0].badgeImage}
-                    themeColors={themeColors}
-                  />
-                )}
-              </View>
-              <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingLeft: 20 }}>
-                {row[1] && (
-                  <Badge
-                    title={row[1].badgeTitle}
-                    achieved={row[1].achieved}
-                    image={row[1].badgeImage}
-                    themeColors={themeColors}
-                  />
-                )}
-              </View>
-            </View>
+          {visibleRows.map((row, idx) => (
+            <BadgeRow key={idx} row={row} themeColors={themeColors} />
           ))}
         </Animated.View>
       </View>
+      
       {/* Toggle Button at the bottom */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <TouchableOpacity
-          onPress={useCallback(() => setViewAll(v => !v), [])}
-          style={{
-            width: 100,
-            height: 48,
-            backgroundColor: themeColors.brandColor2,
-            borderRadius: 10,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{
-            color: '#fff',
-            fontSize: 16,
-            fontFamily: Fonts.bodyMedium,
-            textAlign: 'center',
-          }}>{viewAll ? strings[language].collapse : strings[language].viewAll}</Text>
+        <TouchableOpacity onPress={toggleViewAll} style={buttonStyle}>
+          <Text style={buttonTextStyle}>
+            {viewAll ? strings[language].collapse : strings[language].viewAll}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
   );
-};
+});
 
 // Dummy data for the first BadgeWall
 const dummyBadges1 = [
@@ -1698,7 +1764,7 @@ export default function AwardsScreen() {
               <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title={strings[language].dailyStreakBadges} themeColors={themeColors} />
               <BadgeWall badges={dummyBadges3} backgroundImage={LargeMeshBackground3} title={strings[language].weeklyStreakBadges} themeColors={themeColors} />
               <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title={strings[language].welcomeBadges} themeColors={themeColors} />
-              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].lifetimeBadges} themeColors={themeColors} />
+              <BadgeWall badges={dummyBadges5} backgroundImage={LargeMeshBackground1} title={strings[language].lifetimeBadges} themeColors={themeColors} />
             </View>
           </ScrollView>
     </Animated.View>

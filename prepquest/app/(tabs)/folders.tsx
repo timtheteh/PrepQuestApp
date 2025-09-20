@@ -20,7 +20,7 @@ import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle } from '@/hooks/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
 
 
@@ -30,7 +30,6 @@ type SortDirection = 'asc' | 'desc';
 const FOLDERS_SORT_FIELD_KEY = 'folders_sort_field';
 const FOLDERS_SORT_DIRECTION_KEY = 'folders_sort_direction';
 
-const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 48; // Distance to shift content down
 const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
@@ -93,21 +92,23 @@ export default function FoldersScreen() {
   const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
   const { language } = useLanguage();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const getTopBarTopHeight = useTopBarTopHeight();
+  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
+  const getContentTopHeightNoRoundedToggle = useContentTopHeightNoRoundedToggle();
+  const getBottomContentSpacing = useBottomContentSpacing();
+  const bottomSpacing = getBottomContentSpacing();
 
   // Animation values
   const shiftAnim = useRef(new Animated.Value(0)).current;
-  const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
+  const marginAnim = useRef(new Animated.Value(bottomSpacing)).current;
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
   const selectTextAnim = useRef(new Animated.Value(0)).current;
   const fabOpacity = useRef(new Animated.Value(1)).current;
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const screenOpacity = useRef(new Animated.Value(0)).current;
-  const insets = useSafeAreaInsets();
-
-  const getTopBarTopHeight = useTopBarTopHeight();
-  const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
-  const getContentTopHeightNoRoundedToggle = useContentTopHeightNoRoundedToggle();
 
   const styles = StyleSheet.create({
     animatedContainer: {
@@ -181,7 +182,7 @@ export default function FoldersScreen() {
     scrollContent: {
       flexGrow: 1,
       alignItems: 'center',
-      paddingBottom: BOTTOM_SPACING,
+      paddingBottom: bottomSpacing,
     },
     shiftableContent: {
       flex: 1,
@@ -274,7 +275,7 @@ export default function FoldersScreen() {
         
         // Set animation values directly without animation
         shiftAnim.setValue(SHIFT_DISTANCE);
-        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
         actionRowOpacity.setValue(1);
         selectTextAnim.setValue(1);
         fabOpacity.setValue(0);
@@ -305,7 +306,7 @@ export default function FoldersScreen() {
         
         // Set animation values directly without animation
         shiftAnim.setValue(SHIFT_DISTANCE);
-        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
         actionRowOpacity.setValue(1);
         selectTextAnim.setValue(1);
         fabOpacity.setValue(0);
@@ -331,7 +332,7 @@ export default function FoldersScreen() {
 
         // Reset all animations to their default values
         shiftAnim.setValue(0);
-        marginAnim.setValue(BOTTOM_SPACING);
+        marginAnim.setValue(bottomSpacing);
         actionRowOpacity.setValue(0);
         selectTextAnim.setValue(0);
         fabOpacity.setValue(1);
@@ -530,7 +531,7 @@ export default function FoldersScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(SHIFT_DISTANCE);
-      marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+      marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
       actionRowOpacity.setValue(1);
       selectTextAnim.setValue(1);
       fabOpacity.setValue(0);
@@ -560,7 +561,7 @@ export default function FoldersScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: duration,
           useNativeDriver: false,
         }),
@@ -589,7 +590,7 @@ export default function FoldersScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: selectUnselectedDuration,
           useNativeDriver: false,
         }),
@@ -629,7 +630,7 @@ export default function FoldersScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
+      marginAnim.setValue(bottomSpacing);
       actionRowOpacity.setValue(0);
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
@@ -653,7 +654,7 @@ export default function FoldersScreen() {
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
-        toValue: BOTTOM_SPACING,
+        toValue: bottomSpacing,
         duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),

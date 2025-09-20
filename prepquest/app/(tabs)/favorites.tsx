@@ -25,7 +25,7 @@ import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 
@@ -35,7 +35,6 @@ type SortDirection = 'asc' | 'desc';
 const FAVORITES_SORT_FIELD_KEY = 'favorites_sort_field';
 const FAVORITES_SORT_DIRECTION_KEY = 'favorites_sort_direction';
 
-const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
@@ -95,15 +94,6 @@ export default function FavoritesScreen() {
     setUnfavoriteModalText,
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const shiftAnim = useRef(new Animated.Value(0)).current;
-  const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
-  const actionRowOpacity = useRef(new Animated.Value(0)).current;
-  const selectTextAnim = useRef(new Animated.Value(0)).current;
-  const fabOpacity = useRef(new Animated.Value(1)).current;
-  const screenOpacity = useRef(new Animated.Value(0)).current;
-  const cardWidthPercentage = useRef(new Animated.Value(100)).current;
-  const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const router = useRouter();
   const { mode, selected } = useLocalSearchParams();
@@ -114,6 +104,18 @@ export default function FavoritesScreen() {
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
+  const getBottomContentSpacing = useBottomContentSpacing();
+  const bottomSpacing = getBottomContentSpacing();
+  
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const shiftAnim = useRef(new Animated.Value(0)).current;
+  const marginAnim = useRef(new Animated.Value(bottomSpacing)).current;
+  const actionRowOpacity = useRef(new Animated.Value(0)).current;
+  const selectTextAnim = useRef(new Animated.Value(0)).current;
+  const fabOpacity = useRef(new Animated.Value(1)).current;
+  const screenOpacity = useRef(new Animated.Value(0)).current;
+  const cardWidthPercentage = useRef(new Animated.Value(100)).current;
+  const circleButtonOpacity = useRef(new Animated.Value(0)).current;
 
   const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
 
@@ -168,7 +170,7 @@ export default function FavoritesScreen() {
         
         // Set animation values directly without animation
         shiftAnim.setValue(SHIFT_DISTANCE);
-        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
         actionRowOpacity.setValue(1);
         selectTextAnim.setValue(1);
         fabOpacity.setValue(0);
@@ -182,7 +184,7 @@ export default function FavoritesScreen() {
 
         // Reset all animations to their default values
         shiftAnim.setValue(0);
-        marginAnim.setValue(BOTTOM_SPACING);
+        marginAnim.setValue(bottomSpacing);
         actionRowOpacity.setValue(0);
         selectTextAnim.setValue(0);
         fabOpacity.setValue(1);
@@ -309,7 +311,7 @@ export default function FavoritesScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(SHIFT_DISTANCE);
-      marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+      marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
       actionRowOpacity.setValue(1);
       selectTextAnim.setValue(1);
       fabOpacity.setValue(0);
@@ -339,7 +341,7 @@ export default function FavoritesScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: duration,
           useNativeDriver: false,
         }),
@@ -368,7 +370,7 @@ export default function FavoritesScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: duration,
           useNativeDriver: false,
         }),
@@ -408,7 +410,7 @@ export default function FavoritesScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
+      marginAnim.setValue(bottomSpacing);
       actionRowOpacity.setValue(0);
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
@@ -433,7 +435,7 @@ export default function FavoritesScreen() {
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
-        toValue: BOTTOM_SPACING,
+        toValue: bottomSpacing,
         duration: duration,
         useNativeDriver: false,
       }),
@@ -1568,7 +1570,7 @@ export default function FavoritesScreen() {
     scrollContent: {
       flexGrow: 1,
       alignItems: 'center',
-      paddingBottom: BOTTOM_SPACING,
+      paddingBottom: bottomSpacing,
     },
     firstCard: {
       marginTop: 5,

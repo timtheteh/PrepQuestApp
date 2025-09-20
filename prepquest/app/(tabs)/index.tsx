@@ -17,7 +17,7 @@ import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks, getCompanyIconImageSource, updateDeckFavoriteStatus, saveSortPreferences, loadSortPreferences, checkDatabaseReady } from '@/db/decks';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
@@ -32,7 +32,6 @@ type SortDirection = 'asc' | 'desc';
 
 
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
-const BOTTOM_SPACING = 40; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
 
@@ -74,15 +73,6 @@ export default function DecksScreen() {
     setSourcePageForFolders
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const shiftAnim = useRef(new Animated.Value(0)).current;
-  const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
-  const actionRowOpacity = useRef(new Animated.Value(0)).current;
-  const selectTextAnim = useRef(new Animated.Value(0)).current;
-  const fabOpacity = useRef(new Animated.Value(1)).current;
-  const screenOpacity = useRef(new Animated.Value(0)).current;
-  const cardWidthPercentage = useRef(new Animated.Value(100)).current;
-  const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
   const router = useRouter();
   const navbarRef = useRef<any>(null);
@@ -91,6 +81,18 @@ export default function DecksScreen() {
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
+  const getBottomContentSpacing = useBottomContentSpacing();
+  const bottomSpacing = getBottomContentSpacing();
+  
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const shiftAnim = useRef(new Animated.Value(0)).current;
+  const marginAnim = useRef(new Animated.Value(bottomSpacing)).current;
+  const actionRowOpacity = useRef(new Animated.Value(0)).current;
+  const selectTextAnim = useRef(new Animated.Value(0)).current;
+  const fabOpacity = useRef(new Animated.Value(1)).current;
+  const screenOpacity = useRef(new Animated.Value(0)).current;
+  const cardWidthPercentage = useRef(new Animated.Value(100)).current;
+  const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const { theme } = useTheme();
 
   const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
@@ -177,7 +179,7 @@ export default function DecksScreen() {
     scrollContent: {
       flexGrow: 1,
       alignItems: 'center',
-      paddingBottom: BOTTOM_SPACING,
+      paddingBottom: bottomSpacing,
     },
     firstCard: {
       marginTop: 5,
@@ -390,7 +392,7 @@ export default function DecksScreen() {
         
         // Set animation values directly to their final positions without animation
         shiftAnim.setValue(SHIFT_DISTANCE);
-        marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+        marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
         actionRowOpacity.setValue(1);
         selectTextAnim.setValue(1);
         fabOpacity.setValue(0);
@@ -488,7 +490,7 @@ export default function DecksScreen() {
       setSelectedStudyCards(new Set());
       setSelectedInterviewCards(new Set());
       shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
+      marginAnim.setValue(bottomSpacing);
       actionRowOpacity.setValue(0);
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
@@ -651,7 +653,7 @@ export default function DecksScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(SHIFT_DISTANCE);
-      marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+      marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
       actionRowOpacity.setValue(1);
       selectTextAnim.setValue(1);
       fabOpacity.setValue(0);
@@ -681,7 +683,7 @@ export default function DecksScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: duration,
           useNativeDriver: false,
         }),
@@ -710,7 +712,7 @@ export default function DecksScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: duration,
           useNativeDriver: false,
         }),
@@ -750,7 +752,7 @@ export default function DecksScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
+      marginAnim.setValue(bottomSpacing);
       actionRowOpacity.setValue(0);
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
@@ -775,7 +777,7 @@ export default function DecksScreen() {
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
-        toValue: BOTTOM_SPACING,
+        toValue: bottomSpacing,
         duration: duration,
         useNativeDriver: false,
       }),

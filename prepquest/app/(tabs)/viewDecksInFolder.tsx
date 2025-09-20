@@ -28,7 +28,7 @@ import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/general/Toast';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle2 } from '@/hooks/heights';
+import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle2, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
@@ -37,7 +37,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 
 const SCREEN_TRANSITION_DURATION = 200;
-const BOTTOM_SPACING = 20; // Required spacing from navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down (increased for better spacing)
 
 
@@ -70,10 +69,12 @@ export default function ViewDecksInFolderScreen() {
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
+  const getBottomContentSpacing = useBottomContentSpacing();
+  const bottomSpacing = getBottomContentSpacing();
 
   // Animation values
   const screenOpacity = useRef(new Animated.Value(0)).current;
-  const marginAnim = useRef(new Animated.Value(BOTTOM_SPACING)).current;
+  const marginAnim = useRef(new Animated.Value(bottomSpacing)).current;
   const actionRowOpacity = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -239,7 +240,7 @@ export default function ViewDecksInFolderScreen() {
       
       // Reset all animations to their default values
       shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
+      marginAnim.setValue(bottomSpacing);
       actionRowOpacity.setValue(0);
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
@@ -367,7 +368,7 @@ export default function ViewDecksInFolderScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(SHIFT_DISTANCE);
-      marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+      marginAnim.setValue(bottomSpacing + SHIFT_DISTANCE);
       actionRowOpacity.setValue(1);
       selectTextAnim.setValue(1);
       fabOpacity.setValue(0);
@@ -397,7 +398,7 @@ export default function ViewDecksInFolderScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: duration,
           useNativeDriver: false,
         }),
@@ -426,7 +427,7 @@ export default function ViewDecksInFolderScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
-          toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
+          toValue: bottomSpacing + SHIFT_DISTANCE,
           duration: selectUnselectedDuration,
           useNativeDriver: false,
         }),
@@ -466,7 +467,7 @@ export default function ViewDecksInFolderScreen() {
     if (animationConfig.instantMode) {
       // Set all values directly for instant response
       shiftAnim.setValue(0);
-      marginAnim.setValue(BOTTOM_SPACING);
+      marginAnim.setValue(bottomSpacing);
       actionRowOpacity.setValue(0);
       selectTextAnim.setValue(0);
       fabOpacity.setValue(1);
@@ -490,7 +491,7 @@ export default function ViewDecksInFolderScreen() {
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
-        toValue: BOTTOM_SPACING,
+        toValue: bottomSpacing,
         duration: selectUnselectedDuration,
         useNativeDriver: false,
       }),
@@ -915,7 +916,7 @@ export default function ViewDecksInFolderScreen() {
     scrollContent: {
       flexGrow: 1,
       alignItems: 'center',
-      paddingBottom: BOTTOM_SPACING,
+      paddingBottom: bottomSpacing,
     },
     firstCard: {
       marginTop: 5,

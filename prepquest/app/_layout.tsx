@@ -8,6 +8,7 @@ import { ClerkProvider } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
@@ -306,27 +307,29 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      tokenCache={tokenCache}
-    >
-      <LanguageProvider>
-        <HybridAuthProvider>
-          <CustomThemeProvider>
-            <BackgroundTaskProvider>
-              <BackupBackgroundTaskProvider>
-                <ImportBackgroundTaskProvider>
-                  <ClearDataBackgroundTaskProvider>
-                    <DeleteAccountBackgroundTaskProvider>
-                      <AppContent />
-                    </DeleteAccountBackgroundTaskProvider>
-                  </ClearDataBackgroundTaskProvider>
-                </ImportBackgroundTaskProvider>
-              </BackupBackgroundTaskProvider>
-            </BackgroundTaskProvider>
-          </CustomThemeProvider>
-        </HybridAuthProvider>
-      </LanguageProvider>
-    </ClerkProvider>
+    <SafeAreaProvider>
+      <ClerkProvider
+        publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        tokenCache={tokenCache}
+      >
+        <LanguageProvider>
+          <HybridAuthProvider>
+            <CustomThemeProvider>
+              <BackgroundTaskProvider>
+                <BackupBackgroundTaskProvider>
+                  <ImportBackgroundTaskProvider>
+                    <ClearDataBackgroundTaskProvider>
+                      <DeleteAccountBackgroundTaskProvider>
+                        <AppContent />
+                      </DeleteAccountBackgroundTaskProvider>
+                    </ClearDataBackgroundTaskProvider>
+                  </ImportBackgroundTaskProvider>
+                </BackupBackgroundTaskProvider>
+              </BackgroundTaskProvider>
+            </CustomThemeProvider>
+          </HybridAuthProvider>
+        </LanguageProvider>
+      </ClerkProvider>
+    </SafeAreaProvider>
   );
 }

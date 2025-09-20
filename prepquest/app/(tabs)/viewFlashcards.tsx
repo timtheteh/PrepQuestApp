@@ -16,7 +16,7 @@ import { FloatingActionButton } from '@/components/general/FloatingActionButton'
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useContentTopHeight, useContentTopHeightNoRoundedToggle2, useHeaderIconsTopHeight, useTopBarTopHeight } from '@/hooks/heights';
+import { useContentTopHeight, useContentTopHeightNoRoundedToggle2, useHeaderIconsTopHeight, useTopBarTopHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -606,6 +606,8 @@ export default function ViewFlashcardsScreen() {
   const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getTopBarTopHeight = useTopBarTopHeight();
+  const getBottomSafeAreaHeight = useBottomSafeAreaHeight();
+  const bottomSafeAreaHeight = getBottomSafeAreaHeight();
 
   const styles = StyleSheet.create({
     animatedContainer: {
@@ -915,7 +917,8 @@ export default function ViewFlashcardsScreen() {
             style={[styles.mainScrollView, { marginTop: getContentTopHeight()}]}
             contentContainerStyle={[
               styles.mainScrollViewContent,
-              isSelectMode && { paddingBottom: 60 }
+              isSelectMode && { paddingBottom: 60 + bottomSafeAreaHeight },
+              !isSelectMode && { paddingBottom: bottomSafeAreaHeight }
             ]}
             showsVerticalScrollIndicator={false}
           >

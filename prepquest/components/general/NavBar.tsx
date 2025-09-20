@@ -15,6 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
+import { useBottomSafeAreaHeight } from '@/hooks/heights';
 
 const EllipseForNavBar = ({ fillColor }: { fillColor: string }) => (
   <Svg 
@@ -100,7 +101,9 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const styles = createStyles(colors);
+  const getBottomSafeAreaHeight = useBottomSafeAreaHeight();
+  const bottomSafeAreaHeight = getBottomSafeAreaHeight();
+  const styles = createStyles(colors, bottomSafeAreaHeight);
 
   // Move useAnimatedStyle hooks to top level
   const animatedStyle0 = useAnimatedStyle(() => {
@@ -525,12 +528,12 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
 
 NavBar.displayName = 'NavBar';
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: any, bottomSafeAreaHeight: number = 0) => StyleSheet.create({
   container: {
-    height: NAV_HEIGHT,
+    height: NAV_HEIGHT + bottomSafeAreaHeight,
     backgroundColor: colors.brandColor2,
     justifyContent: 'flex-end',
-    paddingBottom: BOTTOM_SPACING,
+    paddingBottom: BOTTOM_SPACING + bottomSafeAreaHeight,
     zIndex: 0,
   },
   content: {

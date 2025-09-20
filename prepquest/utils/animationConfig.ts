@@ -29,22 +29,22 @@ export const getAnimationConfig = () => {
   );
   
   const config = {
-    // Ultra-fast or instant for low-end devices
-    duration: isLowEndDevice ? 0 : isMidRangeDevice ? 80 : 150,
-    // No parallel animations for low-end devices
-    maxParallelAnimations: isLowEndDevice ? 0 : isMidRangeDevice ? 2 : 7,
+    // Very fast but not instant for low-end devices to prevent touch issues
+    duration: isLowEndDevice ? 50 : isMidRangeDevice ? 80 : 150,
+    // Limited parallel animations for low-end devices
+    maxParallelAnimations: isLowEndDevice ? 1 : isMidRangeDevice ? 2 : 7,
     // Use native driver when animations are enabled
     useNativeDriver: true,
-    // No stagger delays for low-end (instant), minimal for mid-range
-    staggerDelay: isLowEndDevice ? 0 : isMidRangeDevice ? 20 : 0,
+    // Minimal stagger delays for low-end, slightly more for mid-range
+    staggerDelay: isLowEndDevice ? 10 : isMidRangeDevice ? 20 : 0,
     // Performance flags
     isLowEndDevice,
     isMidRangeDevice,
-    // Completely disable animations on low-end devices
+    // Disable complex animations but keep basic ones
     enableComplexAnimations: !isLowEndDevice,
-    enableAnimations: !isLowEndDevice,
-    // Instant mode for low-end devices
-    instantMode: isLowEndDevice,
+    enableAnimations: true, // Always enable basic animations
+    // Fast mode instead of instant mode to prevent touch issues
+    instantMode: false,
   };
   
   // Log device classification for debugging

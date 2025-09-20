@@ -87,6 +87,21 @@ export const Card = React.memo(({
   const animationConfig = useMemo(() => getAnimationConfig(), []);
 
   useEffect(() => {
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      if (isSelectMode) {
+        setShowSelectPill(true);
+        selectPillAnim.setValue(1);
+        unselectPillAnim.setValue(0);
+      } else {
+        selectPillAnim.setValue(0);
+        unselectPillAnim.setValue(1);
+        setShowSelectPill(false);
+      }
+      return;
+    }
+    
+    // For other devices: Use animations
     if (isSelectMode) {
       setShowSelectPill(true);
       setTimeout(() => {
@@ -94,12 +109,12 @@ export const Card = React.memo(({
           Animated.timing(selectPillAnim, {
             toValue: 1,
             duration: animationConfig.duration,
-            useNativeDriver: animationConfig.useNativeDriver,
+            useNativeDriver: true,
           }),
           Animated.timing(unselectPillAnim, {
             toValue: 0,
             duration: animationConfig.duration,
-            useNativeDriver: animationConfig.useNativeDriver,
+            useNativeDriver: true,
           }),
         ]).start();
       }, animationConfig.staggerDelay / 2);
@@ -108,44 +123,67 @@ export const Card = React.memo(({
         Animated.timing(selectPillAnim, {
           toValue: 0,
           duration: animationConfig.duration,
-          useNativeDriver: animationConfig.useNativeDriver,
+          useNativeDriver: true,
         }),
         Animated.timing(unselectPillAnim, {
           toValue: 1,
           duration: animationConfig.duration,
-          useNativeDriver: animationConfig.useNativeDriver,
+          useNativeDriver: true,
         }),
       ]).start(() => {
         setTimeout(() => setShowSelectPill(false), animationConfig.staggerDelay / 2);
       });
     }
-  }, [isSelectMode, animationConfig]);
+  }, [isSelectMode, animationConfig, selectPillAnim, unselectPillAnim]);
 
   useEffect(() => {
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      if (showProgress) {
+        setShowProgressRow(true);
+        progressAnim.setValue(1);
+      } else {
+        progressAnim.setValue(0);
+        setShowProgressRow(false);
+      }
+      return;
+    }
+    
+    // For other devices: Use animations
     if (showProgress) {
       setShowProgressRow(true);
       Animated.timing(progressAnim, {
         toValue: 1,
         duration: animationConfig.duration,
-        useNativeDriver: animationConfig.useNativeDriver,
+        useNativeDriver: true,
       }).start();
     } else {
       Animated.timing(progressAnim, {
         toValue: 0,
         duration: animationConfig.duration,
-        useNativeDriver: animationConfig.useNativeDriver,
+        useNativeDriver: true,
       }).start(() => {
         setTimeout(() => setShowProgressRow(false), animationConfig.staggerDelay / 2);
       });
     }
-  }, [showProgress, animationConfig]);
+  }, [showProgress, animationConfig, progressAnim]);
 
-  const containerStyle = useMemo(() => ({
-    width: containerWidthPercentage.interpolate({
-      inputRange: [85, 100],
-      outputRange: ['85%', '100%']
-    })
-  }), [containerWidthPercentage]);
+  const containerStyle = useMemo(() => {
+    // For low-end devices: Use simple static width to avoid expensive interpolations
+    if (animationConfig.instantMode) {
+      return {
+        width: (isSelectMode ? '85%' : '100%') as any
+      };
+    }
+    
+    // For other devices: Use animated interpolation
+    return {
+      width: containerWidthPercentage.interpolate({
+        inputRange: [85, 100],
+        outputRange: ['85%', '100%']
+      })
+    };
+  }, [containerWidthPercentage, animationConfig.instantMode, isSelectMode]);
 
   const handlePressIn = () => {
     if (!isSelectMode) {

@@ -526,63 +526,60 @@ export default function FoldersScreen() {
     
     const animationConfig = getAnimationConfig();
     
-    // Use staggered animations for low-end devices to reduce load
-    if (animationConfig.maxParallelAnimations < 7) {
-      // Stagger animations in groups for low-end devices
-      const group1 = [
-        Animated.timing(shiftAnim, {
-          toValue: SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      // Set all values directly for instant response
+      shiftAnim.setValue(SHIFT_DISTANCE);
+      marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+      actionRowOpacity.setValue(1);
+      selectTextAnim.setValue(1);
+      fabOpacity.setValue(0);
+      circleButtonOpacity.setValue(1);
+      cardWidthPercentage.setValue(85);
+      
+      return;
+    }
+    
+    const duration = animationConfig.duration;
+    
+    // For all non-instant devices: Instant shift to prevent overlap
+    if (!animationConfig.instantMode) {
+      // INSTANT content shift to make space - no animation delay
+      shiftAnim.setValue(SHIFT_DISTANCE);
+      
+      // Then animate other elements with proper spacing
+      Animated.parallel([
         Animated.timing(actionRowOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
         Animated.timing(selectTextAnim, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
-      ];
-      
-      const group2 = [
         Animated.timing(marginAnim, {
           toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
-        }),
-        Animated.timing(fabOpacity, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
         }),
         Animated.timing(circleButtonOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
-      ];
-      
-      const group3 = [
+        Animated.timing(fabOpacity, {
+          toValue: 0,
+          duration: duration,
+          useNativeDriver: true,
+        }),
         Animated.timing(cardWidthPercentage, {
           toValue: 85,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
         }),
-      ];
-      
-      // Run groups with slight stagger
-      Animated.parallel(group1).start(() => {
-        setTimeout(() => {
-          Animated.parallel(group2).start(() => {
-            setTimeout(() => {
-              Animated.parallel(group3).start();
-            }, animationConfig.staggerDelay);
-          });
-        }, animationConfig.staggerDelay);
-      });
+      ]).start();
     } else {
       // Use all parallel animations for high-end devices
       Animated.parallel([
@@ -626,10 +623,33 @@ export default function FoldersScreen() {
   }, []);
 
   const handleCancel = useCallback(() => {
+    const animationConfig = getAnimationConfig();
+    
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      // Set all values directly for instant response
+      shiftAnim.setValue(0);
+      marginAnim.setValue(BOTTOM_SPACING);
+      actionRowOpacity.setValue(0);
+      selectTextAnim.setValue(0);
+      fabOpacity.setValue(1);
+      circleButtonOpacity.setValue(0);
+      cardWidthPercentage.setValue(100);
+      
+      // Update state immediately
+      setIsSelectMode(false);
+      setSelectedFolders(new Set());
+      
+      return;
+    }
+    
+    const duration = animationConfig.duration;
+    
+    // For mid-range and high-end devices: Use animations
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {

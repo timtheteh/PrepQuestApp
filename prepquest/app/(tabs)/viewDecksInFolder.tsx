@@ -38,7 +38,7 @@ import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const BOTTOM_SPACING = 20; // Required spacing from navbar
-const SHIFT_DISTANCE = 40; // Distance to shift content down
+const SHIFT_DISTANCE = 40; // Distance to shift content down (increased for better spacing)
 
 
 
@@ -363,63 +363,60 @@ export default function ViewDecksInFolderScreen() {
     
     const animationConfig = getAnimationConfig();
     
-    // Use staggered animations for low-end devices to reduce load
-    if (animationConfig.maxParallelAnimations < 7) {
-      // Stagger animations in groups for low-end devices
-      const group1 = [
-        Animated.timing(shiftAnim, {
-          toValue: SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      // Set all values directly for instant response
+      shiftAnim.setValue(SHIFT_DISTANCE);
+      marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+      actionRowOpacity.setValue(1);
+      selectTextAnim.setValue(1);
+      fabOpacity.setValue(0);
+      circleButtonOpacity.setValue(1);
+      cardWidthPercentage.setValue(85);
+      
+      return;
+    }
+    
+    const duration = animationConfig.duration;
+    
+    // For all non-instant devices: Instant shift to prevent overlap
+    if (!animationConfig.instantMode) {
+      // INSTANT content shift to make space - no animation delay
+      shiftAnim.setValue(SHIFT_DISTANCE);
+      
+      // Then animate other elements with proper spacing
+      Animated.parallel([
         Animated.timing(actionRowOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
         Animated.timing(selectTextAnim, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
-      ];
-      
-      const group2 = [
         Animated.timing(marginAnim, {
           toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
-        }),
-        Animated.timing(fabOpacity, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
         }),
         Animated.timing(circleButtonOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
-      ];
-      
-      const group3 = [
+        Animated.timing(fabOpacity, {
+          toValue: 0,
+          duration: duration,
+          useNativeDriver: true,
+        }),
         Animated.timing(cardWidthPercentage, {
           toValue: 85,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
         }),
-      ];
-      
-      // Run groups with slight stagger
-      Animated.parallel(group1).start(() => {
-        setTimeout(() => {
-          Animated.parallel(group2).start(() => {
-            setTimeout(() => {
-              Animated.parallel(group3).start();
-            }, animationConfig.staggerDelay);
-          });
-        }, animationConfig.staggerDelay);
-      });
+      ]).start();
     } else {
       // Use all parallel animations for high-end devices
       Animated.parallel([
@@ -463,10 +460,33 @@ export default function ViewDecksInFolderScreen() {
   }, [shiftAnim, marginAnim, actionRowOpacity, selectTextAnim, fabOpacity, cardWidthPercentage, circleButtonOpacity]);
 
   const handleCancel = useCallback(() => {
+    const animationConfig = getAnimationConfig();
+    
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      // Set all values directly for instant response
+      shiftAnim.setValue(0);
+      marginAnim.setValue(BOTTOM_SPACING);
+      actionRowOpacity.setValue(0);
+      selectTextAnim.setValue(0);
+      fabOpacity.setValue(1);
+      circleButtonOpacity.setValue(0);
+      cardWidthPercentage.setValue(100);
+      
+      // Update state immediately
+      setIsSelectMode(false);
+      setSelectedDecks(new Set());
+      
+      return;
+    }
+    
+    const duration = animationConfig.duration;
+    
+    // For mid-range and high-end devices: Use animations
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
@@ -776,6 +796,19 @@ export default function ViewDecksInFolderScreen() {
     outputRange: [0, 1],
   });
 
+  // Calculate dynamic top position for action buttons based on title length
+  const getActionButtonsTop = () => {
+    const titleText = (folderTitle || folderTitleFromDb) as string || '';
+    // Much more conservative - only trigger for very long titles
+    const willWrap = titleText.length > 30; // Simple character count threshold
+    
+    if (__DEV__) {
+      console.log(`[ActionButtons] Title: "${titleText}", Length: ${titleText.length}, Will Wrap: ${willWrap}, Top: ${willWrap ? 75 : 55}`);
+    }
+    
+    return willWrap ? 75 : 55; // More space for 2-line titles
+  };
+
   const styles = StyleSheet.create({
     animatedContainer: {
       flex: 1,
@@ -1018,26 +1051,27 @@ export default function ViewDecksInFolderScreen() {
                 </Text>
               </View>
 
-              <Animated.View style={[
-                styles.actionButtonsRow,
-                {
-                opacity: actionRowOpacity,
-                transform: [{
-                    translateY: actionRowOpacity.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-20, 0]
-                    })
-                }]
-                }
-              ]}>
-                <ActionButtonsRow
-                  iconNames={['drive-file-move-rtl', 'trash']}
-                  iconLibraries={['materialicons', 'ionicons']}
-                  onCancel={handleCancel}
-                  onIconPress={handleActionIconPress}
-                  iconColors={['black', '#FF3B30']}
-                />
-              </Animated.View>
+               <Animated.View style={[
+                 styles.actionButtonsRow,
+                 {
+                 top: getActionButtonsTop(),
+                 opacity: actionRowOpacity,
+                 transform: [{
+                     translateY: actionRowOpacity.interpolate({
+                     inputRange: [0, 1],
+                     outputRange: [-20, 0]
+                     })
+                 }]
+                 }
+               ]}>
+                 <ActionButtonsRow
+                   iconNames={['drive-file-move-rtl', 'trash']}
+                   iconLibraries={['materialicons', 'ionicons']}
+                   onCancel={handleCancel}
+                   onIconPress={handleActionIconPress}
+                   iconColors={['black', '#FF3B30']}
+                 />
+               </Animated.View>
 
               <Animated.View 
                 style={[

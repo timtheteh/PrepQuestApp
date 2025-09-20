@@ -627,10 +627,17 @@ export default function DecksScreen() {
     } else {
       setSelectedInterviewCards(new Set());
     }
-    // Animate mode toggle
+    
+    // For low-end devices: Instant mode toggle
+    if (animationConfig.instantMode) {
+      fadeAnim.setValue(isRightSide ? 1 : 0);
+      return;
+    }
+    
+    // Animate mode toggle for other devices
     Animated.timing(fadeAnim, {
       toValue: isRightSide ? 1 : 0,
-      duration: selectUnselectedDuration,
+      duration: animationConfig.duration,
       useNativeDriver: true,
     }).start();
   };
@@ -640,99 +647,96 @@ export default function DecksScreen() {
     
     const animationConfig = getAnimationConfig();
     
-    // Use staggered animations for low-end devices to reduce load
-    if (animationConfig.maxParallelAnimations < 7) {
-      // Stagger animations in groups for low-end devices
-      const group1 = [
-        Animated.timing(shiftAnim, {
-          toValue: SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
-        }),
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      // Set all values directly for instant response
+      shiftAnim.setValue(SHIFT_DISTANCE);
+      marginAnim.setValue(BOTTOM_SPACING + SHIFT_DISTANCE);
+      actionRowOpacity.setValue(1);
+      selectTextAnim.setValue(1);
+      fabOpacity.setValue(0);
+      circleButtonOpacity.setValue(1);
+      cardWidthPercentage.setValue(85);
+      
+      return;
+    }
+    
+    const duration = animationConfig.duration;
+    
+    // For all non-instant devices: Instant shift to prevent overlap
+    if (!animationConfig.instantMode) {
+      // INSTANT content shift to make space - no animation delay
+      shiftAnim.setValue(SHIFT_DISTANCE);
+      
+      // Then animate other elements with proper spacing
+      Animated.parallel([
         Animated.timing(actionRowOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
         Animated.timing(selectTextAnim, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
-      ];
-      
-      const group2 = [
         Animated.timing(marginAnim, {
           toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
-        }),
-        Animated.timing(fabOpacity, {
-          toValue: 0,
-          duration: selectUnselectedDuration,
-          useNativeDriver: true,
         }),
         Animated.timing(circleButtonOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
-      ];
-      
-      const group3 = [
+        Animated.timing(fabOpacity, {
+          toValue: 0,
+          duration: duration,
+          useNativeDriver: true,
+        }),
         Animated.timing(cardWidthPercentage, {
           toValue: 85,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
         }),
-      ];
-      
-      // Run groups with slight stagger
-      Animated.parallel(group1).start(() => {
-        setTimeout(() => {
-          Animated.parallel(group2).start(() => {
-            setTimeout(() => {
-              Animated.parallel(group3).start();
-            }, animationConfig.staggerDelay);
-          });
-        }, animationConfig.staggerDelay);
-      });
+      ]).start();
     } else {
-      // Use all parallel animations for high-end devices
+      // For high-end devices: Full parallel animations
       Animated.parallel([
         Animated.timing(shiftAnim, {
           toValue: SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
         Animated.timing(marginAnim, {
           toValue: BOTTOM_SPACING + SHIFT_DISTANCE,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
         }),
         Animated.timing(actionRowOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
         Animated.timing(selectTextAnim, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
         Animated.timing(fabOpacity, {
           toValue: 0,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         }),
         Animated.timing(cardWidthPercentage, {
           toValue: 85,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: false,
         }),
         Animated.timing(circleButtonOpacity, {
           toValue: 1,
-          duration: selectUnselectedDuration,
+          duration: duration,
           useNativeDriver: true,
         })
       ]).start();
@@ -740,44 +744,67 @@ export default function DecksScreen() {
   };
 
   const handleCancel = () => {
+    const animationConfig = getAnimationConfig();
+    
+    // For low-end devices: Instant mode - no animations at all
+    if (animationConfig.instantMode) {
+      // Set all values directly for instant response
+      shiftAnim.setValue(0);
+      marginAnim.setValue(BOTTOM_SPACING);
+      actionRowOpacity.setValue(0);
+      selectTextAnim.setValue(0);
+      fabOpacity.setValue(1);
+      circleButtonOpacity.setValue(0);
+      cardWidthPercentage.setValue(100);
+      
+      // Update state immediately
+      setIsSelectMode(false);
+      setSelectedStudyCards(new Set());
+      setSelectedInterviewCards(new Set());
+      
+      return;
+    }
+    
+    const duration = animationConfig.duration;
+    
+    // For mid-range and high-end devices: Use animations
     Animated.parallel([
       Animated.timing(shiftAnim, {
         toValue: 0,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: true,
       }),
       Animated.timing(marginAnim, {
         toValue: BOTTOM_SPACING,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: false,
       }),
       Animated.timing(actionRowOpacity, {
         toValue: 0,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: true,
       }),
       Animated.timing(selectTextAnim, {
         toValue: 0,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: true,
       }),
       Animated.timing(fabOpacity, {
         toValue: 1,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: true,
       }),
       Animated.timing(cardWidthPercentage, {
         toValue: 100,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: false,
       }),
       Animated.timing(circleButtonOpacity, {
         toValue: 0,
-        duration: selectUnselectedDuration,
+        duration: duration,
         useNativeDriver: true,
       })
     ]).start(() => {
-      // Use requestAnimationFrame to prevent state updates during render
       requestAnimationFrame(() => {
         setIsSelectMode(false);
         setSelectedStudyCards(new Set());
@@ -876,27 +903,39 @@ export default function DecksScreen() {
     }
   };
 
-  const studyOpacity = fadeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0],
-  });
+  // Optimize interpolations for low-end devices
+  const animationConfig = getAnimationConfig();
+  
+  const studyOpacity = animationConfig.instantMode ? 
+    new Animated.Value(isInterviewMode ? 0 : 1) : 
+    fadeAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 0],
+    });
 
-  const interviewOpacity = fadeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
+  const interviewOpacity = animationConfig.instantMode ? 
+    new Animated.Value(isInterviewMode ? 1 : 0) : 
+    fadeAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    });
 
-  const selectOpacity = selectTextAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0],
-  });
+  const selectOpacity = animationConfig.instantMode ? 
+    new Animated.Value(isSelectMode ? 0 : 1) : 
+    selectTextAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 0],
+    });
 
-  const selectAllOpacity = selectTextAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
+  const selectAllOpacity = animationConfig.instantMode ? 
+    new Animated.Value(isSelectMode ? 1 : 0) : 
+    selectTextAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    });
 
-  const handleStudyCardSelection = (index: number, selected: boolean) => {
+  const handleStudyCardSelection = useCallback((index: number, selected: boolean) => {
+    // Always use immediate state update for best responsiveness
     setSelectedStudyCards(prev => {
       const newSet = new Set(prev);
       if (selected) {
@@ -906,9 +945,10 @@ export default function DecksScreen() {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const handleInterviewCardSelection = (index: number, selected: boolean) => {
+  const handleInterviewCardSelection = useCallback((index: number, selected: boolean) => {
+    // Always use immediate state update for best responsiveness  
     setSelectedInterviewCards(prev => {
       const newSet = new Set(prev);
       if (selected) {
@@ -918,7 +958,7 @@ export default function DecksScreen() {
       }
       return newSet;
     });
-  };
+  }, []);
 
   const handleSelectAll = () => {
     if (isInterviewMode) {
@@ -995,7 +1035,39 @@ export default function DecksScreen() {
     }
   };
 
-  const renderStudyCards = () => {
+  const sortDecks = useCallback((decks: (Deck & { progress: number })[]) => {
+    return [...decks].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'name':
+          aValue = a.deckName.toLowerCase();
+          bValue = b.deckName.toLowerCase();
+          break;
+        case 'dateAdded':
+          aValue = new Date(a.dateAdded);
+          bValue = new Date(b.dateAdded);
+          break;
+        case 'lastModified':
+          aValue = new Date(a.lastModifiedDate || a.dateAdded);
+          bValue = new Date(b.lastModifiedDate || b.dateAdded);
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [sortField, sortDirection]);
+
+  const renderStudyCards = useMemo(() => {
     let decksToRender;
     if (isSearching) {
       decksToRender = searchedStudyDecks;
@@ -1055,9 +1127,9 @@ export default function DecksScreen() {
       );
     });
     return cards;
-  };
+  }, [isSearching, searchedStudyDecks, filteredStudyDecksByDate, shouldShowStudyAnimation, sortDecks, selectedStudyCards, isSelectMode, cardWidthPercentage, circleButtonOpacity, formatDate, handleFavoriteToggle, handleStudyCardSelection, language]);
 
-  const renderInterviewCards = () => {
+  const renderInterviewCards = useMemo(() => {
     let decksToRender;
     if (isSearching) {
       decksToRender = searchedInterviewDecks;
@@ -1119,7 +1191,7 @@ export default function DecksScreen() {
       );
     });
     return cards;
-  };
+  }, [isSearching, searchedInterviewDecks, filteredInterviewDecksByDate, shouldShowInterviewAnimation, sortDecks, selectedInterviewCards, isSelectMode, cardWidthPercentage, circleButtonOpacity, imageSources, formatDate, handleFavoriteToggle, handleInterviewCardSelection, language]);
 
   // For counts in UI:
   const studyDeckCount = useMemo(() => 
@@ -1217,38 +1289,6 @@ export default function DecksScreen() {
     setSelectedStudyCards(new Set());
     setSelectedInterviewCards(new Set());
   }, [studyDecks, interviewDecks]);
-
-  const sortDecks = useCallback((decks: (Deck & { progress: number })[]) => {
-    return [...decks].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-      
-      switch (sortField) {
-        case 'name':
-          aValue = a.deckName.toLowerCase();
-          bValue = b.deckName.toLowerCase();
-          break;
-        case 'dateAdded':
-          aValue = new Date(a.dateAdded);
-          bValue = new Date(b.dateAdded);
-          break;
-        case 'lastModified':
-          aValue = new Date(a.lastModifiedDate || a.dateAdded);
-          bValue = new Date(b.lastModifiedDate || b.dateAdded);
-          break;
-        default:
-          return 0;
-      }
-      
-      if (aValue < bValue) {
-        return sortDirection === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  }, [sortField, sortDirection]);
 
   const handleSortChange = (field: SortField, direction: SortDirection) => {
     setSortField(field);
@@ -1386,7 +1426,7 @@ export default function DecksScreen() {
                       contentContainerStyle={styles.scrollContent}
                       showsVerticalScrollIndicator={false}
                     >
-                      {renderStudyCards()}
+                      {renderStudyCards}
                     </ScrollView>
                   </Animated.View>
 
@@ -1400,7 +1440,7 @@ export default function DecksScreen() {
                       contentContainerStyle={styles.scrollContent}
                       showsVerticalScrollIndicator={false}
                     >
-                      {renderInterviewCards()}
+                      {renderInterviewCards}
                     </ScrollView>
                   </Animated.View>
                 </View>

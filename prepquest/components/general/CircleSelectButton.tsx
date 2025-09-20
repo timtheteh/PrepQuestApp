@@ -3,6 +3,7 @@ import { View, StyleSheet, ViewStyle, TouchableOpacity, Animated } from 'react-n
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
+import { getAnimationConfig } from '@/utils/animationConfig';
 
 interface CircleSelectButtonProps {
   style?: ViewStyle;
@@ -21,6 +22,7 @@ export const CircleSelectButton = React.memo(({
 }: CircleSelectButtonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
   
   // Memoize the handlePress function to prevent unnecessary re-renders
   const handlePress = useMemo(() => {
@@ -34,22 +36,44 @@ export const CircleSelectButton = React.memo(({
   // Memoize the animated style to prevent recreation on every render
   const animatedStyle = useMemo(() => [
     styles.container,
-    opacity !== undefined && { opacity },
+    animationConfig.instantMode && opacity !== undefined ? { opacity: 1 } : opacity !== undefined ? { opacity } : {},
     style
-  ], [opacity, style]);
+  ], [opacity, style, animationConfig.instantMode]);
   
-  // Memoize the circle style to prevent recreation
+  // Consistent circle style for all devices
   const circleStyle = useMemo(() => [
     styles.circle,
     selected && styles.selected
   ], [selected]);
   
+  // Use regular View for low-end devices to avoid Animated.View overhead
+  if (animationConfig.instantMode) {
+    return (
+      <View style={[styles.container, style]}>
+        <TouchableOpacity
+          onPress={handlePress}
+          disabled={disabled}
+          style={styles.button}
+          activeOpacity={0.8}
+        >
+          <View style={circleStyle}>
+            {selected && (
+              <Feather name="check" size={18} color={colors.background} />
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Use Animated.View for other devices
   return (
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
         style={styles.button}
+        activeOpacity={0.8}
       >
         <View style={circleStyle}>
           {selected && (

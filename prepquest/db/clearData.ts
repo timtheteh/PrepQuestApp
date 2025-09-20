@@ -1,16 +1,8 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getCurrentUserID } from './decks';
 
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    console.error('Error getting userID from AsyncStorage:', error);
-    return '1'; // Default to '1' on error
-  }
-}
+// Using cached getCurrentUserID from decks.ts
 
 // Interface for backup data before clearing
 export interface BackupData {

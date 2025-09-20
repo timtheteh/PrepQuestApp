@@ -2,15 +2,111 @@ import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/clerk-expo';
 
-// Helper function to get current userID from AsyncStorage
-async function getCurrentUserID(): Promise<string> {
-  try {
-    const userID = await AsyncStorage.getItem('userID');
-    return userID || '1'; // Default to '1' if not found
-  } catch (error) {
-    console.error('Error getting userID:', error);
-    return '1'; // Default to '1' if error
+// Import cached userID function from decks.ts to avoid duplication
+import { getCurrentUserID } from './decks';
+
+// Statistics caching system
+interface CachedStats {
+  data: any;
+  timestamp: number;
+  userID: string;
+}
+
+const statsCache = new Map<string, CachedStats>();
+const STATS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes cache for statistics
+
+function getCachedStats<T>(key: string, userID: string): T | null {
+  const cached = statsCache.get(key);
+  if (cached && 
+      cached.userID === userID && 
+      (Date.now() - cached.timestamp) < STATS_CACHE_DURATION) {
+    return cached.data as T;
   }
+  return null;
+}
+
+function setCachedStats(key: string, userID: string, data: any): void {
+  statsCache.set(key, {
+    data,
+    timestamp: Date.now(),
+    userID
+  });
+}
+
+export function clearStatsCache(): void {
+  statsCache.clear();
+}
+
+// Time period calculation caching to eliminate repeated calculations
+interface TimeCalculation {
+  result: any;
+  timestamp: number;
+  userID: string;
+}
+
+const timeCalculationCache = new Map<string, TimeCalculation>();
+const TIME_CALC_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for time calculations
+
+function getTimeCalculationKey(functionName: string, userID: string, period?: string): string {
+  return `${userID}:${functionName}:${period || 'all'}`;
+}
+
+function getCachedTimeCalculation<T>(functionName: string, userID: string, period?: string): T | null {
+  const key = getTimeCalculationKey(functionName, userID, period);
+  const cached = timeCalculationCache.get(key);
+  
+  if (cached && 
+      cached.userID === userID && 
+      (Date.now() - cached.timestamp) < TIME_CALC_CACHE_DURATION) {
+    return cached.result as T;
+  }
+  
+  return null;
+}
+
+function setCachedTimeCalculation(functionName: string, userID: string, result: any, period?: string): void {
+  const key = getTimeCalculationKey(functionName, userID, period);
+  
+  // LRU eviction for time calculations
+  if (timeCalculationCache.size >= 50) {
+    const oldestKey = timeCalculationCache.keys().next().value;
+    if (oldestKey) {
+      timeCalculationCache.delete(oldestKey);
+    }
+  }
+  
+  timeCalculationCache.set(key, {
+    result,
+    timestamp: Date.now(),
+    userID
+  });
+}
+
+export function clearTimeCalculationCache(): void {
+  timeCalculationCache.clear();
+}
+
+// Memory-efficient data processing utilities
+export function processDataInChunks<T, R>(
+  data: T[], 
+  chunkSize: number, 
+  processor: (chunk: T[]) => R[]
+): R[] {
+  const results: R[] = [];
+  
+  for (let i = 0; i < data.length; i += chunkSize) {
+    const chunk = data.slice(i, i + chunkSize);
+    const chunkResults = processor(chunk);
+    results.push(...chunkResults);
+    
+    // Allow garbage collection between chunks
+    if (i % (chunkSize * 10) === 0) {
+      // Small delay to allow GC
+      setTimeout(() => {}, 0);
+    }
+  }
+  
+  return results;
 }
 
 export interface DayGrade {
@@ -63,32 +159,59 @@ const calculateWeightedScoreWithMCQ = (flashcards: Array<{
 // Get all study/quiz dates and calculate grades for each day
 export async function getDailyGrades(): Promise<DayGrade[]> {
   try {
-    
     const userID = await getCurrentUserID();
     
-    // Get all flashcards with study or quiz dates from both tables
+    // Check cache first
+    const cachedResult = getCachedStats<DayGrade[]>('dailyGrades', userID);
+    if (cachedResult) {
+      return cachedResult;
+    }
+    
+    // Optimized query using UNION ALL with indexes and date extraction in SQL
     const result = await db.getAllAsync(`
-      SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
-      FROM flashcards
-      WHERE userID = ? 
-        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-        AND difficultyRating != 'None'
-    `, [userID]);
+      WITH daily_activities AS (
+        SELECT 
+          difficultyRating,
+          answerType,
+          isMcqAnswerRight,
+          date(lastStudiedDate) as activity_date
+        FROM flashcards
+        WHERE userID = ? 
+          AND lastStudiedDate IS NOT NULL
+          AND difficultyRating != 'None'
+        UNION ALL
+        SELECT 
+          difficultyRating,
+          answerType,
+          isMcqAnswerRight,
+          date(lastQuizzedDate) as activity_date
+        FROM flashcards
+        WHERE userID = ? 
+          AND lastQuizzedDate IS NOT NULL
+          AND difficultyRating != 'None'
+      )
+      SELECT 
+        difficultyRating,
+        answerType,
+        isMcqAnswerRight,
+        activity_date
+      FROM daily_activities
+      WHERE activity_date IS NOT NULL
+      ORDER BY activity_date
+    `, [userID, userID]);
+    
     const flashcards = result as Array<{
       difficultyRating: string;
-      lastStudiedDate: string | null;
-      lastQuizzedDate: string | null;
       answerType: string;
       isMcqAnswerRight: number | null;
+      activity_date: string;
     }>;
 
-
     if (!flashcards || flashcards.length === 0) {
-      console.log('❌ No flashcard data found');
       return [];
     }
 
-    // Group flashcards by date (both study and quiz dates)
+    // Group flashcards by date (already processed in SQL)
     const dateGroups = new Map<string, Array<{
       difficultyRating: string;
       answerType: string;
@@ -96,32 +219,15 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
     }>>();
 
     flashcards.forEach((flashcard) => {
-      // Add to study date group
-      if (flashcard.lastStudiedDate) {
-        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        if (!dateGroups.has(studyDate)) {
-          dateGroups.set(studyDate, []);
-        }
-        dateGroups.get(studyDate)!.push({
-          difficultyRating: flashcard.difficultyRating,
-          answerType: flashcard.answerType,
-          isMcqAnswerRight: flashcard.isMcqAnswerRight
-        });
+      const dateKey = flashcard.activity_date;
+      if (!dateGroups.has(dateKey)) {
+        dateGroups.set(dateKey, []);
       }
-
-      // Add to quiz date group
-      if (flashcard.lastQuizzedDate) {
-        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-
-        if (!dateGroups.has(quizDate)) {
-          dateGroups.set(quizDate, []);
-        }
-        dateGroups.get(quizDate)!.push({
-          difficultyRating: flashcard.difficultyRating,
-          answerType: flashcard.answerType,
-          isMcqAnswerRight: flashcard.isMcqAnswerRight
-        });
-      }
+      dateGroups.get(dateKey)!.push({
+        difficultyRating: flashcard.difficultyRating,
+        answerType: flashcard.answerType,
+        isMcqAnswerRight: flashcard.isMcqAnswerRight
+      });
     });
 
     // Calculate grade for each date
@@ -157,6 +263,9 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       return dateA.getTime() - dateB.getTime();
     });
 
+    // Cache the result
+    setCachedStats('dailyGrades', userID, dailyGrades);
+    
     return dailyGrades;
   } catch (error) {
     console.error('❌ Error getting daily grades:', error);
@@ -305,8 +414,13 @@ function getMonthNumber(monthName: string): string {
 // Calculate average grade for all time
 export async function getAverageGradeAllTime(): Promise<number> {
   try {
-    
     const userID = await getCurrentUserID();
+    
+    // Check cache first
+    const cachedResult = getCachedStats<number>('averageGradeAllTime', userID);
+    if (cachedResult !== null) {
+      return cachedResult;
+    }
     
     // Get all flashcards with study or quiz dates from both tables
     const result = await db.getAllAsync(`
@@ -359,6 +473,8 @@ export async function getAverageGradeAllTime(): Promise<number> {
 
     const averageScore = Math.round((totalWeight / flashcards.length) * 100);
     
+    // Cache the result
+    setCachedStats('averageGradeAllTime', userID, averageScore);
     
     return averageScore;
   } catch (error) {
@@ -435,46 +551,57 @@ export interface MonthSpeed {
 export async function getDailySpeeds(): Promise<DaySpeed[]> {
   try {
     const userID = await getCurrentUserID();
-    // Get all flashcards with study or quiz dates and timeTaken from both tables
+    
+    // Check time calculation cache first
+    const cachedResult = getCachedTimeCalculation<DaySpeed[]>('getDailySpeeds', userID);
+    if (cachedResult) {
+      return cachedResult;
+    }
+    
+    // Optimized query with date extraction in SQL
     const result = await db.getAllAsync(`
-      SELECT timeTaken, lastStudiedDate, lastQuizzedDate
-      FROM flashcards
-      WHERE userID = ? 
-        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-        AND timeTaken IS NOT NULL
-    `, [userID]);
+      WITH daily_speed_activities AS (
+        SELECT 
+          timeTaken,
+          date(lastStudiedDate) as activity_date
+        FROM flashcards
+        WHERE userID = ? 
+          AND lastStudiedDate IS NOT NULL
+          AND timeTaken IS NOT NULL
+        UNION ALL
+        SELECT 
+          timeTaken,
+          date(lastQuizzedDate) as activity_date
+        FROM flashcards
+        WHERE userID = ? 
+          AND lastQuizzedDate IS NOT NULL
+          AND timeTaken IS NOT NULL
+      )
+      SELECT 
+        timeTaken,
+        activity_date
+      FROM daily_speed_activities
+      WHERE activity_date IS NOT NULL
+      ORDER BY activity_date
+    `, [userID, userID]);
     const flashcards = result as Array<{
       timeTaken: number;
-      lastStudiedDate: string | null;
-      lastQuizzedDate: string | null;
+      activity_date: string;
     }>;
-
 
     if (!flashcards || flashcards.length === 0) {
       return [];
     }
 
-    // Group flashcards by date (both study and quiz dates)
+    // Group flashcards by date (already processed in SQL)
     const dateGroups = new Map<string, number[]>();
 
     flashcards.forEach((flashcard) => {
-      // Add to study date group
-      if (flashcard.lastStudiedDate) {
-        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        if (!dateGroups.has(studyDate)) {
-          dateGroups.set(studyDate, []);
-        }
-        dateGroups.get(studyDate)!.push(flashcard.timeTaken);
+      const dateKey = flashcard.activity_date;
+      if (!dateGroups.has(dateKey)) {
+        dateGroups.set(dateKey, []);
       }
-
-      // Add to quiz date group
-      if (flashcard.lastQuizzedDate) {
-        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-        if (!dateGroups.has(quizDate)) {
-          dateGroups.set(quizDate, []);
-        }
-        dateGroups.get(quizDate)!.push(flashcard.timeTaken);
-      }
+      dateGroups.get(dateKey)!.push(flashcard.timeTaken);
     });
 
     // Calculate average speed for each date
@@ -509,6 +636,9 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       const dateB = new Date(b.date.split(' ').reverse().join('-'));
       return dateA.getTime() - dateB.getTime();
     });
+
+    // Cache the result
+    setCachedTimeCalculation('getDailySpeeds', userID, dailySpeeds);
 
     return dailySpeeds;
   } catch (error) {

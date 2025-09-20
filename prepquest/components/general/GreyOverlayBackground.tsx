@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 
 interface GreyOverlayBackgroundProps {
   visible: boolean;
@@ -14,14 +15,25 @@ export const GreyOverlayBackground = ({
   opacity,
   onPress
 }: GreyOverlayBackgroundProps) => {
+  const insets = useSafeAreaInsets();
+  
   if (!visible) {
     return null;
   }
 
+  const overlayStyle = {
+    ...styles.overlay,
+    // Extend beyond safe area to cover full screen
+    top: -insets.top,
+    left: -insets.left,
+    width: SCREEN_WIDTH + insets.left + insets.right,
+    height: SCREEN_HEIGHT + insets.top + insets.bottom,
+  };
+
   return (
     <TouchableWithoutFeedback onPress={onPress}>
       <Animated.View style={[
-        styles.overlay,
+        overlayStyle,
         opacity ? { opacity } : { opacity: 0 }
       ]} />
     </TouchableWithoutFeedback>
@@ -31,10 +43,6 @@ export const GreyOverlayBackground = ({
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
     backgroundColor: '#000000',
     zIndex: 1000,
   },

@@ -406,6 +406,8 @@ export default function TabLayout() {
           screenOptions={{
             headerShown: false,
             tabBarStyle: { display: 'none' },
+            // Performance optimizations for screen transitions
+            lazy: true, // Enable lazy loading of screens
           }}
           tabBar={() => <NavBar ref={navbarRef} />}
         >

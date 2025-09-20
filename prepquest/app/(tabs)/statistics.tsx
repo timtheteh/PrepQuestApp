@@ -10,6 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
 
 // Lazy load heavy components for better performance
 const ReviewLineGraph = lazy(() => import('@/components/statsComponents/ReviewLineGraph').then(module => ({ default: module.ReviewLineGraph })));
@@ -21,12 +22,14 @@ const BreakdownByDifficultyPie = lazy(() => import('@/components/statsComponents
 const SpeedChart = lazy(() => import('@/components/statsComponents/SpeedChart').then(module => ({ default: module.SpeedChart })));
 const AverageSpeedTotal = lazy(() => import('@/components/statsComponents/AverageSpeedTotal'));
 
-// Loading fallback component
+// Loading fallback component optimized for low-end devices
 const ComponentLoader = React.memo(({ height = 200 }: { height?: number }) => {
   const { theme } = useTheme();
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
+  
   return (
     <View style={{ 
-      height, 
+      height: animationConfig.isLowEndDevice ? height * 0.7 : height, // Smaller placeholder for low-end
       backgroundColor: Colors[theme].background, 
       justifyContent: 'center', 
       alignItems: 'center' 
@@ -63,117 +66,34 @@ const StatisticsScreen = React.memo(() => {
   // Get performance-based animation config
   const animationConfig = useMemo(() => getAnimationConfig(), []);
 
-  // Data cache with timestamps
-  const dataCache = useRef<{
-    averageGrade?: { data: number; timestamp: number };
-    difficultyBreakdown?: { data: any; timestamp: number };
-    averageTime?: { data: number; timestamp: number };
-  }>({});
-  
-  // Cache duration: 5 minutes
-  const CACHE_DURATION = 5 * 60 * 1000;
-  
-  // Check if cached data is still valid
-  const isCacheValid = (timestamp: number) => {
-    return Date.now() - timestamp < CACHE_DURATION;
-  };
-
-  // Memoized data fetching functions with caching
-  const fetchAverageGrade = useCallback(async () => {
+  // Optimized data fetching with unified caching system
+  const fetchDataForPerformanceTab = useCallback(async () => {
     try {
       setIsLoadingAverageGrade(true);
-      
-      // Check cache first
-      if (dataCache.current.averageGrade && isCacheValid(dataCache.current.averageGrade.timestamp)) {
-        setAverageGrade(dataCache.current.averageGrade.data);
-        setIsLoadingAverageGrade(false);
-        return;
-      }
-      
-      const grade = await getAverageGradeAllTime();
-      setAverageGrade(grade);
-      
-      // Cache the result
-      dataCache.current.averageGrade = {
-        data: grade,
-        timestamp: Date.now()
-      };
-    } catch (error) {
-      console.error('Error fetching average grade:', error);
-      setAverageGrade(0);
-    } finally {
-      setIsLoadingAverageGrade(false);
-    }
-  }, []);
-
-  const fetchDifficultyBreakdown = useCallback(async () => {
-    try {
       setIsLoadingDifficultyBreakdown(true);
-      
-      // Check cache first
-      if (dataCache.current.difficultyBreakdown && isCacheValid(dataCache.current.difficultyBreakdown.timestamp)) {
-        setDifficultyBreakdown(dataCache.current.difficultyBreakdown.data);
-        setIsLoadingDifficultyBreakdown(false);
-        return;
-      }
-      
-      const breakdown = await getDifficultyBreakdown();
-      setDifficultyBreakdown(breakdown);
-      
-      // Cache the result
-      dataCache.current.difficultyBreakdown = {
-        data: breakdown,
-        timestamp: Date.now()
-      };
-    } catch (error) {
-      console.error('Error fetching difficulty breakdown:', error);
-      setDifficultyBreakdown({
-        Again: 0,
-        Hard: 0,
-        Good: 0,
-        Easy: 0
-      });
-    } finally {
-      setIsLoadingDifficultyBreakdown(false);
-    }
-  }, []);
-
-  const fetchAverageTime = useCallback(async () => {
-    try {
       setIsLoadingAverageTime(true);
-      
-      // Check cache first
-      if (dataCache.current.averageTime && isCacheValid(dataCache.current.averageTime.timestamp)) {
-        setAverageTime(dataCache.current.averageTime.data);
-        setIsLoadingAverageTime(false);
-        return;
-      }
-      
-      const time = await getAverageTimeAllTime();
-      setAverageTime(time);
-      
-      // Cache the result
-      dataCache.current.averageTime = {
-        data: time,
-        timestamp: Date.now()
-      };
+
+      // Use optimized screen data loader with caching
+      const screenData = await optimizedDataLoader.loadScreenData('statistics-performance', {
+        averageGrade: getAverageGradeAllTime,
+        difficultyBreakdown: getDifficultyBreakdown,
+        averageTime: getAverageTimeAllTime,
+      });
+
+      setAverageGrade(screenData.averageGrade);
+      setDifficultyBreakdown(screenData.difficultyBreakdown);
+      setAverageTime(screenData.averageTime);
     } catch (error) {
-      console.error('Error fetching average time:', error);
+      console.error('Error fetching statistics data:', error);
+      setAverageGrade(0);
+      setDifficultyBreakdown({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
       setAverageTime(0);
     } finally {
+      setIsLoadingAverageGrade(false);
+      setIsLoadingDifficultyBreakdown(false);
       setIsLoadingAverageTime(false);
     }
   }, []);
-
-  // Optimized data fetching - only fetch when needed
-  const fetchDataForPerformanceTab = useCallback(async () => {
-    // Only fetch performance-specific data when switching to performance tab
-    await Promise.all([
-      fetchAverageGrade(),
-      fetchDifficultyBreakdown(),
-      fetchAverageTime()
-    ]);
-  }, [fetchAverageGrade, fetchDifficultyBreakdown, fetchAverageTime]);
 
   useEffect(() => {
     if (isFocused) {
@@ -181,25 +101,32 @@ const StatisticsScreen = React.memo(() => {
       setShouldLoadDecksComponents(false);
       setShouldLoadPerformanceComponents(false);
       
-      // Optimize loading experience - show screen immediately without data loading
+      // Optimize loading experience - show screen immediately
       setDisableToggleAnimation(false);
       setIsPerformance(false);
       
-      // Immediate screen display
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: animationConfig.duration, // Use performance-based duration
-        useNativeDriver: true,
-      }).start();
+      // Use optimized screen transition
+      optimizedScreenTransition.transitionWithDataPreload(
+        () => {
+          // Immediate screen display
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: animationConfig.screenTransitionDuration,
+            useNativeDriver: true,
+          }).start();
+        },
+        // Pre-load statistics data in background
+        () => fetchDataForPerformanceTab()
+      );
       
-      // Load initial components after a short delay for better perceived performance
+      // Load initial components with device-optimized delay
       setTimeout(() => {
         setShouldLoadDecksComponents(true);
-      }, 50); // Reduced delay for faster initial load
+      }, animationConfig.isLowEndDevice ? 100 : 50);
     } else {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: animationConfig.duration, // Use performance-based duration
+        duration: animationConfig.duration,
         useNativeDriver: true,
       }).start();
       
@@ -207,38 +134,46 @@ const StatisticsScreen = React.memo(() => {
       setShouldLoadDecksComponents(false);
       setShouldLoadPerformanceComponents(false);
     }
-  }, [isFocused, animationConfig]);
+  }, [isFocused, animationConfig, fetchDataForPerformanceTab]);
 
   // Optimized fade animation for Decks/Performance toggle
   const handleToggle = useCallback((val: boolean) => {
-    Animated.timing(contentFadeAnim, {
-      toValue: 0,
-      duration: animationConfig.duration, // Use performance-based duration
-      useNativeDriver: true,
-    }).start(() => {
+    if (animationConfig.isLowEndDevice) {
+      // Instant toggle for low-end devices
       setIsPerformance(val);
       if (!val) {
-        setPendingDecksFadeIn(true);
-        // Reset both sections to Decks state
         setBreakdownKey(prev => prev + 1);
         setMoreDetailsState(0);
-        // Ensure decks components are loaded
         setShouldLoadDecksComponents(true);
       } else {
-        // Load performance components and fetch data when switching to performance tab
         setShouldLoadPerformanceComponents(true);
-        
-        // Fetch performance data in background
-        fetchDataForPerformanceTab().finally(() => {
+      }
+    } else {
+      // Animated toggle for high-end devices
+      Animated.timing(contentFadeAnim, {
+        toValue: 0,
+        duration: animationConfig.duration,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsPerformance(val);
+        if (!val) {
+          setPendingDecksFadeIn(true);
+          setBreakdownKey(prev => prev + 1);
+          setMoreDetailsState(0);
+          setShouldLoadDecksComponents(true);
+        } else {
+          setShouldLoadPerformanceComponents(true);
+          
+          // Data is already cached from initial load, so fade in immediately
           Animated.timing(contentFadeAnim, {
             toValue: 1,
-            duration: animationConfig.duration, // Use performance-based duration
+            duration: animationConfig.duration,
             useNativeDriver: true,
           }).start();
-        });
-      }
-    });
-  }, [contentFadeAnim, animationConfig, fetchDataForPerformanceTab]);
+        }
+      });
+    }
+  }, [contentFadeAnim, animationConfig]);
 
   // Optimized callback for ReviewLineGraph to trigger fade-in after content is ready
   const handleDecksContentReady = useCallback(() => {
@@ -309,7 +244,9 @@ const StatisticsScreen = React.memo(() => {
             <ScrollView 
               contentContainerStyle={scrollViewStyle}
               showsVerticalScrollIndicator={false}
-              removeClippedSubviews={true} // Optimize for performance
+              removeClippedSubviews={animationConfig.isLowEndDevice}
+              scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+              decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
             >
               {shouldLoadDecksComponents ? (
                 <Suspense fallback={<ComponentLoader height={300} />}>
@@ -328,7 +265,9 @@ const StatisticsScreen = React.memo(() => {
             <ScrollView 
               contentContainerStyle={scrollViewStyle}
               showsVerticalScrollIndicator={false}
-              removeClippedSubviews={true} // Optimize for performance
+              removeClippedSubviews={animationConfig.isLowEndDevice}
+              scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+              decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
             >
               {shouldLoadPerformanceComponents ? (
                 <Suspense fallback={<ComponentLoader height={300} />}>

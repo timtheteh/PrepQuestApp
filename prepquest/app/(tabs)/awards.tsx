@@ -16,6 +16,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTopBarStatisticsHeight } from '@/hooks/heights';
+import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
 const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
 const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
@@ -348,12 +350,16 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Fetch streak data
+  // Optimized streak data fetching with unified caching
   const fetchStreakData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await getLongestStreakData();
-      setStreakData(data);
+      // Use optimized data loader with caching
+      const cachedData = await optimizedDataLoader.loadWithCache(
+        'awards-streak-data',
+        getLongestStreakData
+      );
+      setStreakData(cachedData);
     } catch (error) {
       setStreakData({
         streakLength: 0,
@@ -367,17 +373,12 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
     }
   }, []);
 
-  // Fetch data when screen comes into focus
+  // Optimized data loading on screen focus
   useEffect(() => {
     if (isFocused) {
-      const now = Date.now();
-      // Only fetch if cache is expired or no data exists
-      if (now - lastFetchTime > CACHE_DURATION || streakData.streakLength === 0) {
-        fetchStreakData();
-        setLastFetchTime(now);
-      }
+      fetchStreakData();
     }
-  }, [isFocused, fetchStreakData, lastFetchTime, CACHE_DURATION, streakData.streakLength]);
+  }, [isFocused, fetchStreakData]);
 
   return (
     <View style={{ marginHorizontal: 16, marginTop: 20,}}>
@@ -575,12 +576,16 @@ const StreakCalendar = React.memo(() => {
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Fetch studied dates
+  // Optimized studied dates fetching with unified caching
   const fetchStudiedDates = useCallback(async () => {
     try {
       setIsLoading(true);
-      const dates = await getAllStudiedDates();
-      setStudiedDates(dates);
+      // Use optimized data loader with caching
+      const cachedDates = await optimizedDataLoader.loadWithCache(
+        'awards-studied-dates',
+        getAllStudiedDates
+      );
+      setStudiedDates(cachedDates);
     } catch (error) {
       setStudiedDates([]);
     } finally {
@@ -588,17 +593,12 @@ const StreakCalendar = React.memo(() => {
     }
   }, []);
 
-  // Fetch data when screen comes into focus
+  // Optimized data loading on screen focus
   useEffect(() => {
     if (isFocused) {
-      const now = Date.now();
-      // Only fetch if cache is expired or no data exists
-      if (now - lastFetchTime > CACHE_DURATION || studiedDates.length === 0) {
-        fetchStudiedDates();
-        setLastFetchTime(now);
-      }
+      fetchStudiedDates();
     }
-  }, [isFocused, fetchStudiedDates, lastFetchTime, CACHE_DURATION, studiedDates.length]);
+  }, [isFocused, fetchStudiedDates]);
 
   // Use memoized streak info calculation
   const streakInfo = memoizedGetStreakInfo(studiedDates);
@@ -785,6 +785,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
 const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: BadgeWallProps & { themeColors: any }) => {
   const { language } = useLanguage();
   const [viewAll, setViewAll] = useState(false);
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
   
   // Memoize expensive calculations
   const { sortedBadges, badgeRows, collapsedHeight, expandedHeight } = useMemo(() => {
@@ -813,12 +814,18 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
   const anim = useRef(new Animated.Value(collapsedHeight)).current;
   
   useEffect(() => {
-    Animated.timing(anim, {
-      toValue: viewAll ? expandedHeight : collapsedHeight,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [viewAll, expandedHeight, collapsedHeight]);
+    if (animationConfig.isLowEndDevice) {
+      // Instant expansion for low-end devices
+      anim.setValue(viewAll ? expandedHeight : collapsedHeight);
+    } else {
+      // Animated expansion for high-end devices
+      Animated.timing(anim, {
+        toValue: viewAll ? expandedHeight : collapsedHeight,
+        duration: animationConfig.duration * 2,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [viewAll, expandedHeight, collapsedHeight, animationConfig]);
 
   // Only render the rows that are visible (lazy loading for collapsed state)
   const visibleRows = useMemo(() => {
@@ -1638,6 +1645,7 @@ export default function AwardsScreen() {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
   
   const themeColors = Colors[theme];
 
@@ -1646,72 +1654,89 @@ export default function AwardsScreen() {
       setDisableToggleAnimation(true);
       setIsAchievements(false);
       achievementsContentAnim.setValue(0);
-      setTimeout(() => {
-        setDisableToggleAnimation(false);
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      }, 50);
+      
+      // Use optimized screen transition
+      optimizedScreenTransition.transitionWithDataPreload(
+        () => {
+          setTimeout(() => {
+            setDisableToggleAnimation(false);
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: animationConfig.screenTransitionDuration,
+              useNativeDriver: true,
+            }).start();
+          }, animationConfig.isLowEndDevice ? 100 : 50);
+        },
+        // No heavy data loading needed for awards page, return resolved promise
+        () => Promise.resolve()
+      );
     } else {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 200,
+        duration: animationConfig.duration,
         useNativeDriver: true,
       }).start();
     }
-  }, [isFocused]);
+  }, [isFocused, animationConfig]);
 
   const handleToggle = useCallback((val: boolean) => {
-    if (val) {
-      // Switching to Achievements
-      Animated.sequence([
-        Animated.timing(achievementsContentAnim, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setIsAchievements(true);
+    if (animationConfig.isLowEndDevice) {
+      // Instant toggle for low-end devices
+      setIsAchievements(val);
+      fadeAnim.setValue(1);
+      if (val) {
+        achievementsContentAnim.setValue(1);
+      }
+    } else {
+      // Animated toggle for high-end devices
+      if (val) {
+        // Switching to Achievements
         Animated.sequence([
-          Animated.delay(100),
+          Animated.timing(achievementsContentAnim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: animationConfig.duration,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          setIsAchievements(true);
+          Animated.sequence([
+            Animated.delay(100),
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: animationConfig.duration * 1.5,
+              useNativeDriver: true,
+            }),
+            Animated.timing(achievementsContentAnim, {
+              toValue: 1,
+              duration: animationConfig.duration * 1.5,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        });
+      } else {
+        // Switching back to Goals
+        Animated.sequence([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: animationConfig.duration,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          setIsAchievements(false);
           Animated.timing(fadeAnim, {
             toValue: 1,
-            duration: 300,
+            duration: animationConfig.duration * 1.5,
             useNativeDriver: true,
-          }),
-          Animated.timing(achievementsContentAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    } 
-    else {
-      // Switching back to Goals
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-      toValue: 0,
-          duration: 200,
-      useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setIsAchievements(false);
-        Animated.timing(fadeAnim, {
-        toValue: 1,
-          duration: 300,
-        useNativeDriver: true,
-      }).start();
-      });
+          }).start();
+        });
+      }
     }
-  }, [fadeAnim, achievementsContentAnim]);
+  }, [fadeAnim, achievementsContentAnim, animationConfig]);
 
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>
@@ -1731,6 +1756,9 @@ export default function AwardsScreen() {
             showsVerticalScrollIndicator={false}
             scrollEnabled={scrollEnabled}
             style={{ marginBottom: 40, marginTop: 20 }}
+            removeClippedSubviews={animationConfig.isLowEndDevice}
+            scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+            decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
           >
         <View style={styles.wrapper}>
                       <Text style={[styles.title, language === 'Chinese' && {marginTop: 20}, { color: themeColors.text }]}>{strings[language].fillInCustomGoal}</Text>
@@ -1758,6 +1786,9 @@ export default function AwardsScreen() {
             showsVerticalScrollIndicator={false}
             scrollEnabled={scrollEnabled}
             style={{ marginBottom: 40, marginTop: 20, marginHorizontal: 16 }}
+            removeClippedSubviews={animationConfig.isLowEndDevice}
+            scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+            decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
           >
             <View style={{ flexDirection: 'column', gap: 30 }}>
               <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />

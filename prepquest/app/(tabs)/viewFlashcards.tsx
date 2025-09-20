@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useContext, useState , useCallback } from 'react';
+import React, { useRef, useEffect, useContext, useState, useCallback, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Animated, Text, ScrollView } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 import { useIsFocused } from '@react-navigation/native';
@@ -17,6 +17,8 @@ import { FloatingActionButton } from '@/components/general/FloatingActionButton'
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useContentTopHeight, useContentTopHeightNoRoundedToggle2, useHeaderIconsTopHeight, useTopBarTopHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
+import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -63,6 +65,8 @@ export default function ViewFlashcardsScreen() {
   } = useContext(MenuContext);
 
   const { language } = useLanguage();
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
+  
   // Localized labels
   const COLUMN_TITLES = {
     topics: strings[language].viewFlashcardsPage.topics,
@@ -134,35 +138,38 @@ export default function ViewFlashcardsScreen() {
 
 
 
-  // Function to load flashcards
-  const loadFlashcards = async () => {
+  // Consolidated data loading function with caching
+  const loadAllFlashcardData = useCallback(async () => {
     try {
       setIsLoadingFlashcards(true);
-      const loadedFlashcards = await loadFlashcardsFromDatabase(deckId as string, isAIDeck as string);
-      setFlashcards(loadedFlashcards);
-      const questionTypeCounts = calculateQuestionTypeCounts(loadedFlashcards);
+      setIsLoadingTopics(true);
+
+      // Use optimized screen data loader with caching
+      const screenData = await optimizedDataLoader.loadScreenData(`viewFlashcards-${deckId}`, {
+        flashcards: () => loadFlashcardsFromDatabase(deckId as string, isAIDeck as string),
+        topics: () => loadTopicsFromDatabase(deckId as string, isAIDeck as string),
+      });
+
+      setFlashcards(screenData.flashcards);
+      setTopics(screenData.topics);
+      
+      // Calculate question type counts from loaded flashcards
+      const questionTypeCounts = calculateQuestionTypeCounts(screenData.flashcards);
       setQuestionTypes(questionTypeCounts);
     } catch (error) {
-      console.error('Error loading flashcards:', error);
+      console.error('Error loading flashcard data:', error);
       setFlashcards([]);
+      setTopics([]);
+      setQuestionTypes([]);
     } finally {
       setIsLoadingFlashcards(false);
-    }
-  };
-
-  // Function to load topics
-  const loadTopics = async () => {
-    try {
-      setIsLoadingTopics(true);
-      const loadedTopics = await loadTopicsFromDatabase(deckId as string, isAIDeck as string);
-      setTopics(loadedTopics);
-    } catch (error) {
-      console.error('Error loading topics:', error);
-      setTopics([]);
-    } finally {
       setIsLoadingTopics(false);
     }
-  };
+  }, [deckId, isAIDeck]);
+
+  // Individual functions for backward compatibility
+  const loadFlashcards = loadAllFlashcardData;
+  const loadTopics = loadAllFlashcardData;
 
   // Function to toggle favorite status
   const toggleFavorite = async (flashcardIdx: number) => {
@@ -176,7 +183,7 @@ export default function ViewFlashcardsScreen() {
     }
   };
 
-  // Handle screen transitions
+  // Handle screen transitions with performance optimization
   useEffect(() => {
     if (isFocused) {
       // Reset navbar animation when screen comes into focus
@@ -192,25 +199,28 @@ export default function ViewFlashcardsScreen() {
         setViewMode('grid');
       }
       
-      // Load flashcards when screen comes into focus
-      loadFlashcards();
-      loadTopics();
-      
-      // Ensure opacity starts at 0 for a clean fade-in
-      screenOpacity.setValue(0);
-      
-      // Add a small delay for smoother fade-in animation
-      setTimeout(() => {
-        Animated.timing(screenOpacity, {
-          toValue: 1,
-          duration: SCREEN_TRANSITION_DURATION,
-          useNativeDriver: true,
-        }).start();
-      }, 50);
+      // Use optimized screen transition
+      optimizedScreenTransition.transitionWithDataPreload(
+        () => {
+          // Ensure opacity starts at 0 for a clean fade-in
+          screenOpacity.setValue(0);
+          
+          // Add device-optimized delay for smoother fade-in animation
+          setTimeout(() => {
+            Animated.timing(screenOpacity, {
+              toValue: 1,
+              duration: animationConfig.screenTransitionDuration,
+              useNativeDriver: true,
+            }).start();
+          }, animationConfig.isLowEndDevice ? 100 : 50);
+        },
+        // Pre-load flashcard and topic data
+        () => loadAllFlashcardData()
+      );
     } else {
       screenOpacity.setValue(0);
     }
-  }, [isFocused]);
+  }, [isFocused, animationConfig, loadAllFlashcardData]);
 
   // Background task refresh hook
   const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
@@ -218,8 +228,7 @@ export default function ViewFlashcardsScreen() {
       console.log('Background task completed - refreshing flashcards data');
       // Refresh flashcards data when background task completes
       if (deckId) {
-        loadFlashcards();
-        loadTopics();
+        loadAllFlashcardData();
       }
     }
   });
@@ -227,44 +236,52 @@ export default function ViewFlashcardsScreen() {
 
 
   useEffect(() => {
-    if (isSelectMode) {
-      Animated.parallel([
-        Animated.timing(actionRowOpacity, {
-          toValue: 1,
-          duration: ACTION_ROW_ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(actionRowTranslateY, {
-          toValue: 0,
-          duration: ACTION_ROW_ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: ACTION_ROW_HEIGHT,
-          duration: ACTION_ROW_ANIMATION_DURATION,
-          useNativeDriver: true,
-        })
-      ]).start();
+    if (animationConfig.isLowEndDevice) {
+      // Instant transitions for low-end devices
+      actionRowOpacity.setValue(isSelectMode ? 1 : 0);
+      actionRowTranslateY.setValue(isSelectMode ? 0 : -20);
+      headerTranslateY.setValue(isSelectMode ? ACTION_ROW_HEIGHT : 0);
     } else {
-      Animated.parallel([
-        Animated.timing(actionRowOpacity, {
-          toValue: 0,
-          duration: ACTION_ROW_ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(actionRowTranslateY, {
-          toValue: -20,
-          duration: ACTION_ROW_ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: ACTION_ROW_ANIMATION_DURATION,
-          useNativeDriver: true,
-        })
-      ]).start();
+      // Animated transitions for high-end devices
+      if (isSelectMode) {
+        Animated.parallel([
+          Animated.timing(actionRowOpacity, {
+            toValue: 1,
+            duration: animationConfig.duration * 2,
+            useNativeDriver: true,
+          }),
+          Animated.timing(actionRowTranslateY, {
+            toValue: 0,
+            duration: animationConfig.duration * 2,
+            useNativeDriver: true,
+          }),
+          Animated.timing(headerTranslateY, {
+            toValue: ACTION_ROW_HEIGHT,
+            duration: animationConfig.duration * 2,
+            useNativeDriver: true,
+          })
+        ]).start();
+      } else {
+        Animated.parallel([
+          Animated.timing(actionRowOpacity, {
+            toValue: 0,
+            duration: animationConfig.duration * 2,
+            useNativeDriver: true,
+          }),
+          Animated.timing(actionRowTranslateY, {
+            toValue: -20,
+            duration: animationConfig.duration * 2,
+            useNativeDriver: true,
+          }),
+          Animated.timing(headerTranslateY, {
+            toValue: 0,
+            duration: animationConfig.duration * 2,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }
     }
-  }, [isSelectMode]);
+  }, [isSelectMode, animationConfig]);
 
   useEffect(() => {
     if (viewMode === 'grid') {
@@ -598,9 +615,7 @@ export default function ViewFlashcardsScreen() {
     );
   };
 
-  const SCREEN_TRANSITION_DURATION = 300;
   const ACTION_ROW_HEIGHT = 60;
-  const ACTION_ROW_ANIMATION_DURATION = 300;
 
   const getContentTopHeight = useContentTopHeight();
   const getContentTopHeightNoRoundedToggle2 = useContentTopHeightNoRoundedToggle2();
@@ -921,6 +936,9 @@ export default function ViewFlashcardsScreen() {
               !isSelectMode && { paddingBottom: bottomSafeAreaHeight }
             ]}
             showsVerticalScrollIndicator={false}
+            removeClippedSubviews={animationConfig.isLowEndDevice}
+            scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+            decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
           >
             <View style={styles.headerRow}>
             {/* First Column - Title */}

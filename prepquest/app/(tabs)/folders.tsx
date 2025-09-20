@@ -22,6 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -383,7 +384,7 @@ export default function FoldersScreen() {
     checkDatabaseReady();
   }, []);
 
-  // Load folders data from database
+  // Load folders data from database with performance optimizations
   useEffect(() => {
     const loadFoldersData = async () => {
       if (!isDatabaseReady) {
@@ -391,16 +392,32 @@ export default function FoldersScreen() {
       }
       
       try {
-        const foldersData = await getAllFolders();
-        setFolders(foldersData);
-        setFilteredFolders(foldersData);
-        setFoldersCount(foldersData.length);
+        // Use optimized screen data loader with caching
+        const screenData = await optimizedDataLoader.loadScreenData('folders', {
+          foldersData: getAllFolders,
+        });
+
+        setFolders(screenData.foldersData);
+        setFilteredFolders(screenData.foldersData);
+        setFoldersCount(screenData.foldersData.length);
       } catch (error) {
+        console.error('Error loading folders data:', error);
       }
     };
 
     if (isFocused) {
-      loadFoldersData();
+      // Use optimized screen transition
+      optimizedScreenTransition.transitionWithDataPreload(
+        () => {
+          // Start screen fade-in animation
+          Animated.timing(screenOpacity, {
+            toValue: 1,
+            duration: optimizedScreenTransition.getTransitionDuration(),
+            useNativeDriver: true,
+          }).start();
+        },
+        loadFoldersData
+      );
     }
   }, [isFocused, isDatabaseReady]);
 

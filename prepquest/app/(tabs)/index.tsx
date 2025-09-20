@@ -19,6 +19,7 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -327,7 +328,7 @@ export default function DecksScreen() {
     checkDBReady();
   }, []);
 
-  // Load deck data from database
+  // Load deck data from database with performance optimizations
   useEffect(() => {
     const loadDeckData = async () => {
       if (!isDatabaseReady) {
@@ -335,10 +336,12 @@ export default function DecksScreen() {
       }
       
       try {
-        const [studyData, interviewData] = await Promise.all([
-          getStudyDecksWithProgress(),
-          getInterviewDecksWithProgress()
+        // Use optimized data loading with caching
+        const [studyData, interviewData] = await optimizedDataLoader.loadMultipleData([
+          () => optimizedDataLoader.loadWithCache('study-decks', getStudyDecksWithProgress),
+          () => optimizedDataLoader.loadWithCache('interview-decks', getInterviewDecksWithProgress)
         ]);
+
         setStudyDecks(studyData);
         setInterviewDecks(interviewData);
         setFilteredStudyDecks(studyData);
@@ -346,13 +349,19 @@ export default function DecksScreen() {
         setStudyCardsCount(studyData.length);
         setInterviewCardsCount(interviewData.length);
         
-        // Load image sources for all decks (both study and interview)
-        const sources = new Map<number, { uri: string } | undefined>();
+        // Load image sources with optimized batching
         const allDecks = [...studyData, ...interviewData];
-        for (const deck of allDecks) {
-          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-          sources.set(deck.deckID, imageSource);
-        }
+        const imageLoaders = allDecks.map(deck => 
+          () => getCompanyIconImageSource(deck.interviewCompanyIcon)
+        );
+        
+        const imageResults = await optimizedDataLoader.loadImages(imageLoaders);
+        
+        // Map results back to deck IDs
+        const sources = new Map<number, { uri: string } | undefined>();
+        allDecks.forEach((deck, index) => {
+          sources.set(deck.deckID, imageResults[index]);
+        });
         setImageSources(sources);
       } catch (error) {
         console.error('Error loading deck data:', error);
@@ -360,7 +369,18 @@ export default function DecksScreen() {
     };
 
     if (isFocused) {
-      loadDeckData();
+      // Use optimized screen transition
+      optimizedScreenTransition.transitionWithDataPreload(
+        () => {
+          // Start screen fade-in animation
+          Animated.timing(screenOpacity, {
+            toValue: 1,
+            duration: optimizedScreenTransition.getTransitionDuration(),
+            useNativeDriver: true,
+          }).start();
+        },
+        loadDeckData
+      );
     }
   }, [isFocused, isDatabaseReady]);
 

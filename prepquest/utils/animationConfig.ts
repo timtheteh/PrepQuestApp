@@ -31,6 +31,8 @@ export const getAnimationConfig = () => {
   const config = {
     // Very fast but not instant for low-end devices to prevent touch issues
     duration: isLowEndDevice ? 50 : isMidRangeDevice ? 80 : 150,
+    // Screen transition duration - faster for low-end devices
+    screenTransitionDuration: isLowEndDevice ? 100 : isMidRangeDevice ? 150 : 200,
     // Limited parallel animations for low-end devices
     maxParallelAnimations: isLowEndDevice ? 1 : isMidRangeDevice ? 2 : 7,
     // Use native driver when animations are enabled
@@ -45,6 +47,10 @@ export const getAnimationConfig = () => {
     enableAnimations: true, // Always enable basic animations
     // Fast mode instead of instant mode to prevent touch issues
     instantMode: false,
+    // Data loading optimizations for low-end devices
+    enableDataCaching: true,
+    enableParallelDataLoading: !isLowEndDevice,
+    enableImagePreloading: !isLowEndDevice,
   };
   
   // Log device classification for debugging

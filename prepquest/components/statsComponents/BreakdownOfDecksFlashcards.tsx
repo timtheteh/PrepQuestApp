@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Animated, Platform } from 'react-native';
 import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
 import { getBreakdownData, BreakdownDatum } from '@/db/decks';
@@ -10,6 +10,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedDataLoader } from '@/utils/performanceOptimizations';
 
 interface BreakdownOfDecksFlashcardsProps {
   onContentReady?: () => void;
@@ -25,9 +26,9 @@ const fetchBreakdownData = async (): Promise<{ decksData: BreakdownDatum[], flas
   }
 };
 
-const BOUNCE_SPEED = 2.0; // slightly faster speed
-const HIGH_END_FPS = 60;
-const LOW_END_FPS = 30; // Reduced FPS for low-end devices
+const BOUNCE_SPEED = 2.0; // Same speed for both iOS and Android
+const ANDROID_OPTIMIZED_FPS = 60; // Keep 60 FPS for smooth Android animations
+const ANDROID_UPDATE_INTERVAL = Platform.OS === 'android' ? 16.67 : 16; // Optimized for Android
 
 // Mapping for category labels to Chinese/English
 const CATEGORY_LABELS: Record<string, { en: string; zh: string }> = {
@@ -49,6 +50,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   const [decksData, setDecksData] = useState<BreakdownDatum[]>([]);
   const [flashcardsData, setFlashcardsData] = useState<BreakdownDatum[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showBalls, setShowBalls] = useState(false); // New state for 2-second delay
   const data = renderedIsFlashcards ? flashcardsData : decksData;
   const screenWidth = Dimensions.get('window').width;
   const containerHeight = 440;
@@ -58,10 +60,14 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   // Get performance-based animation config
   const animationConfig = useMemo(() => getAnimationConfig(), []);
   
-  // Performance-based FPS selection
+  // Optimized FPS for smooth Android animations
   const fps = useMemo(() => {
-    return animationConfig.duration <= 100 ? LOW_END_FPS : HIGH_END_FPS;
-  }, [animationConfig]);
+    return ANDROID_OPTIMIZED_FPS; // Always use 60 FPS for smooth animations
+  }, []);
+
+  // Android-specific optimizations
+  const isAndroid = Platform.OS === 'android';
+  const updateInterval = isAndroid ? ANDROID_UPDATE_INTERVAL : 16;
 
   // Bubble sizes (relative to value or percent)
   const maxRadius = 80;
@@ -78,20 +84,99 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     return { maxValue, getRadius };
   }, [data, minRadius, maxRadius]);
 
-  // Physics engine setup
-  const [positions, setPositions] = useState<{ x: number; y: number; }[]>([]);
+  // Pre-calculate initial positions to prevent clumping
+  const initialPositions = useMemo(() => {
+    if (data.length === 0) return [];
+    
+    const centerX = containerWidth / 2;
+    const centerY = containerHeight / 2;
+    const maxDistanceFromCenter = Math.min(containerWidth, containerHeight) * 0.35;
+    const positions: { x: number; y: number; r: number }[] = [];
+    
+    data.forEach((d, i) => {
+      const radius = getRadius(d.value);
+      let x = centerX;
+      let y = centerY;
+      
+      if (data.length > 1) {
+        // Distribute in expanding spiral pattern for better initial spread
+        const angle = (i / data.length) * 2 * Math.PI + (i * 0.5); // Add spiral offset
+        const distance = (i / data.length) * maxDistanceFromCenter + radius * 1.5;
+        
+        x = centerX + Math.cos(angle) * distance;
+        y = centerY + Math.sin(angle) * distance;
+        
+        // Ensure within bounds with padding
+        x = Math.max(radius + 15, Math.min(containerWidth - radius - 15, x));
+        y = Math.max(radius + 15, Math.min(containerHeight - radius - 15, y));
+        
+        // Collision avoidance with previously placed balls
+        let attempts = 0;
+        while (attempts < 15) {
+          let hasCollision = false;
+          
+          for (const existing of positions) {
+            const dx = x - existing.x;
+            const dy = y - existing.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const minDist = radius + existing.r + 25; // Extra spacing
+            
+            if (dist < minDist) {
+              // Move away from collision
+              const pushAngle = Math.atan2(dy, dx);
+              const pushDistance = minDist - dist + 5;
+              x += Math.cos(pushAngle) * pushDistance;
+              y += Math.sin(pushAngle) * pushDistance;
+              
+              // Keep in bounds
+              x = Math.max(radius + 15, Math.min(containerWidth - radius - 15, x));
+              y = Math.max(radius + 15, Math.min(containerHeight - radius - 15, y));
+              
+              hasCollision = true;
+              break;
+            }
+          }
+          
+          if (!hasCollision) break;
+          attempts++;
+        }
+      }
+      
+      positions.push({ x, y, r: radius });
+    });
+    
+    return positions;
+  }, [data, getRadius, containerWidth, containerHeight]);
+
+  // Physics engine setup - initialize with pre-calculated positions
+  const [positions, setPositions] = useState<{ x: number; y: number; }[]>(() => initialPositions);
   const engineRef = useRef<any>(null);
   const bodiesRef = useRef<any[]>([]);
   const worldRef = useRef<any>(null);
   const intervalRef = useRef<any>(null);
 
-  // Memoized function to load data
+  // Update positions immediately when data changes
+  useEffect(() => {
+    setPositions(initialPositions);
+  }, [initialPositions]);
+
+  // Optimized data loading with caching and delayed ball reveal
   const loadData = useCallback(async () => {
     setIsLoading(true);
+    setShowBalls(false); // Hide balls during loading
     try {
-      const { decksData: fetchedDecksData, flashcardsData: fetchedFlashcardsData } = await fetchBreakdownData();
-      setDecksData(fetchedDecksData);
-      setFlashcardsData(fetchedFlashcardsData);
+      // Use optimized data loader with caching
+      const cachedData = await optimizedDataLoader.loadWithCache(
+        'breakdown-decks-flashcards',
+        fetchBreakdownData
+      );
+      setDecksData(cachedData.decksData);
+      setFlashcardsData(cachedData.flashcardsData);
+      
+      // Add 2-second delay to allow physics engine to settle before showing balls
+      setTimeout(() => {
+        setShowBalls(true);
+      }, 2000);
     } catch (error) {
       console.error('Error loading breakdown data:', error);
     } finally {
@@ -105,8 +190,8 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   }, [isFocused, loadData]); // Refresh data when screen comes into focus
 
   useEffect(() => {
-    // Skip physics engine for empty data or low-end devices with too many bubbles
-    if (data.length === 0 || (animationConfig.duration <= 100 && data.length > 6)) {
+    // Skip physics engine for empty data
+    if (data.length === 0) {
       return;
     }
 
@@ -119,82 +204,55 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
 
-    // Create engine and world with optimized settings for low-end devices
+    // Create engine and world optimized for smooth Android performance
     const engine = Engine.create({ 
-      enableSleeping: animationConfig.duration <= 100, // Enable sleeping for low-end devices
+      enableSleeping: false, // Disable sleeping for consistent smooth motion
       timing: {
-        timeScale: animationConfig.duration <= 100 ? 0.5 : 1.0 // Slower physics for low-end devices
+        timeScale: isAndroid ? 0.9 : 1.0, // Slightly slower for Android stability
+        timestamp: 0
       }
     });
+    
+    // Android-specific engine optimizations
+    if (isAndroid) {
+      engine.constraintIterations = 3; // Reduced iterations for better performance
+      engine.positionIterations = 6; // Balanced position accuracy
+      engine.velocityIterations = 4; // Optimized velocity calculations
+    }
     const world = engine.world;
     engine.gravity.y = 0;
     engine.gravity.x = 0;
     worldRef.current = world;
     engineRef.current = engine;
 
-    // Create bubbles as circular bodies with optimized placement
+    // Create bubbles using pre-calculated positions to eliminate clumping
     const bubbles = data.map((d, i) => {
       const radius = getRadius(d.value);
       
-      // Optimized placement algorithm - use grid-based placement instead of random
-      let x = 0, y = 0;
-      const gridSize = Math.max(radius * 2 + 10, 60);
-      const cols = Math.floor(containerWidth / gridSize);
-      const rows = Math.floor(containerHeight / gridSize);
+      // Use pre-calculated positions for immediate proper placement
+      const initialPos = initialPositions[i] || { 
+        x: containerWidth / 2, 
+        y: containerHeight / 2, 
+        r: radius 
+      };
       
-      // Try grid positions first, then fall back to random
-      let placed = false;
-      let tries = 0;
-      const maxTries = Math.min(100, cols * rows); // Limit tries to prevent infinite loop
-      
-      while (!placed && tries < maxTries) {
-        if (tries < cols * rows) {
-          // Grid-based placement
-          const col = tries % cols;
-          const row = Math.floor(tries / cols);
-          x = col * gridSize + radius + 10;
-          y = row * gridSize + radius + 10;
-        } else {
-          // Fallback to random placement
-          x = Math.random() * (containerWidth - 2 * radius) + radius;
-          y = Math.random() * (containerHeight - 2 * radius) + radius;
-        }
-        
-        placed = true;
-        // Only check collision with previously placed bubbles
-        for (let j = 0; j < i; j++) {
-          const other = bodiesRef.current[j];
-          if (other) {
-            const dx = x - other.position.x;
-            const dy = y - other.position.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < radius + other.circleRadius + 5) { // Increased buffer for better spacing
-              placed = false;
-              break;
-            }
-          }
-        }
-        tries++;
-      }
-      
-      // If still not placed, use center position
-      if (!placed) {
-        x = containerWidth / 2;
-        y = containerHeight / 2;
-      }
+      const x = initialPos.x;
+      const y = initialPos.y;
       
       const body = Bodies.circle(x, y, radius, {
-        restitution: animationConfig.duration <= 100 ? 0.6 : 0.8, // Lower restitution for low-end devices
-        friction: animationConfig.duration <= 100 ? 0.3 : 0.1, // Higher friction for low-end devices
-        frictionAir: animationConfig.duration <= 100 ? 0.05 : 0.01, // Higher air resistance for low-end devices
+        restitution: isAndroid ? 0.75 : 0.8, // Slightly less bouncy on Android for stability
+        friction: isAndroid ? 0.08 : 0.1, // Optimized friction for Android
+        frictionAir: isAndroid ? 0.008 : 0.01, // Slightly less air resistance on Android
         label: d.label,
         render: { fillStyle: d.color },
-        sleepingAllowed: animationConfig.duration <= 100, // Allow sleeping for low-end devices
+        sleepingAllowed: false, // Never allow sleeping for consistent motion
+        inertia: Infinity, // Prevent rotation for better performance
       });
       
-      // Give a random slow velocity (reduced for low-end devices)
+      // Give initial velocity for natural movement (no outward bias needed since positions are pre-spread)
       const angle = Math.random() * 2 * Math.PI;
-      const speed = animationConfig.duration <= 100 ? BOUNCE_SPEED * 0.7 : BOUNCE_SPEED;
+      const speed = BOUNCE_SPEED;
+      
       Body.setVelocity(body, {
         x: Math.cos(angle) * speed,
         y: Math.sin(angle) * speed,
@@ -234,64 +292,73 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     ];
     World.add(world, walls);
 
-    // Optimized update loop with performance-based settings
-    let frameCount = 0;
-    intervalRef.current = setInterval(() => {
-      Engine.update(engine, 1000 / fps);
+    // High-performance Android-optimized animation loop
+    let lastTime = performance.now();
+    let frameId: number;
+    
+    const animate = () => {
+      const currentTime = performance.now();
+      const deltaTime = currentTime - lastTime;
       
-      // Skip expensive calculations for low-end devices on some frames
-      const shouldUpdateBoundaries = animationConfig.duration > 100 || frameCount % 3 === 0;
-      const shouldUpdateVelocity = animationConfig.duration > 100 || frameCount % 5 === 0;
-      
-      if (shouldUpdateBoundaries || shouldUpdateVelocity) {
+      // Use requestAnimationFrame for smoother Android performance
+      if (deltaTime >= updateInterval) {
+        // Update physics with consistent timestep
+        Engine.update(engine, updateInterval);
+        
         // Optimized boundary enforcement and velocity control
         bodiesRef.current.forEach(b => {
           const radius = b.circleRadius;
           
-          // Enforce boundaries - if bubble escapes, bring it back
-          if (shouldUpdateBoundaries) {
-            if (b.position.x - radius < 0) {
-              Body.setPosition(b, { x: radius, y: b.position.y });
-              Body.setVelocity(b, { x: Math.abs(b.velocity.x), y: b.velocity.y });
-            }
-            if (b.position.x + radius > containerWidth) {
-              Body.setPosition(b, { x: containerWidth - radius, y: b.position.y });
-              Body.setVelocity(b, { x: -Math.abs(b.velocity.x), y: b.velocity.y });
-            }
-            if (b.position.y - radius < 0) {
-              Body.setPosition(b, { x: b.position.x, y: radius });
-              Body.setVelocity(b, { x: b.velocity.x, y: Math.abs(b.velocity.y) });
-            }
-            if (b.position.y + radius > containerHeight) {
-              Body.setPosition(b, { x: b.position.x, y: containerHeight - radius });
-              Body.setVelocity(b, { x: b.velocity.x, y: -Math.abs(b.velocity.y) });
-            }
+          // Smooth boundary enforcement with velocity dampening
+          if (b.position.x - radius < 0) {
+            Body.setPosition(b, { x: radius, y: b.position.y });
+            Body.setVelocity(b, { x: Math.abs(b.velocity.x) * 0.9, y: b.velocity.y * 0.95 });
+          }
+          if (b.position.x + radius > containerWidth) {
+            Body.setPosition(b, { x: containerWidth - radius, y: b.position.y });
+            Body.setVelocity(b, { x: -Math.abs(b.velocity.x) * 0.9, y: b.velocity.y * 0.95 });
+          }
+          if (b.position.y - radius < 0) {
+            Body.setPosition(b, { x: b.position.x, y: radius });
+            Body.setVelocity(b, { x: b.velocity.x * 0.95, y: Math.abs(b.velocity.y) * 0.9 });
+          }
+          if (b.position.y + radius > containerHeight) {
+            Body.setPosition(b, { x: b.position.x, y: containerHeight - radius });
+            Body.setVelocity(b, { x: b.velocity.x * 0.95, y: -Math.abs(b.velocity.y) * 0.9 });
           }
           
-          // Maintain constant speed (less frequent for low-end devices)
-          if (shouldUpdateVelocity) {
-            const vx = b.velocity.x;
-            const vy = b.velocity.y;
-            const speed = Math.sqrt(vx * vx + vy * vy);
-            const targetSpeed = animationConfig.duration <= 100 ? BOUNCE_SPEED * 0.7 : BOUNCE_SPEED;
-            if (Math.abs(speed - targetSpeed) > 0.1) {
-              const scale = targetSpeed / speed;
-              Body.setVelocity(b, { x: vx * scale, y: vy * scale });
-            }
+          // Maintain target speed with smooth adjustments
+          const vx = b.velocity.x;
+          const vy = b.velocity.y;
+          const currentSpeed = Math.sqrt(vx * vx + vy * vy);
+          const targetSpeed = BOUNCE_SPEED;
+          
+          if (Math.abs(currentSpeed - targetSpeed) > 0.05) {
+            const scale = targetSpeed / currentSpeed;
+            const smoothScale = isAndroid ? 
+              0.95 + (scale - 0.95) * 0.1 : // Gradual adjustment for Android
+              0.9 + (scale - 0.9) * 0.2;     // Faster adjustment for iOS
+            Body.setVelocity(b, { x: vx * smoothScale, y: vy * smoothScale });
           }
         });
+        
+        // Update positions for smooth rendering
+        setPositions(bodiesRef.current.map(b => ({ 
+          x: b.position.x, 
+          y: b.position.y, 
+          r: b.circleRadius 
+        })));
+        
+        lastTime = currentTime;
       }
       
-      // Update positions less frequently for low-end devices
-      const shouldUpdatePositions = animationConfig.duration > 100 || frameCount % 2 === 0;
-      if (shouldUpdatePositions) {
-        setPositions(bodiesRef.current.map(b => ({ x: b.position.x, y: b.position.y, r: b.circleRadius })));
-      }
-      
-      frameCount++;
-    }, 1000 / fps);
+      frameId = requestAnimationFrame(animate);
+    };
+    
+    frameId = requestAnimationFrame(animate);
 
     return () => {
+      if (frameId) cancelAnimationFrame(frameId);
       if (intervalRef.current) clearInterval(intervalRef.current);
       Engine.clear(engine);
       engineRef.current = null;
@@ -299,11 +366,15 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
       worldRef.current = null;
     };
      
-  }, [data, getRadius, containerWidth, containerHeight, fps, animationConfig]);
+  }, [data, getRadius, containerWidth, containerHeight, fps, animationConfig, initialPositions, isAndroid, updateInterval]);
 
   // Optimized fade animation with performance-based durations
   useEffect(() => {
     if (isFlashcards === renderedIsFlashcards) return;
+    
+    // Hide balls during transition to prevent clumping
+    setShowBalls(false);
+    
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: animationConfig.duration, // Use performance-based duration
@@ -311,11 +382,16 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     }).start(() => {
       setRenderedIsFlashcards(isFlashcards);
       fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: animationConfig.duration * 1.5, // Slightly longer fade in
-        useNativeDriver: true,
-      }).start();
+      
+      // Show balls after 2-second delay to ensure smooth spread
+      setTimeout(() => {
+        setShowBalls(true);
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: animationConfig.duration * 1.5, // Slightly longer fade in
+          useNativeDriver: true,
+        }).start();
+      }, 2000);
     });
   }, [isFlashcards, fadeAnim, animationConfig]);
 
@@ -342,13 +418,23 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
   }, [data, getRadius, containerWidth, containerHeight]);
 
   // Show loading or empty state
-  if (isLoading) {
+  if (isLoading || !showBalls) {
     return (
       <View style={styles.container}>
         <Text style={[styles.title, {
           fontFamily: Fonts.title,
           color: colors.text
         }]}>{strings[language].breakdownOfDecksFlashcards}</Text>
+        {!isLoading && (
+          <View style={{ alignItems: 'center', marginTop: 15 }}>
+            <SmallGreenBinaryToggle
+              leftLabel={strings[language].breakdownDecks}
+              rightLabel={strings[language].breakdownFlashcards}
+              onToggle={setIsFlashcards}
+              initialPosition={isFlashcards ? 'right' : 'left'}
+            />
+          </View>
+        )}
         <Text style={[{
           fontFamily: Fonts.bodyMedium,
           fontSize: 16,
@@ -356,7 +442,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
           marginTop: 20,
           color: colors.unselectedText
         }]}>
-          {strings[language].loading}
+          {isLoading ? strings[language].loading : 'Preparing animation...'}
         </Text>
       </View>
     );
@@ -397,13 +483,23 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
         />
       </View>
       <View style={{ height: containerHeight, width: '100%', marginTop: 15 }}>
+        {!showBalls && data.length > 0 && (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={[{
+              fontFamily: Fonts.bodyMedium,
+              fontSize: 16,
+              textAlign: 'center',
+              color: colors.unselectedText
+            }]}>
+              Preparing animation...
+            </Text>
+          </View>
+        )}
         <Animated.View style={{ flex: 1, width: '100%', height: '100%', opacity: fadeAnim }}>
-          {data.map((d: BreakdownDatum, i: number) => {
+          {showBalls && data.map((d: BreakdownDatum, i: number) => {
             const radius = getRadius(d.value);
-            // Use static positions for low-end devices or when physics engine is disabled
-            const pos = (animationConfig.duration <= 100 && data.length > 6) || positions.length === 0 
-              ? staticPositions[i] || { x: containerWidth / 2, y: containerHeight / 2 }
-              : positions[i] || { x: containerWidth / 2, y: containerHeight / 2 };
+            // Use physics positions for smooth animations on all devices
+            const pos = positions[i] || { x: containerWidth / 2, y: containerHeight / 2 };
             
             return (
               <View

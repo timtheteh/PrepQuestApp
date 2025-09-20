@@ -201,8 +201,19 @@ function AppContent() {
           />
       ) : (
         <>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack
+            screenOptions={{
+              // Performance optimizations for modal screens
+              animationTypeForReplace: 'push',
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen 
+              name="(tabs)" 
+              options={{ 
+                headerShown: false,
+              }} 
+            />
             <Stack.Screen name="+not-found" />
             <Stack.Screen 
               name="genAIForm" 

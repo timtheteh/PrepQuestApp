@@ -5,6 +5,7 @@ import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { AntDesign } from '@expo/vector-icons';
 import LightSwitchBody from '@/assets/icons/account/lightSwitchBody.svg';
 import DarkSwitchBody from '@/assets/icons/account/darkSwitchBody.svg';
 import LightSwitch from '@/assets/icons/account/lightSwitch.svg';
@@ -21,6 +22,8 @@ import { strings } from '@/constants/strings';
 import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 import DeckCreationStatusPage from '../deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
+import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 
 export default function AccountScreen() {
   const [upgradePressed, setUpgradePressed] = useState(false);
@@ -51,7 +54,9 @@ export default function AccountScreen() {
   const buttonAnim = useRef(new Animated.Value(theme === 'dark' ? 0 : 1)).current; // 1 = right (light), 0 = left (dark)
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const swipeAnim = useRef(new Animated.Value(0)).current; // 0 = profile view, 1 = stats view
+  const arrowOpacity = useRef(new Animated.Value(0)).current; // For arrow fade-in optimization
   const isFocused = useIsFocused();
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
 
   useEffect(() => {
     if (isFocused) {
@@ -59,14 +64,35 @@ export default function AccountScreen() {
       setCurrentView('profile');
       swipeAnim.setValue(0);
       
-      fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 350,
-        useNativeDriver: true,
-      }).start();
+      // Use optimized screen transition
+      optimizedScreenTransition.transitionWithDataPreload(
+        () => {
+          fadeAnim.setValue(0);
+          arrowOpacity.setValue(0);
+          
+          // Start main content animation
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: animationConfig.screenTransitionDuration,
+            useNativeDriver: true,
+          }).start();
+          
+          // For high-end devices only: animate arrows
+          if (!animationConfig.isLowEndDevice) {
+            setTimeout(() => {
+              Animated.timing(arrowOpacity, {
+                toValue: 1,
+                duration: animationConfig.duration,
+                useNativeDriver: true,
+              }).start();
+            }, 0);
+          }
+        },
+        // No data loading needed for account page, return resolved promise
+        () => Promise.resolve()
+      );
     }
-  }, [isFocused, swipeAnim, fadeAnim]);
+  }, [isFocused, swipeAnim, fadeAnim, animationConfig.screenTransitionDuration]);
 
   useFocusEffect(
     useCallback(() => {
@@ -87,11 +113,11 @@ export default function AccountScreen() {
     
     setThemeMode(newThemeMode);
     
-    // Animate to the appropriate position
+    // Animate to the appropriate position with performance optimization
     const targetValue = newThemeMode === 'system' ? (theme === 'dark' ? 0 : 1) : (newThemeMode === 'dark' ? 0 : 1);
     Animated.timing(buttonAnim, {
       toValue: targetValue,
-      duration: 200,
+      duration: animationConfig.duration,
       useNativeDriver: false,
     }).start();
   };
@@ -100,10 +126,10 @@ export default function AccountScreen() {
   useEffect(() => {
     Animated.timing(buttonAnim, {
       toValue: theme === 'dark' ? 0 : 1,
-      duration: 200,
+      duration: animationConfig.duration,
       useNativeDriver: false,
     }).start();
-  }, [theme]);
+  }, [theme, animationConfig.duration]);
 
   // Swipe gesture handler
   const onSwipeGestureEvent = useCallback((event: any) => {
@@ -518,9 +544,9 @@ export default function AccountScreen() {
               </View>
               
               {/* Right Arrow for Swipe Hint */}
-              <View style={styles.rightArrowContainer}>
-                <FontAwesome6 name="arrow-left-long" size={24} color={themeColors.text} />
-              </View>
+              <Animated.View style={[styles.rightArrowContainer, { opacity: animationConfig.isLowEndDevice ? 1 : arrowOpacity }]}>
+                <AntDesign name="arrowleft" size={24} color={themeColors.text} />
+              </Animated.View>
             </View>
           </Animated.View>
           <Animated.View 
@@ -606,9 +632,9 @@ export default function AccountScreen() {
               </View>
               
               {/* Left Arrow for Swipe Hint */}
-              <View style={styles.leftArrowContainer}>
-                <FontAwesome6 name="arrow-right-long" size={24} color={themeColors.text} />
-              </View>
+              <Animated.View style={[styles.leftArrowContainer, { opacity: animationConfig.isLowEndDevice ? 1 : arrowOpacity }]}>
+                <AntDesign name="arrowright" size={24} color={themeColors.text} />
+              </Animated.View>
             </View>
           </Animated.View>
         </Animated.View>

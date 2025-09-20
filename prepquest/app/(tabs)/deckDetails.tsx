@@ -38,6 +38,8 @@ import { Toast } from '@/components/general/Toast';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
+import { getAnimationConfig } from '@/utils/animationConfig';
+import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -45,7 +47,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 
 
-const SCREEN_TRANSITION_DURATION = 300;
+// Removed SCREEN_TRANSITION_DURATION - now using animationConfig.screenTransitionDuration
 
 export default function DeckDetailsScreen() {
   const router = useRouter();
@@ -72,6 +74,7 @@ export default function DeckDetailsScreen() {
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
 
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return '--';
@@ -130,6 +133,9 @@ export default function DeckDetailsScreen() {
   // State for company logo image source
   const [companyLogoImageSource, setCompanyLogoImageSource] = useState<any>(null);
 
+  // State to track if initial data is loaded to prevent showing default values
+  const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
+
   // Get deck information from database
   const deckTitle = useMemo(() => deckInfo?.deckName || '', [deckInfo?.deckName]);
   const deckType = useMemo(() => deckInfo?.deckType || '', [deckInfo?.deckType]);
@@ -182,27 +188,53 @@ export default function DeckDetailsScreen() {
     }
   };
 
-  // Handle screen transitions
+  // Clear previous deck data immediately when deckId changes
+  useEffect(() => {
+    // Clear all previous deck data to prevent showing stale data
+    setDeckInfo(null);
+    setDeckGrade(null);
+    setAverageTime(null);
+    setHasAttemptedFlashcards(null);
+    setIsAIDeckSaved(null);
+    setCompanyLogoImageSource(null);
+    setIsInitialDataLoaded(false); // Prevent rendering until new data loads
+    
+    // Reset loading states
+    setIsLoadingDeckInfo(true);
+    setIsLoadingGrade(true);
+    setIsLoadingAverageTime(true);
+    setIsLoadingAttemptStatus(true);
+    setIsLoadingSavedStatus(true);
+  }, [deckId]);
+
+  // Handle screen transitions with performance optimization
   useEffect(() => {
     if (isFocused) {
       // Reset navbar animation when screen comes into focus
       navbarRef?.current?.resetAnimation();
       
-      // Ensure opacity starts at 0 for a clean fade-in
-      screenOpacity.setValue(0);
-      
-      // Add a small delay for smoother fade-in animation
-      setTimeout(() => {
-        Animated.timing(screenOpacity, {
-          toValue: 1,
-          duration: SCREEN_TRANSITION_DURATION,
-          useNativeDriver: true,
-        }).start();
-      }, 50);
+      // Use optimized screen transition
+      optimizedScreenTransition.transitionWithDataPreload(
+        () => {
+          // Ensure opacity starts at 0 for a clean fade-in
+          screenOpacity.setValue(0);
+          
+          // Add device-optimized delay for smoother fade-in animation
+          setTimeout(() => {
+            Animated.timing(screenOpacity, {
+              toValue: 1,
+              duration: animationConfig.screenTransitionDuration,
+              useNativeDriver: true,
+            }).start();
+          }, animationConfig.isLowEndDevice ? 100 : 50);
+        },
+        // Pre-load all deck data
+        () => loadAllDeckData()
+      );
     } else {
       screenOpacity.setValue(0);
     }
-  }, [isFocused]);
+  }, [isFocused, animationConfig]);
 
   // Clean up animation when component unmounts
   useEffect(() => {
@@ -629,16 +661,54 @@ export default function DeckDetailsScreen() {
     }
   };
 
-  // Load deck grade when component mounts or screen comes into focus
-  useEffect(() => {
-    if (isFocused) {
-      loadDeckGrade();
-      loadAverageTime();
-      loadDeckInfo();
-      loadFlashcardAttemptStatus();
-      loadAIDeckSavedStatus();
+  // Consolidated data loading function with caching
+  const loadAllDeckData = useCallback(async () => {
+    const isAIDeckFromParams = isAIDeck as string === 'true';
+    const deckIdNum = parseInt(deckId as string);
+    
+    try {
+      // Use optimized screen data loader with caching
+      const screenData = await optimizedDataLoader.loadScreenData(`deckDetails-${deckId}`, {
+        deckInfo: () => isAIDeckFromParams ? getAIDeckInfo(deckIdNum) : getDeckInfoWithProgress(deckIdNum),
+        deckGrade: () => isAIDeckFromParams ? getAIDeckGrade(deckIdNum) : getDeckGrade(deckIdNum),
+        averageTime: () => isAIDeckFromParams ? getAIDeckAverageTime(deckIdNum) : getDeckAverageTime(deckIdNum),
+        attemptStatus: () => checkFlashcardAttemptStatus(deckIdNum, isAIDeckFromParams),
+        savedStatus: () => isAIDeckFromParams ? checkAIDeckSavedStatus(deckIdNum) : Promise.resolve(false),
+      });
+
+      // Update all state at once
+      setDeckInfo(screenData.deckInfo);
+      setDeckGrade(screenData.deckGrade);
+      setAverageTime(screenData.averageTime);
+      setHasAttemptedFlashcards(screenData.attemptStatus);
+      setIsAIDeckSaved(screenData.savedStatus);
+
+      // Load company logo if needed
+      if (screenData.deckInfo?.deckType === 'interview' && screenData.deckInfo?.interviewCompanyIcon) {
+        const imageSource = await getCompanyIconImageSource(screenData.deckInfo.interviewCompanyIcon);
+        setCompanyLogoImageSource(imageSource);
+      }
+      
+      // Mark initial data as loaded
+      setIsInitialDataLoaded(true);
+    } catch (error) {
+      console.error('Error loading deck data:', error);
+      // Set default values on error
+      setDeckInfo(null);
+      setDeckGrade(null);
+      setAverageTime(null);
+      setHasAttemptedFlashcards(false);
+      setIsAIDeckSaved(false);
+      setIsInitialDataLoaded(true); // Still mark as loaded to show error state
+    } finally {
+      // Update loading states
+      setIsLoadingDeckInfo(false);
+      setIsLoadingGrade(false);
+      setIsLoadingAverageTime(false);
+      setIsLoadingAttemptStatus(false);
+      setIsLoadingSavedStatus(false);
     }
-  }, [isFocused, deckId]);
+  }, [deckId, isAIDeck]);
 
   const handleDeletePress = () => {
     setShowEditModal(false);
@@ -652,18 +722,25 @@ export default function DeckDetailsScreen() {
       setEditNameSelected(false);
     });
     
-    Animated.parallel([
-      Animated.timing(menuOverlayOpacity, {
-        toValue: 0.5,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(deckDetailsDeleteModalOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start();
+    if (animationConfig.isLowEndDevice) {
+      // Instant modal for low-end devices
+      menuOverlayOpacity.setValue(0.5);
+      deckDetailsDeleteModalOpacity.setValue(1);
+    } else {
+      // Animated modal for high-end devices
+      Animated.parallel([
+        Animated.timing(menuOverlayOpacity, {
+          toValue: 0.5,
+          duration: animationConfig.duration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(deckDetailsDeleteModalOpacity, {
+          toValue: 1,
+          duration: animationConfig.duration,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
   };
 
   const handleSavePress = async () => {
@@ -718,19 +795,26 @@ export default function DeckDetailsScreen() {
           }
         });
         
-        // Show the modal
-        Animated.parallel([
-          Animated.timing(menuOverlayOpacity, {
-            toValue: 0.4,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(deckDetailsSaveModalOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          })
-        ]).start();
+        // Show the modal with performance optimization
+        if (animationConfig.isLowEndDevice) {
+          // Instant modal for low-end devices
+          menuOverlayOpacity.setValue(0.4);
+          deckDetailsSaveModalOpacity.setValue(1);
+        } else {
+          // Animated modal for high-end devices
+          Animated.parallel([
+            Animated.timing(menuOverlayOpacity, {
+              toValue: 0.4,
+              duration: animationConfig.duration * 2,
+              useNativeDriver: true,
+            }),
+            Animated.timing(deckDetailsSaveModalOpacity, {
+              toValue: 1,
+              duration: animationConfig.duration * 2,
+              useNativeDriver: true,
+            })
+          ]).start();
+        }
         
       } else {
         // You could show an error message to the user here
@@ -1310,7 +1394,20 @@ export default function DeckDetailsScreen() {
           </View>
           
           <View style={[styles.mainContainer, { marginTop: getContentTopHeight()}]}>
-          <ImageBackground 
+          {!isInitialDataLoaded ? (
+            // Loading state - show generic background until data loads
+            <View style={[styles.backgroundImage, { backgroundColor: Colors[theme].secondaryShade, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}>
+              <Text style={[{
+                fontFamily: Fonts.bodyMedium,
+                fontSize: 18,
+                color: Colors[theme].unselectedText,
+                textAlign: 'center'
+              }]}>
+                {strings[language].loading}
+              </Text>
+            </View>
+          ) : (
+            <ImageBackground 
               source={AIDeck || deckInfo?.isAIDeck === 1 ? deckDetailsAICardDesigns[safeBackgroundIndex] : deckDetailsCardDesigns[safeBackgroundIndex]}
               style={styles.backgroundImage}
               imageStyle={styles.backgroundImageStyle}
@@ -1320,9 +1417,13 @@ export default function DeckDetailsScreen() {
                 contentContainerStyle={styles.scrollViewContent}
                 showsVerticalScrollIndicator={false}
                 ref={scrollViewRef}
+                removeClippedSubviews={animationConfig.isLowEndDevice}
+                scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+                decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
               >
                 <View style={styles.cardContentContainer}>
-                  {AIDeck && !isAIDeckSaved ? (
+                  {/* Only render content when we have valid deck data */}
+                  {deckInfo && (AIDeck && !isAIDeckSaved ? (
                     // AI Deck Layout - 3 columns (only for unsaved AI decks)
                     <View style={styles.aiDeckLayout}>
                       {/* Column 1: Company Logo */}
@@ -1415,10 +1516,10 @@ export default function DeckDetailsScreen() {
                         </View>
                       )}
                     </>
-                  )}
+                  ))}
                   
                   {/* Progress bar */}
-                  {cardPercent >= 0 && (!AIDeck || isAIDeckSaved) && (
+                  {deckInfo && cardPercent >= 0 && (!AIDeck || isAIDeckSaved) && (
                     <View style={styles.progressRow}> 
                       <View style={styles.loadingBarFlexWrapper}>
                         <LoadingBar percent={cardPercent} />
@@ -1486,28 +1587,31 @@ export default function DeckDetailsScreen() {
 
               </ScrollView>
             </ImageBackground>
+          )}
           </View>
 
-          <View style={[
-            styles.fabContainer,
-          ]}>
-            {AIDeck && !isAIDeckSaved && (
+          {isInitialDataLoaded && (
+            <View style={[
+              styles.fabContainer,
+            ]}>
+              {AIDeck && !isAIDeckSaved && (
+                <TouchableOpacity
+                  style={[styles.fab, { bottom: (Platform.OS === 'ios' ? 100 : 95) }]}
+                  onPress={handleSavePress}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons name="save-alt" size={30} color="white" />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
-                style={[styles.fab, { bottom: (Platform.OS === 'ios' ? 100 : 95) }]}
-                onPress={handleSavePress}
+                style={[styles.fab]}
+                onPress={handleFabPress}
                 activeOpacity={0.8}
               >
-                <MaterialIcons name="save-alt" size={30} color="white" />
+                <Ionicons name="eye" size={30} color="white" />
               </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[styles.fab]}
-              onPress={handleFabPress}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="eye" size={30} color="white" />
-            </TouchableOpacity>
-          </View>
+            </View>
+          )}
         </ThemedView>
       </SafeAreaView>
       <BottomTextInputModal

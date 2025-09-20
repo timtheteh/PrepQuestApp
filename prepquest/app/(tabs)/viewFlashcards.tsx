@@ -364,8 +364,13 @@ export default function ViewFlashcardsScreen() {
   }, [setViewMode]);
 
   // Action row handlers
-  const handleSelect = useCallback(() => setIsSelectMode(true), [setIsSelectMode]);
+  const handleSelect = useCallback(() => {
+    console.log('handleSelect called - setting isSelectMode to true');
+    setIsSelectMode(true);
+  }, [setIsSelectMode]);
+  
   const handleSelectAll = useCallback(() => {
+    console.log('handleSelectAll called - selectedCardIndexes.length:', selectedCardIndexes.length, 'flashcards.length:', flashcards.length);
     if (selectedCardIndexes.length === flashcards.length) {
       // If all are selected, deselect all
       setSelectedCardIndexes([]);
@@ -374,6 +379,7 @@ export default function ViewFlashcardsScreen() {
       setSelectedCardIndexes(flashcards.map((_, idx) => idx));
     }
   }, [selectedCardIndexes.length, flashcards.length, setSelectedCardIndexes]);
+
   const handleCancel = useCallback(() => {
     setIsSelectMode(false);
     setSelectedCardIndexes([]);
@@ -979,6 +985,7 @@ export default function ViewFlashcardsScreen() {
                 opacity: actionRowOpacity,
                 transform: [{ translateY: actionRowTranslateY }],
                 zIndex: 1,
+                pointerEvents: isSelectMode ? 'auto' : 'none',
               }
             ]}>
               <ActionButtonsRow
@@ -986,7 +993,7 @@ export default function ViewFlashcardsScreen() {
                 onCancel={handleCancel}
                 onIconPress={handleActionIconPress}
                 iconColors={['#FF3B30']}
-                style={{ opacity: isSelectMode ? 1 : 0, pointerEvents: isSelectMode ? 'auto' : 'none', marginRight: -15}}
+                style={{ opacity: isSelectMode ? 1 : 0, marginRight: -15}}
               />
             </Animated.View>
             {/* Flashcards title row */}

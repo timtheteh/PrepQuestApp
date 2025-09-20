@@ -1137,6 +1137,7 @@ export default function ViewDecksInFolderScreen() {
             <FloatingActionButton
               style={styles.fab}
               onPress={() => {}}
+              disabled={isSelectMode}
             />
           </Animated.View>
         </View>

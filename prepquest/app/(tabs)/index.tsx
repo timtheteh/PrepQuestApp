@@ -1455,6 +1455,7 @@ export default function DecksScreen() {
             <FloatingActionButton
               style={styles.fab}
               onPress={() => {}}
+              disabled={isSelectMode}
             />
           </Animated.View>
         </ThemedView>

@@ -16,6 +16,7 @@ interface FloatingActionButtonProps extends ViewProps {
   animationType?: 'default' | 'viewFlashcards';
   isFoldersPage?: boolean;
   isFavoritesPageFavFolders?: boolean;
+  disabled?: boolean;
 }
 
 export const FloatingActionButton = ({ 
@@ -27,6 +28,7 @@ export const FloatingActionButton = ({
   animationType = 'default',
   isFoldersPage = false,
   isFavoritesPageFavFolders = false,
+  disabled = false,
   ...props 
 }: FloatingActionButtonProps) => {
   const { theme } = useTheme();
@@ -101,6 +103,8 @@ export const FloatingActionButton = ({
       ]}
       onPress={handlePress}
       activeOpacity={0.8}
+      pointerEvents={disabled ? 'none' : 'auto'}
+      disabled={disabled}
       {...props}
     >
       {isBackgroundTaskRunning && !isFoldersPage && !isFavoritesPageFavFolders ? (

@@ -1536,6 +1536,7 @@ export default function FoldersScreen() {
               disableOverlay={true}
               onPress={handleFabPress}
               isFoldersPage={true}
+              disabled={isSelectMode}
             />
           </Animated.View>
         </View>

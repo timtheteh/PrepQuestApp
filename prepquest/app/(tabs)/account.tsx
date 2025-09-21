@@ -23,7 +23,6 @@ import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 import DeckCreationStatusPage from '../deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 
 export default function AccountScreen() {
   const [upgradePressed, setUpgradePressed] = useState(false);
@@ -52,7 +51,6 @@ export default function AccountScreen() {
 
   // For button animation
   const buttonAnim = useRef(new Animated.Value(theme === 'dark' ? 0 : 1)).current; // 1 = right (light), 0 = left (dark)
-  const fadeAnim = useRef(new Animated.Value(0)).current;
   const swipeAnim = useRef(new Animated.Value(0)).current; // 0 = profile view, 1 = stats view
   const arrowOpacity = useRef(new Animated.Value(0)).current; // For arrow fade-in optimization
   const isFocused = useIsFocused();
@@ -64,35 +62,17 @@ export default function AccountScreen() {
       setCurrentView('profile');
       swipeAnim.setValue(0);
       
-      // Use optimized screen transition
-      optimizedScreenTransition.transitionWithDataPreload(
-        () => {
-          fadeAnim.setValue(0);
-          arrowOpacity.setValue(0);
-          
-          // Start main content animation
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: animationConfig.screenTransitionDuration,
-            useNativeDriver: true,
-          }).start();
-          
-          // For high-end devices only: animate arrows
-          if (!animationConfig.isLowEndDevice) {
-            setTimeout(() => {
-              Animated.timing(arrowOpacity, {
-                toValue: 1,
-                duration: animationConfig.duration,
-                useNativeDriver: true,
-              }).start();
-            }, 0);
-          }
-        },
-        // No data loading needed for account page, return resolved promise
-        () => Promise.resolve()
-      );
+      // Show arrows immediately with the rest of the content
+      arrowOpacity.setValue(0);
+      
+      // Animate arrows without delay for immediate appearance
+      Animated.timing(arrowOpacity, {
+        toValue: 1,
+        duration: animationConfig.isLowEndDevice ? 100 : animationConfig.duration,
+        useNativeDriver: true,
+      }).start();
     }
-  }, [isFocused, swipeAnim, fadeAnim, animationConfig.screenTransitionDuration]);
+  }, [isFocused, swipeAnim, arrowOpacity, animationConfig]);
 
   useFocusEffect(
     useCallback(() => {
@@ -684,9 +664,9 @@ export default function AccountScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Animated.View style={{ flex: 1, backgroundColor: themeColors.background, opacity: fadeAnim }}>
+      <View style={{ flex: 1, backgroundColor: themeColors.background }}>
         {MainContent}
-      </Animated.View>
+      </View>
     </GestureHandlerRootView>
   );
 }

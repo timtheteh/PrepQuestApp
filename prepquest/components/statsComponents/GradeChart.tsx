@@ -16,7 +16,6 @@ const X_AXIS_LABEL_GAP = -5;
 const X_AXIS_DATE_GAP = 2;
 const X_AXIS_EXTRA_HEIGHT = 28;
 const BAR_WIDTH = 45;
-const BAR_COLOR = '#CAC6F3';
 const BAR_RADIUS = 10;
 
 type GradeChartProps = {
@@ -160,7 +159,7 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
             y={barY}
             width={BAR_WIDTH}
             height={barHeight}
-            fill={BAR_COLOR}
+            fill={colors.thermometerColor5}
             rx={BAR_RADIUS}
             ry={BAR_RADIUS}
           />

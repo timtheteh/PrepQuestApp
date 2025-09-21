@@ -61,12 +61,12 @@ export function SmallGreenBinaryToggle({
 
   const leftTextColor = colorAnim.interpolate({
     inputRange: [0, 0.4, 0.6, 1],
-    outputRange: [colors.text, colors.text, colors.unselectedText, colors.unselectedText]
+    outputRange: [colors.contrastText, colors.contrastText, colors.unselectedText, colors.unselectedText]
   });
 
   const rightTextColor = colorAnim.interpolate({
     inputRange: [0, 0.4, 0.6, 1],
-    outputRange: [colors.unselectedText, colors.unselectedText, colors.text, colors.text]
+    outputRange: [colors.unselectedText, colors.unselectedText, colors.contrastText, colors.contrastText]
   });
 
   return (

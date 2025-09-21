@@ -119,7 +119,7 @@ export const FloatingActionButton = ({
           cacheComposition={true}
         />
       ) : (
-        children || <Feather name="plus" size={38} color="white" />
+        children || <Feather name="plus" size={38} color={colors.contrastIconColor} />
       )}
     </TouchableOpacity>
   );

@@ -23,6 +23,7 @@ export const CircleSelectButton = React.memo(({
   const { theme } = useTheme();
   const colors = Colors[theme];
   const animationConfig = useMemo(() => getAnimationConfig(), []);
+  const styles = createStyles(colors);
   
   // Memoize the handlePress function to prevent unnecessary re-renders
   const handlePress = useMemo(() => {
@@ -58,7 +59,7 @@ export const CircleSelectButton = React.memo(({
         >
           <View style={circleStyle}>
             {selected && (
-              <Feather name="check" size={18} color={colors.background} />
+              <Feather name="check" size={18} color={colors.contrastIconColor} />
             )}
           </View>
         </TouchableOpacity>
@@ -77,7 +78,7 @@ export const CircleSelectButton = React.memo(({
       >
         <View style={circleStyle}>
           {selected && (
-            <Feather name="check" size={18} color={colors.background} />
+            <Feather name="check" size={18} color={colors.contrastIconColor} />
           )}
         </View>
       </TouchableOpacity>
@@ -85,7 +86,7 @@ export const CircleSelectButton = React.memo(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     width: 30,
     height: 30,
@@ -98,13 +99,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
     borderWidth: 3,
-    borderColor: '#4F41D8',
+    borderColor: colors.brandColor2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selected: {
-    backgroundColor: '#4F41D8',
+    backgroundColor: colors.brandColor2,
   },
 }); 

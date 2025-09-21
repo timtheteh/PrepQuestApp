@@ -7,9 +7,13 @@ import { MenuContext } from '@/contexts/MenuContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import GenAIFormIcon from '@/assets/icons/addDeckIcons/genAIFormIcon.svg';
+import GenAIFormIconDark from '@/assets/icons/addDeckIcons/genAIFormIconDarkTheme.svg';
 import FileUploadIcon from '@/assets/icons/addDeckIcons/fileUploadIcon.svg';
+import FileUploadIconDark from '@/assets/icons/addDeckIcons/fileUploadIconDarkTheme.svg';
 import YoutubeIcon from '@/assets/icons/addDeckIcons/youtubeIcon.svg';
+import YoutubeIconDark from '@/assets/icons/addDeckIcons/youtubeIconDarkTheme.svg';
 import ManualFormIcon from '@/assets/icons/addDeckIcons/manualFormIcon.svg';
+import ManualFormIconDark from '@/assets/icons/addDeckIcons/manualFormIconDarkTheme.svg';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -42,6 +46,12 @@ export const AddDeckModal = ({
   const { language } = useLanguage();
   const { theme } = useTheme();
   const themeColors = Colors[theme];
+
+  // Select icons based on theme
+  const getGenAIIcon = () => theme === 'dark' ? GenAIFormIconDark : GenAIFormIcon;
+  const getFileUploadIcon = () => theme === 'dark' ? FileUploadIconDark : FileUploadIcon;
+  const getYoutubeIcon = () => theme === 'dark' ? YoutubeIconDark : YoutubeIcon;
+  const getManualFormIcon = () => theme === 'dark' ? ManualFormIconDark : ManualFormIcon;
 
   const buildNavigationParams = (pathname: '/genAIForm' | '/fileUploadPage' | '/youtubeLink' | '/manualAddDeck') => {
     const params: any = { mode: currentMode };
@@ -148,13 +158,13 @@ export const AddDeckModal = ({
           <View style={styles.firstButtonRow}>
             <AddDeckModalButton
               title={strings[language].genAIForm}
-              Icon={GenAIFormIcon}
+              Icon={getGenAIIcon()}
               onPress={handleGenAIFormPress}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
             <AddDeckModalButton
               title={strings[language].fileUpload}
-              Icon={FileUploadIcon}
+              Icon={getFileUploadIcon()}
               marginBottom={3}
               onPress={handleFormUploadPagePress}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
@@ -163,13 +173,13 @@ export const AddDeckModal = ({
           <View style={styles.buttonRow}>
             <AddDeckModalButton
               title={strings[language].youtubeLink}
-              Icon={YoutubeIcon}
+              Icon={getYoutubeIcon()}
               onPress={handleYoutubeLinkPress}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
             />
             <AddDeckModalButton
               title={strings[language].manual}
-              Icon={ManualFormIcon}
+              Icon={getManualFormIcon()}
               isInViewFlashcardsPage={isInViewFlashcardsPage}
               marginBottom={6}
               onPress={handleManualPress}

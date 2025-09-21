@@ -215,6 +215,38 @@ export default function AccountScreen() {
     upgrade:   { top: '50%', left: '50%' },
   }), []);
 
+  // Grape color mapping - memoized for performance
+  const grapeColors = useMemo(() => ({
+    website: {
+      normal: themeColors.grapeLightShade,
+      pressed: themeColors.grapePressedShade
+    },
+    rate: {
+      normal: themeColors.grapeNormalShade,
+      pressed: themeColors.grapePressedShade
+    },
+    share: {
+      normal: themeColors.grapeLightShade,
+      pressed: themeColors.grapePressedShade
+    },
+    tc: {
+      normal: themeColors.grapeNormalShade,
+      pressed: themeColors.grapePressedShade
+    },
+    app: {
+      normal: themeColors.grapeDarkShade,
+      pressed: themeColors.grapePressedShade
+    },
+    deck: {
+      normal: themeColors.grapeDarkShade,
+      pressed: themeColors.grapePressedShade
+    },
+    upgrade: {
+      normal: themeColors.grapeLightShade,
+      pressed: themeColors.grapePressedShade
+    }
+  }), [themeColors]);
+
   // --- BEGIN GRAPE BUNCH POSITIONING REFACTOR ---
   // Remove all getXTopPosition/getXLeftPosition functions
 
@@ -408,7 +440,7 @@ export default function AccountScreen() {
                   onPressOut={() => setWebsitePressed(false)}
                   style={[
                     scaledStyles.grapeCircle,
-                    { backgroundColor: websitePressed ? '#8684FF' : '#685CDD', 
+                    { backgroundColor: websitePressed ? grapeColors.website.pressed : grapeColors.website.normal, 
                       position: 'absolute', 
                       ...(grapePositions.website as any), 
                       zIndex: 7,
@@ -425,7 +457,7 @@ export default function AccountScreen() {
                   onPressOut={() => setRatePressed(false)}
                   style={[
                     scaledStyles.grapeCircle,
-                    { backgroundColor: ratePressed ? '#8684FF' : '#4F41D8', 
+                    { backgroundColor: ratePressed ? grapeColors.rate.pressed : grapeColors.rate.normal, 
                       position: 'absolute', 
                       ...(grapePositions.rate as any), 
                       zIndex: 8,
@@ -443,7 +475,7 @@ export default function AccountScreen() {
                   onPress={handleShare}
                   style={[
                     scaledStyles.grapeCircle,
-                    { backgroundColor: sharePressed ? '#8684FF' : '#685CDD', 
+                    { backgroundColor: sharePressed ? grapeColors.share.pressed : grapeColors.share.normal, 
                       position: 'absolute', ...(grapePositions.share as any), 
                       zIndex: 9, 
                       transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]} as any
@@ -458,7 +490,7 @@ export default function AccountScreen() {
                   onPressOut={() => setTCPressed(false)}
                   style={[
                     scaledStyles.grapeCircle,
-                    { backgroundColor: tcPressed ? '#8684FF' : '#4F41D8', 
+                    { backgroundColor: tcPressed ? grapeColors.tc.pressed : grapeColors.tc.normal, 
                       position: 'absolute', ...(grapePositions.tc as any), 
                       zIndex: 9, 
                       transform: [{ translateX: -70 * scaleFactor }, { translateY: -70 * scaleFactor }]} as any
@@ -474,7 +506,7 @@ export default function AccountScreen() {
                   onPress={handleAppSettingsPress}
                   style={[
                     scaledStyles.grapeCircle,
-                    { backgroundColor: appSettingsPressed ? '#8684FF' : '#3B30A7', 
+                    { backgroundColor: appSettingsPressed ? grapeColors.app.pressed : grapeColors.app.normal, 
                       position: 'absolute', 
                       ...(grapePositions.app as any), 
                       zIndex: 8, 
@@ -492,7 +524,7 @@ export default function AccountScreen() {
                   onPress={handleDeckSettingsPress}
                   style={[
                     scaledStyles.grapeCircle,
-                    { backgroundColor: deckSettingsPressed ? '#8684FF' : '#3B30A7', 
+                    { backgroundColor: deckSettingsPressed ? grapeColors.deck.pressed : grapeColors.deck.normal, 
                       position: 'absolute', 
                       ...(grapePositions.deck as any), 
                       zIndex: 8,
@@ -508,7 +540,7 @@ export default function AccountScreen() {
                   onPressIn={() => setUpgradePressed(true)}
                   onPressOut={() => setUpgradePressed(false)}
                   style={[scaledStyles.grapeCircle, 
-                    { backgroundColor: upgradePressed ? '#8684FF' : '#685CDD', 
+                    { backgroundColor: upgradePressed ? grapeColors.upgrade.pressed : grapeColors.upgrade.normal, 
                       position: 'absolute', 
                       ...(grapePositions.upgrade as any), 
                       zIndex: 10, 
@@ -657,7 +689,8 @@ export default function AccountScreen() {
     onSwipeHandlerStateChange,
     swipeAnim,
     screenWidth,
-    scaleFactor
+    scaleFactor,
+    grapeColors
   ]);
 
 

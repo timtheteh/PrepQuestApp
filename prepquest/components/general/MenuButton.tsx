@@ -1,6 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface MenuButtonProps {
   onPress?: () => void;
@@ -12,16 +14,20 @@ interface MenuButtonProps {
 export function MenuButton({ 
   onPress, 
   size = 30, 
-  color = 'black',
+  color,
   style 
 }: MenuButtonProps) {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+  const iconColor = color || colors.normalIconColor;
+  
   return (
     <TouchableOpacity 
       style={[styles.button, style]}
       activeOpacity={0.5}
       onPress={onPress}
     >
-      <Feather name="menu" size={size} color={color} />
+      <Feather name="menu" size={size} color={iconColor} />
     </TouchableOpacity>
   );
 }

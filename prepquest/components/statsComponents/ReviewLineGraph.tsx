@@ -234,7 +234,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
           x2={GRAPH_WIDTH - 32}
           y1={PADDING - 15}
           y2={GRAPH_HEIGHT - 32}
-          stroke="#E5E4EA"
+          stroke={colors.graphLineColor}
           strokeWidth={1}
         />
         {/* Y axis dashed lines and labels */}
@@ -245,7 +245,7 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
               x2={GRAPH_WIDTH - PADDING}
               y1={getY(y, GRAPH_HEIGHT)}
               y2={getY(y, GRAPH_HEIGHT)}
-              stroke="#E5E4EA"
+              stroke={colors.graphLineColor}
               strokeDasharray={y === 0 ? undefined : y % Y_STEP === 0 ? '4,4' : undefined}
               strokeWidth={1}
             />
@@ -272,12 +272,12 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
           {/* Gradient Defs */}
           <Defs>
             <LinearGradient id="flashcardGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#5CFFBE" stopOpacity="0.6" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              <Stop offset="0%" stopColor={colors.brandColor1} stopOpacity="0.6" />
+              <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
             </LinearGradient>
             <LinearGradient id="deckGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#5C4BFF" stopOpacity="0.6" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              <Stop offset="0%" stopColor={colors.brandColor2} stopOpacity="0.6" />
+              <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
             </LinearGradient>
           </Defs>
           {/* Calculate right-aligned X positions */}
@@ -465,12 +465,12 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
             {/* Gradient Defs */}
             <Defs>
               <LinearGradient id="flashcardGradient" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#5CFFBE" stopOpacity="0.6" />
-                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                <Stop offset="0%" stopColor={colors.brandColor1} stopOpacity="0.6" />
+                <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
               </LinearGradient>
               <LinearGradient id="deckGradient" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#5C4BFF" stopOpacity="0.6" />
-                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                <Stop offset="0%" stopColor={colors.brandColor2} stopOpacity="0.6" />
+                <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
               </LinearGradient>
             </Defs>
             {/* Flashcards faded area */}

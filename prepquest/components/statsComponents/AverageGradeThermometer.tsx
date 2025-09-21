@@ -12,14 +12,6 @@ interface AverageGradeThermometerProps {
 }
 
 const SEGMENTS = [0, 20, 45, 65, 80, 90, 100];
-const SEGMENT_COLORS = [
-  'rgba(79,65,216,1)', // 0-20
-  'rgba(79,65,216,0.85)', // 20-45
-  'rgba(104,92,221,0.73)', // 45-65
-  'rgba(142,133,227,0.54)', // 65-80
-  'rgba(189,184,235,0.75)', // 80-90
-  'rgba(203,199,237,0.71)', // 90-100
-];
 
 const RECT_WIDTH = Dimensions.get('window').width * 0.73;
 const RECT_HEIGHT = 24;
@@ -30,6 +22,17 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
   const { language } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
+  
+  // Get theme-based segment colors
+  const segmentColors = [
+    colors.thermometerColor1, // 0-20
+    colors.thermometerColor2, // 20-45
+    colors.thermometerColor3, // 45-65
+    colors.thermometerColor4, // 65-80
+    colors.thermometerColor5, // 80-90
+    colors.thermometerColor6, // 90-100
+  ];
+  
   // Calculate segment widths
   const segmentWidths = SEGMENTS.slice(1).map((val, i) => (val - SEGMENTS[i]) / 100 * RECT_WIDTH);
   // Calculate arrow position, clamped to padding
@@ -69,7 +72,7 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
             y={18}
             width={RECT_WIDTH}
             height={RECT_HEIGHT}
-            fill={SEGMENT_COLORS[SEGMENT_COLORS.length - 1]}
+            fill={segmentColors[segmentColors.length - 1]}
             rx={RADIUS}
             ry={RADIUS}
           />
@@ -106,7 +109,7 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
               y={18}
               width={segmentWidths[0]}
               height={RECT_HEIGHT}
-              fill={SEGMENT_COLORS[0]}
+              fill={segmentColors[0]}
               clipPath="url(#leftRadius)"
             />
             {/* Middle segments: no radius */}
@@ -117,7 +120,7 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
                 y={18}
                 width={w}
                 height={RECT_HEIGHT}
-                fill={SEGMENT_COLORS[i + 1]}
+                fill={segmentColors[i + 1]}
               />
             ))}
             {/* Last segment: round right corners only */}
@@ -126,7 +129,7 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
               y={18}
               width={segmentWidths[5]}
               height={RECT_HEIGHT}
-              fill={SEGMENT_COLORS[5]}
+              fill={segmentColors[5]}
               clipPath="url(#rightRadius)"
             />
           </G>

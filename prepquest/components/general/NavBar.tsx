@@ -514,7 +514,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
                   <IconComponent 
                     name={item.icon as any}
                     size={ICON_SIZE} 
-                    color="#FFFFFF"
+                    color={colors.contrastIconColor}
                   />
                 </Animated.View>
               </TouchableOpacity>
@@ -556,7 +556,7 @@ const createStyles = (colors: any, bottomSafeAreaHeight: number = 0) => StyleShe
     alignItems: 'center',
   },
   accountLabel: {
-    color: colors.background,
+    color: colors.contrastText,
     fontSize: 16,
     fontFamily: 'Satoshi-Medium',
   }

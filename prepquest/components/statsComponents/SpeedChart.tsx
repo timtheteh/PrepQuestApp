@@ -289,12 +289,12 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
           {/* Gradient Defs */}
           <Defs>
             <LinearGradient id="flashcardGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#5CFFBE" stopOpacity="0.6" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              <Stop offset="0%" stopColor={colors.brandColor2} stopOpacity="0.6" />
+              <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
             </LinearGradient>
             <LinearGradient id="deckGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#5C4BFF" stopOpacity="0.6" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              <Stop offset="0%" stopColor={colors.brandColor2} stopOpacity="0.6" />
+              <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
             </LinearGradient>
           </Defs>
           {/* Calculate right-aligned X positions */}
@@ -482,12 +482,12 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
             {/* Gradient Defs */}
             <Defs>
               <LinearGradient id="flashcardGradient" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#5CFFBE" stopOpacity="0.6" />
-                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                <Stop offset="0%" stopColor={colors.brandColor2} stopOpacity="0.6" />
+                <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
               </LinearGradient>
               <LinearGradient id="deckGradient" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#5C4BFF" stopOpacity="0.6" />
-                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                <Stop offset="0%" stopColor={colors.brandColor2} stopOpacity="0.6" />
+                <Stop offset="100%" stopColor={colors.background} stopOpacity="0" />
               </LinearGradient>
             </Defs>
             {/* Flashcards faded area */}

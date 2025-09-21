@@ -305,6 +305,8 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
           <TextInput
             style={styles.searchInput}
             placeholder={getSearchPlaceholder(pageType, language)}
+            placeholderTextColor={colors.unselectedText}
+            selectionColor={colors.brandColor2} 
             value={searchText}
             onChangeText={(text) => {
               setSearchText(text);

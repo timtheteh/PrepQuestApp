@@ -15,7 +15,6 @@ const CY = HEIGHT - 20;
 const R = 110;
 const STROKE_WIDTH = 20;
 const LABELS = [0, 10, 35, 60];
-const COLORS = ['#CBC7ED', '#8E85E3', '#685CDD'];
 
 interface AverageSpeedTotalProps {
   averageTime?: number | null;
@@ -62,11 +61,11 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
   // Cap the value at 60 seconds for gauge angle calculation
   const cappedValue = Math.min(value, 60);
   
-  // Arc segments: [start, end, color]
+  // Arc segments: [start, end, color] - using theme-based colors
   const segments = [
-    { start: 0, end: 10, color: COLORS[0] },
-    { start: 10, end: 35, color: COLORS[1] },
-    { start: 35, end: 60, color: COLORS[2] },
+    { start: 0, end: 10, color: colors.speedChartColor1 },
+    { start: 10, end: 35, color: colors.speedChartColor2 },
+    { start: 35, end: 60, color: colors.speedChartColor3 },
   ];
   // Convert to angles
   const arcSegments = segments.map(seg => ({

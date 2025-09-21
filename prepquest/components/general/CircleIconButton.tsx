@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { StyleSheet, TouchableOpacity, ViewStyle, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
@@ -21,7 +21,7 @@ export const CircleIconButton = React.memo(({
   iconLibrary = 'ionicons',
   size = 24,
   onPress,
-  color = 'black',
+  color,
   style,
   renderCustomIcon,
   selected = false,
@@ -29,8 +29,20 @@ export const CircleIconButton = React.memo(({
 }: CircleIconButtonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
+  const defaultIconColor = color || colors.normalIconColor;
   const disabledColor = colors.unselectedText;
-  const finalColor = disabled ? disabledColor : color;
+  const finalColor = disabled ? disabledColor : defaultIconColor;
+  
+  // Platform-specific background colors
+  const getBackgroundColor = () => {
+    if (disabled) return colors.disabledIconBackgroundColor;
+    if (selected) return colors.unselectedText;
+    return colors.secondaryShade;
+  };
+  
+  const getPressedBackgroundColor = () => {
+    return colors.unselectedText;
+  };
   
   const renderIcon = () => {
     if (renderCustomIcon) {
@@ -48,13 +60,23 @@ export const CircleIconButton = React.memo(({
   
   const handlePressIn = (e: any) => {
     if (!disabled && !selected) {
-      e.currentTarget.setNativeProps({ style: styles.circleButtonPressed });
+      e.currentTarget.setNativeProps({ 
+        style: {
+          ...styles.circleButton,
+          backgroundColor: getPressedBackgroundColor()
+        }
+      });
     }
   };
   
   const handlePressOut = (e: any) => {
     if (!disabled && !selected) {
-      e.currentTarget.setNativeProps({ style: styles.circleButton });
+      e.currentTarget.setNativeProps({ 
+        style: {
+          ...styles.circleButton,
+          backgroundColor: getBackgroundColor()
+        }
+      });
     }
   };
   
@@ -64,8 +86,7 @@ export const CircleIconButton = React.memo(({
     <TouchableOpacity 
       style={[
         styles.circleButton, 
-        selected && styles.selected, 
-        disabled && styles.disabled,
+        { backgroundColor: getBackgroundColor() },
         style
       ]}
       activeOpacity={disabled ? 1 : 0.8}
@@ -84,22 +105,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#F8F8F8',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  circleButtonPressed: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#D5D4DD',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selected: {
-    backgroundColor: '#D5D4DD',
-  },
-  disabled: {
-    backgroundColor: '#EFEFEF',
   },
 }); 

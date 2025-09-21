@@ -119,7 +119,7 @@ export const RoundedContainer = memo(({
                 { 
                   color: colorAnim.interpolate({
                     inputRange: [0, 0.4, 0.6, 1],
-                    outputRange: [colors.background, colors.background, colors.unselectedText, colors.unselectedText]
+                    outputRange: [colors.contrastText, colors.contrastText, colors.unselectedText, colors.unselectedText]
                   })
                 }
               ]}>
@@ -132,7 +132,7 @@ export const RoundedContainer = memo(({
                 { 
                   color: colorAnim.interpolate({
                     inputRange: [0, 0.4, 0.6, 1],
-                    outputRange: [colors.unselectedText, colors.unselectedText, colors.background, colors.background]
+                    outputRange: [colors.unselectedText, colors.unselectedText, colors.contrastText, colors.contrastText]
                   })
                 }
               ]}>

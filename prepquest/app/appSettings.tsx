@@ -662,7 +662,7 @@ export default function AppSettingsScreen() {
           setIsDeleteAccountLoading(false);
         });
         
-        console.error('No user ID found. Please try logging in again.');
+        console.error(strings[language].appSettingsPage.noUserIdFound);
         return;
       }
       
@@ -813,14 +813,14 @@ export default function AppSettingsScreen() {
   // Show success modal on page load if backup was completed
   React.useEffect(() => {
     if (hasBackupCompleted && !isSuccessModalOpen) {
-      handleShowSuccessModal('Backup completed successfully!');
+      handleShowSuccessModal(strings[language].appSettingsPage.backupCompletedSuccessfully);
     }
   }, [hasBackupCompleted, isSuccessModalOpen]);
 
   // Show success modal on page load if import was completed
   React.useEffect(() => {
     if (hasImportCompleted && !isSuccessModalOpen) {
-      handleShowSuccessModal('Import completed!');
+      handleShowSuccessModal(strings[language].appSettingsPage.importCompleted);
     }
   }, [hasImportCompleted, isSuccessModalOpen]);
 
@@ -877,7 +877,7 @@ export default function AppSettingsScreen() {
         // Set persistent backup completion state
         setHasBackupCompleted(true);
         // Show success modal when user taps on backup notification (will stay open until manually dismissed)
-        handleShowSuccessModal('Backup completed successfully!');
+        handleShowSuccessModal(strings[language].appSettingsPage.backupCompletedSuccessfully);
       } else if (data?.type === 'backup_network_error') {
         // Show persistent network error modal when user taps on network error notification
         handleShowNetworkErrorModal('backup');
@@ -891,7 +891,7 @@ export default function AppSettingsScreen() {
         // Set persistent clear data completion state
         setHasClearDataCompleted(true);
         // Show success modal when user taps on clear data notification (will stay open until manually dismissed)
-        handleShowSuccessModal('Clear data completed successfully!');
+        handleShowSuccessModal(strings[language].appSettingsPage.clearDataCompletedSuccessfully);
       } else if (data?.type === 'clear_data_network_error') {
         // Show persistent network error modal when user taps on clear data network error notification
         handleShowNetworkErrorModal('clearData');
@@ -899,7 +899,7 @@ export default function AppSettingsScreen() {
         // Set persistent delete account completion state
         setHasDeleteAccountCompleted(true);
         // Show success modal when user taps on delete account notification (will stay open until manually dismissed)
-        handleShowSuccessModal('Account deletion completed successfully!');
+        handleShowSuccessModal(strings[language].appSettingsPage.accountDeletionCompletedSuccessfully);
       }
     });
 
@@ -1001,14 +1001,14 @@ export default function AppSettingsScreen() {
   // Show success modal on page load if clear data was completed
   React.useEffect(() => {
     if (hasClearDataCompleted && !isSuccessModalOpen) {
-      handleShowSuccessModal('Clear data completed successfully!');
+      handleShowSuccessModal(strings[language].appSettingsPage.clearDataCompletedSuccessfully);
     }
   }, [hasClearDataCompleted, isSuccessModalOpen]);
 
   // Show success modal on page load if delete account was completed
   React.useEffect(() => {
     if (hasDeleteAccountCompleted && !isSuccessModalOpen) {
-      handleShowSuccessModal('Account deletion completed successfully!');
+      handleShowSuccessModal(strings[language].appSettingsPage.accountDeletionCompletedSuccessfully);
     }
   }, [hasDeleteAccountCompleted, isSuccessModalOpen]);
 
@@ -1098,14 +1098,12 @@ export default function AppSettingsScreen() {
       } else {
         // If permission denied, show alert and open settings
         Alert.alert(
-          language === 'Chinese' ? '需要通知权限' : 'Notification Permission Required',
-          language === 'Chinese' 
-            ? '请在设置中启用通知权限以接收卡组创建完成的通知。' 
-            : 'Please enable notification permissions in settings to receive deck creation notifications.',
+          strings[language].appSettingsPage.notificationPermissionRequired,
+          strings[language].appSettingsPage.notificationPermissionMessage,
           [
-            { text: language === 'Chinese' ? '取消' : 'Cancel', style: 'cancel' },
+            { text: strings[language].cancel, style: 'cancel' },
             { 
-              text: language === 'Chinese' ? '打开设置' : 'Open Settings', 
+              text: strings[language].appSettingsPage.openSettings, 
               onPress: () => Linking.openSettings() 
             }
           ]
@@ -1309,7 +1307,7 @@ export default function AppSettingsScreen() {
       }
       
       // Show success modal when clear data completes (will stay open until manually dismissed)
-      handleShowSuccessModal(clearDataBackgroundTaskProgress.message || 'Clear data completed successfully!');
+      handleShowSuccessModal(clearDataBackgroundTaskProgress.message || strings[language].appSettingsPage.clearDataCompletedSuccessfully);
     } else if (clearDataBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
       // Show persistent network error modal only if it hasn't been shown yet
       handleShowNetworkErrorModal('clearData');
@@ -1381,7 +1379,7 @@ export default function AppSettingsScreen() {
       }
       
       // Show success modal when backup completes (will stay open until manually dismissed)
-      handleShowSuccessModal(backupBackgroundTaskProgress.message || 'Backup completed successfully!');
+      handleShowSuccessModal(backupBackgroundTaskProgress.message || strings[language].appSettingsPage.backupCompletedSuccessfully);
     } else if (backupBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
       // Show persistent network error modal only if it hasn't been shown yet
       handleShowNetworkErrorModal('backup');
@@ -1440,7 +1438,7 @@ export default function AppSettingsScreen() {
       }
       
       // Show success modal when import completes (will stay open until manually dismissed)
-      handleShowSuccessModal('Import completed!');
+      handleShowSuccessModal(strings[language].appSettingsPage.importCompleted);
     } else if (importBackgroundTaskProgress?.noData) {
       // Show no data modal when there's no data to import
       console.log('Showing no data modal for import');
@@ -1714,7 +1712,7 @@ export default function AppSettingsScreen() {
         
         Alert.alert(
           strings[language].error,
-          'Failed to start backup process',
+          strings[language].appSettingsPage.failedToStartBackupProcess,
           [{ text: strings[language].ok }]
         );
         return;
@@ -1741,7 +1739,7 @@ export default function AppSettingsScreen() {
       
       Alert.alert(
         strings[language].error,
-        `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `${strings[language].appSettingsPage.backupFailed}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         [{ text: strings[language].ok }]
       );
     }
@@ -1895,7 +1893,7 @@ export default function AppSettingsScreen() {
         
         Alert.alert(
           strings[language].error,
-          'Failed to start import process',
+          strings[language].appSettingsPage.failedToStartImportProcess,
           [{ text: strings[language].ok }]
         );
       }
@@ -1912,7 +1910,7 @@ export default function AppSettingsScreen() {
       
       Alert.alert(
         strings[language].error,
-        `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `${strings[language].appSettingsPage.importFailed}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         [{ text: strings[language].ok }]
       );
     }
@@ -2053,7 +2051,7 @@ export default function AppSettingsScreen() {
         
         Alert.alert(
           strings[language].error,
-          'Failed to start clear data process',
+          strings[language].appSettingsPage.failedToStartClearDataProcess,
           [{ text: strings[language].ok }]
         );
         return;
@@ -2076,7 +2074,7 @@ export default function AppSettingsScreen() {
       
       Alert.alert(
         strings[language].error,
-        `Clear data failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `${strings[language].appSettingsPage.clearDataFailed}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         [{ text: strings[language].ok }]
       );
     }
@@ -2305,7 +2303,7 @@ export default function AppSettingsScreen() {
       console.error('Error cancelling backup task:', error);
       Alert.alert(
         strings[language].error,
-        'Failed to cancel backup task',
+        strings[language].appSettingsPage.failedToCancelBackupTask,
         [{ text: strings[language].ok }]
       );
     }
@@ -2411,7 +2409,7 @@ export default function AppSettingsScreen() {
       console.error('Error cancelling import task:', error);
       Alert.alert(
         strings[language].error,
-        'Failed to cancel import task',
+        strings[language].appSettingsPage.failedToCancelImportTask,
         [{ text: strings[language].ok }]
       );
     }
@@ -2527,7 +2525,7 @@ export default function AppSettingsScreen() {
       console.error('Error cancelling clear data task:', error);
       Alert.alert(
         strings[language].error,
-        'Failed to cancel clear data task',
+        strings[language].appSettingsPage.failedToCancelClearDataTask,
         [{ text: strings[language].ok }]
       );
     }
@@ -2815,7 +2813,7 @@ export default function AppSettingsScreen() {
                       textAlign: 'center',
                       paddingHorizontal: 20
                     }]}>
-                      {language === 'Chinese' ? '请保持应用开启，否则备份将提前结束' : "Please don't close this app otherwise backup will end prematurely"}
+                      {strings[language].appSettingsPage.pleaseDontCloseAppBackup}
                     </Text>
                   </View>
                 ) : (
@@ -2836,7 +2834,7 @@ export default function AppSettingsScreen() {
                         {isBackupLoading
                           ? strings[language].appSettingsPage.backupDataToCloud
                           : (isBackupStopping || isLocallyStoppingBackup || isBackupCleanupInProgress || isCancelCooldownActive)
-                            ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                            ? strings[language].appSettingsPage.pleaseWait
                             : strings[language].appSettingsPage.backupDataToCloud
                         }
                       </Text>
@@ -2891,10 +2889,10 @@ export default function AppSettingsScreen() {
                       paddingHorizontal: 20
                     }]}>
                       {importBackgroundTaskProgress?.status === 'importStarted' || importBackgroundTaskProgress?.status === 'counting'
-                        ? (language === 'Chinese' ? '正在检查云端数据...' : "Checking data in cloud...\nPlease don't close this app otherwise import will end prematurely")
+                        ? strings[language].appSettingsPage.checkingDataInCloud
                         : importBackgroundTaskProgress?.status === 'importing'
-                        ? (language === 'Chinese' ? '正在从云端导入数据...' : "Importing data from cloud...\nPlease don't close this app otherwise import will end prematurely")
-                        : (language === 'Chinese' ? '正在更新本地数据库...' : "Updating local database...\nPlease don't close this app otherwise import will end prematurely")
+                        ? strings[language].appSettingsPage.importingDataFromCloud
+                        : strings[language].appSettingsPage.updatingLocalDatabase
                       }
                     </Text>
                   </View>
@@ -2916,7 +2914,7 @@ export default function AppSettingsScreen() {
                         fontFamily: Fonts.bodyMedium,
                       }]}>
                         {(isImportStopping || isImportCancelCooldownActive || isImportCleanupInProgress) && !isImportLoading
-                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          ? strings[language].appSettingsPage.pleaseWait
                           : strings[language].appSettingsPage.loadDataFromCloud
                         }
                       </Text>
@@ -2948,9 +2946,9 @@ export default function AppSettingsScreen() {
                       fontFamily: Fonts.bodyMedium,
                     }]}>
                       {isClearDataLoading || isClearDataBackgroundTaskRunning
-                        ? (language === 'Chinese' ? '请稍等...' : 'Please wait...')
+                        ? strings[language].appSettingsPage.pleaseWait
                         : (isLocallyStoppingClearData || isClearDataCancelCooldownActive)
-                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          ? strings[language].appSettingsPage.pleaseWait
                           : strings[language].appSettingsPage.clearLocalStorageData
                       }
                     </Text>
@@ -2978,9 +2976,9 @@ export default function AppSettingsScreen() {
                       fontFamily: Fonts.bodyMedium,
                     }]}>
                       {isDeleteAccountLoading || isDeleteAccountBackgroundTaskRunning
-                        ? (language === 'Chinese' ? '请稍等...' : 'Please wait...')
+                        ? strings[language].appSettingsPage.pleaseWait
                         : (isDeleteAccountStopping || isDeleteAccountCleanupInProgress)
-                          ? (language === 'Chinese' ? '正在取消任务，请稍等...' : 'Please wait...')
+                          ? strings[language].appSettingsPage.pleaseWait
                           : strings[language].appSettingsPage.deleteAccount
                       }
                     </Text>
@@ -3133,7 +3131,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isCancelImportModalOpen}
           opacity={cancelImportModalOpacity}
-          text={language === 'Chinese' ? '取消导入?' : 'Cancel Import?'}
+          text={strings[language].appSettingsPage.cancelImport}
           Icon={DeleteModalIcon}
           buttons="double"
           onCancel={handleDismissCancelImport}
@@ -3149,7 +3147,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isNoDataModalOpen}
           opacity={noDataModalOpacity}
-          text={language === 'Chinese' ? '没有数据可导入！\n\n请先尝试备份数据。' : 'No data to import!\n\nTry backing up first.'}
+          text={strings[language].appSettingsPage.noDataToImport}
           Icon={ModalExclamationMarkIcon}
           buttons="single"
           onConfirm={handleDismissNoDataModal}
@@ -3164,7 +3162,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isNoBackupDataModalOpen}
           opacity={noBackupDataModalOpacity}
-          text={language === 'Chinese' ? '没有数据可备份！' : 'No data to backup!'}
+          text={strings[language].appSettingsPage.noDataToBackup}
           Icon={ModalExclamationMarkIcon}
           buttons="single"
           onConfirm={handleDismissNoBackupDataModal}
@@ -3179,9 +3177,11 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isNetworkErrorModalOpen}
           opacity={networkErrorModalOpacity}
-          text={language === 'Chinese' 
-            ? (networkErrorOperation === 'backup' ? '备份因网络错误而取消！检查您的网络。' : networkErrorOperation === 'import' ? '导入因网络错误而取消！检查您的网络。' : '清除数据因网络错误而取消！检查您的网络。')
-            : (networkErrorOperation === 'backup' ? 'Backup cancelled\ndue to network error!' : networkErrorOperation === 'import' ? 'Import cancelled\ndue to network error!' : 'Clear data cancelled\ndue to network error!')
+          text={networkErrorOperation === 'backup' 
+            ? strings[language].appSettingsPage.backupCancelledNetworkError
+            : networkErrorOperation === 'import' 
+            ? strings[language].appSettingsPage.importCancelledNetworkError
+            : strings[language].appSettingsPage.clearDataCancelledNetworkError
           }
           Icon={DeleteModalIcon}
           buttons="single"
@@ -3197,7 +3197,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isBackupLoadingNetworkErrorModalOpen}
           opacity={backupLoadingNetworkErrorModalOpacity}
-          text={language === 'Chinese' ? '备份因网络错误而无法启动！' : 'Backup failed to start\ndue to network error!'}
+          text={strings[language].appSettingsPage.backupFailedToStartNetworkError}
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissBackupLoadingNetworkErrorModal}
@@ -3212,7 +3212,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isImportLoadingNetworkErrorModalOpen}
           opacity={importLoadingNetworkErrorModalOpacity}
-          text={language === 'Chinese' ? '导入因网络错误而无法启动！' : 'Import failed to start\ndue to network error!'}
+          text={strings[language].appSettingsPage.importFailedToStartNetworkError}
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissImportLoadingNetworkErrorModal}
@@ -3229,10 +3229,10 @@ export default function AppSettingsScreen() {
           opacity={navigationGuardModalOpacity}
           text={
             navigationBlockingProcess === 'backup'
-              ? (language === 'Chinese' ? '请在备份过程中停留在此页面' : 'Please stay on this page\nduring the backup process')
+              ? strings[language].appSettingsPage.pleaseStayOnPageBackup
               : navigationBlockingProcess === 'import'
-              ? (language === 'Chinese' ? '请在导入过程中停留在此页面' : 'Please stay on this page\nduring the import process')
-              : (language === 'Chinese' ? '请在删除过程中停留在此页面' : 'Please stay on this page\nduring the deletion process')
+              ? strings[language].appSettingsPage.pleaseStayOnPageImport
+              : strings[language].appSettingsPage.pleaseStayOnPageDeletion
           }
           Icon={ModalExclamationMarkIcon}
           buttons="single"
@@ -3248,7 +3248,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isAutomaticCancellationModalOpen}
           opacity={automaticCancellationModalOpacity}
-          text={language === 'Chinese' ? '糟糕，备份任务已被取消！' : 'Oops backup task has been cancelled!'}
+          text={strings[language].appSettingsPage.oopsBackupTaskCancelled}
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissAutomaticCancellationModal}
@@ -3263,7 +3263,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isImportAutomaticCancellationModalOpen}
           opacity={importAutomaticCancellationModalOpacity}
-          text={language === 'Chinese' ? '糟糕，导入任务已被取消！' : 'Oops import task has been cancelled!'}
+          text={strings[language].appSettingsPage.oopsImportTaskCancelled}
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissImportAutomaticCancellationModal}
@@ -3278,7 +3278,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isCancelClearDataModalOpen}
           opacity={cancelClearDataModalOpacity}
-          text={language === 'Chinese' ? '取消清除数据?' : 'Cancel Clear Data?'}
+          text={strings[language].appSettingsPage.cancelClearData}
           Icon={DeleteModalIcon}
           buttons="double"
           onCancel={handleDismissCancelClearData}
@@ -3294,7 +3294,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isNoClearDataModalOpen}
           opacity={noClearDataModalOpacity}
-          text={language === 'Chinese' ? '没有数据可清除！' : 'No data to clear!'}
+          text={strings[language].appSettingsPage.noDataToClear}
           Icon={ModalExclamationMarkIcon}
           buttons="single"
           onConfirm={handleDismissNoClearDataModal}
@@ -3309,7 +3309,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isClearDataLoadingNetworkErrorModalOpen}
           opacity={clearDataLoadingNetworkErrorModalOpacity}
-          text={language === 'Chinese' ? '清除数据因网络错误而无法启动！' : 'Clear data failed to start\ndue to network error!'}
+          text={strings[language].appSettingsPage.clearDataFailedToStartNetworkError}
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissClearDataLoadingNetworkErrorModal}
@@ -3325,7 +3325,7 @@ export default function AppSettingsScreen() {
         <GenericModal
           visible={isBackupServiceBusyModalOpen}
           opacity={backupServiceBusyModalOpacity}
-          text={language === 'Chinese' ? '备份服务暂时繁忙。请几分钟后再试。' : 'Backup service is temporarily busy. Please try again in a few minutes.'}
+          text={strings[language].appSettingsPage.backupServiceTemporarilyBusy}
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissBackupServiceBusyModal}

@@ -67,18 +67,13 @@ export default function ViewQuizStatsModal() {
   const formatTime = useCallback((seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    if (language === 'Chinese') {
-      if (minutes > 0) {
-        return `${minutes}分${remainingSeconds}秒`;
-      } else {
-        return `${remainingSeconds}秒`;
-      }
+    if (minutes > 0) {
+      return strings[language].flashcardViewPage.timeFormatMinutesSeconds
+        .replace('{minutes}', minutes.toString())
+        .replace('{seconds}', remainingSeconds.toString());
     } else {
-      if (minutes > 0) {
-        return `${minutes}min ${remainingSeconds}s`;
-      } else {
-        return `${remainingSeconds}s`;
-      }
+      return strings[language].flashcardViewPage.timeFormatSeconds
+        .replace('{seconds}', remainingSeconds.toString());
     }
   }, [language]);
 

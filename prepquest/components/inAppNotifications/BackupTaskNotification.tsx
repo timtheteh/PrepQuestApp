@@ -202,13 +202,13 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
     if (!isSuccess) {
       // Check if it's a network error
       if (notificationData?.isNetworkError) {
-        return language === 'Chinese' ? '糟糕，备份因网络错误而取消！' : 'Oops backup has cancelled due to a network error!';
+        return strings[language].backupTaskNotification.oopsBackupCancelledNetworkError;
       }
-      return language === 'Chinese' ? '备份过程中出现错误' : 'An error occurred during backup';
+      return strings[language].backupTaskNotification.errorOccurredDuringBackup;
     }
     
     // Get message from multiple possible sources
-    const message = (language === 'Chinese' ? '数据已成功上传到云端!' : 'Data successfully uploaded to cloud!');
+    const message = strings[language].backupTaskNotification.dataSuccessfullyUploadedToCloud;
     
     return message;
   };
@@ -235,10 +235,10 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
           <View style={styles.textContainer}>
             <Text style={styles.title}>
               {isSuccess 
-                ? (language === 'Chinese' ? '备份完成！' : 'Backup Completed!')
+                ? strings[language].backupTaskNotification.backupCompleted
                 : notificationData?.isNetworkError
-                  ? (language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!')
-                  : (language === 'Chinese' ? '备份失败' : 'Backup Failed')
+                  ? strings[language].backupTaskNotification.backupCancelled
+                  : strings[language].backupTaskNotification.backupFailed
               }
             </Text>
             <Text style={styles.message}>
@@ -249,7 +249,7 @@ export const BackupTaskNotification: React.FC<BackupTaskNotificationProps> = ({
         {isSuccess && onViewResults && (
           <TouchableOpacity style={styles.viewButton} onPress={handleViewResults}>
             <Text style={styles.viewButtonText}>
-              {language === 'Chinese' ? '查看' : 'View'}
+              {strings[language].backupTaskNotification.view}
             </Text>
           </TouchableOpacity>
         )}

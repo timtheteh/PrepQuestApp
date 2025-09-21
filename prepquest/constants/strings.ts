@@ -55,6 +55,13 @@ export const strings: Record<string, any> = {
       confirmNewPassword: 'Confirm New Password',
       done: 'Done',
       passwordResetSuccess: 'Your password has been reset! Try logging in',
+      // Additional error messages
+      signInNotAvailable: 'Sign in not available',
+      passwordResetNotAvailable: 'Password reset not available for this email',
+      passwordResetSessionExpired: 'Password reset session expired',
+      pleaseFillBothPasswordFields: 'Please fill in both password fields',
+      passwordsDoNotMatch: 'Passwords do not match',
+      failedToResetPassword: 'Failed to reset password',
     },
                     // Statistics page strings
                 statistics: {
@@ -189,6 +196,7 @@ export const strings: Record<string, any> = {
     minimize: 'Minimize',
     // BottomTextInputModal strings
     editDeckName: 'Edit deck name',
+    editDeckNamePlaceholder: 'Edit deck name...',
     done: 'Done',
     // DifficultyToggleRow strings
     difficultyOptions: {
@@ -272,6 +280,11 @@ export const strings: Record<string, any> = {
     confirmAddToFolders: 'Confirm adding to\nfolder(s)?',
     confirmMoveToFolders: 'Confirm moving to\nfolder(s)?',
     unfavoriteConfirmation: 'Are you sure you want to unfavorite?',
+    // Highlight words for modals
+    highlightWords: {
+      delete: 'delete',
+      unfavorite: 'unfavorite',
+    },
     customGoalFormSubmitted: ['Custom Goal Form', 'Submitted!'],
     deleteDeckConfirmation: 'Are you sure you want to delete this deck?',
     deckMovedToFolder: ['Deck(s) moved', 'into folder(s)!'],
@@ -300,6 +313,7 @@ export const strings: Record<string, any> = {
     noDataAvailable: 'No data available',
     breakdownDecks: 'Decks',
     breakdownFlashcards: 'Flashcards',
+    preparingAnimation: 'Preparing animation...',
     breakdownCategoryLabels: {
       study: 'Study',
       technical: 'Technical',
@@ -409,6 +423,257 @@ export const strings: Record<string, any> = {
       microphonePermissionDisableMessage: 'To disable microphone access, please go to your device settings and disable microphone permissions for this app.',
       settings: 'Settings',
       backupInProgress: 'Backup in Progress',
+      // Success messages
+      backupCompletedSuccessfully: 'Backup completed successfully!',
+      importCompleted: 'Import completed!',
+      clearDataCompletedSuccessfully: 'Clear data completed successfully!',
+      accountDeletionCompletedSuccessfully: 'Account deletion completed successfully!',
+      // Alert messages
+      notificationPermissionRequired: 'Notification Permission Required',
+      notificationPermissionMessage: 'Please enable notification permissions in settings to receive deck creation notifications.',
+      openSettings: 'Open Settings',
+      failedToStartBackupProcess: 'Failed to start backup process',
+      failedToStartImportProcess: 'Failed to start import process',
+      failedToStartClearDataProcess: 'Failed to start clear data process',
+      failedToCancelBackupTask: 'Failed to cancel backup task',
+      failedToCancelImportTask: 'Failed to cancel import task',
+      failedToCancelClearDataTask: 'Failed to cancel clear data task',
+      backupFailed: 'Backup failed',
+      importFailed: 'Import failed',
+      clearDataFailed: 'Clear data failed',
+      noUserIdFound: 'No user ID found. Please try logging in again.',
+      // Modal messages
+      cancelImport: 'Cancel Import?',
+      noDataToImport: 'No data to import!\n\nTry backing up first.',
+      noDataToBackup: 'No data to backup!',
+      noDataToClear: 'No data to clear!',
+      backupCancelledNetworkError: 'Backup cancelled\ndue to network error!',
+      importCancelledNetworkError: 'Import cancelled\ndue to network error!',
+      clearDataCancelledNetworkError: 'Clear data cancelled\ndue to network error!',
+      backupFailedToStartNetworkError: 'Backup failed to start\ndue to network error!',
+      importFailedToStartNetworkError: 'Import failed to start\ndue to network error!',
+      clearDataFailedToStartNetworkError: 'Clear data failed to start\ndue to network error!',
+      pleaseStayOnPageBackup: 'Please stay on this page\nduring the backup process',
+      pleaseStayOnPageImport: 'Please stay on this page\nduring the import process',
+      pleaseStayOnPageDeletion: 'Please stay on this page\nduring the deletion process',
+      oopsBackupTaskCancelled: 'Oops backup task has been cancelled!',
+      oopsImportTaskCancelled: 'Oops import task has been cancelled!',
+      cancelClearData: 'Cancel Clear Data?',
+      backupServiceTemporarilyBusy: 'Backup service is temporarily busy. Please try again in a few minutes.',
+      // Status messages
+      pleaseDontCloseAppBackup: "Please don't close this app otherwise backup will end prematurely",
+      pleaseWait: 'Please wait...',
+      checkingDataInCloud: "Checking data in cloud...\nPlease don't close this app otherwise import will end prematurely",
+      importingDataFromCloud: "Importing data from cloud...\nPlease don't close this app otherwise import will end prematurely",
+      updatingLocalDatabase: "Updating local database...\nPlease don't close this app otherwise import will end prematurely",
+    },
+    // DeckCreationLoadingPage strings
+    deckCreationLoadingPage: {
+      deckOnWay: 'Your fantastic deck is\non its way!',
+      flashcardsOnWay: 'Your flashcards are\non their way!',
+      flashcardsGenerated: '{current} out of {total} Flashcards generated',
+    },
+    // DeckCreationStatusPage strings
+    deckCreationStatusPage: {
+      // File upload flow statuses
+      successfullyExtractedInfoFromFile: 'Successfully extracted\ninfo from file',
+      extractingInfoFromFile: 'Extracting info\nfrom file',
+      successfullyGeneratedFlashcards: 'Successfully generated\nflashcards',
+      generatingFlashcards: 'Generating flashcards',
+      successfullyAddedFlashcardsToDeck: 'Successfully Added\nflashcards to deck',
+      addingFlashcardsToDeck: 'Adding flashcards\nto deck',
+      successfullyAddedFlashcardsAndDeck: 'Successfully added\nflashcards and deck',
+      addingFlashcardsAndDeck: 'Adding flashcards\nand deck',
+      // YouTube link flow statuses
+      transcriptFetched: 'Transcript fetched',
+      fetchingYoutubeTranscript: 'Fetching youtube transcript',
+      // GenAI form flow statuses
+      requestReceived: 'Request received',
+    },
+    // FileUploadPage strings
+    fileUploadPage: {
+      // Upload success messages
+      imageUploadedSuccessfully: 'Image uploaded successfully!',
+      fileUploadedSuccessfully: 'File uploaded successfully!',
+      imageLabel: 'Image',
+      fileLabel: 'File',
+      fileWithColon: 'File:',
+      // Background task messages
+      creatingDeck: 'Creating Deck',
+      creatingDeckInBackground: 'Your deck is being created in the background.',
+      // Error messages
+      invalidFileType: 'Invalid file type',
+      // Permission messages
+      cameraRollPermissionsNeeded: 'Sorry, we need camera roll permissions to make this work!',
+      cameraPermissionsNeeded: 'Sorry, we need camera permissions to make this work!',
+      errorSelectingImage: 'Error selecting image. Please try again.',
+      errorTakingPhoto: 'Error taking photo. Please try again.',
+      errorSelectingFile: 'Error selecting file. Please try again.',
+      failedToStartBackgroundTask: 'Failed to start background task',
+    },
+    // GenAIFormPage strings
+    genAIFormPage: {
+      // Toggle labels
+      mandatory: 'Mandatory',
+      optional: 'Optional',
+      // Form labels and placeholders
+      deckName: ' Deck Name',
+      study: 'Study',
+      interview: 'Interview',
+      typeHere: 'Type here!',
+      educationLevel: '1. Education Level?',
+      educationLevelPlaceholder: 'e.g. Freshman, Sophomore, etc',
+      educationLevelHelper: 'What education level is your preparation for?',
+      subjects: '2. Subject(s)?',
+      subjectsPlaceholder: 'e.g. Computer Science, Math, Physics, etc.',
+      subjectsHelper: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.',
+      jobRole: '1. Job/Role?',
+      jobRolePlaceholder: 'e.g. Frontend Developer, Private Equity Analyst, etc',
+      jobRoleHelper: 'What job or role are you preparing for?',
+      numberOfQuestions: '3. Number of questions:',
+      // Optional fields
+      topics: '1. Topic(s)?',
+      topicsPlaceholder: 'e.g. Microeconomics, Electromagnetism, etc',
+      topicsHelper: 'Which topics would you like to study? Provide your answer in a comma separated list, e.g Microeconomics, Electromagnetism, etc',
+      subtopics: '2. Subtopic(s)?',
+      subtopicsPlaceholder: 'e.g. Demand and Supply, etc',
+      subtopicsHelper: 'Which subtopics would you like to focus on? Provide your answer in a comma separated list, e.g Demand and Supply, etc',
+      examQuiz: '3. Exam/Quiz?',
+      examQuizPlaceholder: 'e.g. SAT, ACT, GRE, etc',
+      examQuizHelper: 'What exam or quiz would you like to study for?',
+      company: '1. Company?',
+      companyPlaceholder: 'e.g. Google, Meta, Microsoft, etc',
+      companyHelper: 'Which company are you preparing to interview with?',
+      experienceLevel: '2. Experience Level?',
+      experienceLevelPlaceholder: 'e.g. Junior Developer, Senior Developer, etc',
+      experienceLevelHelper: 'Which experience level is your interview for?',
+      interviewTopics: '3. Topic(s)?',
+      interviewTopicsPlaceholder: 'e.g. React, Java, Operating Systems, etc',
+      interviewTopicsHelper: 'Which topics would you like to focus on?',
+      // Button text
+      submit: 'Submit',
+      // Background task messages
+      creatingDeck: 'Creating Deck',
+      creatingDeckInBackground: 'Your deck is being created in the background.',
+      // Modal messages
+      helpModalText: 'Our team has identified 7 main types of cognitive questions based on Bloom\'s taxonomy to help with your learning. Visit our website to learn more.',
+      helpModalHighlight: 'our website',
+      useRecentFormEntry: ['Use most recent', 'form entry?'],
+      leaveConfirmation: ['Are you sure you want', 'to leave? All your', 'progress will be lost'],
+      allMandatoryFieldsMustBeFilled: 'All mandatory fields must be filled up!',
+      submitWithoutOptionalFields: 'Submit form without filling up all optional fields?',
+      greatSubmit: 'Great! 😊 Do you want to go ahead and submit?',
+      failedToStartBackgroundTask: 'Failed to start background task',
+    },
+    // ManualAddDeckPage strings
+    manualAddDeckPage: {
+      // Toggle labels
+      mandatory: 'Mandatory',
+      manual: 'Manual',
+      // Form labels and placeholders
+      deckName: ' Deck Name',
+      study: 'Study',
+      interview: 'Interview',
+      typeHere: 'Type here!',
+      educationLevel: '1. Education Level?',
+      educationLevelPlaceholder: 'e.g. Freshman, Sophomore, etc',
+      educationLevelHelper: 'What education level is your preparation for?',
+      subjects: '2. Subject(s)?',
+      subjectsPlaceholder: 'e.g. Computer Science, Math, Physics, etc.',
+      subjectsHelper: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.',
+      exam: '3. Exam/Quiz?',
+      examPlaceholder: 'e.g. SAT, GRE, IB, A-Levels etc.',
+      examHelper: 'What exam or quiz would this deck be for?',
+      jobRole: '1. Job/Role?',
+      jobRolePlaceholder: 'e.g. Frontend Developer, Private Equity Analyst, etc',
+      jobRoleHelper: 'What job or role are you preparing for?',
+      experienceLevel: '3. Experience Level?',
+      experienceLevelPlaceholder: 'e.g. Mid-Level, Senior, etc',
+      experienceLevelHelper: 'What experience level is your interview for?',
+      // Content placeholders
+      typeYourContentHere: 'Type your content here',
+      // Button text
+      submitFormWithCards: 'Submit Form With Cards?',
+      moveToNextCard: 'Move To\nNext Card?',
+      select: 'Select',
+      selectAll: 'Select All',
+      cancel: 'Cancel',
+      // Content type labels
+      image: '<Image>',
+      voice: '<Voice Recording>',
+      drawing: '<Drawing>',
+      inProgress: 'In Progress...',
+      // Error messages
+      deckNameInUse: 'Deckname already in use',
+      invalidSubjects: "Invalid form input for 'Subject(s)'",
+      fillAllAndAdd: 'Fill up all mandatory fields\nand add your cards before submitting!',
+      addBeforeSubmit: 'Add your card(s)\nbefore submitting!',
+      fillAll: 'Fill up all mandatory fields and all QA pairs for your cards!',
+      missingQA: 'You have missing question/answer\ndata for card',
+      noSelection: 'No selection made!',
+      selectAtLeastOne: 'Select at least one flashcard to delete.',
+      areYouSureDelete: 'Are you sure you want to delete',
+      flashcard: 'flashcard',
+      flashcards: 'flashcards',
+      // Modal messages
+      helpModalText: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.",
+      useRecentFormEntry: ['Use most recent', 'form entry?'],
+      greatSubmit: 'Great! 😊 Do you want to go ahead and submit?',
+      leaveConfirmation: ['Are you sure you want', 'to leave? All your', 'progress will be lost'],
+      changeContentTypeWarning: 'Changing the content type will clear the current content on this side. Are you sure you want to continue?',
+      noFlashcards: 'No flashcards added\nat the moment!',
+      // Background task messages
+      creatingDeck: 'Creating Deck',
+      creatingDeckInBackground: 'Your deck is being created in the background.',
+    },
+    // YouTubeLinkPage strings
+    youtubeLinkPage: {
+      // Toggle labels
+      mandatory: 'Mandatory',
+      youtubeLink: 'YouTube Link',
+      // Form labels and placeholders
+      deckName: ' Deck Name',
+      study: 'Study',
+      interview: 'Interview',
+      typeHere: 'Type here!',
+      educationLevel: '1. Education Level?',
+      educationLevelPlaceholder: 'e.g. Freshman, Sophomore, etc',
+      educationLevelHelper: 'What education level is your preparation for?',
+      subjects: '2. Subject(s)?',
+      subjectsPlaceholder: 'e.g. Computer Science, Math, Physics, etc.',
+      subjectsHelper: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.',
+      jobRole: '1. Job/Role?',
+      jobRolePlaceholder: 'e.g. Frontend Developer, Private Equity Analyst, etc',
+      jobRoleHelper: 'What job or role are you preparing for?',
+      numberOfQuestions: '3. Number of questions:',
+      // YouTube specific
+      pasteLinkHere: 'Paste Link Here',
+      pasteYoutubeLink: 'Paste your YouTube Link here!',
+      aiGenerate: 'AI Generate new card content?',
+      submit: 'Submit',
+      // Error messages
+      deckNameInUse: 'Deckname already in use',
+      invalidSubjects: "Invalid form input for 'Subject(s)'",
+      fillAllAndPaste: 'Fill up all mandatory fields and paste your Youtube Link!',
+      pasteBeforeSubmit: 'Paste your Youtube Link before submitting!',
+      fillAll: 'Fill up all mandatory fields!',
+      // Modal messages
+      helpModalText: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.",
+      aiHelpModalText: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.',
+      useRecentFormEntry: ['Use most recent', 'form entry?'],
+      greatSubmit: 'Great! 😊 Do you want to go ahead and submit?',
+      leaveConfirmation: ['Are you sure you want', 'to leave? All your', 'progress will be lost'],
+      // Network and error messages
+      networkError: 'Network error!',
+      transcriptsDisabled: 'Transcripts are disabled for this video.',
+      noTranscriptFound: 'No transcript found for this video in any language.',
+      videoUnavailable: 'The video is unavailable (private, removed, or region/age restricted).',
+      requestBlocked: 'Request blocked by YouTube (possible IP ban).',
+      transcriptFetchFailed: 'Failed to fetch transcript from YouTube.',
+      // Background task messages
+      creatingDeck: 'Creating Deck',
+      creatingDeckInBackground: 'Your deck is being created in the background.',
+      failedToStartBackgroundTask: 'Failed to start background task',
     },
     // DeckSettings strings
     deckSettingsPage: {
@@ -590,7 +855,67 @@ export const strings: Record<string, any> = {
       // Quiz stats progress indicator
       flashcardsCompleted: 'of flashcards completed',
       flashcardsCompletedChinese: '张卡片已完成',
-    },
+    // Time formatting
+    timeFormatMinutesSeconds: '{minutes}min {seconds}s',
+    timeFormatSeconds: '{seconds}s',
+  },
+  // General UI components
+  progressBar: {
+    itemsUploaded: 'items uploaded',
+  },
+  // Background task notifications
+  backgroundTaskNotification: {
+    // Success messages
+    taskCompleted: 'Task Completed!',
+    flashcardsCreatedFor: 'Flashcards created for "{deckName}"',
+    deckCreatedFor: 'Deck created for "{deckName}"',
+    // Error messages
+    taskFailed: 'Task Failed',
+    youtubeTranscriptFetchFailed: 'YouTube transcript fetch failed',
+    networkErrorTaskCancelled: 'Network error occurred, task cancelled',
+    taskCancelledTimeout: 'Task cancelled (timeout)',
+    taskCancelled: 'Task cancelled',
+    errorOccurredDuringCreation: 'An error occurred during creation',
+    // Button text
+    view: 'View',
+  },
+  // Backup task notifications
+  backupTaskNotification: {
+    // Success messages
+    backupCompleted: 'Backup Completed!',
+    dataSuccessfullyUploadedToCloud: 'Data successfully uploaded to cloud!',
+    // Error messages
+    backupCancelled: 'Backup cancelled!',
+    backupFailed: 'Backup Failed',
+    oopsBackupCancelledNetworkError: 'Oops backup has cancelled due to a network error!',
+    errorOccurredDuringBackup: 'An error occurred during backup',
+    // Button text
+    view: 'View',
+  },
+  // Clear data task notifications
+  clearDataTaskNotification: {
+    // Success messages
+    clearDataCompleted: 'Clear Data Completed!',
+    localStorageDataSuccessfullyCleared: 'Local storage data successfully cleared!',
+    // Error messages
+    clearDataFailed: 'Clear Data Failed',
+    errorOccurredDuringClearData: 'An error occurred during clear data',
+    // Button text
+    view: 'View',
+  },
+  // Import task notifications
+  importTaskNotification: {
+    // Success messages
+    importCompleted: 'Import Completed!',
+    dataSuccessfullyImportedFromCloud: 'Data successfully imported from cloud!',
+    // Error messages
+    importCancelled: 'Import cancelled!',
+    importFailed: 'Import Failed',
+    oopsImportCancelledNetworkError: 'Oops import has cancelled due to a network error!',
+    errorOccurredDuringImport: 'An error occurred during import',
+    // Button text
+    view: 'View',
+  },
   },
   Chinese: {
     // Splash screen strings
@@ -628,6 +953,13 @@ export const strings: Record<string, any> = {
       pleaseEnterYourEmailAddress: '请输入您的邮箱地址',
       passwordResetEmailSent: '密码重置邮件已发送！请检查您的收件箱。',
       failedToSendResetEmail: '发送重置邮件失败',
+      // Additional error messages
+      signInNotAvailable: '登录不可用',
+      passwordResetNotAvailable: '此邮箱不支持密码重置',
+      passwordResetSessionExpired: '密码重置会话已过期',
+      pleaseFillBothPasswordFields: '请填写两个密码字段',
+      passwordsDoNotMatch: '密码不匹配',
+      failedToResetPassword: '密码重置失败',
     },
                     // Statistics page strings
                 statistics: {
@@ -798,7 +1130,67 @@ export const strings: Record<string, any> = {
       // Quiz stats progress indicator
       flashcardsCompleted: '张卡片已完成',
       flashcardsCompletedChinese: '张卡片已完成',
-    },
+    // Time formatting
+    timeFormatMinutesSeconds: '{minutes}分{seconds}秒',
+    timeFormatSeconds: '{seconds}秒',
+  },
+  // General UI components
+  progressBar: {
+    itemsUploaded: '项已上传',
+  },
+  // Background task notifications
+  backgroundTaskNotification: {
+    // Success messages
+    taskCompleted: '任务完成！',
+    flashcardsCreatedFor: '闪卡已为"{deckName}"创建',
+    deckCreatedFor: '卡组"{deckName}"已创建',
+    // Error messages
+    taskFailed: '任务失败',
+    youtubeTranscriptFetchFailed: 'YouTube字幕获取失败',
+    networkErrorTaskCancelled: '网络错误，任务已取消',
+    taskCancelledTimeout: '任务已取消（超时）',
+    taskCancelled: '任务已取消',
+    errorOccurredDuringCreation: '创建过程中出现错误',
+    // Button text
+    view: '查看',
+  },
+  // Backup task notifications
+  backupTaskNotification: {
+    // Success messages
+    backupCompleted: '备份完成！',
+    dataSuccessfullyUploadedToCloud: '数据已成功上传到云端!',
+    // Error messages
+    backupCancelled: '备份已取消！',
+    backupFailed: '备份失败',
+    oopsBackupCancelledNetworkError: '糟糕，备份因网络错误而取消！',
+    errorOccurredDuringBackup: '备份过程中出现错误',
+    // Button text
+    view: '查看',
+  },
+  // Clear data task notifications
+  clearDataTaskNotification: {
+    // Success messages
+    clearDataCompleted: '清除完成！',
+    localStorageDataSuccessfullyCleared: '本地存储数据已成功清除!',
+    // Error messages
+    clearDataFailed: '清除失败',
+    errorOccurredDuringClearData: '清除过程中出现错误',
+    // Button text
+    view: '查看',
+  },
+  // Import task notifications
+  importTaskNotification: {
+    // Success messages
+    importCompleted: '导入完成！',
+    dataSuccessfullyImportedFromCloud: '数据已成功从云端导入!',
+    // Error messages
+    importCancelled: '导入已取消！',
+    importFailed: '导入失败',
+    oopsImportCancelledNetworkError: '糟糕，导入因网络错误而取消！',
+    errorOccurredDuringImport: '导入过程中出现错误',
+    // Button text
+    view: '查看',
+  },
     // AIPromptModal strings
     aiPromptTitle: '试试为你量身定制的AI卡片组！',
     loadingAiDecks: '正在加载AI卡片组...',
@@ -841,6 +1233,7 @@ export const strings: Record<string, any> = {
     minimize: '最小化',
     // BottomTextInputModal strings
     editDeckName: '编辑卡组名称',
+    editDeckNamePlaceholder: '编辑卡组名称...',
     done: '完成',
     // DifficultyToggleRow strings
     difficultyOptions: {
@@ -925,6 +1318,11 @@ export const strings: Record<string, any> = {
     confirmAddToFolders: '确认添加到文件夹？',
     confirmMoveToFolders: '确认移动到文件夹？',
     unfavoriteConfirmation: '你确定要取消收藏吗？',
+    // Highlight words for modals
+    highlightWords: {
+      delete: '删除',
+      unfavorite: '取消收藏',
+    },
     customGoalFormSubmitted: ['自定义目标表单', '已提交！'],
     deleteDeckConfirmation: '你确定要删除这个卡片组吗？',
     deckMovedToFolder: ['卡片组已移动', '到文件夹！'],
@@ -953,6 +1351,7 @@ export const strings: Record<string, any> = {
     noDataAvailable: '暂无数据',
     breakdownDecks: '卡组',
     breakdownFlashcards: '卡片',
+    preparingAnimation: '正在准备动画...',
     breakdownCategoryLabels: {
       study: '学习',
       technical: '技术',
@@ -1099,6 +1498,257 @@ export const strings: Record<string, any> = {
       microphonePermissionDisableMessage: '要禁用麦克风访问，请前往设备设置并禁用此应用的麦克风权限。',
       settings: '设置',
       backupInProgress: '备份进行中',
+      // Success messages
+      backupCompletedSuccessfully: '备份成功完成！',
+      importCompleted: '导入完成！',
+      clearDataCompletedSuccessfully: '清除数据成功完成！',
+      accountDeletionCompletedSuccessfully: '账户删除成功完成！',
+      // Alert messages
+      notificationPermissionRequired: '需要通知权限',
+      notificationPermissionMessage: '请在设置中启用通知权限以接收卡组创建完成的通知。',
+      openSettings: '打开设置',
+      failedToStartBackupProcess: '启动备份过程失败',
+      failedToStartImportProcess: '启动导入过程失败',
+      failedToStartClearDataProcess: '启动清除数据过程失败',
+      failedToCancelBackupTask: '取消备份任务失败',
+      failedToCancelImportTask: '取消导入任务失败',
+      failedToCancelClearDataTask: '取消清除数据任务失败',
+      backupFailed: '备份失败',
+      importFailed: '导入失败',
+      clearDataFailed: '清除数据失败',
+      noUserIdFound: '未找到用户ID。请重新登录。',
+      // Modal messages
+      cancelImport: '取消导入?',
+      noDataToImport: '没有数据可导入！\n\n请先尝试备份数据。',
+      noDataToBackup: '没有数据可备份！',
+      noDataToClear: '没有数据可清除！',
+      backupCancelledNetworkError: '备份因网络错误而取消！检查您的网络。',
+      importCancelledNetworkError: '导入因网络错误而取消！检查您的网络。',
+      clearDataCancelledNetworkError: '清除数据因网络错误而取消！检查您的网络。',
+      backupFailedToStartNetworkError: '备份因网络错误而无法启动！',
+      importFailedToStartNetworkError: '导入因网络错误而无法启动！',
+      clearDataFailedToStartNetworkError: '清除数据因网络错误而无法启动！',
+      pleaseStayOnPageBackup: '请在备份过程中停留在此页面',
+      pleaseStayOnPageImport: '请在导入过程中停留在此页面',
+      pleaseStayOnPageDeletion: '请在删除过程中停留在此页面',
+      oopsBackupTaskCancelled: '糟糕，备份任务已被取消！',
+      oopsImportTaskCancelled: '糟糕，导入任务已被取消！',
+      cancelClearData: '取消清除数据?',
+      backupServiceTemporarilyBusy: '备份服务暂时繁忙。请几分钟后再试。',
+      // Status messages
+      pleaseDontCloseAppBackup: '请保持应用开启，否则备份将提前结束',
+      pleaseWait: '请稍等...',
+      checkingDataInCloud: '正在检查云端数据...',
+      importingDataFromCloud: '正在从云端导入数据...',
+      updatingLocalDatabase: '正在更新本地数据库...',
+    },
+    // DeckCreationLoadingPage strings
+    deckCreationLoadingPage: {
+      deckOnWay: '你的精彩卡组正在生成！',
+      flashcardsOnWay: '你的卡片正在生成！',
+      flashcardsGenerated: '已生成 {current}/{total} 张卡片',
+    },
+    // DeckCreationStatusPage strings
+    deckCreationStatusPage: {
+      // File upload flow statuses
+      successfullyExtractedInfoFromFile: '成功提取信息',
+      extractingInfoFromFile: '正在提取信息',
+      successfullyGeneratedFlashcards: '成功生成闪卡',
+      generatingFlashcards: '正在生成闪卡',
+      successfullyAddedFlashcardsToDeck: '已添加闪卡到卡组',
+      addingFlashcardsToDeck: '正在添加闪卡到卡组',
+      successfullyAddedFlashcardsAndDeck: '成功添加闪卡和卡组',
+      addingFlashcardsAndDeck: '正在添加闪卡和卡组',
+      // YouTube link flow statuses
+      transcriptFetched: '文字稿已获取',
+      fetchingYoutubeTranscript: '正在获取YouTube文字稿',
+      // GenAI form flow statuses
+      requestReceived: '请求已收到',
+    },
+    // FileUploadPage strings
+    fileUploadPage: {
+      // Upload success messages
+      imageUploadedSuccessfully: '图片上传成功！',
+      fileUploadedSuccessfully: '文件上传成功！',
+      imageLabel: '图片',
+      fileLabel: '文件',
+      fileWithColon: '文件：',
+      // Background task messages
+      creatingDeck: '创建卡组',
+      creatingDeckInBackground: '正在后台创建您的卡组',
+      // Error messages
+      invalidFileType: '不支持的文件类型',
+      // Permission messages
+      cameraRollPermissionsNeeded: '抱歉，我们需要相机权限才能正常工作！',
+      cameraPermissionsNeeded: '抱歉，我们需要相机权限才能正常工作！',
+      errorSelectingImage: '选择图片时出错，请重试。',
+      errorTakingPhoto: '拍照时出错，请重试。',
+      errorSelectingFile: '选择文件时出错，请重试。',
+      failedToStartBackgroundTask: '启动后台任务失败',
+    },
+    // GenAIFormPage strings
+    genAIFormPage: {
+      // Toggle labels
+      mandatory: '必填',
+      optional: '选填',
+      // Form labels and placeholders
+      deckName: '卡组名称',
+      study: '学习',
+      interview: '面试',
+      typeHere: '请输入！',
+      educationLevel: '1. 教育水平？',
+      educationLevelPlaceholder: '例如：大一，大二等',
+      educationLevelHelper: '你的准备是针对哪个教育水平？',
+      subjects: '2. 科目？',
+      subjectsPlaceholder: '例如：计算机科学，数学，物理等',
+      subjectsHelper: '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。',
+      jobRole: '1. 职位/角色？',
+      jobRolePlaceholder: '例如：前端开发，私募股权分析师等',
+      jobRoleHelper: '你正在准备什么职位或角色？',
+      numberOfQuestions: '3. 题目数量：',
+      // Optional fields
+      topics: '1. 主题？',
+      topicsPlaceholder: '例如：微观经济学，电磁学等',
+      topicsHelper: '你想学习哪些主题？请用逗号分隔，例如：微观经济学，电磁学等。',
+      subtopics: '2. 子主题？',
+      subtopicsPlaceholder: '例如：供需关系等',
+      subtopicsHelper: '你想专注于哪些子主题？请用逗号分隔，例如：供需关系等。',
+      examQuiz: '3. 考试/测验？',
+      examQuizPlaceholder: '例如：SAT，ACT，GRE等',
+      examQuizHelper: '你想为哪些考试或测验学习？',
+      company: '1. 公司？',
+      companyPlaceholder: '例如：谷歌，Meta，微软等',
+      companyHelper: '你正在准备面试哪家公司？',
+      experienceLevel: '2. 经验水平？',
+      experienceLevelPlaceholder: '例如：初级开发者，高级开发者等',
+      experienceLevelHelper: '你的面试是针对哪个经验水平？',
+      interviewTopics: '3. 主题？',
+      interviewTopicsPlaceholder: '例如：React，Java，操作系统等',
+      interviewTopicsHelper: '你想专注于哪些主题？',
+      // Button text
+      submit: '提交',
+      // Background task messages
+      creatingDeck: '创建卡组',
+      creatingDeckInBackground: '正在后台创建您的卡组',
+      // Modal messages
+      helpModalText: '我们的团队根据布鲁姆的认知分类法确定了7种主要的认知问题类型，以帮助您的学习。请访问我们的网站了解更多信息。',
+      helpModalHighlight: '网站',
+      useRecentFormEntry: ['使用最近的', '表单条目?'],
+      leaveConfirmation: ['你确定要离开吗？', '所有进度将丢失'],
+      allMandatoryFieldsMustBeFilled: '所有必填项都必须填写！',
+      submitWithoutOptionalFields: '未填写所有可选项就提交表单？',
+      greatSubmit: '太棒了！😊 要继续提交吗？',
+      failedToStartBackgroundTask: '启动后台任务失败',
+    },
+    // ManualAddDeckPage strings
+    manualAddDeckPage: {
+      // Toggle labels
+      mandatory: '必填',
+      manual: '手动添加',
+      // Form labels and placeholders
+      deckName: '卡组名称',
+      study: '学习',
+      interview: '面试',
+      typeHere: '请在此输入！',
+      educationLevel: '1. 教育程度？',
+      educationLevelPlaceholder: '例如：大一，大二等',
+      educationLevelHelper: '你正在为哪个教育阶段做准备？',
+      subjects: '2. 科目？',
+      subjectsPlaceholder: '例如：计算机，数学，物理等',
+      subjectsHelper: '这个卡组适用于哪些科目？请用逗号分隔，例如：无机化学，有机化学等。',
+      exam: '3. 考试/测验？',
+      examPlaceholder: '例如：SAT，GRE，IB，A-Levels等',
+      examHelper: '这个卡组适用于哪些考试或测验？',
+      jobRole: '1. 职位/角色？',
+      jobRolePlaceholder: '例如：前端开发，私募分析师等',
+      jobRoleHelper: '你正在准备什么职位或角色？',
+      experienceLevel: '3. 经验水平？',
+      experienceLevelPlaceholder: '例如：中级，高级等',
+      experienceLevelHelper: '你的面试是针对什么经验水平？',
+      // Content placeholders
+      typeYourContentHere: '在此输入内容',
+      // Button text
+      submitFormWithCards: '提交表单和卡片？',
+      moveToNextCard: '移动到\n下一张卡片？',
+      select: '选择',
+      selectAll: '全选',
+      cancel: '取消',
+      // Content type labels
+      image: '<图片>',
+      voice: '<语音录音>',
+      drawing: '<绘图>',
+      inProgress: '进行中...',
+      // Error messages
+      deckNameInUse: '卡组名称已被使用',
+      invalidSubjects: '"科目"输入无效',
+      fillAllAndAdd: '请填写所有必填项并添加卡片后再提交！',
+      addBeforeSubmit: '请先添加卡片再提交！',
+      fillAll: '请填写所有必填项和所有卡片的问答对！',
+      missingQA: '第',
+      noSelection: '未选择任何卡片！',
+      selectAtLeastOne: '请至少选择一张卡片进行删除。',
+      areYouSureDelete: '确定要删除',
+      flashcard: '张卡片',
+      flashcards: '张卡片',
+      // Modal messages
+      helpModalText: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。',
+      useRecentFormEntry: ['使用最近的', '表单记录？'],
+      greatSubmit: '太棒了！😊 是否确认提交？',
+      leaveConfirmation: ['确定要离开吗？', '所有进度将丢失'],
+      changeContentTypeWarning: '更改内容类型将清除此侧的当前内容。确定要继续吗？',
+      noFlashcards: '当前没有添加卡片！',
+      // Background task messages
+      creatingDeck: '创建卡组',
+      creatingDeckInBackground: '正在后台创建您的卡组',
+    },
+    // YouTubeLinkPage strings
+    youtubeLinkPage: {
+      // Toggle labels
+      mandatory: '必填',
+      youtubeLink: 'YouTube链接',
+      // Form labels and placeholders
+      deckName: '卡组名称',
+      study: '学习',
+      interview: '面试',
+      typeHere: '请在此输入！',
+      educationLevel: '1. 教育程度？',
+      educationLevelPlaceholder: '例如：大一，大二等',
+      educationLevelHelper: '你正在为哪个教育阶段做准备？',
+      subjects: '2. 科目？',
+      subjectsPlaceholder: '例如：计算机，数学，物理等',
+      subjectsHelper: '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。',
+      jobRole: '1. 职位/角色？',
+      jobRolePlaceholder: '例如：前端开发，私募分析师等',
+      jobRoleHelper: '你正在准备什么职位或角色？',
+      numberOfQuestions: '3. 题目数量：',
+      // YouTube specific
+      pasteLinkHere: '在此粘贴链接',
+      pasteYoutubeLink: '请在此粘贴您的YouTube链接！',
+      aiGenerate: 'AI生成新卡片内容？',
+      submit: '提交',
+      // Error messages
+      deckNameInUse: '卡组名称已被使用',
+      invalidSubjects: '"科目"输入无效',
+      fillAllAndPaste: '请填写所有必填项并粘贴YouTube链接！',
+      pasteBeforeSubmit: '请先粘贴YouTube链接再提交！',
+      fillAll: '请填写所有必填项！',
+      // Modal messages
+      helpModalText: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。',
+      aiHelpModalText: '勾选此项将让AI生成与上传内容无关的新建议卡片。',
+      useRecentFormEntry: ['使用最近的', '表单记录？'],
+      greatSubmit: '太棒了！😊 是否确认提交？',
+      leaveConfirmation: ['确定要离开吗？', '所有进度将丢失'],
+      // Network and error messages
+      networkError: '网络错误。请检查您的连接并重试。',
+      transcriptsDisabled: '此视频的字幕已禁用。',
+      noTranscriptFound: '未找到此视频的任何语言字幕。',
+      videoUnavailable: '视频不可用（私人、已删除或地区/年龄限制）。',
+      requestBlocked: '请求被YouTube阻止（可能IP被封禁）。',
+      transcriptFetchFailed: '无法从YouTube获取字幕。',
+      // Background task messages
+      creatingDeck: '创建卡组',
+      creatingDeckInBackground: '正在后台创建您的卡组',
+      failedToStartBackgroundTask: '启动后台任务失败',
     },
     // Awards strings
     goals: '目标',

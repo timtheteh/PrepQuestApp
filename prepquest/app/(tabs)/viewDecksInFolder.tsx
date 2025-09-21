@@ -36,6 +36,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
+import { formatDate as formatDateUtil } from '@/utils/dateFormat';
 
 const SCREEN_TRANSITION_DURATION = 200;
 const SHIFT_DISTANCE = 40; // Distance to shift content down (increased for better spacing)
@@ -314,20 +315,10 @@ export default function ViewDecksInFolderScreen() {
     }
   }, [folderId, folderTitle, folderTitleFromDb, sourcePage, setCurrentFolderId, setCurrentFolderTitle, setCurrentSourcePage]);
 
-  // Helper function to format date
+  // Helper function to format date using utility
   const formatDate = useCallback((dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[date.getMonth()];
-      const day = date.getDate();
-      const year = date.getFullYear();
-      return `${month} ${day}, ${year}`;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateString; // Return original string if parsing fails
-    }
-  }, []);
+    return formatDateUtil(dateString, language);
+  }, [language]);
 
 
   const handleBackPress = useCallback(() => {

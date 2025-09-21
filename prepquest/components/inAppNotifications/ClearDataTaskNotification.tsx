@@ -196,11 +196,11 @@ export const ClearDataTaskNotification: React.FC<ClearDataTaskNotificationProps>
   // Determine the message
   const getMessage = () => {
     if (!isSuccess) {
-      return language === 'Chinese' ? '清除过程中出现错误' : 'An error occurred during clear data';
+      return strings[language].clearDataTaskNotification.errorOccurredDuringClearData;
     }
     
     // Get message from multiple possible sources
-    const message = (language === 'Chinese' ? '本地存储数据已成功清除!' : 'Local storage data successfully cleared!');
+    const message = strings[language].clearDataTaskNotification.localStorageDataSuccessfullyCleared;
     
     return message;
   };
@@ -227,8 +227,8 @@ export const ClearDataTaskNotification: React.FC<ClearDataTaskNotificationProps>
           <View style={styles.textContainer}>
             <Text style={styles.title}>
               {isSuccess 
-                ? (language === 'Chinese' ? '清除完成！' : 'Clear Data Completed!')
-                : (language === 'Chinese' ? '清除失败' : 'Clear Data Failed')
+                ? strings[language].clearDataTaskNotification.clearDataCompleted
+                : strings[language].clearDataTaskNotification.clearDataFailed
               }
             </Text>
             <Text style={styles.message}>
@@ -239,7 +239,7 @@ export const ClearDataTaskNotification: React.FC<ClearDataTaskNotificationProps>
         {isSuccess && onViewResults && (
           <TouchableOpacity style={styles.viewButton} onPress={handleViewResults}>
             <Text style={styles.viewButtonText}>
-              {language === 'Chinese' ? '查看' : 'View'}
+              {strings[language].clearDataTaskNotification.view}
             </Text>
           </TouchableOpacity>
         )}

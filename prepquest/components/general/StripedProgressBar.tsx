@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, Text, Easing } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 
 interface StripedProgressBarProps {
   progress: number; // 0-100
@@ -25,6 +27,7 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
   immediateProgress = false,
 }) => {
   const { theme } = useTheme();
+  const { language } = useLanguage();
   const colors = Colors[theme];
   
   const animationValue = useRef(new Animated.Value(0)).current;
@@ -79,7 +82,7 @@ export const StripedProgressBar: React.FC<StripedProgressBarProps> = ({
   const getProgressLabel = () => {
     const percentage = Math.round(progress);
     if (currentItems !== undefined && totalItems !== undefined) {
-      return `${percentage}% (${currentItems}/${totalItems} items uploaded)`;
+      return `${percentage}% (${currentItems}/${totalItems} ${strings[language].progressBar.itemsUploaded})`;
     }
     return `${percentage}%`;
   };

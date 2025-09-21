@@ -26,6 +26,7 @@ import LottieView from 'lottie-react-native';
 import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck, getDeckNameById } from '../db/decks';
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 import * as mammoth from 'mammoth';
 import * as FileSystem from 'expo-file-system';
 import NotificationService from '@/utils/notifications';
@@ -749,7 +750,7 @@ const FileUploadMainSection = ({
         )}
         <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
           {isUploadSuccess 
-            ? `${uploadType === 'image' ? (language === 'Chinese' ? '图片' : 'Image') : (language === 'Chinese' ? '文件' : 'File')} ${language === 'Chinese' ? '上传成功！' : 'uploaded successfully!'}\n${uploadType === 'file' ? (language === 'Chinese' ? `文件：${uploadedFileName}` : `File: ${uploadedFileName}`) : ''}`
+            ? `${uploadType === 'image' ? strings[language].fileUploadPage.imageUploadedSuccessfully : strings[language].fileUploadPage.fileUploadedSuccessfully}\n${uploadType === 'file' ? `${strings[language].fileUploadPage.fileWithColon}${uploadedFileName}` : ''}`
             : STRINGS.supportedFiles[language]
           }
         </Text>
@@ -1383,8 +1384,8 @@ export default function FileUploadPage() {
             try {
               await BackgroundService.start(fileUploadDeckCreationBackgroundTask, {
                 taskName: 'GenAIDeckCreation',
-                taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
-                taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+                taskTitle: strings[language].fileUploadPage.creatingDeck,
+                taskDesc: strings[language].fileUploadPage.creatingDeckInBackground,
                 taskIcon: { name: 'ic_launcher', type: 'mipmap' },
                 color: '#44B88A',
                 parameters: {
@@ -1868,8 +1869,8 @@ export default function FileUploadPage() {
       try {
         await BackgroundService.start(fileUploadDeckCreationBackgroundTask, {
           taskName: 'GenAIDeckCreation',
-          taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
-          taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+          taskTitle: strings[language].fileUploadPage.creatingDeck,
+          taskDesc: strings[language].fileUploadPage.creatingDeckInBackground,
           taskIcon: { name: 'ic_launcher', type: 'mipmap' },
           color: '#44B88A',
           parameters: {
@@ -1880,7 +1881,7 @@ export default function FileUploadPage() {
       } catch (error) {
         console.error('Failed to start background task (file upload):', error);
         setShowStatusPage(false);
-        Alert.alert('Error', 'Failed to start background task');
+        Alert.alert(strings[language].error, strings[language].fileUploadPage.failedToStartBackgroundTask);
         return;
       }
 
@@ -1977,7 +1978,7 @@ export default function FileUploadPage() {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!');
+        alert(strings[language].fileUploadPage.cameraRollPermissionsNeeded);
         return;
       }
 
@@ -2026,7 +2027,7 @@ export default function FileUploadPage() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      alert('Error selecting image. Please try again.');
+      alert(strings[language].fileUploadPage.errorSelectingImage);
     }
   };
 
@@ -2036,7 +2037,7 @@ export default function FileUploadPage() {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       
       if (status !== 'granted') {
-        alert('Sorry, we need camera permissions to make this work!');
+        alert(strings[language].fileUploadPage.cameraPermissionsNeeded);
         return;
       }
 
@@ -2085,7 +2086,7 @@ export default function FileUploadPage() {
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-      alert('Error taking photo. Please try again.');
+      alert(strings[language].fileUploadPage.errorTakingPhoto);
     }
   };
 
@@ -2107,7 +2108,7 @@ export default function FileUploadPage() {
         
         if (!supportedExtensions.includes(fileExtension)) {
           setShowToast(true);
-          setToastMessage(language === 'Chinese' ? '不支持的文件类型' : 'Invalid file type');
+          setToastMessage(strings[language].fileUploadPage.invalidFileType);
           return;
         }
         
@@ -2225,7 +2226,7 @@ export default function FileUploadPage() {
       }
     } catch (error) {
       console.error('Error picking document:', error);
-      alert('Error selecting file. Please try again.');
+      alert(strings[language].fileUploadPage.errorSelectingFile);
       setIsFileUploading(false);
       setUploadProgress(0);
     }
@@ -2245,15 +2246,15 @@ export default function FileUploadPage() {
     return (
       <DeckCreationStatusPage
         statusRows={[
-          { done: statusExtractingInformationFromFiles, label: statusExtractingInformationFromFiles ? (language === 'Chinese' ? '成功提取信息' : 'Successfully extracted\ninfo from file') : (language === 'Chinese' ? '正在提取信息' : 'Extracting info\nfrom file') },
-          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
+          { done: statusExtractingInformationFromFiles, label: statusExtractingInformationFromFiles ? strings[language].deckCreationStatusPage.successfullyExtractedInfoFromFile : strings[language].deckCreationStatusPage.extractingInfoFromFile },
+          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? strings[language].deckCreationStatusPage.successfullyGeneratedFlashcards : strings[language].deckCreationStatusPage.generatingFlashcards },
           { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards
             ? (isInViewFlashcardsPage
-                ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
-                : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+                ? strings[language].deckCreationStatusPage.successfullyAddedFlashcardsToDeck
+                : strings[language].deckCreationStatusPage.successfullyAddedFlashcardsAndDeck)
             : (isInViewFlashcardsPage
-                ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
-                : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck')) }        ]}
+                ? strings[language].deckCreationStatusPage.addingFlashcardsToDeck
+                : strings[language].deckCreationStatusPage.addingFlashcardsAndDeck) }        ]}
         isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
         onCancel={async () => {
           cancelCreationRef.current = true;

@@ -442,7 +442,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
           marginTop: 20,
           color: colors.unselectedText
         }]}>
-          {isLoading ? strings[language].loading : 'Preparing animation...'}
+          {isLoading ? strings[language].loading : strings[language].preparingAnimation}
         </Text>
       </View>
     );
@@ -491,7 +491,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
               textAlign: 'center',
               color: colors.unselectedText
             }]}>
-              Preparing animation...
+              {strings[language].preparingAnimation}
             </Text>
           </View>
         )}

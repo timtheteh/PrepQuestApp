@@ -20,6 +20,7 @@ import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import { checkDeckNameExists, saveUserYouTubeLinkFormEntry, getMostRecentYouTubeLinkFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck , getDeckNameById } from '../db/decks';
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import DeckCreationStatusPage from './deckCreationStatusPage';
 import BackgroundService from 'react-native-background-actions';
@@ -46,47 +47,8 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-// Add language mappings for all user-facing strings
-const STRINGS = {
-  mandatory: { English: 'Mandatory', Chinese: '必填' },
-  youtubeLink: { English: 'YouTube Link', Chinese: 'YouTube链接' },
-  deckName: { English: ' Deck Name', Chinese: '卡组名称' },
-  study: { English: 'Study', Chinese: '学习' },
-  interview: { English: 'Interview', Chinese: '面试' },
-  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
-  educationLevel: { English: '1. Education Level?', Chinese: '1. 教育程度？' },
-  educationLevelPH: { English: 'e.g. Freshman, Sophomore, etc', Chinese: '例如：大一，大二等' },
-  educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
-  subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
-  subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
-  subjectsHelper: { English: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.', Chinese: '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。' },
-  jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
-  jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
-  jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
-  numQuestions: { English: '3. Number of questions:', Chinese: '3. 题目数量：' },
-  pasteLinkHere: { English: 'Paste Link Here', Chinese: '在此粘贴链接' },
-  pasteYoutubeLink: { English: 'Paste your YouTube Link here!', Chinese: '请在此粘贴您的YouTube链接！' },
-  aiGenerate: { English: 'AI Generate new card content?', Chinese: 'AI生成新卡片内容？' },
-  submit: { English: 'Submit', Chinese: '提交' },
-  deckNameInUse: { English: 'Deckname already in use', Chinese: '卡组名称已被使用' },
-  invalidSubjects: { English: "Invalid form input for 'Subject(s)'", Chinese: '“科目”输入无效' },
-  fillAllAndPaste: { English: 'Fill up all mandatory fields and paste your Youtube Link!', Chinese: '请填写所有必填项并粘贴YouTube链接！' },
-  pasteBeforeSubmit: { English: 'Paste your Youtube Link before submitting!', Chinese: '请先粘贴YouTube链接再提交！' },
-  fillAll: { English: 'Fill up all mandatory fields!', Chinese: '请填写所有必填项！' },
-  helpModal: { English: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.", Chinese: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。' },
-  aiHelpModal: { English: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.', Chinese: '勾选此项将让AI生成与上传内容无关的新建议卡片。' },
-  useRecent: { English: ['Use most recent', 'form entry?'], Chinese: ['使用最近的', '表单记录？'] },
-  greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
-  leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
-  networkError: { English: 'Network error!', Chinese: '网络错误。请检查您的连接并重试。' },
-  transcriptsDisabled: { English: 'Transcripts are disabled for this video.', Chinese: '此视频的字幕已禁用。' },
-  noTranscriptFound: { English: 'No transcript found for this video in any language.', Chinese: '未找到此视频的任何语言字幕。' },
-  videoUnavailable: { English: 'The video is unavailable (private, removed, or region/age restricted).', Chinese: '视频不可用（私人、已删除或地区/年龄限制）。' },
-  requestBlocked: { English: 'Request blocked by YouTube (possible IP ban).', Chinese: '请求被YouTube阻止（可能IP被封禁）。' },
-  transcriptFetchFailed: { English: 'Failed to fetch transcript from YouTube.', Chinese: '无法从YouTube获取字幕。' },
-};
 
-const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { youtubeLink: string; setYoutubeLink: (text: string) => void; language: 'English' | 'Chinese' }) => {
+const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { youtubeLink: string; setYoutubeLink: (text: string) => void; language: string }) => {
   return (
     <View style={styles.youtubeLinkMainSection}>
       <View style={styles.youtubeImageContainer}>
@@ -98,7 +60,7 @@ const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { you
       <View style={styles.textAreaContainer}>
         <TextInput
           style={styles.textArea}
-          placeholder={STRINGS.pasteLinkHere[language]}
+          placeholder={strings[language].youtubeLinkPage.pasteLinkHere}
           placeholderTextColor="#D5D4DD"
           multiline={true}
           numberOfLines={4}
@@ -316,25 +278,24 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
           
           // Determine the specific error message to show
           let transcriptErrorMessage = '';
-          const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
-          switch (errorMessage) {
-            case 'TRANSCRIPTS_DISABLED':
-              transcriptErrorMessage = STRINGS.transcriptsDisabled[lang];
-              break;
-            case 'NO_TRANSCRIPT_FOUND':
-              transcriptErrorMessage = STRINGS.noTranscriptFound[lang];
-              break;
-            case 'VIDEO_UNAVAILABLE':
-              transcriptErrorMessage = STRINGS.videoUnavailable[lang];
-              break;
-            case 'REQUEST_BLOCKED':
-              transcriptErrorMessage = STRINGS.requestBlocked[lang];
-              break;
-            case 'TRANSCRIPT_FETCH_FAILED':
-              transcriptErrorMessage = STRINGS.transcriptFetchFailed[lang];
-              break;
-            default:
-              transcriptErrorMessage = STRINGS.transcriptFetchFailed[lang];
+              switch (errorMessage) {
+                case 'TRANSCRIPTS_DISABLED':
+                  transcriptErrorMessage = strings[language].youtubeLinkPage.transcriptsDisabled;
+                  break;
+                case 'NO_TRANSCRIPT_FOUND':
+                  transcriptErrorMessage = strings[language].youtubeLinkPage.noTranscriptFound;
+                  break;
+                case 'VIDEO_UNAVAILABLE':
+                  transcriptErrorMessage = strings[language].youtubeLinkPage.videoUnavailable;
+                  break;
+                case 'REQUEST_BLOCKED':
+                  transcriptErrorMessage = strings[language].youtubeLinkPage.requestBlocked;
+                  break;
+                case 'TRANSCRIPT_FETCH_FAILED':
+                  transcriptErrorMessage = strings[language].youtubeLinkPage.transcriptFetchFailed;
+                  break;
+                default:
+                  transcriptErrorMessage = strings[language].youtubeLinkPage.transcriptFetchFailed;
           }
           
           // Check if app is in background and send notification immediately
@@ -901,7 +862,6 @@ export default function YouTubeLinkPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
-  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const getTopBarAccountHeight = useTopBarAccountHeight();
   const { 
     startBackgroundTaskMonitoring, 
@@ -1088,8 +1048,8 @@ export default function YouTubeLinkPage() {
             try {
               await BackgroundService.start(youtubeLinkDeckCreationBackgroundTask, {
                 taskName: 'GenAIDeckCreation',
-                taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
-                taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+                taskTitle: strings[language].youtubeLinkPage.creatingDeck,
+                taskDesc: strings[language].youtubeLinkPage.creatingDeckInBackground,
                 taskIcon: { name: 'ic_launcher', type: 'mipmap' },
                 color: '#44B88A',
                 parameters: {
@@ -1271,7 +1231,7 @@ export default function YouTubeLinkPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage(STRINGS.deckNameInUse[lang]);
+        setToastMessage(strings[language].youtubeLinkPage.deckNameInUse);
         return false;
       }
     }
@@ -1291,28 +1251,28 @@ export default function YouTubeLinkPage() {
       
       if (hasEmptySubjects || hasInvalidSubjects) {
         setShowToast(true);
-        setToastMessage(STRINGS.invalidSubjects[lang]);
+        setToastMessage(strings[language].youtubeLinkPage.invalidSubjects);
         return false;
       }
     }
 
     // Error 1: mandatory fields not filled up and youtube link not filled up
     if (!mandatoryFieldsFilled && !youtubeLinkFilled) {
-      setErrorMessage(STRINGS.fillAllAndPaste[lang]);
+      setErrorMessage(strings[language].youtubeLinkPage.fillAllAndPaste);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 2: mandatory fields filled up but youtube link not filled up
     if (mandatoryFieldsFilled && !youtubeLinkFilled) {
-      setErrorMessage(STRINGS.pasteBeforeSubmit[lang]);
+      setErrorMessage(strings[language].youtubeLinkPage.pasteBeforeSubmit);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 3: mandatory fields not filled up but youtube link is filled up
     if (!mandatoryFieldsFilled && youtubeLinkFilled) {
-      setErrorMessage(STRINGS.fillAll[lang]);
+      setErrorMessage(strings[language].youtubeLinkPage.fillAll);
       setIsErrorModalOpen(true);
       return false;
     }
@@ -1434,8 +1394,8 @@ export default function YouTubeLinkPage() {
       try {
         await BackgroundService.start(youtubeLinkDeckCreationBackgroundTask, {
           taskName: 'GenAIDeckCreation',
-          taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
-          taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+          taskTitle: strings[language].youtubeLinkPage.creatingDeck,
+          taskDesc: strings[language].youtubeLinkPage.creatingDeckInBackground,
           taskIcon: { name: 'ic_launcher', type: 'mipmap' },
           color: '#44B88A',
           parameters: {
@@ -1447,7 +1407,7 @@ export default function YouTubeLinkPage() {
       } catch (error) {
         console.error('Failed to start background task (youtube link):', error);
         setShowStatusPage(false);
-        Alert.alert('Error', 'Failed to start background task');
+        Alert.alert(strings[language].error, strings[language].youtubeLinkPage.failedToStartBackgroundTask);
         return;
       }
 
@@ -1607,15 +1567,15 @@ export default function YouTubeLinkPage() {
     return (
       <DeckCreationStatusPage
         statusRows={[
-          { done: statusFetchingTranscript, label: statusFetchingTranscript ? (language === 'Chinese' ? '文字稿已获取' : 'Transcript fetched') : (language === 'Chinese' ? '正在获取YouTube文字稿' : 'Fetching youtube transcript') },
-          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards') : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards') },
+          { done: statusFetchingTranscript, label: statusFetchingTranscript ? strings[language].deckCreationStatusPage.transcriptFetched : strings[language].deckCreationStatusPage.fetchingYoutubeTranscript },
+          { done: statusGeneratingFlashcards, label: statusGeneratingFlashcards ? strings[language].deckCreationStatusPage.successfullyGeneratedFlashcards : strings[language].deckCreationStatusPage.generatingFlashcards },
           { done: statusAddingDeckAndFlashcards, label: statusAddingDeckAndFlashcards
             ? (isInViewFlashcardsPage
-                ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
-                : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+                ? strings[language].deckCreationStatusPage.successfullyAddedFlashcardsToDeck
+                : strings[language].deckCreationStatusPage.successfullyAddedFlashcardsAndDeck)
             : (isInViewFlashcardsPage
-                ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
-                : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck')) }        ]}
+                ? strings[language].deckCreationStatusPage.addingFlashcardsToDeck
+                : strings[language].deckCreationStatusPage.addingFlashcardsAndDeck) }        ]}
         isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
         onCancel={async () => {
           cancelCreationRef.current = true;
@@ -1722,8 +1682,8 @@ export default function YouTubeLinkPage() {
       <View style={styles.mainContainer}>
       <View style={styles.toggleContainer}>
           <RoundedContainer 
-            leftLabel={STRINGS.mandatory[lang]}
-            rightLabel={STRINGS.youtubeLink[lang]}
+            leftLabel={strings[language].youtubeLinkPage.mandatory}
+            rightLabel={strings[language].youtubeLinkPage.youtubeLink}
             onToggle={handleToggle}
           />
         </View>
@@ -1749,17 +1709,17 @@ export default function YouTubeLinkPage() {
             {isMandatory && (
               <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
                 {!isInViewFlashcardsPage && (<TitleTextBar
-                  title={STRINGS.deckName[lang]}
-                  highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
-                  placeholder={STRINGS.typeHere[lang]}
+                  title={strings[language].youtubeLinkPage.deckName}
+                  highlightedWord={mode === 'study' ? strings[language].youtubeLinkPage.study : strings[language].youtubeLinkPage.interview}
+                  placeholder={strings[language].youtubeLinkPage.typeHere}
                   value={deckName}
                   onChangeText={setDeckName}
                 />)
                 }
                 {isInViewFlashcardsPage === 'true' && (
                   <TitleTextBar
-                    title={STRINGS.deckName[lang]}
-                    highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
+                    title={strings[language].youtubeLinkPage.deckName}
+                    highlightedWord={mode === 'study' ? strings[language].youtubeLinkPage.study : strings[language].youtubeLinkPage.interview}
                     placeholder={deckTitle}
                     value={deckTitle}
                     onChangeText={() => {}} // Disabled - no-op function
@@ -1769,29 +1729,29 @@ export default function YouTubeLinkPage() {
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
-                      label={STRINGS.educationLevel[lang]}
-                      placeholder={STRINGS.educationLevelPH[lang]}
+                      label={strings[language].youtubeLinkPage.educationLevel}
+                      placeholder={strings[language].youtubeLinkPage.educationLevelPlaceholder}
                       value={studyMandatoryQuestion1}
                       onChangeText={setStudyMandatoryQuestion1}
-                      helperText={STRINGS.educationLevelHelper[lang]}
+                      helperText={strings[language].youtubeLinkPage.educationLevelHelper}
                     />
                     <QuestionTextBar
-                      label={STRINGS.subjects[lang]}
-                      placeholder={STRINGS.subjectsPH[lang]}
+                      label={strings[language].youtubeLinkPage.subjects}
+                      placeholder={strings[language].youtubeLinkPage.subjectsPlaceholder}
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText={STRINGS.subjectsHelper[lang]}
+                      helperText={strings[language].youtubeLinkPage.subjectsHelper}
                     />
                   </>
                 )}
                 {mode !== 'study' && (
                   <>
                     <QuestionTextBar
-                      label={STRINGS.jobRole[lang]}
-                      placeholder={STRINGS.jobRolePH[lang]}
+                      label={strings[language].youtubeLinkPage.jobRole}
+                      placeholder={strings[language].youtubeLinkPage.jobRolePlaceholder}
                       value={interviewMandatoryQuestion1}
                       onChangeText={setInterviewMandatoryQuestion1}
-                      helperText={STRINGS.jobRoleHelper[lang]}
+                      helperText={strings[language].youtubeLinkPage.jobRoleHelper}
                     />
                     <TypeOfInterviewQn
                       value={interviewType}
@@ -1800,7 +1760,7 @@ export default function YouTubeLinkPage() {
                   </>
                 )}
                 <NumberOfQuestions
-                  title={STRINGS.numQuestions[lang]}
+                  title={strings[language].youtubeLinkPage.numberOfQuestions}
                   value={numberOfQuestions}
                   onValueChange={setNumberOfQuestions}
                 />
@@ -1830,15 +1790,15 @@ export default function YouTubeLinkPage() {
             >
               <View>
                 <Text style={styles.youtubeLinkTitle}>
-                  {STRINGS.pasteYoutubeLink[lang]}
+                  {strings[language].youtubeLinkPage.pasteYoutubeLink}
                 </Text>
-                <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={lang} />
+                <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={language} />
                 <View style={styles.aiGenerateRow}>
                   <SmallCircleSelectButton
                     selected={isAIGenerate}
                     onPress={() => setIsAIGenerate(!isAIGenerate)}
                   />
-                  <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
+                  <Text style={styles.aiGenerateText}>{strings[language].youtubeLinkPage.aiGenerate}</Text>
                   <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
                     <HelpIconOutline width={24} height={24} />
                   </TouchableOpacity>
@@ -1852,7 +1812,7 @@ export default function YouTubeLinkPage() {
           { bottom: bottomOffset }
         ]}>
           <ActionButton
-            text={STRINGS.submit[lang]}
+            text={strings[language].youtubeLinkPage.submit}
             backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
             onPress={handleSubmit}
             disabled={isSubmitDisabled()}
@@ -1869,7 +1829,7 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text={STRINGS.helpModal[lang]}
+        text={strings[language].youtubeLinkPage.helpModalText}
         buttons='none'
         textStyle={{
           highlightWord: "our website",
@@ -1880,14 +1840,14 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isAIHelpModalOpen}
         opacity={aiHelpModalOpacity}
-        text={STRINGS.aiHelpModal[lang]}
+        text={strings[language].youtubeLinkPage.aiHelpModalText}
         buttons='none'
         Icon={HelpIconFilled}
       />
       <GenericModal
         visible={isRecentFormModalOpen}
         opacity={recentFormModalOpacity}
-        text={STRINGS.useRecent[lang]}
+        text={strings[language].youtubeLinkPage.useRecentFormEntry}
         buttons='double'
         onConfirm={handleLoadMostRecentForm}
         onCancel={handleDismissRecentForm}
@@ -1902,7 +1862,7 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isSuccessModalOpen}
         opacity={successModalOpacity}
-        text={STRINGS.greatSubmit[lang]}
+        text={strings[language].youtubeLinkPage.greatSubmit}
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
@@ -1910,7 +1870,7 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isBackConfirmationModalOpen}
         opacity={backConfirmationModalOpacity}
-        text={STRINGS.leaveConfirm[lang]}
+        text={strings[language].youtubeLinkPage.leaveConfirmation}
         buttons="double"
         onCancel={handleDismissBackConfirmation}
         onConfirm={() => {
@@ -1941,7 +1901,7 @@ export default function YouTubeLinkPage() {
       <GenericModal
         visible={isNetworkErrorModalOpen}
         opacity={networkErrorModalOpacity}
-        text={STRINGS.networkError[lang]}
+        text={strings[language].youtubeLinkPage.networkError}
         buttons="single"
         onConfirm={handleDismissNetworkErrorModal}
         Icon={DeleteModalIcon}

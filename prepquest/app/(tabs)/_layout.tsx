@@ -500,7 +500,7 @@ export default function TabLayout() {
           Icon={DeleteModalIcon}
           text={strings[language].deleteDecksConfirmation}
           textStyle={{
-            highlightWord: language === 'Chinese' ? '删除' : 'delete',
+            highlightWord: strings[language].highlightWords.delete,
             highlightColor: '#D7191C'
           }}
           buttons="double"
@@ -626,7 +626,7 @@ export default function TabLayout() {
           Icon={DeleteModalIcon}
           text={strings[language].unfavoriteConfirmation}
           textStyle={{
-            highlightWord: language === 'Chinese' ? '取消收藏' : 'unfavorite',
+            highlightWord: strings[language].highlightWords.unfavorite,
             highlightColor: '#D7191C'
           }}
           buttons="double"
@@ -654,7 +654,7 @@ export default function TabLayout() {
           Icon={DeleteModalIcon}
           text={strings[language].deleteDeckConfirmation}
           textStyle={{
-            highlightWord: language === 'Chinese' ? '删除' : 'delete',
+            highlightWord: strings[language].highlightWords.delete,
             highlightColor: '#D7191C'
           }}
           buttons="double"
@@ -686,7 +686,7 @@ export default function TabLayout() {
           Icon={DeleteModalIcon}
           text={strings[language].deleteFolderConfirmation}
           textStyle={{
-            highlightWord: language === 'Chinese' ? '删除' : 'delete',
+            highlightWord: strings[language].highlightWords.delete,
             highlightColor: '#D7191C'
           }}
           buttons="double"

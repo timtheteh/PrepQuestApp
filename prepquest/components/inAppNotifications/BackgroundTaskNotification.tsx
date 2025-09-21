@@ -242,34 +242,34 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
         if (transcriptErrorMessage) {
           return transcriptErrorMessage;
         }
-        return language === 'Chinese' ? 'YouTube字幕获取失败' : 'YouTube transcript fetch failed';
+        return strings[language].backgroundTaskNotification.youtubeTranscriptFetchFailed;
       }
       
       // Check if this is a network error
       const isNetworkError = backgroundTaskProgress?.networkError || notificationData?.networkError;
       if (isNetworkError) {
-        return language === 'Chinese' ? '网络错误，任务已取消' : 'Network error occurred, task cancelled';
+        return strings[language].backgroundTaskNotification.networkErrorTaskCancelled;
       }
       
       // Check if this is an automatic cancellation (30-second timeout)
       const isAutomaticCancellation = backgroundTaskProgress?.automaticallyCancelled || notificationData?.automaticallyCancelled;
       if (isAutomaticCancellation) {
-        return language === 'Chinese' ? '任务已取消（超时）' : 'Task cancelled (timeout)';
+        return strings[language].backgroundTaskNotification.taskCancelledTimeout;
       }
       
       // Check if this is a manual cancellation
       const isManualCancellation = backgroundTaskProgress?.manuallyCancelled || notificationData?.manuallyCancelled;
       if (isManualCancellation) {
-        return language === 'Chinese' ? '任务已取消' : 'Task cancelled';
+        return strings[language].backgroundTaskNotification.taskCancelled;
       }
       
       // Check if this is a general cancellation
       const isCancelled = backgroundTaskProgress?.cancelled || backgroundTaskProgress?.networkErrorCancelled;
       if (isCancelled) {
-        return language === 'Chinese' ? '任务已取消' : 'Task cancelled';
+        return strings[language].backgroundTaskNotification.taskCancelled;
       }
       
-      return language === 'Chinese' ? '创建过程中出现错误' : 'An error occurred during creation';
+      return strings[language].backgroundTaskNotification.errorOccurredDuringCreation;
     }
     
     // Get deck name from multiple possible sources
@@ -286,14 +286,10 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
     
     if (isInViewFlashcardsPage) {
       // Flashcards were added to existing deck
-      return language === 'Chinese' 
-        ? `闪卡已为"${deckName}"创建`
-        : `Flashcards created for "${deckName}"`;
+      return strings[language].backgroundTaskNotification.flashcardsCreatedFor.replace('{deckName}', deckName);
     } else {
       // New deck was created (from index, favorites, or viewDecksInFolder pages)
-      return language === 'Chinese' 
-        ? `卡组"${deckName}"已创建`
-        : `Deck created for "${deckName}"`;
+      return strings[language].backgroundTaskNotification.deckCreatedFor.replace('{deckName}', deckName);
     }
   };
 
@@ -324,8 +320,8 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             <View style={styles.textContainer}>
             <Text style={styles.title}>
               {isSuccess 
-                ? (language === 'Chinese' ? '任务完成！' : 'Task Completed!')
-                : (language === 'Chinese' ? '任务失败' : 'Task Failed')
+                ? strings[language].backgroundTaskNotification.taskCompleted
+                : strings[language].backgroundTaskNotification.taskFailed
               }
             </Text>
             <Text style={styles.message}>
@@ -336,7 +332,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
         {isSuccess && onViewResults && (
           <TouchableOpacity style={styles.viewButton} onPress={handleViewResults}>
             <Text style={styles.viewButtonText}>
-              {language === 'Chinese' ? '查看' : 'View'}
+              {strings[language].backgroundTaskNotification.view}
             </Text>
           </TouchableOpacity>
         )}

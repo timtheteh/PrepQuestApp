@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { formatDate as formatDateUtil } from '@/utils/dateFormat';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -442,25 +443,9 @@ export default function FoldersScreen() {
     }
   }, [isSearching, isSelectMode]);
 
-  // Helper function to format date
+  // Helper function to format date using utility
   const formatDate = useCallback((dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      if (language === 'Chinese') {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        return `${year}年${month}月${day}日`;
-      } else {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const month = months[date.getMonth()];
-        const day = date.getDate();
-        const year = date.getFullYear();
-        return `${month} ${day}, ${year}`;
-      }
-    } catch (error) {
-      return dateString; // Return original string if parsing fails
-    }
+    return formatDateUtil(dateString, language);
   }, [language]);
 
   // Sort function for folders

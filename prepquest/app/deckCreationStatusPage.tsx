@@ -179,24 +179,24 @@ export default function DeckCreationStatusPage({
           {
             done: statusExtractingInfo,
             label: statusExtractingInfo
-              ? (language === 'Chinese' ? '成功提取信息' : 'Successfully extracted\ninfo from file')
-              : (language === 'Chinese' ? '正在提取信息' : 'Extracting info\nfrom file')
+              ? strings[language].deckCreationStatusPage.successfullyExtractedInfoFromFile
+              : strings[language].deckCreationStatusPage.extractingInfoFromFile
           },
           {
             done: statusGeneratingFlashcards,
             label: statusGeneratingFlashcards
-              ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards')
-              : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards')
+              ? strings[language].deckCreationStatusPage.successfullyGeneratedFlashcards
+              : strings[language].deckCreationStatusPage.generatingFlashcards
           },
           {
             done: statusAddingDeckAndFlashcards,
             label: statusAddingDeckAndFlashcards
               ? (inView
-                  ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
-                  : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+                  ? strings[language].deckCreationStatusPage.successfullyAddedFlashcardsToDeck
+                  : strings[language].deckCreationStatusPage.successfullyAddedFlashcardsAndDeck)
               : (inView
-                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
-                  : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck'))
+                  ? strings[language].deckCreationStatusPage.addingFlashcardsToDeck
+                  : strings[language].deckCreationStatusPage.addingFlashcardsAndDeck)
           }
         ];
       } else if (isYouTubeLinkTask) {
@@ -215,24 +215,24 @@ export default function DeckCreationStatusPage({
           {
             done: statusTranscriptFetched,
             label: statusTranscriptFetched
-              ? (language === 'Chinese' ? '文字稿已获取' : 'Transcript fetched')
-              : (language === 'Chinese' ? '正在获取YouTube文字稿' : 'Fetching youtube transcript')
+              ? strings[language].deckCreationStatusPage.transcriptFetched
+              : strings[language].deckCreationStatusPage.fetchingYoutubeTranscript
           },
           {
             done: statusGeneratingFlashcards,
             label: statusGeneratingFlashcards
-              ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards')
-              : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards')
+              ? strings[language].deckCreationStatusPage.successfullyGeneratedFlashcards
+              : strings[language].deckCreationStatusPage.generatingFlashcards
           },
           {
             done: statusAddingDeckAndFlashcards,
             label: statusAddingDeckAndFlashcards
               ? (inView
-                  ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
-                  : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+                  ? strings[language].deckCreationStatusPage.successfullyAddedFlashcardsToDeck
+                  : strings[language].deckCreationStatusPage.successfullyAddedFlashcardsAndDeck)
               : (inView
-                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
-                  : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck'))
+                  ? strings[language].deckCreationStatusPage.addingFlashcardsToDeck
+                  : strings[language].deckCreationStatusPage.addingFlashcardsAndDeck)
           }
         ];
       } else {
@@ -250,23 +250,23 @@ export default function DeckCreationStatusPage({
         newStatusRows = [
           {
             done: statusRequestReceived,
-            label: language === 'Chinese' ? '请求已收到' : 'Request received'
+            label: strings[language].deckCreationStatusPage.requestReceived
           },
           {
             done: statusGeneratingFlashcards,
             label: statusGeneratingFlashcards
-              ? (language === 'Chinese' ? '成功生成闪卡' : 'Successfully generated\nflashcards')
-              : (language === 'Chinese' ? '正在生成闪卡' : 'Generating flashcards')
+              ? strings[language].deckCreationStatusPage.successfullyGeneratedFlashcards
+              : strings[language].deckCreationStatusPage.generatingFlashcards
           },
           {
             done: statusAddingDeckAndFlashcards,
             label: statusAddingDeckAndFlashcards
               ? (inView
-                  ? (language === 'Chinese' ? '已添加闪卡到卡组' : 'Successfully Added\nflashcards to deck')
-                  : (language === 'Chinese' ? '成功添加闪卡和卡组' : 'Successfully added\nflashcards and deck'))
+                  ? strings[language].deckCreationStatusPage.successfullyAddedFlashcardsToDeck
+                  : strings[language].deckCreationStatusPage.successfullyAddedFlashcardsAndDeck)
               : (inView
-                  ? (language === 'Chinese' ? '正在添加闪卡到卡组' : 'Adding flashcards\nto deck')
-                  : (language === 'Chinese' ? '正在添加闪卡和卡组' : 'Adding flashcards\nand deck'))
+                  ? strings[language].deckCreationStatusPage.addingFlashcardsToDeck
+                  : strings[language].deckCreationStatusPage.addingFlashcardsAndDeck)
           }
         ];
       }

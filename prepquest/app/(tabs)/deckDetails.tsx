@@ -1619,7 +1619,7 @@ export default function DeckDetailsScreen() {
         value={editText}
         onChangeText={setEditText}
         onDone={handleDoneEdit}
-        placeholder="Edit deck name..."
+        placeholder={strings[language].editDeckNamePlaceholder}
       />
       <Toast
         visible={showToast}

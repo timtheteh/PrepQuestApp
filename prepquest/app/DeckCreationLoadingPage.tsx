@@ -21,12 +21,6 @@ interface DeckCreationLoadingPageProps {
 
 
 
-// Add language mappings for all user-facing strings
-const STRINGS = {
-  deckOnWay: { English: 'Your fantastic deck is\non its way!', Chinese: '你的精彩卡组正在生成！' },
-  flashcardsOnWay: { English: 'Your flashcards are\non their way!', Chinese: '你的卡片正在生成！' },
-  flashcardsGenerated: { English: '{current} out of {total} Flashcards generated', Chinese: '已生成 {current}/{total} 张卡片' },
-};
 
 export default function DeckCreationLoadingPage({
   progress = 0,
@@ -37,7 +31,6 @@ export default function DeckCreationLoadingPage({
   onMinimize,
 }: DeckCreationLoadingPageProps) {
   const { language } = useLanguage();
-  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const { backgroundTaskProgress } = useBackgroundTask();
   const router = useRouter();
   // Derive progress from background task if available (manual add)
@@ -117,7 +110,7 @@ export default function DeckCreationLoadingPage({
         {/* Text and progress below */}
         <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
           <Text style={styles.title}>
-            {isInViewFlashcardsPage ? STRINGS.flashcardsOnWay[lang] : STRINGS.deckOnWay[lang]}
+            {isInViewFlashcardsPage ? strings[language].deckCreationLoadingPage.flashcardsOnWay : strings[language].deckCreationLoadingPage.deckOnWay}
           </Text>
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBarBg}>
@@ -133,11 +126,9 @@ export default function DeckCreationLoadingPage({
             </View>
           </View>
           <Text style={styles.percentText}>{percent}%</Text>
-          <Text style={styles.countText}>{
-            lang === 'Chinese'
-              ? STRINGS.flashcardsGenerated[lang].replace('{current}', String(effectiveCurrent)).replace('{total}', String(effectiveTotal))
-              : `${effectiveCurrent} out of ${effectiveTotal} Flashcards generated`
-          }</Text>
+          <Text style={styles.countText}>
+            {strings[language].deckCreationLoadingPage.flashcardsGenerated.replace('{current}', String(effectiveCurrent)).replace('{total}', String(effectiveTotal))}
+          </Text>
         </View>
       </View>
     </View>

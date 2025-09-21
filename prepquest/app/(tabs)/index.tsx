@@ -25,6 +25,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
+import { formatDate as formatDateUtil } from '@/utils/dateFormat';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -238,26 +239,9 @@ export default function DecksScreen() {
     }, [])
   );
 
-  // Helper function to format date
+  // Helper function to format date using utility
   const formatDate = useCallback((dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      if (language === 'Chinese') {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        return `${year}年${month}月${day}日`;
-      } else {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const month = months[date.getMonth()];
-        const day = date.getDate();
-        const year = date.getFullYear();
-        return `${month} ${day}, ${year}`;
-      }
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateString; // Return original string if parsing fails
-    }
+    return formatDateUtil(dateString, language);
   }, [language]);
 
   // Function to handle favorite/unfavorite deck

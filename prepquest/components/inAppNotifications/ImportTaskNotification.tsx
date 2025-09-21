@@ -202,13 +202,13 @@ export const ImportTaskNotification: React.FC<ImportTaskNotificationProps> = ({
     if (!isSuccess) {
       // Check if it's a network error
       if (notificationData?.isNetworkError) {
-        return language === 'Chinese' ? '糟糕，导入因网络错误而取消！' : 'Oops import has cancelled due to a network error!';
+        return strings[language].importTaskNotification.oopsImportCancelledNetworkError;
       }
-      return language === 'Chinese' ? '导入过程中出现错误' : 'An error occurred during import';
+      return strings[language].importTaskNotification.errorOccurredDuringImport;
     }
     
     // Get message from multiple possible sources
-    const message = (language === 'Chinese' ? '数据已成功从云端导入!' : 'Data successfully imported from cloud!');
+    const message = strings[language].importTaskNotification.dataSuccessfullyImportedFromCloud;
     
     return message;
   };
@@ -235,10 +235,10 @@ export const ImportTaskNotification: React.FC<ImportTaskNotificationProps> = ({
           <View style={styles.textContainer}>
             <Text style={styles.title}>
               {isSuccess 
-                ? (language === 'Chinese' ? '导入完成！' : 'Import Completed!')
+                ? strings[language].importTaskNotification.importCompleted
                 : notificationData?.isNetworkError
-                  ? (language === 'Chinese' ? '导入已取消！' : 'Import cancelled!')
-                  : (language === 'Chinese' ? '导入失败' : 'Import Failed')
+                  ? strings[language].importTaskNotification.importCancelled
+                  : strings[language].importTaskNotification.importFailed
               }
             </Text>
             <Text style={styles.message}>
@@ -249,7 +249,7 @@ export const ImportTaskNotification: React.FC<ImportTaskNotificationProps> = ({
         {isSuccess && onViewResults && (
           <TouchableOpacity style={styles.viewButton} onPress={handleViewResults}>
             <Text style={styles.viewButtonText}>
-              {language === 'Chinese' ? '查看' : 'View'}
+              {strings[language].importTaskNotification.view}
             </Text>
           </TouchableOpacity>
         )}

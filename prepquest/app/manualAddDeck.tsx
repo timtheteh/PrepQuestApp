@@ -26,6 +26,7 @@ import { Toast } from '../components/general/Toast';
 import DeckCreationLoadingPage from './DeckCreationLoadingPage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import BackgroundService from 'react-native-background-actions';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
@@ -145,13 +146,13 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-const ManualAddDeckMainSection = () => {
+const ManualAddDeckMainSection = ({ language }: { language: string }) => {
   return (
     <View style={styles.manualAddDeckMainSection}>
       <View style={styles.textAreaContainer}>
         <TextInput
           style={styles.textArea}
-          placeholder="Type your content here"
+          placeholder={strings[language].manualAddDeckPage.typeYourContentHere}
           placeholderTextColor="#D5D4DD"
           multiline={true}
           numberOfLines={4}
@@ -172,57 +173,6 @@ async function getCurrentUserID(): Promise<string> {
   }
 }
 
-// Add language mappings for all user-facing strings
-const STRINGS = {
-  mandatory: { English: 'Mandatory', Chinese: '必填' },
-  manual: { English: 'Manual', Chinese: '手动添加' },
-  deckName: { English: ' Deck Name', Chinese: '卡组名称' },
-  study: { English: 'Study', Chinese: '学习' },
-  interview: { English: 'Interview', Chinese: '面试' },
-  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
-  educationLevel: { English: '1. Education Level?', Chinese: '1. 教育程度？' },
-  educationLevelPH: { English: 'e.g. Freshman, Sophomore, etc', Chinese: '例如：大一，大二等' },
-  educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
-  subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
-  subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
-  subjectsHelper: { English: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.', Chinese: '这个卡组适用于哪些科目？请用逗号分隔，例如：无机化学，有机化学等。' },
-  exam: { English: '3. Exam/Quiz?', Chinese: '3. 考试/测验？' },
-  examPH: { English: 'e.g. SAT, GRE, IB, A-Levels etc.', Chinese: '例如：SAT，GRE，IB，A-Levels等' },
-  examHelper: { English: 'What exam or quiz would this deck be for?', Chinese: '这个卡组适用于哪些考试或测验？' },
-  jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
-  jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
-  jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
-  experienceLevel: { English: '3. Experience Level?', Chinese: '3. 经验水平？' },
-  experienceLevelPH: { English: 'e.g. Mid-Level, Senior, etc', Chinese: '例如：中级，高级等' },
-  experienceLevelHelper: { English: 'What experience level is your interview for?', Chinese: '你的面试是针对什么经验水平？' },
-  submitFormWithCards: { English: 'Submit Form With Cards?', Chinese: '提交表单和卡片？' },
-  moveToNextCard: { English: 'Move To\nNext Card?', Chinese: '移动到\n下一张卡片？' },
-  select: { English: 'Select', Chinese: '选择' },
-  selectAll: { English: 'Select All', Chinese: '全选' },
-  cancel: { English: 'Cancel', Chinese: '取消' },
-  noFlashcards: { English: 'No flashcards added\nat the moment!', Chinese: '当前没有添加卡片！' },
-  inProgress: { English: 'In Progress...', Chinese: '进行中...' },
-  image: { English: '<Image>', Chinese: '<图片>' },
-  voice: { English: '<Voice Recording>', Chinese: '<语音录音>' },
-  drawing: { English: '<Drawing>', Chinese: '<绘图>' },
-  deckNameInUse: { English: 'Deckname already in use', Chinese: '卡组名称已被使用' },
-  invalidSubjects: { English: "Invalid form input for 'Subject(s)'", Chinese: '“科目"输入无效' },
-  fillAllAndAdd: { English: 'Fill up all mandatory fields\nand add your cards before submitting!', Chinese: '请填写所有必填项并添加卡片后再提交！' },
-  addBeforeSubmit: { English: 'Add your card(s)\nbefore submitting!', Chinese: '请先添加卡片再提交！' },
-  fillAll: { English: 'Fill up all mandatory fields and all QA pairs for your cards!', Chinese: '请填写所有必填项和所有卡片的问答对！' },
-  missingQA: { English: 'You have missing question/answer\ndata for card', Chinese: '第' },
-  helpModal: { English: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.", Chinese: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。' },
-  aiHelpModal: { English: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.', Chinese: '勾选此项将让AI生成与上传内容无关的新建议卡片。' },
-  useRecent: { English: ['Use most recent', 'form entry?'], Chinese: ['使用最近的', '表单记录？'] },
-  greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
-  leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
-  noSelection: { English: 'No selection made!', Chinese: '未选择任何卡片！' },
-  selectAtLeastOne: { English: 'Select at least one flashcard to delete.', Chinese: '请至少选择一张卡片进行删除。' },
-  delete: { English: 'delete', Chinese: '删除' },
-  areYouSureDelete: { English: 'Are you sure you want to delete', Chinese: '确定要删除' },
-  flashcard: { English: 'flashcard', Chinese: '张卡片' },
-  flashcards: { English: 'flashcards', Chinese: '张卡片' },
-};
 
 export default function ManualAddDeckPage() {
   const { 
@@ -742,7 +692,7 @@ export default function ManualAddDeckPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage(STRINGS.deckNameInUse[lang]);
+        setToastMessage(strings[language].manualAddDeckPage.deckNameInUse);
         return false;
       }
     }
@@ -764,28 +714,28 @@ export default function ManualAddDeckPage() {
         
         if (hasEmptySubjects || hasInvalidSubjects) {
           setShowToast(true);
-          setToastMessage(STRINGS.invalidSubjects[lang]);
+          setToastMessage(strings[language].manualAddDeckPage.invalidSubjects);
           return false;
         }
       }
 
       // Error 1: mandatory fields not filled up and no cards
       if (!mandatoryFieldsFilled && !hasCards) {
-        setErrorMessage(STRINGS.fillAllAndAdd[lang]);
+        setErrorMessage(strings[language].manualAddDeckPage.fillAllAndAdd);
         setIsErrorModalOpen(true);
         return false;
       }
 
       // Error 2: mandatory fields filled up but no cards
       if (mandatoryFieldsFilled && !hasCards) {
-        setErrorMessage(STRINGS.addBeforeSubmit[lang]);
+        setErrorMessage(strings[language].manualAddDeckPage.addBeforeSubmit);
         setIsErrorModalOpen(true);
         return false;
       }
 
       // Error 3: mandatory fields not filled up but has cards
       if (!mandatoryFieldsFilled && hasCards) {
-        setErrorMessage(STRINGS.fillAll[lang]);
+        setErrorMessage(strings[language].manualAddDeckPage.fillAll);
         setIsErrorModalOpen(true);
         return false;
       }
@@ -805,7 +755,7 @@ export default function ManualAddDeckPage() {
         });
         if (incompleteCard) {
           setIncompleteCardNumber(incompleteCard.cardNumber);
-          setErrorMessage(`${STRINGS.missingQA[lang]}${incompleteCard.cardNumber}`);
+          setErrorMessage(`${strings[language].manualAddDeckPage.missingQA}${incompleteCard.cardNumber}`);
           setIsErrorModalOpen(true);
           return false;
         }
@@ -813,7 +763,7 @@ export default function ManualAddDeckPage() {
     }
     // Always check for cards and completeness first
     if (!hasCards) {
-      setErrorMessage(STRINGS.addBeforeSubmit[lang]);
+      setErrorMessage(strings[language].manualAddDeckPage.addBeforeSubmit);
       setIsErrorModalOpen(true);
       return false;
     }
@@ -830,7 +780,7 @@ export default function ManualAddDeckPage() {
       });
       if (incompleteCard) {
         setIncompleteCardNumber(incompleteCard.cardNumber);
-        setErrorMessage(`${STRINGS.missingQA[lang]}${incompleteCard.cardNumber}`);
+        setErrorMessage(`${strings[language].manualAddDeckPage.missingQA}${incompleteCard.cardNumber}`);
         setIsErrorModalOpen(true);
         return false;
       }
@@ -1381,21 +1331,21 @@ export default function ManualAddDeckPage() {
       if (textContent && textContent.length > 100) {
         return textContent.substring(0, 100) + '...';
       }
-      return textContent || STRINGS.inProgress[lang];
+      return textContent || strings[language].manualAddDeckPage.inProgress;
     }
 
     if (card.frontContent?.type === 'camera' && card.frontContent?.content) {
-      return STRINGS.image[lang]
+      return strings[language].manualAddDeckPage.image
     }
     if (card.frontContent?.type === 'mic' && card.frontContent?.audioUri) {
-      return STRINGS.voice[lang]
+      return strings[language].manualAddDeckPage.voice
     }
     if (card.frontContent?.type === 'marker' && card.frontContent?.content) {
-      return STRINGS.drawing[lang]
+      return strings[language].manualAddDeckPage.drawing
     }
     
     // Default to "Card X" for other content types
-    return STRINGS.inProgress[lang];
+    return strings[language].manualAddDeckPage.inProgress;
   };
 
   const extractTextFromContent = (content: React.ReactNode): string => {
@@ -1520,8 +1470,8 @@ export default function ManualAddDeckPage() {
         try {
           await BackgroundService.start(manualDeckCreationBackgroundTask as any, {
             taskName: 'GenAIDeckCreation',
-            taskTitle: language === 'Chinese' ? '创建卡组' : 'Creating Deck',
-            taskDesc: language === 'Chinese' ? '正在后台创建您的卡组' : 'Your deck is being created in the background.',
+            taskTitle: strings[language].manualAddDeckPage.creatingDeck,
+            taskDesc: strings[language].manualAddDeckPage.creatingDeckInBackground,
             taskIcon: { name: 'ic_launcher', type: 'mipmap' },
             color: '#44B88A',
             parameters: params,
@@ -1993,8 +1943,8 @@ export default function ManualAddDeckPage() {
           {/* Only show RoundedContainer if not in view flashcards */}
           {!forceManual && (
             <RoundedContainer 
-              leftLabel={STRINGS.mandatory[lang]}
-              rightLabel={STRINGS.manual[lang]}
+              leftLabel={strings[language].manualAddDeckPage.mandatory}
+              rightLabel={strings[language].manualAddDeckPage.manual}
               onToggle={handleToggle}
             />
           )}
@@ -2037,9 +1987,9 @@ export default function ManualAddDeckPage() {
               <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
               {!isInViewFlashcardsPage && (
                   <TitleTextBar
-                    title={STRINGS.deckName[lang]}
-                    highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
-                    placeholder={STRINGS.typeHere[lang]}
+                    title={strings[language].manualAddDeckPage.deckName}
+                    highlightedWord={mode === 'study' ? strings[language].manualAddDeckPage.study : strings[language].manualAddDeckPage.interview}
+                    placeholder={strings[language].manualAddDeckPage.typeHere}
                     value={deckName}
                     onChangeText={setDeckName}
                   />
@@ -2047,47 +1997,47 @@ export default function ManualAddDeckPage() {
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
-                      label={STRINGS.educationLevel[lang]}
-                      placeholder={STRINGS.educationLevelPH[lang]}
+                      label={strings[language].manualAddDeckPage.educationLevel}
+                      placeholder={strings[language].manualAddDeckPage.educationLevelPlaceholder}
                       value={studyMandatoryQuestion1}
                       onChangeText={setStudyMandatoryQuestion1}
-                      helperText={STRINGS.educationLevelHelper[lang]}
+                      helperText={strings[language].manualAddDeckPage.educationLevelHelper}
                     />
                     <QuestionTextBar
-                      label={STRINGS.subjects[lang]}
-                      placeholder={STRINGS.subjectsPH[lang]}
+                      label={strings[language].manualAddDeckPage.subjects}
+                      placeholder={strings[language].manualAddDeckPage.subjectsPlaceholder}
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText={STRINGS.subjectsHelper[lang]}
+                      helperText={strings[language].manualAddDeckPage.subjectsHelper}
                     />
                     <QuestionTextBar
-                      label={STRINGS.exam[lang]}
-                      placeholder={STRINGS.examPH[lang]}
+                      label={strings[language].manualAddDeckPage.exam}
+                      placeholder={strings[language].manualAddDeckPage.examPlaceholder}
                       value={studyMandatoryQuestion3}
                       onChangeText={setStudyMandatoryQuestion3}
-                      helperText={STRINGS.examHelper[lang]}
+                      helperText={strings[language].manualAddDeckPage.examHelper}
                     />
                   </>
                 )}
                 {mode !== 'study' && (
                   <>
                     <QuestionTextBar
-                      label={STRINGS.jobRole[lang]}
-                      placeholder={STRINGS.jobRolePH[lang]}
+                      label={strings[language].manualAddDeckPage.jobRole}
+                      placeholder={strings[language].manualAddDeckPage.jobRolePlaceholder}
                       value={interviewMandatoryQuestion1}
                       onChangeText={setInterviewMandatoryQuestion1}
-                      helperText={STRINGS.jobRoleHelper[lang]}
+                      helperText={strings[language].manualAddDeckPage.jobRoleHelper}
                     />
                     <TypeOfInterviewQn
                       value={interviewType}
                       onValueChange={setInterviewType}
                     />
                     <QuestionTextBar
-                      label={STRINGS.experienceLevel[lang]}
-                      placeholder={STRINGS.experienceLevelPH[lang]}
+                      label={strings[language].manualAddDeckPage.experienceLevel}
+                      placeholder={strings[language].manualAddDeckPage.experienceLevelPlaceholder}
                       value={interviewMandatoryQuestion2}
                       onChangeText={setInterviewMandatoryQuestion2}
-                      helperText={STRINGS.experienceLevelHelper[lang]}
+                      helperText={strings[language].manualAddDeckPage.experienceLevelHelper}
                     />
                   </>
                 )}
@@ -2156,7 +2106,7 @@ export default function ManualAddDeckPage() {
                 const submittedCards = getSubmittedCards();
                 setSelectedFlashcards(submittedCards.map(card => card.cardNumber));
               }}>
-                <Text style={styles.selectAllText}>{STRINGS.selectAll[lang]}</Text>
+                <Text style={styles.selectAllText}>{strings[language].manualAddDeckPage.selectAll}</Text>
               </TouchableOpacity>
               <CircleIconButton
                 iconName="trash"
@@ -2167,7 +2117,7 @@ export default function ManualAddDeckPage() {
                 setSelectExpanded(false);
                 setSelectedFlashcards([]);
               }}>
-                <Text style={styles.cancelText}>{STRINGS.cancel[lang]}</Text>
+                <Text style={styles.cancelText}>{strings[language].manualAddDeckPage.cancel}</Text>
               </TouchableOpacity>
             </Animated.View>
           ) : (
@@ -2180,7 +2130,7 @@ export default function ManualAddDeckPage() {
                 <Text style={[
                   styles.selectText,
                   getSubmittedCards().length === 0 && styles.selectTextDisabled
-                ]}>{STRINGS.select[lang]}</Text>
+                ]}>{strings[language].manualAddDeckPage.select}</Text>
               </TouchableOpacity>
             </Animated.View>
           )
@@ -2195,7 +2145,7 @@ export default function ManualAddDeckPage() {
                 loop
                 style={styles.emptyStateAnimation}
               />
-              <Text style={styles.emptyStateText}>{STRINGS.noFlashcards[lang]}</Text>
+              <Text style={styles.emptyStateText}>{strings[language].manualAddDeckPage.noFlashcards}</Text>
             </View>
           ) : (
             <ScrollView 
@@ -2257,7 +2207,7 @@ export default function ManualAddDeckPage() {
         ]}>
           {isMandatory ? (
             <ActionButton
-              text={STRINGS.submitFormWithCards[lang]}
+              text={strings[language].manualAddDeckPage.submitFormWithCards}
               backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
@@ -2266,14 +2216,14 @@ export default function ManualAddDeckPage() {
           ) : addViewState === 'add' ? (
             <View style={{ flexDirection: 'row', gap: 8, width: '100%', paddingHorizontal: 16}}>
               <ActionButton
-                text={STRINGS.submitFormWithCards[lang]}
+                text={strings[language].manualAddDeckPage.submitFormWithCards}
                 backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled()}
                 style={{ flex: 1 }}
               />
               <ActionButton
-                text={STRINGS.moveToNextCard[lang]}
+                text={strings[language].manualAddDeckPage.moveToNextCard}
                 backgroundColor={hasCardContent ? "#44B88A" : "#D5D4DD"}
                 style={{ flex: 1 }}
                 onPress={handleNextFlashcard}
@@ -2282,7 +2232,7 @@ export default function ManualAddDeckPage() {
             </View>
           ) : (
             <ActionButton
-              text={STRINGS.submitFormWithCards[lang]}
+              text={strings[language].manualAddDeckPage.submitFormWithCards}
               backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
@@ -2300,7 +2250,7 @@ export default function ManualAddDeckPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text={STRINGS.helpModal[lang]}
+        text={strings[language].manualAddDeckPage.helpModalText}
         buttons='none'
         textStyle={{
           highlightWord: "our website",
@@ -2311,7 +2261,7 @@ export default function ManualAddDeckPage() {
       <GenericModal
         visible={isAIHelpModalOpen}
         opacity={aiHelpModalOpacity}
-        text={STRINGS.aiHelpModal[lang]}
+        text={strings[language].fileUploadPage.aiHelpModal}
         buttons='none'
         Icon={HelpIconFilled}
       />
@@ -2319,7 +2269,7 @@ export default function ManualAddDeckPage() {
         visible={isDeleteModalOpen}
         opacity={deleteModalOpacity}
         Icon={DeleteModalIcon}
-        text={`${STRINGS.areYouSureDelete[lang]} ${selectedFlashcards.length} ${STRINGS.flashcard[lang]}${selectedFlashcards.length === 1 ? '' : STRINGS.flashcards[lang]}?`}
+        text={`${strings[language].manualAddDeckPage.areYouSureDelete} ${selectedFlashcards.length} ${strings[language].manualAddDeckPage.flashcard}${selectedFlashcards.length === 1 ? '' : strings[language].manualAddDeckPage.flashcards}?`}
         textStyle={{
           highlightWord: "delete",
           highlightColor: "#D7191C"
@@ -2345,7 +2295,7 @@ export default function ManualAddDeckPage() {
       <GenericModal
         visible={isRecentFormModalOpen}
         opacity={recentFormModalOpacity}
-        text={STRINGS.useRecent[lang]}
+        text={strings[language].manualAddDeckPage.useRecentFormEntry}
         buttons='double'
         onConfirm={async () => {
           try {
@@ -2392,7 +2342,7 @@ export default function ManualAddDeckPage() {
       <GenericModal
         visible={isContentTypeChangeModalOpen}
         opacity={contentTypeChangeModalOpacity}
-        text="Changing the content type will clear the current content on this side. Are you sure you want to continue?"
+        text={strings[language].manualAddDeckPage.changeContentTypeWarning}
         buttons="double"
         onCancel={handleDismissContentTypeChange}
         onConfirm={() => {
@@ -2427,7 +2377,7 @@ export default function ManualAddDeckPage() {
       <GenericModal
         visible={isBackConfirmationModalOpen}
         opacity={backConfirmationModalOpacity}
-        text={STRINGS.leaveConfirm[lang]}
+        text={strings[language].manualAddDeckPage.leaveConfirmation}
         buttons="double"
         onCancel={handleDismissBackConfirmation}
         onConfirm={() => {
@@ -2458,8 +2408,8 @@ export default function ManualAddDeckPage() {
       <GenericModal
         visible={isNoSelectionModalOpen}
         opacity={noSelectionModalOpacity}
-        subtitle={STRINGS.selectAtLeastOne[lang]}
-        text={STRINGS.noSelection[lang]}
+        subtitle={strings[language].manualAddDeckPage.selectAtLeastOne}
+        text={strings[language].manualAddDeckPage.noSelection}
         onConfirm={handleDismissNoSelection}
       />
       <GenericModal
@@ -2472,7 +2422,7 @@ export default function ManualAddDeckPage() {
       <GenericModal
         visible={isSuccessModalOpen}
         opacity={successModalOpacity}
-        text={STRINGS.greatSubmit[lang]}
+        text={strings[language].manualAddDeckPage.greatSubmit}
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}

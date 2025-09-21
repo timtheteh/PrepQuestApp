@@ -752,7 +752,7 @@ export default function SplashScreen({
     try {
       // Start the password reset flow with Clerk
       if (!signIn) {
-        showErrorToast('Sign in not available');
+        showErrorToast(strings[language].splash.signInNotAvailable);
         setIsResettingPassword(false);
         return;
       }
@@ -768,7 +768,7 @@ export default function SplashScreen({
       );
 
       if (!resetPasswordFactor) {
-        showErrorToast('Password reset not available for this email');
+        showErrorToast(strings[language].splash.passwordResetNotAvailable);
         setIsResettingPassword(false);
         return;
       }
@@ -817,7 +817,7 @@ export default function SplashScreen({
     }
 
     if (!pendingPasswordReset) {
-      showErrorToast('Password reset session expired');
+      showErrorToast(strings[language].splash.passwordResetSessionExpired);
       return;
     }
 
@@ -848,17 +848,17 @@ export default function SplashScreen({
   // Handle new password submission
   const handleSetNewPassword = useCallback(async () => {
     if (!newPassword.trim() || !confirmNewPassword.trim()) {
-      showErrorToast('Please fill in both password fields');
+      showErrorToast(strings[language].splash.pleaseFillBothPasswordFields);
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      showErrorToast('Passwords do not match');
+      showErrorToast(strings[language].splash.passwordsDoNotMatch);
       return;
     }
 
     if (!pendingPasswordReset) {
-      showErrorToast('Password reset session expired');
+      showErrorToast(strings[language].splash.passwordResetSessionExpired);
       return;
     }
 
@@ -899,7 +899,7 @@ export default function SplashScreen({
       setConfirmPassword('');
       
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || 'Failed to reset password';
+      const errorMessage = error.errors?.[0]?.message || strings[language].splash.failedToResetPassword;
       showErrorToast(errorMessage);
     }
   }, [newPassword, confirmNewPassword, pendingPasswordReset, showErrorToast, showSuccessToast, language, signOut, passwordResetFadeAnim]);

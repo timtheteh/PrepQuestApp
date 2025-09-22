@@ -1376,7 +1376,7 @@ export default function DecksScreen() {
                   iconNames={['folder', 'trash']}
                   onCancel={handleCancel}
                   onIconPress={handleActionIconPress}
-                  iconColors={['black', '#FF3B30']}
+                  iconColors={[Colors[theme].normalIconColor, '#FF3B30']}
                 />
               </Animated.View>
 

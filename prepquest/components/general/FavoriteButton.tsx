@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface FavoriteButtonProps {
   isSelectMode?: boolean;
@@ -17,6 +19,8 @@ export const FavoriteButton = React.memo(({
   onPress: externalOnPress,
   onFavoriteToggle
 }: FavoriteButtonProps) => {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const [internalFavorited, setInternalFavorited] = useState(false);
   
   // Use external state if provided, otherwise use internal state

@@ -81,20 +81,18 @@ export default function AccountScreen() {
   );
 
   const handleToggle = () => {
-    // Cycle through: system -> light -> dark -> system
+    // Direct toggle between light and dark, ignoring system mode
     let newThemeMode: ThemeMode;
-    if (isSystemTheme) {
-      newThemeMode = 'light';
-    } else if (theme === 'light') {
+    if (theme === 'light') {
       newThemeMode = 'dark';
     } else {
-      newThemeMode = 'system';
+      newThemeMode = 'light';
     }
     
     setThemeMode(newThemeMode);
     
     // Animate to the appropriate position with performance optimization
-    const targetValue = newThemeMode === 'system' ? (theme === 'dark' ? 0 : 1) : (newThemeMode === 'dark' ? 0 : 1);
+    const targetValue = newThemeMode === 'dark' ? 0 : 1;
     Animated.timing(buttonAnim, {
       toValue: targetValue,
       duration: animationConfig.duration,

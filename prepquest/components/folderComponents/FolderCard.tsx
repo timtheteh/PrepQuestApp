@@ -59,7 +59,7 @@ export const FolderCard = React.memo(({
 
   const dynamicStyles = {
     container: {
-      backgroundColor: Platform.OS === 'android' ? Colors[theme].androidSecondaryShade : Colors[theme].secondaryShade,
+      backgroundColor: Colors[theme].secondaryShade,
     },
     folderTitle: {
       color: Colors[theme].text,

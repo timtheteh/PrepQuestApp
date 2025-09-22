@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import Svg, { Path, G, Text as SvgText } from 'react-native-svg';
 import GaugeIcon from '../../assets/icons/statsIcons/gaugeIcon.svg';
+import GaugeIconDarkMode from '../../assets/icons/statsIcons/gaugeIconDarkMode.svg';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
@@ -55,6 +56,11 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
   const { language } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
+  
+  // Get the appropriate gauge icon based on theme
+  const getGaugeIcon = () => {
+    return theme === 'dark' ? GaugeIconDarkMode : GaugeIcon;
+  };
   // Use provided averageTime or default to 0 if no data
   const value = averageTime ?? 0;
   
@@ -143,7 +149,7 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
               transformOrigin: '6px 70px',
             }}
           >
-            <GaugeIcon width={40} height={100} />
+            {React.createElement(getGaugeIcon(), { width: 40, height: 100 })}
           </View>
         </View>
         {/* Value at bottom center - show actual value, not capped */}

@@ -28,3 +28,4 @@ export const formatDate = (dateString: string, language: string): string => {
     return dateString; // Return original string if parsing fails
   }
 };
+

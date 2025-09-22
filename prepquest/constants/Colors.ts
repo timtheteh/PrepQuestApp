@@ -27,6 +27,8 @@ export const Colors = {
     speedChartColor1: '#CBC7ED',
     speedChartColor2: '#8E85E3',
     speedChartColor3: '#685CDD',
+    loadingBarBgColor: '#FFFFFF',
+    cardTypePillBgColor: '#FFFFFF',
   },
   dark: {
     background: '#1D2428',
@@ -57,5 +59,7 @@ export const Colors = {
     speedChartColor1: '#FFA6B8',
     speedChartColor2: '#FF728F',
     speedChartColor3: '#FF0437',
+    loadingBarBgColor: '#000000',
+    cardTypePillBgColor: '#000000',
   },
 };

@@ -71,6 +71,8 @@ export default function DeckDetailsScreen() {
   } = useContext(MenuContext);
   const { language } = useLanguage();
   const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const colors = Colors[theme];
   const getTopBarTopHeight = useTopBarTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
@@ -1114,7 +1116,7 @@ export default function DeckDetailsScreen() {
     loadingBarBg: {
       height: 11,
       borderRadius: 13,
-      backgroundColor: Colors[theme].background,
+      backgroundColor: Colors[theme].loadingBarBgColor,
       overflow: 'hidden',
       justifyContent: 'center',
       width: '100%',
@@ -1375,7 +1377,7 @@ export default function DeckDetailsScreen() {
               style={styles.backButton}
               onPress={handleBackPress}
             >
-              <AntDesign name="arrowleft" size={32} color="black" />
+              <AntDesign name="arrowleft" size={32} color={Colors[theme].normalIconColor} />
             </TouchableOpacity>
           </View>
           
@@ -1407,37 +1409,91 @@ export default function DeckDetailsScreen() {
               </Text>
             </View>
           ) : (
-            <ImageBackground 
-              source={AIDeck || deckInfo?.isAIDeck === 1 ? deckDetailsAICardDesigns[safeBackgroundIndex] : deckDetailsCardDesigns[safeBackgroundIndex]}
-              style={styles.backgroundImage}
-              imageStyle={styles.backgroundImageStyle}
-            >
-              <ScrollView 
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollViewContent}
-                showsVerticalScrollIndicator={false}
-                ref={scrollViewRef}
-                removeClippedSubviews={animationConfig.isLowEndDevice}
-                scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
-                decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
-              >
-                <View style={styles.cardContentContainer}>
-                  {/* Only render content when we have valid deck data */}
-                  {deckInfo && (AIDeck && !isAIDeckSaved ? (
-                    // AI Deck Layout - 3 columns (only for unsaved AI decks)
-                    <View style={styles.aiDeckLayout}>
-                      {/* Column 1: Company Logo */}
-                      <View style={styles.aiDeckColumn1}>
-                        {cardCompanyLogo && (
-                          <Image source={cardCompanyLogo} style={styles.aiDeckCompanyLogo} />
-                        )}
+            isDark ? (
+              <View style={[
+                styles.backgroundImage,
+                {
+                  backgroundColor: Colors[theme].secondaryShade,
+                  borderRadius: 30
+                }
+              ]}>
+                <ScrollView 
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollViewContent}
+                  showsVerticalScrollIndicator={false}
+                  ref={scrollViewRef}
+                  removeClippedSubviews={animationConfig.isLowEndDevice}
+                  scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+                  decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+                >
+                  <View style={styles.cardContentContainer}>
+                    {/* Only render content when we have valid deck data */}
+                    {deckInfo && (AIDeck && !isAIDeckSaved ? (
+                      // AI Deck Layout - 3 columns (only for unsaved AI decks)
+                      <View style={styles.aiDeckLayout}>
+                        {/* Column 1: Company Logo */}
+                        <View style={styles.aiDeckColumn1}>
+                          {cardCompanyLogo && (
+                            <Image source={cardCompanyLogo} style={styles.aiDeckCompanyLogo} />
+                          )}
+                        </View>
+                        
+                        {/* Column 2: Title */}
+                        <View style={styles.aiDeckColumn2}>
+                          {deckTitle && (
+                            <Text 
+                              style={[styles.aiDeckTitle,
+                                /[\u4e00-\u9fff]/.test(deckTitle) && { paddingTop: 10 },
+                              ]}
+                              numberOfLines={2}
+                            >
+                              {deckTitle}
+                            </Text>
+                          )}
+                        </View>
+                        
+                        {/* Column 3: Card Type Pill and Flashcard Count */}
+                        <View style={styles.aiDeckColumn3}>
+                          {deckType && (
+                            <View style={[styles.aiDeckCardTypePill, { 
+                                borderColor: isDark ? 'transparent' : getCardTypeColor(cardType as string),
+                                borderWidth: isDark ? 0 : 2,
+                                backgroundColor: isDark ? colors.cardTypePillBgColor : colors.background
+                              }]}>
+                              <Text style={[styles.aiDeckCardTypeText, { color: isDark ? colors.text : '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
+                            </View>
+                          )}
+                          {cardFlashcardCount !== undefined && (
+                            <Text style={[styles.aiDeckFlashcardCount, {
+                              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+                            }]}>{cardFlashcardCount} {strings[language].cards}</Text>
+                          )}
+                        </View>
                       </View>
-                      
-                      {/* Column 2: Title */}
-                      <View style={styles.aiDeckColumn2}>
+                    ) : (
+                      // Regular Deck Layout - Original positioning (for regular decks and saved AI decks)
+                      <>
+                        {/* Company logo at top left */}
+                        {cardCompanyLogo && (
+                          <Image source={cardCompanyLogo} style={styles.cardIconImage} />
+                        )}
+
+                        <View 
+                          style={[
+                            styles.favoriteButtonContainer,
+                          ]}
+                        >
+                          <FavoriteButton 
+                            isSelectMode={false} 
+                            favorited={favoriteStatus}
+                            onPress={handleFavoriteToggle}
+                          />
+                        </View>
+                        
+                        {/* Title */}
                         {deckTitle && (
                           <Text 
-                            style={[styles.aiDeckTitle,
+                            style={[styles.cardTitle,
                               /[\u4e00-\u9fff]/.test(deckTitle) && { paddingTop: 10 },
                             ]}
                             numberOfLines={2}
@@ -1445,148 +1501,295 @@ export default function DeckDetailsScreen() {
                             {deckTitle}
                           </Text>
                         )}
-                      </View>
-                      
-                      {/* Column 3: Card Type Pill and Flashcard Count */}
-                      <View style={styles.aiDeckColumn3}>
-                        {deckType && (
-                          <View style={[styles.aiDeckCardTypePill, { borderColor: getCardTypeColor(cardType as string) }]}>
-                            <Text style={[styles.aiDeckCardTypeText, { color: '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
+                        
+                        {/* Date and Flashcard Count Row */}
+                        {(cardDate || cardFlashcardCount !== undefined) && (
+                          <View 
+                            style={[
+                              styles.dateFlashcardRow,
+                            ]}
+                          >
+                            {cardDate && (
+                              <Text style={styles.dateText}>{cardDate}</Text>
+                            )}
+                            {cardFlashcardCount !== undefined && (
+                              <Text style={styles.flashcardCountText}>{cardFlashcardCount} {strings[language].cards}</Text>
+                            )}
                           </View>
                         )}
-                        {cardFlashcardCount !== undefined && (
-                          <Text style={[styles.aiDeckFlashcardCount, {
-                            // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-                          }]}>{cardFlashcardCount} {strings[language].cards}</Text>
+                        
+                        {/* Card type pill */}
+                        {deckType && (
+                          <View style={[styles.cardTypePill, { 
+                                borderColor: isDark ? 'transparent' : getCardTypeColor(cardType as string),
+                                borderWidth: isDark ? 0 : 2,
+                                backgroundColor: isDark ? colors.cardTypePillBgColor : colors.background
+                              }]}>
+                            <Text style={[styles.cardTypeText, { color: isDark ? colors.text : '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
+                          </View>
                         )}
+                      </>
+                    ))}
+                    
+                    {/* Progress bar */}
+                    {deckInfo && cardPercent >= 0 && (!AIDeck || isAIDeckSaved) && (
+                      <View style={styles.progressRow}> 
+                        <View style={styles.loadingBarFlexWrapper}>
+                          <LoadingBar percent={cardPercent} />
+                        </View>
+                        <Text style={styles.progressLabel}>{cardPercent}% {strings[language].progress}</Text>
                       </View>
-                    </View>
-                  ) : (
-                    // Regular Deck Layout - Original positioning (for regular decks and saved AI decks)
-                    <>
-                      {/* Company logo at top left */}
-                      {cardCompanyLogo && (
-                        <Image source={cardCompanyLogo} style={styles.cardIconImage} />
-                      )}
+                    )}
+                  </View>
 
-                      <View 
-                        style={[
-                          styles.favoriteButtonContainer,
-                        ]}
-                      >
-                        <FavoriteButton 
-                          isSelectMode={false} 
-                          favorited={favoriteStatus}
-                          onPress={handleFavoriteToggle}
-                        />
-                      </View>
-                      
-                      {/* Title */}
-                      {deckTitle && (
-                        <Text 
-                          style={[styles.cardTitle,
-                            /[\u4e00-\u9fff]/.test(deckTitle) && { paddingTop: 10 },
-                          ]}
-                          numberOfLines={2}
-                        >
-                          {deckTitle}
+                    {/* Metadata Section */}
+                    {deckInfo && (
+                    <View style={[
+                      styles.metadataContainer,
+                      { marginTop: AIDeck && !isAIDeckSaved ? 20 : 130 }
+                    ]}>
+                      {renderMetadataRows()}
+                    </View>
+                    )}
+
+                    {/* Empty State or Stats Section (stacked below metadata) */}
+                    {hasAttemptedFlashcards === false ? (
+                      <View style={[styles.emptyStateContainer]}>
+                        <View style={styles.emptyStateAnimationsContainer}>
+                          {/* First animation - normal size, rotated 20° right */}
+                          <View style={styles.aiDeckAnimation1}>
+                            <LottieView
+                              source={require('@/assets/animations/EmptyState1.json')}
+                              autoPlay
+                              loop
+                              style={styles.aiDeckAnimation}
+                            />
+                          </View>
+                          {/* Second animation - 80% smaller, positioned top-left, rotated 30° left */}
+                          <View style={styles.aiDeckAnimation2}>
+                            <LottieView
+                              source={require('@/assets/animations/EmptyState1.json')}
+                              autoPlay
+                              loop
+                              style={[styles.aiDeckAnimation,]}
+                            />
+                          </View>
+                          {/* Third animation - 60% smaller, positioned top-right, rotated 10° right */}
+                          <View style={styles.aiDeckAnimation3}>
+                            <LottieView
+                              source={require('@/assets/animations/EmptyState1.json')}
+                              autoPlay
+                              loop
+                              style={[styles.aiDeckAnimation]}
+                            />
+                          </View>
+                        </View>
+                        {/* Stats message for all deck types */}
+                        <Text style={styles.aiDeckStatsMessage}>
+                          {strings[language].deckDetails.noStatsYet}
                         </Text>
-                      )}
-                      
-                      {/* Date and Flashcard Count Row */}
-                      {(cardDate || cardFlashcardCount !== undefined) && (
-                        <View 
-                          style={[
-                            styles.dateFlashcardRow,
-                          ]}
-                        >
-                          {cardDate && (
-                            <Text style={styles.dateText}>{cardDate}</Text>
+                      </View>
+                    ) : (
+                      // Stats for all deck types when flashcards have been attempted
+                      <View style={styles.cardDetailsContainer}>
+                        <AverageGradeThermometer score={deckGrade?.score}/>
+                        <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
+                        <AverageSpeedTotal averageTime={averageTime}/>
+                      </View>
+                    )}
+
+                </ScrollView>
+              </View>
+            ) : (
+              <ImageBackground 
+                source={AIDeck || deckInfo?.isAIDeck === 1 ? deckDetailsAICardDesigns[safeBackgroundIndex] : deckDetailsCardDesigns[safeBackgroundIndex]}
+                style={styles.backgroundImage}
+                imageStyle={styles.backgroundImageStyle}
+              >
+                <ScrollView 
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollViewContent}
+                  showsVerticalScrollIndicator={false}
+                  ref={scrollViewRef}
+                  removeClippedSubviews={animationConfig.isLowEndDevice}
+                  scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+                  decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+                >
+                  <View style={styles.cardContentContainer}>
+                    {/* Only render content when we have valid deck data */}
+                    {deckInfo && (AIDeck && !isAIDeckSaved ? (
+                      // AI Deck Layout - 3 columns (only for unsaved AI decks)
+                      <View style={styles.aiDeckLayout}>
+                        {/* Column 1: Company Logo */}
+                        <View style={styles.aiDeckColumn1}>
+                          {cardCompanyLogo && (
+                            <Image source={cardCompanyLogo} style={styles.aiDeckCompanyLogo} />
+                          )}
+                        </View>
+                        
+                        {/* Column 2: Title */}
+                        <View style={styles.aiDeckColumn2}>
+                          {deckTitle && (
+                            <Text 
+                              style={[styles.aiDeckTitle,
+                                /[\u4e00-\u9fff]/.test(deckTitle) && { paddingTop: 10 },
+                              ]}
+                              numberOfLines={2}
+                            >
+                              {deckTitle}
+                            </Text>
+                          )}
+                        </View>
+                        
+                        {/* Column 3: Card Type Pill and Flashcard Count */}
+                        <View style={styles.aiDeckColumn3}>
+                          {deckType && (
+                            <View style={[styles.aiDeckCardTypePill, { 
+                                borderColor: isDark ? 'transparent' : getCardTypeColor(cardType as string),
+                                borderWidth: isDark ? 0 : 2,
+                                backgroundColor: isDark ? colors.cardTypePillBgColor : colors.background
+                              }]}>
+                              <Text style={[styles.aiDeckCardTypeText, { color: isDark ? colors.text : '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
+                            </View>
                           )}
                           {cardFlashcardCount !== undefined && (
-                            <Text style={styles.flashcardCountText}>{cardFlashcardCount} {strings[language].cards}</Text>
+                            <Text style={[styles.aiDeckFlashcardCount, {
+                              // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+                            }]}>{cardFlashcardCount} {strings[language].cards}</Text>
                           )}
                         </View>
-                      )}
-                      
-                      {/* Card type pill */}
-                      {deckType && (
-                        <View style={[styles.cardTypePill, { borderColor: getCardTypeColor(cardType as string) }]}>
-                          <Text style={[styles.cardTypeText, { color: '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
-                        </View>
-                      )}
-                    </>
-                  ))}
-                  
-                  {/* Progress bar */}
-                  {deckInfo && cardPercent >= 0 && (!AIDeck || isAIDeckSaved) && (
-                    <View style={styles.progressRow}> 
-                      <View style={styles.loadingBarFlexWrapper}>
-                        <LoadingBar percent={cardPercent} />
                       </View>
-                      <Text style={styles.progressLabel}>{cardPercent}% {strings[language].progress}</Text>
-                    </View>
-                  )}
-                </View>
+                    ) : (
+                      // Regular Deck Layout - Original positioning (for regular decks and saved AI decks)
+                      <>
+                        {/* Company logo at top left */}
+                        {cardCompanyLogo && (
+                          <Image source={cardCompanyLogo} style={styles.cardIconImage} />
+                        )}
 
-                  {/* Metadata Section */}
-                  {deckInfo && (
-                  <View style={[
-                    styles.metadataContainer,
-                    { marginTop: AIDeck && !isAIDeckSaved ? 20 : 130 }
-                  ]}>
-                    {renderMetadataRows()}
+                        <View 
+                          style={[
+                            styles.favoriteButtonContainer,
+                          ]}
+                        >
+                          <FavoriteButton 
+                            isSelectMode={false} 
+                            favorited={favoriteStatus}
+                            onPress={handleFavoriteToggle}
+                          />
+                        </View>
+                        
+                        {/* Title */}
+                        {deckTitle && (
+                          <Text 
+                            style={[styles.cardTitle,
+                              /[\u4e00-\u9fff]/.test(deckTitle) && { paddingTop: 10 },
+                            ]}
+                            numberOfLines={2}
+                          >
+                            {deckTitle}
+                          </Text>
+                        )}
+                        
+                        {/* Date and Flashcard Count Row */}
+                        {(cardDate || cardFlashcardCount !== undefined) && (
+                          <View 
+                            style={[
+                              styles.dateFlashcardRow,
+                            ]}
+                          >
+                            {cardDate && (
+                              <Text style={styles.dateText}>{cardDate}</Text>
+                            )}
+                            {cardFlashcardCount !== undefined && (
+                              <Text style={styles.flashcardCountText}>{cardFlashcardCount} {strings[language].cards}</Text>
+                            )}
+                          </View>
+                        )}
+                        
+                        {/* Card type pill */}
+                        {deckType && (
+                          <View style={[styles.cardTypePill, { 
+                                borderColor: isDark ? 'transparent' : getCardTypeColor(cardType as string),
+                                borderWidth: isDark ? 0 : 2,
+                                backgroundColor: isDark ? colors.cardTypePillBgColor : colors.background
+                              }]}>
+                            <Text style={[styles.cardTypeText, { color: isDark ? colors.text : '#000' }]}>{getCardTypeLabel(cardType as string)}</Text>
+                          </View>
+                        )}
+                      </>
+                    ))}
+                    
+                    {/* Progress bar */}
+                    {deckInfo && cardPercent >= 0 && (!AIDeck || isAIDeckSaved) && (
+                      <View style={styles.progressRow}> 
+                        <View style={styles.loadingBarFlexWrapper}>
+                          <LoadingBar percent={cardPercent} />
+                        </View>
+                        <Text style={styles.progressLabel}>{cardPercent}% {strings[language].progress}</Text>
+                      </View>
+                    )}
                   </View>
-                  )}
 
-                  {/* Empty State or Stats Section (stacked below metadata) */}
-                  {hasAttemptedFlashcards === false ? (
-                    <View style={[styles.emptyStateContainer]}>
-                      <View style={styles.emptyStateAnimationsContainer}>
-                        {/* First animation - normal size, rotated 20° right */}
-                        <View style={styles.aiDeckAnimation1}>
-                          <LottieView
-                            source={require('@/assets/animations/EmptyState1.json')}
-                            autoPlay
-                            loop
-                            style={styles.aiDeckAnimation}
-                          />
+                    {/* Metadata Section */}
+                    {deckInfo && (
+                    <View style={[
+                      styles.metadataContainer,
+                      { marginTop: AIDeck && !isAIDeckSaved ? 20 : 130 }
+                    ]}>
+                      {renderMetadataRows()}
+                    </View>
+                    )}
+
+                    {/* Empty State or Stats Section (stacked below metadata) */}
+                    {hasAttemptedFlashcards === false ? (
+                      <View style={[styles.emptyStateContainer]}>
+                        <View style={styles.emptyStateAnimationsContainer}>
+                          {/* First animation - normal size, rotated 20° right */}
+                          <View style={styles.aiDeckAnimation1}>
+                            <LottieView
+                              source={require('@/assets/animations/EmptyState1.json')}
+                              autoPlay
+                              loop
+                              style={styles.aiDeckAnimation}
+                            />
+                          </View>
+                          {/* Second animation - 80% smaller, positioned top-left, rotated 30° left */}
+                          <View style={styles.aiDeckAnimation2}>
+                            <LottieView
+                              source={require('@/assets/animations/EmptyState1.json')}
+                              autoPlay
+                              loop
+                              style={[styles.aiDeckAnimation,]}
+                            />
+                          </View>
+                          {/* Third animation - 60% smaller, positioned top-right, rotated 10° right */}
+                          <View style={styles.aiDeckAnimation3}>
+                            <LottieView
+                              source={require('@/assets/animations/EmptyState1.json')}
+                              autoPlay
+                              loop
+                              style={[styles.aiDeckAnimation]}
+                            />
+                          </View>
                         </View>
-                        {/* Second animation - 80% smaller, positioned top-left, rotated 30° left */}
-                        <View style={styles.aiDeckAnimation2}>
-                          <LottieView
-                            source={require('@/assets/animations/EmptyState1.json')}
-                            autoPlay
-                            loop
-                            style={[styles.aiDeckAnimation,]}
-                          />
-                        </View>
-                        {/* Third animation - 60% smaller, positioned top-right, rotated 10° right */}
-                        <View style={styles.aiDeckAnimation3}>
-                          <LottieView
-                            source={require('@/assets/animations/EmptyState1.json')}
-                            autoPlay
-                            loop
-                            style={[styles.aiDeckAnimation]}
-                          />
-                        </View>
+                        {/* Stats message for all deck types */}
+                        <Text style={styles.aiDeckStatsMessage}>
+                          {strings[language].deckDetails.noStatsYet}
+                        </Text>
                       </View>
-                      {/* Stats message for all deck types */}
-                      <Text style={styles.aiDeckStatsMessage}>
-                        {strings[language].deckDetails.noStatsYet}
-                      </Text>
-                    </View>
-                  ) : (
-                    // Stats for all deck types when flashcards have been attempted
-                    <View style={styles.cardDetailsContainer}>
-                      <AverageGradeThermometer score={deckGrade?.score}/>
-                      <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
-                      <AverageSpeedTotal averageTime={averageTime}/>
-                    </View>
-                  )}
+                    ) : (
+                      // Stats for all deck types when flashcards have been attempted
+                      <View style={styles.cardDetailsContainer}>
+                        <AverageGradeThermometer score={deckGrade?.score}/>
+                        <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
+                        <AverageSpeedTotal averageTime={averageTime}/>
+                      </View>
+                    )}
 
-              </ScrollView>
-            </ImageBackground>
+                </ScrollView>
+              </ImageBackground>
+            )
           )}
           </View>
 
@@ -1600,7 +1803,7 @@ export default function DeckDetailsScreen() {
                   onPress={handleSavePress}
                   activeOpacity={0.8}
                 >
-                  <MaterialIcons name="save-alt" size={30} color="white" />
+                  <MaterialIcons name="save-alt" size={30} color={Colors[theme].contrastIconColor} />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -1608,7 +1811,7 @@ export default function DeckDetailsScreen() {
                 onPress={handleFabPress}
                 activeOpacity={0.8}
               >
-                <Ionicons name="eye" size={30} color="white" />
+                <Ionicons name="eye" size={30} color={Colors[theme].contrastIconColor} />
               </TouchableOpacity>
             </View>
           )}

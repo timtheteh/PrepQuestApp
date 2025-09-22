@@ -1040,7 +1040,7 @@ export default function ViewDecksInFolderScreen() {
               style={styles.backButton}
               onPress={handleBackPress}
             >
-              <AntDesign name="arrowleft" size={32} color="black" />
+              <AntDesign name="arrowleft" size={32} color={Colors[theme].normalIconColor} />
             </TouchableOpacity>
           </View>
           
@@ -1083,7 +1083,7 @@ export default function ViewDecksInFolderScreen() {
                    iconLibraries={['materialicons', 'ionicons']}
                    onCancel={handleCancel}
                    onIconPress={handleActionIconPress}
-                   iconColors={['black', '#FF3B30']}
+                   iconColors={[Colors[theme].normalIconColor, '#FF3B30']}
                  />
                </Animated.View>
 

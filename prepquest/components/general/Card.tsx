@@ -73,7 +73,7 @@ export const Card = React.memo(({
 }: CardProps) => {
   const router = useRouter();
   const { language } = useLanguage();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const colors = Colors[theme];
   const [isPressed, setIsPressed] = useState(false);
   const isLargeScreen = SCREEN_WIDTH > LARGE_SCREEN_THRESHOLD;
@@ -82,6 +82,7 @@ export const Card = React.memo(({
   const unselectPillAnim = useRef(new Animated.Value(isSelectMode ? 0 : 1)).current;
   const [showProgressRow, setShowProgressRow] = useState(showProgress);
   const progressAnim = useRef(new Animated.Value(showProgress ? 1 : 0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Get performance-based animation config
   const animationConfig = useMemo(() => getAnimationConfig(), []);
@@ -188,12 +189,38 @@ export const Card = React.memo(({
   const handlePressIn = () => {
     if (!isSelectMode) {
       setIsPressed(true);
+      
+      // In dark mode, animate scale to 0.95
+      if (isDark) {
+        if (animationConfig.instantMode) {
+          scaleAnim.setValue(0.95);
+        } else {
+          Animated.timing(scaleAnim, {
+            toValue: 0.95,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        }
+      }
     }
   };
 
   const handlePressOut = () => {
     if (!isSelectMode) {
       setIsPressed(false);
+      
+      // In dark mode, animate scale back to 1
+      if (isDark) {
+        if (animationConfig.instantMode) {
+          scaleAnim.setValue(1);
+        } else {
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        }
+      }
     }
   };
 
@@ -246,39 +273,42 @@ export const Card = React.memo(({
           onPress={handleCardPress}
         >
           <Animated.View style={[styles.container, containerStyle, style]}>
-            <ImageBackground 
-              source={isPressed && !isSelectMode ? pressedBackgroundImage : backgroundImage}
-              style={styles.imageBackground}
-              imageStyle={[
-                styles.backgroundImage,
-                { resizeMode: isLargeScreen ? 'stretch' : 'contain' }
-              ]}
-            >
-              <View style={styles.cardContentContainer}>
-                {/* Icon image at top left */}
-                {image && (
-                  <Image source={image} style={styles.cardIconImage} />
-                )}
-                {!image && isStudy && (
-                  <Image source={require('@/assets/companyIcons/StudyCardIcon.png')} style={styles.cardIconImage} />
-                )}
-                {!image && !isStudy && (
-                  <Image source={require('@/assets/companyIcons/companyDefaultIcon.png')} style={styles.cardIconImage} />
-                )}
-                {/* Favorite button at top right */}
-                <View 
-                  style={[
-                    styles.favoriteButtonContainer,
-                    isSelectMode && styles.favoriteButtonContainerSelectMode
-                  ]}
-                >
-                  <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
-                </View>
-                {/* Title */}
-                {title && (
+            {isDark ? (
+              <Animated.View 
+                style={[
+                  styles.darkModeBackground,
+                  { 
+                    backgroundColor: colors.secondaryShade,
+                    transform: [{ scale: scaleAnim }]
+                  }
+                ]}
+              >
+                <View style={styles.cardContentContainer}>
+                  {/* Icon image at top left */}
+                  {image && (
+                    <Image source={image} style={styles.cardIconImage} />
+                  )}
+                  {!image && isStudy && (
+                    <Image source={require('@/assets/companyIcons/StudyCardIcon.png')} style={styles.cardIconImage} />
+                  )}
+                  {!image && !isStudy && (
+                    <Image source={require('@/assets/companyIcons/companyDefaultIcon.png')} style={styles.cardIconImage} />
+                  )}
+                  {/* Favorite button at top right */}
+                  <View 
+                    style={[
+                      styles.favoriteButtonContainer,
+                      isSelectMode && styles.favoriteButtonContainerSelectMode
+                    ]}
+                  >
+                    <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
+                  </View>
+                  {/* Title */}
+                  {title && (
                   <Text 
                     style={[
                       styles.cardTitle,
+                      { color: colors.text },
                       isSelectMode && styles.cardTitleSelectMode,
                       /[\u4e00-\u9fff]/.test(title) && { paddingTop: 10 },
                     ]} 
@@ -286,67 +316,209 @@ export const Card = React.memo(({
                   >
                     {title}
                   </Text>
-                )}
-                {/* Date and Flashcard Count Row */}
-                {(date || flashcardCount !== undefined) && (
+                  )}
+                  {/* Date and Flashcard Count Row */}
+                  {(date || flashcardCount !== undefined) && (
+                    <View 
+                      style={[
+                        styles.dateFlashcardRow,
+                        isSelectMode && styles.dateFlashcardRowSelectMode
+                      ]}
+                    >
+                      {!isSelectMode && date && (
+                        <Text style={[styles.dateText, { color: colors.text }]}>{date}</Text>
+                      )}
+                      {flashcardCount !== undefined && (
+                        <Text style={[styles.flashcardCountText, {
+                          color: colors.text,
+                          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+                        }]}>{flashcardCount} {strings[language].cards}</Text>
+                      )}
+                    </View>
+                  )}
+                  {/* Animated card type pill crossfade */}
+                  {typeInfo && (
+                    <>
+                      {/* Unselected pill - always rendered when not in select mode */}
+                      {!isSelectMode && (
+                        <Animated.View
+                          pointerEvents="none"
+                          style={[
+                            styles.cardTypePill,
+                            styles.cardTypePillUnselected,
+                            isDark 
+                              ? { 
+                                  backgroundColor: colors.cardTypePillBgColor, 
+                                  borderWidth: 0,
+                                  opacity: unselectPillAnim 
+                                }
+                              : { 
+                                  borderColor: typeInfo.color, 
+                                  opacity: unselectPillAnim 
+                                }
+                          ]}
+                        >
+                          <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
+                        </Animated.View>
+                      )}
+                      {/* Selected pill - always rendered when in select mode */}
+                      {isSelectMode && (
+                        <Animated.View
+                          pointerEvents="none"
+                          style={[
+                            styles.cardTypePill,
+                            styles.cardTypePillSelected,
+                            isDark 
+                              ? { 
+                                  backgroundColor: colors.cardTypePillBgColor, 
+                                  borderWidth: 0,
+                                  opacity: selectPillAnim 
+                                }
+                              : { 
+                                  borderColor: typeInfo.color, 
+                                  opacity: selectPillAnim 
+                                }
+                          ]}
+                        >
+                          <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
+                        </Animated.View>
+                      )}
+                    </>
+                  )}
+                  {children}
+                  {showProgressRow && (
+                    <Animated.View style={[styles.progressRow, { opacity: progressAnim }]}> 
+                      <View style={styles.loadingBarFlexWrapper}>
+                        <LoadingBar percent={percent} language={language} colors={colors} />
+                      </View>
+                      <Text style={[styles.progressLabel, { color: colors.text }]}>{percent}% {strings[language].progress}</Text>
+                    </Animated.View>
+                  )}
+                </View>
+              </Animated.View>
+            ) : (
+              <ImageBackground 
+                source={isPressed && !isSelectMode ? pressedBackgroundImage : backgroundImage}
+                style={styles.imageBackground}
+                imageStyle={[
+                  styles.backgroundImage,
+                  { resizeMode: isLargeScreen ? 'stretch' : 'contain' }
+                ]}
+              >
+                <View style={styles.cardContentContainer}>
+                  {/* Icon image at top left */}
+                  {image && (
+                    <Image source={image} style={styles.cardIconImage} />
+                  )}
+                  {!image && isStudy && (
+                    <Image source={require('@/assets/companyIcons/StudyCardIcon.png')} style={styles.cardIconImage} />
+                  )}
+                  {!image && !isStudy && (
+                    <Image source={require('@/assets/companyIcons/companyDefaultIcon.png')} style={styles.cardIconImage} />
+                  )}
+                  {/* Favorite button at top right */}
                   <View 
                     style={[
-                      styles.dateFlashcardRow,
-                      isSelectMode && styles.dateFlashcardRowSelectMode
+                      styles.favoriteButtonContainer,
+                      isSelectMode && styles.favoriteButtonContainerSelectMode
                     ]}
                   >
-                    {!isSelectMode && date && (
-                      <Text style={styles.dateText}>{date}</Text>
-                    )}
-                    {flashcardCount !== undefined && (
-                      <Text style={[styles.flashcardCountText, {
-                        // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-                      }]}>{flashcardCount} {strings[language].cards}</Text>
-                    )}
+                    <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
                   </View>
-                )}
-                {/* Animated card type pill crossfade */}
-                {typeInfo && (
-                  <>
-                    {/* Unselected pill - always rendered when not in select mode */}
-                    {!isSelectMode && (
-                      <Animated.View
-                        pointerEvents="none"
-                        style={[
-                          styles.cardTypePill,
-                          styles.cardTypePillUnselected,
-                          { borderColor: typeInfo.color, opacity: unselectPillAnim }
-                        ]}
-                      >
-                        <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
-                      </Animated.View>
-                    )}
-                    {/* Selected pill - always rendered when in select mode */}
-                    {isSelectMode && (
-                      <Animated.View
-                        pointerEvents="none"
-                        style={[
-                          styles.cardTypePill,
-                          styles.cardTypePillSelected,
-                          { borderColor: typeInfo.color, opacity: selectPillAnim }
-                        ]}
-                      >
-                        <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
-                      </Animated.View>
-                    )}
-                  </>
-                )}
-              {children}
-                {showProgressRow && (
-                  <Animated.View style={[styles.progressRow, { opacity: progressAnim }]}> 
-                    <View style={styles.loadingBarFlexWrapper}>
-                      <LoadingBar percent={percent} language={language} colors={colors} />
+                  {/* Title */}
+                  {title && (
+                  <Text 
+                    style={[
+                      styles.cardTitle,
+                      { color: colors.text },
+                      isSelectMode && styles.cardTitleSelectMode,
+                      /[\u4e00-\u9fff]/.test(title) && { paddingTop: 10 },
+                    ]} 
+                    numberOfLines={2}
+                  >
+                    {title}
+                  </Text>
+                  )}
+                  {/* Date and Flashcard Count Row */}
+                  {(date || flashcardCount !== undefined) && (
+                    <View 
+                      style={[
+                        styles.dateFlashcardRow,
+                        isSelectMode && styles.dateFlashcardRowSelectMode
+                      ]}
+                    >
+                      {!isSelectMode && date && (
+                        <Text style={[styles.dateText, { color: colors.text }]}>{date}</Text>
+                      )}
+                      {flashcardCount !== undefined && (
+                        <Text style={[styles.flashcardCountText, {
+                          color: colors.text,
+                          // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
+                        }]}>{flashcardCount} {strings[language].cards}</Text>
+                      )}
                     </View>
-                    <Text style={styles.progressLabel}>{percent}% {strings[language].progress}</Text>
-                  </Animated.View>
-                )}
-              </View>
-            </ImageBackground>
+                  )}
+                  {/* Animated card type pill crossfade */}
+                  {typeInfo && (
+                    <>
+                      {/* Unselected pill - always rendered when not in select mode */}
+                      {!isSelectMode && (
+                        <Animated.View
+                          pointerEvents="none"
+                          style={[
+                            styles.cardTypePill,
+                            styles.cardTypePillUnselected,
+                            isDark 
+                              ? { 
+                                  backgroundColor: colors.cardTypePillBgColor, 
+                                  borderWidth: 0,
+                                  opacity: unselectPillAnim 
+                                }
+                              : { 
+                                  borderColor: typeInfo.color, 
+                                  opacity: unselectPillAnim 
+                                }
+                          ]}
+                        >
+                          <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
+                        </Animated.View>
+                      )}
+                      {/* Selected pill - always rendered when in select mode */}
+                      {isSelectMode && (
+                        <Animated.View
+                          pointerEvents="none"
+                          style={[
+                            styles.cardTypePill,
+                            styles.cardTypePillSelected,
+                            isDark 
+                              ? { 
+                                  backgroundColor: colors.cardTypePillBgColor, 
+                                  borderWidth: 0,
+                                  opacity: selectPillAnim 
+                                }
+                              : { 
+                                  borderColor: typeInfo.color, 
+                                  opacity: selectPillAnim 
+                                }
+                          ]}
+                        >
+                          <Text style={[styles.cardTypeText, { color: colors.text }]}>{typeInfo.label}</Text>
+                        </Animated.View>
+                      )}
+                    </>
+                  )}
+                  {children}
+                  {showProgressRow && (
+                    <Animated.View style={[styles.progressRow, { opacity: progressAnim }]}> 
+                      <View style={styles.loadingBarFlexWrapper}>
+                        <LoadingBar percent={percent} language={language} colors={colors} />
+                      </View>
+                      <Text style={[styles.progressLabel, { color: colors.text }]}>{percent}% {strings[language].progress}</Text>
+                    </Animated.View>
+                  )}
+                </View>
+              </ImageBackground>
+            )}
           </Animated.View>
         </Pressable>
       </View>
@@ -368,11 +540,11 @@ export const Card = React.memo(({
 const LoadingBar = React.memo(({ percent, language, colors }: { percent: number, language: string, colors: any }) => {
   const isComplete = percent === 100;
   return (
-    <View style={styles.loadingBarBg}>
+    <View style={[styles.loadingBarBg, { backgroundColor: colors.loadingBarBgColor }]}>
       <View style={[styles.loadingBarFg, { width: `${percent}%`, backgroundColor: isComplete ? colors.brandColor1 : colors.brandColor2 }]} />
       {isComplete && (
         <View style={styles.loadingBarTextContainer}>
-          <Text style={styles.loadingBarCompleteText}>{strings[language].completed}</Text>
+          <Text style={[styles.loadingBarCompleteText, { color: colors.contrastText }]}>{strings[language].completed}</Text>
         </View>
       )}
     </View>
@@ -409,6 +581,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  darkModeBackground: {
+    height: '100%',
+    width: '100%',
+    borderRadius: 30,
+  },
   circleSelectButton: {
     position: 'absolute',
     right: 8,
@@ -443,7 +620,6 @@ const styles = StyleSheet.create({
   loadingBarBg: {
     height: 11,
     borderRadius: 13,
-    backgroundColor: '#FFFFFF',
     overflow: 'hidden',
     justifyContent: 'center',
     width: '100%',
@@ -460,7 +636,6 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontFamily: Fonts.bodyItalic,
     fontSize: 12,
-    color: '#000000',
     textAlign: 'right',
     minWidth: 70,
     marginRight: 8,
@@ -477,8 +652,7 @@ const styles = StyleSheet.create({
   },
   loadingBarCompleteText: {
     fontFamily: Fonts.bodyItalic,
-    fontSize: 12,
-    color: '#FFFFFF',
+    fontSize: 10,
     textAlign: 'center',
   },
   cardIconImage: {
@@ -493,8 +667,8 @@ const styles = StyleSheet.create({
   cardTypePill: {
     position: 'absolute',
     width: 84,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
+    backgroundColor: '#FFFFFF', // Default for light mode
+    borderWidth: 2, // Default for light mode
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -534,7 +708,6 @@ const styles = StyleSheet.create({
     left: 75,
     fontFamily: Fonts.title,
     fontSize: 24,
-    color: '#000000',
     zIndex: 2,
     lineHeight: Platform.OS === 'ios' ? 24 : 28,
     // borderWidth: 1,
@@ -565,11 +738,9 @@ const styles = StyleSheet.create({
   dateText: {
     fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#000000',
   },
   flashcardCountText: {
     fontFamily: Fonts.bodyItalic,
     fontSize: Dimensions.get('window').height < 670 ? 12 : 14,
-    color: '#000000',
   },
 });

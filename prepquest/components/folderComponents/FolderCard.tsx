@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { View, StyleSheet, ViewStyle, Platform, Pressable, Animated, Dimensions, Text } from 'react-native';
 import { CircleSelectButton } from '../general/CircleSelectButton';
 import { FavoriteButton } from '../general/FavoriteButton';
 import FolderCardIcon from '@/assets/icons/folders/FolderCardIcon.svg';
+import FolderCardIconDarkMode from '@/assets/icons/folders/FolderCardIconDarkMode.svg';
 import { router } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Fonts } from '@/constants/Fonts';
 import { Colors } from '@/constants/Colors';
+import { getAnimationConfig } from '@/utils/animationConfig';
 
 interface FolderCardProps {
   style?: ViewStyle;
@@ -47,15 +49,30 @@ export const FolderCard = React.memo(({
 }: FolderCardProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const { language } = useLanguage();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Get performance-based animation config
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
 
   // Memoize container style to prevent recreation on every render
-  const containerStyle = useMemo(() => ({
-    width: containerWidthPercentage.interpolate({
-      inputRange: [85, 100],
-      outputRange: ['85%', '100%']
-    })
-  }), [containerWidthPercentage]);
+  const containerStyle = useMemo(() => {
+    // For low-end devices or when using native driver, use simple static width
+    const shouldUseNativeDriver = (Platform.OS === 'android' || isDark);
+    if (shouldUseNativeDriver) {
+      return {
+        width: isSelectMode ? '85%' : '100%'
+      };
+    }
+    
+    // For other cases, use animated interpolation
+    return {
+      width: containerWidthPercentage.interpolate({
+        inputRange: [85, 100],
+        outputRange: ['85%', '100%']
+      })
+    };
+  }, [containerWidthPercentage, isSelectMode, isDark]);
 
   const dynamicStyles = {
     container: {
@@ -75,12 +92,44 @@ export const FolderCard = React.memo(({
   const handlePressIn = () => {
     if (!isSelectMode) {
       setIsPressed(true);
+      
+      // For Android: always animate scale to 0.95 (regardless of theme)
+      // For iOS: only animate in dark mode
+      const shouldAnimate = Platform.OS === 'android' || isDark;
+      
+      if (shouldAnimate) {
+        if (animationConfig.instantMode) {
+          scaleAnim.setValue(0.95);
+        } else {
+          Animated.timing(scaleAnim, {
+            toValue: 0.95,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        }
+      }
     }
   };
 
   const handlePressOut = () => {
     if (!isSelectMode) {
       setIsPressed(false);
+      
+      // For Android: always animate scale back to 1 (regardless of theme)
+      // For iOS: only animate in dark mode
+      const shouldAnimate = Platform.OS === 'android' || isDark;
+      
+      if (shouldAnimate) {
+        if (animationConfig.instantMode) {
+          scaleAnim.setValue(1);
+        } else {
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        }
+      }
     }
   };
 
@@ -117,6 +166,9 @@ export const FolderCard = React.memo(({
     style,
     isPressed && styles.containerPressed
   ];
+
+  // Separate scale animation style
+  const scaleAnimationStyle = (Platform.OS === 'android' || isDark) ? { transform: [{ scale: scaleAnim }] } : {};
 
   const favoriteButtonContainerStyle = [
     styles.favoriteButtonContainer,
@@ -157,37 +209,78 @@ export const FolderCard = React.memo(({
           onPressOut={handlePressOut}
           onPress={handleFolderPress}
         >
-          <Animated.View style={animatedContainerStyle}>
-            <View style={styles.cardContentContainer}>
-              {/* Folder Icon */}
-              <FolderCardIcon width={45} height={40} style={styles.folderIcon} />
-              {/* Favorite button at top right */}
-              <View style={favoriteButtonContainerStyle}>
-                <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
-              </View>
-              {/* Title */}
-              {title && (
-                <Text 
-                  style={folderTitleStyle} 
-                  numberOfLines={1}
-                >
-                  {title}
-                </Text>
-              )}
-              {/* Date and Deck Count Row */}
-              {(dateCreated || deckCount !== undefined) && (
-                <View style={dateDeckRowStyle}>
-                  {dateCreated && (
-                    <Text style={dateTextStyle}>{dateCreated}</Text>
+          {/* Scale animation wrapper - only applies when needed */}
+          {(Platform.OS === 'android' || isDark) ? (
+            <Animated.View style={scaleAnimationStyle}>
+              <Animated.View style={animatedContainerStyle}>
+                <View style={styles.cardContentContainer}>
+                  {/* Folder Icon */}
+                  {isDark ? (
+                    <FolderCardIconDarkMode width={45} height={40} style={styles.folderIcon} />
+                  ) : (
+                    <FolderCardIcon width={45} height={40} style={styles.folderIcon} />
                   )}
-                  {deckCountText && (
-                    <Text style={deckCountTextStyle}>{deckCountText}</Text>
+                  {/* Favorite button at top right */}
+                  <View style={favoriteButtonContainerStyle}>
+                    <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
+                  </View>
+                  {/* Title */}
+                  {title && (
+                    <Text 
+                      style={folderTitleStyle} 
+                      numberOfLines={1}
+                    >
+                      {title}
+                    </Text>
                   )}
+                  {/* Date and Deck Count Row */}
+                  {(dateCreated || deckCount !== undefined) && (
+                    <View style={dateDeckRowStyle}>
+                      {dateCreated && (
+                        <Text style={dateTextStyle}>{dateCreated}</Text>
+                      )}
+                      {deckCountText && (
+                        <Text style={deckCountTextStyle}>{deckCountText}</Text>
+                      )}
+                    </View>
+                  )}
+                  {children}
                 </View>
-              )}
-              {children}
-            </View>
-          </Animated.View>
+              </Animated.View>
+            </Animated.View>
+          ) : (
+            <Animated.View style={animatedContainerStyle}>
+              <View style={styles.cardContentContainer}>
+                {/* Folder Icon */}
+                <FolderCardIcon width={45} height={40} style={styles.folderIcon} />
+                {/* Favorite button at top right */}
+                <View style={favoriteButtonContainerStyle}>
+                  <FavoriteButton isSelectMode={isSelectMode} favorited={isFavorited} onFavoriteToggle={onFavoriteToggle} />
+                </View>
+                {/* Title */}
+                {title && (
+                  <Text 
+                    style={folderTitleStyle} 
+                    numberOfLines={1}
+                  >
+                    {title}
+                  </Text>
+                )}
+                {/* Date and Deck Count Row */}
+                {(dateCreated || deckCount !== undefined) && (
+                  <View style={dateDeckRowStyle}>
+                    {dateCreated && (
+                      <Text style={dateTextStyle}>{dateCreated}</Text>
+                    )}
+                    {deckCountText && (
+                      <Text style={deckCountTextStyle}>{deckCountText}</Text>
+                    )}
+                  </View>
+                )}
+                {children}
+              </View>
+            </Animated.View>
+          )}
         </Pressable>
       </View>
       {isSelectMode && (
@@ -246,7 +339,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 1,
         shadowRadius: 4,
-        borderWidth: 4,
+        // borderWidth: 4,
         borderColor: 'transparent', // Transparent border to create space for shadow
       },
     }),

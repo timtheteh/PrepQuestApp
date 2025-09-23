@@ -244,7 +244,11 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
         friction: isAndroid ? 0.08 : 0.1, // Optimized friction for Android
         frictionAir: isAndroid ? 0.008 : 0.01, // Slightly less air resistance on Android
         label: d.label,
-        render: { fillStyle: d.color },
+        render: { 
+          fillStyle: theme === 'dark' ? colors.background : d.color,
+          strokeStyle: theme === 'dark' ? d.color : 'transparent',
+          lineWidth: theme === 'dark' ? 3 : 0
+        },
         sleepingAllowed: false, // Never allow sleeping for consistent motion
         inertia: Infinity, // Prevent rotation for better performance
       });
@@ -507,7 +511,9 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
                 style={[
                   styles.bubble,
                   {
-                    backgroundColor: d.color,
+                    backgroundColor: theme === 'dark' ? colors.background : d.color,
+                    borderWidth: theme === 'dark' ? 3 : 0,
+                    borderColor: theme === 'dark' ? d.color : 'transparent',
                     width: radius * 2,
                     height: radius * 2,
                     borderRadius: radius,
@@ -523,7 +529,9 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
                   styles.bubbleLabel, 
                   {
                     fontFamily: Fonts.bodyBold,
-                    color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : colors.text,
+                    color: theme === 'dark' 
+                      ? colors.text 
+                      : (d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : colors.text),
                     fontSize: (d.label == 'Case study' || d.label == 'Brainteasers') ? 12 : 16
                   }
                 ]}>{
@@ -533,7 +541,9 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
                 }</Text>
                 <Text style={[styles.bubbleText, {
                   fontFamily: Fonts.bodyMedium,
-                  color: d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : colors.text
+                  color: theme === 'dark' 
+                    ? colors.text 
+                    : (d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : colors.text)
                 }]}>{`${d.value} (${d.percent}%)`}</Text>
               </View>
             );

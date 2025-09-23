@@ -120,7 +120,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.accumulatedDecks}</Text>
@@ -132,7 +136,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
               {/* Second row: two mesh backgrounds spaced between */}
               <View style={styles.imageRowTwoUp}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.localStorageDecks}</Text>
@@ -141,7 +149,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   </View>
                 </View>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground1} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.totalQuizzedDecks}</Text>
@@ -157,7 +169,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.accumulatedFlashcards}</Text>
@@ -169,7 +185,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
               {/* Second row: two mesh backgrounds spaced between */}
               <View style={styles.imageRowTwoUp}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.localStorageFlashcards}</Text>
@@ -178,7 +198,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   </View>
                 </View>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground2} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.totalQuizzedFlashcards}</Text>
@@ -194,7 +218,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.studyDecks}</Text>
@@ -206,7 +234,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
               {/* Second row: two mesh backgrounds spaced between */}
               <View style={styles.imageRowTwoUp}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.studyLocalStorage}</Text>
@@ -215,7 +247,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   </View>
                 </View>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground3} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.studyQuizzed}</Text>
@@ -231,7 +267,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
             <View style={styles.decksColumn}>
               <View style={styles.imageRow}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.interviewDecks}</Text>
@@ -243,7 +283,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
               {/* Second row: two mesh backgrounds spaced between */}
               <View style={styles.imageRowTwoUp}>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.interviewLocalStorage}</Text>
@@ -252,7 +296,11 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
                   </View>
                 </View>
                 <View style={styles.imageStack}>
-                  <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
+                  {theme === 'dark' ? (
+                    <View style={[styles.meshImage, { backgroundColor: colors.secondaryShade, borderRadius: 30 }]} />
+                  ) : (
+                    <Image source={meshBackground4} style={styles.meshImage} resizeMode="contain" />
+                  )}
                   <View style={styles.overlayContainer}>
                     <View style={styles.overlayColumn}>
                       <Text style={[styles.deckNumber, { color: colors.text }]}>{statsData.interviewQuizzed}</Text>

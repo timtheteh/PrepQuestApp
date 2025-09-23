@@ -578,11 +578,15 @@ export default function AccountScreen() {
                 <View style={scaledStyles.statsRow}>
                   {/* GenAI Form Requests */}
                   <View style={scaledStyles.statCard}>
-                    <Image 
-                      source={require('@/assets/images/meshBackground1.png')} 
-                      style={scaledStyles.statCardBackground}
-                      resizeMode="contain"
-                    />
+                    {theme === 'dark' ? (
+                      <View style={[scaledStyles.statCardBackground, { backgroundColor: themeColors.secondaryShade, borderRadius: 15 }]} />
+                    ) : (
+                      <Image 
+                        source={require('@/assets/images/meshBackground1.png')} 
+                        style={scaledStyles.statCardBackground}
+                        resizeMode="contain"
+                      />
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
                         <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>5/10</Text>
@@ -593,11 +597,15 @@ export default function AccountScreen() {
                   
                   {/* File Upload Form Requests */}
                   <View style={scaledStyles.statCard}>
-                    <Image 
-                      source={require('@/assets/images/meshBackground2.png')} 
-                      style={scaledStyles.statCardBackground}
-                      resizeMode="contain"
-                    />
+                    {theme === 'dark' ? (
+                      <View style={[scaledStyles.statCardBackground, { backgroundColor: themeColors.secondaryShade, borderRadius: 15 }]} />
+                    ) : (
+                      <Image 
+                        source={require('@/assets/images/meshBackground2.png')} 
+                        style={scaledStyles.statCardBackground}
+                        resizeMode="contain"
+                      />
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
                         <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>4/10</Text>
@@ -611,11 +619,15 @@ export default function AccountScreen() {
                 <View style={scaledStyles.statsRow}>
                   {/* Youtube Link Form Requests */}
                   <View style={scaledStyles.statCard}>
-                    <Image 
-                      source={require('@/assets/images/meshBackground3.png')} 
-                      style={scaledStyles.statCardBackground}
-                      resizeMode="contain"
-                    />
+                    {theme === 'dark' ? (
+                      <View style={[scaledStyles.statCardBackground, { backgroundColor: themeColors.secondaryShade, borderRadius: 15 }]} />
+                    ) : (
+                      <Image 
+                        source={require('@/assets/images/meshBackground3.png')} 
+                        style={scaledStyles.statCardBackground}
+                        resizeMode="contain"
+                      />
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
                         <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>3/10</Text>
@@ -626,11 +638,15 @@ export default function AccountScreen() {
                   
                   {/* AI Chat Feedback Requests */}
                   <View style={scaledStyles.statCard}>
-                    <Image 
-                      source={require('@/assets/images/meshBackground4.png')} 
-                      style={scaledStyles.statCardBackground}
-                      resizeMode="contain"
-                    />
+                    {theme === 'dark' ? (
+                      <View style={[scaledStyles.statCardBackground, { backgroundColor: themeColors.secondaryShade, borderRadius: 15 }]} />
+                    ) : (
+                      <Image 
+                        source={require('@/assets/images/meshBackground4.png')} 
+                        style={scaledStyles.statCardBackground}
+                        resizeMode="contain"
+                      />
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
                         <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>2/10</Text>

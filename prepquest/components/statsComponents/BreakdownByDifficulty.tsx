@@ -7,9 +7,12 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 
-const SIZE = Dimensions.get('window').width * 0.73;
-const RADIUS = SIZE / 2;
+const BASE_SIZE = Dimensions.get('window').width * 0.73;
+const RADIUS = BASE_SIZE / 2;
+const STROKE_WIDTH = 3;
+const SIZE = BASE_SIZE + (STROKE_WIDTH * 2); // Add padding for stroke
 const COLORS = ['#F8696B', '#FA9473', '#FFEB84', '#98CE7F']; // Again, Hard, Good, Easy
+const DIFFICULTY_LABELS = ['Again', 'Hard', 'Good', 'Easy'];
 
 interface BreakdownByDifficultyPieProps {
   breakdown?: {
@@ -103,18 +106,28 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
   }
 
   let cumulative = 0;
+  const centerX = SIZE / 2;
+  const centerY = SIZE / 2;
   const slices = values.map((value, i) => {
     const startAngle = (cumulative / total) * 360;
     const endAngle = ((cumulative + value) / total) * 360;
-    const path = describeArc(RADIUS, RADIUS, RADIUS, startAngle, endAngle);
+    const path = describeArc(centerX, centerY, RADIUS, startAngle, endAngle);
     // For label position, use the angle in the middle of the slice
     const midAngle = (startAngle + endAngle) / 2;
     const labelRadius = RADIUS * 0.65;
-    const labelPos = polarToCartesian(RADIUS, RADIUS, labelRadius, midAngle);
+    const labelPos = polarToCartesian(centerX, centerY, labelRadius, midAngle);
     const percent = Math.round((value / total) * 100);
     const label = `${LABELS[i]}\n${value} (${percent}%)`;
     cumulative += value;
-    return { path, color: COLORS[i], label, labelPos, value, percent };
+    return { 
+      path, 
+      color: theme === 'dark' ? colors.background : COLORS[i], 
+      strokeColor: COLORS[i],
+      label, 
+      labelPos, 
+      value, 
+      percent 
+    };
   });
 
   return (
@@ -127,7 +140,13 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
         <Svg width={SIZE} height={SIZE}>
           <G>
             {slices.map((slice, i) => (
-              <Path key={i} d={slice.path} fill={slice.color} />
+              <Path 
+                key={i} 
+                d={slice.path} 
+                fill={slice.color}
+                stroke={theme === 'dark' ? slice.strokeColor : 'none'}
+                strokeWidth={theme === 'dark' ? STROKE_WIDTH : 0}
+              />
             ))}
             {slices.map((slice, i) => (
               // Only show labels if the value is greater than 0

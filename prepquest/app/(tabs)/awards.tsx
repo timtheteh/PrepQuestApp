@@ -6,7 +6,9 @@ import Svg, { Path, Defs, ClipPath, Polygon , Image as SvgImage } from 'react-na
 import { MenuContext } from '@/contexts/MenuContext';
 import FireIcon from '@/assets/icons/statsIcons/FireIcon.svg';
 import DecksStudiedIcon from '@/assets/icons/statsIcons/DecksStudiedIcon.svg';
+import DecksStudiedIconDarkMode from '@/assets/icons/statsIcons/DecksStudiedIconDarkMode.svg';
 import FlashcardsStudiedIcon from '@/assets/icons/statsIcons/FlashcardsStudiedIcon.svg';
+import FlashcardsStudiedIconDarkMode from '@/assets/icons/statsIcons/FlashcardsStudiedIconDarkMode.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
@@ -307,10 +309,10 @@ const CustomGoalForm = React.memo(({ setScrollEnabled, themeColors }: { setScrol
             >
               <Svg width={signatureWidth} height={signatureHeight} style={{ position: 'absolute', left: 0, top: 0 }}>
                 {signature && (
-                  <Path d={signature} stroke="#111" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  <Path d={signature} stroke={themeColors.text} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                 )}
                 {currentPoints.length > 1 && (
-                  <Path d={pointsToSvgPath(currentPoints)} stroke="#111" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  <Path d={pointsToSvgPath(currentPoints)} stroke={themeColors.text} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                 )}
               </Svg>
             </View>
@@ -336,6 +338,7 @@ const CustomGoalForm = React.memo(({ setScrollEnabled, themeColors }: { setScrol
 
 const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) => {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const [streakData, setStreakData] = useState<LongestStreakData>({
     streakLength: 0,
     uniqueFlashcards: 0,
@@ -384,7 +387,7 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
     <View style={{ marginHorizontal: 16, marginTop: 20,}}>
       {/* First row - Title */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={styles.title}>{strings[language].longestStreak}</Text>
+        <Text style={[styles.title, { color: themeColors.text }]}>{strings[language].longestStreak}</Text>
       </View>
 
       {/* 3x3 Grid */}
@@ -406,7 +409,11 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
         {/* Row 2 */}
         <View style={{ flexDirection: 'row', height: CELL_HEIGHT, marginBottom: 20,}}>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <DecksStudiedIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}}/>
+            {theme === 'dark' ? (
+              <DecksStudiedIconDarkMode width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}}/>
+            ) : (
+              <DecksStudiedIcon width={ICON_SIZE} height={ICON_SIZE} style={{marginRight: 110}}/>
+            )}
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 48, color: themeColors.text,width:150, textAlign: "center"}}>
@@ -420,7 +427,11 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
         {/* Row 3 */}
         <View style={{ flexDirection: 'row', height: CELL_HEIGHT }}>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <FlashcardsStudiedIcon width={60} height={60} style={{marginRight: 110}}/>
+            {theme === 'dark' ? (
+              <FlashcardsStudiedIconDarkMode width={60} height={60} style={{marginRight: 110}}/>
+            ) : (
+              <FlashcardsStudiedIcon width={60} height={60} style={{marginRight: 110}}/>
+            )}
           </View>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 48, color: themeColors.text, width:150, textAlign: "center"}}>
@@ -501,6 +512,9 @@ const CalendarDay = React.memo(({ date, state, streakInfo, today }: {
 }) => {
   if (!date) return null;
   
+  const { theme } = useTheme();
+  const colors = Colors[theme as keyof typeof Colors];
+  
   const dateStr = date.dateString;
   const info = streakInfo[dateStr];
   
@@ -515,22 +529,24 @@ const CalendarDay = React.memo(({ date, state, streakInfo, today }: {
     position: 'absolute' as const,
     width: 28,
     height: 28,
-    backgroundColor: isStreak ? '#5bcfff' : '#FFCE51',
+    backgroundColor: isStreak ? (theme === 'dark' ? 'transparent' : '#5bcfff') : '#FFCE51',
+    borderWidth: isStreak && theme === 'dark' ? 2 : 0,
+    borderColor: isStreak && theme === 'dark' ? '#5bcfff' : 'transparent',
     borderRadius: 99,
     top: 4,
     left: 4,
     zIndex: 1,
-  }), [isStreak]);
+  }), [isStreak, theme]);
 
   const textStyle = useMemo(() => ({
-    color: isToday ? '#4F41D8' : (isDisabled ? '#d9e1e8' : '#2d4150'),
+    color: isToday ? colors.brandColor2 : (isDisabled ? colors.unselectedText : colors.text),
     fontFamily: Fonts.bodyMedium,
     fontSize: 16,
     zIndex: 3,
     fontWeight: isToday ? 'bold' as const : 'normal' as const,
     ...(isToday && {
       borderWidth: 2,
-      borderColor: '#4F41D8',
+      borderColor: colors.brandColor2,
       borderRadius: 28,
       width: 28,
       height: 28,
@@ -538,7 +554,7 @@ const CalendarDay = React.memo(({ date, state, streakInfo, today }: {
       textAlignVertical: 'center' as const,
       lineHeight: 20,
     }),
-  }), [isToday, isDisabled]);
+  }), [isToday, isDisabled, colors]);
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', width: 36, height: 36, position: 'relative' }}>
@@ -572,6 +588,7 @@ const StreakCalendar = React.memo(() => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const isFocused = useIsFocused();
+  const { theme } = useTheme();
   
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
@@ -607,24 +624,27 @@ const StreakCalendar = React.memo(() => {
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // Memoized calendar theme to prevent recreating object
-  const calendarTheme = useMemo(() => ({
-    backgroundColor: '#ffffff',
-    calendarBackground: '#ffffff',
-    textSectionTitleColor: '#b6c1cd',
-    selectedDayBackgroundColor: '#4F41D8',
-    selectedDayTextColor: '#ffffff',
-    todayTextColor: '#4F41D8',
-    dayTextColor: '#2d4150',
-    textDisabledColor: '#d9e1e8',
-    dotColor: '#FFCE51',
-    monthTextColor: '#000000',
-    textMonthFontFamily: Fonts.bodyMedium,
-    textDayHeaderFontFamily: Fonts.bodyMedium,
-    textDayFontFamily: Fonts.bodyMedium,
-    textDayHeaderFontSize: 14,
-    textMonthFontSize: 20,
-    arrowColor: '#000000',
-  }), []);
+  const calendarTheme = useMemo(() => {
+    const colors = Colors[theme as keyof typeof Colors];
+    return {
+      backgroundColor: colors.background,
+      calendarBackground: colors.background,
+      textSectionTitleColor: colors.unselectedText,
+      selectedDayBackgroundColor: colors.brandColor2,
+      selectedDayTextColor: colors.contrastText,
+      todayTextColor: colors.brandColor2,
+      dayTextColor: colors.text,
+      textDisabledColor: colors.unselectedText,
+      dotColor: '#FFCE51',
+      monthTextColor: colors.text,
+      textMonthFontFamily: Fonts.bodyMedium,
+      textDayHeaderFontFamily: Fonts.bodyMedium,
+      textDayFontFamily: Fonts.bodyMedium,
+      textDayHeaderFontSize: 14,
+      textMonthFontSize: 20,
+      arrowColor: colors.text,
+    };
+  }, [theme]);
 
   const dayComponent = useCallback(({ date, state }: any) => (
     <CalendarDay
@@ -784,6 +804,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
 
 const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: BadgeWallProps & { themeColors: any }) => {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const [viewAll, setViewAll] = useState(false);
   const animationConfig = useMemo(() => getAnimationConfig(), []);
   
@@ -839,10 +860,10 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
     width: '100%' as const,
     borderRadius: 30,
     overflow: 'hidden' as const,
-    backgroundColor: '#fff',
+    backgroundColor: theme === 'dark' ? themeColors.secondaryShade : '#fff',
     flexDirection: 'column' as const,
     justifyContent: 'space-between' as const,
-  }), []);
+  }), [theme, themeColors.secondaryShade]);
 
   const backgroundImageStyle = useMemo(() => ({
     position: 'absolute' as const,
@@ -877,8 +898,12 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
 
   return (
     <View style={containerStyle}>
-      {/* Background image */}
-      <RNImage source={backgroundImage} style={backgroundImageStyle} />
+      {/* Background image or colored rectangle */}
+      {theme === 'dark' ? (
+        <View style={[backgroundImageStyle, { backgroundColor: themeColors.secondaryShade, borderRadius: 30 }]} />
+      ) : (
+        <RNImage source={backgroundImage} style={backgroundImageStyle} />
+      )}
       
       {/* Content column */}
       <View style={{ margin: 10, flex: 1 }}>

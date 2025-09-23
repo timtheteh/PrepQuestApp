@@ -15,10 +15,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import Svg, { SvgProps, Path } from 'react-native-svg';
 import { SmallCircleSelectButton } from '@/components/general/SmallCircleSelectButton';
 import HelpIconOutline from '@/assets/icons/generalIcons/helpIconOutline.svg';
+import HelpIconOutlineDarkMode from '@/assets/icons/generalIcons/helpIconOutlineDarkMode.svg';
 import { PrimaryButton } from '@/components/general/PrimaryButton';
 import CloudUploadIcon from '@/assets/icons/fileUpload/cloudUploadIcon.svg';
 import ImageIconFilled from '@/assets/icons/generalIcons/imageIconFilled.svg';
+import ImageIconFilledDarkMode from '@/assets/icons/generalIcons/imageIconFilledDarkMode.svg';
 import CameraIconFilled from '@/assets/icons/generalIcons/cameraIconFilled.svg';
+import CameraIconFilledDarkMode from '@/assets/icons/generalIcons/cameraIconFilledDarkMode.svg';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -27,6 +30,8 @@ import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUplo
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 import * as mammoth from 'mammoth';
 import * as FileSystem from 'expo-file-system';
 import NotificationService from '@/utils/notifications';
@@ -717,8 +722,10 @@ const FileUploadMainSection = ({
   uploadProgress?: number;
 }) => {
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   return (
-    <View style={styles.fileUploadMainSection}>
+      <View style={[styles.fileUploadMainSection, { borderColor: themeColors.brandColor2 }]}>
       {/* Loading Bar */}
       {isLoading && (
         <View style={styles.loadingBarContainer}>
@@ -728,12 +735,12 @@ const FileUploadMainSection = ({
                 styles.progressBarFill, 
                 { 
                   width: `${uploadProgress}%`,
-                  backgroundColor: uploadProgress === 100 ? '#44B88A' : '#4F41D8',
+                  backgroundColor: uploadProgress === 100 ? themeColors.brandColor1 : themeColors.brandColor2,
                 }
               ]} 
             />
           </View>
-          <Text style={styles.percentText}>{uploadProgress}%</Text>
+          <Text style={[styles.percentText, { color: themeColors.brandColor2 }]}>{uploadProgress}%</Text>
         </View>
       )}
       
@@ -748,7 +755,7 @@ const FileUploadMainSection = ({
         ) : (
           <CloudUploadIcon width={110} height={110} />
         )}
-        <Text style={[styles.supportedFilesText, { fontSize: 20 }]}>
+        <Text style={[styles.supportedFilesText, { fontSize: 20, color: themeColors.text }]}>
           {isUploadSuccess 
             ? `${uploadType === 'image' ? strings[language].fileUploadPage.imageUploadedSuccessfully : strings[language].fileUploadPage.fileUploadedSuccessfully}\n${uploadType === 'file' ? `${strings[language].fileUploadPage.fileWithColon}${uploadedFileName}` : ''}`
             : STRINGS.supportedFiles[language]
@@ -761,10 +768,18 @@ const FileUploadMainSection = ({
       </View>
       <View style={styles.cornerIconsContainer}>
         <TouchableOpacity onPress={pickImage}>
-          <ImageIconFilled width={30} height={30} />
+          {theme === 'dark' ? (
+            <ImageIconFilledDarkMode width={30} height={30} />
+          ) : (
+            <ImageIconFilled width={30} height={30} />
+          )}
         </TouchableOpacity>
         <TouchableOpacity onPress={takePhoto}>
-          <CameraIconFilled width={40} height={40} />
+          {theme === 'dark' ? (
+            <CameraIconFilledDarkMode width={40} height={40} />
+          ) : (
+            <CameraIconFilled width={40} height={40} />
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -1069,6 +1084,8 @@ export default function FileUploadPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   // Type language as 'English' | 'Chinese' for STRINGS indexing
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const [selectedFile, setSelectedFile] = useState<any>(null);
@@ -1096,8 +1113,8 @@ export default function FileUploadPage() {
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
-    (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    30;
+    (screenHeight < 670 ? 10 : insets.bottom) : 
+    insets.bottom + 10;
 
   const getTopBarAccountHeight = useTopBarAccountHeight();
 
@@ -1387,7 +1404,7 @@ export default function FileUploadPage() {
                 taskTitle: strings[language].fileUploadPage.creatingDeck,
                 taskDesc: strings[language].fileUploadPage.creatingDeckInBackground,
                 taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-                color: '#44B88A',
+                color: themeColors.brandColor1,
                 parameters: {
                   ...progress,
                   cancelDeckCreationTaskDueToNetworkError
@@ -1872,7 +1889,7 @@ export default function FileUploadPage() {
           taskTitle: strings[language].fileUploadPage.creatingDeck,
           taskDesc: strings[language].fileUploadPage.creatingDeckInBackground,
           taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-          color: '#44B88A',
+          color: themeColors.brandColor1,
           parameters: {
             ...params,
             cancelDeckCreationTaskDueToNetworkError
@@ -2341,13 +2358,13 @@ export default function FileUploadPage() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight()}]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
         >
-          <AntDesign name="arrowleft" size={32} color="black" />
+          <AntDesign name="arrowleft" size={32} color={themeColors.text} />
         </TouchableOpacity>
       </View>
       
@@ -2471,7 +2488,7 @@ export default function FileUploadPage() {
               keyboardShouldPersistTaps="handled"
             >
               <View>
-                <Text style={styles.fileUploadTitle}>
+                <Text style={[styles.fileUploadTitle, { color: themeColors.text }]}>
                 {STRINGS.uploadTitle[lang]}
               </Text>
               <FileUploadMainSection 
@@ -2490,9 +2507,13 @@ export default function FileUploadPage() {
                   selected={isAIGenerate}
                   onPress={() => setIsAIGenerate(!isAIGenerate)}
                     />
-                <Text style={styles.aiGenerateText}>{STRINGS.aiGenerate[lang]}</Text>
+                <Text style={[styles.aiGenerateText, { color: themeColors.text }]}>{STRINGS.aiGenerate[lang]}</Text>
                 <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-                  <HelpIconOutline width={24} height={24} />
+                  {theme === 'dark' ? (
+                    <HelpIconOutlineDarkMode width={24} height={24} />
+                  ) : (
+                    <HelpIconOutline width={24} height={24} />
+                  )}
                 </TouchableOpacity>
               </View>
               </View>
@@ -2502,11 +2523,11 @@ export default function FileUploadPage() {
 
           <View style={[
             styles.buttonContainer,
-            { bottom: bottomOffset }
+            { bottom: bottomOffset, backgroundColor: themeColors.background }
           ]}>
             <ActionButton
               text={STRINGS.submit[lang]}
-              backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+              backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
               fullWidth
@@ -2613,7 +2634,6 @@ export default function FileUploadPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   mainContainer: {
     flex: 1,
@@ -2670,7 +2690,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
   bottomSpacing: {
     height: 20,
@@ -2692,7 +2711,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderWidth: 3,
     borderStyle: 'dashed',
-    borderColor: '#4F41D8',
     marginTop: Platform.OS === 'ios' ? 20 : 10,
     borderRadius: 4,
     justifyContent: 'center',
@@ -2706,7 +2724,6 @@ const styles = StyleSheet.create({
   supportedFilesText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 16,
-    color: '#000000',
     textAlign: 'center',
     maxWidth: '80%',
     paddingBottom: 10,
@@ -2722,7 +2739,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#000000',
   },
   cornerIconsContainer: {
     position: 'absolute',
@@ -2756,14 +2772,12 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#4F41D8',
     borderRadius: 8,
   },
   percentText: {
     fontFamily: 'Satoshi-Variable',
     fontWeight: '700',
     fontSize: 24,
-    color: '#4F41D8',
     textAlign: 'center',
     marginTop: 4,
     marginBottom: 4,

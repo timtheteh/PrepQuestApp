@@ -2,13 +2,18 @@ import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, us
 import { View, StyleSheet, ViewStyle, Pressable, Animated, Text, Dimensions, ScrollView, Image } from 'react-native';
 import FlippableCardFrontFlipArrow from '@/assets/icons/flippableCard/flippableCardFrontFlipArrow.svg';
 import FlippableCardBackFlipArrow from '@/assets/icons/flippableCard/flippableCardBackFlipArrow.svg';
+import FlippableCardFrontFlipArrowDarkMode from '@/assets/icons/flippableCard/flippableCardFrontFlipArrowDarkMode.svg';
+import FlippableCardBackFlipArrowDarkMode from '@/assets/icons/flippableCard/flippableCardBackFlipArrowDarkMode.svg';
 import MicIcon from '@/assets/icons/flippableCard/micIcon.svg';
+import MicIconWhite from '@/assets/icons/flippableCard/micIconWhite.svg';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { DrawableOptionsRow } from './DrawableOptionsRow';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getLastTypedText } from '../../app/textInputModal';
 import ImageIconFilled from '@/assets/icons/generalIcons/imageIconFilled.svg';
 import CameraIconFilled from '@/assets/icons/generalIcons/cameraIconFilled.svg';
+import ImageIconFilledDarkMode from '@/assets/icons/generalIcons/imageIconFilledDarkMode.svg';
+import CameraIconFilledDarkMode from '@/assets/icons/generalIcons/cameraIconFilledDarkMode.svg';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
@@ -1038,7 +1043,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                       return effectiveCardType === 'none' && (
                         <View style={styles.animationContainerTop}>
                           <LottieView
-                            source={require('../../assets/animations/DownArrowAnimation.json')}
+                            source={theme === 'dark' ? require('../../assets/animations/DownArrowAnimationDarkMode.json') : require('../../assets/animations/DownArrowAnimation.json')}
                             autoPlay
                             loop
                             style={[styles.downArrowAnimation, { transform: [{ rotate: '180deg' }] }]}
@@ -1073,7 +1078,7 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                       return (effectiveCardType === 'camera' || (effectiveCardType === 'mic' && (hasAudioRecording || !isRecording))) && !isRecording && (
                         <View style={styles.animationContainer}>
                           <LottieView
-                            source={require('../../assets/animations/DownArrowAnimation.json')}
+                            source={theme === 'dark' ? require('../../assets/animations/DownArrowAnimationDarkMode.json') : require('../../assets/animations/DownArrowAnimation.json')}
                             autoPlay
                             loop
                             style={styles.downArrowAnimation}
@@ -1096,7 +1101,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             onPressIn={startRecording}
                             onPressOut={stopRecording}
                             >
-                            <MicIcon width={36} height={36} />
+                            {theme === 'dark' ? (
+                              <MicIconWhite width={36} height={36} />
+                            ) : (
+                              <MicIcon width={36} height={36} />
+                            )}
                             </Pressable>
                             <Pressable 
                             style={({ pressed }) => [
@@ -1141,7 +1150,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             ]}
                             onPress={pickImage}
                             >
-                            <ImageIconFilled width={30} height={30} />
+                            {theme === 'dark' ? (
+                              <ImageIconFilledDarkMode width={30} height={30} />
+                            ) : (
+                              <ImageIconFilled width={30} height={30} />
+                            )}
                             </Pressable>
                             <Pressable 
                             style={({ pressed }) => [
@@ -1151,7 +1164,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             ]}
                             onPress={takePhoto}
                             >
-                            <CameraIconFilled width={38} height={38} />
+                            {theme === 'dark' ? (
+                              <CameraIconFilledDarkMode width={38} height={38} />
+                            ) : (
+                              <CameraIconFilled width={38} height={38} />
+                            )}
                             </Pressable>
                         </View>
                       );
@@ -1185,7 +1202,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             ]}
                             onPress={pickImage}
                             >
-                            <ImageIconFilled width={30} height={30} />
+                            {theme === 'dark' ? (
+                              <ImageIconFilledDarkMode width={30} height={30} />
+                            ) : (
+                              <ImageIconFilled width={30} height={30} />
+                            )}
                             </Pressable>
                             <Pressable 
                             style={({ pressed }) => [
@@ -1195,7 +1216,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                             ]}
                             onPress={takePhoto}
                             >
-                            <CameraIconFilled width={38} height={38} />
+                            {theme === 'dark' ? (
+                              <CameraIconFilledDarkMode width={38} height={38} />
+                            ) : (
+                              <CameraIconFilled width={38} height={38} />
+                            )}
                             </Pressable>
                                 {frontContent.content && (
                                     <Pressable 
@@ -1238,7 +1263,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                         ]}
                         onPress={pickImage}
                         >
-                        <ImageIconFilled width={30} height={30} />
+                        {theme === 'dark' ? (
+                          <ImageIconFilledDarkMode width={30} height={30} />
+                        ) : (
+                          <ImageIconFilled width={30} height={30} />
+                        )}
                         </Pressable>
                         <Pressable 
                         style={({ pressed }) => [
@@ -1248,7 +1277,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
                         ]}
                         onPress={takePhoto}
                         >
-                        <CameraIconFilled width={38} height={38} />
+                        {theme === 'dark' ? (
+                          <CameraIconFilledDarkMode width={38} height={38} />
+                        ) : (
+                          <CameraIconFilled width={38} height={38} />
+                        )}
                         </Pressable>
                         {backContent.content && (
                             <Pressable 
@@ -1283,7 +1316,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
           
           {/* Bottom Bar */}
           <View style={[styles.bottomBar, { backgroundColor: colors.secondaryShade }]}>
-              <FlippableCardFrontFlipArrow width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.frontFlipArrow}/>
+              {theme === 'dark' ? (
+                <FlippableCardFrontFlipArrowDarkMode width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.frontFlipArrow}/>
+              ) : (
+                <FlippableCardFrontFlipArrow width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.frontFlipArrow}/>
+              )}
           </View>
         </Animated.View>
         
@@ -1300,7 +1337,11 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
           
           {/* Bottom Bar */}
           <View style={[styles.bottomBar, { backgroundColor: colors.secondaryShade }]}>
-              <FlippableCardBackFlipArrow width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.backFlipArrow}/>
+              {theme === 'dark' ? (
+                <FlippableCardBackFlipArrowDarkMode width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.backFlipArrow}/>
+              ) : (
+                <FlippableCardBackFlipArrow width={FlippableCardFlipArrowSize} height={FlippableCardFlipArrowSize} style={styles.backFlipArrow}/>
+              )}
           </View>
         </Animated.View>
       </View>

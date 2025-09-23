@@ -6,6 +6,7 @@ import { RoundedContainer } from '@/components/general/RoundedContainer';
 import { ActionButton } from '@/components/general/ActionButton';
 import { SmallCircleSelectButton } from '@/components/general/SmallCircleSelectButton';
 import HelpIconOutline from '@/assets/icons/generalIcons/helpIconOutline.svg';
+import HelpIconOutlineDarkMode from '@/assets/icons/generalIcons/helpIconOutlineDarkMode.svg';
 import YoutubeIconSVG from '@/assets/images/YoutubeIconSVG.svg';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
@@ -21,6 +22,8 @@ import { checkDeckNameExists, saveUserYouTubeLinkFormEntry, getMostRecentYouTube
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import DeckCreationStatusPage from './deckCreationStatusPage';
 import BackgroundService from 'react-native-background-actions';
@@ -49,8 +52,10 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
 
 
 const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { youtubeLink: string; setYoutubeLink: (text: string) => void; language: string }) => {
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   return (
-    <View style={styles.youtubeLinkMainSection}>
+    <View style={[styles.youtubeLinkMainSection, { borderColor: themeColors.brandColor2 }]}>
       <View style={styles.youtubeImageContainer}>
         <YoutubeIconSVG 
           width={200}
@@ -59,9 +64,9 @@ const YoutubeLinkMainSection = ({ youtubeLink, setYoutubeLink, language }: { you
       </View>
       <View style={styles.textAreaContainer}>
         <TextInput
-          style={styles.textArea}
+          style={[styles.textArea, { backgroundColor: themeColors.secondaryShade, color: themeColors.text }]}
           placeholder={strings[language].youtubeLinkPage.pasteLinkHere}
-          placeholderTextColor="#D5D4DD"
+          placeholderTextColor={themeColors.unselectedText}
           multiline={true}
           numberOfLines={4}
           submitBehavior='blurAndSubmit'
@@ -862,6 +867,8 @@ export default function YouTubeLinkPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   const getTopBarAccountHeight = useTopBarAccountHeight();
   const { 
     startBackgroundTaskMonitoring, 
@@ -884,8 +891,8 @@ export default function YouTubeLinkPage() {
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
-    (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    30;
+    (screenHeight < 670 ? 10 : insets.bottom) : 
+    insets.bottom + 10;
   // Fetch deck title when in view flashcards page
   useEffect(() => {
     const fetchDeckTitle = async () => {
@@ -1051,7 +1058,7 @@ export default function YouTubeLinkPage() {
                 taskTitle: strings[language].youtubeLinkPage.creatingDeck,
                 taskDesc: strings[language].youtubeLinkPage.creatingDeckInBackground,
                 taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-                color: '#44B88A',
+                color: themeColors.brandColor1,
                 parameters: {
                   ...progress,
                   cancelDeckCreationTaskDueToNetworkError,
@@ -1397,7 +1404,7 @@ export default function YouTubeLinkPage() {
           taskTitle: strings[language].youtubeLinkPage.creatingDeck,
           taskDesc: strings[language].youtubeLinkPage.creatingDeckInBackground,
           taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-          color: '#44B88A',
+          color: themeColors.brandColor1,
           parameters: {
             ...params,
             cancelDeckCreationTaskDueToNetworkError,
@@ -1657,13 +1664,13 @@ export default function YouTubeLinkPage() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight() }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
         >
-          <AntDesign name="arrowleft" size={32} color="black" />
+          <AntDesign name="arrowleft" size={32} color={themeColors.text} />
         </TouchableOpacity>
       </View>
       
@@ -1789,7 +1796,7 @@ export default function YouTubeLinkPage() {
               keyboardShouldPersistTaps="handled"
             >
               <View>
-                <Text style={styles.youtubeLinkTitle}>
+                <Text style={[styles.youtubeLinkTitle, { color: themeColors.text }]}>
                   {strings[language].youtubeLinkPage.pasteYoutubeLink}
                 </Text>
                 <YoutubeLinkMainSection youtubeLink={youtubeLink} setYoutubeLink={setYoutubeLink} language={language} />
@@ -1798,9 +1805,13 @@ export default function YouTubeLinkPage() {
                     selected={isAIGenerate}
                     onPress={() => setIsAIGenerate(!isAIGenerate)}
                   />
-                  <Text style={styles.aiGenerateText}>{strings[language].youtubeLinkPage.aiGenerate}</Text>
+                  <Text style={[styles.aiGenerateText, { color: themeColors.text }]}>{strings[language].youtubeLinkPage.aiGenerate}</Text>
                   <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
-                    <HelpIconOutline width={24} height={24} />
+                    {theme === 'dark' ? (
+                      <HelpIconOutlineDarkMode width={24} height={24} />
+                    ) : (
+                      <HelpIconOutline width={24} height={24} />
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1809,11 +1820,11 @@ export default function YouTubeLinkPage() {
 
         <View style={[
           styles.buttonContainer,
-          { bottom: bottomOffset }
+          { bottom: bottomOffset, backgroundColor: themeColors.background }
         ]}>
           <ActionButton
             text={strings[language].youtubeLinkPage.submit}
-            backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+            backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
             onPress={handleSubmit}
             disabled={isSubmitDisabled()}
             fullWidth
@@ -1919,7 +1930,6 @@ export default function YouTubeLinkPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   mainContainer: {
     flex: 1,
@@ -1965,7 +1975,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
   bottomSpacing: {
     height: 20,
@@ -1987,7 +1996,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderWidth: 3,
     borderStyle: 'dashed',
-    borderColor: '#4F41D8',
     marginTop: Platform.OS === 'ios' ? 20 : 10,
     borderRadius: 4,
     justifyContent: 'space-between',
@@ -2005,7 +2013,6 @@ const styles = StyleSheet.create({
   textArea: {
     width: '90%',
     height: Dimensions.get('window').height * 0.3,
-    backgroundColor: '#F8F8F8',
     borderRadius: 10,
     marginBottom: 20,
     padding: 16,
@@ -2025,6 +2032,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#000000',
   },
 }); 

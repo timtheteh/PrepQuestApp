@@ -1,6 +1,6 @@
 import { View, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, Keyboard, Animated, Text, Dimensions, TextInput, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { FormHeaderIcons } from '../components/formComponents/FormHeaderIcons';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
 import { ActionButton } from '@/components/general/ActionButton';
@@ -16,7 +16,6 @@ import { TopBarManualHeader } from '@/components/manualAddDeck/TopBarManualHeade
 import { AddViewToggle } from '@/components/manualAddDeck/AddViewToggle';
 import { FlippableCard, FlippableCardRef } from '../components/manualAddDeck/FlippableCard';
 import { CircleIconButton } from '@/components/general/CircleIconButton';
-import EyeIcon from '@/assets/icons/generalIcons/eyeIcon.svg';
 import { CircleSelectButtonGreen } from '../components/general/CircleSelectButtonGreen';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import LottieView from 'lottie-react-native';
@@ -28,6 +27,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTopBarAccountHeight } from '@/hooks/heights';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 import BackgroundService from 'react-native-background-actions';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import NotificationService from '@/utils/notifications';
@@ -240,6 +241,8 @@ export default function ManualAddDeckPage() {
   const [loadingTotal, setLoadingTotal] = React.useState(0);
   const [showLoadingPage, setShowLoadingPage] = React.useState(false);
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const getTopBarAccountHeight = useTopBarAccountHeight();
   const { 
@@ -292,8 +295,8 @@ export default function ManualAddDeckPage() {
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
-    (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    30;
+    (screenHeight < 670 ? 10 : insets.bottom) : 
+    insets.bottom + 10;
 
   const cancelCreationRef = useRef(false);
 
@@ -1473,7 +1476,7 @@ export default function ManualAddDeckPage() {
             taskTitle: strings[language].manualAddDeckPage.creatingDeck,
             taskDesc: strings[language].manualAddDeckPage.creatingDeckInBackground,
             taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-            color: '#44B88A',
+            color: themeColors.brandColor1,
             parameters: params,
           });
         } catch (error) {
@@ -1897,13 +1900,13 @@ export default function ManualAddDeckPage() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight() }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
         >
-          <AntDesign name="arrowleft" size={32} color="black" />
+          <AntDesign name="arrowleft" size={32} color={themeColors.text} />
         </TouchableOpacity>
         
       </View>
@@ -2056,7 +2059,7 @@ export default function ManualAddDeckPage() {
           <View 
             style={[
               styles.flippableCardContainer,
-              { paddingBottom: bottomOffset * 2 + 72}
+              { marginBottom: Platform.OS === 'android' ? bottomOffset + 100 : bottomOffset * 2 + 72}
             ]}
           >
             {/* Left Chevron Button */}
@@ -2068,7 +2071,7 @@ export default function ManualAddDeckPage() {
               <AntDesign 
                 name="left" 
                 size={30} 
-                color={isLeftChevronDisabled() ? "#D5D4DD" : "#000000"} 
+                color={isLeftChevronDisabled() ? themeColors.disabledIconBackgroundColor : themeColors.text} 
               />
             </TouchableOpacity>
 
@@ -2081,7 +2084,7 @@ export default function ManualAddDeckPage() {
               <AntDesign 
                 name="right" 
                 size={30} 
-                color={isRightChevronDisabled() ? "#D5D4DD" : "#000000"} 
+                color={isRightChevronDisabled() ? themeColors.disabledIconBackgroundColor : themeColors.text} 
               />
             </TouchableOpacity>
 
@@ -2106,7 +2109,7 @@ export default function ManualAddDeckPage() {
                 const submittedCards = getSubmittedCards();
                 setSelectedFlashcards(submittedCards.map(card => card.cardNumber));
               }}>
-                <Text style={styles.selectAllText}>{strings[language].manualAddDeckPage.selectAll}</Text>
+                <Text style={[styles.selectAllText, { color: themeColors.brandColor1 }]}>{strings[language].manualAddDeckPage.selectAll}</Text>
               </TouchableOpacity>
               <CircleIconButton
                 iconName="trash"
@@ -2117,7 +2120,7 @@ export default function ManualAddDeckPage() {
                 setSelectExpanded(false);
                 setSelectedFlashcards([]);
               }}>
-                <Text style={styles.cancelText}>{strings[language].manualAddDeckPage.cancel}</Text>
+                <Text style={[styles.cancelText, { color: themeColors.text }]}>{strings[language].manualAddDeckPage.cancel}</Text>
               </TouchableOpacity>
             </Animated.View>
           ) : (
@@ -2129,7 +2132,8 @@ export default function ManualAddDeckPage() {
               >
                 <Text style={[
                   styles.selectText,
-                  getSubmittedCards().length === 0 && styles.selectTextDisabled
+                  { color: themeColors.brandColor1 },
+                  getSubmittedCards().length === 0 && { color: themeColors.unselectedText }
                 ]}>{strings[language].manualAddDeckPage.select}</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -2145,7 +2149,7 @@ export default function ManualAddDeckPage() {
                 loop
                 style={styles.emptyStateAnimation}
               />
-              <Text style={styles.emptyStateText}>{strings[language].manualAddDeckPage.noFlashcards}</Text>
+              <Text style={[styles.emptyStateText, { color: themeColors.text }]}>{strings[language].manualAddDeckPage.noFlashcards}</Text>
             </View>
           ) : (
             <ScrollView 
@@ -2160,10 +2164,10 @@ export default function ManualAddDeckPage() {
                   styles.flashcardRow,
                   i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
                 ]}>
-                  <Text style={styles.flashcardNumber}>{card.cardNumber}.</Text>
-                  <Text style={styles.flashcardTitle}>{getCardTitle(card)}</Text>
+                  <Text style={[styles.flashcardNumber, { color: themeColors.text }]}>{card.cardNumber}.</Text>
+                  <Text style={[styles.flashcardTitle, { color: themeColors.text }]}>{getCardTitle(card)}</Text>
                   <TouchableOpacity onPress={() => handleViewCard(card.cardNumber)}>
-                    <EyeIcon width={24} height={24} style={styles.flashcardEyeIcon} />
+                    <Ionicons name="eye" size={24} color={themeColors.normalIconColor} style={styles.flashcardEyeIcon} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -2184,8 +2188,8 @@ export default function ManualAddDeckPage() {
                 styles.flashcardRow,
                 i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }
               ]}>
-                <Text style={styles.flashcardNumber}>{card.cardNumber}.</Text>
-                <Text style={styles.flashcardTitle}>{getCardTitle(card)}</Text>
+                <Text style={[styles.flashcardNumber, { color: themeColors.text }]}>{card.cardNumber}.</Text>
+                <Text style={[styles.flashcardTitle, { color: themeColors.text }]}>{getCardTitle(card)}</Text>
                 <CircleSelectButtonGreen 
                   selected={selectedFlashcards.includes(card.cardNumber)}
                   onPress={() => {
@@ -2203,12 +2207,12 @@ export default function ManualAddDeckPage() {
         
         <View style={[
           styles.buttonContainer,
-          { bottom: bottomOffset, paddingTop: isMandatory ? Dimensions.get('window').height < 670 ? 10 : 20 : 0,}
+          { bottom: bottomOffset, paddingTop: isMandatory ? Dimensions.get('window').height < 670 ? 10 : 20 : 0, backgroundColor: themeColors.background }
         ]}>
           {isMandatory ? (
             <ActionButton
               text={strings[language].manualAddDeckPage.submitFormWithCards}
-              backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+              backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
               fullWidth
@@ -2217,14 +2221,14 @@ export default function ManualAddDeckPage() {
             <View style={{ flexDirection: 'row', gap: 8, width: '100%', paddingHorizontal: 16}}>
               <ActionButton
                 text={strings[language].manualAddDeckPage.submitFormWithCards}
-                backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+                backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled()}
                 style={{ flex: 1 }}
               />
               <ActionButton
                 text={strings[language].manualAddDeckPage.moveToNextCard}
-                backgroundColor={hasCardContent ? "#44B88A" : "#D5D4DD"}
+                backgroundColor={hasCardContent ? themeColors.brandColor1 : themeColors.unselectedText}
                 style={{ flex: 1 }}
                 onPress={handleNextFlashcard}
                 disabled={!hasCardContent}
@@ -2233,7 +2237,7 @@ export default function ManualAddDeckPage() {
           ) : (
             <ActionButton
               text={strings[language].manualAddDeckPage.submitFormWithCards}
-              backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+              backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
               fullWidth
@@ -2441,7 +2445,6 @@ export default function ManualAddDeckPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   mainContainer: {
     flex: 1,
@@ -2485,7 +2488,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
   bottomSpacing: {
     height: 20,
@@ -2540,7 +2542,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#000000',
   },
   flippableCardContainer: {
     flex: 1,
@@ -2557,12 +2558,10 @@ const styles = StyleSheet.create({
   selectText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#44B88A',
   },
   selectAllText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#44B88A',
   },
   selectRow: {
     flexDirection: 'row',
@@ -2575,7 +2574,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 14.5,
-    color: '#000000',
   },
   flashcardList: {
     flex: 1,
@@ -2595,14 +2593,12 @@ const styles = StyleSheet.create({
   flashcardNumber: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#000',
     width: 32,
     textAlign: 'left',
   },
   flashcardTitle: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#000',
     flex: 1,
     textAlign: 'left',
     marginLeft: -5,
@@ -2623,17 +2619,16 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 20,
-    color: '#000',
     marginTop: 16,
     textAlign: 'center',
   },
   selectTextDisabled: {
-    color: '#D5D4DD',
+    // Color will be applied dynamically
   },
   leftChevronButton: {
     position: 'absolute',
     left: 0,
-    top: '50%',
+    top: Platform.OS === 'android' ? '55%' : '50%',
     transform: [{ translateY: -10 }],
     zIndex: 1000,
     padding: 8,
@@ -2643,7 +2638,7 @@ const styles = StyleSheet.create({
   rightChevronButton: {
     position: 'absolute',
     right: 0,
-    top: '50%',
+    top: Platform.OS === 'android' ? '55%' : '50%',
     transform: [{ translateY: -10 }],
     zIndex: 1000,
     padding: 8,

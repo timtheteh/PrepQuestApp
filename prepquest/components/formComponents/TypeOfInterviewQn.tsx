@@ -57,7 +57,7 @@ export const TypeOfInterviewQn = React.memo(({
         ]}
         onPress={() => handleSelect(type)}
       >
-        <Text style={styles.buttonText}>{label}</Text>
+        <Text style={[styles.buttonText, { color: Colors[theme].contrastText }]}>{label}</Text>
       </TouchableOpacity>
     );
   };
@@ -100,6 +100,5 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: Fonts.bodyMedium,
     fontSize: Dimensions.get('window').height < 670 ? 10 : 12,
-    color: '#FFFFFF',
   },
 }); 

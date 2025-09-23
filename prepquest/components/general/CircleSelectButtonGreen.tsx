@@ -41,10 +41,13 @@ export const CircleSelectButtonGreen = React.memo(({
       >
         <View style={[
           styles.circle,
-          selected && styles.selected
+          { 
+            backgroundColor: selected ? colors.brandColor1 : colors.background,
+            borderColor: colors.brandColor1
+          }
         ]}>
           {selected && (
-            <Feather name="check" size={18} color={colors.background} />
+            <Feather name="check" size={18} color={colors.contrastText} />
           )}
         </View>
       </TouchableOpacity>
@@ -65,13 +68,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 15,
-    backgroundColor: '#FFFFFF',
     borderWidth: 3,
-    borderColor: '#44B88A',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  selected: {
-    backgroundColor: '#44B88A',
   },
 }); 

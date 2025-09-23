@@ -20,6 +20,8 @@ import { checkDeckNameExists, saveUserGenAIFormEntry, getMostRecentGenAIFormEntr
 import { Toast } from '../components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserQuestionSettings } from '../db/users';
@@ -859,6 +861,8 @@ export default function GenAIFormPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   const getTopBarAccountHeight = useTopBarAccountHeight();
   const { 
     startBackgroundTaskMonitoring, 
@@ -921,7 +925,7 @@ export default function GenAIFormPage() {
                 taskTitle: strings[language].genAIFormPage.creatingDeck,
                 taskDesc: strings[language].genAIFormPage.creatingDeckInBackground,
                 taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-                color: '#44B88A',
+                color: themeColors.brandColor1,
                 parameters: {
                   mode, 
                   deckId, 
@@ -2306,8 +2310,8 @@ export default function GenAIFormPage() {
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
-    (screenHeight < 670 ? 10 : (isReady ? insets.bottom : 34)) : 
-    30;
+    (screenHeight < 670 ? 10 : insets.bottom) : 
+    insets.bottom + 10;
 
   const mandatoryOpacity = fadeAnim.interpolate({
     inputRange: [0, 1],
@@ -2448,13 +2452,13 @@ export default function GenAIFormPage() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={[styles.topBar, { paddingTop: getTopBarAccountHeight() }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={handleBackPress}
         >
-          <AntDesign name="arrowleft" size={32} color="black" />
+          <AntDesign name="arrowleft" size={32} color={themeColors.text} />
         </TouchableOpacity>
       </View>
       
@@ -2622,11 +2626,11 @@ export default function GenAIFormPage() {
 
         <View style={[
           styles.buttonContainer,
-          { bottom: bottomOffset }
+          { bottom: bottomOffset, backgroundColor: themeColors.background }
         ]}>
           <ActionButton
             text={strings[language].genAIFormPage.submit}
-            backgroundColor={isSubmitDisabled() ? '#D5D4DD' : '#44B88A'}
+            backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
             onPress={handleSubmit}
             disabled={isSubmitDisabled()}
             fullWidth
@@ -2754,7 +2758,6 @@ export default function GenAIFormPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   mainContainer: {
     flex: 1,
@@ -2794,7 +2797,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
   bottomSpacing: {
     height: 20,

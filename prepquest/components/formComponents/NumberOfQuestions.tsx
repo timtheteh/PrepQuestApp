@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface NumberOfQuestionsProps {
   title: string;
@@ -19,6 +21,8 @@ export function NumberOfQuestions({
   minValue = 1,
   maxValue = 40
 }: NumberOfQuestionsProps) {
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   const handleDecrement = () => {
     if (value > minValue) {
       onValueChange(value - 1);
@@ -37,27 +41,35 @@ export function NumberOfQuestions({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, { color: themeColors.text }]}>{title}</Text>
       <View style={styles.counterContainer}>
         <TouchableOpacity 
-          style={[styles.button, value <= minValue && styles.buttonDisabled]} 
+          style={[
+            styles.button, 
+            { backgroundColor: themeColors.brandColor2 },
+            value <= minValue && { backgroundColor: themeColors.unselectedText, opacity: 0.5 }
+          ]} 
           onPress={handleDecrement}
           disabled={value <= minValue}
         >
           <View style={styles.buttonInner}>
-            <Feather name="minus" size={30} color="#FFFFFF" />
+            <Feather name="minus" size={30} color={themeColors.contrastText} />
           </View>
         </TouchableOpacity>
         
-        <Text style={styles.numberText}>{value}</Text>
+        <Text style={[styles.numberText, { color: themeColors.text }]}>{value}</Text>
         
         <TouchableOpacity 
-          style={[styles.button, value >= maxValue && styles.buttonDisabled]} 
+          style={[
+            styles.button, 
+            { backgroundColor: themeColors.brandColor2 },
+            value >= maxValue && { backgroundColor: themeColors.unselectedText, opacity: 0.5 }
+          ]} 
           onPress={handleIncrement}
           disabled={value >= maxValue}
         >
           <View style={styles.buttonInner}>
-            <Feather name="plus" size={30} color="#FFFFFF" />
+            <Feather name="plus" size={30} color={themeColors.contrastText} />
           </View>
         </TouchableOpacity>
       </View>
@@ -68,14 +80,16 @@ export function NumberOfQuestions({
             key={quickValue}
             style={[
               styles.quickSelectButton,
-              value === quickValue && styles.quickSelectButtonSelected
+              { backgroundColor: themeColors.secondaryShade },
+              value === quickValue && { backgroundColor: themeColors.brandColor2 }
             ]}
             onPress={() => handleQuickSelect(quickValue)}
           >
             <Text 
               style={[
                 styles.quickSelectText,
-                value === quickValue && styles.quickSelectTextSelected
+                { color: themeColors.text },
+                value === quickValue && { color: themeColors.contrastText }
               ]}
             >
               {quickValue}
@@ -94,7 +108,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontFamily: 'Neuton-Regular',
-    color: '#000000',
     marginBottom: 16,
     height: 32
   },
@@ -109,7 +122,6 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#4F41D8',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -119,14 +131,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonDisabled: {
-    backgroundColor: '#D5D4DD',
-    opacity: 0.5,
-  },
   numberText: {
     fontSize: 24,
     fontFamily: 'Satoshi-Medium',
-    color: '#000000',
     width: 40,
     textAlign: 'center',
   },
@@ -137,21 +144,13 @@ const styles = StyleSheet.create({
   },
   quickSelectButton: {
     width: '17%',
-    backgroundColor: '#F8F8F8',
     borderRadius: 10,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickSelectButtonSelected: {
-    backgroundColor: '#4F41D8',
-  },
   quickSelectText: {
     fontFamily: 'Satoshi-Medium',
     fontSize: 12,
-    color: '#000000',
-  },
-  quickSelectTextSelected: {
-    color: '#FFFFFF',
   },
 }); 

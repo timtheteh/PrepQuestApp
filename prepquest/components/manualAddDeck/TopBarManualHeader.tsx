@@ -40,7 +40,13 @@ export function TopBarManualHeader({
 
   const renderIcon = (Icon: any, WhiteIcon: any, type: ButtonType) => {
     const isSelected = selectedButton === type;
-    return isSelected ? WhiteIcon : Icon;
+    if (theme === 'dark') {
+      // In dark mode: unpressed = white icon, pressed = non-white icon
+      return isSelected ? Icon : WhiteIcon;
+    } else {
+      // In light mode: unpressed = non-white icon, pressed = white icon
+      return isSelected ? WhiteIcon : Icon;
+    }
   };
 
   const handlePress = (type: ButtonType, callback?: () => void) => {

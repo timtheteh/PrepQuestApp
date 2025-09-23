@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { Fonts } from '@/constants/Fonts';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 interface ActionButtonProps {
   text: string;
@@ -19,13 +21,15 @@ export const ActionButton = React.memo(({
   disabled = false,
   fullWidth = false
 }: ActionButtonProps) => {
+  const { theme } = useTheme();
+  const themeColors = Colors[theme as keyof typeof Colors];
   const textLines = text.split('\n');
 
   return (
     <TouchableOpacity 
       style={[
         styles.button,
-        { backgroundColor },
+        { backgroundColor: disabled ? themeColors.disabledIconBackgroundColor : backgroundColor },
         fullWidth && styles.fullWidth,
         style
       ]}
@@ -34,7 +38,7 @@ export const ActionButton = React.memo(({
       disabled={disabled}
     >
       {textLines.map((line, index) => (
-        <Text key={index} style={[styles.text, index > 0 && styles.textLine]}>
+        <Text key={index} style={[styles.text, { color: themeColors.contrastText }, index > 0 && styles.textLine]}>
           {line}
         </Text>
       ))}
@@ -58,7 +62,6 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 22,
     fontFamily: Fonts.bodyBold,
-    color: '#FFFFFF',
     textAlign: 'center',
   },
   textLine: {

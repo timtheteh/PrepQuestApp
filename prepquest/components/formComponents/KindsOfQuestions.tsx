@@ -89,7 +89,7 @@ export const KindsOfQuestions = React.memo(({
         ]}
         onPress={() => handleSelect(type)}
       >
-        <Text style={styles.buttonText}>{label}</Text>
+        <Text style={[styles.buttonText, { color: Colors[theme].contrastText }]}>{label}</Text>
       </TouchableOpacity>
     );
   };
@@ -149,6 +149,5 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: Fonts.bodyMedium,
     fontSize: 12,
-    color: '#FFFFFF',
   },
 }); 

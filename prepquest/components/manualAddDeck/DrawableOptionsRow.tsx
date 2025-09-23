@@ -4,6 +4,8 @@ import MarkerIcon from '@/assets/icons/flippableCard/markerIcon.svg';
 import MarkerIconWhite from '@/assets/icons/flippableCard/markerIconWhite.svg';
 import UndoIcon from '@/assets/icons/flippableCard/undoIcon.svg';
 import ForwarddoIcon from '@/assets/icons/flippableCard/forwarddoIcon.svg';
+import UndoDarkMode from '@/assets/icons/flippableCard/undoDarkMode.svg';
+import ForwarddoDarkMode from '@/assets/icons/flippableCard/forwardDoDarkMode.svg';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { ResizeSlider } from './ResizeSlider';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -71,7 +73,11 @@ export function DrawableOptionsRow({
           ]}
           onPress={handleMarkerPress}
         >
-          {selectedTool === 'marker' ? <MarkerIconWhite width={20} height={20} /> : <MarkerIcon width={20} height={20} />}
+          {theme === 'dark' ? (
+            selectedTool === 'marker' ? <MarkerIcon width={20} height={20} /> : <MarkerIconWhite width={20} height={20} />
+          ) : (
+            selectedTool === 'marker' ? <MarkerIconWhite width={20} height={20} /> : <MarkerIcon width={20} height={20} />
+          )}
         </Pressable>
         
         <Pressable 
@@ -82,7 +88,11 @@ export function DrawableOptionsRow({
           ]}
           onPress={handleEraserPress}
         >
-          {selectedTool === 'eraser' ? <FontAwesome5 name="eraser" size={20} color="white" /> : <FontAwesome5 name="eraser" size={20} color={colors.text} />}
+          {theme === 'dark' ? (
+            selectedTool === 'eraser' ? <FontAwesome5 name="eraser" size={20} color="black" /> : <FontAwesome5 name="eraser" size={20} color="white" />
+          ) : (
+            selectedTool === 'eraser' ? <FontAwesome5 name="eraser" size={20} color="white" /> : <FontAwesome5 name="eraser" size={20} color={colors.text} />
+          )}
         </Pressable>
         
         {/* Resize Button */}
@@ -104,7 +114,11 @@ export function DrawableOptionsRow({
           ]}
           onPress={onUndoPress}
         >
-          <UndoIcon width={20} height={20} />
+          {theme === 'dark' ? (
+            <UndoDarkMode width={20} height={20} />
+          ) : (
+            <UndoIcon width={20} height={20} />
+          )}
         </Pressable>
         
         <Pressable 
@@ -115,7 +129,11 @@ export function DrawableOptionsRow({
           ]}
           onPress={onForwarddoPress}
         >
-          <ForwarddoIcon width={20} height={20} />
+          {theme === 'dark' ? (
+            <ForwarddoDarkMode width={20} height={20} />
+          ) : (
+            <ForwarddoIcon width={20} height={20} />
+          )}
         </Pressable>
         
         <TouchableOpacity 

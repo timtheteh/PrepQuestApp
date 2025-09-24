@@ -755,7 +755,7 @@ const FileUploadMainSection = ({
         ) : (
           <CloudUploadIcon width={110} height={110} />
         )}
-        <Text style={[styles.supportedFilesText, { fontSize: 20, color: themeColors.text }]}>
+        <Text style={[styles.supportedFilesText, { fontSize: 20, color: themeColors.unselectedText }]}>
           {isUploadSuccess 
             ? `${uploadType === 'image' ? strings[language].fileUploadPage.imageUploadedSuccessfully : strings[language].fileUploadPage.fileUploadedSuccessfully}\n${uploadType === 'file' ? `${strings[language].fileUploadPage.fileWithColon}${uploadedFileName}` : ''}`
             : STRINGS.supportedFiles[language]

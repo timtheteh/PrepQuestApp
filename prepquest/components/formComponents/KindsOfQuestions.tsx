@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import HelpIconOutline from '@/assets/icons/generalIcons/helpIconOutline.svg';
+import HelpIconOutlineDarkMode from '@/assets/icons/generalIcons/helpIconOutlineDarkMode.svg';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -105,7 +106,11 @@ export const KindsOfQuestions = React.memo(({
           style={styles.helpIconContainer}
           onPress={onHelpPress || handleHelpPress}
         >
-          <HelpIconOutline width={24} height={24} />
+          {theme === 'dark' ? (
+            <HelpIconOutlineDarkMode width={24} height={24} />
+          ) : (
+            <HelpIconOutline width={24} height={24} />
+          )}
         </TouchableOpacity>
       </View>
     </View>

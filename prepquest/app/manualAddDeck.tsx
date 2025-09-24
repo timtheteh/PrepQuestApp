@@ -2211,7 +2211,7 @@ export default function ManualAddDeckPage() {
         ]}>
           {isMandatory ? (
             <ActionButton
-              text={strings[language].manualAddDeckPage.submitFormWithCards}
+              text={strings[language].manualAddDeckPage.submit}
               backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
@@ -2220,7 +2220,7 @@ export default function ManualAddDeckPage() {
           ) : addViewState === 'add' ? (
             <View style={{ flexDirection: 'row', gap: 8, width: '100%', paddingHorizontal: 16}}>
               <ActionButton
-                text={strings[language].manualAddDeckPage.submitFormWithCards}
+                text={strings[language].manualAddDeckPage.submit}
                 backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled()}
@@ -2236,7 +2236,7 @@ export default function ManualAddDeckPage() {
             </View>
           ) : (
             <ActionButton
-              text={strings[language].manualAddDeckPage.submitFormWithCards}
+              text={strings[language].manualAddDeckPage.submit}
               backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}

@@ -594,7 +594,8 @@ export const strings: Record<string, any> = {
       typeYourContentHere: 'Type your content here',
       // Button text
       submitFormWithCards: 'Submit Form With Cards?',
-      moveToNextCard: 'Move To\nNext Card?',
+      submit: 'Submit',
+      moveToNextCard: 'Next Card',
       select: 'Select',
       selectAll: 'Select All',
       cancel: 'Cancel',
@@ -1669,7 +1670,8 @@ export const strings: Record<string, any> = {
       typeYourContentHere: '在此输入内容',
       // Button text
       submitFormWithCards: '提交表单和卡片？',
-      moveToNextCard: '移动到\n下一张卡片？',
+      submit: '提交',
+      moveToNextCard: '下一张卡片',
       select: '选择',
       selectAll: '全选',
       cancel: '取消',

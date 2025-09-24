@@ -121,7 +121,7 @@ export function BreakdownByDifficultyPie({ breakdown }: BreakdownByDifficultyPie
     cumulative += value;
     return { 
       path, 
-      color: theme === 'dark' ? colors.background : COLORS[i], 
+      color: theme === 'dark' ? colors.secondaryShade : COLORS[i], 
       strokeColor: COLORS[i],
       label, 
       labelPos, 

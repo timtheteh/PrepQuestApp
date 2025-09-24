@@ -29,7 +29,7 @@ export const ActionButton = React.memo(({
     <TouchableOpacity 
       style={[
         styles.button,
-        { backgroundColor: disabled ? themeColors.disabledIconBackgroundColor : backgroundColor },
+        { backgroundColor: disabled ? themeColors.unselectedText : backgroundColor },
         fullWidth && styles.fullWidth,
         style
       ]}

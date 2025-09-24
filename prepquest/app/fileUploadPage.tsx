@@ -18,6 +18,7 @@ import HelpIconOutline from '@/assets/icons/generalIcons/helpIconOutline.svg';
 import HelpIconOutlineDarkMode from '@/assets/icons/generalIcons/helpIconOutlineDarkMode.svg';
 import { PrimaryButton } from '@/components/general/PrimaryButton';
 import CloudUploadIcon from '@/assets/icons/fileUpload/cloudUploadIcon.svg';
+import CloudUploadIconDarkMode from '@/assets/icons/fileUpload/cloudUploadIconDarkMode.svg';
 import ImageIconFilled from '@/assets/icons/generalIcons/imageIconFilled.svg';
 import ImageIconFilledDarkMode from '@/assets/icons/generalIcons/imageIconFilledDarkMode.svg';
 import CameraIconFilled from '@/assets/icons/generalIcons/cameraIconFilled.svg';
@@ -753,16 +754,20 @@ const FileUploadMainSection = ({
             style={styles.successAnimation}
           />
         ) : (
-          <CloudUploadIcon width={110} height={110} />
+          theme === 'dark' ? (
+            <CloudUploadIconDarkMode width={110} height={110} />
+          ) : (
+            <CloudUploadIcon width={110} height={110} />
+          )
         )}
         <Text style={[styles.supportedFilesText, { fontSize: 20, color: themeColors.unselectedText }]}>
           {isUploadSuccess 
             ? `${uploadType === 'image' ? strings[language].fileUploadPage.imageUploadedSuccessfully : strings[language].fileUploadPage.fileUploadedSuccessfully}\n${uploadType === 'file' ? `${strings[language].fileUploadPage.fileWithColon}${uploadedFileName}` : ''}`
-            : STRINGS.supportedFiles[language]
+            : strings[language].fileUploadPage.supportedFiles
           }
         </Text>
         <PrimaryButton 
-          text={STRINGS.browseFiles[language]}
+          text={strings[language].fileUploadPage.browseFiles}
           onPress={browseFiles}
         />
       </View>
@@ -786,46 +791,6 @@ const FileUploadMainSection = ({
   );
 };
 
-// Add language mappings for all user-facing strings
-const STRINGS = {
-  mandatory: { English: 'Mandatory', Chinese: '必填' },
-  fileUpload: { English: 'File Upload', Chinese: '文件上传' },
-  deckName: { English: ' Deck Name', Chinese: '卡组名称' },
-  study: { English: 'Study', Chinese: '学习' },
-  interview: { English: 'Interview', Chinese: '面试' },
-  typeHere: { English: 'Type here!', Chinese: '请在此输入！' },
-  educationLevel: { English: '1. Education Level?', Chinese: '1. 教育程度？' },
-  educationLevelPH: { English: 'e.g. Freshman, Sophomore, etc', Chinese: '例如：大一，大二等' },
-  educationLevelHelper: { English: 'What education level is your preparation for?', Chinese: '你正在为哪个教育阶段做准备？' },
-  subjects: { English: '2. Subject(s)?', Chinese: '2. 科目？' },
-  subjectsPH: { English: 'e.g. Computer Science, Math, Physics, etc.', Chinese: '例如：计算机，数学，物理等' },
-  subjectsHelper: { English: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.', Chinese: '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。' },
-  jobRole: { English: '1. Job/Role?', Chinese: '1. 职位/角色？' },
-  jobRolePH: { English: 'e.g. Frontend Developer, Private Equity Analyst, etc', Chinese: '例如：前端开发，私募分析师等' },
-  jobRoleHelper: { English: 'What job or role are you preparing for?', Chinese: '你正在准备什么职位或角色？' },
-  numQuestions: { English: '3. Number of questions:', Chinese: '3. 题目数量：' },
-  uploadTitle: { English: 'Upload any file document to generate a new deck!', Chinese: '上传任意文件以生成新卡组！' },
-  browseFiles: { English: 'Browse\nFiles', Chinese: '浏览\n文件' },
-  supportedFiles: { English: 'Word documents (25MB), Text files (10MB), PowerPoint (30MB), Excel (20MB), PDF files (50MB), Images (10MB)', Chinese: 'Word文档(25MB)，文本文件(10MB)，PPT(30MB)，Excel(20MB)，PDF文件(50MB)，图片(10MB)' },
-  imageUploaded: { English: 'Image uploaded successfully!', Chinese: '图片上传成功！' },
-  fileUploaded: { English: 'File uploaded successfully!', Chinese: '文件上传成功！' },
-  fileLabel: { English: 'File:', Chinese: '文件：' },
-  aiGenerate: { English: 'AI Generate new card content?', Chinese: 'AI生成新卡片内容？' },
-  submit: { English: 'Submit', Chinese: '提交' },
-  deckNameInUse: { English: 'Deckname already in use', Chinese: '卡组名称已被使用' },
-  invalidSubjects: { English: "Invalid form input for 'Subject(s)'", Chinese: '“科目”输入无效' },
-  fillAllAndUpload: { English: 'Fill up all mandatory fields\nand upload your file!', Chinese: '请填写所有必填项并上传文件！' },
-  uploadBeforeSubmit: { English: 'Upload your file\nbefore submitting!', Chinese: '请先上传文件再提交！' },
-  fillAll: { English: 'Fill up all\nmandatory fields!', Chinese: '请填写所有必填项！' },
-  helpModal: { English: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.", Chinese: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。' },
-  aiHelpModal: { English: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.', Chinese: '勾选此项将让AI生成与上传内容无关的新建议卡片。' },
-  useRecent: { English: ['Use most recent', 'form entry?'], Chinese: ['使用最近的', '表单记录？'] },
-  greatSubmit: { English: 'Great! 😊 Do you want to go ahead and submit?', Chinese: '太棒了！😊 是否确认提交？' },
-  leaveConfirm: { English: ['Are you sure you want', 'to leave? All your', 'progress will be lost'], Chinese: ['确定要离开吗？', '所有进度将丢失'] },
-  fileSizeExceeded: { English: 'File size too large', Chinese: '文件大小超出限制' },
-  fileSizeLimit: { English: 'Maximum file size is', Chinese: '最大文件大小为' },
-  pleaseChooseSmallerFile: { English: 'Please choose a smaller file.', Chinese: '请选择较小的文件。' },
-};
 
 // Utility: Save base64 image to file
 async function saveBase64ImageToFile(base64Data: string, fileName: string) {
@@ -1086,8 +1051,6 @@ export default function FileUploadPage() {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const themeColors = Colors[theme as keyof typeof Colors];
-  // Type language as 'English' | 'Chinese' for STRINGS indexing
-  const lang: 'English' | 'Chinese' = language === 'Chinese' ? 'Chinese' : 'English';
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [extractedImages, setExtractedImages] = useState<string[]>([]);
   const [extractedText, setExtractedText] = useState<string>('');
@@ -1118,45 +1081,6 @@ export default function FileUploadPage() {
 
   const getTopBarAccountHeight = useTopBarAccountHeight();
 
-    // Error messages for network/API errors
-  const ERROR_MESSAGES = {
-    network: {
-      English: 'Network error!',
-      Chinese: '网络错误。请检查您的连接并重试。'
-    },
-    400: {
-      English: 'Something went wrong. Please try again.',
-      Chinese: '出现错误，请重试。'
-    },
-    401: {
-      English: "You're not logged in. Please sign in to continue.",
-      Chinese: '您尚未登录。请先登录。'
-    },
-    403: {
-      English: "You don't have permission to perform this action.",
-      Chinese: '您没有权限执行此操作。'
-    },
-    404: {
-      English: 'The requested resource was not found.',
-      Chinese: '未找到请求的资源。'
-    },
-    500: {
-      English: 'Server error. Please try again later.',
-      Chinese: '服务器错误，请稍后再试。'
-    },
-    502: {
-      English: 'Service temporarily unavailable. Please try again shortly.',
-      Chinese: '服务暂时不可用，请稍后再试。'
-    },
-    503: {
-      English: 'Service temporarily unavailable. Please try again shortly.',
-      Chinese: '服务暂时不可用，请稍后再试。'
-    },
-    default: {
-      English: 'Something went wrong. Please try again.',
-      Chinese: '出现错误，请重试。'
-    }
-  };
 
   const callGenAIFlashcardsGeneration = async (
     pdfCaption?: string | null,
@@ -1268,7 +1192,7 @@ export default function FileUploadPage() {
           console.log('Request was cancelled');
           return null;
         }
-        Alert.alert('Error', ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English);
+        Alert.alert('Error', strings[language].fileUploadPage.errorMessages.network);
         return null;
       } finally {
         // Clean up the AbortController after the request completes (success or error)
@@ -1281,28 +1205,28 @@ export default function FileUploadPage() {
         let message = '';
         switch (response.status) {
           case 400:
-            message = ERROR_MESSAGES[400][language] || ERROR_MESSAGES[400].English;
+            message = strings[language].fileUploadPage.errorMessages[400];
             break;
           case 401:
-            message = ERROR_MESSAGES[401][language] || ERROR_MESSAGES[401].English;
+            message = strings[language].fileUploadPage.errorMessages[401];
             break;
           case 403:
-            message = ERROR_MESSAGES[403][language] || ERROR_MESSAGES[403].English;
+            message = strings[language].fileUploadPage.errorMessages[403];
             break;
           case 404:
-            message = ERROR_MESSAGES[404][language] || ERROR_MESSAGES[404].English;
+            message = strings[language].fileUploadPage.errorMessages[404];
             break;
           case 500:
-            message = ERROR_MESSAGES[500][language] || ERROR_MESSAGES[500].English;
+            message = strings[language].fileUploadPage.errorMessages[500];
             break;
           case 502:
-            message = ERROR_MESSAGES[502][language] || ERROR_MESSAGES[502].English;
+            message = strings[language].fileUploadPage.errorMessages[502];
             break;
           case 503:
-            message = ERROR_MESSAGES[503][language] || ERROR_MESSAGES[503].English;
+            message = strings[language].fileUploadPage.errorMessages[503];
             break;
           default:
-            message = ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English;
+            message = strings[language].fileUploadPage.errorMessages.default;
         }
         Alert.alert('Error', message);
         return null;
@@ -1358,7 +1282,7 @@ export default function FileUploadPage() {
       console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
       return flashcards;
     } catch (error: any) {
-      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : (ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English));
+      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : strings[language].fileUploadPage.errorMessages.default);
     }
   };
 
@@ -1674,7 +1598,7 @@ export default function FileUploadPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage(STRINGS.deckNameInUse[lang]);
+        setToastMessage(strings[language].fileUploadPage.deckNameInUse);
         return false;
       }
     }
@@ -1694,28 +1618,28 @@ export default function FileUploadPage() {
       
       if (hasEmptySubjects || hasInvalidSubjects) {
         setShowToast(true);
-        setToastMessage(STRINGS.invalidSubjects[lang]);
+        setToastMessage(strings[language].fileUploadPage.invalidSubjects);
         return false;
       }
     }
 
     // Error 1: mandatory fields not filled up and no file/image uploaded
     if (!mandatoryFieldsFilled && !hasFileUploaded) {
-      setErrorMessage(STRINGS.fillAllAndUpload[lang]);
+      setErrorMessage(strings[language].fileUploadPage.fillAllAndUpload);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 2: mandatory fields filled up but file/image not uploaded
     if (mandatoryFieldsFilled && !hasFileUploaded) {
-      setErrorMessage(STRINGS.uploadBeforeSubmit[lang]);
+      setErrorMessage(strings[language].fileUploadPage.uploadBeforeSubmit);
       setIsErrorModalOpen(true);
       return false;
     }
 
     // Error 3: mandatory fields not filled up but got file/image uploaded
     if (!mandatoryFieldsFilled && hasFileUploaded) {
-      setErrorMessage(STRINGS.fillAll[lang]);
+      setErrorMessage(strings[language].fileUploadPage.fillAll);
       setIsErrorModalOpen(true);
       return false;
     }
@@ -2014,7 +1938,7 @@ export default function FileUploadPage() {
         const maxSize = FILE_SIZE_LIMITS.IMAGE;
         if (selectedImage.fileSize && selectedImage.fileSize > maxSize) {
           const sizeLimitText = formatFileSize(maxSize);
-          const errorMessage = `${STRINGS.fileSizeExceeded[lang]}!\n${STRINGS.fileSizeLimit[lang]} ${sizeLimitText}.\n${STRINGS.pleaseChooseSmallerFile[lang]}`;
+          const errorMessage = `${strings[language].fileUploadPage.fileSizeExceeded}!\n${strings[language].fileUploadPage.fileSizeLimit} ${sizeLimitText}.\n${strings[language].fileUploadPage.pleaseChooseSmallerFile}`;
           setShowToast(true);
           setToastMessage(errorMessage);
           return;
@@ -2073,7 +1997,7 @@ export default function FileUploadPage() {
         const maxSize = FILE_SIZE_LIMITS.IMAGE;
         if (capturedImage.fileSize && capturedImage.fileSize > maxSize) {
           const sizeLimitText = formatFileSize(maxSize);
-          const errorMessage = `${STRINGS.fileSizeExceeded[lang]}!\n${STRINGS.fileSizeLimit[lang]} ${sizeLimitText}.\n${STRINGS.pleaseChooseSmallerFile[lang]}`;
+          const errorMessage = `${strings[language].fileUploadPage.fileSizeExceeded}!\n${strings[language].fileUploadPage.fileSizeLimit} ${sizeLimitText}.\n${strings[language].fileUploadPage.pleaseChooseSmallerFile}`;
           setShowToast(true);
           setToastMessage(errorMessage);
           return;
@@ -2133,7 +2057,7 @@ export default function FileUploadPage() {
         const maxSize = getFileSizeLimit(selected.name);
         if (selected.size && selected.size > maxSize) {
           const sizeLimitText = formatFileSize(maxSize);
-          const errorMessage = `${STRINGS.fileSizeExceeded[lang]}!\n${STRINGS.fileSizeLimit[lang]} ${sizeLimitText}.\n${STRINGS.pleaseChooseSmallerFile[lang]}`;
+          const errorMessage = `${strings[language].fileUploadPage.fileSizeExceeded}!\n${strings[language].fileUploadPage.fileSizeLimit} ${sizeLimitText}.\n${strings[language].fileUploadPage.pleaseChooseSmallerFile}`;
           setShowToast(true);
           setToastMessage(errorMessage);
           return;
@@ -2385,8 +2309,8 @@ export default function FileUploadPage() {
       <View style={styles.mainContainer}>
         <View style={styles.toggleContainer}>
           <RoundedContainer 
-            leftLabel={STRINGS.mandatory[lang]}
-            rightLabel={STRINGS.fileUpload[lang]}
+            leftLabel={strings[language].fileUploadPage.mandatory}
+            rightLabel={strings[language].fileUploadPage.fileUpload}
             onToggle={handleToggle}
           />
         </View>
@@ -2409,17 +2333,17 @@ export default function FileUploadPage() {
           ]}>
               <View style={[{gap: Dimensions.get('window').height * 0.025}]}>
                 {!isInViewFlashcardsPage && (<TitleTextBar
-                  title={STRINGS.deckName[lang]}
-                  highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
-                  placeholder={STRINGS.typeHere[lang]}
+                  title={strings[language].fileUploadPage.deckName}
+                  highlightedWord={mode === 'study' ? strings[language].fileUploadPage.study : strings[language].fileUploadPage.interview}
+                  placeholder={strings[language].fileUploadPage.typeHere}
                   value={deckName}
                   onChangeText={setDeckName}
                 />)
                 }
                 {isInViewFlashcardsPage === 'true' && (
                   <TitleTextBar
-                    title={STRINGS.deckName[lang]}
-                    highlightedWord={mode === 'study' ? STRINGS.study[lang] : STRINGS.interview[lang]}
+                    title={strings[language].fileUploadPage.deckName}
+                    highlightedWord={mode === 'study' ? strings[language].fileUploadPage.study : strings[language].fileUploadPage.interview}
                     placeholder={deckTitle}
                     value={deckTitle}
                     onChangeText={() => {}} // Disabled - no-op function
@@ -2429,29 +2353,29 @@ export default function FileUploadPage() {
                 {mode === 'study' && (
                   <>
                     <QuestionTextBar
-                      label={STRINGS.educationLevel[lang]}
-                      placeholder={STRINGS.educationLevelPH[lang]}
+                      label={strings[language].fileUploadPage.educationLevel}
+                      placeholder={strings[language].fileUploadPage.educationLevelPlaceholder}
                       value={studyMandatoryQuestion1}
                       onChangeText={setStudyMandatoryQuestion1}
-                      helperText={STRINGS.educationLevelHelper[lang]}
+                      helperText={strings[language].fileUploadPage.educationLevelHelper}
                     />
                     <QuestionTextBar
-                      label={STRINGS.subjects[lang]}
-                      placeholder={STRINGS.subjectsPH[lang]}
+                      label={strings[language].fileUploadPage.subjects}
+                      placeholder={strings[language].fileUploadPage.subjectsPlaceholder}
                       value={studyMandatoryQuestion2}
                       onChangeText={setStudyMandatoryQuestion2}
-                      helperText={STRINGS.subjectsHelper[lang]}
+                      helperText={strings[language].fileUploadPage.subjectsHelper}
                     />
                   </>
                 )}
                 {mode !== 'study' && (
                   <>
                   <QuestionTextBar
-                    label={STRINGS.jobRole[lang]}
-                    placeholder={STRINGS.jobRolePH[lang]}
+                    label={strings[language].fileUploadPage.jobRole}
+                    placeholder={strings[language].fileUploadPage.jobRolePlaceholder}
                     value={interviewMandatoryQuestion1}
                     onChangeText={setInterviewMandatoryQuestion1}
-                    helperText={STRINGS.jobRoleHelper[lang]}
+                    helperText={strings[language].fileUploadPage.jobRoleHelper}
                     />
                   <TypeOfInterviewQn
                     value={interviewType}
@@ -2460,7 +2384,7 @@ export default function FileUploadPage() {
                   </>
                 )}
                 <NumberOfQuestions
-                  title={STRINGS.numQuestions[lang]}
+                  title={strings[language].fileUploadPage.numberOfQuestions}
                   value={numberOfQuestions}
                   onValueChange={setNumberOfQuestions}
                 />
@@ -2489,7 +2413,7 @@ export default function FileUploadPage() {
             >
               <View>
                 <Text style={[styles.fileUploadTitle, { color: themeColors.text }]}>
-                {STRINGS.uploadTitle[lang]}
+                {strings[language].fileUploadPage.uploadTitle}
               </Text>
               <FileUploadMainSection 
                 pickImage={pickImage} 
@@ -2498,7 +2422,7 @@ export default function FileUploadPage() {
                 isUploadSuccess={isUploadSuccess} 
                 uploadType={uploadType} 
                 uploadedFileName={uploadedFileName} 
-                language={lang}
+                language={language}
                 isLoading={isFileUploading}
                 uploadProgress={uploadProgress}
               />
@@ -2507,7 +2431,7 @@ export default function FileUploadPage() {
                   selected={isAIGenerate}
                   onPress={() => setIsAIGenerate(!isAIGenerate)}
                     />
-                <Text style={[styles.aiGenerateText, { color: themeColors.text }]}>{STRINGS.aiGenerate[lang]}</Text>
+                <Text style={[styles.aiGenerateText, { color: themeColors.text }]}>{strings[language].fileUploadPage.aiGenerate}</Text>
                 <TouchableOpacity onPress={() => setIsAIHelpModalOpen(true)}>
                   {theme === 'dark' ? (
                     <HelpIconOutlineDarkMode width={24} height={24} />
@@ -2526,7 +2450,7 @@ export default function FileUploadPage() {
             { bottom: bottomOffset, backgroundColor: themeColors.background }
           ]}>
             <ActionButton
-              text={STRINGS.submit[lang]}
+              text={strings[language].fileUploadPage.submit}
               backgroundColor={isSubmitDisabled() ? themeColors.unselectedText : themeColors.brandColor1}
               onPress={handleSubmit}
               disabled={isSubmitDisabled()}
@@ -2543,7 +2467,7 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isHelpModalOpen}
         opacity={modalOpacity}
-        text={STRINGS.helpModal[lang]}
+        text={strings[language].fileUploadPage.helpModal}
         buttons='none'
         textStyle={{
           highlightWord: "our website",
@@ -2554,14 +2478,14 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isAIHelpModalOpen}
         opacity={aiHelpModalOpacity}
-        text={STRINGS.aiHelpModal[lang]}
+        text={strings[language].fileUploadPage.aiHelpModal}
         buttons='none'
         Icon={HelpIconFilled}
       />
       <GenericModal
         visible={isRecentFormModalOpen}
         opacity={recentFormModalOpacity}
-        text={STRINGS.useRecent[lang]}
+        text={strings[language].fileUploadPage.useRecent}
         buttons='double'
         onConfirm={handleLoadMostRecentForm}
         onCancel={handleDismissRecentForm}
@@ -2576,7 +2500,7 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isSuccessModalOpen}
         opacity={successModalOpacity}
-        text={STRINGS.greatSubmit[lang]}
+        text={strings[language].fileUploadPage.greatSubmit}
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
@@ -2584,7 +2508,7 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isBackConfirmationModalOpen}
         opacity={backConfirmationModalOpacity}
-        text={STRINGS.leaveConfirm[lang]}
+        text={strings[language].fileUploadPage.leaveConfirm}
         buttons="double"
         onCancel={handleDismissBackConfirmation}
         onConfirm={() => {
@@ -2615,7 +2539,7 @@ export default function FileUploadPage() {
       <GenericModal
         visible={isNetworkErrorModalOpen}
         opacity={networkErrorModalOpacity}
-        text={ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English}
+        text={strings[language].fileUploadPage.errorMessages.network}
         buttons="single"
         onConfirm={handleDismissNetworkErrorModal}
         Icon={DeleteModalIcon}

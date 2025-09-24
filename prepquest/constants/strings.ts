@@ -492,12 +492,54 @@ export const strings: Record<string, any> = {
     },
     // FileUploadPage strings
     fileUploadPage: {
+      // Toggle labels
+      mandatory: 'Mandatory',
+      fileUpload: 'File Upload',
+      // Form labels and placeholders
+      deckName: ' Deck Name',
+      study: 'Study',
+      interview: 'Interview',
+      typeHere: 'Type here!',
+      educationLevel: '1. Education Level?',
+      educationLevelPlaceholder: 'e.g. Freshman, Sophomore, etc',
+      educationLevelHelper: 'What education level is your preparation for?',
+      subjects: '2. Subject(s)?',
+      subjectsPlaceholder: 'e.g. Computer Science, Math, Physics, etc.',
+      subjectsHelper: 'What subject(s) would this deck be for? Provide your answer in a comma separated list, e.g Inorganic Chemistry, Organic Chemistry, etc.',
+      jobRole: '1. Job/Role?',
+      jobRolePlaceholder: 'e.g. Frontend Developer, Private Equity Analyst, etc',
+      jobRoleHelper: 'What job or role are you preparing for?',
+      numberOfQuestions: '3. Number of questions:',
+      // Upload section
+      uploadTitle: 'Upload any file document to generate a new deck!',
+      browseFiles: 'Browse\nFiles',
+      supportedFiles: 'Word documents (25MB), Text files (10MB), PowerPoint (30MB), Excel (20MB), PDF files (50MB), Images (10MB)',
       // Upload success messages
       imageUploadedSuccessfully: 'Image uploaded successfully!',
       fileUploadedSuccessfully: 'File uploaded successfully!',
       imageLabel: 'Image',
       fileLabel: 'File',
       fileWithColon: 'File:',
+      // AI Generate option
+      aiGenerate: 'AI Generate new card content?',
+      // Submit button
+      submit: 'Submit',
+      // Validation messages
+      deckNameInUse: 'Deckname already in use',
+      invalidSubjects: "Invalid form input for 'Subject(s)'",
+      fillAllAndUpload: 'Fill up all mandatory fields\nand upload your file!',
+      uploadBeforeSubmit: 'Upload your file\nbefore submitting!',
+      fillAll: 'Fill up all\nmandatory fields!',
+      // Modal messages
+      helpModal: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.",
+      aiHelpModal: 'Ticking this option will let AI generate new, suggested cards outside the content of your upload.',
+      useRecent: ['Use most recent', 'form entry?'],
+      greatSubmit: 'Great! 😊 Do you want to go ahead and submit?',
+      leaveConfirm: ['Are you sure you want', 'to leave? All your', 'progress will be lost'],
+      // File size error messages
+      fileSizeExceeded: 'File size too large',
+      fileSizeLimit: 'Maximum file size is',
+      pleaseChooseSmallerFile: 'Please choose a smaller file.',
       // Background task messages
       creatingDeck: 'Creating Deck',
       creatingDeckInBackground: 'Your deck is being created in the background.',
@@ -510,6 +552,18 @@ export const strings: Record<string, any> = {
       errorTakingPhoto: 'Error taking photo. Please try again.',
       errorSelectingFile: 'Error selecting file. Please try again.',
       failedToStartBackgroundTask: 'Failed to start background task',
+      // Error messages for network/API errors
+      errorMessages: {
+        network: 'Network error!',
+        400: 'Something went wrong. Please try again.',
+        401: "You're not logged in. Please sign in to continue.",
+        403: "You don't have permission to perform this action.",
+        404: 'The requested resource was not found.',
+        500: 'Server error. Please try again later.',
+        502: 'Service temporarily unavailable. Please try again shortly.',
+        503: 'Service temporarily unavailable. Please try again shortly.',
+        default: 'Something went wrong. Please try again.',
+      },
     },
     // GenAIFormPage strings
     genAIFormPage: {
@@ -1568,12 +1622,54 @@ export const strings: Record<string, any> = {
     },
     // FileUploadPage strings
     fileUploadPage: {
+      // Toggle labels
+      mandatory: '必填',
+      fileUpload: '文件上传',
+      // Form labels and placeholders
+      deckName: '卡组名称',
+      study: '学习',
+      interview: '面试',
+      typeHere: '请在此输入！',
+      educationLevel: '1. 教育程度？',
+      educationLevelPlaceholder: '例如：大一，大二等',
+      educationLevelHelper: '你正在为哪个教育阶段做准备？',
+      subjects: '2. 科目？',
+      subjectsPlaceholder: '例如：计算机，数学，物理等',
+      subjectsHelper: '这个卡组是针对哪些科目？请用逗号分隔，例如：无机化学，有机化学等。',
+      jobRole: '1. 职位/角色？',
+      jobRolePlaceholder: '例如：前端开发，私募分析师等',
+      jobRoleHelper: '你正在准备什么职位或角色？',
+      numberOfQuestions: '3. 题目数量：',
+      // Upload section
+      uploadTitle: '上传任意文件以生成新卡组！',
+      browseFiles: '浏览\n文件',
+      supportedFiles: 'Word文档(25MB)，文本文件(10MB)，PPT(30MB)，Excel(20MB)，PDF文件(50MB)，图片(10MB)',
       // Upload success messages
       imageUploadedSuccessfully: '图片上传成功！',
       fileUploadedSuccessfully: '文件上传成功！',
       imageLabel: '图片',
       fileLabel: '文件',
       fileWithColon: '文件：',
+      // AI Generate option
+      aiGenerate: 'AI生成新卡片内容？',
+      // Submit button
+      submit: '提交',
+      // Validation messages
+      deckNameInUse: '卡组名称已被使用',
+      invalidSubjects: '"科目"输入无效',
+      fillAllAndUpload: '请填写所有必填项并上传文件！',
+      uploadBeforeSubmit: '请先上传文件再提交！',
+      fillAll: '请填写所有必填项！',
+      // Modal messages
+      helpModal: '我们的团队基于布鲁姆认知分类法，归纳了7种主要认知题型，帮助你的学习。访问我们的网站了解更多。',
+      aiHelpModal: '勾选此项将让AI生成与上传内容无关的新建议卡片。',
+      useRecent: ['使用最近的', '表单记录？'],
+      greatSubmit: '太棒了！😊 是否确认提交？',
+      leaveConfirm: ['确定要离开吗？', '所有进度将丢失'],
+      // File size error messages
+      fileSizeExceeded: '文件大小超出限制',
+      fileSizeLimit: '最大文件大小为',
+      pleaseChooseSmallerFile: '请选择较小的文件。',
       // Background task messages
       creatingDeck: '创建卡组',
       creatingDeckInBackground: '正在后台创建您的卡组',
@@ -1586,6 +1682,18 @@ export const strings: Record<string, any> = {
       errorTakingPhoto: '拍照时出错，请重试。',
       errorSelectingFile: '选择文件时出错，请重试。',
       failedToStartBackgroundTask: '启动后台任务失败',
+      // Error messages for network/API errors
+      errorMessages: {
+        network: '网络错误。请检查您的连接并重试。',
+        400: '出现错误，请重试。',
+        401: '您尚未登录。请先登录。',
+        403: '您没有权限执行此操作。',
+        404: '未找到请求的资源。',
+        500: '服务器错误，请稍后再试。',
+        502: '服务暂时不可用，请稍后再试。',
+        503: '服务暂时不可用，请稍后再试。',
+        default: '出现错误，请重试。',
+      },
     },
     // GenAIFormPage strings
     genAIFormPage: {

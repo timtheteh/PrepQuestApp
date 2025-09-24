@@ -54,9 +54,9 @@ const TitleToggleRow = React.memo(({ text, value, onValueChange, language }: { t
         <Switch
           value={value}
           onValueChange={onValueChange}
-          trackColor={{ false: colors.unselectedText, true: colors.brandColor1 }}
+          trackColor={{ false: theme === 'dark' ? colors.disabledIconBackgroundColor : colors.unselectedText, true: colors.brandColor1 }}
           thumbColor={'#FFFFFF'}
-          ios_backgroundColor={colors.unselectedText}
+          ios_backgroundColor={theme === 'dark' ? colors.disabledIconBackgroundColor : colors.unselectedText}
         />
       </View>
     );

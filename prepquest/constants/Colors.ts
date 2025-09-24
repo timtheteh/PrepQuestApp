@@ -34,7 +34,7 @@ export const Colors = {
     background: '#1D2428',
     brandColor1: '#2CFED3',
     brandColor2: '#FE2C57',
-    brandColor3: '#8684FF',
+    brandColor3: '#FF5174',
     secondaryShade: '#2A2A2A',
     androidSecondaryShade: '#000000',
     text: "#FFFFFF",
@@ -59,7 +59,7 @@ export const Colors = {
     speedChartColor1: '#FFA6B8',
     speedChartColor2: '#FF728F',
     speedChartColor3: '#FF0437',
-    loadingBarBgColor: '#000000',
+    loadingBarBgColor: '#1D2428',
     cardTypePillBgColor: '#000000',
   },
 };

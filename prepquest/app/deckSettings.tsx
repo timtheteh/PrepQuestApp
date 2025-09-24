@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, ScrollV
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import HelpIconFilled from '@/assets/icons/generalIcons/helpIconFilled.svg';
+import HelpIconFilledDarkMode from '@/assets/icons/generalIcons/helpIconFilledDarkMode.svg';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { DifficultyToggleRow } from '@/components/general/DifficultyToggleRow';
@@ -20,6 +21,7 @@ import { BackgroundTaskNotification } from '@/components/inAppNotifications/Back
 // Local component for title and toggle row
 const TitleToggleRow = React.memo(({ text, value, onValueChange, styles }: { text: string; value: boolean; onValueChange: (value: boolean) => void; styles: any }) => {
   const { theme } = useTheme();
+  const colors = Colors[theme];
   const unselectedText = Colors[theme].unselectedText;
   const brandColor1 = Colors[theme].brandColor1;
   
@@ -29,16 +31,18 @@ const TitleToggleRow = React.memo(({ text, value, onValueChange, styles }: { tex
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: unselectedText, true: brandColor1 }}
-        thumbColor={Colors[theme].background}
-        ios_backgroundColor={unselectedText}
-      />
+        trackColor={{ false: theme === 'dark' ? colors.disabledIconBackgroundColor : colors.unselectedText, true: colors.brandColor1 }}
+        thumbColor={'#FFFFFF'}
+        ios_backgroundColor={theme === 'dark' ? colors.disabledIconBackgroundColor : colors.unselectedText}
+    />
     </View>
   );
 });
 
 // Local component for list paragraph with help icon
 const ListParagraph = React.memo(({ listItems, onHelpPress, styles }: { listItems: string[]; onHelpPress: () => void; styles: any }) => {
+  const { theme } = useTheme();
+  
   return (
     <View style={styles.listParagraphContainer}>
       <View style={styles.listColumn}>
@@ -51,7 +55,11 @@ const ListParagraph = React.memo(({ listItems, onHelpPress, styles }: { listItem
       </View>
       <View style={styles.iconColumn}>
         <TouchableOpacity onPress={onHelpPress}>
-          <HelpIconFilled width={30} height={30} />
+          {theme === 'dark' ? (
+            <HelpIconFilledDarkMode width={30} height={30} />
+          ) : (
+            <HelpIconFilled width={30} height={30} />
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -505,7 +513,7 @@ export default function DeckSettingsPage() {
           <Text style={[styles.descriptionText, { color: text }]}>
             {strings[language].deckSettingsPage.autoDecksDescription}
           </Text>
-          <Text style={[styles.sectionTitle, { color: brandColor2 }]}>{strings[language].deckSettingsPage.flashcardSettings}</Text>
+          <Text style={[styles.sectionTitle, { color: theme === 'dark' ? text : brandColor2 }]}>{strings[language].deckSettingsPage.flashcardSettings}</Text>
           <TitleToggleRow 
             text={strings[language].deckSettingsPage.clozeQuestions}
             value={clozeQuestionsEnabled}
@@ -559,7 +567,7 @@ export default function DeckSettingsPage() {
             language={language}
             theme={theme}
           />
-          <Text style={[styles.sectionTitle, { color: brandColor2 }]}>{strings[language].deckSettingsPage.quizPreferences}</Text>
+          <Text style={[styles.sectionTitle, { color: theme === 'dark' ? text : brandColor2 }]}>{strings[language].deckSettingsPage.quizPreferences}</Text>
           <TitleToggleRow 
             text={strings[language].deckSettingsPage.halfwayCheckpoint}
             value={halfwayCheckpointEnabled}
@@ -631,7 +639,7 @@ export default function DeckSettingsPage() {
           highlightWord: strings[language].deckSettingsPage.helpModalWebsite,
           highlightColor: Colors[theme].brandColor2
         }}
-        Icon={HelpIconFilled}
+        Icon={theme === 'dark' ? HelpIconFilledDarkMode : HelpIconFilled}
       />
 
       {/* In-app notifications */}

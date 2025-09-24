@@ -83,19 +83,37 @@ export const DifficultyToggleRow = React.memo(({
   }), [positionAnim, colorRange]);
 
   // Animated text color for each option
-  const getTextColor = (idx: number) =>
-    colorAnim.interpolate({
-      inputRange: [0, 1, 2, 3, 4],
-      outputRange: idx === 0
-        ? [colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText]
-        : idx === 1
-        ? [colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText]
-        : idx === 2
-        ? [colors.unselectedText, colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText]
-        : idx === 3
-        ? [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.text, colors.unselectedText]
-        : [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.background]
-    });
+  const getTextColor = (idx: number) => {
+    if (theme === 'dark') {
+      // In dark mode, use unselectedText for unselected options, background for selected
+      return colorAnim.interpolate({
+        inputRange: [0, 1, 2, 3, 4],
+        outputRange: idx === 0
+          ? [colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText]
+          : idx === 1
+          ? [colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText]
+          : idx === 2
+          ? [colors.unselectedText, colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText]
+          : idx === 3
+          ? [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.background, colors.unselectedText]
+          : [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.background]
+      });
+    } else {
+      // In light mode, use original colors
+      return colorAnim.interpolate({
+        inputRange: [0, 1, 2, 3, 4],
+        outputRange: idx === 0
+          ? [colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText]
+          : idx === 1
+          ? [colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText, colors.unselectedText]
+          : idx === 2
+          ? [colors.unselectedText, colors.unselectedText, colors.background, colors.unselectedText, colors.unselectedText]
+          : idx === 3
+          ? [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.text, colors.unselectedText]
+          : [colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.unselectedText, colors.background]
+      });
+    }
+  };
 
   return (
     <View style={[styles.container, { width: containerWidth, backgroundColor: colors.secondaryShade }, style]} {...props}>

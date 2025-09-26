@@ -39,7 +39,7 @@ import { Toast } from '@/components/general/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -663,31 +663,31 @@ export default function DeckDetailsScreen() {
     }
   };
 
-  // Consolidated data loading function with caching
+  // Consolidated data loading function
   const loadAllDeckData = useCallback(async () => {
     const isAIDeckFromParams = isAIDeck as string === 'true';
     const deckIdNum = parseInt(deckId as string);
     
     try {
-      // Use optimized screen data loader with caching
-      const screenData = await optimizedDataLoader.loadScreenData(`deckDetails-${deckId}`, {
-        deckInfo: () => isAIDeckFromParams ? getAIDeckInfo(deckIdNum) : getDeckInfoWithProgress(deckIdNum),
-        deckGrade: () => isAIDeckFromParams ? getAIDeckGrade(deckIdNum) : getDeckGrade(deckIdNum),
-        averageTime: () => isAIDeckFromParams ? getAIDeckAverageTime(deckIdNum) : getDeckAverageTime(deckIdNum),
-        attemptStatus: () => checkFlashcardAttemptStatus(deckIdNum, isAIDeckFromParams),
-        savedStatus: () => isAIDeckFromParams ? checkAIDeckSavedStatus(deckIdNum) : Promise.resolve(false),
-      });
+      // Load all deck data directly from database
+      const [deckInfoData, deckGradeData, averageTimeData, attemptStatusData, savedStatusData] = await Promise.all([
+        isAIDeckFromParams ? getAIDeckInfo(deckIdNum) : getDeckInfoWithProgress(deckIdNum),
+        isAIDeckFromParams ? getAIDeckGrade(deckIdNum) : getDeckGrade(deckIdNum),
+        isAIDeckFromParams ? getAIDeckAverageTime(deckIdNum) : getDeckAverageTime(deckIdNum),
+        checkFlashcardAttemptStatus(deckIdNum, isAIDeckFromParams),
+        isAIDeckFromParams ? checkAIDeckSavedStatus(deckIdNum) : Promise.resolve(false),
+      ]);
 
       // Update all state at once
-      setDeckInfo(screenData.deckInfo);
-      setDeckGrade(screenData.deckGrade);
-      setAverageTime(screenData.averageTime);
-      setHasAttemptedFlashcards(screenData.attemptStatus);
-      setIsAIDeckSaved(screenData.savedStatus);
+      setDeckInfo(deckInfoData);
+      setDeckGrade(deckGradeData);
+      setAverageTime(averageTimeData);
+      setHasAttemptedFlashcards(attemptStatusData);
+      setIsAIDeckSaved(savedStatusData);
 
       // Load company logo if needed
-      if (screenData.deckInfo?.deckType === 'interview' && screenData.deckInfo?.interviewCompanyIcon) {
-        const imageSource = await getCompanyIconImageSource(screenData.deckInfo.interviewCompanyIcon);
+      if (deckInfoData?.deckType === 'interview' && deckInfoData?.interviewCompanyIcon) {
+        const imageSource = await getCompanyIconImageSource(deckInfoData.interviewCompanyIcon);
         setCompanyLogoImageSource(imageSource);
       }
       

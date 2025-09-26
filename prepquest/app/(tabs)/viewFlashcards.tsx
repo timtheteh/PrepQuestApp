@@ -18,7 +18,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useContentTopHeight, useContentTopHeightNoRoundedToggle2, useHeaderIconsTopHeight, useTopBarTopHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -138,23 +138,23 @@ export default function ViewFlashcardsScreen() {
 
 
 
-  // Consolidated data loading function with caching
+  // Consolidated data loading function
   const loadAllFlashcardData = useCallback(async () => {
     try {
       setIsLoadingFlashcards(true);
       setIsLoadingTopics(true);
 
-      // Use optimized screen data loader with caching
-      const screenData = await optimizedDataLoader.loadScreenData(`viewFlashcards-${deckId}`, {
-        flashcards: () => loadFlashcardsFromDatabase(deckId as string, isAIDeck as string),
-        topics: () => loadTopicsFromDatabase(deckId as string, isAIDeck as string),
-      });
+      // Load flashcards and topics data directly from database
+      const [flashcardsData, topicsData] = await Promise.all([
+        loadFlashcardsFromDatabase(deckId as string, isAIDeck as string),
+        loadTopicsFromDatabase(deckId as string, isAIDeck as string)
+      ]);
 
-      setFlashcards(screenData.flashcards);
-      setTopics(screenData.topics);
+      setFlashcards(flashcardsData);
+      setTopics(topicsData);
       
       // Calculate question type counts from loaded flashcards
-      const questionTypeCounts = calculateQuestionTypeCounts(screenData.flashcards);
+      const questionTypeCounts = calculateQuestionTypeCounts(flashcardsData);
       setQuestionTypes(questionTypeCounts);
     } catch (error) {
       console.error('Error loading flashcard data:', error);

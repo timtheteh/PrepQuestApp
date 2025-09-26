@@ -27,7 +27,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 import { formatDate as formatDateUtil } from '@/utils/dateFormat';
 
@@ -1004,33 +1004,27 @@ export default function FavoritesScreen() {
       
       console.log('Loading favorited data from database...');
       try {
-        // Use optimized screen data loader with caching
-        const screenData = await optimizedDataLoader.loadScreenData('favorites', {
-          decksData: getFavoritedDecks,
-          foldersData: getFavoritedFolders,
-        });
+        // Load favorited data directly from database
+        const [decksData, foldersData] = await Promise.all([
+          getFavoritedDecks(),
+          getFavoritedFolders()
+        ]);
 
-        console.log('Favorited decks loaded:', screenData.decksData.length);
-        console.log('Favorited folders loaded:', screenData.foldersData.length);
-        setFavoritedDecks(screenData.decksData);
-        setFavoritedFolders(screenData.foldersData);
-        setFilteredFavoritedDecks(screenData.decksData);
-        setFilteredFavoritedFolders(screenData.foldersData);
-        setFavDeckCardsCount(screenData.decksData.length);
-        setFavFolderCardsCount(screenData.foldersData.length);
+        console.log('Favorited decks loaded:', decksData.length);
+        console.log('Favorited folders loaded:', foldersData.length);
+        setFavoritedDecks(decksData);
+        setFavoritedFolders(foldersData);
+        setFilteredFavoritedDecks(decksData);
+        setFilteredFavoritedFolders(foldersData);
+        setFavDeckCardsCount(decksData.length);
+        setFavFolderCardsCount(foldersData.length);
 
-        // Load image sources with optimized batching
-        const imageLoaders = screenData.decksData.map((deck: any) => 
-          () => getCompanyIconImageSource(deck.interviewCompanyIcon)
-        );
-        
-        const imageResults = await optimizedDataLoader.loadImages(imageLoaders);
-        
-        // Map results back to deck IDs
+        // Load image sources for all decks
         const sources = new Map<number, { uri: string } | undefined>();
-        screenData.decksData.forEach((deck: any, index: number) => {
-          sources.set(deck.deckID, imageResults[index]);
-        });
+        for (const deck of decksData) {
+          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+          sources.set(deck.deckID, imageSource);
+        }
         setImageSources(sources);
       } catch (error) {
         console.error('Error loading favorited data:', error);

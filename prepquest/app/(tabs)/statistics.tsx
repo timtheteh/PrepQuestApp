@@ -10,7 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 
 // Lazy load heavy components for better performance
 const ReviewLineGraph = lazy(() => import('@/components/statsComponents/ReviewLineGraph').then(module => ({ default: module.ReviewLineGraph })));
@@ -66,23 +66,23 @@ const StatisticsScreen = React.memo(() => {
   // Get performance-based animation config
   const animationConfig = useMemo(() => getAnimationConfig(), []);
 
-  // Optimized data fetching with unified caching system
+  // Data fetching for performance tab
   const fetchDataForPerformanceTab = useCallback(async () => {
     try {
       setIsLoadingAverageGrade(true);
       setIsLoadingDifficultyBreakdown(true);
       setIsLoadingAverageTime(true);
 
-      // Use optimized screen data loader with caching
-      const screenData = await optimizedDataLoader.loadScreenData('statistics-performance', {
-        averageGrade: getAverageGradeAllTime,
-        difficultyBreakdown: getDifficultyBreakdown,
-        averageTime: getAverageTimeAllTime,
-      });
+      // Load statistics data directly from database
+      const [averageGradeData, difficultyBreakdownData, averageTimeData] = await Promise.all([
+        getAverageGradeAllTime(),
+        getDifficultyBreakdown(),
+        getAverageTimeAllTime(),
+      ]);
 
-      setAverageGrade(screenData.averageGrade);
-      setDifficultyBreakdown(screenData.difficultyBreakdown);
-      setAverageTime(screenData.averageTime);
+      setAverageGrade(averageGradeData);
+      setDifficultyBreakdown(difficultyBreakdownData);
+      setAverageTime(averageTimeData);
     } catch (error) {
       console.error('Error fetching statistics data:', error);
       setAverageGrade(0);

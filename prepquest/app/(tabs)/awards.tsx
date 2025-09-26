@@ -19,7 +19,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTopBarStatisticsHeight } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
 const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
 const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
@@ -353,16 +353,12 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Optimized streak data fetching with unified caching
+  // Streak data fetching
   const fetchStreakData = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Use optimized data loader with caching
-      const cachedData = await optimizedDataLoader.loadWithCache(
-        'awards-streak-data',
-        getLongestStreakData
-      );
-      setStreakData(cachedData);
+      const streakData = await getLongestStreakData();
+      setStreakData(streakData);
     } catch (error) {
       setStreakData({
         streakLength: 0,
@@ -593,16 +589,12 @@ const StreakCalendar = React.memo(() => {
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Optimized studied dates fetching with unified caching
+  // Studied dates fetching
   const fetchStudiedDates = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Use optimized data loader with caching
-      const cachedDates = await optimizedDataLoader.loadWithCache(
-        'awards-studied-dates',
-        getAllStudiedDates
-      );
-      setStudiedDates(cachedDates);
+      const studiedDates = await getAllStudiedDates();
+      setStudiedDates(studiedDates);
     } catch (error) {
       setStudiedDates([]);
     } finally {

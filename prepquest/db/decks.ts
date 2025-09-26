@@ -60,435 +60,41 @@ export interface Flashcard {
   lastQuizzedDate: string | null;
 }
 
-// Cached userID to avoid repeated AsyncStorage calls
-let cachedUserID: string | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
-
-// Helper function to get current userID from AsyncStorage with caching
+// Helper function to get current userID from AsyncStorage
 export async function getCurrentUserID(): Promise<string> {
   try {
-    const now = Date.now();
-    
-    // Use cached value if it's still valid
-    if (cachedUserID && (now - cacheTimestamp) < CACHE_DURATION) {
-      return cachedUserID;
-    }
-    
-    // Fetch from AsyncStorage and update cache
     const userID = await AsyncStorage.getItem('userID');
-    cachedUserID = userID || '1';
-    cacheTimestamp = now;
-    
-    return cachedUserID;
+    return userID || '1'; // Default to '1' if not found
   } catch (error) {
     console.error('Error getting userID from AsyncStorage:', error);
-    // Return cached value if available, otherwise default
-    return cachedUserID || '1';
+    return '1'; // Default to '1' on error
   }
 }
 
-// Function to clear userID cache (useful for logout/login)
-export function clearUserIDCache(): void {
-  cachedUserID = null;
-  cacheTimestamp = 0;
-}
-
-// Batch operation utilities for better performance
-export async function batchInsertFlashcards(flashcards: Array<{
-  userID: string;
-  deckID: number;
-  difficultyRating: string;
-  cognitiveQnType: string;
-  isFavorited: number;
-  questionType: string;
-  questionText: string | null;
-  questionBlob: Uint8Array | null;
-  answerType: string;
-  answerText: string | null;
-  answerMCQ: string | null;
-  answerBlob: Uint8Array | null;
-  timeTaken: number | null;
-  isMcqAnswerRight: number | null;
-  lastStudiedDate: string | null;
-  lastQuizzedDate: string | null;
-}>): Promise<number[]> {
-  const insertedIds: number[] = [];
-  
-  if (flashcards.length === 0) return insertedIds;
-  
-  try {
-    await db.execAsync('BEGIN TRANSACTION');
-    
-    // Create batch INSERT with multiple VALUES
-    const values: string[] = [];
-    
-    for (const flashcard of flashcards) {
-      const questionBlobHex = flashcard.questionBlob ? 
-        `X'${Array.from(flashcard.questionBlob).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
-      const answerBlobHex = flashcard.answerBlob ? 
-        `X'${Array.from(flashcard.answerBlob).map((b: number) => b.toString(16).padStart(2, '0')).join('')}'` : 'NULL';
-      
-      const questionText = flashcard.questionText ? `'${flashcard.questionText.replace(/'/g, "''")}'` : 'NULL';
-      const answerText = flashcard.answerText ? `'${flashcard.answerText.replace(/'/g, "''")}'` : 'NULL';
-      const answerMCQ = flashcard.answerMCQ ? `'${flashcard.answerMCQ.replace(/'/g, "''")}'` : 'NULL';
-      
-      values.push(`(
-        '${flashcard.userID}', ${flashcard.deckID}, '${flashcard.difficultyRating}', '${flashcard.cognitiveQnType}', 
-        ${flashcard.isFavorited}, '${flashcard.questionType}', ${questionText}, ${questionBlobHex},
-        '${flashcard.answerType}', ${answerText}, ${answerMCQ}, ${answerBlobHex},
-        ${flashcard.timeTaken || 'NULL'}, ${flashcard.isMcqAnswerRight !== null ? flashcard.isMcqAnswerRight : 'NULL'}, 
-        ${flashcard.lastStudiedDate ? `'${flashcard.lastStudiedDate}'` : 'NULL'}, 
-        ${flashcard.lastQuizzedDate ? `'${flashcard.lastQuizzedDate}'` : 'NULL'}
-      )`);
-    }
-    
-    // Execute batch INSERT
-    await db.execAsync(`
-      INSERT INTO flashcards (
-        userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
-        answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
-      ) VALUES ${values.join(', ')}
-    `);
-    
-    // Get the inserted IDs (assuming sequential insertion)
-    const lastIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as lastId') as { lastId: number };
-    if (lastIdResult && lastIdResult.lastId) {
-      const startId = lastIdResult.lastId - flashcards.length + 1;
-      for (let i = 0; i < flashcards.length; i++) {
-        insertedIds.push(startId + i);
-      }
-    }
-    
-    await db.execAsync('COMMIT');
-    return insertedIds;
-  } catch (error) {
-    await db.execAsync('ROLLBACK');
-    console.error('Error in batch insert flashcards:', error);
-    throw error;
-  }
-}
-
-// Parallel query execution utility
-export async function executeQueriesInParallel<T>(queries: Array<{
-  query: string;
-  params?: any[];
-  type: 'getFirst' | 'getAll';
-}>): Promise<T[]> {
-  const promises = queries.map(({ query, params = [], type }) => {
-    if (type === 'getFirst') {
-      return db.getFirstAsync(query, params);
-    } else {
-      return db.getAllAsync(query, params);
-    }
-  });
-  
-  return Promise.all(promises) as Promise<T[]>;
-}
-
-// Comprehensive Query Result Caching System
-interface CachedQuery {
-  data: any;
-  timestamp: number;
-  userID: string;
-  hash: string;
-}
-
-const queryCache = new Map<string, CachedQuery>();
-const QUERY_CACHE_DURATION = 3 * 60 * 1000; // 3 minutes for query results
-const MAX_CACHE_SIZE = 100; // Maximum number of cached queries
-
-// Generate cache key from query and parameters
-function generateCacheKey(query: string, params: any[] = [], userID: string): string {
-  const paramStr = params.map(p => String(p)).join('|');
-  return `${userID}:${query}:${paramStr}`;
-}
-
-// Get cached query result
-function getCachedQuery<T>(query: string, params: any[] = [], userID: string): T | null {
-  const key = generateCacheKey(query, params, userID);
-  const cached = queryCache.get(key);
-  
-  if (cached && 
-      cached.userID === userID && 
-      (Date.now() - cached.timestamp) < QUERY_CACHE_DURATION) {
-    return cached.data as T;
-  }
-  
-  return null;
-}
-
-// Set cached query result with LRU eviction
-function setCachedQuery(query: string, params: any[] = [], userID: string, data: any): void {
-  const key = generateCacheKey(query, params, userID);
-  
-  // LRU eviction - remove oldest entries if cache is full
-  if (queryCache.size >= MAX_CACHE_SIZE) {
-    const oldestKey = queryCache.keys().next().value;
-    if (oldestKey) {
-      queryCache.delete(oldestKey);
-    }
-  }
-  
-  queryCache.set(key, {
-    data,
-    timestamp: Date.now(),
-    userID,
-    hash: key
-  });
-}
-
-// Clear query cache (useful for data invalidation)
-export function clearQueryCache(pattern?: string): void {
-  if (pattern) {
-    // Clear specific pattern
-    const keysToDelete = Array.from(queryCache.keys()).filter(key => key.includes(pattern));
-    keysToDelete.forEach(key => queryCache.delete(key));
-  } else {
-    // Clear all
-    queryCache.clear();
-  }
-}
-
-// Memory management and cache invalidation system
-interface MemoryStats {
-  queryCacheSize: number;
-  userIDCacheActive: boolean;
-  totalCachedQueries: number;
-  oldestCacheEntry: string | null;
-}
-
-export function getMemoryStats(): MemoryStats {
-  const cacheEntries = Array.from(queryCache.values());
-  const oldestEntry = cacheEntries.length > 0 ? 
-    cacheEntries.reduce((oldest, current) => 
-      current.timestamp < oldest.timestamp ? current : oldest
-    ) : null;
-
-  return {
-    queryCacheSize: queryCache.size,
-    userIDCacheActive: cachedUserID !== null,
-    totalCachedQueries: queryCache.size,
-    oldestCacheEntry: oldestEntry ? new Date(oldestEntry.timestamp).toISOString() : null
-  };
-}
-
-// Intelligent cache invalidation based on data changes
-export function invalidateCacheForDataChange(changeType: 'deck' | 'flashcard' | 'folder' | 'user', userID: string): void {
-  const patterns: string[] = [];
-  
-  switch (changeType) {
-    case 'deck':
-      patterns.push(`${userID}:SELECT.*FROM decks`, `${userID}:SELECT.*FROM AIDecks`);
-      break;
-    case 'flashcard':
-      patterns.push(`${userID}:SELECT.*FROM flashcards`, `${userID}:SELECT.*FROM AIFlashcards`);
-      break;
-    case 'folder':
-      patterns.push(`${userID}:SELECT.*FROM folders`);
-      break;
-    case 'user':
-      patterns.push(`${userID}:`); // Clear all for user
-      break;
-  }
-  
-  patterns.forEach(pattern => clearQueryCache(pattern));
-}
-
-// Memory cleanup utility
-export function performMemoryCleanup(): void {
-  const now = Date.now();
-  
-  // Remove expired query cache entries
-  const expiredKeys = Array.from(queryCache.entries())
-    .filter(([_, cached]) => (now - cached.timestamp) > QUERY_CACHE_DURATION)
-    .map(([key, _]) => key);
-  
-  expiredKeys.forEach(key => queryCache.delete(key));
-  
-  // Force garbage collection if available (Node.js)
-  if (global.gc) {
-    global.gc();
-  }
-  
-  console.log(`Memory cleanup completed. Removed ${expiredKeys.length} expired cache entries.`);
-}
-
-// Auto cleanup interval (runs every 5 minutes)
-let cleanupInterval: ReturnType<typeof setInterval> | null = null;
-
-export function startMemoryCleanup(): void {
-  if (cleanupInterval) return;
-  
-  cleanupInterval = setInterval(() => {
-    performMemoryCleanup();
-  }, 5 * 60 * 1000);
-}
-
-export function stopMemoryCleanup(): void {
-  if (cleanupInterval) {
-    clearInterval(cleanupInterval);
-    cleanupInterval = null;
-  }
-}
-
-// Usage examples and helper functions for the new caching system
-
-/**
- * Example: Get paginated study decks
- * Usage: const result = await getStudyDecks({ limit: 20, offset: 0, orderBy: 'lastModifiedDate' });
- */
-
-/**
- * Example: Get cached deck info
- * const deckInfo = await executeWithCache<Deck>(
- *   'SELECT * FROM decks WHERE deckID = ? AND userID = ?', 
- *   [deckId, userID], 
- *   'getFirst'
- * );
- */
-
-/**
- * Example: Invalidate cache after data changes
- * await db.runAsync('INSERT INTO decks ...');
- * invalidateCacheForDataChange('deck', userID);
- */
-
-// Initialize memory management (call this in your app startup)
-export function initializeMemoryManagement(): void {
-  startMemoryCleanup();
-  console.log('Database memory management initialized');
-}
-
-// Cached query execution wrapper
-export async function executeWithCache<T>(
-  query: string, 
-  params: any[] = [], 
-  type: 'getFirst' | 'getAll' = 'getAll',
-  cacheable: boolean = true
-): Promise<T> {
-  const userID = await getCurrentUserID();
-  
-  // Check cache first if cacheable
-  if (cacheable) {
-    const cached = getCachedQuery<T>(query, params, userID);
-    if (cached !== null) {
-      return cached;
-    }
-  }
-  
-  // Execute query
-  let result: T;
-  if (type === 'getFirst') {
-    result = await db.getFirstAsync(query, params) as T;
-  } else {
-    result = await db.getAllAsync(query, params) as T;
-  }
-  
-  // Cache result if cacheable
-  if (cacheable) {
-    setCachedQuery(query, params, userID, result);
-  }
-  
-  return result;
-}
-
-// Pagination support for large result sets
-export interface PaginationOptions {
-  limit: number;
-  offset: number;
-  orderBy?: string;
-  orderDirection?: 'ASC' | 'DESC';
-}
-
-export interface PaginatedResult<T> {
-  data: T[];
-  totalCount: number;
-  hasMore: boolean;
-  currentPage: number;
-  totalPages: number;
-}
-
-export async function executeWithPagination<T>(
-  baseQuery: string,
-  countQuery: string,
-  params: any[] = [],
-  pagination: PaginationOptions
-): Promise<PaginatedResult<T>> {
-  const userID = await getCurrentUserID();
-  
-  // Build paginated query
-  const orderClause = pagination.orderBy ? 
-    `ORDER BY ${pagination.orderBy} ${pagination.orderDirection || 'DESC'}` : '';
-  const paginatedQuery = `${baseQuery} ${orderClause} LIMIT ? OFFSET ?`;
-  const paginatedParams = [...params, pagination.limit, pagination.offset];
-  
-  // Execute queries in parallel
-  const [data, countResult] = await Promise.all([
-    executeWithCache<T[]>(paginatedQuery, paginatedParams, 'getAll'),
-    executeWithCache<{count: number}>(countQuery, params, 'getFirst')
-  ]);
-  
-  const totalCount = countResult?.count || 0;
-  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
-  const totalPages = Math.ceil(totalCount / pagination.limit);
-  const hasMore = pagination.offset + pagination.limit < totalCount;
-  
-  return {
-    data: data || [],
-    totalCount,
-    hasMore,
-    currentPage,
-    totalPages
-  };
-}
-
-export async function getStudyDecks(pagination?: PaginationOptions): Promise<Deck[] | PaginatedResult<Deck>> {
+export async function getStudyDecks(): Promise<Deck[]> {
   try {
     const userID = await getCurrentUserID();
-    
-    const baseQuery = `
+    const result = await db.getAllAsync(`
       SELECT 
         d.*,
-        (SELECT COUNT(*) FROM flashcards f WHERE f.deckID = d.deckID AND f.userID = ?) as flashcardCount
+        COUNT(f.flashcardID) as flashcardCount
       FROM decks d
-      WHERE d.deckType = 'study' AND d.userID = ?`;
-    
-    if (pagination) {
-      // Return paginated results
-      const countQuery = `SELECT COUNT(*) as count FROM decks WHERE deckType = 'study' AND userID = ?`;
-      return await executeWithPagination<Deck>(
-        baseQuery,
-        countQuery,
-        [userID, userID],
-        {
-          ...pagination,
-          orderBy: pagination.orderBy || 'lastModifiedDate',
-          orderDirection: pagination.orderDirection || 'DESC'
-        }
-      );
-    } else {
-      // Return all results with caching
-      const query = `${baseQuery} ORDER BY d.lastModifiedDate DESC`;
-      return await executeWithCache<Deck[]>(query, [userID, userID]);
-    }
+      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      WHERE d.deckType = 'study' AND d.userID = ?
+      GROUP BY d.deckID
+      ORDER BY d.lastModifiedDate DESC
+    `, [userID]);
+    return result as Deck[];
   } catch (error) {
     console.error('Error fetching study decks:', error);
-    return pagination ? {
-      data: [],
-      totalCount: 0,
-      hasMore: false,
-      currentPage: 1,
-      totalPages: 0
-    } : [];
+    return [];
   }
 }
 
-export async function getInterviewDecks(pagination?: PaginationOptions): Promise<Deck[] | PaginatedResult<Deck>> {
+export async function getInterviewDecks(): Promise<Deck[]> {
   try {
     const userID = await getCurrentUserID();
-    
-    const baseQuery = `
+    const result = await db.getAllAsync(`
       SELECT 
         d.deckID,
         d.deckName,
@@ -513,37 +119,18 @@ export async function getInterviewDecks(pagination?: PaginationOptions): Promise
         d.interviewTopics,
         d.AICardDesignIndex,
         d.interviewCompanyIcon,
-        (SELECT COUNT(*) FROM flashcards f WHERE f.deckID = d.deckID AND f.userID = ?) as flashcardCount
+        COUNT(f.flashcardID) as flashcardCount
       FROM decks d
-      WHERE d.deckType = 'interview' AND d.userID = ?`;
-    
-    if (pagination) {
-      // Return paginated results
-      const countQuery = `SELECT COUNT(*) as count FROM decks WHERE deckType = 'interview' AND userID = ?`;
-      return await executeWithPagination<Deck>(
-        baseQuery,
-        countQuery,
-        [userID, userID],
-        {
-          ...pagination,
-          orderBy: pagination.orderBy || 'lastModifiedDate',
-          orderDirection: pagination.orderDirection || 'DESC'
-        }
-      );
-    } else {
-      // Return all results with caching
-      const query = `${baseQuery} ORDER BY d.lastModifiedDate DESC`;
-      return await executeWithCache<Deck[]>(query, [userID, userID]);
-    }
+      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      WHERE d.deckType = 'interview' AND d.userID = ?
+      GROUP BY d.deckID
+      ORDER BY d.lastModifiedDate DESC
+    `, [userID]);
+        
+    return result as Deck[];
   } catch (error) {
     console.error('Error fetching interview decks:', error);
-    return pagination ? {
-      data: [],
-      totalCount: 0,
-      hasMore: false,
-      currentPage: 1,
-      totalPages: 0
-    } : [];
+    return [];
   }
 }
 
@@ -596,12 +183,9 @@ export async function getDeckProgress(deckId: number): Promise<number> {
 
 export async function getStudyDecksWithProgress(): Promise<(Deck & { progress: number })[]> {
   try {
-    const result = await getStudyDecks();
-    // Handle both array and paginated results
-    const decks = Array.isArray(result) ? result : result.data;
-    
+    const decks = await getStudyDecks();
     const decksWithProgress = await Promise.all(
-      decks.map(async (deck: Deck) => {
+      decks.map(async (deck) => {
         const progress = await getDeckProgress(deck.deckID);
         return { ...deck, progress };
       })
@@ -615,12 +199,9 @@ export async function getStudyDecksWithProgress(): Promise<(Deck & { progress: n
 
 export async function getInterviewDecksWithProgress(): Promise<(Deck & { progress: number })[]> {
   try {
-    const result = await getInterviewDecks();
-    // Handle both array and paginated results
-    const decks = Array.isArray(result) ? result : result.data;
-    
+    const decks = await getInterviewDecks();
     const decksWithProgress = await Promise.all(
-      decks.map(async (deck: Deck) => {
+      decks.map(async (deck) => {
         const progress = await getDeckProgress(deck.deckID);
         return { ...deck, progress };
       })
@@ -816,14 +397,12 @@ export async function deleteFolder(folderId: number): Promise<boolean> {
     await db.execAsync('BEGIN TRANSACTION');
     
     // First, update all decks that reference this folder to remove it from their folderIDs
-    // Get all decks that have this folder in their folderIDs using JSON functions for better performance
+    // Get all decks that have this folder in their folderIDs
     const decksWithFolder = await db.getAllAsync(`
       SELECT deckID, folderIDs 
       FROM decks 
-      WHERE folderIDs IS NOT NULL 
-        AND userID = ?
-        AND json_extract(folderIDs, '$') LIKE '%' || ? || '%'
-    `, [userID, folderId]);
+      WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%' AND userID = ?
+    `, [userID]);
     
     // Update each deck to remove this folder from their folderIDs
     for (const deck of decksWithFolder) {
@@ -889,14 +468,12 @@ export async function deleteMultipleFolders(folderIds: number[]): Promise<boolea
     
     // Process each folder
     for (const folderId of folderIds) {
-      // Get all decks that have this folder in their folderIDs using JSON functions
+      // Get all decks that have this folder in their folderIDs
       const decksWithFolder = await db.getAllAsync(`
         SELECT deckID, folderIDs 
         FROM decks 
-        WHERE folderIDs IS NOT NULL 
-          AND userID = ?
-          AND json_extract(folderIDs, '$') LIKE '%' || ? || '%'
-      `, [userID, folderId]);
+        WHERE folderIDs IS NOT NULL AND folderIDs LIKE '%${folderId}%' AND userID = ?
+      `, [userID]);
       
       // Update each deck to remove this folder from their folderIDs
       for (const deck of decksWithFolder) {
@@ -1187,54 +764,33 @@ const getBreakdown = (ratings: string[]) => {
 export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
   try {
     const userID = await getCurrentUserID();
-    
-    // Optimized single query with conditional UNION ALL using indexes
+    // Get attempted flashcards from both regular and AI flashcards tables
     const result = await db.getAllAsync(`
-      WITH attempted_flashcards AS (
-        SELECT 
-          difficultyRating,
-          lastStudiedDate,
-          lastQuizzedDate,
-          answerType,
-          isMcqAnswerRight,
-          1 as flashcard_count
-        FROM flashcards
-        WHERE deckID = ? AND userID = ?
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-        UNION ALL
-        SELECT 
-          difficultyRating,
-          lastStudiedDate,
-          lastQuizzedDate,
-          answerType,
-          isMcqAnswerRight,
-          1 as flashcard_count
-        FROM AIFlashcards
-        WHERE deckID = ? AND userID = ?
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND difficultyRating != 'None'
-      ),
-      total_flashcards AS (
-        SELECT COUNT(*) as total_count
-        FROM (
-          SELECT 1 FROM flashcards WHERE deckID = ? AND userID = ?
-          UNION ALL
-          SELECT 1 FROM AIFlashcards WHERE deckID = ? AND userID = ?
-        )
-      )
       SELECT 
-        af.difficultyRating,
-        af.lastStudiedDate,
-        af.lastQuizzedDate,
-        af.answerType,
-        af.isMcqAnswerRight,
-        tf.total_count as totalFlashcards
-      FROM attempted_flashcards af
-      CROSS JOIN total_flashcards tf
-    `, [deckId, userID, deckId, userID, deckId, userID, deckId, userID]);
+        difficultyRating,
+        lastStudiedDate,
+        lastQuizzedDate,
+        answerType,
+        isMcqAnswerRight
+      FROM (
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
+        FROM flashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+          AND userID = ?
+        UNION ALL
+        SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND difficultyRating != 'None'
+          AND userID = ?
+      )
+    `, [deckId, userID, deckId, userID]);
 
     if (!result || result.length === 0) {
+      // No attempted flashcards, return null
       return null;
     }
 
@@ -1244,14 +800,22 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
       lastQuizzedDate: string | null;
       answerType: string;
       isMcqAnswerRight: number | null;
-      totalFlashcards: number;
     }>;
 
     // Calculate weighted score with MCQ handling
     const grade = calculateWeightedScoreWithMCQ(flashcards);
+
+    // Get total number of flashcards for this deck from both tables
+    const totalResult = await db.getFirstAsync(`
+      SELECT 
+        (SELECT COUNT(*) FROM flashcards WHERE deckID = ? AND userID = ?) +
+        (SELECT COUNT(*) FROM AIFlashcards WHERE deckID = ? AND userID = ?) as total
+    `, [deckId, userID, deckId, userID]);
+
+    const totalFlashcards = (totalResult as { total: number }).total;
     
-    // Set total flashcards from the query result
-    grade.totalFlashcards = flashcards[0]?.totalFlashcards || 0;
+    // Update totalFlashcards in the result
+    grade.totalFlashcards = totalFlashcards;
 
     return grade;
   } catch (error) {
@@ -1266,90 +830,15 @@ export async function getDeckGrades(deckIds: number[]): Promise<Map<number, Deck
       return new Map();
     }
 
-    const userID = await getCurrentUserID();
     const grades = new Map<number, DeckGrade | null>();
 
-    // Optimized single query to get grades for all decks at once - fixes N+1 problem
-    const deckIdsStr = deckIds.join(',');
-    const result = await db.getAllAsync(`
-      WITH attempted_flashcards AS (
-        SELECT 
-          f.deckID,
-          f.difficultyRating,
-          f.lastStudiedDate,
-          f.lastQuizzedDate,
-          f.answerType,
-          f.isMcqAnswerRight,
-          1 as flashcard_count
-        FROM flashcards f
-        WHERE f.deckID IN (${deckIdsStr}) AND f.userID = ?
-          AND (f.lastStudiedDate IS NOT NULL OR f.lastQuizzedDate IS NOT NULL)
-          AND f.difficultyRating != 'None'
-        UNION ALL
-        SELECT 
-          af.deckID,
-          af.difficultyRating,
-          af.lastStudiedDate,
-          af.lastQuizzedDate,
-          af.answerType,
-          af.isMcqAnswerRight,
-          1 as flashcard_count
-        FROM AIFlashcards af
-        WHERE af.deckID IN (${deckIdsStr}) AND af.userID = ?
-          AND (af.lastStudiedDate IS NOT NULL OR af.lastQuizzedDate IS NOT NULL)
-          AND af.difficultyRating != 'None'
-      ),
-      total_flashcards AS (
-        SELECT 
-          deckID,
-          COUNT(*) as total_count
-        FROM (
-          SELECT deckID FROM flashcards WHERE deckID IN (${deckIdsStr}) AND userID = ?
-          UNION ALL
-          SELECT deckID FROM AIFlashcards WHERE deckID IN (${deckIdsStr}) AND userID = ?
-        )
-        GROUP BY deckID
-      )
-      SELECT 
-        af.deckID,
-        af.difficultyRating,
-        af.lastStudiedDate,
-        af.lastQuizzedDate,
-        af.answerType,
-        af.isMcqAnswerRight,
-        tf.total_count as totalFlashcards
-      FROM attempted_flashcards af
-      LEFT JOIN total_flashcards tf ON af.deckID = tf.deckID
-    `, [userID, userID, userID, userID]);
-
-    // Group results by deckID and calculate grades
-    const deckFlashcards = new Map<number, Array<{
-      difficultyRating: string;
-      lastStudiedDate: string | null;
-      lastQuizzedDate: string | null;
-      answerType: string;
-      isMcqAnswerRight: number | null;
-      totalFlashcards: number;
-    }>>();
-
-    (result as any[]).forEach((row: any) => {
-      if (!deckFlashcards.has(row.deckID)) {
-        deckFlashcards.set(row.deckID, []);
-      }
-      deckFlashcards.get(row.deckID)!.push(row);
-    });
-
-    // Calculate grades for each deck
-    for (const deckId of deckIds) {
-      const flashcards = deckFlashcards.get(deckId);
-      if (!flashcards || flashcards.length === 0) {
-        grades.set(deckId, null);
-      } else {
-        const grade = calculateWeightedScoreWithMCQ(flashcards);
-        grade.totalFlashcards = flashcards[0].totalFlashcards || 0;
+    // Get grades for each deck
+    await Promise.all(
+      deckIds.map(async (deckId) => {
+        const grade = await getDeckGrade(deckId);
         grades.set(deckId, grade);
-      }
-    }
+      })
+    );
 
     return grades;
   } catch (error) {
@@ -1385,26 +874,26 @@ export function testGradeCalculation() {
 export async function getDeckAverageTime(deckId: number): Promise<number | null> {
   try {
     const userID = await getCurrentUserID();
-    
-    // Optimized query using indexes for time calculation
+    // Get attempted flashcards from both regular and AI flashcards tables
     const result = await db.getFirstAsync(`
-      WITH time_data AS (
-        SELECT timeTaken
-        FROM flashcards
-        WHERE deckID = ? AND userID = ?
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND timeTaken IS NOT NULL
-        UNION ALL
-        SELECT timeTaken
-        FROM AIFlashcards
-        WHERE deckID = ? AND userID = ?
-          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-          AND timeTaken IS NOT NULL
-      )
       SELECT 
         AVG(timeTaken) as averageTime,
         COUNT(*) as attemptedCount
-      FROM time_data
+      FROM (
+        SELECT timeTaken
+        FROM flashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+          AND userID = ?
+        UNION ALL
+        SELECT timeTaken
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+          AND userID = ?
+      )
     `, [deckId, userID, deckId, userID]);
 
     if (!result) {

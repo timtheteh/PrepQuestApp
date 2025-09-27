@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -39,19 +40,27 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const isFocused = useIsFocused();
 
-  // Fetch speed data
+  // Fetch speed data with caching
   const fetchSpeedData = async () => {
     try {
       setIsLoading(true);
       
-      const [dailySpeeds, monthlySpeeds] = await Promise.all([
-        getCompleteDailySpeeds(),
-        getMonthlySpeeds()
-      ]);
+      // Fetch daily speeds with caching
+      const dailySpeeds = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.SPEED_CHART_DAILY,
+        getCompleteDailySpeeds
+      );
+      
+      // Fetch monthly speeds with caching
+      const monthlySpeeds = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.SPEED_CHART_MONTHLY,
+        getMonthlySpeeds
+      );
       
       setData(dailySpeeds);
       setMonthData(monthlySpeeds);
     } catch (error) {
+      console.error('Error fetching speed chart data:', error);
       setData([]);
       setMonthData([]);
     } finally {

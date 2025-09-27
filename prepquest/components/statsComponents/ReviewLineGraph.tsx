@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -41,14 +42,32 @@ export function ReviewLineGraph({ onContentReady }: ReviewLineGraphProps) {
   const [monthData, setMonthData] = useState<MonthData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Function to load data
+  // Function to load data with caching
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const { dayData: fetchedDayData, monthData: fetchedMonthData } = await fetchReviewData();
-      setDayData(fetchedDayData);
-      setMonthData(fetchedMonthData);
+      // Fetch daily data with caching
+      const dayData = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.REVIEW_LINE_DAILY,
+        async () => {
+          const { dayData } = await fetchReviewData();
+          return dayData;
+        }
+      );
+      
+      // Fetch monthly data with caching
+      const monthData = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.REVIEW_LINE_MONTHLY,
+        async () => {
+          const { monthData } = await fetchReviewData();
+          return monthData;
+        }
+      );
+      
+      setDayData(dayData);
+      setMonthData(monthData);
     } catch (error) {
+      console.error('Error loading review line graph data:', error);
     } finally {
       setIsLoading(false);
     }

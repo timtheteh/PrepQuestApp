@@ -10,7 +10,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader } from '@/utils/performanceOptimizations';
+import { statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
 
 interface BreakdownOfDecksFlashcardsProps {
   onContentReady?: () => void;
@@ -160,18 +160,19 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     setPositions(initialPositions);
   }, [initialPositions]);
 
-  // Optimized data loading with caching and delayed ball reveal
+  // Data loading with delayed ball reveal and caching
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setShowBalls(false); // Hide balls during loading
     try {
-      // Use optimized data loader with caching
-      const cachedData = await optimizedDataLoader.loadWithCache(
-        'breakdown-decks-flashcards',
+      // Try to get cached data first, fallback to database fetch
+      const breakdownData = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.BREAKDOWN_DATA,
         fetchBreakdownData
       );
-      setDecksData(cachedData.decksData);
-      setFlashcardsData(cachedData.flashcardsData);
+      
+      setDecksData(breakdownData.decksData);
+      setFlashcardsData(breakdownData.flashcardsData);
       
       // Add 2-second delay to allow physics engine to settle before showing balls
       setTimeout(() => {

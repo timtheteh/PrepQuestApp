@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
 
 const GRAPH_HEIGHT = 280;
 const PADDING = 32;
@@ -43,18 +44,28 @@ export function GradeChart({ onContentReady }: GradeChartProps) {
   const [monthData, setMonthData] = useState<MonthGrade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Function to fetch data
+  // Function to fetch data with caching
   const fetchData = async () => {
     try {
-      console.log('🔄 GradeChart: Fetching fresh data...');
+      console.log('🔄 GradeChart: Fetching data...');
       setIsLoading(true);
-      const [dailyGrades, monthlyGrades] = await Promise.all([
-        getCompleteDailyGrades(),
-        getMonthlyGrades()
-      ]);      
+      
+      // Fetch daily grades with caching
+      const dailyGrades = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.GRADE_CHART_DAILY,
+        getCompleteDailyGrades
+      );
+      
+      // Fetch monthly grades with caching
+      const monthlyGrades = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.GRADE_CHART_MONTHLY,
+        getMonthlyGrades
+      );
+      
       setDayData(dailyGrades);
       setMonthData(monthlyGrades);
     } catch (error) {
+      console.error('Error fetching grade chart data:', error);
       // Fallback to empty arrays if there's an error
       setDayData([]);
       setMonthData([]);

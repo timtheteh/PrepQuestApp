@@ -193,68 +193,63 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
       )
     `);
 
-    // Create indexes for performance optimization
+    // Create optimized indexes for performance (minimal set for maximum impact)
     console.log('Creating database indexes for performance...');
     
-    // Folders table indexes
+    // Folders table indexes - Essential only (3 indexes)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_folders_userID ON folders (userID)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_folders_dateAdded ON folders (dateAdded)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_folders_lastModifiedDate ON folders (lastModifiedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_folders_isFavorited ON folders (isFavorited)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_folders_userID_dateAdded ON folders (userID, dateAdded)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_folders_userID_lastModifiedDate ON folders (userID, lastModifiedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_folders_userID_isFavorited ON folders (userID, isFavorited)');
 
-    // Decks table indexes
+    // Decks table indexes - Essential only (8 indexes)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID ON decks (userID)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_deckType ON decks (deckType)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_dateAdded ON decks (dateAdded)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_lastModifiedDate ON decks (lastModifiedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_isFavorited ON decks (isFavorited)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_lastStudiedDate ON decks (lastStudiedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_lastQuizzedDate ON decks (lastQuizzedDate)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID_deckType ON decks (userID, deckType)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID_lastModifiedDate ON decks (userID, lastModifiedDate)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID_isFavorited ON decks (userID, isFavorited)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID_deckID ON decks (userID, deckID)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID_lastQuizzedDate ON decks (userID, lastQuizzedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID_lastStudiedDate ON decks (userID, lastStudiedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_decks_userID_deckType_lastQuizzedDate ON decks (userID, deckType, lastQuizzedDate)');
 
-    // Flashcards table indexes
+    // Flashcards table indexes - Essential only (8 indexes)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID ON flashcards (userID)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_deckID ON flashcards (deckID)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_lastStudiedDate ON flashcards (lastStudiedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_lastQuizzedDate ON flashcards (lastQuizzedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_isFavorited ON flashcards (isFavorited)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_difficultyRating ON flashcards (difficultyRating)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID_deckID ON flashcards (userID, deckID)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID_lastStudiedDate ON flashcards (userID, lastStudiedDate)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID_lastQuizzedDate ON flashcards (userID, lastQuizzedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID_flashcardID ON flashcards (userID, flashcardID)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID_difficultyRating ON flashcards (userID, difficultyRating)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID_timeTaken ON flashcards (userID, timeTaken)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_flashcards_userID_lastStudiedDate_lastQuizzedDate ON flashcards (userID, lastStudiedDate, lastQuizzedDate)');
 
-    // AIDecks table indexes
+    // AIDecks table indexes - Essential only (8 indexes)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID ON AIDecks (userID)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_deckType ON AIDecks (deckType)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_dateAdded ON AIDecks (dateAdded)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_lastModifiedDate ON AIDecks (lastModifiedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_isFavorited ON AIDecks (isFavorited)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_lastStudiedDate ON AIDecks (lastStudiedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_lastQuizzedDate ON AIDecks (lastQuizzedDate)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID_deckType ON AIDecks (userID, deckType)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID_lastModifiedDate ON AIDecks (userID, lastModifiedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID_isFavorited ON AIDecks (userID, isFavorited)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID_deckID ON AIDecks (userID, deckID)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID_lastQuizzedDate ON AIDecks (userID, lastQuizzedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID_lastStudiedDate ON AIDecks (userID, lastStudiedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aidecks_userID_deckType_lastQuizzedDate ON AIDecks (userID, deckType, lastQuizzedDate)');
 
-    // AIFlashcards table indexes
+    // AIFlashcards table indexes - Essential only (8 indexes)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID ON AIFlashcards (userID)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_deckID ON AIFlashcards (deckID)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_lastStudiedDate ON AIFlashcards (lastStudiedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_lastQuizzedDate ON AIFlashcards (lastQuizzedDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_isFavorited ON AIFlashcards (isFavorited)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_difficultyRating ON AIFlashcards (difficultyRating)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID_deckID ON AIFlashcards (userID, deckID)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID_lastStudiedDate ON AIFlashcards (userID, lastStudiedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID_lastQuizzedDate ON AIFlashcards (userID, lastQuizzedDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID_flashcardID ON AIFlashcards (userID, flashcardID)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID_difficultyRating ON AIFlashcards (userID, difficultyRating)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID_timeTaken ON AIFlashcards (userID, timeTaken)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_aiflashcards_userID_lastStudiedDate_lastQuizzedDate ON AIFlashcards (userID, lastStudiedDate, lastQuizzedDate)');
 
-    // Users table indexes
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_users_userID ON users (userID)');
+    // Users table indexes - Essential only (userID is already primary key)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_users_lastUpdated ON users (lastUpdated)');
 
-    // UserFormEntries table indexes
+    // UserFormEntries table indexes - Essential only (3 indexes)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_userformentries_userID ON userFormEntries (userID)');
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_userformentries_formSubmissionDate ON userFormEntries (formSubmissionDate)');
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_userformentries_userID_formSubmissionDate ON userFormEntries (userID, formSubmissionDate)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_userformentries_userID_formEntryType_formEntryMethod ON userFormEntries (userID, formEntryType, formEntryMethod)');
+
+    // InterviewCompanyIcons table indexes - Essential only (name is already primary key)
 
     console.log('Database indexes created successfully');
 

@@ -30,7 +30,7 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle2, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -142,7 +142,7 @@ export default function ViewDecksInFolderScreen() {
     fetchFolderTitle();
   }, [isDatabaseReady, folderId, folderTitle]);
 
-  // Load decks data from database with performance optimizations
+  // Load decks data from database
   useEffect(() => {
     const loadDecksData = async () => {
       if (!isDatabaseReady || !folderId) {
@@ -150,26 +150,16 @@ export default function ViewDecksInFolderScreen() {
       }
       
       try {
-        // Use optimized screen data loader with caching
-        const screenData = await optimizedDataLoader.loadScreenData(`viewDecksInFolder-${folderId}`, {
-          decksData: () => getDecksInFolder(parseInt(folderId as string)),
-        });
-
-        setDecks(screenData.decksData);
-        setDecksCount(screenData.decksData.length);
+        const decksData = await getDecksInFolder(parseInt(folderId as string));
+        setDecks(decksData);
+        setDecksCount(decksData.length);
         
-        // Load image sources with optimized batching
-        const imageLoaders = screenData.decksData.map((deck: any) => 
-          () => getCompanyIconImageSource(deck.interviewCompanyIcon)
-        );
-        
-        const imageResults = await optimizedDataLoader.loadImages(imageLoaders);
-        
-        // Map results back to deck IDs
+        // Load image sources for each deck
         const sources = new Map<number, { uri: string } | undefined>();
-        screenData.decksData.forEach((deck: any, index: number) => {
-          sources.set(deck.deckID, imageResults[index]);
-        });
+        for (const deck of decksData) {
+          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+          sources.set(deck.deckID, imageSource);
+        }
         setImageSources(sources);
       } catch (error) {
         console.error('Error loading decks data for folder:', error);

@@ -22,7 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { formatDate as formatDateUtil } from '@/utils/dateFormat';
 
 
@@ -385,7 +385,7 @@ export default function FoldersScreen() {
     checkDatabaseReady();
   }, []);
 
-  // Load folders data from database with performance optimizations
+  // Load folders data from database
   useEffect(() => {
     const loadFoldersData = async () => {
       if (!isDatabaseReady) {
@@ -393,14 +393,12 @@ export default function FoldersScreen() {
       }
       
       try {
-        // Use optimized screen data loader with caching
-        const screenData = await optimizedDataLoader.loadScreenData('folders', {
-          foldersData: getAllFolders,
-        });
+        // Load folders data directly from database
+        const foldersData = await getAllFolders();
 
-        setFolders(screenData.foldersData);
-        setFilteredFolders(screenData.foldersData);
-        setFoldersCount(screenData.foldersData.length);
+        setFolders(foldersData);
+        setFilteredFolders(foldersData);
+        setFoldersCount(foldersData.length);
       } catch (error) {
         console.error('Error loading folders data:', error);
       }

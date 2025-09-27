@@ -19,7 +19,7 @@ import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
-import { optimizedDataLoader, optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
@@ -312,7 +312,7 @@ export default function DecksScreen() {
     checkDBReady();
   }, []);
 
-  // Load deck data from database with performance optimizations
+  // Load deck data from database
   useEffect(() => {
     const loadDeckData = async () => {
       if (!isDatabaseReady) {
@@ -320,10 +320,10 @@ export default function DecksScreen() {
       }
       
       try {
-        // Use optimized data loading with caching
-        const [studyData, interviewData] = await optimizedDataLoader.loadMultipleData([
-          () => optimizedDataLoader.loadWithCache('study-decks', getStudyDecksWithProgress),
-          () => optimizedDataLoader.loadWithCache('interview-decks', getInterviewDecksWithProgress)
+        // Load deck data directly from database
+        const [studyData, interviewData] = await Promise.all([
+          getStudyDecksWithProgress(),
+          getInterviewDecksWithProgress()
         ]);
 
         setStudyDecks(studyData);
@@ -333,19 +333,13 @@ export default function DecksScreen() {
         setStudyCardsCount(studyData.length);
         setInterviewCardsCount(interviewData.length);
         
-        // Load image sources with optimized batching
+        // Load image sources for all decks
         const allDecks = [...studyData, ...interviewData];
-        const imageLoaders = allDecks.map(deck => 
-          () => getCompanyIconImageSource(deck.interviewCompanyIcon)
-        );
-        
-        const imageResults = await optimizedDataLoader.loadImages(imageLoaders);
-        
-        // Map results back to deck IDs
         const sources = new Map<number, { uri: string } | undefined>();
-        allDecks.forEach((deck, index) => {
-          sources.set(deck.deckID, imageResults[index]);
-        });
+        for (const deck of allDecks) {
+          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+          sources.set(deck.deckID, imageSource);
+        }
         setImageSources(sources);
       } catch (error) {
         console.error('Error loading deck data:', error);

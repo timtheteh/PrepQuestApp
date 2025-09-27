@@ -1,4 +1,4 @@
-import { Animated, Dimensions, View, StyleSheet, Text, ScrollView, TouchableOpacity, Platform, Image as RNImage, ImageSourcePropType , PanResponder } from 'react-native';
+import { Animated, Dimensions, View, StyleSheet, Text, ScrollView, TouchableOpacity, Platform, Image as RNImage, ImageSourcePropType , PanResponder, RefreshControl } from 'react-native';
 import React, { useEffect, useRef, useState, useContext, useMemo, useCallback } from 'react';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
 import { useIsFocused } from '@react-navigation/native';
@@ -12,6 +12,7 @@ import FlashcardsStudiedIconDarkMode from '@/assets/icons/statsIcons/FlashcardsS
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
+import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -353,11 +354,14 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Streak data fetching
+  // Streak data fetching with caching
   const fetchStreakData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const streakData = await getLongestStreakData();
+      const streakData = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.LONGEST_STREAK_DATA,
+        getLongestStreakData
+      );
       setStreakData(streakData);
     } catch (error) {
       setStreakData({
@@ -589,11 +593,14 @@ const StreakCalendar = React.memo(() => {
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Studied dates fetching
+  // Studied dates fetching with caching
   const fetchStudiedDates = useCallback(async () => {
     try {
       setIsLoading(true);
-      const studiedDates = await getAllStudiedDates();
+      const studiedDates = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.ALL_STUDIED_DATES,
+        getAllStudiedDates
+      );
       setStudiedDates(studiedDates);
     } catch (error) {
       setStudiedDates([]);
@@ -1659,6 +1666,8 @@ export default function AwardsScreen() {
   const [disableToggleAnimation, setDisableToggleAnimation] = useState(false);
   const isFocused = useIsFocused();
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { language } = useLanguage();
   const { theme } = useTheme();
   const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
@@ -1755,6 +1764,24 @@ export default function AwardsScreen() {
     }
   }, [fadeAnim, achievementsContentAnim, animationConfig]);
 
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      // Clear all cached statistics data (including awards data)
+      await refreshAllStatistics();
+      
+      // Force refresh awards data by incrementing refresh key
+      setRefreshKey(prev => prev + 1);
+      
+      console.log('✅ Awards cache refreshed successfully');
+    } catch (error) {
+      console.error('❌ Failed to refresh awards:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>
               <View style={{ marginTop: getTopBarStatisticsHeight(), paddingHorizontal: 16 }}>
@@ -1776,12 +1803,20 @@ export default function AwardsScreen() {
             removeClippedSubviews={animationConfig.isLowEndDevice}
             scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
             decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={themeColors.brandColor2}
+                colors={[themeColors.brandColor2]}
+              />
+            }
           >
         <View style={styles.wrapper}>
                       <Text style={[styles.title, language === 'Chinese' && {marginTop: 20}, { color: themeColors.text }]}>{strings[language].fillInCustomGoal}</Text>
                             <CustomGoalForm setScrollEnabled={setScrollEnabled} themeColors={themeColors} />
-                <StreakCalendarStats themeColors={themeColors} />
-              <StreakCalendar />
+                <StreakCalendarStats key={`streak-stats-${refreshKey}`} themeColors={themeColors} />
+              <StreakCalendar key={`streak-calendar-${refreshKey}`} />
         </View>
             <View style={{ height: 20 }}></View>
           </ScrollView>
@@ -1806,6 +1841,14 @@ export default function AwardsScreen() {
             removeClippedSubviews={animationConfig.isLowEndDevice}
             scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
             decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={themeColors.brandColor2}
+                colors={[themeColors.brandColor2]}
+              />
+            }
           >
             <View style={{ flexDirection: 'column', gap: 30 }}>
               <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />

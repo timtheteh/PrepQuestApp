@@ -18,6 +18,9 @@ export const CACHE_KEYS = {
   AVERAGE_GRADE: 'average_grade',
   AVERAGE_TIME: 'average_time',
   DIFFICULTY_BREAKDOWN: 'difficulty_breakdown',
+  // Awards page cache keys
+  LONGEST_STREAK_DATA: 'longest_streak_data',
+  ALL_STUDIED_DATES: 'all_studied_dates',
 } as const;
 
 // Cache entry interface

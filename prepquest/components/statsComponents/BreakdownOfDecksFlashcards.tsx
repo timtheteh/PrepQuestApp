@@ -10,6 +10,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
 
 interface BreakdownOfDecksFlashcardsProps {
   onContentReady?: () => void;
@@ -159,13 +160,17 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
     setPositions(initialPositions);
   }, [initialPositions]);
 
-  // Data loading with delayed ball reveal
+  // Data loading with delayed ball reveal and caching
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setShowBalls(false); // Hide balls during loading
     try {
-      // Load data directly from database
-      const breakdownData = await fetchBreakdownData();
+      // Try to get cached data first, fallback to database fetch
+      const breakdownData = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.BREAKDOWN_DATA,
+        fetchBreakdownData
+      );
+      
       setDecksData(breakdownData.decksData);
       setFlashcardsData(breakdownData.flashcardsData);
       

@@ -1,4 +1,4 @@
-import { Dimensions, View, ScrollView, Animated } from 'react-native';
+import { Dimensions, View, ScrollView, Animated, RefreshControl } from 'react-native';
 import { RoundedContainer } from '@/components/general/RoundedContainer';
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useIsFocused } from '@react-navigation/native';
@@ -11,6 +11,7 @@ import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
+import { refreshAllStatistics, statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
 
 // Lazy load heavy components for better performance
 const ReviewLineGraph = lazy(() => import('@/components/statsComponents/ReviewLineGraph').then(module => ({ default: module.ReviewLineGraph })));
@@ -58,6 +59,8 @@ const StatisticsScreen = React.memo(() => {
   const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
   const [shouldLoadDecksComponents, setShouldLoadDecksComponents] = useState(false);
   const [shouldLoadPerformanceComponents, setShouldLoadPerformanceComponents] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
@@ -66,18 +69,18 @@ const StatisticsScreen = React.memo(() => {
   // Get performance-based animation config
   const animationConfig = useMemo(() => getAnimationConfig(), []);
 
-  // Data fetching for performance tab
+  // Data fetching for performance tab with caching
   const fetchDataForPerformanceTab = useCallback(async () => {
     try {
       setIsLoadingAverageGrade(true);
       setIsLoadingDifficultyBreakdown(true);
       setIsLoadingAverageTime(true);
 
-      // Load statistics data directly from database
+      // Load statistics data with caching
       const [averageGradeData, difficultyBreakdownData, averageTimeData] = await Promise.all([
-        getAverageGradeAllTime(),
-        getDifficultyBreakdown(),
-        getAverageTimeAllTime(),
+        statisticsCache.getCachedOrFetch(CACHE_KEYS.AVERAGE_GRADE, getAverageGradeAllTime),
+        statisticsCache.getCachedOrFetch(CACHE_KEYS.DIFFICULTY_BREAKDOWN, getDifficultyBreakdown),
+        statisticsCache.getCachedOrFetch(CACHE_KEYS.AVERAGE_TIME, getAverageTimeAllTime),
       ]);
 
       setAverageGrade(averageGradeData);
@@ -175,6 +178,29 @@ const StatisticsScreen = React.memo(() => {
     }
   }, [contentFadeAnim, animationConfig]);
 
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      // Clear all cached statistics data
+      await refreshAllStatistics();
+      
+      // Force refresh performance tab data
+      await fetchDataForPerformanceTab();
+      
+      // Trigger re-render of all components by updating keys
+      setBreakdownKey(prev => prev + 1);
+      setMoreDetailsState(prev => prev);
+      setRefreshKey(prev => prev + 1); // This will force all components to re-mount
+      
+      console.log('✅ Statistics cache refreshed successfully');
+    } catch (error) {
+      console.error('❌ Failed to refresh statistics:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchDataForPerformanceTab]);
+
   // Optimized callback for ReviewLineGraph to trigger fade-in after content is ready
   const handleDecksContentReady = useCallback(() => {
     if (pendingDecksFadeIn) {
@@ -247,14 +273,22 @@ const StatisticsScreen = React.memo(() => {
               removeClippedSubviews={animationConfig.isLowEndDevice}
               scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
               decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={Colors[theme].brandColor2}
+                  colors={[Colors[theme].brandColor2]}
+                />
+              }
             >
               {shouldLoadDecksComponents ? (
                 <Suspense fallback={<ComponentLoader height={300} />}>
                   {/* ReviewSection */}
-                  <ReviewLineGraph onContentReady={handleDecksContentReady} />
+                  <ReviewLineGraph key={`review-${refreshKey}`} onContentReady={handleDecksContentReady} />
                   {/* breakdown section */}
-                  <BreakdownOfDecksFlashcards key={breakdownKey} />
-                  <MoreDetailsStats selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
+                  <BreakdownOfDecksFlashcards key={`breakdown-${refreshKey}`} />
+                  <MoreDetailsStats key={`details-${refreshKey}`} selectedIndex={moreDetailsState} onSelectedIndexChange={setMoreDetailsState} />
                 </Suspense>
               ) : (
                 <ComponentLoader height={600} />
@@ -268,14 +302,22 @@ const StatisticsScreen = React.memo(() => {
               removeClippedSubviews={animationConfig.isLowEndDevice}
               scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
               decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={Colors[theme].brandColor2}
+                  colors={[Colors[theme].brandColor2]}
+                />
+              }
             >
               {shouldLoadPerformanceComponents ? (
                 <Suspense fallback={<ComponentLoader height={300} />}>
-                  <GradeChart />
-                  <AverageGradeThermometer score={averageGrade} />
-                  <BreakdownByDifficultyPie breakdown={difficultyBreakdown} />
-                  <SpeedChart />
-                  <AverageSpeedTotal averageTime={averageTime} />
+                  <GradeChart key={`grade-${refreshKey}`} />
+                  <AverageGradeThermometer key={`thermometer-${refreshKey}`} score={averageGrade} />
+                  <BreakdownByDifficultyPie key={`difficulty-${refreshKey}`} breakdown={difficultyBreakdown} />
+                  <SpeedChart key={`speed-${refreshKey}`} />
+                  <AverageSpeedTotal key={`speed-total-${refreshKey}`} averageTime={averageTime} />
                 </Suspense>
               ) : (
                 <ComponentLoader height={600} />

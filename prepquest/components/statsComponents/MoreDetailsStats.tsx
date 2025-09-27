@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
 
 
 interface MoreDetailsStatsProps {
@@ -56,13 +57,17 @@ export function MoreDetailsStats({ selectedIndex: controlledIndex, onSelectedInd
     strings[language].moreDetailsInterview,
   ];
 
-  // Function to load data
+  // Function to load data with caching
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchStatsData();
+      const data = await statisticsCache.getCachedOrFetch(
+        CACHE_KEYS.MORE_DETAILS_STATS,
+        fetchStatsData
+      );
       setStatsData(data);
     } catch (error) {
+      console.error('Error loading more details stats:', error);
     } finally {
       setIsLoading(false);
     }

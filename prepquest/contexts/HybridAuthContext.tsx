@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth as useClerkAuth, useSignIn as useClerkSignIn, useSignUp as useClerkSignUp, useOAuth, useUser } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearUserStatisticsCache } from '@/utils/statisticsCache';
 
 // Authentication types
 export interface AuthUser {
@@ -298,6 +299,9 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
   // Common methods
   const signOut = async (): Promise<void> => {
     try {
+      // Clear user-specific statistics cache before signing out
+      await clearUserStatisticsCache();
+      
       // Sign out from Clerk
       if (clerkSignOut) {
         await clerkSignOut();

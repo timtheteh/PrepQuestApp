@@ -32,15 +32,19 @@ import { Fonts } from '@/constants/Fonts';
 import { 
   loadFlashcardsFromDatabaseForView, 
   updateFlashcardDate, 
-  updateDeckCompletionDate, 
   updateFlashcardDifficulty, 
   toggleFlashcardFavoriteForView, 
-  loadHalfwayCheckpointSetting,
   getFlashcardCount,
   deleteFlashcard,
-  updateDeckLastModifiedAfterFlashcardDeletion,
   type TransformedFlashcard,
-} from '@/db/decks';
+} from '@/db/tables/flashcards';
+import { 
+  updateDeckCompletionDate, 
+  updateDeckLastModifiedAfterFlashcardDeletion
+} from '@/db/tables/flashcardView';
+import { 
+  loadHalfwayCheckpointSetting
+} from '@/db/tables/users';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';

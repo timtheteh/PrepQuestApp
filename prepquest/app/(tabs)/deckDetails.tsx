@@ -18,22 +18,28 @@ import { deckDetailsCardDesigns, deckDetailsAICardDesigns } from '@/constants/ca
 
 import { 
   deleteDeck, 
+  getDeckInfoWithProgress, 
+  checkDeckNameExists, 
+  updateDeckName,
+  updateDeckFavoriteStatus
+} from '@/db/tables/decks';
+import { getCompanyIconImageSource } from '@/db/tables/interviewCompanyIcons';
+import { 
   getDeckGrade, 
   getDeckAverageTime, 
-  getDeckInfoWithProgress, 
-  DeckGrade, 
+  DeckGrade
+} from '@/db/tables/grades';
+import { 
   saveAIDeck, 
-  checkDeckNameExists, 
-  getCompanyIconImageSource,
-  updateDeckName,
-  updateDeckFavoriteStatus,
   getAIDeckInfo,
   getAIDeckGrade,
   getAIDeckAverageTime,
-  checkFlashcardAttemptStatus,
   checkAIDeckSavedStatus,
   getAIDeckProgress
-} from '@/db/decks';
+} from '@/db/tables/aiDecks';
+import { 
+  checkFlashcardAttemptStatus
+} from '@/db/tables/attemptedFlashcards';
 import { Toast } from '@/components/general/Toast';
 
 import { useLanguage } from '@/contexts/LanguageContext';

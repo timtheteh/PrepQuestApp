@@ -1,6 +1,6 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCurrentUserID } from './decks';
+import { getCurrentUserID } from './tables/users';
 
 export interface UserStats {
   accumulatedDecksCreated: number;

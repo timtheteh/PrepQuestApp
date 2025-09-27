@@ -13,17 +13,23 @@ import { FloatingActionButton } from '@/components/general/FloatingActionButton'
 
 import { BottomTextInputModal } from '@/components/general/BottomTextInputModal';
 import { 
-  getDecksInFolder, 
+  getDecksInFolder
+} from '@/db/tables/folderOperations';
+import { 
   Deck, 
+  updateDeckFavoriteStatusInFolder,
+  checkDatabaseReady
+} from '@/db/tables/decks';
+import { getCompanyIconImageSource } from '@/db/tables/interviewCompanyIcons';
+import { 
   deleteFolder, 
   checkFolderNameExists, 
-  getCompanyIconImageSource,
   updateFolderName,
-  removeDecksFromFolder,
-  updateDeckFavoriteStatusInFolder,
-  checkDatabaseReady,
   getFolderById
-} from '@/db/decks';
+} from '@/db/tables/folders';
+import { 
+  removeDecksFromFolder
+} from '@/db/tables/decks';
 import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/general/Toast';
 import LottieView from 'lottie-react-native';

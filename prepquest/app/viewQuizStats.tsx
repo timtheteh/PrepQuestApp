@@ -12,7 +12,7 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
-import { loadQuizStatsForView, type QuizStats } from '@/db/decks';
+import { loadQuizStatsForView, type QuizStats } from '@/db/tables/attemptedFlashcards';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 
 // Memoized child components to prevent unnecessary re-renders

@@ -7,7 +7,7 @@ import HelpIconFilledDarkMode from '@/assets/icons/generalIcons/helpIconFilledDa
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { DifficultyToggleRow } from '@/components/general/DifficultyToggleRow';
-import { loadDeckSettings, saveDeckSettings, resetDeckSettingsToDefaults, DeckSettings } from '@/db/decks';
+import { loadDeckSettings, saveDeckSettings, resetDeckSettingsToDefaults, DeckSettings } from '@/db/tables/users';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useFocusEffect } from '@react-navigation/native';

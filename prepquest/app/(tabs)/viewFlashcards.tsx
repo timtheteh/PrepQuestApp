@@ -31,7 +31,7 @@ import {
   toggleFlashcardFavorite, 
   deleteSelectedFlashcards as deleteSelectedFlashcardsFromDB,
   Flashcard,
-} from '@/db/decks';
+} from '@/db/tables/flashcards';
 
 // Safe JSON parse helper
 function safeParseJSON(val: any, fallback: any[] = []): any[] {

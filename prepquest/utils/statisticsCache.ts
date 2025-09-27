@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCurrentUserID } from '@/db/decks';
+import { getCurrentUserID } from '@/db/tables/users';
 
 // Cache configuration
 const CACHE_EXPIRY_HOURS = 1; // Cache expires after 1 hour

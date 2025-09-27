@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, Dimensions, Animated, Platform } from 'react-native';
 import { SmallGreenBinaryToggle } from '../general/SmallGreenBinaryToggle';
 import { Engine, World, Bodies, Body, Events } from 'matter-js';
-import { getBreakdownData, BreakdownDatum } from '@/db/decks';
+import { getBreakdownData, BreakdownDatum } from '@/db/tables/statistics';
 import { useIsFocused } from '@react-navigation/native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';

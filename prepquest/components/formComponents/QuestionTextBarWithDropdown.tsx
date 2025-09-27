@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, Platform, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getAllCompanyNames, getCompanyIconByName } from '@/db/decks';
+import { getAllCompanyNames, getCompanyIconByName } from '@/db/tables/interviewCompanyIcons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';

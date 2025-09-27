@@ -1,7 +1,7 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/clerk-expo';
-import { getCurrentUserID } from './decks';
+import { getCurrentUserID } from './tables/users';
 
 export interface DayGrade {
   day: string;

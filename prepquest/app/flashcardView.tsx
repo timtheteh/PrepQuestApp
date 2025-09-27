@@ -2047,12 +2047,14 @@ const LoadingScreen = React.memo(({ progress, current, total, language }: { prog
         }}>
           {/* Stacked image + Lottie animation */}
           <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-            <Image
-              source={require('@/assets/images/loadingBackground.png')}
-              style={{ width: '100%', height: '100%', borderRadius: 24 }}
-              resizeMode="contain"
-              fadeDuration={0}
-            />
+             {theme !== 'dark' && (
+               <Image
+                 source={require('@/assets/images/loadingBackground.png')}
+                 style={{ width: '100%', height: '100%', borderRadius: 24 }}
+                 resizeMode="contain"
+                 fadeDuration={0}
+               />
+             )}
             <LottieView
               source={require('@/assets/animations/LoadingAnimation2.json')}
               autoPlay
@@ -2083,7 +2085,7 @@ const LoadingScreen = React.memo(({ progress, current, total, language }: { prog
               <View style={{
                 width: '100%',
                 height: 16,
-                backgroundColor: Colors[theme].unselectedText,
+                backgroundColor: Colors[theme].loadingBarBgColor,
                 borderRadius: 8,
                 overflow: 'hidden',
               }}>

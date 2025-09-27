@@ -5,6 +5,8 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { FlashcardViewTopBar } from '@/components/flashcardView/FlashcardViewTopBar';
 import FlippableCardFrontFlipArrow from '@/assets/icons/flippableCard/flippableCardFrontFlipArrow.svg';
 import FlippableCardBackFlipArrow from '@/assets/icons/flippableCard/flippableCardBackFlipArrow.svg';
+import FlippableCardFrontFlipArrowDarkMode from '@/assets/icons/flippableCard/flippableCardFrontFlipArrowDarkMode.svg';
+import FlippableCardBackFlipArrowDarkMode from '@/assets/icons/flippableCard/flippableCardBackFlipArrowDarkMode.svg';
 import { FavoriteButton } from '@/components/general/FavoriteButton';
 import { GenericModal } from '@/components/modals/GenericModal';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
@@ -42,7 +44,7 @@ import {
   type TransformedFlashcard,
 } from '@/db/decks';
 //
-import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight } from '@/hooks/heights';
+import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -365,8 +367,15 @@ const DifficultyPillRow = React.memo(({ currentIdx, onDifficultyChange, flashcar
           key={type}
           style={[
             styles.difficultyPillButton,
-            { backgroundColor: color },
-            currentDifficulty === type && { borderColor: Colors[theme].brandColor2, borderWidth: 3 },
+            { 
+              backgroundColor: theme === 'dark' ? Colors[theme].cardTypePillBgColor : color,
+              borderWidth: theme === 'dark' ? 1 : 0,
+              borderColor: theme === 'dark' ? Colors[theme].unselectedText : 'transparent',
+            },
+            currentDifficulty === type && { 
+              borderColor: theme === 'dark' ? color : Colors[theme].brandColor2, 
+              borderWidth: theme === 'dark' ? 2 : 3 
+            },
           ]}
           activeOpacity={0.8}
           onPress={() => {
@@ -1601,7 +1610,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             
             {/* Front flip arrow - positioned at bottom right */}
             <Animated.View style={[styles.flipArrowContainer, { opacity: frontOpacity }]}>
-              <FlippableCardFrontFlipArrow width={30} height={30} />
+              {theme === 'dark' ? (
+                <FlippableCardFrontFlipArrowDarkMode width={30} height={30} />
+              ) : (
+                <FlippableCardFrontFlipArrow width={30} height={30} />
+              )}
             </Animated.View>
           </Animated.View>
           <Animated.View
@@ -1886,7 +1899,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             
             {/* Back flip arrow - positioned at bottom right */}
             <Animated.View style={[styles.flipArrowContainer, { opacity: backOpacity }]}>
-              <FlippableCardBackFlipArrow width={30} height={30} />
+              {theme === 'dark' ? (
+                <FlippableCardBackFlipArrowDarkMode width={30} height={30} />
+              ) : (
+                <FlippableCardBackFlipArrow width={30} height={30} />
+              )}
             </Animated.View>
           </Animated.View>
         </View>
@@ -2796,6 +2813,7 @@ export default function FlashcardViewPage() {
   const getContentTopHeight = useContentTopHeight();
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getTopBarAccountHeight = useTopBarAccountHeight();
+  const getBottomSafeAreaHeight = useBottomSafeAreaHeight();
 
   return (
     isSuccessMode ? (
@@ -2946,7 +2964,7 @@ export default function FlashcardViewPage() {
               style={[styles.backButton, { top: getHeaderIconsTopHeight()}]}
               onPress={() => router.back()}
             >
-              <AntDesign name="arrowleft" size={32} color="black" />
+              <AntDesign name="arrowleft" size={32} color={Colors[theme].text} />
             </TouchableOpacity>
             {/* Quiz starting text */}
             <Text style={{
@@ -3011,7 +3029,7 @@ export default function FlashcardViewPage() {
               }
             }}
           >
-            <AntDesign name="arrowleft" size={32} color="black" />
+            <AntDesign name="arrowleft" size={32} color={Colors[theme].text} />
           </TouchableOpacity>
           <View style={[styles.headerIconsContainer, { top: getHeaderIconsTopHeight()}]}>
             <FlashcardViewTopBar 
@@ -3024,7 +3042,7 @@ export default function FlashcardViewPage() {
               isSpeechPaused={isSpeechPaused}
             />
           </View>
-          <View style={[styles.middleContentContainer, { top: getContentTopHeight()}]}>
+          <View style={[styles.middleContentContainer, { top: getContentTopHeight(), bottom: 104 + getBottomSafeAreaHeight() }]}>
             <FlippableFlashcard 
               currentIdx={currentIdx} 
               setCurrentIdx={setCurrentIdx} 
@@ -3065,10 +3083,10 @@ export default function FlashcardViewPage() {
               isAIDeckParam={isAIDeckParam as string}
             />
           </View>
-          <View style={styles.difficultyPillRowContainer}>
+          <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>
             <DifficultyPillRow currentIdx={currentIdx} onDifficultyChange={handleDifficultyChange} flashcards={flashcards} language={language} />
           </View>
-          <View style={styles.loadingBarBottomContainer}>
+          <View style={[styles.loadingBarBottomContainer, { bottom: 16 + getBottomSafeAreaHeight() }]}>
             <LoadingBar currentIdx={currentIdx} totalCards={totalCards} isStudyMode={isStudyMode} isQuizMode={isQuizMode} hasFlippedCard={hasFlippedCard} hasSubmittedMCQ={hasSubmittedMCQ} flashcardAnswerType={flashcards[currentIdx]?.flashcardAnswerType || ''} recordedAudioUri={recordedAudioUri} language={language} />
           </View>
         </View>

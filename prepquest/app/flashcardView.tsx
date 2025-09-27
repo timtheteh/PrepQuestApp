@@ -1718,7 +1718,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                 >
                   {mcqOptionsWithLettersRef.current.map((option: any, idx: number) => (
                     <View key={idx} style={styles.mcqOptionRow}>
-                        <Text style={styles.mcqOptionText}>
+                        <Text style={[styles.mcqOptionText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
                             {option.letter}) {option.choice}
                         </Text>
                     </View>
@@ -1941,7 +1941,7 @@ const MCQOption = React.memo(({ text, selected, onPress, disabled }: { text: str
   return (
     <View style={styles.mcqOptionContainer}>
       <SmallCircleSelectButton selected={selected} onPress={onPress} disabled={disabled} />
-                      <Text style={[styles.mcqOptionLabelText, disabled && { color: Colors[theme].unselectedText }]}>{text}</Text>
+                      <Text style={[styles.mcqOptionLabelText, { color: disabled ? Colors[theme].unselectedText : Colors[theme].text }]}>{text}</Text>
     </View>
   );
 });
@@ -1960,7 +1960,7 @@ const SubmitButton = React.memo(({ enabled, onPress, disabled, language }: { ena
       disabled={isDisabled}
       activeOpacity={0.8}
     >
-              <Text style={styles.submitButtonText}>{strings[language].flashcardViewPage.submit}</Text>
+              <Text style={[styles.submitButtonText, { color: isDisabled ? 'black' : Colors[theme].contrastText }]}>{strings[language].flashcardViewPage.submit}</Text>
     </TouchableOpacity>
   );
 });
@@ -3514,7 +3514,7 @@ const styles = StyleSheet.create({
   mcqOptionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 0,
+    gap: 8,
   },
   mcqOptionLabelText: {
     fontSize: 14,

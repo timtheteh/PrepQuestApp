@@ -30,12 +30,22 @@ export const CircleIconButton = React.memo(({
   const { theme } = useTheme();
   const colors = Colors[theme];
   const defaultIconColor = color || colors.normalIconColor;
-  const disabledColor = colors.unselectedText;
-  const finalColor = disabled ? disabledColor : defaultIconColor;
+  
+  // Icon color logic based on theme and state
+  const getIconColor = () => {
+    if (disabled) {
+      return theme === 'dark' ? colors.contrastIconColor : colors.unselectedText;
+    }
+    return defaultIconColor;
+  };
+  
+  const finalColor = getIconColor();
   
   // Platform-specific background colors
   const getBackgroundColor = () => {
-    if (disabled) return colors.disabledIconBackgroundColor;
+    if (disabled) {
+      return theme === 'dark' ? colors.disabledIconBackgroundColor : colors.secondaryShade;
+    }
     if (selected) return colors.unselectedText;
     return colors.secondaryShade;
   };

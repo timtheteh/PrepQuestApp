@@ -1388,7 +1388,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           <AntDesign
             name="left"
             size={30}
-                            color={isLeftChevronDisabled() ? Colors[theme].unselectedText : Colors[theme].text}
+                            color={isLeftChevronDisabled() ? Colors[theme].disabledIconBackgroundColor : Colors[theme].text}
           />
         </TouchableOpacity>
       ) : null}
@@ -1401,7 +1401,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         <AntDesign
           name="right"
           size={30}
-                          color={isRightChevronDisabled() ? Colors[theme].unselectedText : Colors[theme].text}
+                          color={isRightChevronDisabled() ? Colors[theme].disabledIconBackgroundColor : Colors[theme].text}
         />
       </TouchableOpacity>
       <Animated.View style={[{ flex: 1 }, slideStyle]}>

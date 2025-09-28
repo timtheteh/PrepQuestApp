@@ -1791,7 +1791,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                         strings[language].flashcardViewPage.recordAnswerGetFeedback}
                       </Text>
                       <LottieView
-                        source={require('@/assets/animations/DownArrowAnimation.json')}
+                        source={theme === 'dark' ? require('@/assets/animations/DownArrowAnimationDarkMode.json') : require('@/assets/animations/DownArrowAnimation.json')}
                         autoPlay
                         loop
                         style={styles.voiceAnswerAnimation}

@@ -10,6 +10,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import BackgroundService from 'react-native-background-actions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 interface DeckCreationStatusPageProps {
   statusRows?: { done: boolean, label: string }[];
@@ -25,6 +28,7 @@ export default function DeckCreationStatusPage({
   onMinimize 
 }: DeckCreationStatusPageProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -431,7 +435,7 @@ export default function DeckCreationStatusPage({
   };
 
   return (
-    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
+    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors[theme].background}}>
       {/* Top row with Minimize and Cancel buttons */}
       <View style={{ position: 'absolute', top: insets.top + 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10, paddingHorizontal: 16 }}>
         {/* Minimize button at top left */}
@@ -439,35 +443,37 @@ export default function DeckCreationStatusPage({
           style={{ padding: 8 }}
           onPress={handleMinimize}
         >
-          <Text style={{ fontSize: 20, color: '#44B88A', fontFamily: 'Satoshi-Medium' }}>{strings[language].minimize}</Text>
+          <Text style={{ fontSize: 20, color: Colors[theme].brandColor1, fontFamily: Fonts.bodyMedium }}>{strings[language].minimize}</Text>
         </TouchableOpacity>
         {/* Cancel button at top right */}
         <TouchableOpacity
           style={{ padding: 8 }}
           onPress={handleCancel}
         >
-          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{strings[language].cancel}</Text>
+          <Text style={{ fontSize: 20, color: Colors[theme].alertColor, fontFamily: Fonts.bodyMedium }}>{strings[language].cancel}</Text>
         </TouchableOpacity>
       </View>
       <View style={{ width: '100%', alignItems: 'center', marginTop: 20}}>
         {/* Deck name title above the animation */}
         {deckName && (
           <View style={{ width: '100%', paddingHorizontal: 16, alignItems: 'center', marginBottom: 16 }}>
-            <Text style={styles.deckNameTitle}>
+            <Text style={[styles.deckNameTitle, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
               {deckName}
             </Text>
           </View>
         )}
         {/* Stacked image + Lottie animation */}
         <View style={{ aspectRatio: 1.2, width: '100%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-          <Image
-            source={require('@/assets/images/loadingBackground.png')}
-            style={{ width: '100%', height: '100%', borderRadius: 24, transform: [{ rotate: '90deg' }] }}
-            resizeMode="contain"
-            fadeDuration={0}
-          />
+          {theme !== 'dark' && (
+            <Image
+              source={require('@/assets/images/loadingBackground.png')}
+              style={{ width: '100%', height: '100%', borderRadius: 24, transform: [{ rotate: '90deg' }] }}
+              resizeMode="contain"
+              fadeDuration={0}
+            />
+          )}
           <LottieView
-            source={require('@/assets/animations/LoadingAnimation1.json')}
+            source={theme === 'dark' ? require('@/assets/animations/LoadingAnimation1DarkMode.json') : require('@/assets/animations/LoadingAnimation1.json')}
             autoPlay
             loop
             style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}
@@ -475,7 +481,7 @@ export default function DeckCreationStatusPage({
           />
         </View>
         <View style={{ width: '100%', paddingHorizontal: 16, alignItems: 'center', marginTop: 8,}}>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
             {currentIsInViewFlashcardsPage
               ? strings[language].flashcardViewPage.creatingFlashcards
               : strings[language].flashcardViewPage.creatingDeck}
@@ -488,7 +494,7 @@ export default function DeckCreationStatusPage({
                 ) : (
                   <DeleteModalIcon width={28} height={28} style={{ marginRight: 12 }} />
                 )}
-                <Text style={{ fontFamily: 'Satoshi-Medium', fontSize: 18, color: '#000'}}>{row.label}</Text>
+                <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 18, color: Colors[theme].text}}>{row.label}</Text>
               </View>
             ))}
           </View>
@@ -500,16 +506,12 @@ export default function DeckCreationStatusPage({
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 24,
-    color: '#000',
     textAlign: 'center',
     lineHeight: 32,
   },
   deckNameTitle: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 28,
-    color: '#000',
     textAlign: 'center',
     lineHeight: 36,
   },

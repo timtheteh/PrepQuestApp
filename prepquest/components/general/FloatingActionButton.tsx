@@ -110,8 +110,8 @@ export const FloatingActionButton = ({
       {isBackgroundTaskRunning && !isFoldersPage && !isFavoritesPageFavFolders ? (
         <LottieView
           source={animationType === 'viewFlashcards' 
-            ? require('@/assets/animations/addDeckLoadingAnimation2.json')
-            : require('@/assets/animations/addDeckLoadingAnimation.json')
+            ? (theme === 'dark' ? require('@/assets/animations/addDeckLoadingAnimation2DarkMode.json') : require('@/assets/animations/addDeckLoadingAnimation2.json'))
+            : (theme === 'dark' ? require('@/assets/animations/addDeckLoadingAnimationDarkMode.json') : require('@/assets/animations/addDeckLoadingAnimation.json'))
           }
           autoPlay
           loop

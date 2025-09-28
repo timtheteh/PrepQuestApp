@@ -194,13 +194,13 @@ export default function SplashScreen({
   // Memoized values to prevent unnecessary recalculations
   const containerStyle = useMemo(() => [
     styles.container, 
-    { backgroundColor: Colors[theme].background }
-  ], [theme]);
+    { backgroundColor: Colors.light.background }
+  ], []);
 
   const whiteContainerStyle = useMemo(() => [
     styles.whiteContainer, 
-    { backgroundColor: Colors[theme].background }
-  ], [theme]);
+    { backgroundColor: Colors.light.background }
+  ], []);
 
   const signInContainerStyle = useMemo(() => [
     styles.signInContainer, 
@@ -214,77 +214,77 @@ export default function SplashScreen({
   const textInputStyle = useMemo(() => [
     styles.textInput, 
     { 
-      borderColor: Colors[theme].unselectedText,
-      color: Colors[theme].text,
+      borderColor: Colors.light.unselectedText,
+      color: Colors.light.text,
       fontFamily: Fonts.bodyBold
     }
-  ], [theme]);
+  ], []);
 
-  const placeholderTextColor = useMemo(() => Colors[theme].unselectedText, [theme]);
+  const placeholderTextColor = useMemo(() => Colors.light.unselectedText, []);
 
   // Memoized button styles
   const signInButtonStyle = useMemo(() => [
     styles.signInButton, 
-    { backgroundColor: Colors[theme].brandColor2 }
-  ], [theme]);
+    { backgroundColor: Colors.light.brandColor2 }
+  ], []);
 
   const signInButtonTextStyle = useMemo(() => [
     styles.signInButtonText, 
-    { color: Colors[theme].background, fontFamily: Fonts.bodyBold }
-  ], [theme]);
+    { color: Colors.light.background, fontFamily: Fonts.bodyBold }
+  ], []);
 
   // Memoized social login button style
   const socialLoginButtonStyle = useMemo(() => [
     styles.socialLoginButton, 
-    { borderColor: Colors[theme].unselectedText }
-  ], [theme]);
+    { borderColor: Colors.light.unselectedText }
+  ], []);
 
   const socialLoginTextStyle = useMemo(() => [
     styles.socialLoginText, 
-    { color: Colors[theme].text, fontFamily: Fonts.bodyBold }
-  ], [theme]);
+    { color: Colors.light.text, fontFamily: Fonts.bodyBold }
+  ], []);
 
   // Memoized toggle text styles
   const signInToggleTextStyle = useMemo(() => [
     styles.toggleText,
     { 
-      color: isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
+      color: isSignIn ? Colors.light.text : Colors.light.unselectedText,
       fontFamily: Fonts.bodyMedium
     }
-  ], [isSignIn, theme]);
+  ], [isSignIn]);
 
   const signUpToggleTextStyle = useMemo(() => [
     styles.toggleText,
     { 
-      color: !isSignIn ? Colors[theme].text : Colors[theme].unselectedText,
+      color: !isSignIn ? Colors.light.text : Colors.light.unselectedText,
       fontFamily: Fonts.bodyMedium
     }
-  ], [isSignIn, theme]);
+  ], [isSignIn]);
 
   const underlineStyle = useMemo(() => [
     styles.underline, 
-    { backgroundColor: Colors[theme].brandColor2 }
-  ], [theme]);
+    { backgroundColor: Colors.light.brandColor2 }
+  ], []);
 
   const welcomeTextStyle = useMemo(() => [
     styles.welcomeText, 
-    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
-  ], [theme]);
+    { color: Colors.light.text, fontFamily: Fonts.bodyMedium }
+  ], []);
 
   const forgotPasswordTextStyle = useMemo(() => [
     styles.forgotPasswordText, 
-    { color: Colors[theme].text, fontFamily: Fonts.bodyBold }
-  ], [theme]);
+    { color: Colors.light.text, fontFamily: Fonts.bodyBold }
+  ], []);
 
   const signInWithTextStyle = useMemo(() => [
     styles.signInWithText, 
-    { color: Colors[theme].text, fontFamily: Fonts.bodyBold }
-  ], [theme]);
+    { color: Colors.light.text, fontFamily: Fonts.bodyBold }
+  ], []);
 
   const loadingTextStyle = useMemo(() => [
     styles.loadingText, 
-    { color: Colors[theme].text }
-  ], [theme]);
+    { color: Colors.light.text }
+  ], []);
 
   // Memoized animation sources to prevent unnecessary re-renders
   const backgroundAnimationSource = useMemo(() => 
@@ -305,88 +305,88 @@ export default function SplashScreen({
   // Memoized modal styles
   const modalContentStyle = useMemo(() => [
     styles.modalContent, 
-    { backgroundColor: Colors[theme].background }
-  ], [theme]);
+    { backgroundColor: Colors.light.background }
+  ], []);
 
   const modalTitleStyle = useMemo(() => [
     styles.modalTitle, 
-    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
-  ], [theme]);
+    { color: Colors.light.text, fontFamily: Fonts.bodyMedium }
+  ], []);
 
   const modalSubtitleStyle = useMemo(() => [
     styles.modalSubtitle, 
-    { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }
-  ], [theme]);
+    { color: Colors.light.unselectedText, fontFamily: Fonts.bodyMedium }
+  ], []);
 
   const modalInputStyle = useMemo(() => [
     styles.modalInput, 
     { 
-      borderColor: Colors[theme].unselectedText,
-      color: Colors[theme].text,
+      borderColor: Colors.light.unselectedText,
+      color: Colors.light.text,
       fontFamily: Fonts.bodyBold
     }
-  ], [theme]);
+  ], []);
 
   const modalCancelButtonStyle = useMemo(() => [
     styles.modalCancelButton, 
-    { borderColor: Colors[theme].unselectedText }
-  ], [theme]);
+    { borderColor: Colors.light.unselectedText }
+  ], []);
 
   const modalCancelButtonTextStyle = useMemo(() => [
     styles.modalCancelButtonText, 
-    { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }
-  ], [theme]);
+    { color: Colors.light.text, fontFamily: Fonts.bodyMedium }
+  ], []);
 
   const modalConfirmButtonStyle = useMemo(() => [
     styles.modalConfirmButton, 
-    { backgroundColor: Colors[theme].brandColor2 },
-    isResettingPassword && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }
-  ], [theme, isResettingPassword]);
+    { backgroundColor: Colors.light.brandColor2 },
+    isResettingPassword && { backgroundColor: Colors.light.unselectedText, opacity: 0.6 }
+  ], [isResettingPassword]);
 
   const modalConfirmButtonTextStyle = useMemo(() => [
     styles.modalConfirmButtonText, 
-    { color: Colors[theme].background, fontFamily: Fonts.bodyMedium }
-  ], [theme]);
+    { color: Colors.light.background, fontFamily: Fonts.bodyMedium }
+  ], []);
 
   // Verification modal styles
   const verificationCodeInputStyle = useMemo(() => [
     styles.verificationCodeInput,
     {
-      borderColor: hasVerificationError ? '#FF4444' : Colors[theme].unselectedText,
-      color: Colors[theme].text,
-      backgroundColor: Colors[theme].background,
+      borderColor: hasVerificationError ? '#FF4444' : Colors.light.unselectedText,
+      color: Colors.light.text,
+      backgroundColor: Colors.light.background,
       fontFamily: Fonts.bodyBold
     }
-  ], [theme, hasVerificationError]);
+  ], [hasVerificationError]);
 
   // Password reset verification code input styles
   const passwordResetCodeInputStyle = useMemo(() => [
     styles.verificationCodeInput,
     {
-      borderColor: hasPasswordResetError ? '#FF4444' : Colors[theme].unselectedText,
-      color: Colors[theme].text,
-      backgroundColor: Colors[theme].background,
+      borderColor: hasPasswordResetError ? '#FF4444' : Colors.light.unselectedText,
+      color: Colors.light.text,
+      backgroundColor: Colors.light.background,
       fontFamily: Fonts.bodyBold
     }
-  ], [theme, hasPasswordResetError]);
+  ], [hasPasswordResetError]);
 
 
 
   const resendButtonStyle = useMemo(() => [
     styles.resendButton,
     { 
-      borderColor: canResendCode ? Colors[theme].brandColor2 : Colors[theme].unselectedText,
+      borderColor: canResendCode ? Colors.light.brandColor2 : Colors.light.unselectedText,
       opacity: canResendCode ? 1 : 0.5
     }
-  ], [theme, canResendCode]);
+  ], [canResendCode]);
 
   const resendButtonTextStyle = useMemo(() => [
     styles.resendButtonText,
     { 
-      color: canResendCode ? Colors[theme].brandColor2 : Colors[theme].unselectedText, 
+      color: canResendCode ? Colors.light.brandColor2 : Colors.light.unselectedText, 
       fontFamily: Fonts.bodyMedium 
     }
-  ], [theme, canResendCode]);
+  ], [canResendCode]);
 
   // Loading overlay styles
   const loadingOverlayStyle = useMemo(() => [
@@ -1236,7 +1236,7 @@ export default function SplashScreen({
                       <Feather 
                         name={showPassword ? 'eye' : 'eye-off'} 
                         size={20} 
-                        color={Colors[theme].normalIconColor}
+                        color={Colors.light.normalIconColor}
                       />
                     </MemoizedTouchableOpacity>
                   </View>
@@ -1259,7 +1259,7 @@ export default function SplashScreen({
                         <Feather 
                           name={showPassword ? 'eye' : 'eye-off'} 
                           size={20} 
-                          color={Colors[theme].normalIconColor}
+                          color={Colors.light.normalIconColor}
                         />
                       </MemoizedTouchableOpacity>
                     </View>
@@ -1457,7 +1457,7 @@ export default function SplashScreen({
                   </MemoizedTouchableOpacity>
                   
                   <MemoizedTouchableOpacity 
-                    style={[modalConfirmButtonStyle, isVerifyingResetCode && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }]}
+                    style={[modalConfirmButtonStyle, isVerifyingResetCode && { backgroundColor: Colors.light.unselectedText, opacity: 0.6 }]}
                     onPress={handleVerifyResetCode}
                     disabled={isVerifyingResetCode}
                   >
@@ -1494,7 +1494,7 @@ export default function SplashScreen({
                     <Feather 
                       name={showPassword ? 'eye' : 'eye-off'} 
                       size={20} 
-                      color={Colors[theme].normalIconColor}
+                      color={Colors.light.normalIconColor}
                     />
                   </MemoizedTouchableOpacity>
                 </View>
@@ -1517,7 +1517,7 @@ export default function SplashScreen({
                     <Feather 
                       name={showPassword ? 'eye' : 'eye-off'} 
                       size={20} 
-                      color={Colors[theme].normalIconColor}
+                      color={Colors.light.normalIconColor}
                     />
                   </MemoizedTouchableOpacity>
                 </View>
@@ -1606,7 +1606,7 @@ export default function SplashScreen({
               </MemoizedTouchableOpacity>
               
               <MemoizedTouchableOpacity 
-                style={[modalConfirmButtonStyle, isVerifying && { backgroundColor: Colors[theme].unselectedText, opacity: 0.6 }]}
+                style={[modalConfirmButtonStyle, isVerifying && { backgroundColor: Colors.light.unselectedText, opacity: 0.6 }]}
                 onPress={handleVerifyCode}
                 disabled={isVerifying}
               >

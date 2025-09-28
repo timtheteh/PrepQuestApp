@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { AverageGradeThermometer } from '@/components/statsComponents/AverageGradeThermometer';
 import BreakdownByDifficultyPie from '@/components/statsComponents/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/statsComponents/AverageSpeedTotal';
 import DoubleChevron from '@/assets/icons/generalIcons/DoubleChevron.svg';
+import DoubleChevronDarkMode from '@/assets/icons/generalIcons/DoubleChevronDarkMode.svg';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -51,6 +53,7 @@ export default function ViewQuizStatsModal() {
   const router = useRouter();
   const { language } = useLanguage();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { halfwayCheckpoint, deckID, isAIDeck, attemptedFlashcardIds } = useLocalSearchParams();
   const isHalfwayCheckpoint = halfwayCheckpoint === 'true';
   
@@ -164,14 +167,16 @@ export default function ViewQuizStatsModal() {
         <AntDesign name="close" size={28} color={closeButtonIconColor} />
       </MemoizedTouchableOpacity>
       <ScrollView
-        style={[styles.scrollContainer, { marginBottom: isHalfwayCheckpoint ? 120 : 0 }]}
+        style={[styles.scrollContainer, { 
+          marginBottom: isHalfwayCheckpoint ? (120 + insets.bottom) : 0 
+        }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Title row with confetti */}
         <View style={styles.titleRow}>
           {isHalfwayCheckpoint ? (
-            <MemoizedImage source={FlagIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+            <MemoizedImage source={FlagIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }, { rotate: '15deg' }] }]} resizeMode="contain" />
           ) : (
             <MemoizedImage source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
           )}
@@ -181,7 +186,7 @@ export default function ViewQuizStatsModal() {
             <MemoizedText style={wellDoneTitleStyle}>{strings[language].flashcardViewPage.wellDone}</MemoizedText>
           )}
           {isHalfwayCheckpoint ? (
-            <MemoizedImage source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
+            <MemoizedImage source={FlagIcon} style={[styles.confettiIcon, { transform: [{ rotate: '15deg' }] }]} resizeMode="contain" />
           ) : (
             <MemoizedImage source={ConfettiIcon} style={styles.confettiIcon} resizeMode="contain" />
           )}
@@ -220,11 +225,15 @@ export default function ViewQuizStatsModal() {
       
       {/* Halfway checkpoint button fixed at bottom */}
       {isHalfwayCheckpoint && (
-        <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
+        <View style={[styles.fixedBottomButtonWrap, { bottom: Platform.OS === 'ios' ? 30 + insets.bottom : 24 + insets.bottom }]} pointerEvents="box-none">
           <MemoizedTouchableOpacity style={fixedBottomButtonStyle} activeOpacity={0.85} onPress={handleBackPress}>
             <View style={styles.buttonContentRow}>
               <MemoizedText style={buttonTextStyle}>{strings[language].flashcardViewPage.continueWithQuiz}</MemoizedText>
-              <DoubleChevron width={36} height={36} />
+              {theme === 'dark' ? (
+                <DoubleChevronDarkMode width={36} height={36} />
+              ) : (
+                <DoubleChevron width={36} height={36} />
+              )}
             </View>
           </MemoizedTouchableOpacity>
         </View>
@@ -313,7 +322,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: Platform.OS === 'ios' ? 30 : 24,
     alignItems: 'center',
     zIndex: 20,
     pointerEvents: 'box-none',

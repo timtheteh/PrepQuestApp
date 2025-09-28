@@ -567,7 +567,7 @@ export default function ViewFlashcardsScreen() {
         {/* Top row */}
         <View style={styles.cardTopRow}>
           <TouchableOpacity onPress={() => onNavigate(flashcardIdx)}>
-            <Ionicons name="eye" size={20} color="#444" />
+            <Ionicons name="eye" size={20} color={Colors[theme].text} />
           </TouchableOpacity>
           <View style={[styles.difficultyPill, { borderColor: difficultyColors[flashcardDifficulty] }]}> 
             <Text style={[styles.difficultyPillText]}>{DIFFICULTY_LABELS[flashcardDifficulty]}</Text>
@@ -595,8 +595,8 @@ export default function ViewFlashcardsScreen() {
           <View style={{
             alignSelf: 'center',
             marginBottom: -10,
-            backgroundColor: '#fff',
-            borderColor: '#4F41D8',
+            backgroundColor: Colors[theme].background,
+            borderColor: Colors[theme].brandColor2,
             borderWidth: 1,
             borderRadius: 12,
             minHeight: 24,
@@ -605,7 +605,7 @@ export default function ViewFlashcardsScreen() {
             alignItems: 'center',
             flexDirection: 'row',
           }}>
-            <Text style={{ fontSize: 12, color: '#222', textAlign: 'center', 
+            <Text style={{ fontSize: 12, color: Colors[theme].text, textAlign: 'center', 
               }}>
               {getCognitiveQnTypeLabel(flashcards[flashcardIdx].cognitiveQnType)}
             </Text>
@@ -671,6 +671,7 @@ export default function ViewFlashcardsScreen() {
       fontSize: 24,
       marginBottom: 8,
       textAlign: 'left',
+      color: Colors[theme].text,
     },
     componentContainer: {
       flex: 1,
@@ -708,7 +709,7 @@ export default function ViewFlashcardsScreen() {
     selectButton: {
       fontSize: 20,
       fontFamily: Fonts.bodyMedium,
-      color: Colors.light.brandColor1,
+      color: Colors[theme].brandColor1,
     },
   //   selectButtonAbsolute: {
   //     position: 'relative',
@@ -727,7 +728,7 @@ export default function ViewFlashcardsScreen() {
       alignItems: 'flex-start',
     },
     topicPill: {
-      backgroundColor: Colors.light.brandColor1,
+      backgroundColor: Colors[theme].brandColor1,
       borderRadius: 30,
       height: 30,
       minWidth: 50,
@@ -742,7 +743,7 @@ export default function ViewFlashcardsScreen() {
       fontFamily: Fonts.bodyBold,
       fontWeight: '700',
       fontSize: 14,
-      color: '#FFFFFF',
+      color: Colors[theme].contrastText,
       textAlign: 'center',
     },
     questionTypeCountRow: {
@@ -811,11 +812,12 @@ export default function ViewFlashcardsScreen() {
       borderWidth: 2,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: '#fff',
+      backgroundColor: Colors[theme].background,
     },
     difficultyPillText: {
       fontFamily: Fonts.bodyMedium,
       fontSize: 13,
+      color: Colors[theme].text,
     },
     cardQnContainer: {
       flex: 1,
@@ -914,7 +916,7 @@ export default function ViewFlashcardsScreen() {
               style={styles.backButton}
               onPress={handleBackPress}
             >
-              <AntDesign name="arrowleft" size={32} color="black" />
+              <AntDesign name="arrowleft" size={32} color={Colors[theme].text} />
             </TouchableOpacity>
           </View>
           
@@ -1094,7 +1096,7 @@ export default function ViewFlashcardsScreen() {
                     };
 
                     return (
-                      <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: '#ECECEC' }]}>
+                      <View key={i} style={[styles.flashcardListRow, i === 0 && { borderTopWidth: 1, borderTopColor: Colors[theme].graphLineColor }]}>
                         <View style={styles.flashcardListRowLeft}>  
                           <FavoriteButton size={25} favorited={card.isFavorited === 1} onPress={() => toggleFavorite(i)} />
                         </View>
@@ -1106,7 +1108,7 @@ export default function ViewFlashcardsScreen() {
                           />
                         ) : (
                           <TouchableOpacity onPress={() => handleNavigateToFlashcardView(i)}>
-                            <Ionicons name="eye" size={24} color="#444" style={styles.flashcardListEyeIcon} />
+                            <Ionicons name="eye" size={24} color={Colors[theme].text} style={styles.flashcardListEyeIcon} />
                           </TouchableOpacity>
                         )}
                       </View>
@@ -1121,7 +1123,7 @@ export default function ViewFlashcardsScreen() {
           {!isSelectMode && (
             <FloatingActionButton
               style={styles.fab}
-              backgroundColor="#44B88A"
+              backgroundColor={Colors[theme].brandColor1}
               animationType="viewFlashcards"
             />
           )}    

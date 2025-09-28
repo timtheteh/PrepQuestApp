@@ -484,6 +484,15 @@ export default function DeckSettingsPage() {
     }
   ], [text, language, styles.title]);
   const mainContainerStyle = React.useMemo(() => [styles.mainContainer, { backgroundColor: background }], [background, styles.mainContainer]);
+  
+  // Calculate bottom spacing for Android devices with system navigation bar
+  const bottomSpacing = React.useMemo(() => {
+    if (Platform.OS === 'android') {
+      // Add extra spacing for Android devices with system navigation bar
+      return insets.bottom > 0 ? insets.bottom + 16 : 16;
+    }
+    return 24;
+  }, [insets.bottom]);
 
   return (
     <View style={containerStyle}>
@@ -498,7 +507,7 @@ export default function DeckSettingsPage() {
       </View>
       <View style={mainContainerStyle}>
         <ScrollView 
-          style={styles.scrollView}
+          style={[styles.scrollView, { marginBottom: bottomSpacing + 90 }]}
           contentContainerStyle={[styles.scrollContent]}
           showsVerticalScrollIndicator={false}
           bounces={true}
@@ -604,7 +613,7 @@ export default function DeckSettingsPage() {
           position: 'absolute',
           left: 16,
           right: 16,
-          bottom: 24,
+          bottom: bottomSpacing,
           height: 72,
           backgroundColor: alertColor,
           borderRadius: 30,
@@ -678,7 +687,6 @@ const createStyles = (theme: 'light' | 'dark') => StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginBottom: 110,
   },
   scrollContent: {
     flexGrow: 1,

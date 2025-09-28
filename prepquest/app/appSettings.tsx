@@ -2665,6 +2665,15 @@ export default function AppSettingsScreen() {
       return false;
     }
   }, []);
+  
+  // Calculate bottom spacing for Android devices with system navigation bar
+  const bottomSpacing = React.useMemo(() => {
+    if (Platform.OS === 'android') {
+      // Add extra spacing for Android devices with system navigation bar
+      return insets.bottom > 0 ? insets.bottom + 16 : 16;
+    }
+    return 24;
+  }, [insets.bottom]);
 
   return (
     <View style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
@@ -2685,7 +2694,8 @@ export default function AppSettingsScreen() {
         <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
             <ScrollView 
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 140 }}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              style={[{ marginBottom: bottomSpacing + 90 }]}
             >
                 <View style={styles.titleToggleRow}>
                   <Text style={[styles.titleToggleText, { 

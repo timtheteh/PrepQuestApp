@@ -69,6 +69,9 @@ const CountdownCircle: React.FC<CountdownCircleProps> = ({
     outputRange: [circumference, 0],
   });
   
+  // Create a seamless blend by using a slightly longer dash array
+  const seamlessDashArray = circumference + strokeWidth;
+  
   // Always use brandColor1 for progress
   const getProgressColor = () => {
     return Colors[theme].brandColor1;
@@ -94,9 +97,9 @@ const CountdownCircle: React.FC<CountdownCircleProps> = ({
           stroke={getProgressColor()}
           strokeWidth={strokeWidth}
           fill="transparent"
-          strokeDasharray={circumference}
+          strokeDasharray={seamlessDashArray}
           strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
+          strokeLinecap="butt"
         />
       </Svg>
       {/* Time text in center */}

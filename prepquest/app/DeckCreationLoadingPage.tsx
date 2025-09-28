@@ -106,7 +106,7 @@ export default function DeckCreationLoadingPage({
             />
           )}
           <LottieView
-            source={require('@/assets/animations/LoadingAnimation1.json')}
+            source={theme === 'dark' ? require('@/assets/animations/LoadingAnimation1DarkMode.json') : require('@/assets/animations/LoadingAnimation1.json')}
             autoPlay
             loop
             style={{ position: 'absolute', width: '70%', height: '70%', top: '15%', left: '15%' }}

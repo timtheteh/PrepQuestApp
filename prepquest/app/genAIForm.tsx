@@ -22,7 +22,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
-import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
+import { generateGenAIPrompt } from '@/utils/genAIPromptGeneration';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUserQuestionSettings } from '../db/users';
 import DeckCreationStatusPage from './deckCreationStatusPage';
@@ -1409,297 +1410,6 @@ export default function GenAIFormPage() {
     });
   };
 
-  const callGenAIFlashcardsGeneration = async () => {
-    const formData = {
-      mode,
-      deckName,
-      studyMandatoryQuestion1, // education level
-      studyMandatoryQuestion2, // subjects
-      studyOptionalQuestion1, // topics
-      studyOptionalQuestion2, // subtopics
-      studyOptionalQuestion3, // exam
-      interviewMandatoryQuestion1, // role
-      interviewOptionalQuestion1, // company
-      interviewOptionalQuestion2, // experience level
-      interviewOptionalQuestion3, // topics
-      numberOfQuestions,
-      interviewType,
-      questionType, // cognitive qn types
-    };
-    try {
-      const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
-      const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
-        isMcqEnabled,
-        isClozeEnabled,
-        isVoiceRecordedEnabled,
-        interviewType,
-        numberOfQuestions,
-        questionType // this is the allowed cognitive types
-      );
-
-      let prompt = ""
-      if (mode === 'interview' && language === 'English') {
-        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
-        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
-          prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion1}.\n`
-        }
-        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
-          prompt += `The experience level for this position is ${interviewOptionalQuestion2}.\n`
-        }
-        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
-          prompt += `The topics I would like to focus on are ${interviewOptionalQuestion3}.\n`
-        }
-      }
-      if (mode === 'interview' && language === 'Chinese') {
-        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
-        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
-          prompt += `我准备面试的公司是${interviewOptionalQuestion1}。\n`
-        }
-        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
-          prompt += `这个职位的经验水平是${interviewOptionalQuestion2}。\n`
-        }
-        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
-          prompt += `我想要聚焦的领域是${interviewOptionalQuestion3}。\n`
-        }
-      }
-      if (mode === 'study' && language === 'English') {
-        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
-        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
-          prompt += `The topics I would like to study are ${studyOptionalQuestion1}.\n`
-        }
-        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
-          prompt += `The subtopics I would like to focus on are ${studyOptionalQuestion2}.\n`
-        }
-        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
-          prompt += `The exam I am preparing for is ${studyOptionalQuestion3}.\n`
-        }
-      }
-      if (mode === 'study' && language === 'Chinese') { 
-        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
-        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
-          prompt += `我想要学习的领域是${studyOptionalQuestion1}。\n`
-        }
-        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
-          prompt += `我想要聚焦的子领域是${studyOptionalQuestion2}。\n`
-        }
-        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
-          prompt += `我正在准备${studyOptionalQuestion3}考试。\n`
-        }
-      }
-      if (distributionOfFlashcards) {   
-        if (language === 'English') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
-            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
-          }
-        } 
-        if (language === 'Chinese') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
-            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
-          }
-        }
-      }
-      if (language === 'English' && mode === 'interview') { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'interview') { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
-      if (language === 'English' && mode === 'study') { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'study') { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
-      console.log("prompt >>>> \n", prompt);
-      let response;
-      try {
-        // Create a new AbortController for this request
-        abortControllerRef.current = new AbortController();
-        
-        response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({prompt}),
-          signal: abortControllerRef.current.signal,
-        });
-      } catch (networkError) {
-        // Check if the error is due to cancellation
-        if (networkError instanceof Error && networkError.name === 'AbortError') {
-          console.log('Request was cancelled');
-          return null;
-        }
-        Alert.alert('Error', strings[language].genAIFormPage.errorMessages.network);
-        return null;
-      }
-      console.log("fetch complete, status:", response.status);
-      if (!response.ok) {
-        let message = '';
-        switch (response.status) {
-          case 400:
-            message = strings[language].genAIFormPage.errorMessages[400];
-            break;
-          case 401:
-            message = strings[language].genAIFormPage.errorMessages[401];
-            break;
-          case 403:
-            message = strings[language].genAIFormPage.errorMessages[403];
-            break;
-          case 404:
-            message = strings[language].genAIFormPage.errorMessages[404];
-            break;
-          case 500:
-            message = strings[language].genAIFormPage.errorMessages[500];
-            break;
-          case 502:
-            message = strings[language].genAIFormPage.errorMessages[502];
-            break;
-          case 503:
-            message = strings[language].genAIFormPage.errorMessages[503];
-            break;
-          default:
-            message = strings[language].genAIFormPage.errorMessages.default;
-        }
-        Alert.alert('Error', message);
-        return null;
-      }
-      const data = await response.json();
-      console.log("DATA >>>>>>>>>>>>>>>>> ", data);
-      let flashcards = data.flashcards?.flashcards ?? data.flashcards;
-
-      // Handle case where API returns flashcards as raw string (when Edge Function parsing fails)
-      if (typeof flashcards === 'string') {
-        try {
-          // Clean up the raw string - remove trailing ]\n and other artifacts
-          let cleanedString = flashcards.trim();
-          
-          // Remove trailing ]
-          if (cleanedString.endsWith(']')) {
-            cleanedString = cleanedString.slice(0, -1);
-          }
-          
-          // Remove leading [ if present
-          if (cleanedString.startsWith('[')) {
-            cleanedString = cleanedString.slice(1);
-          }
-          
-          // Clean up any trailing whitespace/newlines
-          cleanedString = cleanedString.trim();
-          
-          // If it doesn't start with {, it might need array wrapping
-          if (!cleanedString.startsWith('{')) {
-            throw new Error('Invalid flashcard format - does not start with object');
-          }
-          
-          // Try to parse as single object first
-          let parsedFlashcards;
-          try {
-            parsedFlashcards = JSON.parse(cleanedString);
-            flashcards = [parsedFlashcards]; // Wrap single object in array
-          } catch (singleParseError) {
-            // If single object parsing fails, try to split multiple objects
-            const objectStrings = [];
-            let currentObject = '';
-            let braceCount = 0;
-            let inString = false;
-            let escapeNext = false;
-            
-            for (let i = 0; i < cleanedString.length; i++) {
-              const char = cleanedString[i];
-              
-              if (escapeNext) {
-                escapeNext = false;
-                currentObject += char;
-                continue;
-              }
-              
-              if (char === '\\') {
-                escapeNext = true;
-                currentObject += char;
-                continue;
-              }
-              
-              if (char === '"' && !escapeNext) {
-                inString = !inString;
-              }
-              
-              if (!inString) {
-                if (char === '{') {
-                  braceCount++;
-                } else if (char === '}') {
-                  braceCount--;
-                }
-              }
-              
-              currentObject += char;
-              
-              // If we've closed a complete object and there's more content
-              if (!inString && braceCount === 0 && currentObject.trim().endsWith('}')) {
-                objectStrings.push(currentObject.trim());
-                currentObject = '';
-                
-                // Skip any whitespace and commas
-                while (i + 1 < cleanedString.length && 
-                       (cleanedString[i + 1] === ' ' || 
-                        cleanedString[i + 1] === '\n' || 
-                        cleanedString[i + 1] === '\t' || 
-                        cleanedString[i + 1] === ',')) {
-                  i++;
-                }
-              }
-            }
-            
-            // Add any remaining content
-            if (currentObject.trim()) {
-              objectStrings.push(currentObject.trim());
-            }
-            
-            // Parse each object
-            const parsedObjects = [];
-            for (const objStr of objectStrings) {
-              if (objStr.trim()) {
-                try {
-                  const parsed = JSON.parse(objStr);
-                  parsedObjects.push(parsed);
-                } catch (objError: any) {
-                  console.error('Failed to parse object:', objStr, objError.message);
-                }
-              }
-            }
-            
-            if (parsedObjects.length > 0) {
-              flashcards = parsedObjects;
-            } else {
-              throw new Error('No valid flashcard objects found');
-            }
-          }
-        } catch (parseError) {
-          console.error('Failed to parse flashcards string:', parseError);
-          console.error('Raw flashcards string:', flashcards);
-          throw new Error('Invalid flashcards format from API');
-        }
-      }
-
-      // If it's a single object, wrap in array
-      if (flashcards && !Array.isArray(flashcards)) {
-        flashcards = [flashcards];
-      }
-
-      console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
-      return flashcards;
-    } catch (error: any) {
-      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : strings[language].genAIFormPage.errorMessages.default);
-    }
-  };
-
   const handleSuccessConfirm = async () => {
     // Check network connectivity first
     const isConnected = await checkNetworkConnectivity();
@@ -1780,57 +1490,6 @@ export default function GenAIFormPage() {
         }
       };
 
-      // Build prompt for GenAI
-      let prompt = "";
-      if (mode === 'interview' && language === 'English') {
-        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
-        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
-          prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion1}.\n`
-        }
-        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
-          prompt += `The experience level for this position is ${interviewOptionalQuestion2}.\n`
-        }
-        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
-          prompt += `The topics I would like to focus on are ${interviewOptionalQuestion3}.\n`
-        }
-      }
-      if (mode === 'interview' && language === 'Chinese') {
-        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
-        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
-          prompt += `我准备面试的公司是${interviewOptionalQuestion1}。\n`
-        }
-        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
-          prompt += `这个职位的经验水平是${interviewOptionalQuestion2}。\n`
-        }
-        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
-          prompt += `我想要聚焦的领域是${interviewOptionalQuestion3}。\n`
-        }
-      }
-      if (mode === 'study' && language === 'English') {
-        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
-        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
-          prompt += `The topics I would like to study are ${studyOptionalQuestion1}.\n`
-        }
-        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
-          prompt += `The subtopics I would like to focus on are ${studyOptionalQuestion2}.\n`
-        }
-        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
-          prompt += `The exam I am preparing for is ${studyOptionalQuestion3}.\n`
-        }
-      }
-      if (mode === 'study' && language === 'Chinese') { 
-        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
-        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
-          prompt += `我想要学习的领域是${studyOptionalQuestion1}。\n`
-        }
-        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
-          prompt += `我想要聚焦的子领域是${studyOptionalQuestion2}。\n`
-        }
-        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
-          prompt += `我正在准备${studyOptionalQuestion3}考试。\n`
-        }
-      }
-
       // Add flashcard distribution and type prompts
       const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
       const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
@@ -1842,38 +1501,24 @@ export default function GenAIFormPage() {
         questionType
       );
 
-      if (distributionOfFlashcards) {   
-        if (language === 'English') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
-            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
-          }
-        } 
-        if (language === 'Chinese') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
-            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
-          }
-        }
-      }
-
-      // Add final instructions
-      if (language === 'English' && mode === 'interview') { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'interview') { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
-      if (language === 'English' && mode === 'study') { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'study') { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
+      // Generate prompt using utility function
+      const prompt = await generateGenAIPrompt({
+        mode: mode as string,
+        language,
+        studyMandatoryQuestion1,
+        studyMandatoryQuestion2,
+        studyOptionalQuestion1,
+        studyOptionalQuestion2,
+        studyOptionalQuestion3,
+        interviewMandatoryQuestion1,
+        interviewOptionalQuestion1,
+        interviewOptionalQuestion2,
+        interviewOptionalQuestion3,
+        interviewType,
+        numberOfQuestions,
+        questionType,
+        distributionOfFlashcards: distributionOfFlashcards || undefined
+      });
 
       // Start background task
       try {
@@ -2014,57 +1659,6 @@ export default function GenAIFormPage() {
         }
       };
 
-      // Build prompt for GenAI
-      let prompt = "";
-      if (mode === 'interview' && language === 'English') {
-        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
-        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
-          prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion1}.\n`
-        }
-        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
-          prompt += `The experience level for this position is ${interviewOptionalQuestion2}.\n`
-        }
-        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
-          prompt += `The topics I would like to focus on are ${interviewOptionalQuestion3}.\n`
-        }
-      }
-      if (mode === 'interview' && language === 'Chinese') {
-        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
-        if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
-          prompt += `我准备面试的公司是${interviewOptionalQuestion1}。\n`
-        }
-        if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
-          prompt += `这个职位的经验水平是${interviewOptionalQuestion2}。\n`
-        }
-        if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
-          prompt += `我想要聚焦的领域是${interviewOptionalQuestion3}。\n`
-        }
-      }
-      if (mode === 'study' && language === 'English') {
-        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
-        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
-          prompt += `The topics I would like to study are ${studyOptionalQuestion1}.\n`
-        }
-        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
-          prompt += `The subtopics I would like to focus on are ${studyOptionalQuestion2}.\n`
-        }
-        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
-          prompt += `The exam I am preparing for is ${studyOptionalQuestion3}.\n`
-        }
-      }
-      if (mode === 'study' && language === 'Chinese') { 
-        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
-        if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
-          prompt += `我想要学习的领域是${studyOptionalQuestion1}。\n`
-        }
-        if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
-          prompt += `我想要聚焦的子领域是${studyOptionalQuestion2}。\n`
-        }
-        if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
-          prompt += `我正在准备${studyOptionalQuestion3}考试。\n`
-        }
-      }
-
       // Add flashcard distribution and type prompts
       const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
       const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
@@ -2076,38 +1670,24 @@ export default function GenAIFormPage() {
         questionType
       );
 
-      if (distributionOfFlashcards) {   
-        if (language === 'English') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
-            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
-          }
-        } 
-        if (language === 'Chinese') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
-            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
-          }
-        }
-      }
-
-      // Add final instructions
-      if (language === 'English' && mode === 'interview') { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'interview') { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
-      if (language === 'English' && mode === 'study') { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'study') { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
+      // Generate prompt using utility function
+      const prompt = await generateGenAIPrompt({
+        mode: mode as string,
+        language,
+        studyMandatoryQuestion1,
+        studyMandatoryQuestion2,
+        studyOptionalQuestion1,
+        studyOptionalQuestion2,
+        studyOptionalQuestion3,
+        interviewMandatoryQuestion1,
+        interviewOptionalQuestion1,
+        interviewOptionalQuestion2,
+        interviewOptionalQuestion3,
+        interviewType,
+        numberOfQuestions,
+        questionType,
+        distributionOfFlashcards: distributionOfFlashcards || undefined
+      });
 
       // Start background task
       try {

@@ -42,7 +42,8 @@ import * as XLSX from 'xlsx'; // Use CommonJS import for React Native compatibil
 // @ts-ignore
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getUserQuestionSettings } from '@/db/users';
-import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
+import { generateFileUploadPrompt } from '@/utils/fileUploadPromptGeneration';
 import DeckCreationStatusPage from './deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import BackgroundService from 'react-native-background-actions';
@@ -385,74 +386,20 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       numberOfQuestions,
     );
 
-    let prompt = '';
-    if (mode === 'interview' && language === 'English') {
-      prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`;
-    }
-    if (mode === 'interview' && language === 'Chinese') {
-      prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n`;
-    }
-    if (mode === 'study' && language === 'English') {
-      prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`;
-    }
-    if (mode === 'study' && language === 'Chinese') {
-      prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`;
-    }
-    if (pdfCaptionClaudeCaption && language === 'English') {
-      prompt += `Here is additional information and context from a PDF file for my preparation: ${pdfCaptionClaudeCaption}\n`;
-    }
-    if (pdfCaptionClaudeCaption && language === 'Chinese') {
-      prompt += `这里有一些额外的信息和上下文，来自一个PDF文件，用于我的准备：${pdfCaptionClaudeCaption}\n`;
-    }
-    if (extractedText && extractedText.trim() !== '' && language === 'English') {
-      prompt += `Here is additional information and context from a text file for my preparation: ${extractedText}\n`;
-    }
-    if (extractedText && extractedText.trim() !== '' && language === 'Chinese') {
-      prompt += `这里有一些额外的信息和上下文，来自一个文本文件，用于我的准备：${extractedText}\n`;
-    }
-    if (imageCaptionClaudeCaption && language === 'English') {
-      prompt += `Here is additional information and context from some images for my preparation: ${imageCaptionClaudeCaption}\n`;
-    }
-    if (imageCaptionClaudeCaption && language === 'Chinese') {
-      prompt += `这里有一些额外的信息和上下文，来自一些图像，用于我的准备：${imageCaptionClaudeCaption}\n`;
-    }
-
-    if (distribution) {
-      if (language === 'English') {
-        for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
-          prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`;
-          // @ts-ignore
-          prompt += `${promptAndData[flashcardType].prompt}\n`;
-        }
-      } else {
-        for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
-          prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`;
-          // @ts-ignore
-          prompt += `${promptAndDataChinese[flashcardType].prompt}\n`;
-        }
-      }
-    }
-
-    if (language === 'English' && mode === 'interview' && isAIGenerate) {
-      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n';
-      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
-    }
-    if (language === 'English' && mode === 'interview' && !isAIGenerate) {
-      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\nHowever, it is EXTREMELY CRUCIAL THAT YOU DO NOT DEVIATE from the information and context I have provided from the PDF file, text file or images. STICK ONLY TO CONTENT FROM THE PDF FILE, TEXT FILE OR IMAGES. ';
-      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
-    }
-    if (language === 'Chinese' && mode === 'interview' && isAIGenerate) {
-      prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n';
-      prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
-    }
-    if (language === 'English' && mode === 'study' && isAIGenerate) {
-      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n';
-      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
-    }
-    if (language === 'Chinese' && mode === 'study' && isAIGenerate) {
-      prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n';
-      prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
-    }
+    // Generate prompt using utility function
+    const prompt = generateFileUploadPrompt({
+      mode: mode as string,
+      language,
+      studyMandatoryQuestion1,
+      studyMandatoryQuestion2,
+      interviewMandatoryQuestion1,
+      interviewType,
+      pdfCaptionClaudeCaption: pdfCaptionClaudeCaption || undefined,
+      extractedText: extractedText || undefined,
+      imageCaptionClaudeCaption: imageCaptionClaudeCaption || undefined,
+      distribution: distribution || undefined,
+      isAIGenerate
+    });
 
     if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
 
@@ -1080,211 +1027,6 @@ export default function FileUploadPage() {
     insets.bottom + 10;
 
   const getTopBarAccountHeight = useTopBarAccountHeight();
-
-
-  const callGenAIFlashcardsGeneration = async (
-    pdfCaption?: string | null,
-    extractedText?: string | null,
-    imageCaption?: string | null,
-  ) => {
-    try {
-      const { isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled } = await getUserQuestionSettings();
-      const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
-        isMcqEnabled,
-        isClozeEnabled,
-        isVoiceRecordedEnabled,
-        interviewType,
-        numberOfQuestions,
-      );
-
-      let prompt = ""
-      if (mode === 'interview' && language === 'English') {
-        prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
-      }
-      if (mode === 'interview' && language === 'Chinese') {
-        prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
-      }
-      if (mode === 'study' && language === 'English') {
-        prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
-      }
-      if (mode === 'study' && language === 'Chinese') { 
-        prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
-      }
-
-      if (pdfCaption && language === 'English') {
-        prompt += `Here is additional information and context from a PDF file for my preparation: ${pdfCaption}\n`
-      }
-      if (pdfCaption && language === 'Chinese') {
-        prompt += `这里有一些额外的信息和上下文，来自一个PDF文件，用于我的准备：${pdfCaption}\n`
-      }
-      if (extractedText && extractedText.trim() !== '' && language === 'English') {
-        prompt += `Here is additional information and context from a text file for my preparation: ${extractedText}\n`
-      }
-      if (extractedText && extractedText.trim() !== '' && language === 'Chinese') {
-        prompt += `这里有一些额外的信息和上下文，来自一个文本文件，用于我的准备：${extractedText}\n`
-      }
-      if (imageCaption && language === 'English') {
-        prompt += `Here is additional information and context from some images for my preparation: ${imageCaption}\n`
-      }
-      if (imageCaption && language === 'Chinese') {
-        prompt += `这里有一些额外的信息和上下文，来自一些图像，用于我的准备：${imageCaption}\n`
-      }
-
-      if (distributionOfFlashcards) {   
-        if (language === 'English') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
-            prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
-          }
-        } 
-        if (language === 'Chinese') {
-          for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
-            prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
-            prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
-          }
-        }
-      }
-
-      if (language === 'English' && mode === 'interview' && isAIGenerate) { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'English' && mode === 'interview' && !isAIGenerate) { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\nHowever, it is EXTREMELY CRUCIAL THAT YOU DO NOT DEVIATE from the information and context I have provided from the PDF file, text file or images. STICK ONLY TO CONTENT FROM THE PDF FILE, TEXT FILE OR IMAGES. "
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'interview' && isAIGenerate) { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
-      if (language === 'English' && mode === 'study' && isAIGenerate) { 
-        prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
-        prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
-      }
-      if (language === 'Chinese' && mode === 'study' && isAIGenerate) { 
-        prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
-        prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
-      }
-      console.log("prompt >>>> \n", prompt);
-      let response;
-      try {
-        // Check if we should cancel before making the request
-        if (cancelCreationRef.current) {
-          console.log('Request cancelled before starting');
-          return null;
-        }
-        
-        // Create a new AbortController for this request
-        abortControllerRef.current = new AbortController();
-        
-        response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({prompt}),
-          signal: abortControllerRef.current.signal,
-        });
-      } catch (networkError) {
-        // Check if the error is due to cancellation
-        if (networkError instanceof Error && networkError.name === 'AbortError') {
-          console.log('Request was cancelled');
-          return null;
-        }
-        Alert.alert('Error', strings[language].fileUploadPage.errorMessages.network);
-        return null;
-      } finally {
-        // Clean up the AbortController after the request completes (success or error)
-        if (abortControllerRef.current) {
-          abortControllerRef.current = null;
-        }
-      }
-      console.log("fetch complete, status:", response.status);
-      if (!response.ok) {
-        let message = '';
-        switch (response.status) {
-          case 400:
-            message = strings[language].fileUploadPage.errorMessages[400];
-            break;
-          case 401:
-            message = strings[language].fileUploadPage.errorMessages[401];
-            break;
-          case 403:
-            message = strings[language].fileUploadPage.errorMessages[403];
-            break;
-          case 404:
-            message = strings[language].fileUploadPage.errorMessages[404];
-            break;
-          case 500:
-            message = strings[language].fileUploadPage.errorMessages[500];
-            break;
-          case 502:
-            message = strings[language].fileUploadPage.errorMessages[502];
-            break;
-          case 503:
-            message = strings[language].fileUploadPage.errorMessages[503];
-            break;
-          default:
-            message = strings[language].fileUploadPage.errorMessages.default;
-        }
-        Alert.alert('Error', message);
-        return null;
-      }
-      const data = await response.json();
-      console.log("DATA >>>>>>>>>>>>>>>>> ", data);
-      let flashcards = data.flashcards?.flashcards ?? data.flashcards;
-
-      // Handle case where API returns flashcards as raw string (when Edge Function parsing fails)
-      if (typeof flashcards === 'string') {
-        try {
-          // Clean up the raw string - remove trailing ]\n and other artifacts
-          let cleanedString = flashcards.trim();
-          
-          // Remove trailing ]
-          if (cleanedString.endsWith(']')) {
-            cleanedString = cleanedString.slice(0, -1);
-          }
-          
-          // Remove leading [ if present
-          if (cleanedString.startsWith('[')) {
-            cleanedString = cleanedString.slice(1);
-          }
-          
-          // Clean up any trailing whitespace/newlines
-          cleanedString = cleanedString.trim();
-          
-          // If it doesn't start with {, it might need array wrapping
-          if (cleanedString.startsWith('{')) {
-            // Try to parse as single object first
-            try {
-              const parsedFlashcards = JSON.parse(cleanedString);
-              flashcards = [parsedFlashcards]; // Wrap single object in array
-            } catch (parseError) {
-              console.error('Failed to parse flashcards string in fileUpload:', parseError);
-              throw new Error('Invalid flashcards format from API');
-            }
-          } else {
-            throw new Error('Invalid flashcard format - does not start with object');
-          }
-        } catch (parseError) {
-          console.error('Failed to parse flashcards string in fileUpload:', parseError);
-          console.error('Raw flashcards string:', flashcards);
-          throw new Error('Invalid flashcards format from API');
-        }
-      }
-
-      // If it's a single object, wrap in array
-      if (flashcards && !Array.isArray(flashcards)) {
-        flashcards = [flashcards];
-      }
-
-      console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
-      return flashcards;
-    } catch (error: any) {
-      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : strings[language].fileUploadPage.errorMessages.default);
-    }
-  };
 
   // Fetch deck title when in view flashcards page
   useEffect(() => {

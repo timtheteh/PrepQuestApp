@@ -30,7 +30,8 @@ import BackgroundService from 'react-native-background-actions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { getUserQuestionSettings } from '@/db/users';
-import { getDistributionOfFlashcardsForInterviewType, promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
+import { generateYouTubeLinkPrompt } from '@/utils/youtubeLinkPromptGeneration';
 import NotificationService from '@/utils/notifications';
 
 const HelpIconFilled: React.FC<SvgProps> = (props) => (
@@ -425,61 +426,18 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       numberOfQuestions,
     );
 
-    let prompt = '';
-    if (mode === 'interview' && language === 'English') {
-      prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`;
-    }
-    if (mode === 'interview' && language === 'Chinese') {
-      prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n`;
-    }
-    if (mode === 'study' && language === 'English') {
-      prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`;
-    }
-    if (mode === 'study' && language === 'Chinese') {
-      prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`;
-    }
-    if (language === 'English') {
-      prompt += `Here is additional information and context from a YouTube video transcript for my preparation: ${transcript}\n`;
-    } else {
-      prompt += `这里有一些额外的信息和上下文，来自一个YouTube视频的文字稿，用于我的准备：${transcript}\n`;
-    }
-
-    if (distribution) {
-      if (language === 'English') {
-        for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
-          prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`;
-          // @ts-ignore
-          prompt += `${promptAndData[flashcardType].prompt}\n`;
-        }
-      } else {
-        for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
-          prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`;
-          // @ts-ignore
-          prompt += `${promptAndDataChinese[flashcardType].prompt}\n`;
-        }
-      }
-    }
-
-    if (language === 'English' && mode === 'interview' && isAIGenerate) {
-      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n';
-      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
-    }
-    if (language === 'English' && mode === 'interview' && !isAIGenerate) {
-      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\nHowever, it is EXTREMELY CRUCIAL THAT YOU DO NOT DEVIATE from the information and context I have provided from the YouTube video transcript. STICK ONLY TO CONTENT FROM THE TRANSCRIPT. ';
-      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
-    }
-    if (language === 'Chinese' && mode === 'interview' && isAIGenerate) {
-      prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n';
-      prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
-    }
-    if (language === 'English' && mode === 'study' && isAIGenerate) {
-      prompt += 'Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n';
-      prompt += 'Generate a JSON array of flashcards in this format: [{"flashcardType": <>, "question": <>, "answer": <>}], where each {"flashcardType": <>, "question": <>, "answer": <>} represents a flashcard.';
-    }
-    if (language === 'Chinese' && mode === 'study' && isAIGenerate) {
-      prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n';
-      prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
-    }
+    // Generate prompt using utility function
+    const prompt = generateYouTubeLinkPrompt({
+      mode: mode as string,
+      language,
+      studyMandatoryQuestion1,
+      studyMandatoryQuestion2,
+      interviewMandatoryQuestion1,
+      interviewType,
+      transcript,
+      distribution: distribution || undefined,
+      isAIGenerate
+    });
 
     // Step C: Call GenAI to generate flashcards
     if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }

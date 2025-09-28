@@ -1551,9 +1551,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {(countdown === 0 && countdownStarted) ? (
-                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center', ...(Platform.OS === 'android' && { lineHeight: 30 }) }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center', ...(Platform.OS === 'android' && { lineHeight: 30 }) }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -1747,9 +1747,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {(countdown === 0 && countdownStarted) ? (
-                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center', ...(Platform.OS === 'android' && { lineHeight: 30 }) }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
-                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center', ...(Platform.OS === 'android' && { lineHeight: 30 }) }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
                   )}
                 </View>
               )}
@@ -2942,7 +2942,7 @@ export default function FlashcardViewPage() {
             style={{ width: 220, height: 220, marginBottom: 32 }}
           />
         )}
-                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 40, color: Colors[theme].text, textAlign: 'center', marginBottom: 48 }}>
+                    <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 40, color: Colors[theme].text, textAlign: 'center', marginBottom: 48, ...(Platform.OS === 'android' && { lineHeight: 50 }) }}>
           {isQuizMode ? strings[language].flashcardViewPage.nicelyDone : strings[language].flashcardViewPage.niceStudying}
         </Text>
         {isQuizMode && (
@@ -3050,6 +3050,7 @@ export default function FlashcardViewPage() {
               color: Colors[theme].text,
               marginBottom: 24,
               textAlign: 'center',
+              ...(Platform.OS === 'android' && { lineHeight: 35 }),
             }}>
               {strings[language].flashcardViewPage.quizStartingIn}
             </Text>
@@ -3498,6 +3499,7 @@ const styles = StyleSheet.create({
   },
   flashcardIndexText: {
     fontSize: 24,
+    ...(Platform.OS === 'android' && { lineHeight: 30 }),
   },
   flipArrowPressable: {
     position: 'absolute',
@@ -3525,6 +3527,7 @@ const styles = StyleSheet.create({
   questionText: {
     fontSize: 32,
     textAlign: 'center',
+    ...(Platform.OS === 'android' && { lineHeight: 40 }),
   },
   blankUnderlineView: {
     borderBottomWidth: 2,
@@ -3558,6 +3561,7 @@ const styles = StyleSheet.create({
   audioLabel: {
     fontSize: 36,
     marginBottom: 16,
+    ...(Platform.OS === 'android' && { lineHeight: 45 }),
   },
   replayButton: {
     width: 64,
@@ -3589,6 +3593,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     textAlign: 'left',
     lineHeight: 28,
+    ...(Platform.OS === 'android' && { lineHeight: 35 }),
   },
   mcqOptionContainer: {
     flexDirection: 'row',
@@ -3680,6 +3685,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginBottom: 10,
     textAlign: 'center',
+    ...(Platform.OS === 'android' && { lineHeight: 35 }),
   },
   voiceAnswerAnimation: {
     width: 50,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { AverageGradeThermometer } from '@/components/statsComponents/AverageGradeThermometer';
@@ -51,6 +52,7 @@ export default function ViewQuizStatsModal() {
   const router = useRouter();
   const { language } = useLanguage();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { halfwayCheckpoint, deckID, isAIDeck, attemptedFlashcardIds } = useLocalSearchParams();
   const isHalfwayCheckpoint = halfwayCheckpoint === 'true';
   
@@ -164,7 +166,9 @@ export default function ViewQuizStatsModal() {
         <AntDesign name="close" size={28} color={closeButtonIconColor} />
       </MemoizedTouchableOpacity>
       <ScrollView
-        style={[styles.scrollContainer, { marginBottom: isHalfwayCheckpoint ? 120 : 0 }]}
+        style={[styles.scrollContainer, { 
+          marginBottom: isHalfwayCheckpoint ? (120 + insets.bottom) : 0 
+        }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -220,7 +224,7 @@ export default function ViewQuizStatsModal() {
       
       {/* Halfway checkpoint button fixed at bottom */}
       {isHalfwayCheckpoint && (
-        <View style={styles.fixedBottomButtonWrap} pointerEvents="box-none">
+        <View style={[styles.fixedBottomButtonWrap, { bottom: Platform.OS === 'ios' ? 30 + insets.bottom : 24 + insets.bottom }]} pointerEvents="box-none">
           <MemoizedTouchableOpacity style={fixedBottomButtonStyle} activeOpacity={0.85} onPress={handleBackPress}>
             <View style={styles.buttonContentRow}>
               <MemoizedText style={buttonTextStyle}>{strings[language].flashcardViewPage.continueWithQuiz}</MemoizedText>
@@ -313,7 +317,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: Platform.OS === 'ios' ? 30 : 24,
     alignItems: 'center',
     zIndex: 20,
     pointerEvents: 'box-none',

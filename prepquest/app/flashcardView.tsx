@@ -48,6 +48,7 @@ import {
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import CountdownCircle from '@/components/general/CountdownCircle';
+import { getAnimationConfig } from '@/utils/animationConfig';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -1171,24 +1172,40 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   const borderAnim = useRef(new Animated.Value(0)).current;
   const cardRef = useRef(null);
   const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
+  
+  // Get device performance configuration
+  const animationConfig = getAnimationConfig();
 
   useEffect(() => {
     if (isQuizMode && !showQuizCountdown) {
       if (pauseNextTimer) return; // PAUSE BORDER ANIMATION IF TIMER IS PAUSED
-      borderAnim.setValue(0);
-      Animated.timing(borderAnim, {
-        toValue: 1,
-        duration: ((currentFlashcard?.timeLimit)  || 30) * 1000,
-        useNativeDriver: false,
-        easing: Easing.linear,
-      }).start();
+      
+      // For low-end devices, add a small delay to prevent animation conflicts
+      const startAnimation = () => {
+        borderAnim.setValue(0);
+        Animated.timing(borderAnim, {
+          toValue: 1,
+          duration: ((currentFlashcard?.timeLimit)  || 30) * 1000,
+          useNativeDriver: false,
+          easing: Easing.linear,
+        }).start();
+      };
+      
+      if (animationConfig.isLowEndDevice) {
+        // Add small delay for low-end devices to prevent conflicts
+        setTimeout(startAnimation, 50);
+      } else {
+        startAnimation();
+      }
     }
     // eslint-disable-next-line
-  }, [currentIdx, isQuizMode, pauseNextTimer, showQuizCountdown]);
+  }, [currentIdx, isQuizMode, pauseNextTimer, showQuizCountdown, animationConfig.isLowEndDevice]);
 
   // At the top of FlippableFlashcard, after other hooks:
   const [circlePos, setCirclePos] = React.useState({ x: 0, y: 0 });
   const HEADSTART = 0.005; // 2% headstart for the circle
+  
+  const shouldShowBall = !animationConfig.isLowEndDevice;
 
   // Helper to get (x, y) at a given progress (0-1) along the path
   function getPointAtLength(progress: number, w: number, h: number, r: number, halfStroke: number) {
@@ -1270,9 +1287,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     return { x: w/2, y: halfStroke };
   }
 
-  // Update circlePos when borderAnim, cardSize, or isQuizMode changes
+  // Update circlePos when borderAnim, cardSize, or isQuizMode changes (only for high-end devices)
   React.useEffect(() => {
-    if (!isQuizMode || showQuizCountdown || cardSize.width === 0 || cardSize.height === 0) return;
+    if (!isQuizMode || showQuizCountdown || cardSize.width === 0 || cardSize.height === 0 || !shouldShowBall) return;
     const w = cardSize.width;
     const h = cardSize.height;
     const r = 30;
@@ -1287,7 +1304,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     // Set initial
     update((borderAnim as any)._value ?? 0);
     return () => borderAnim.removeListener(id);
-  }, [isQuizMode, showQuizCountdown, cardSize.width, cardSize.height, borderAnim]);
+  }, [isQuizMode, showQuizCountdown, cardSize.width, cardSize.height, borderAnim, shouldShowBall]);
 
   // Track card's absolute position for correct circle placement
   const [cardLayout, setCardLayout] = React.useState({ left: 0, top: 0 });
@@ -1295,12 +1312,14 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   // At the top of FlippableFlashcard, after other hooks:
   const [countdown, setCountdown] = React.useState(0);
   const countdownIntervalRef = useRef<any>(null);
+  const [countdownStarted, setCountdownStarted] = React.useState(false);
 
   // Start/reset countdown in quiz mode when card changes
   useEffect(() => {
     if (isQuizMode && currentFlashcard?.timeLimit && !showQuizCountdown) {
       if (pauseNextTimer) return; // DO NOT START TIMER IF PAUSED
       setCountdown(currentFlashcard.timeLimit);
+      setCountdownStarted(true); // Mark that countdown has started
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = setInterval(() => {
         setCountdown(prev => {
@@ -1314,6 +1333,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
       };
     } else {
       setCountdown(0);
+      setCountdownStarted(false); // Reset started flag
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     }
      
@@ -1323,25 +1343,46 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   const shiverAnim = useRef(new Animated.Value(0)).current;
   const shiverIntervalRef = useRef<any>(null);
 
-  // Shiver animation function
+  // Shiver animation function - optimized for low-end devices
   const triggerShiver = () => {
     shiverAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shiverAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shiverAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
-      Animated.timing(shiverAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
-      Animated.timing(shiverAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-    ]).start();
+    
+    if (animationConfig.isLowEndDevice) {
+      // Reduced intensity for low-end devices to prevent glitching
+      Animated.sequence([
+        Animated.timing(shiverAnim, { toValue: 5, duration: 50, useNativeDriver: true }),
+        Animated.timing(shiverAnim, { toValue: -5, duration: 100, useNativeDriver: true }),
+        Animated.timing(shiverAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
+        Animated.timing(shiverAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      ]).start();
+    } else {
+      // Full intensity for high-end devices
+      Animated.sequence([
+        Animated.timing(shiverAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shiverAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
+        Animated.timing(shiverAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
+        Animated.timing(shiverAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      ]).start();
+    }
   };
 
-  // Effect to start/stop shiver when countdown is zero
+  // Effect to start/stop shiver when countdown is zero (only if countdown has actually started)
   useEffect(() => {
-    if (countdown === 0 && isQuizMode && !showQuizCountdown) {
-      triggerShiver();
-      if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
-      shiverIntervalRef.current = setInterval(() => {
+    if (countdown === 0 && isQuizMode && !showQuizCountdown && countdownStarted) {
+      // Add small delay for low-end devices to prevent animation conflicts
+      const startShiver = () => {
         triggerShiver();
-      }, 2000);
+        if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
+        shiverIntervalRef.current = setInterval(() => {
+          triggerShiver();
+        }, 2000);
+      };
+      
+      if (animationConfig.isLowEndDevice) {
+        setTimeout(startShiver, 100); // Delay shiver start for low-end devices
+      } else {
+        startShiver();
+      }
     } else {
       if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
       shiverAnim.setValue(0);
@@ -1349,10 +1390,10 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     return () => {
       if (shiverIntervalRef.current) clearInterval(shiverIntervalRef.current);
     };
-  }, [countdown, isQuizMode, showQuizCountdown]);
+  }, [countdown, isQuizMode, showQuizCountdown, countdownStarted, animationConfig.isLowEndDevice]);
 
-  // Define the border/circle color based on countdown
-  const borderColor = countdown === 0 ? Colors[theme].alertColor : Colors[theme].brandColor1;
+  // Define the border/circle color based on countdown (only if countdown has started)
+  const borderColor = (countdown === 0 && countdownStarted) ? Colors[theme].alertColor : Colors[theme].brandColor1;
 
   // Start timing when current flashcard changes
   React.useEffect(() => {
@@ -1360,7 +1401,10 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     if (currentFlashcard && (isStudyMode || isQuizMode)) {
       startFlashcardTimer(currentFlashcard.flashcardID);
     }
-  }, [currentIdx, isStudyMode, isQuizMode, flashcards]);
+    
+    // Reset shiver animation when card changes to prevent glitching
+    shiverAnim.setValue(0);
+  }, [currentIdx, isStudyMode, isQuizMode, flashcards, shiverAnim]);
 
   // Helper to get localized cognitiveQnType label
   const getCognitiveQnTypeLabel = (type: string, language: string) => {
@@ -1477,18 +1521,20 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       })}
                     />
                   </Svg>
-                  {/* Animated circle following the path */}
-                  <Animated.View
-                    style={{
-                      position: 'absolute',
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      backgroundColor: borderColor,
-                      left: circlePos.x - 16,
-                      top: circlePos.y - 16,
-                    }}
-                  />
+                  {/* Animated circle following the path - only for high-end devices */}
+                  {shouldShowBall && (
+                    <Animated.View
+                      style={{
+                        position: 'absolute',
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: borderColor,
+                        left: circlePos.x - 16,
+                        top: circlePos.y - 16,
+                      }}
+                    />
+                  )}
                 </View>
               );
             })()}
@@ -1504,7 +1550,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               </View>
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                  {countdown === 0 ? (
+                  {(countdown === 0 && countdownStarted) ? (
                     <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
                     <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
@@ -1700,7 +1746,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               </View>
               {isQuizMode && !showQuizCountdown && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                  {countdown === 0 ? (
+                  {(countdown === 0 && countdownStarted) ? (
                     <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center' }}>{strings[language].flashcardViewPage.timesUp}</Text>
                   ) : (
                     <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].brandColor1, textAlign: 'center' }}>{`${countdown}${strings[language].flashcardViewPage.seconds}`}</Text>
@@ -1941,7 +1987,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           style={styles.flipArrowPressable}
         />
       </Animated.View>
-      {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && (
+      {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && shouldShowBall && (
         <Animated.View
           pointerEvents="none"
           style={{

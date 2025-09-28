@@ -176,7 +176,7 @@ export default function ViewQuizStatsModal() {
         {/* Title row with confetti */}
         <View style={styles.titleRow}>
           {isHalfwayCheckpoint ? (
-            <MemoizedImage source={FlagIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+            <MemoizedImage source={FlagIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }, { rotate: '15deg' }] }]} resizeMode="contain" />
           ) : (
             <MemoizedImage source={ConfettiIcon} style={[styles.confettiIcon, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
           )}
@@ -186,7 +186,7 @@ export default function ViewQuizStatsModal() {
             <MemoizedText style={wellDoneTitleStyle}>{strings[language].flashcardViewPage.wellDone}</MemoizedText>
           )}
           {isHalfwayCheckpoint ? (
-            <MemoizedImage source={FlagIcon} style={styles.confettiIcon} resizeMode="contain" />
+            <MemoizedImage source={FlagIcon} style={[styles.confettiIcon, { transform: [{ rotate: '15deg' }] }]} resizeMode="contain" />
           ) : (
             <MemoizedImage source={ConfettiIcon} style={styles.confettiIcon} resizeMode="contain" />
           )}

@@ -2114,7 +2114,7 @@ const LoadingScreen = React.memo(({ progress, current, total, language }: { prog
               <View style={{
                 width: '100%',
                 height: 16,
-                backgroundColor: Colors[theme].loadingBarBgColor,
+                backgroundColor: Colors[theme].secondaryShade,
                 borderRadius: 8,
                 overflow: 'hidden',
               }}>

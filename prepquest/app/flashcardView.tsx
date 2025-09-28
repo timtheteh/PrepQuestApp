@@ -2017,6 +2017,7 @@ const MCQFeedbackModal = React.memo(({ visible, opacity, isCorrect, onDismiss, l
 // Loading Screen Component to avoid hooks in conditional render
 const LoadingScreen = React.memo(({ progress, current, total, language }: { progress: number; current: number; total: number; language: string }) => {
   const { theme } = useTheme();
+  const getBottomSafeAreaHeight = useBottomSafeAreaHeight();
   const percent = Math.round(progress * 100);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -2044,6 +2045,7 @@ const LoadingScreen = React.memo(({ progress, current, total, language }: { prog
           backgroundColor: Colors[theme].background,
           alignItems: 'center',
           justifyContent: 'center',
+          paddingBottom: getBottomSafeAreaHeight(),
         }}>
           {/* Stacked image + Lottie animation */}
           <View style={{ width: '100%', aspectRatio: 1.1, marginTop: '15%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>

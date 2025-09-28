@@ -13,6 +13,7 @@ import { AppStateContext } from '@/contexts/AppStateContext';
 import { ActionHandlersContext } from '@/contexts/ActionHandlersContext';
 import { useState, useRef, useCallback, RefObject, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
 import { ANIMATION_CONFIGS } from '@/constants/AnimationConfigs';
 import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
@@ -73,11 +74,12 @@ export default function TabLayout() {
   const [showGlobalLoadingOverlay, setShowGlobalLoadingOverlay] = useState(false);
   const globalLoadingOverlayRef = useRef<LottieView>(null);
   const { language } = useLanguage();
+  const { theme } = useTheme();
 
   // Memoized loading animation source
   const globalLoadingAnimationSource = useMemo(() => 
-    require('../../assets/animations/addDeckLoadingAnimation.json'), 
-    []
+    theme === 'dark' ? require('../../assets/animations/addDeckLoadingAnimationDarkMode.json') : require('../../assets/animations/addDeckLoadingAnimation.json'), 
+    [theme]
   );
 
   // Global loading overlay styles

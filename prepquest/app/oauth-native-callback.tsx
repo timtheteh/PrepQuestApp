@@ -62,7 +62,7 @@ export default function OAuthNativeCallback() {
       padding: 20,
     }}>
       <LottieView
-        source={require('@/assets/animations/addDeckLoadingAnimation.json')}
+        source={theme === 'dark' ? require('@/assets/animations/addDeckLoadingAnimationDarkMode.json') : require('@/assets/animations/addDeckLoadingAnimation.json')}
         autoPlay
         loop
         style={{ width: 96, height: 96}}

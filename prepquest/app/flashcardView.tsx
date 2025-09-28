@@ -19,6 +19,7 @@ import LottieView from 'lottie-react-native';
 import MicIcon from '@/assets/icons/flippableCard/micIcon.svg';
 import AIChatIcon from '@/assets/icons/flashcardView/AIChatIcon.svg';
 import AIChatIconGrey from '@/assets/icons/flashcardView/AIChatIconGrey.svg';
+import AIChatIconDarkMode from '@/assets/icons/flashcardView/AIChatIconDarkMode.svg';
 import * as Clipboard from 'expo-clipboard';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
@@ -640,6 +641,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
   const backOpacity = useRef(new Animated.Value(0)).current;
+  const [isFlipping, setIsFlipping] = useState(false);
   const displayNumber = currentIdx + 1;
 
   // MCQ selection state
@@ -705,6 +707,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   // Flipping logic (unchanged)
   const handlePress = () => {
     stopSpeech();
+    setIsFlipping(true);
     const toValue = isFlipped ? 0 : 1;
     Animated.timing(isFlipped ? backOpacity : frontOpacity, {
       toValue: 0,
@@ -725,7 +728,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           toValue: 1,
           duration: 200,
           useNativeDriver: true,
-        }).start();
+        }).start(() => {
+          setIsFlipping(false);
+        });
       });
     });
   };
@@ -1562,7 +1567,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   <Pressable
                     style={({ pressed }) => [
                       styles.replayButton, 
-                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      { 
+                        backgroundColor: Colors[theme].secondaryShade, 
+                        shadowColor: Colors[theme].text,
+                        ...(isFlipping ? { shadowOpacity: 0, elevation: 0 } : {})
+                      },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
                     onPress={() => handleAudioButtonPress(flashcardQn)}
@@ -1756,7 +1765,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   <Pressable 
                     style={({ pressed }) => [
                       styles.micButton,
-                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      { 
+                        backgroundColor: Colors[theme].secondaryShade, 
+                        shadowColor: Colors[theme].text,
+                        ...(isFlipping ? { shadowOpacity: 0, elevation: 0 } : {})
+                      },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }],
                       isRecording && [styles.recordingButton, { backgroundColor: Colors[theme].alertColor }]
                     ]}
@@ -1768,7 +1781,12 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   <Pressable 
                     style={({ pressed }) => [
                       styles.replayButton,
-                      pressed && styles.buttonPressed
+                      { 
+                        backgroundColor: Colors[theme].secondaryShade, 
+                        shadowColor: Colors[theme].text,
+                        ...(recordedAudioUri ? (isFlipping ? { shadowOpacity: 0, elevation: 0 } : {}) : { shadowOpacity: 0, elevation: 0 })
+                      },
+                      pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
                     onPress={() => {
                       if (recordedAudioUri) {
@@ -1781,7 +1799,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       <Svg width={45} height={45} viewBox="0 0 24 24" fill="none">
                         <Path 
                           d="M8 5v14l11-7z" 
-                          fill={recordedAudioUri ? Colors[theme].text : Colors[theme].unselectedText}
+                          fill={recordedAudioUri ? (theme === 'dark' ? 'black' : Colors[theme].text) : (theme === 'dark' ? Colors[theme].disabledIconColor : Colors[theme].unselectedText)}
                           transform="rotate(0 12 12)"
                         />
                       </Svg>
@@ -1795,14 +1813,18 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   <Pressable 
                     style={({ pressed }) => [
                       styles.aiChatButton,
-                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      { 
+                        backgroundColor: Colors[theme].secondaryShade, 
+                        shadowColor: Colors[theme].text,
+                        ...(isFlipping ? { shadowOpacity: 0, elevation: 0 } : {})
+                      },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
                     onPress={() => {
                     }}
                     disabled={!recordedAudioUri}
                   >
-                    {recordedAudioUri ? <AIChatIcon width={36} height={36}/> : <AIChatIconGrey width={36} height={36} />}
+                    {recordedAudioUri ? <AIChatIcon width={36} height={36}/> : (theme === 'dark' ? <AIChatIconDarkMode width={36} height={36}/> : <AIChatIconGrey width={36} height={36} />)}
                   </Pressable>
                 </View>
               )}
@@ -1850,7 +1872,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                   <Pressable
                     style={({ pressed }) => [
                       styles.replayButton, 
-                      { backgroundColor: Colors[theme].secondaryShade, shadowColor: Colors[theme].text },
+                      { 
+                        backgroundColor: Colors[theme].secondaryShade, 
+                        shadowColor: Colors[theme].text,
+                        ...(isFlipping ? { shadowOpacity: 0, elevation: 0 } : {})
+                      },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
                     onPress={() => handleAudioButtonPress(flashcardAnswer)}

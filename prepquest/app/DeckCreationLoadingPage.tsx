@@ -7,6 +7,9 @@ import { useContentTopHeightNoRoundedToggle2, useTopBarAccountHeight } from '@/h
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +34,7 @@ export default function DeckCreationLoadingPage({
   onMinimize,
 }: DeckCreationLoadingPageProps) {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const { backgroundTaskProgress } = useBackgroundTask();
   const router = useRouter();
   // Derive progress from background task if available (manual add)
@@ -63,7 +67,7 @@ export default function DeckCreationLoadingPage({
   }, [progressAnim]);
 
   return (
-    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
+    <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors[theme].background}}>
       {/* Top row with Minimize (left) and Cancel (right) to match status page */}
       {onMinimize && (
         <TouchableOpacity
@@ -77,7 +81,7 @@ export default function DeckCreationLoadingPage({
             }
           }}
         >
-          <Text style={{ fontSize: 20, color: '#44B88A', fontFamily: 'Satoshi-Medium' }}>{strings[language].minimize}</Text>
+          <Text style={{ fontSize: 20, color: Colors[theme].brandColor1, fontFamily: Fonts.bodyMedium }}>{strings[language].minimize}</Text>
         </TouchableOpacity>
       )}
       {/* Cancel button at top right */}
@@ -86,19 +90,21 @@ export default function DeckCreationLoadingPage({
           style={{ position: 'absolute', top: insets.top + 10, right: 16, zIndex: 10, padding: 8 }}
           onPress={onCancel}
         >
-          <Text style={{ fontSize: 20, color: '#D7191C', fontFamily: 'Satoshi-Medium' }}>{strings[language].cancel}</Text>
+          <Text style={{ fontSize: 20, color: Colors[theme].alertColor, fontFamily: Fonts.bodyMedium }}>{strings[language].cancel}</Text>
         </TouchableOpacity>
       )}
       {/* Wrapper for all content to keep it centered as a unit */}
       <View style={{ width: '100%', alignItems: 'center', marginTop: 20}}>
         {/* Stacked image + Lottie animation */}
         <View style={{ aspectRatio: 1.1, width: '100%', marginBottom: 0, position: 'relative', alignItems: 'center', justifyContent: 'center',}}>
-          <Image
-            source={require('@/assets/images/loadingBackground.png')}
-            style={{ width: '100%', height: '100%', borderRadius: 24 }}
-            resizeMode="contain"
-            fadeDuration={0}
-          />
+          {theme !== 'dark' && (
+            <Image
+              source={require('@/assets/images/loadingBackground.png')}
+              style={{ width: '100%', height: '100%', borderRadius: 24 }}
+              resizeMode="contain"
+              fadeDuration={0}
+            />
+          )}
           <LottieView
             source={require('@/assets/animations/LoadingAnimation1.json')}
             autoPlay
@@ -109,24 +115,24 @@ export default function DeckCreationLoadingPage({
         </View>
         {/* Text and progress below */}
         <View style={{ width: '100%', paddingHorizontal: 32, alignItems: 'center' }}>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: Colors[theme].text, fontFamily: Fonts.bodyBold }]}>
             {isInViewFlashcardsPage ? strings[language].deckCreationLoadingPage.flashcardsOnWay : strings[language].deckCreationLoadingPage.deckOnWay}
           </Text>
           <View style={styles.progressBarContainer}>
-            <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarBg, { backgroundColor: Colors[theme].secondaryShade }]}>
               <Animated.View 
                 style={[
                   styles.progressBarFill, 
                   { 
                     width: animatedWidth(),
-                    backgroundColor: percent === 100 ? '#44B88A' : '#4F41D8',
+                    backgroundColor: percent === 100 ? Colors[theme].brandColor1 : Colors[theme].brandColor2,
                   }
                 ]} 
               />
             </View>
           </View>
-          <Text style={styles.percentText}>{percent}%</Text>
-          <Text style={styles.countText}>
+          <Text style={[styles.percentText, { color: Colors[theme].brandColor2, fontFamily: Fonts.bodyBold }]}>{percent}%</Text>
+          <Text style={[styles.countText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
             {strings[language].deckCreationLoadingPage.flashcardsGenerated.replace('{current}', String(effectiveCurrent)).replace('{total}', String(effectiveTotal))}
           </Text>
         </View>
@@ -139,10 +145,7 @@ export default function DeckCreationLoadingPage({
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: 'Satoshi-Variable',
-    fontWeight: '700',
     fontSize: 24,
-    color: '#000',
     textAlign: 'center',
     marginTop: 24,
     marginBottom: 16,
@@ -156,28 +159,21 @@ const styles = StyleSheet.create({
   progressBarBg: {
     width: '100%',
     height: 16,
-    backgroundColor: '#D5D4DD',
     borderRadius: 8,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#4F41D8',
     borderRadius: 8,
   },
   percentText: {
-    fontFamily: 'Satoshi-Variable',
-    fontWeight: '700',
     fontSize: 24,
-    color: '#4F41D8',
     textAlign: 'center',
     marginTop: 4,
     marginBottom: 4,
   },
   countText: {
-    fontFamily: 'Satoshi-Medium',
     fontSize: 14,
-    color: '#000',
     textAlign: 'center',
     marginTop: 2,
   },

@@ -618,6 +618,26 @@ export const strings: Record<string, any> = {
       submitWithoutOptionalFields: 'Submit form without filling up all optional fields?',
       greatSubmit: 'Great! 😊 Do you want to go ahead and submit?',
       failedToStartBackgroundTask: 'Failed to start background task',
+      // Error messages for network/API errors
+      errorMessages: {
+        network: 'Network error!',
+        400: 'Something went wrong. Please try again.',
+        401: "You're not logged in. Please sign in to continue.",
+        403: "You don't have permission to perform this action.",
+        404: 'The requested resource was not found.',
+        500: 'Server error. Please try again later.',
+        502: 'Service temporarily unavailable. Please try again shortly.',
+        503: 'Service temporarily unavailable. Please try again shortly.',
+        default: 'Something went wrong. Please try again.',
+      },
+      // Toast messages for form validation
+      toastMessages: {
+        deckNameInUse: 'Deckname already in use',
+        invalidSubjects: "Invalid form input for 'Subject(s)'",
+        invalidTopics: "Invalid form input for 'Topic(s)'",
+        invalidSubtopics: "Invalid form input for 'Subtopic(s)'",
+        insufficientQuestions: 'Number of questions insufficient to cover all kinds of questions chosen!',
+      },
     },
     // ManualAddDeckPage strings
     manualAddDeckPage: {
@@ -1748,6 +1768,26 @@ export const strings: Record<string, any> = {
       submitWithoutOptionalFields: '未填写所有可选项就提交表单？',
       greatSubmit: '太棒了！😊 要继续提交吗？',
       failedToStartBackgroundTask: '启动后台任务失败',
+      // Error messages for network/API errors
+      errorMessages: {
+        network: '网络错误。请检查您的连接并重试。',
+        400: '出现错误，请重试。',
+        401: '您尚未登录。请先登录。',
+        403: '您没有权限执行此操作。',
+        404: '未找到请求的资源。',
+        500: '服务器错误，请稍后再试。',
+        502: '服务暂时不可用，请稍后再试。',
+        503: '服务暂时不可用，请稍后再试。',
+        default: '出现错误，请重试。',
+      },
+      // Toast messages for form validation
+      toastMessages: {
+        deckNameInUse: '卡组名称已被使用',
+        invalidSubjects: '"科目"输入无效',
+        invalidTopics: '"主题"输入无效',
+        invalidSubtopics: '"子主题"输入无效',
+        insufficientQuestions: '题目数量不足以覆盖所选题型！',
+      },
     },
     // ManualAddDeckPage strings
     manualAddDeckPage: {

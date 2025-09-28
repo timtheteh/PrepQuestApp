@@ -748,69 +748,6 @@ const HelpIconFilled: React.FC<SvgProps> = (props) => (
   </Svg>
 );
 
-// Error messages for network/API errors
-const ERROR_MESSAGES = {
-  network: {
-    English: 'Network error!',
-    Chinese: '网络错误。请检查您的连接并重试。'
-  },
-  400: {
-    English: 'Something went wrong. Please try again.',
-    Chinese: '出现错误，请重试。'
-  },
-  401: {
-    English: "You're not logged in. Please sign in to continue.",
-    Chinese: '您尚未登录。请先登录。'
-  },
-  403: {
-    English: "You don't have permission to perform this action.",
-    Chinese: '您没有权限执行此操作。'
-  },
-  404: {
-    English: 'The requested resource was not found.',
-    Chinese: '未找到请求的资源。'
-  },
-  500: {
-    English: 'Server error. Please try again later.',
-    Chinese: '服务器错误，请稍后再试。'
-  },
-  502: {
-    English: 'Service temporarily unavailable. Please try again shortly.',
-    Chinese: '服务暂时不可用，请稍后再试。'
-  },
-  503: {
-    English: 'Service temporarily unavailable. Please try again shortly.',
-    Chinese: '服务暂时不可用，请稍后再试。'
-  },
-  default: {
-    English: 'Something went wrong. Please try again.',
-    Chinese: '出现错误，请重试。'
-  }
-};
-
-// Toast messages for form validation
-const TOAST_MESSAGES = {
-  deckNameInUse: {
-    English: 'Deckname already in use',
-    Chinese: '卡组名称已被使用'
-  },
-  invalidSubjects: {
-    English: "Invalid form input for 'Subject(s)'",
-    Chinese: '“科目"输入无效'
-  },
-  invalidTopics: {
-    English: "Invalid form input for 'Topic(s)'",
-    Chinese: '“主题"输入无效'
-  },
-  invalidSubtopics: {
-    English: "Invalid form input for 'Subtopic(s)'",
-    Chinese: '“子主题"输入无效'
-  },
-  insufficientQuestions: {
-    English: 'Number of questions insufficient to cover all kinds of questions chosen!',
-    Chinese: '题目数量不足以覆盖所选题型！'
-  }
-};
 
 export default function GenAIFormPage() {
   const { 
@@ -1229,7 +1166,7 @@ export default function GenAIFormPage() {
       const deckNameExists = await checkDeckNameExists(deckName.trim());
       if (deckNameExists) {
         setShowToast(true);
-        setToastMessage(TOAST_MESSAGES.deckNameInUse[language] || TOAST_MESSAGES.deckNameInUse.English);
+        setToastMessage(strings[language].genAIFormPage.toastMessages.deckNameInUse);
         return false;
       }
     }
@@ -1249,7 +1186,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptySubjects || hasInvalidSubjects) {
         setShowToast(true);
-        setToastMessage(TOAST_MESSAGES.invalidSubjects[language] || TOAST_MESSAGES.invalidSubjects.English);
+        setToastMessage(strings[language].genAIFormPage.toastMessages.invalidSubjects);
         return false;
       }
     }
@@ -1270,7 +1207,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptyTopics || hasInvalidTopics) {
         setShowToast(true);
-        setToastMessage(TOAST_MESSAGES.invalidTopics[language] || TOAST_MESSAGES.invalidTopics.English);
+        setToastMessage(strings[language].genAIFormPage.toastMessages.invalidTopics);
         return false;
       }
     }
@@ -1290,7 +1227,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptySubtopics || hasInvalidSubtopics) {
         setShowToast(true);
-        setToastMessage(TOAST_MESSAGES.invalidSubtopics[language] || TOAST_MESSAGES.invalidSubtopics.English);
+        setToastMessage(strings[language].genAIFormPage.toastMessages.invalidSubtopics);
         return false;
       }
     }
@@ -1310,7 +1247,7 @@ export default function GenAIFormPage() {
       
       if (hasEmptyTopics || hasInvalidTopics) {
         setShowToast(true);
-        setToastMessage(TOAST_MESSAGES.invalidTopics[language] || TOAST_MESSAGES.invalidTopics.English);
+        setToastMessage(strings[language].genAIFormPage.toastMessages.invalidTopics);
         return false;
       }
     }
@@ -1318,7 +1255,7 @@ export default function GenAIFormPage() {
     // Validate that the number of question types does not exceed the number of questions
     if (questionType.length > numberOfQuestions) {
       setShowToast(true);
-      setToastMessage(TOAST_MESSAGES.insufficientQuestions[language] || TOAST_MESSAGES.insufficientQuestions.English);
+      setToastMessage(strings[language].genAIFormPage.toastMessages.insufficientQuestions);
       return false;
     }
 
@@ -1600,7 +1537,7 @@ export default function GenAIFormPage() {
           console.log('Request was cancelled');
           return null;
         }
-        Alert.alert('Error', ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English);
+        Alert.alert('Error', strings[language].genAIFormPage.errorMessages.network);
         return null;
       }
       console.log("fetch complete, status:", response.status);
@@ -1608,28 +1545,28 @@ export default function GenAIFormPage() {
         let message = '';
         switch (response.status) {
           case 400:
-            message = ERROR_MESSAGES[400][language] || ERROR_MESSAGES[400].English;
+            message = strings[language].genAIFormPage.errorMessages[400];
             break;
           case 401:
-            message = ERROR_MESSAGES[401][language] || ERROR_MESSAGES[401].English;
+            message = strings[language].genAIFormPage.errorMessages[401];
             break;
           case 403:
-            message = ERROR_MESSAGES[403][language] || ERROR_MESSAGES[403].English;
+            message = strings[language].genAIFormPage.errorMessages[403];
             break;
           case 404:
-            message = ERROR_MESSAGES[404][language] || ERROR_MESSAGES[404].English;
+            message = strings[language].genAIFormPage.errorMessages[404];
             break;
           case 500:
-            message = ERROR_MESSAGES[500][language] || ERROR_MESSAGES[500].English;
+            message = strings[language].genAIFormPage.errorMessages[500];
             break;
           case 502:
-            message = ERROR_MESSAGES[502][language] || ERROR_MESSAGES[502].English;
+            message = strings[language].genAIFormPage.errorMessages[502];
             break;
           case 503:
-            message = ERROR_MESSAGES[503][language] || ERROR_MESSAGES[503].English;
+            message = strings[language].genAIFormPage.errorMessages[503];
             break;
           default:
-            message = ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English;
+            message = strings[language].genAIFormPage.errorMessages.default;
         }
         Alert.alert('Error', message);
         return null;
@@ -1759,7 +1696,7 @@ export default function GenAIFormPage() {
       console.log("FLASHCARDS >>>>>>>>>>>>>>>>> \n", flashcards);
       return flashcards;
     } catch (error: any) {
-      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : (ERROR_MESSAGES.default[language] || ERROR_MESSAGES.default.English));
+      Alert.alert('Error', (error.message && typeof error.message === 'string') ? error.message : strings[language].genAIFormPage.errorMessages.default);
     }
   };
 
@@ -2739,7 +2676,7 @@ export default function GenAIFormPage() {
       <GenericModal
         visible={isNetworkErrorModalOpen}
         opacity={networkErrorModalOpacity}
-        text={ERROR_MESSAGES.network[language] || ERROR_MESSAGES.network.English}
+        text={strings[language].genAIFormPage.errorMessages.network}
         buttons="single"
         onConfirm={handleDismissNetworkErrorModal}
         Icon={DeleteModalIcon}

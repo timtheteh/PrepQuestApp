@@ -47,6 +47,7 @@ import {
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
+import CountdownCircle from '@/components/general/CountdownCircle';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -3006,11 +3007,13 @@ export default function FlashcardViewPage() {
             }}>
               {strings[language].flashcardViewPage.quizStartingIn}
             </Text>
-            <LottieView
-              source={require('@/assets/animations/CountdownAnimation.json')}
-              autoPlay
-              loop={false}
-              style={{ width: 200, height: 200 }}
+            <CountdownCircle 
+              duration={3}
+              size={200}
+              onComplete={() => {
+                // Countdown completed, hide the countdown screen
+                setShowQuizCountdown(false);
+              }}
             />
           </View>
         </SafeAreaView>

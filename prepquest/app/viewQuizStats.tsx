@@ -7,6 +7,7 @@ import { AverageGradeThermometer } from '@/components/statsComponents/AverageGra
 import BreakdownByDifficultyPie from '@/components/statsComponents/BreakdownByDifficulty';
 import AverageSpeedTotal from '@/components/statsComponents/AverageSpeedTotal';
 import DoubleChevron from '@/assets/icons/generalIcons/DoubleChevron.svg';
+import DoubleChevronDarkMode from '@/assets/icons/generalIcons/DoubleChevronDarkMode.svg';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
@@ -228,7 +229,11 @@ export default function ViewQuizStatsModal() {
           <MemoizedTouchableOpacity style={fixedBottomButtonStyle} activeOpacity={0.85} onPress={handleBackPress}>
             <View style={styles.buttonContentRow}>
               <MemoizedText style={buttonTextStyle}>{strings[language].flashcardViewPage.continueWithQuiz}</MemoizedText>
-              <DoubleChevron width={36} height={36} />
+              {theme === 'dark' ? (
+                <DoubleChevronDarkMode width={36} height={36} />
+              ) : (
+                <DoubleChevron width={36} height={36} />
+              )}
             </View>
           </MemoizedTouchableOpacity>
         </View>

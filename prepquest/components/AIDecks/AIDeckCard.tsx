@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { View, StyleSheet, ImageBackground, Platform, ImageSourcePropType, Pressable, Text, Image, Dimensions } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import { View, StyleSheet, ImageBackground, Platform, ImageSourcePropType, Pressable, Text, Image, Dimensions, Animated } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Fonts } from '@/constants/Fonts';
 import { Colors } from '@/constants/Colors';
+import { getAnimationConfig } from '@/utils/animationConfig';
 
 interface AIDeckCardProps {
   backgroundImage: ImageSourcePropType;
@@ -47,14 +48,49 @@ export const AIDeckCard = ({
 }: AIDeckCardProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const { language } = useLanguage();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
+  const colors = Colors[theme];
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+  // Get performance-based animation config
+  const animationConfig = useMemo(() => getAnimationConfig(), []);
 
   const handlePressIn = () => {
-    setIsPressed(true);
+    if (!isSelectMode) {
+      setIsPressed(true);
+      
+      // In dark mode, animate scale to 0.95
+      if (isDark) {
+        if (animationConfig.instantMode) {
+          scaleAnim.setValue(0.95);
+        } else {
+          Animated.timing(scaleAnim, {
+            toValue: 0.95,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        }
+      }
+    }
   };
 
   const handlePressOut = () => {
-    setIsPressed(false);
+    if (!isSelectMode) {
+      setIsPressed(false);
+      
+      // In dark mode, animate scale back to 1
+      if (isDark) {
+        if (animationConfig.instantMode) {
+          scaleAnim.setValue(1);
+        } else {
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        }
+      }
+    }
   };
 
   const handleCardPress = () => {
@@ -86,7 +122,7 @@ export const AIDeckCard = ({
   } as Record<string, { color: string; label: string }>;
 
   const typeInfo = cardType && cardTypeMap[cardType];
-  const themeTextColor = { color: Colors[theme].text };
+  const themeTextColor = { color: colors.text };
   const flashcardCountText = flashcardCount !== undefined ? `${flashcardCount} ${strings[language].cards}` : null;
 
   return (
@@ -97,56 +133,117 @@ export const AIDeckCard = ({
           onPressOut={handlePressOut}
           onPress={handleCardPress}
         >
-          <View style={styles.container}>
-            <ImageBackground 
-              source={isPressed ? pressedBackgroundImage : backgroundImage}
-              style={styles.imageBackground}
-              imageStyle={styles.backgroundImage}
-              resizeMode="contain"
-            >
-              <View style={styles.cardContentContainer}>
-                {/* Icon image at top left */}
-                {image && (
-                  <Image source={image} style={styles.cardIconImage} />
-                )}
-                {!image && isStudy && (
-                  <Image source={STUDY_CARD_ICON} style={styles.cardIconImage} />
-                )}
-                {!image && !isStudy && (
-                  <Image source={COMPANY_DEFAULT_ICON} style={styles.cardIconImage} />
-                )}
-                {/* Title */}
-                {title && (
-                  <Text 
-                    style={[styles.cardTitle, themeTextColor]}
-                    numberOfLines={1}
-                  >
-                    {title}
-                  </Text>
-                )}
-                {/* Flashcard Count and Card Type Row */}
-                {(flashcardCount !== undefined || typeInfo) && (
-                  <View style={styles.bottomRow}>
-                    {typeInfo && (
-                      <View
-                        style={[
-                          styles.cardTypePill,
-                          { borderColor: typeInfo.color }
-                        ]}
-                      >
-                        <Text style={[styles.cardTypeText, themeTextColor]}>{typeInfo.label}</Text>
-                      </View>
-                    )}
-                    {flashcardCountText && (
-                      <Text style={[styles.flashcardCountText, themeTextColor]}>
-                        {flashcardCountText}
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </View>
-            </ImageBackground>
-          </View>
+          <Animated.View style={styles.container}>
+            {isDark ? (
+              <Animated.View 
+                style={[
+                  styles.darkModeBackground,
+                  { 
+                    backgroundColor: colors.background,
+                    borderWidth: 2,
+                    borderColor: '#000000',
+                    transform: [{ scale: scaleAnim }]
+                  }
+                ]}
+              >
+                <View style={styles.cardContentContainer}>
+                  {/* Icon image at top left */}
+                  {image && (
+                    <Image source={image} style={styles.cardIconImage} />
+                  )}
+                  {!image && isStudy && (
+                    <Image source={STUDY_CARD_ICON} style={styles.cardIconImage} />
+                  )}
+                  {!image && !isStudy && (
+                    <Image source={COMPANY_DEFAULT_ICON} style={styles.cardIconImage} />
+                  )}
+                  {/* Title */}
+                  {title && (
+                    <Text 
+                      style={[styles.cardTitle, themeTextColor]}
+                      numberOfLines={1}
+                    >
+                      {title}
+                    </Text>
+                  )}
+                  {/* Flashcard Count and Card Type Row */}
+                  {(flashcardCount !== undefined || typeInfo) && (
+                    <View style={styles.bottomRow}>
+                      {typeInfo && (
+                        <View
+                          style={[
+                            styles.cardTypePill,
+                            isDark 
+                              ? { 
+                                  backgroundColor: colors.cardTypePillBgColor, 
+                                  borderWidth: 0
+                                }
+                              : { borderColor: typeInfo.color }
+                          ]}
+                        >
+                          <Text style={[styles.cardTypeText, themeTextColor]}>{typeInfo.label}</Text>
+                        </View>
+                      )}
+                      {flashcardCountText && (
+                        <Text style={[styles.flashcardCountText, themeTextColor]}>
+                          {flashcardCountText}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              </Animated.View>
+            ) : (
+              <ImageBackground 
+                source={isPressed ? pressedBackgroundImage : backgroundImage}
+                style={styles.imageBackground}
+                imageStyle={styles.backgroundImage}
+                resizeMode="contain"
+              >
+                <View style={styles.cardContentContainer}>
+                  {/* Icon image at top left */}
+                  {image && (
+                    <Image source={image} style={styles.cardIconImage} />
+                  )}
+                  {!image && isStudy && (
+                    <Image source={STUDY_CARD_ICON} style={styles.cardIconImage} />
+                  )}
+                  {!image && !isStudy && (
+                    <Image source={COMPANY_DEFAULT_ICON} style={styles.cardIconImage} />
+                  )}
+                  {/* Title */}
+                  {title && (
+                    <Text 
+                      style={[styles.cardTitle, themeTextColor]}
+                      numberOfLines={1}
+                    >
+                      {title}
+                    </Text>
+                  )}
+                  {/* Flashcard Count and Card Type Row */}
+                  {(flashcardCount !== undefined || typeInfo) && (
+                    <View style={styles.bottomRow}>
+                      {typeInfo && (
+                        <View
+                          style={[
+                            styles.cardTypePill,
+                            { borderColor: typeInfo.color }
+                          ]}
+                        >
+                          <Text style={[styles.cardTypeText, themeTextColor]}>{typeInfo.label}</Text>
+                        </View>
+                      )}
+                      {flashcardCountText && (
+                        <Text style={[styles.flashcardCountText, themeTextColor]}>
+                          {flashcardCountText}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              </ImageBackground>
+            )}
+          </Animated.View>
         </Pressable>
       </View>
     </View>
@@ -182,6 +279,11 @@ const styles = StyleSheet.create({
   backgroundImage: {
     width: '100%',
     height: '100%',
+  },
+  darkModeBackground: {
+    height: '90%',
+    width: '100%',
+    borderRadius: 30,
   },
   cardContentContainer: {
     flex: 1,

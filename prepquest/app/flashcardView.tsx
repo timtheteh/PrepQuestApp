@@ -1831,7 +1831,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       { 
                         backgroundColor: Colors[theme].secondaryShade, 
                         shadowColor: Colors[theme].text,
-                        ...(recordedAudioUri ? (isFlipping ? { shadowOpacity: 0, elevation: 0 } : {}) : { shadowOpacity: 0, elevation: 0 })
+                        ...(isFlipping ? { shadowOpacity: 0, elevation: 0 } : {})
                       },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}

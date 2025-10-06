@@ -559,6 +559,99 @@ async function playAudio(uri: any) {
   }
 }
 
+// Helper function to get audio duration
+async function getAudioDuration(uri: string): Promise<number> {
+  try {
+    const { sound } = await Audio.Sound.createAsync({ uri });
+    const status = await sound.getStatusAsync();
+    if (status.isLoaded) {
+      const durationSeconds = status.durationMillis ? status.durationMillis / 1000 : 0;
+      await sound.unloadAsync();
+      return durationSeconds;
+    }
+    await sound.unloadAsync();
+    return 0;
+  } catch (error) {
+    console.error('Error getting audio duration:', error);
+    return 0;
+  }
+}
+
+// Helper function to convert audio file to base64 blob (optimized for WAV format)
+async function convertAudioToBase64Blob(uri: string): Promise<Blob> {
+  try {
+    console.log('🔄 Converting audio to blob format...');
+    
+    // Read the audio file as base64 (should already be WAV format from recording)
+    const base64String = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    
+    // For React Native, create a data URI and convert to blob using fetch
+    const dataUri = `data:audio/wav;base64,${base64String}`;
+    const response = await fetch(dataUri);
+    const blob = await response.blob();
+    
+    console.log(`✅ Audio blob created: ${blob.size} bytes`);
+    return blob;
+  } catch (error) {
+    console.error('Error converting audio to blob:', error);
+    throw error;
+  }
+}
+
+
+// Helper function to call speech-to-text edge function
+async function transcribeAudio(audioUri: string): Promise<string> {
+  try {
+    console.log('🎤 Starting audio transcription...');
+    
+    // Get audio duration
+    const duration = await getAudioDuration(audioUri);
+    console.log(`📏 Audio duration: ${duration} seconds`);
+    
+    // Determine if audio is short or long (threshold: 60 seconds)
+    const audioType = duration <= 60 ? 'short' : 'long';
+    console.log(`🔤 Audio type: ${audioType}`);
+    
+    // Convert audio to base64 blob
+    const audioBlob = await convertAudioToBase64Blob(audioUri);
+    console.log(`📦 Audio blob size: ${audioBlob.size} bytes`);
+    
+    // Call Supabase Edge Function using direct fetch
+    const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/AIChatAPI`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'audio/wav',
+        'x-audio-type': audioType,
+        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+      body: audioBlob,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Speech-to-text error:', response.status, errorText);
+      throw new Error(`Speech-to-text failed: ${response.status} ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data?.transcript) {
+      console.log('✅ Transcription successful!');
+      console.log('📝 Transcribed text:', data.transcript);
+      return data.transcript;
+    } else {
+      console.log('⚠️ No transcript returned from speech-to-text function');
+      return 'No speech detected';
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in transcribeAudio:', error);
+    throw error;
+  }
+}
+
 // Move this above FlippableFlashcard:
 interface FlippableFlashcardProps {
   currentIdx: number;
@@ -1141,9 +1234,31 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         playsInSilentModeIOS: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const { recording } = await Audio.Recording.createAsync({
+        android: {
+          extension: '.wav',
+          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
+          audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.wav',
+          outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/wav',
+          bitsPerSecond: 128000,
+        },
+      });
       recordingRef.current = recording;
       setIsRecording(true);
     } catch (err) {
@@ -1867,7 +1982,17 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
-                    onPress={() => {
+                    onPress={async () => {
+                      if (recordedAudioUri) {
+                        try {
+                          console.log('🤖 AI Chat button pressed - starting transcription...');
+                          const transcript = await transcribeAudio(recordedAudioUri);
+                          console.log('🎯 Final transcribed text:', transcript);
+                        } catch (error) {
+                          console.error('❌ Transcription failed:', error);
+                          Alert.alert('Transcription Error', 'Failed to transcribe audio. Please try again.');
+                        }
+                      }
                     }}
                     disabled={!recordedAudioUri}
                   >

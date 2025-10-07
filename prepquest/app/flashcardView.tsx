@@ -562,11 +562,25 @@ async function playAudio(uri: any) {
 // Helper function to get audio duration
 async function getAudioDuration(uri: string): Promise<number> {
   try {
+    // For Android AMR files, use file size estimation because Audio API can't read AMR duration correctly
+    if (Platform.OS === 'android' && uri.endsWith('.amr')) {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (fileInfo.exists && fileInfo.size) {
+        // AMR-WB bitrate is ~23.85 kbps = ~2981 bytes per second
+        // Add a small header overhead (~6 bytes for AMR header)
+        const estimatedSeconds = (fileInfo.size - 6) / 2981;
+        console.log(`📏 Audio duration (Android AMR estimated from ${fileInfo.size} bytes): ${estimatedSeconds.toFixed(2)} seconds`);
+        return estimatedSeconds;
+      }
+    }
+    
+    // For iOS WAV files, use Audio API
     const { sound } = await Audio.Sound.createAsync({ uri });
     const status = await sound.getStatusAsync();
     if (status.isLoaded) {
       const durationSeconds = status.durationMillis ? status.durationMillis / 1000 : 0;
       await sound.unloadAsync();
+      console.log(`📏 Audio duration (from Audio API): ${durationSeconds.toFixed(2)} seconds`);
       return durationSeconds;
     }
     await sound.unloadAsync();
@@ -577,25 +591,35 @@ async function getAudioDuration(uri: string): Promise<number> {
   }
 }
 
-// Helper function to convert audio file to base64 blob (optimized for WAV format)
-async function convertAudioToBase64Blob(uri: string): Promise<Blob> {
+// Helper function to get audio data for upload (platform-specific handling)
+async function getAudioDataForUpload(uri: string, isLongAudio: boolean): Promise<{ data: Blob | FormData; contentType: string }> {
   try {
-    console.log('🔄 Converting audio to blob format...');
+    console.log('🔄 Preparing audio data for upload...');
     
-    // Read the audio file as base64 (should already be WAV format from recording)
-    const base64String = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    
-    // For React Native, create a data URI and convert to blob using fetch
-    const dataUri = `data:audio/wav;base64,${base64String}`;
-    const response = await fetch(dataUri);
-    const blob = await response.blob();
-    
-    console.log(`✅ Audio blob created: ${blob.size} bytes`);
-    return blob;
+    if (Platform.OS === 'ios') {
+      // iOS: Read as base64 and create blob using fetch with data URI
+      const base64String = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const dataUri = `data:audio/wav;base64,${base64String}`;
+      const response = await fetch(dataUri);
+      const blob = await response.blob();
+      console.log(`✅ Audio blob created (iOS): ${blob.size} bytes`);
+      return { data: blob, contentType: 'audio/wav' };
+    } else {
+      // Android: Use FormData for both short and long audio
+      // FormData with file URI works for all sizes and React Native handles the file reading
+      const formData = new FormData();
+      formData.append('audio', {
+        uri: uri,
+        type: 'audio/amr-wb',
+        name: 'recording.amr',
+      } as any);
+      console.log(`✅ Audio FormData created (Android ${isLongAudio ? 'long' : 'short'} audio) from URI: ${uri}`);
+      return { data: formData, contentType: 'multipart/form-data' };
+    }
   } catch (error) {
-    console.error('Error converting audio to blob:', error);
+    console.error('Error preparing audio data:', error);
     throw error;
   }
 }
@@ -612,21 +636,29 @@ async function transcribeAudio(audioUri: string): Promise<string> {
     
     // Determine if audio is short or long (threshold: 60 seconds)
     const audioType = duration <= 60 ? 'short' : 'long';
+    const isLongAudio = audioType === 'long';
     console.log(`🔤 Audio type: ${audioType}`);
     
-    // Convert audio to base64 blob
-    const audioBlob = await convertAudioToBase64Blob(audioUri);
-    console.log(`📦 Audio blob size: ${audioBlob.size} bytes`);
+    // Get audio data for upload (platform-specific)
+    const { data: audioData, contentType } = await getAudioDataForUpload(audioUri, isLongAudio);
+    console.log(`📦 Audio data prepared for ${Platform.OS}`);
     
     // Call Supabase Edge Function using direct fetch
+    const headers: HeadersInit = {
+      'x-audio-type': audioType,
+      'x-platform': Platform.OS, // Pass platform info (ios or android)
+      'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+    };
+    
+    // Set Content-Type for blob (iOS). For FormData (Android), let fetch set it automatically with boundary
+    if (contentType !== 'multipart/form-data') {
+      headers['Content-Type'] = contentType;
+    }
+    
     const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/AIChatAPI`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'audio/wav',
-        'x-audio-type': audioType,
-        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-      },
-      body: audioBlob,
+      headers: headers,
+      body: audioData as any,
     });
     
     if (!response.ok) {
@@ -1236,12 +1268,12 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
 
       const { recording } = await Audio.Recording.createAsync({
         android: {
-          extension: '.wav',
-          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-          audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
-          sampleRate: 44100,
+          extension: '.amr',
+          outputFormat: Audio.AndroidOutputFormat.AMR_WB,
+          audioEncoder: Audio.AndroidAudioEncoder.AMR_WB,
+          sampleRate: 16000,
           numberOfChannels: 1,
-          bitRate: 128000,
+          bitRate: 23850,
         },
         ios: {
           extension: '.wav',

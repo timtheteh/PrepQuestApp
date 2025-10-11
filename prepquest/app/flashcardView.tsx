@@ -643,7 +643,7 @@ async function getAudioDuration(uri: string): Promise<number> {
 }
 
 // Helper function to get audio data for upload (platform-specific handling)
-async function getAudioDataForUpload(uri: string, isLongAudio: boolean): Promise<{ data: Blob | FormData; contentType: string }> {
+async function getAudioDataForUpload(uri: string, isLongAudio: boolean, questionContext?: string): Promise<{ data: Blob | FormData; contentType: string }> {
   try {
     console.log('🔄 Preparing audio data for upload...');
     
@@ -666,6 +666,13 @@ async function getAudioDataForUpload(uri: string, isLongAudio: boolean): Promise
         type: 'audio/amr-wb',
         name: 'recording.amr',
       } as any);
+      
+      // Add question context to FormData if provided
+      if (questionContext) {
+        formData.append('questionContext', questionContext);
+        console.log('📝 Question context added to FormData');
+      }
+      
       console.log(`✅ Audio FormData created (Android ${isLongAudio ? 'long' : 'short'} audio) from URI: ${uri}`);
       return { data: formData, contentType: 'multipart/form-data' };
     }
@@ -677,10 +684,13 @@ async function getAudioDataForUpload(uri: string, isLongAudio: boolean): Promise
 
 
 // Helper function to call speech-to-text edge function
-async function transcribeAudio(audioUri: string, language: string = 'English'): Promise<string> {
+async function transcribeAudio(audioUri: string, language: string = 'English', questionContext?: string): Promise<{ transcript: string; evaluation: string | null }> {
   try {
     console.log('🎤 Starting audio transcription...');
     console.log(`🌐 Language: ${language}`);
+    if (questionContext) {
+      console.log(`📝 Question context: ${questionContext.substring(0, 50)}...`);
+    }
     
     // Get audio duration
     const duration = await getAudioDuration(audioUri);
@@ -692,7 +702,7 @@ async function transcribeAudio(audioUri: string, language: string = 'English'): 
     console.log(`🔤 Audio type: ${audioType}`);
     
     // Get audio data for upload (platform-specific)
-    const { data: audioData, contentType } = await getAudioDataForUpload(audioUri, isLongAudio);
+    const { data: audioData, contentType } = await getAudioDataForUpload(audioUri, isLongAudio, questionContext);
     console.log(`📦 Audio data prepared for ${Platform.OS}`);
     
     // Call Supabase Edge Function using direct fetch
@@ -702,6 +712,12 @@ async function transcribeAudio(audioUri: string, language: string = 'English'): 
       'x-language': language, // Pass selected language for speech-to-text
       'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
     };
+    
+    // For iOS, send question context as header (Android sends it via FormData)
+    if (Platform.OS === 'ios' && questionContext) {
+      headers['x-question-context'] = encodeURIComponent(questionContext);
+      console.log('📝 Question context added to headers (iOS)');
+    }
     
     // Set Content-Type for blob (iOS). For FormData (Android), let fetch set it automatically with boundary
     if (contentType !== 'multipart/form-data') {
@@ -725,10 +741,19 @@ async function transcribeAudio(audioUri: string, language: string = 'English'): 
     if (data?.transcript) {
       console.log('✅ Transcription successful!');
       console.log('📝 Transcribed text:', data.transcript);
-      return data.transcript;
+      if (data?.evaluation) {
+        console.log('🤖 AI Evaluation received:', data.evaluation);
+      }
+      return {
+        transcript: data.transcript,
+        evaluation: data.evaluation || null
+      };
     } else {
       console.log('⚠️ No transcript returned from speech-to-text function');
-      return 'No speech detected';
+      return {
+        transcript: 'No speech detected',
+        evaluation: null
+      };
     }
     
   } catch (error) {
@@ -777,6 +802,10 @@ interface FlippableFlashcardProps {
   deckID: string;
   isAIDeckParam: string;
   voiceLanguage: string;
+  aiEvaluation: string | null;
+  isLoadingEvaluation: boolean;
+  setAiEvaluation: React.Dispatch<React.SetStateAction<string | null>>;
+  setIsLoadingEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -818,7 +847,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     startFlashcardTimer,
     retryDifficultParam,
     language,
-    voiceLanguage
+    voiceLanguage,
+    aiEvaluation,
+    isLoadingEvaluation,
+    setAiEvaluation,
+    setIsLoadingEvaluation
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -1202,6 +1235,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           setHasFlippedCard(false); // Reset flipped state for new card
           setHasSubmittedMCQ(false); // Reset MCQ submission state for new card
           setRecordedAudioUri(null); // Reset voice recording for new card
+          setAiEvaluation(null); // Reset AI evaluation for new card
+          setIsLoadingEvaluation(false); // Reset loading state for new card
           flipAnim.setValue(0);
           frontOpacity.setValue(1);
           backOpacity.setValue(0);
@@ -1304,6 +1339,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
 
   // Clean up audio on unmount or card change
   React.useEffect(() => {
+    // Reset AI evaluation when card changes
+    setAiEvaluation(null);
+    
     return () => {
       if (audioSoundRef.current) {
         audioSoundRef.current.unloadAsync();
@@ -1987,17 +2025,43 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                 <View style={styles.voiceAnswerContainer}>
                   {!isRecording ? (
                     <>
-                      <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
-                        {recordedAudioUri ? 
-                        strings[language].flashcardViewPage.greatAnswerReplayOrFeedback : 
-                        strings[language].flashcardViewPage.recordAnswerGetFeedback}
-                      </Text>
-                      <LottieView
-                        source={theme === 'dark' ? require('@/assets/animations/DownArrowAnimationDarkMode.json') : require('@/assets/animations/DownArrowAnimation.json')}
-                        autoPlay
-                        loop
-                        style={styles.voiceAnswerAnimation}
-                      />
+                      {isLoadingEvaluation ? (
+                        <>
+                          <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                            Evaluating your answer...
+                          </Text>
+                          <LottieView
+                            source={require('@/assets/animations/LoadingAnimation2.json')}
+                            autoPlay
+                            loop
+                            style={styles.voiceAnswerAnimation}
+                          />
+                        </>
+                      ) : aiEvaluation ? (
+                        <ScrollView 
+                          style={styles.evaluationScrollView}
+                          contentContainerStyle={styles.evaluationScrollViewContent}
+                          showsVerticalScrollIndicator={false}
+                        >
+                          <Text style={[styles.evaluationText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
+                            {aiEvaluation}
+                          </Text>
+                        </ScrollView>
+                      ) : (
+                        <>
+                          <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                            {recordedAudioUri ? 
+                            strings[language].flashcardViewPage.greatAnswerReplayOrFeedback : 
+                            strings[language].flashcardViewPage.recordAnswerGetFeedback}
+                          </Text>
+                          <LottieView
+                            source={theme === 'dark' ? require('@/assets/animations/DownArrowAnimationDarkMode.json') : require('@/assets/animations/DownArrowAnimation.json')}
+                            autoPlay
+                            loop
+                            style={styles.voiceAnswerAnimation}
+                          />
+                        </>
+                      )}
                     </>
                   ) : (
                     <LottieView
@@ -2072,12 +2136,27 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                     onPress={async () => {
                       if (recordedAudioUri) {
                         try {
-                          console.log('🤖 AI Chat button pressed - starting transcription...');
-                          const transcript = await transcribeAudio(recordedAudioUri, voiceLanguage);
-                          console.log('🎯 Final transcribed text:', transcript);
+                          console.log('🤖 AI Chat button pressed - starting transcription and evaluation...');
+                          setIsLoadingEvaluation(true);
+                          // Extract question context (text from flashcard question)
+                          const questionContext = flashcardQnType === 'text' && typeof flashcardQn === 'string' ? flashcardQn : undefined;
+                          const response = await transcribeAudio(recordedAudioUri, voiceLanguage, questionContext);
+                          console.log('🎯 Final transcribed text:', response.transcript);
+                          
+                          // Set the AI evaluation to display on the flashcard
+                          if (response.evaluation) {
+                            setAiEvaluation(response.evaluation);
+                            console.log('✅ AI Evaluation set successfully');
+                          } else {
+                            setAiEvaluation('No evaluation available');
+                            console.log('⚠️ No evaluation received');
+                          }
                         } catch (error) {
-                          console.error('❌ Transcription failed:', error);
-                          Alert.alert('Transcription Error', 'Failed to transcribe audio. Please try again.');
+                          console.error('❌ Transcription/Evaluation failed:', error);
+                          Alert.alert('Error', 'Failed to transcribe audio and get evaluation. Please try again.');
+                          setAiEvaluation(null);
+                        } finally {
+                          setIsLoadingEvaluation(false);
                         }
                       }
                     }}
@@ -2461,6 +2540,10 @@ export default function FlashcardViewPage() {
   // Add voice recording state (lifted from FlippableFlashcard)
   const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
 
+  // AI evaluation state (lifted from FlippableFlashcard)
+  const [aiEvaluation, setAiEvaluation] = useState<string | null>(null);
+  const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(false);
+
   // Voice language state for speech-to-text detection
   // NOTE: This is ONLY for speech-to-text language detection, NOT for app UI language
   // The app UI language is managed separately by LanguageContext
@@ -2734,6 +2817,8 @@ export default function FlashcardViewPage() {
       setHasFlippedCard(false);
       setHasSubmittedMCQ(false);
       setRecordedAudioUri(null);
+      setAiEvaluation(null);
+      setIsLoadingEvaluation(false);
 
       // Close the delete modal
     handleDismissDeleteModal();
@@ -3398,6 +3483,10 @@ export default function FlashcardViewPage() {
               deckID={deckID as string}
               isAIDeckParam={isAIDeckParam as string}
               voiceLanguage={voiceLanguage}
+              aiEvaluation={aiEvaluation}
+              isLoadingEvaluation={isLoadingEvaluation}
+              setAiEvaluation={setAiEvaluation}
+              setIsLoadingEvaluation={setIsLoadingEvaluation}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>
@@ -3927,6 +4016,22 @@ const styles = StyleSheet.create({
   voiceAnswerAnimation: {
     width: 50,
     height: 50,
+  },
+  evaluationScrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  evaluationScrollViewContent: {
+    flexGrow: 1,
+    alignContent: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  evaluationText: {
+    fontSize: 22,
+    textAlign: 'center',
+    lineHeight: 28,
+    ...(Platform.OS === 'android' && { lineHeight: 27 }),
   },
   micButtonsContainer: {
     position: 'absolute',

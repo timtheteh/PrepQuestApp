@@ -677,9 +677,10 @@ async function getAudioDataForUpload(uri: string, isLongAudio: boolean): Promise
 
 
 // Helper function to call speech-to-text edge function
-async function transcribeAudio(audioUri: string): Promise<string> {
+async function transcribeAudio(audioUri: string, language: string = 'English'): Promise<string> {
   try {
     console.log('🎤 Starting audio transcription...');
+    console.log(`🌐 Language: ${language}`);
     
     // Get audio duration
     const duration = await getAudioDuration(audioUri);
@@ -698,6 +699,7 @@ async function transcribeAudio(audioUri: string): Promise<string> {
     const headers: HeadersInit = {
       'x-audio-type': audioType,
       'x-platform': Platform.OS, // Pass platform info (ios or android)
+      'x-language': language, // Pass selected language for speech-to-text
       'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
     };
     
@@ -774,6 +776,7 @@ interface FlippableFlashcardProps {
   language: string;
   deckID: string;
   isAIDeckParam: string;
+  voiceLanguage: string;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -814,7 +817,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     updateDeckCompletionDate,
     startFlashcardTimer,
     retryDifficultParam,
-    language
+    language,
+    voiceLanguage
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -2069,7 +2073,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       if (recordedAudioUri) {
                         try {
                           console.log('🤖 AI Chat button pressed - starting transcription...');
-                          const transcript = await transcribeAudio(recordedAudioUri);
+                          const transcript = await transcribeAudio(recordedAudioUri, voiceLanguage);
                           console.log('🎯 Final transcribed text:', transcript);
                         } catch (error) {
                           console.error('❌ Transcription failed:', error);
@@ -3393,6 +3397,7 @@ export default function FlashcardViewPage() {
               language={language}
               deckID={deckID as string}
               isAIDeckParam={isAIDeckParam as string}
+              voiceLanguage={voiceLanguage}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>

@@ -388,6 +388,7 @@ export const strings: Record<string, any> = {
     appSettingsPage: {
       title: 'App Settings',
       language: 'Language',
+      selectVoiceLanguage: 'Select Voice Language',
       languages: {
         english: 'English',
         chinese: '中文',
@@ -1538,6 +1539,7 @@ export const strings: Record<string, any> = {
     appSettingsPage: {
       title: '应用设置',
       language: '语言',
+      selectVoiceLanguage: '选择语音语言',
       languages: {
         english: 'English',
         chinese: '中文',

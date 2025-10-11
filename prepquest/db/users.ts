@@ -52,6 +52,40 @@ export async function getUserQuestionSettings(): Promise<{
       isVoiceRecordedEnabled: true,
     };
   }
+}
+
+// Fetch user's voice recording language for speech-to-text
+// NOTE: This is ONLY for speech-to-text language detection, NOT for app UI language
+// The app UI language is managed separately by LanguageContext
+export async function getUserVoiceLanguage(): Promise<string> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(
+      `SELECT language FROM users WHERE userID = ?`,
+      [userID]
+    ) as { language?: string } | null;
+    return result?.language || 'English';
+  } catch (error) {
+    console.error('Error fetching user voice language:', error);
+    return 'English';
+  }
+}
+
+// Update user's voice recording language for speech-to-text
+// NOTE: This is ONLY for speech-to-text language detection, NOT for app UI language
+// The app UI language is managed separately by LanguageContext
+export async function updateUserVoiceLanguage(language: string): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.runAsync(
+      `UPDATE users SET language = ? WHERE userID = ?`,
+      [language, userID]
+    );
+    return true;
+  } catch (error) {
+    console.error('Error updating user voice language:', error);
+    return false;
+  }
 } 
 
 // Create a new user in the database

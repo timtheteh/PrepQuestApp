@@ -45,6 +45,7 @@ import {
   updateDeckLastModifiedAfterFlashcardDeletion,
   type TransformedFlashcard,
 } from '@/db/decks';
+import { getUserVoiceLanguage } from '@/db/users';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
@@ -2456,6 +2457,27 @@ export default function FlashcardViewPage() {
   // Add voice recording state (lifted from FlippableFlashcard)
   const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
 
+  // Voice language state for speech-to-text detection
+  // NOTE: This is ONLY for speech-to-text language detection, NOT for app UI language
+  // The app UI language is managed separately by LanguageContext
+  const [voiceLanguage, setVoiceLanguage] = useState<string>('English');
+
+  // Load user's voice language from database (for speech-to-text detection)
+  useEffect(() => {
+    const loadVoiceLanguage = async () => {
+      const userLanguage = await getUserVoiceLanguage();
+      setVoiceLanguage(userLanguage);
+    };
+    loadVoiceLanguage();
+  }, []);
+
+  // Handler for voice language change (for speech-to-text detection only)
+  // TODO: Add functionality to use this language for speech-to-text detection
+  // Currently only updates local state, does not persist to database
+  const handleVoiceLanguageChange = (newLanguage: string) => {
+    setVoiceLanguage(newLanguage);
+  };
+
   // Load flashcards from database when component mounts
   useEffect(() => {
     const loadFlashcards = async () => {
@@ -3327,6 +3349,9 @@ export default function FlashcardViewPage() {
               isAudioButtonEnabled={isAudioButtonEnabled(isFlipped)} 
               isSpeechPlaying={isSpeechPlaying}
               isSpeechPaused={isSpeechPaused}
+              answerType={flashcards[currentIdx]?.flashcardAnswerType}
+              voiceLanguage={voiceLanguage}
+              onVoiceLanguageChange={handleVoiceLanguageChange}
             />
           </View>
           <View style={[styles.middleContentContainer, { top: getContentTopHeight(), bottom: 104 + getBottomSafeAreaHeight() }]}>

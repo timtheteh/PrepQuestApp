@@ -25,6 +25,7 @@ import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import * as Speech from 'expo-speech';
 import { useFocusEffect } from '@react-navigation/native';
+import { franc } from 'franc-min';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -332,6 +333,55 @@ const copyAssetToClipboard = async (imageSource: any) => {
   } catch (error) {
     console.error('Failed to copy image to clipboard:', error);
     return false;
+  }
+};
+
+// Helper function to detect language and map to Speech API language code
+const detectLanguageForSpeech = (text: string): string => {
+  try {
+    // Use franc to detect the language (returns ISO 639-3 code)
+    const detectedLang = franc(text, { minLength: 3 });
+    
+    // Map ISO 639-3 codes to Speech API language codes (BCP 47 format)
+    const languageMap: { [key: string]: string } = {
+      'eng': 'en-US',      // English
+      'spa': 'es-ES',      // Spanish
+      'fra': 'fr-FR',      // French
+      'deu': 'de-DE',      // German
+      'ita': 'it-IT',      // Italian
+      'por': 'pt-BR',      // Portuguese
+      'rus': 'ru-RU',      // Russian
+      'jpn': 'ja-JP',      // Japanese
+      'kor': 'ko-KR',      // Korean
+      'cmn': 'zh-CN',      // Chinese (Mandarin)
+      'ara': 'ar-SA',      // Arabic
+      'hin': 'hi-IN',      // Hindi
+      'ben': 'bn-BD',      // Bengali
+      'nld': 'nl-NL',      // Dutch
+      'pol': 'pl-PL',      // Polish
+      'tur': 'tr-TR',      // Turkish
+      'vie': 'vi-VN',      // Vietnamese
+      'tha': 'th-TH',      // Thai
+      'swe': 'sv-SE',      // Swedish
+      'dan': 'da-DK',      // Danish
+      'nor': 'nb-NO',      // Norwegian
+      'fin': 'fi-FI',      // Finnish
+      'ces': 'cs-CZ',      // Czech
+      'hun': 'hu-HU',      // Hungarian
+      'ron': 'ro-RO',      // Romanian
+      'ukr': 'uk-UA',      // Ukrainian
+      'ell': 'el-GR',      // Greek
+      'heb': 'he-IL',      // Hebrew
+      'ind': 'id-ID',      // Indonesian
+      'msa': 'ms-MY',      // Malay
+      'fil': 'fil-PH',     // Filipino
+    };
+    
+    // Return mapped language or default to English
+    return languageMap[detectedLang] || 'en-US';
+  } catch (error) {
+    console.warn('Language detection failed, defaulting to en-US:', error);
+    return 'en-US'; // Default to English if detection fails
   }
 };
 
@@ -2760,11 +2810,11 @@ export default function FlashcardViewPage() {
         const answerType = currentFlashcard?.flashcardAnswerType;
         const answer = currentFlashcard?.flashcardAnswer;
         if (answerType === 'text' && typeof answer === 'string') {
+          const detectedLanguage = detectLanguageForSpeech(answer);
           await Speech.speak(answer, {
-            language: 'en-US',
+            language: detectedLanguage,
             pitch: 1.1,
             rate: 0.6,
-            voice: 'com.apple.ttsbundle.Samantha-compact',
             onStart: () => {
               setIsSpeechPlaying(true);
               setIsSpeechPaused(false);
@@ -2794,11 +2844,11 @@ export default function FlashcardViewPage() {
               return `Option ${letter}: ${option.choice}`;
             }).join('. ');
           }
+          const detectedLanguage = detectLanguageForSpeech(mcqText);
           await Speech.speak(mcqText, {
-            language: 'en-US',
+            language: detectedLanguage,
             pitch: 1.1,
             rate: 0.6,
-            voice: 'com.apple.ttsbundle.Samantha-compact',
             onStart: () => {
               setIsSpeechPlaying(true);
               setIsSpeechPaused(false);
@@ -2821,11 +2871,11 @@ export default function FlashcardViewPage() {
         const questionType = currentFlashcard?.flashcardQnType;
         const question = currentFlashcard?.flashcardQn;
         if (questionType === 'text' && typeof question === 'string') {
+          const detectedLanguage = detectLanguageForSpeech(question);
           await Speech.speak(question, {
-            language: 'en-US',
+            language: detectedLanguage,
             pitch: 1.1,
             rate: 0.6,
-            voice: 'com.apple.ttsbundle.Samantha-compact',
             onStart: () => {
               setIsSpeechPlaying(true);
               setIsSpeechPaused(false);

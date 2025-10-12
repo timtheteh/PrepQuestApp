@@ -17,6 +17,8 @@ import { SmallCircleSelectButton } from '@/components/general/SmallCircleSelectB
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 import LottieView from 'lottie-react-native';
 import MicIcon from '@/assets/icons/flippableCard/micIcon.svg';
+import MicGrey from '@/assets/icons/flashcardView/micGrey.svg';
+import MicGreyDarkMode from '@/assets/icons/flashcardView/micGreyDarkMode.svg';
 import AIChatIcon from '@/assets/icons/flashcardView/AIChatIcon.svg';
 import AIChatIconGrey from '@/assets/icons/flashcardView/AIChatIconGrey.svg';
 import AIChatIconDarkMode from '@/assets/icons/flashcardView/AIChatIconDarkMode.svg';
@@ -802,7 +804,7 @@ const EvaluationToggle = React.memo(({ showDetailed, onToggle, theme, language }
           style={[
             styles.evaluationToggleSlider,
             { 
-              backgroundColor: Colors[theme].brandColor2,
+              backgroundColor: Colors[theme].background,
               transform: [{ translateX: slideAnim }]
             }
           ]}
@@ -812,7 +814,7 @@ const EvaluationToggle = React.memo(({ showDetailed, onToggle, theme, language }
             <Text style={[
               styles.evaluationToggleText, 
               { 
-                color: !showDetailed ? Colors[theme].background : Colors[theme].text,
+                color: Colors[theme].text,
                 fontFamily: Fonts.bodyMedium 
               }
             ]}>
@@ -823,7 +825,7 @@ const EvaluationToggle = React.memo(({ showDetailed, onToggle, theme, language }
             <Text style={[
               styles.evaluationToggleText, 
               { 
-                color: showDetailed ? Colors[theme].background : Colors[theme].text,
+                color: Colors[theme].text,
                 fontFamily: Fonts.bodyMedium 
               }
             ]}>
@@ -2124,15 +2126,18 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                           />
                         </>
                       ) : (aiEvaluationConcise || aiEvaluationDetailed) ? (
-                        <ScrollView 
-                          style={styles.evaluationScrollView}
-                          contentContainerStyle={styles.evaluationScrollViewContent}
-                          showsVerticalScrollIndicator={false}
-                        >
-                          <Text style={[styles.evaluationText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
-                            {showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise}
-                          </Text>
-                        </ScrollView>
+                        <>
+                          <ScrollView 
+                            style={styles.evaluationScrollView}
+                            contentContainerStyle={styles.evaluationScrollViewContent}
+                            showsVerticalScrollIndicator={false}
+                          >
+                            <Text style={[styles.evaluationText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
+                              {showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise}
+                            </Text>
+                          </ScrollView>
+                          <View style={styles.evaluationBottomSpacer} />
+                        </>
                       ) : (
                         <>
                           <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
@@ -2169,13 +2174,18 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                         shadowColor: Colors[theme].text,
                         ...(isFlipping ? { shadowOpacity: 0, elevation: 0 } : {})
                       },
-                      pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }],
+                      pressed && !isLoadingEvaluation && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }],
                       isRecording && [styles.recordingButton, { backgroundColor: Colors[theme].alertColor }]
                     ]}
-                    onPressIn={startRecording}
-                    onPressOut={stopRecording}
+                    onPressIn={isLoadingEvaluation ? undefined : startRecording}
+                    onPressOut={isLoadingEvaluation ? undefined : stopRecording}
+                    disabled={isLoadingEvaluation}
                   >
-                    <MicIcon width={36} height={36} />
+                    {isLoadingEvaluation ? (
+                      theme === 'dark' ? <MicGreyDarkMode width={36} height={36} /> : <MicGrey width={36} height={36} />
+                    ) : (
+                      <MicIcon width={36} height={36} />
+                    )}
                   </Pressable>
                   <Pressable 
                     style={({ pressed }) => [
@@ -2250,9 +2260,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                         }
                       }
                     }}
-                    disabled={!recordedAudioUri}
+                    disabled={!recordedAudioUri || isLoadingEvaluation}
                   >
-                    {recordedAudioUri ? <AIChatIcon width={36} height={36}/> : (theme === 'dark' ? <AIChatIconDarkMode width={36} height={36}/> : <AIChatIconGrey width={36} height={36} />)}
+                    {(recordedAudioUri && !isLoadingEvaluation) ? <AIChatIcon width={36} height={36}/> : (theme === 'dark' ? <AIChatIconDarkMode width={36} height={36}/> : <AIChatIconGrey width={36} height={36} />)}
                   </Pressable>
                 </View>
               )}
@@ -4139,6 +4149,10 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     ...(Platform.OS === 'android' && { lineHeight: 27 }),
   },
+  evaluationBottomSpacer: {
+    height: 70, // Height of audio buttons row
+    width: '100%',
+  },
   micButtonsContainer: {
     position: 'absolute',
     bottom: 0,
@@ -4182,8 +4196,9 @@ const styles = StyleSheet.create({
   },
   evaluationToggleContainer: {
     width: '100%',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
+    paddingLeft: 10,
   },
   evaluationToggleBackground: {
     width: 180,

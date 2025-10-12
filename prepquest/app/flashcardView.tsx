@@ -684,7 +684,7 @@ async function getAudioDataForUpload(uri: string, isLongAudio: boolean, question
 
 
 // Helper function to call speech-to-text edge function
-async function transcribeAudio(audioUri: string, language: string = 'English', questionContext?: string): Promise<{ transcript: string; evaluation: string | null }> {
+async function transcribeAudio(audioUri: string, language: string = 'English', questionContext?: string): Promise<{ transcript: string; evaluation: { concise: string | null; detailed: string | null } }> {
   try {
     console.log('🎤 Starting audio transcription...');
     console.log(`🌐 Language: ${language}`);
@@ -742,17 +742,23 @@ async function transcribeAudio(audioUri: string, language: string = 'English', q
       console.log('✅ Transcription successful!');
       console.log('📝 Transcribed text:', data.transcript);
       if (data?.evaluation) {
-        console.log('🤖 AI Evaluation received:', data.evaluation);
+        console.log('🤖 AI Evaluation received:');
+        if (data.evaluation.concise) {
+          console.log('  - Concise:', data.evaluation.concise);
+        }
+        if (data.evaluation.detailed) {
+          console.log('  - Detailed:', data.evaluation.detailed);
+        }
       }
       return {
         transcript: data.transcript,
-        evaluation: data.evaluation || null
+        evaluation: data.evaluation || { concise: null, detailed: null }
       };
     } else {
       console.log('⚠️ No transcript returned from speech-to-text function');
       return {
         transcript: 'No speech detected',
-        evaluation: null
+        evaluation: { concise: null, detailed: null }
       };
     }
     
@@ -761,6 +767,74 @@ async function transcribeAudio(audioUri: string, language: string = 'English', q
     throw error;
   }
 }
+
+// Evaluation Toggle Component
+interface EvaluationToggleProps {
+  showDetailed: boolean;
+  onToggle: () => void;
+  theme: 'light' | 'dark';
+  language: string;
+}
+
+const EvaluationToggle = React.memo(({ showDetailed, onToggle, theme, language }: EvaluationToggleProps) => {
+  const slideAnim = useRef(new Animated.Value(showDetailed ? 85 : 0)).current;
+
+  React.useEffect(() => {
+    Animated.spring(slideAnim, {
+      toValue: showDetailed ? 85 : 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 10,
+    }).start();
+  }, [showDetailed]);
+
+  return (
+    <View style={styles.evaluationToggleContainer}>
+      <TouchableOpacity 
+        style={[
+          styles.evaluationToggleBackground,
+          { backgroundColor: Colors[theme].unselectedText }
+        ]}
+        activeOpacity={0.8}
+        onPress={onToggle}
+      >
+        <Animated.View 
+          style={[
+            styles.evaluationToggleSlider,
+            { 
+              backgroundColor: Colors[theme].brandColor2,
+              transform: [{ translateX: slideAnim }]
+            }
+          ]}
+        />
+        <View style={styles.evaluationToggleLabelsContainer}>
+          <View style={styles.evaluationToggleLabel}>
+            <Text style={[
+              styles.evaluationToggleText, 
+              { 
+                color: !showDetailed ? Colors[theme].background : Colors[theme].text,
+                fontFamily: Fonts.bodyMedium 
+              }
+            ]}>
+              Concise
+            </Text>
+          </View>
+          <View style={styles.evaluationToggleLabel}>
+            <Text style={[
+              styles.evaluationToggleText, 
+              { 
+                color: showDetailed ? Colors[theme].background : Colors[theme].text,
+                fontFamily: Fonts.bodyMedium 
+              }
+            ]}>
+              Detailed
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+});
 
 // Move this above FlippableFlashcard:
 interface FlippableFlashcardProps {
@@ -802,9 +876,13 @@ interface FlippableFlashcardProps {
   deckID: string;
   isAIDeckParam: string;
   voiceLanguage: string;
-  aiEvaluation: string | null;
+  aiEvaluationConcise: string | null;
+  aiEvaluationDetailed: string | null;
+  showDetailedEvaluation: boolean;
+  setShowDetailedEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
   isLoadingEvaluation: boolean;
-  setAiEvaluation: React.Dispatch<React.SetStateAction<string | null>>;
+  setAiEvaluationConcise: React.Dispatch<React.SetStateAction<string | null>>;
+  setAiEvaluationDetailed: React.Dispatch<React.SetStateAction<string | null>>;
   setIsLoadingEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -848,9 +926,13 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     retryDifficultParam,
     language,
     voiceLanguage,
-    aiEvaluation,
+    aiEvaluationConcise,
+    aiEvaluationDetailed,
+    showDetailedEvaluation,
+    setShowDetailedEvaluation,
     isLoadingEvaluation,
-    setAiEvaluation,
+    setAiEvaluationConcise,
+    setAiEvaluationDetailed,
     setIsLoadingEvaluation
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
@@ -1235,7 +1317,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           setHasFlippedCard(false); // Reset flipped state for new card
           setHasSubmittedMCQ(false); // Reset MCQ submission state for new card
           setRecordedAudioUri(null); // Reset voice recording for new card
-          setAiEvaluation(null); // Reset AI evaluation for new card
+          setAiEvaluationConcise(null); // Reset AI evaluation for new card
+          setAiEvaluationDetailed(null); // Reset AI evaluation for new card
+          setShowDetailedEvaluation(false); // Reset toggle to concise view
           setIsLoadingEvaluation(false); // Reset loading state for new card
           flipAnim.setValue(0);
           frontOpacity.setValue(1);
@@ -1340,7 +1424,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   // Clean up audio on unmount or card change
   React.useEffect(() => {
     // Reset AI evaluation when card changes
-    setAiEvaluation(null);
+    setAiEvaluationConcise(null);
+    setAiEvaluationDetailed(null);
+    setShowDetailedEvaluation(false); // Reset to concise view
     
     return () => {
       if (audioSoundRef.current) {
@@ -2037,14 +2123,14 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                             style={styles.voiceAnswerAnimation}
                           />
                         </>
-                      ) : aiEvaluation ? (
+                      ) : (aiEvaluationConcise || aiEvaluationDetailed) ? (
                         <ScrollView 
                           style={styles.evaluationScrollView}
                           contentContainerStyle={styles.evaluationScrollViewContent}
                           showsVerticalScrollIndicator={false}
                         >
                           <Text style={[styles.evaluationText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
-                            {aiEvaluation}
+                            {showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise}
                           </Text>
                         </ScrollView>
                       ) : (
@@ -2144,17 +2230,21 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                           console.log('🎯 Final transcribed text:', response.transcript);
                           
                           // Set the AI evaluation to display on the flashcard
-                          if (response.evaluation) {
-                            setAiEvaluation(response.evaluation);
+                          if (response.evaluation && (response.evaluation.concise || response.evaluation.detailed)) {
+                            setAiEvaluationConcise(response.evaluation.concise);
+                            setAiEvaluationDetailed(response.evaluation.detailed);
+                            setShowDetailedEvaluation(false); // Default to concise view
                             console.log('✅ AI Evaluation set successfully');
                           } else {
-                            setAiEvaluation('No evaluation available');
+                            setAiEvaluationConcise('No evaluation available');
+                            setAiEvaluationDetailed('No evaluation available');
                             console.log('⚠️ No evaluation received');
                           }
                         } catch (error) {
                           console.error('❌ Transcription/Evaluation failed:', error);
                           Alert.alert('Error', 'Failed to transcribe audio and get evaluation. Please try again.');
-                          setAiEvaluation(null);
+                          setAiEvaluationConcise(null);
+                          setAiEvaluationDetailed(null);
                         } finally {
                           setIsLoadingEvaluation(false);
                         }
@@ -2258,6 +2348,14 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                     language={language}
                   />
                 </View>
+              )}
+              {flashcardAnswerType === 'voice' && (aiEvaluationConcise || aiEvaluationDetailed) && (
+                <EvaluationToggle 
+                  showDetailed={showDetailedEvaluation}
+                  onToggle={() => setShowDetailedEvaluation(!showDetailedEvaluation)}
+                  theme={theme}
+                  language={language}
+                />
               )}
             </Animated.View>
             
@@ -2541,7 +2639,9 @@ export default function FlashcardViewPage() {
   const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
 
   // AI evaluation state (lifted from FlippableFlashcard)
-  const [aiEvaluation, setAiEvaluation] = useState<string | null>(null);
+  const [aiEvaluationConcise, setAiEvaluationConcise] = useState<string | null>(null);
+  const [aiEvaluationDetailed, setAiEvaluationDetailed] = useState<string | null>(null);
+  const [showDetailedEvaluation, setShowDetailedEvaluation] = useState(false); // Toggle between concise and detailed
   const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(false);
 
   // Voice language state for speech-to-text detection
@@ -2817,7 +2917,9 @@ export default function FlashcardViewPage() {
       setHasFlippedCard(false);
       setHasSubmittedMCQ(false);
       setRecordedAudioUri(null);
-      setAiEvaluation(null);
+      setAiEvaluationConcise(null);
+      setAiEvaluationDetailed(null);
+      setShowDetailedEvaluation(false);
       setIsLoadingEvaluation(false);
 
       // Close the delete modal
@@ -3483,9 +3585,13 @@ export default function FlashcardViewPage() {
               deckID={deckID as string}
               isAIDeckParam={isAIDeckParam as string}
               voiceLanguage={voiceLanguage}
-              aiEvaluation={aiEvaluation}
+              aiEvaluationConcise={aiEvaluationConcise}
+              aiEvaluationDetailed={aiEvaluationDetailed}
+              showDetailedEvaluation={showDetailedEvaluation}
+              setShowDetailedEvaluation={setShowDetailedEvaluation}
               isLoadingEvaluation={isLoadingEvaluation}
-              setAiEvaluation={setAiEvaluation}
+              setAiEvaluationConcise={setAiEvaluationConcise}
+              setAiEvaluationDetailed={setAiEvaluationDetailed}
               setIsLoadingEvaluation={setIsLoadingEvaluation}
             />
           </View>
@@ -4073,5 +4179,44 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+  },
+  evaluationToggleContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  evaluationToggleBackground: {
+    width: 180,
+    height: 40,
+    borderRadius: 20,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  evaluationToggleSlider: {
+    position: 'absolute',
+    width: 90,
+    height: 36,
+    borderRadius: 18,
+    top: 2,
+    left: 2,
+    zIndex: 1,
+  },
+  evaluationToggleLabelsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    zIndex: 2,
+  },
+  evaluationToggleLabel: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  evaluationToggleText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 });  

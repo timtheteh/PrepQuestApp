@@ -27,7 +27,6 @@ import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import * as Speech from 'expo-speech';
 import { useFocusEffect } from '@react-navigation/native';
-import { francAll } from 'franc-min';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -339,125 +338,42 @@ const copyAssetToClipboard = async (imageSource: any) => {
   }
 };
 
-// Helper function to normalize text before language detection
-const normalizeText = (text: string): string => {
-  return text
-    .replace(/[0-9.,!?;:()'"""''\-]/g, '') // Remove numbers and punctuation
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .trim()
-    .toLowerCase();
-};
-
-// Helper function to detect language by script (non-Latin scripts)
-const guessScript = (text: string): string | null => {
+// Helper function to detect language by script (non-Latin scripts ONLY)
+// This is the primary and most reliable detection method
+const detectNonLatinScript = (text: string): string | null => {
+  // Non-Latin scripts - highly reliable detection via Unicode ranges
+  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN'; // Chinese (CJK Unified Ideographs)
   if (/[а-яё]/i.test(text)) return 'ru-RU'; // Cyrillic (Russian)
-  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN'; // Chinese characters
   if (/[ぁ-んァ-ン]/.test(text)) return 'ja-JP'; // Japanese (Hiragana/Katakana)
   if (/[가-힣]/.test(text)) return 'ko-KR'; // Korean (Hangul)
   if (/[\u0600-\u06FF]/.test(text)) return 'ar-SA'; // Arabic
   if (/[\u0E00-\u0E7F]/.test(text)) return 'th-TH'; // Thai
   if (/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Devanagari (Hindi)
+  if (/[\u0980-\u09FF]/.test(text)) return 'bn-BD'; // Bengali
   if (/[\u0590-\u05FF]/.test(text)) return 'he-IL'; // Hebrew
+  if (/[\u0A80-\u0AFF]/.test(text)) return 'gu-IN'; // Gujarati
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN'; // Tamil
+  
+  // If no non-Latin script detected, return null (will default to English)
   return null;
 };
 
-// Helper function to detect language using franc with confidence threshold
-// ONLY trusts franc for non-Latin script languages as a backup to script detection
-// All Latin-script text defaults to English to avoid false positives
-const detectLanguageWithConfidence = (text: string): string => {
-  const normalized = normalizeText(text);
-  
-  // // If text is too short after normalization, return undetermined
-  // if (normalized.length < 20) {
-  //   console.log('Text too short for reliable detection (<20 chars), returning und');
-  //   return 'und'; // undetermined
-  // }
-  
-  try {
-    const results = francAll(normalized);
-    if (results.length === 0) {
-      console.log('No language detected by franc, returning und');
-      return 'und';
-    }
-    
-    const [topLang, confidence] = results[0];
-    console.log(`Franc top result: ${topLang} (confidence: ${confidence})`);
-    
-    // List of ONLY non-Latin script languages we trust franc to detect
-    // This is a backup for script detection in case script regex didn't catch it
-    const trustedNonLatinLanguages = ['cmn', 'jpn', 'kor', 'ara', 'tha', 'hin', 'ben', 'heb', 'rus', 'ukr', 'vie'];
-    
-    // ONLY accept non-Latin languages with decent confidence
-    if (trustedNonLatinLanguages.includes(topLang) && confidence >= 0.7) {
-      console.log(`Non-Latin language detected with sufficient confidence: ${topLang}`);
-      return topLang;
-    }
-    
-    // NEVER trust franc for Latin-script languages (English, French, Spanish, Portuguese, etc.)
-    // These languages are too similar and franc frequently misidentifies them
-    console.log('Latin-script language or low confidence - returning und (will default to English)');
-    return 'und';
-  } catch (error) {
-    console.warn('Franc detection error:', error);
-    return 'und';
-  }
-};
-
 // Helper function to detect language and map to Speech API language code
+// Strategy: Only detect non-Latin languages, default all Latin languages to English
 const detectLanguageForSpeech = (text: string): string => {
   try {
-    // Map ISO 639-3 codes (franc) to Speech API language codes (BCP 47 format)
-    const francToLocale: { [key: string]: string } = {
-      'eng': 'en-US',      // English
-      'spa': 'es-ES',      // Spanish
-      'fra': 'fr-FR',      // French
-      'deu': 'de-DE',      // German
-      'ita': 'it-IT',      // Italian
-      'por': 'pt-PT',      // Portuguese
-      'rus': 'ru-RU',      // Russian
-      'jpn': 'ja-JP',      // Japanese
-      'kor': 'ko-KR',      // Korean
-      'cmn': 'zh-CN',      // Chinese (Mandarin)
-      'ara': 'ar-SA',      // Arabic
-      'hin': 'hi-IN',      // Hindi
-      'ben': 'bn-BD',      // Bengali
-      'nld': 'nl-NL',      // Dutch
-      'pol': 'pl-PL',      // Polish
-      'tur': 'tr-TR',      // Turkish
-      'vie': 'vi-VN',      // Vietnamese
-      'tha': 'th-TH',      // Thai
-      'swe': 'sv-SE',      // Swedish
-      'dan': 'da-DK',      // Danish
-      'nor': 'nb-NO',      // Norwegian
-      'fin': 'fi-FI',      // Finnish
-      'ces': 'cs-CZ',      // Czech
-      'hun': 'hu-HU',      // Hungarian
-      'ron': 'ro-RO',      // Romanian
-      'ukr': 'uk-UA',      // Ukrainian
-      'ell': 'el-GR',      // Greek
-      'heb': 'he-IL',      // Hebrew
-      'ind': 'id-ID',      // Indonesian
-      'msa': 'ms-MY',      // Malay
-      'fil': 'fil-PH',     // Filipino
-    };
+    // ONLY detection method: Check for non-Latin scripts
+    const nonLatinLanguage = detectNonLatinScript(text);
     
-    // Priority 1: Check for non-Latin scripts first (most reliable)
-    const scriptGuess = guessScript(text);
-    if (scriptGuess) {
-      console.log(`Script detection found: ${scriptGuess}`);
-      return scriptGuess;
+    if (nonLatinLanguage) {
+      console.log(`Non-Latin script detected: ${nonLatinLanguage}`);
+      return nonLatinLanguage;
     }
     
-    // Priority 2: Use franc with confidence threshold
-    const francCode = detectLanguageWithConfidence(text);
-    if (francCode !== 'und' && francToLocale[francCode]) {
-      const locale = francToLocale[francCode];
-      console.log(`Franc detection: ${francCode} → ${locale}`);
-      return locale;
-    }
-    
-    // Priority 3: Default to English for undetermined or unmapped languages
-    console.log('Defaulting to English (en-US)');
+    // ALL Latin-script text defaults to English
+    // This includes: English, French, Spanish, Portuguese, German, Italian, etc.
+    // Reason: franc cannot reliably distinguish between Latin-script languages
+    console.log('Latin script (or no special characters) detected - defaulting to English (en-US)');
     return 'en-US';
   } catch (error) {
     console.warn('Language detection failed, defaulting to en-US:', error);

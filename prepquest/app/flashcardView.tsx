@@ -340,48 +340,32 @@ const copyAssetToClipboard = async (imageSource: any) => {
 };
 
 // Helper function to detect language and map to Speech API language code
+// Limited to English and Chinese only to avoid misdetection
 const detectLanguageForSpeech = (text: string): string => {
   try {
-    // Use franc to detect the language (returns ISO 639-3 code)
-    const detectedLang = franc(text, { minLength: 3 });
+    // Check for Chinese characters (CJK Unified Ideographs range)
+    const chineseCharRegex = /[\u4e00-\u9fff]/;
+    const hasChineseChars = chineseCharRegex.test(text);
     
-    // Map ISO 639-3 codes to Speech API language codes (BCP 47 format)
-    const languageMap: { [key: string]: string } = {
-      'eng': 'en-US',      // English
-      'spa': 'es-ES',      // Spanish
-      'fra': 'fr-FR',      // French
-      'deu': 'de-DE',      // German
-      'ita': 'it-IT',      // Italian
-      'por': 'pt-BR',      // Portuguese
-      'rus': 'ru-RU',      // Russian
-      'jpn': 'ja-JP',      // Japanese
-      'kor': 'ko-KR',      // Korean
-      'cmn': 'zh-CN',      // Chinese (Mandarin)
-      'ara': 'ar-SA',      // Arabic
-      'hin': 'hi-IN',      // Hindi
-      'ben': 'bn-BD',      // Bengali
-      'nld': 'nl-NL',      // Dutch
-      'pol': 'pl-PL',      // Polish
-      'tur': 'tr-TR',      // Turkish
-      'vie': 'vi-VN',      // Vietnamese
-      'tha': 'th-TH',      // Thai
-      'swe': 'sv-SE',      // Swedish
-      'dan': 'da-DK',      // Danish
-      'nor': 'nb-NO',      // Norwegian
-      'fin': 'fi-FI',      // Finnish
-      'ces': 'cs-CZ',      // Czech
-      'hun': 'hu-HU',      // Hungarian
-      'ron': 'ro-RO',      // Romanian
-      'ukr': 'uk-UA',      // Ukrainian
-      'ell': 'el-GR',      // Greek
-      'heb': 'he-IL',      // Hebrew
-      'ind': 'id-ID',      // Indonesian
-      'msa': 'ms-MY',      // Malay
-      'fil': 'fil-PH',     // Filipino
-    };
+    // If text contains Chinese characters, use Chinese
+    if (hasChineseChars) {
+      console.log('Detected Chinese characters, using zh-CN');
+      return 'zh-CN';
+    }
     
-    // Return mapped language or default to English
-    return languageMap[detectedLang] || 'en-US';
+    // Use franc only to distinguish between English and Chinese
+    const detectedLang = franc(text, { minLength: 10 });
+    console.log(`Franc detected language code: ${detectedLang}`);
+    
+    // Only accept Chinese detection from franc, default everything else to English
+    if (detectedLang === 'cmn' || detectedLang === 'zho') {
+      console.log('Franc confirmed Chinese, using zh-CN');
+      return 'zh-CN';
+    }
+    
+    // Default to English for everything else (prevents false positives)
+    console.log('Defaulting to English (en-US)');
+    return 'en-US';
   } catch (error) {
     console.warn('Language detection failed, defaulting to en-US:', error);
     return 'en-US'; // Default to English if detection fails

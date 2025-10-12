@@ -27,6 +27,7 @@ import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import * as Speech from 'expo-speech';
 import { useFocusEffect } from '@react-navigation/native';
+import { francAll } from 'franc-min';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -338,46 +339,199 @@ const copyAssetToClipboard = async (imageSource: any) => {
   }
 };
 
+// Helper function to normalize text for franc detection
+const normalizeText = (text: string): string => {
+  return text
+    .replace(/[0-9.,!?;:()'"""''\-]/g, '') // Remove numbers and punctuation
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim()
+    .toLowerCase();
+};
+
 // Helper function to detect language by script (non-Latin scripts ONLY)
 // This is the primary and most reliable detection method
 const detectNonLatinScript = (text: string): string | null => {
-  // Non-Latin scripts - highly reliable detection via Unicode ranges
-  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN'; // Chinese (CJK Unified Ideographs)
-  if (/[а-яё]/i.test(text)) return 'ru-RU'; // Cyrillic (Russian)
-  if (/[ぁ-んァ-ン]/.test(text)) return 'ja-JP'; // Japanese (Hiragana/Katakana)
-  if (/[가-힣]/.test(text)) return 'ko-KR'; // Korean (Hangul)
-  if (/[\u0600-\u06FF]/.test(text)) return 'ar-SA'; // Arabic
-  if (/[\u0E00-\u0E7F]/.test(text)) return 'th-TH'; // Thai
-  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Devanagari (Hindi)
-  if (/[\u0980-\u09FF]/.test(text)) return 'bn-BD'; // Bengali
-  if (/[\u0590-\u05FF]/.test(text)) return 'he-IL'; // Hebrew
-  if (/[\u0A80-\u0AFF]/.test(text)) return 'gu-IN'; // Gujarati
-  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN'; // Tamil
+  // CJK Scripts (East Asian)
+  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN'; // Chinese (Mandarin) - 885M
+  if (/[ぁ-んァ-ン]/.test(text)) return 'ja-JP'; // Japanese - 125M
+  if (/[가-힣]/.test(text)) return 'ko-KR'; // Korean - 75M
   
-  // If no non-Latin script detected, return null (will default to English)
+  // Cyrillic Scripts (Slavic & Central Asian)
+  if (/[а-яёіїєґўӯқғҳ]/i.test(text)) {
+    if (/[іїєґ]/i.test(text)) return 'uk-UA'; // Ukrainian - 41M
+    if (/[ўӯ]/i.test(text)) return 'be-BY'; // Belarusian - 10M
+    if (/[қғҳ]/i.test(text)) return 'kk-KZ'; // Kazakh - 8M
+    // Note: Bulgarian (9M) uses standard Cyrillic → defaults to Russian (acceptable)
+    // Serbian Cyrillic (21M), Uzbek Cyrillic (18M), Azerbaijani Cyrillic (14M), Bosnian Cyrillic (21M)
+    // all use standard Cyrillic and will default to Russian
+    return 'ru-RU'; // Russian - 288M (default for standard Cyrillic)
+  }
+  
+  // Arabic & Perso-Arabic Scripts
+  if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) {
+    // Covers: Arabic (280M), Urdu (54M), Persian (33M), Kurdish (20M), Pashto (10M)
+    return 'ar-SA'; // Default to Standard Arabic
+  }
+  
+  // South Asian Scripts (Indic)
+  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Devanagari: Hindi (182M), Marathi (65M), Nepali (16M), Maithili (35M), Magahi (11M)
+  if (/[\u0980-\u09FF]/.test(text)) return 'bn-BD'; // Bengali - 196M
+  if (/[\u0A80-\u0AFF]/.test(text)) return 'gu-IN'; // Gujarati - 44M
+  if (/[\u0A00-\u0A7F]/.test(text)) return 'pa-IN'; // Gurmukhi (Punjabi) - 26M
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN'; // Tamil - 62M
+  if (/[\u0C00-\u0C7F]/.test(text)) return 'te-IN'; // Telugu - 73M
+  if (/[\u0C80-\u0CFF]/.test(text)) return 'kn-IN'; // Kannada - 38M
+  if (/[\u0D00-\u0D7F]/.test(text)) return 'ml-IN'; // Malayalam - 34M
+  if (/[\u0D80-\u0DFF]/.test(text)) return 'si-LK'; // Sinhala - 13M
+  
+  // Southeast Asian Scripts
+  if (/[\u0E00-\u0E7F]/.test(text)) return 'th-TH'; // Thai - 21M
+  if (/[\u1000-\u109F]/.test(text)) return 'my-MM'; // Burmese - 31M
+  if (/[\uA980-\uA9DF]/.test(text)) return 'jv-ID'; // Javanese (Javanese script) - 76M
+  if (/[\u1B80-\u1BBF]/.test(text)) return 'su-ID'; // Sundanese (Sundanese script) - 27M
+  
+  // Other Scripts
+  if (/[\u0370-\u03FF]/.test(text)) return 'el-GR'; // Greek - 12M
+  if (/[\u0590-\u05FF]/.test(text)) return 'he-IL'; // Hebrew
+  if (/[\u1200-\u137F]/.test(text)) return 'am-ET'; // Ethiopic (Amharic) - 23M
+  
+  // If no non-Latin script detected, return null
   return null;
 };
 
+// Helper function to detect Latin-script language using franc (only for longer text)
+const detectLatinLanguage = (text: string): string | null => {
+  const normalized = normalizeText(text);
+  
+  // For short text, don't even try - too unreliable
+  if (normalized.length < 50) {
+    console.log(`Text too short (${normalized.length} chars) for reliable Latin language detection`);
+    return null; // Will default to English
+  }
+  
+  try {
+    const results = francAll(normalized);
+    if (results.length === 0) {
+      console.log('No language detected by franc');
+      return null;
+    }
+    
+    const [topLang, confidence] = results[0];
+    console.log(`Franc result: ${topLang} (confidence: ${confidence}, text length: ${normalized.length})`);
+    
+    // Map of franc codes to BCP-47 locales for Latin-script languages
+    const latinLanguageMap: { [key: string]: string } = {
+      // Major European languages
+      'eng': 'en-US',      // English - 322M
+      'spa': 'es-ES',      // Spanish - 332M
+      'por': 'pt-PT',      // Portuguese - 182M
+      'fra': 'fr-FR',      // French - 124M
+      'deu': 'de-DE',      // German - 121M
+      'ita': 'it-IT',      // Italian - 63M
+      'nld': 'nl-NL',      // Dutch - 21M
+      'pol': 'pl-PL',      // Polish - 44M
+      'ron': 'ro-RO',      // Romanian - 26M
+      'hun': 'hu-HU',      // Hungarian - 15M
+      'ces': 'cs-CZ',      // Czech - 12M
+      'swe': 'sv-SE',      // Swedish - 9M
+      'dan': 'da-DK',      // Danish
+      'nor': 'nb-NO',      // Norwegian
+      'fin': 'fi-FI',      // Finnish
+      'slk': 'sk-SK',      // Slovak
+      'slv': 'sl-SI',      // Slovenian
+      'hrv': 'hr-HR',      // Croatian - 21M
+      'bos': 'bs-BA',      // Bosnian (Latin) - 21M
+      'srp': 'sr-RS',      // Serbian (Latin) - 21M
+      'est': 'et-EE',      // Estonian
+      'lav': 'lv-LV',      // Latvian
+      'lit': 'lt-LT',      // Lithuanian
+      'isl': 'is-IS',      // Icelandic
+      'sqi': 'sq-AL',      // Albanian
+      'cat': 'ca-ES',      // Catalan
+      'eus': 'eu-ES',      // Basque
+      'glg': 'gl-ES',      // Galician
+      'cym': 'cy-GB',      // Welsh
+      'afr': 'af-ZA',      // Afrikaans
+      
+      // Asian Latin-script languages
+      'ind': 'id-ID',      // Indonesian - 140M
+      'vie': 'vi-VN',      // Vietnamese - 67M
+      'tgl': 'fil-PH',     // Tagalog - 15M
+      'jav': 'jv-ID',      // Javanese (Latin) - 76M
+      'zlm': 'ms-MY',      // Malay (Latin) - 18M
+      'sun': 'su-ID',      // Sundanese - 27M
+      'ceb': 'en-US',      // Cebuano - 15M (no specific TTS)
+      'ilo': 'en-US',      // Iloko - 8M (no specific TTS)
+      'mad': 'en-US',      // Madurese - 10M (no specific TTS)
+      
+      // Turkic Latin-script languages
+      'tur': 'tr-TR',      // Turkish - 59M
+      'uzn': 'uz-UZ',      // Uzbek (Latin) - 18M
+      'azj': 'az-AZ',      // Azerbaijani (Latin) - 14M
+      
+      // African Latin-script languages
+      'swa': 'sw-KE',      // Swahili - 30M
+      'swh': 'sw-KE',      // Swahili (alt code) - 30M
+      'hau': 'ha-NG',      // Hausa - 22M
+      'yor': 'yo-NG',      // Yoruba - 20M
+      'ibo': 'ig-NG',      // Igbo - 17M
+      'fuv': 'en-US',      // Fulfulde - 22M (no specific TTS)
+      'zul': 'zu-ZA',      // Zulu - 9M
+      'som': 'so-SO',      // Somali - 8M
+      'kin': 'rw-RW',      // Kinyarwanda - 9M
+      'run': 'en-US',      // Rundi - 11M (no specific TTS)
+      'nya': 'en-US',      // Nyanja - 10M (no specific TTS)
+      'lin': 'ln-CD',      // Lingala - 8M
+      
+      // Other Latin-script languages
+      'plt': 'en-US',      // Malagasy - 10M (no specific TTS)
+      'qug': 'es-ES',      // Quichua - 10M (use Spanish)
+      'hnj': 'en-US',      // Hmong Njua - 8M (no specific TTS)
+      'hms': 'en-US',      // Qiandong Miao - 8M (no specific TTS)
+      'zyb': 'zh-CN',      // Yongbei Zhuang - 10M (use Chinese as fallback)
+      'msa': 'ms-MY',      // Malay (alternative code)
+      'fil': 'fil-PH',     // Filipino (alternative to 'tgl')
+    };
+    
+    // Only trust franc for Latin languages with EXTREMELY high confidence and very long text
+    // Requirements are intentionally very strict to avoid false positives
+    if (latinLanguageMap[topLang] && confidence >= 0.98 && normalized.length >= 150) {
+      console.log(`Very high confidence Latin language: ${topLang} → ${latinLanguageMap[topLang]} (confidence: ${confidence}, length: ${normalized.length})`);
+      return latinLanguageMap[topLang];
+    }
+    
+    console.log('Insufficient confidence or text length for Latin language detection');
+    return null;
+  } catch (error) {
+    console.warn('Franc detection error:', error);
+    return null;
+  }
+};
+
 // Helper function to detect language and map to Speech API language code
-// Strategy: Only detect non-Latin languages, default all Latin languages to English
+// Strategy: Detect non-Latin languages reliably, use franc carefully for Latin languages
 const detectLanguageForSpeech = (text: string): string => {
   try {
-    // ONLY detection method: Check for non-Latin scripts
+    // Priority 1: Check for non-Latin scripts first (100% reliable)
     const nonLatinLanguage = detectNonLatinScript(text);
-    
     if (nonLatinLanguage) {
       console.log(`Non-Latin script detected: ${nonLatinLanguage}`);
       return nonLatinLanguage;
     }
     
-    // ALL Latin-script text defaults to English
-    // This includes: English, French, Spanish, Portuguese, German, Italian, etc.
-    // Reason: franc cannot reliably distinguish between Latin-script languages
-    console.log('Latin script (or no special characters) detected - defaulting to English (en-US)');
+    // Priority 2: For Latin scripts, try franc but ONLY if text is long enough
+    const latinLanguage = detectLatinLanguage(text);
+    if (latinLanguage) {
+      console.log(`Latin language detected: ${latinLanguage}`);
+      return latinLanguage;
+    }
+    
+    // Priority 3: Default to English for short Latin text or low confidence
+    console.log('Defaulting to English (en-US)');
     return 'en-US';
   } catch (error) {
     console.warn('Language detection failed, defaulting to en-US:', error);
-    return 'en-US'; // Default to English if detection fails
+    return 'en-US';
   }
 };
 

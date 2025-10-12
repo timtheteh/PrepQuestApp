@@ -2346,7 +2346,10 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
               {flashcardAnswerType === 'voice' && (aiEvaluationConcise || aiEvaluationDetailed) && (
                 <EvaluationToggle 
                   showDetailed={showDetailedEvaluation}
-                  onToggle={() => setShowDetailedEvaluation(!showDetailedEvaluation)}
+                  onToggle={() => {
+                    stopSpeech(); // Stop any playing/paused speech when switching modes
+                    setShowDetailedEvaluation(!showDetailedEvaluation);
+                  }}
                   theme={theme}
                   language={language}
                 />

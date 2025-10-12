@@ -3089,6 +3089,33 @@ export default function FlashcardViewPage() {
               setIsSpeechPaused(false);
             },
           });
+        } else if (answerType === 'voice' && (aiEvaluationConcise || aiEvaluationDetailed)) {
+          // Read the AI evaluation based on toggle state
+          const evaluationText = showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise;
+          if (evaluationText) {
+            const detectedLanguage = detectLanguageForSpeech(evaluationText);
+            await Speech.speak(evaluationText, {
+              language: detectedLanguage,
+              pitch: 1.1,
+              rate: 0.6,
+              onStart: () => {
+                setIsSpeechPlaying(true);
+                setIsSpeechPaused(false);
+              },
+              onDone: () => {
+                setIsSpeechPlaying(false);
+                setIsSpeechPaused(false);
+              },
+              onStopped: () => {
+                setIsSpeechPlaying(false);
+                setIsSpeechPaused(false);
+              },
+              onError: () => {
+                setIsSpeechPlaying(false);
+                setIsSpeechPaused(false);
+              },
+            });
+          }
         }
       } else {
         const questionType = currentFlashcard?.flashcardQnType;
@@ -3165,7 +3192,14 @@ export default function FlashcardViewPage() {
     if (isFlipped) {
       // Back side
       const answerType = currentFlashcard?.flashcardAnswerType;
-      return answerType === 'text' || answerType === 'mcq';
+      // Enable for text/MCQ, or voice with AI evaluation
+      if (answerType === 'text' || answerType === 'mcq') {
+        return true;
+      }
+      if (answerType === 'voice' && (aiEvaluationConcise || aiEvaluationDetailed)) {
+        return true;
+      }
+      return false;
     } else {
       // Front side
       const questionType = currentFlashcard?.flashcardQnType;

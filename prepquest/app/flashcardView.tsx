@@ -795,7 +795,7 @@ const EvaluationToggle = React.memo(({ showDetailed, onToggle, theme, language }
       <TouchableOpacity 
         style={[
           styles.evaluationToggleBackground,
-          { backgroundColor: Colors[theme].unselectedText }
+          { backgroundColor: theme === 'dark' ? Colors[theme].disabledIconBackgroundColor : Colors[theme].unselectedText }
         ]}
         activeOpacity={0.8}
         onPress={onToggle}

@@ -388,6 +388,7 @@ export const strings: Record<string, any> = {
     appSettingsPage: {
       title: 'App Settings',
       language: 'Language',
+      selectVoiceLanguage: 'Select Voice Language',
       languages: {
         english: 'English',
         chinese: '中文',
@@ -930,10 +931,16 @@ export const strings: Record<string, any> = {
       // Quiz stats progress indicator
       flashcardsCompleted: 'of flashcards completed',
       flashcardsCompletedChinese: '张卡片已完成',
-    // Time formatting
-    timeFormatMinutesSeconds: '{minutes}min {seconds}s',
-    timeFormatSeconds: '{seconds}s',
-  },
+      // Time formatting
+      timeFormatMinutesSeconds: '{minutes}min {seconds}s',
+      timeFormatSeconds: '{seconds}s',
+      // Toast messages for TTS
+      toastMessages: {
+        detectedUnsupportedLanguage: 'Detected unsupported language',
+        defaultingToEnglishInsufficientText: 'Defaulting to English due to insufficient text length (150 characters minimum)',
+        defaultingToEnglishLowConfidence: 'Defaulting to English due to low language detection confidence',
+      },
+    },
   // General UI components
   progressBar: {
     itemsUploaded: 'items uploaded',
@@ -1205,10 +1212,16 @@ export const strings: Record<string, any> = {
       // Quiz stats progress indicator
       flashcardsCompleted: '张卡片已完成',
       flashcardsCompletedChinese: '张卡片已完成',
-    // Time formatting
-    timeFormatMinutesSeconds: '{minutes}分{seconds}秒',
-    timeFormatSeconds: '{seconds}秒',
-  },
+      // Time formatting
+      timeFormatMinutesSeconds: '{minutes}分{seconds}秒',
+      timeFormatSeconds: '{seconds}秒',
+      // Toast messages for TTS
+      toastMessages: {
+        detectedUnsupportedLanguage: '检测到不支持的语言',
+        defaultingToEnglishInsufficientText: '由于文本长度不足（最少150个字符），默认使用英语',
+        defaultingToEnglishLowConfidence: '由于语言检测置信度较低，默认使用英语',
+      },
+    },
   // General UI components
   progressBar: {
     itemsUploaded: '项已上传',
@@ -1538,6 +1551,7 @@ export const strings: Record<string, any> = {
     appSettingsPage: {
       title: '应用设置',
       language: '语言',
+      selectVoiceLanguage: '选择语音语言',
       languages: {
         english: 'English',
         chinese: '中文',

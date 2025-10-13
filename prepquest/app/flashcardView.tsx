@@ -17,6 +17,8 @@ import { SmallCircleSelectButton } from '@/components/general/SmallCircleSelectB
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 import LottieView from 'lottie-react-native';
 import MicIcon from '@/assets/icons/flippableCard/micIcon.svg';
+import MicGrey from '@/assets/icons/flashcardView/micGrey.svg';
+import MicGreyDarkMode from '@/assets/icons/flashcardView/micGreyDarkMode.svg';
 import AIChatIcon from '@/assets/icons/flashcardView/AIChatIcon.svg';
 import AIChatIconGrey from '@/assets/icons/flashcardView/AIChatIconGrey.svg';
 import AIChatIconDarkMode from '@/assets/icons/flashcardView/AIChatIconDarkMode.svg';
@@ -25,6 +27,7 @@ import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import * as Speech from 'expo-speech';
 import { useFocusEffect } from '@react-navigation/native';
+import { francAll } from 'franc-min';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -44,11 +47,13 @@ import {
   updateDeckLastModifiedAfterFlashcardDeletion,
   type TransformedFlashcard,
 } from '@/db/decks';
+import { getUserVoiceLanguage } from '@/db/users';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import CountdownCircle from '@/components/general/CountdownCircle';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { Toast } from '@/components/general/Toast';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -335,6 +340,190 @@ const copyAssetToClipboard = async (imageSource: any) => {
   }
 };
 
+// Helper function to normalize text for franc detection
+const normalizeText = (text: string): string => {
+  return text
+    .replace(/[0-9.,!?;:()'"""''\-]/g, '') // Remove numbers and punctuation
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim()
+    .toLowerCase();
+};
+
+// Helper function to detect language by script (non-Latin scripts ONLY)
+// This is the primary and most reliable detection method
+const detectNonLatinScript = (text: string): string | null => {
+  // === East Asian Scripts ===
+  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN'; // Mandarin Chinese
+  if (/[ぁ-んァ-ン]/.test(text)) return 'ja-JP'; // Japanese
+  if (/[가-힣]/.test(text)) return 'ko-KR'; // Korean
+
+  // === Cyrillic Scripts ===
+  if (/[а-яёіїєґўқғҳҷ]/i.test(text)) {
+    if (/[іїєґ]/i.test(text)) return 'uk-UA'; // Ukrainian
+    if (/[ў]/i.test(text)) return 'be-BY'; // Belarusian
+    if (/[қғҳҷ]/i.test(text)) return 'kk-KZ'; // Kazakh
+    return 'ru-RU'; // Russian (default for Cyrillic)
+  }
+
+  // === Arabic & Perso-Arabic Scripts ===
+  if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) {
+    return 'ar-SA'; // Arabic (default)
+  }
+
+  // === Indic Scripts ===
+  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Hindi
+  if (/[\u0980-\u09FF]/.test(text)) return 'bn-BD'; // Bengali
+  if (/[\u0A00-\u0A7F]/.test(text)) return 'pa-IN'; // Punjabi (Gurmukhi)
+  if (/[\u0A80-\u0AFF]/.test(text)) return 'gu-IN'; // Gujarati
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN'; // Tamil
+  if (/[\u0C00-\u0C7F]/.test(text)) return 'te-IN'; // Telugu
+  if (/[\u0C80-\u0CFF]/.test(text)) return 'kn-IN'; // Kannada
+  if (/[\u0D00-\u0D7F]/.test(text)) return 'ml-IN'; // Malayalam
+  if (/[\u0D80-\u0DFF]/.test(text)) return 'si-LK'; // Sinhala
+
+  // === Southeast Asian Scripts ===
+  if (/[\u0E00-\u0E7F]/.test(text)) return 'th-TH'; // Thai
+  if (/[\u1000-\u109F]/.test(text)) return 'my-MM'; // Burmese
+  if (/[\uA980-\uA9DF]/.test(text)) return 'jv-ID'; // Javanese
+  if (/[\u1B80-\u1BBF]/.test(text)) return 'su-ID'; // Sundanese
+
+  // === Other Non-Latin Scripts ===
+  if (/[\u0370-\u03FF]/.test(text)) return 'el-GR'; // Greek
+  if (/[\u1200-\u137F]/.test(text)) return 'am-ET'; // Amharic
+
+  return null;
+};
+// Helper function to detect Latin-script language using franc (only for longer text)
+const detectLatinLanguage = (text: string): string | null => {
+  const normalized = normalizeText(text);
+  
+  // For short text, don't even try - too unreliable
+  if (normalized.length < 50) {
+    console.log(`Text too short (${normalized.length} chars) for reliable Latin language detection`);
+    return null; // Will default to English
+  }
+  
+  try {
+    const results = francAll(normalized);
+    if (results.length === 0) {
+      console.log('No language detected by franc');
+      return null;
+    }
+    
+    const [topLang, confidence] = results[0];
+    console.log(`Franc result: ${topLang} (confidence: ${confidence}, text length: ${normalized.length})`);
+    
+    // Map of franc-min ISO 639-3 codes → BCP-47 locales
+    const latinLanguageMap: Record<string, string> = {
+      // Indo-European (Latin)
+      eng: 'en-US',
+      spa: 'es-ES',
+      por: 'pt-PT',
+      fra: 'fr-FR',
+      deu: 'de-DE',
+      ita: 'it-IT',
+      nld: 'nl-NL',
+      pol: 'pl-PL',
+      ron: 'ro-RO',
+      hun: 'hu-HU',
+      ces: 'cs-CZ',
+      swe: 'sv-SE',
+      bos: 'bs-BA',
+      hrv: 'hr-HR',
+      srp: 'sr-RS',
+      
+      // South / Southeast / East Asia (Latin)
+      ind: 'id-ID',
+      vie: 'vi-VN',
+      jav: 'jv-ID',
+      sun: 'su-ID',
+      zlm: 'ms-MY',
+      tgl: 'fil-PH',
+      ceb: 'fil-PH',
+      mad: 'id-ID',
+      ilo: 'fil-PH',
+    
+      // Indo-Aryan
+      mar: 'mr-IN',
+      mai: 'mai-IN',
+      bho: 'bho-IN',
+      mag: 'mag-IN',
+    
+      // Turkic
+      tur: 'tr-TR',
+      uzn: 'uz-UZ',
+      azj: 'az-AZ',
+    
+      // African
+      swh: 'sw-KE',
+      hau: 'ha-NG',
+      yor: 'yo-NG',
+      ibo: 'ig-NG',
+      fuv: 'ff-NG',
+      kin: 'rw-RW',
+      run: 'rn-BI',
+      zul: 'zu-ZA',
+      som: 'so-SO',
+      lin: 'ln-CD',
+      plt: 'mg-MG',
+      nya: 'ny-MW',
+    
+      // Miscellaneous
+      qug: 'qu-EC',
+      hnj: 'hmn-US',
+      hms: 'hmn-US',
+      zyb: 'za-CN',
+    
+      // Missing from original (added)
+      skr: 'skr-PK',
+      npi: 'ne-NP',
+      bul: 'bg-BG',
+      koi: 'kv-RU',
+      pbu: 'ps-AF',
+    };
+
+    // Only trust franc for Latin languages with EXTREMELY high confidence and very long text
+    // Requirements are intentionally very strict to avoid false positives
+    if (latinLanguageMap[topLang] && confidence >= 0.98 && normalized.length >= 150) {
+      console.log(`Very high confidence Latin language: ${topLang} → ${latinLanguageMap[topLang]} (confidence: ${confidence}, length: ${normalized.length})`);
+      return latinLanguageMap[topLang];
+    }
+    
+    console.log('Insufficient confidence or text length for Latin language detection');
+    return null;
+  } catch (error) {
+    console.warn('Franc detection error:', error);
+    return null;
+  }
+};
+
+// Helper function to detect language and map to Speech API language code
+// Strategy: Detect non-Latin languages reliably, use franc carefully for Latin languages
+const detectLanguageForSpeech = (text: string): string => {
+  try {
+    // Priority 1: Check for non-Latin scripts first (100% reliable)
+    const nonLatinLanguage = detectNonLatinScript(text);
+    if (nonLatinLanguage) {
+      console.log(`Non-Latin script detected: ${nonLatinLanguage}`);
+      return nonLatinLanguage;
+    }
+    
+    // Priority 2: For Latin scripts, try franc but ONLY if text is long enough
+    const latinLanguage = detectLatinLanguage(text);
+    if (latinLanguage) {
+      console.log(`Latin language detected: ${latinLanguage}`);
+      return latinLanguage;
+    }
+    
+    // Priority 3: Default to English for short Latin text or low confidence
+    console.log('Defaulting to English (en-US)');
+    return 'en-US';
+  } catch (error) {
+    console.warn('Language detection failed, defaulting to en-US:', error);
+    return 'en-US';
+  }
+};
+
 const DIFFICULTY_TYPES = [
   { type: 'Again', color: '#F8696B' },
   { type: 'Hard', color: '#FA9473' },
@@ -559,6 +748,232 @@ async function playAudio(uri: any) {
   }
 }
 
+// Helper function to get audio duration
+async function getAudioDuration(uri: string): Promise<number> {
+  try {
+    // For Android AMR files, use file size estimation because Audio API can't read AMR duration correctly
+    if (Platform.OS === 'android' && uri.endsWith('.amr')) {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (fileInfo.exists && fileInfo.size) {
+        // AMR-WB bitrate is ~23.85 kbps = ~2981 bytes per second
+        // Add a small header overhead (~6 bytes for AMR header)
+        const estimatedSeconds = (fileInfo.size - 6) / 2981;
+        console.log(`📏 Audio duration (Android AMR estimated from ${fileInfo.size} bytes): ${estimatedSeconds.toFixed(2)} seconds`);
+        return estimatedSeconds;
+      }
+    }
+    
+    // For iOS WAV files, use Audio API
+    const { sound } = await Audio.Sound.createAsync({ uri });
+    const status = await sound.getStatusAsync();
+    if (status.isLoaded) {
+      const durationSeconds = status.durationMillis ? status.durationMillis / 1000 : 0;
+      await sound.unloadAsync();
+      console.log(`📏 Audio duration (from Audio API): ${durationSeconds.toFixed(2)} seconds`);
+      return durationSeconds;
+    }
+    await sound.unloadAsync();
+    return 0;
+  } catch (error) {
+    console.error('Error getting audio duration:', error);
+    return 0;
+  }
+}
+
+// Helper function to get audio data for upload (platform-specific handling)
+async function getAudioDataForUpload(uri: string, isLongAudio: boolean, questionContext?: string): Promise<{ data: Blob | FormData; contentType: string }> {
+  try {
+    console.log('🔄 Preparing audio data for upload...');
+    
+    if (Platform.OS === 'ios') {
+      // iOS: Read as base64 and create blob using fetch with data URI
+      const base64String = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const dataUri = `data:audio/wav;base64,${base64String}`;
+      const response = await fetch(dataUri);
+      const blob = await response.blob();
+      console.log(`✅ Audio blob created (iOS): ${blob.size} bytes`);
+      return { data: blob, contentType: 'audio/wav' };
+    } else {
+      // Android: Use FormData for both short and long audio
+      // FormData with file URI works for all sizes and React Native handles the file reading
+      const formData = new FormData();
+      formData.append('audio', {
+        uri: uri,
+        type: 'audio/amr-wb',
+        name: 'recording.amr',
+      } as any);
+      
+      // Add question context to FormData if provided
+      if (questionContext) {
+        formData.append('questionContext', questionContext);
+        console.log('📝 Question context added to FormData');
+      }
+      
+      console.log(`✅ Audio FormData created (Android ${isLongAudio ? 'long' : 'short'} audio) from URI: ${uri}`);
+      return { data: formData, contentType: 'multipart/form-data' };
+    }
+  } catch (error) {
+    console.error('Error preparing audio data:', error);
+    throw error;
+  }
+}
+
+
+// Helper function to call speech-to-text edge function
+async function transcribeAudio(audioUri: string, language: string = 'English', questionContext?: string): Promise<{ transcript: string; evaluation: { concise: string | null; detailed: string | null } }> {
+  try {
+    console.log('🎤 Starting audio transcription...');
+    console.log(`🌐 Language: ${language}`);
+    if (questionContext) {
+      console.log(`📝 Question context: ${questionContext.substring(0, 50)}...`);
+    }
+    
+    // Get audio duration
+    const duration = await getAudioDuration(audioUri);
+    console.log(`📏 Audio duration: ${duration} seconds`);
+    
+    // Determine if audio is short or long (threshold: 60 seconds)
+    const audioType = duration <= 60 ? 'short' : 'long';
+    const isLongAudio = audioType === 'long';
+    console.log(`🔤 Audio type: ${audioType}`);
+    
+    // Get audio data for upload (platform-specific)
+    const { data: audioData, contentType } = await getAudioDataForUpload(audioUri, isLongAudio, questionContext);
+    console.log(`📦 Audio data prepared for ${Platform.OS}`);
+    
+    // Call Supabase Edge Function using direct fetch
+    const headers: HeadersInit = {
+      'x-audio-type': audioType,
+      'x-platform': Platform.OS, // Pass platform info (ios or android)
+      'x-language': language, // Pass selected language for speech-to-text
+      'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+    };
+    
+    // For iOS, send question context as header (Android sends it via FormData)
+    if (Platform.OS === 'ios' && questionContext) {
+      headers['x-question-context'] = encodeURIComponent(questionContext);
+      console.log('📝 Question context added to headers (iOS)');
+    }
+    
+    // Set Content-Type for blob (iOS). For FormData (Android), let fetch set it automatically with boundary
+    if (contentType !== 'multipart/form-data') {
+      headers['Content-Type'] = contentType;
+    }
+    
+    const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/AIChatAPI`, {
+      method: 'POST',
+      headers: headers,
+      body: audioData as any,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Speech-to-text error:', response.status, errorText);
+      throw new Error(`Speech-to-text failed: ${response.status} ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data?.transcript) {
+      console.log('✅ Transcription successful!');
+      console.log('📝 Transcribed text:', data.transcript);
+      if (data?.evaluation) {
+        console.log('🤖 AI Evaluation received:');
+        if (data.evaluation.concise) {
+          console.log('  - Concise:', data.evaluation.concise);
+        }
+        if (data.evaluation.detailed) {
+          console.log('  - Detailed:', data.evaluation.detailed);
+        }
+      }
+      return {
+        transcript: data.transcript,
+        evaluation: data.evaluation || { concise: null, detailed: null }
+      };
+    } else {
+      console.log('⚠️ No transcript returned from speech-to-text function');
+      return {
+        transcript: 'No speech detected',
+        evaluation: { concise: null, detailed: null }
+      };
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in transcribeAudio:', error);
+    throw error;
+  }
+}
+
+// Evaluation Toggle Component
+interface EvaluationToggleProps {
+  showDetailed: boolean;
+  onToggle: () => void;
+  theme: 'light' | 'dark';
+  language: string;
+}
+
+const EvaluationToggle = React.memo(({ showDetailed, onToggle, theme, language }: EvaluationToggleProps) => {
+  const slideAnim = useRef(new Animated.Value(showDetailed ? 85 : 0)).current;
+
+  React.useEffect(() => {
+    Animated.spring(slideAnim, {
+      toValue: showDetailed ? 85 : 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 10,
+    }).start();
+  }, [showDetailed]);
+
+  return (
+    <View style={styles.evaluationToggleContainer}>
+      <TouchableOpacity 
+        style={[
+          styles.evaluationToggleBackground,
+          { backgroundColor: theme === 'dark' ? Colors[theme].disabledIconBackgroundColor : Colors[theme].unselectedText }
+        ]}
+        activeOpacity={0.8}
+        onPress={onToggle}
+      >
+        <Animated.View 
+          style={[
+            styles.evaluationToggleSlider,
+            { 
+              backgroundColor: Colors[theme].background,
+              transform: [{ translateX: slideAnim }]
+            }
+          ]}
+        />
+        <View style={styles.evaluationToggleLabelsContainer}>
+          <View style={styles.evaluationToggleLabel}>
+            <Text style={[
+              styles.evaluationToggleText, 
+              { 
+                color: Colors[theme].text,
+                fontFamily: Fonts.bodyMedium 
+              }
+            ]}>
+              Concise
+            </Text>
+          </View>
+          <View style={styles.evaluationToggleLabel}>
+            <Text style={[
+              styles.evaluationToggleText, 
+              { 
+                color: Colors[theme].text,
+                fontFamily: Fonts.bodyMedium 
+              }
+            ]}>
+              Detailed
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+});
+
 // Move this above FlippableFlashcard:
 interface FlippableFlashcardProps {
   currentIdx: number;
@@ -598,6 +1013,15 @@ interface FlippableFlashcardProps {
   language: string;
   deckID: string;
   isAIDeckParam: string;
+  voiceLanguage: string;
+  aiEvaluationConcise: string | null;
+  aiEvaluationDetailed: string | null;
+  showDetailedEvaluation: boolean;
+  setShowDetailedEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
+  isLoadingEvaluation: boolean;
+  setAiEvaluationConcise: React.Dispatch<React.SetStateAction<string | null>>;
+  setAiEvaluationDetailed: React.Dispatch<React.SetStateAction<string | null>>;
+  setIsLoadingEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -638,7 +1062,16 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     updateDeckCompletionDate,
     startFlashcardTimer,
     retryDifficultParam,
-    language
+    language,
+    voiceLanguage,
+    aiEvaluationConcise,
+    aiEvaluationDetailed,
+    showDetailedEvaluation,
+    setShowDetailedEvaluation,
+    isLoadingEvaluation,
+    setAiEvaluationConcise,
+    setAiEvaluationDetailed,
+    setIsLoadingEvaluation
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -1022,6 +1455,10 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           setHasFlippedCard(false); // Reset flipped state for new card
           setHasSubmittedMCQ(false); // Reset MCQ submission state for new card
           setRecordedAudioUri(null); // Reset voice recording for new card
+          setAiEvaluationConcise(null); // Reset AI evaluation for new card
+          setAiEvaluationDetailed(null); // Reset AI evaluation for new card
+          setShowDetailedEvaluation(false); // Reset toggle to concise view
+          setIsLoadingEvaluation(false); // Reset loading state for new card
           flipAnim.setValue(0);
           frontOpacity.setValue(1);
           backOpacity.setValue(0);
@@ -1124,6 +1561,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
 
   // Clean up audio on unmount or card change
   React.useEffect(() => {
+    // Reset AI evaluation when card changes
+    setAiEvaluationConcise(null);
+    setAiEvaluationDetailed(null);
+    setShowDetailedEvaluation(false); // Reset to concise view
+    
     return () => {
       if (audioSoundRef.current) {
         audioSoundRef.current.unloadAsync();
@@ -1141,9 +1583,31 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         playsInSilentModeIOS: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const { recording } = await Audio.Recording.createAsync({
+        android: {
+          extension: '.amr',
+          outputFormat: Audio.AndroidOutputFormat.AMR_WB,
+          audioEncoder: Audio.AndroidAudioEncoder.AMR_WB,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 23850,
+        },
+        ios: {
+          extension: '.wav',
+          outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/wav',
+          bitsPerSecond: 128000,
+        },
+      });
       recordingRef.current = recording;
       setIsRecording(true);
     } catch (err) {
@@ -1785,17 +2249,46 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                 <View style={styles.voiceAnswerContainer}>
                   {!isRecording ? (
                     <>
-                      <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
-                        {recordedAudioUri ? 
-                        strings[language].flashcardViewPage.greatAnswerReplayOrFeedback : 
-                        strings[language].flashcardViewPage.recordAnswerGetFeedback}
-                      </Text>
-                      <LottieView
-                        source={theme === 'dark' ? require('@/assets/animations/DownArrowAnimationDarkMode.json') : require('@/assets/animations/DownArrowAnimation.json')}
-                        autoPlay
-                        loop
-                        style={styles.voiceAnswerAnimation}
-                      />
+                      {isLoadingEvaluation ? (
+                        <>
+                          <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                            Evaluating your answer...
+                          </Text>
+                          <LottieView
+                            source={require('@/assets/animations/LoadingAnimation2.json')}
+                            autoPlay
+                            loop
+                            style={styles.voiceAnswerAnimation}
+                          />
+                        </>
+                      ) : (aiEvaluationConcise || aiEvaluationDetailed) ? (
+                        <>
+                          <ScrollView 
+                            style={styles.evaluationScrollView}
+                            contentContainerStyle={styles.evaluationScrollViewContent}
+                            showsVerticalScrollIndicator={false}
+                          >
+                            <Text style={[styles.evaluationText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
+                              {showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise}
+                            </Text>
+                          </ScrollView>
+                          <View style={styles.evaluationBottomSpacer} />
+                        </>
+                      ) : (
+                        <>
+                          <Text style={[styles.voiceAnswerText, { color: Colors[theme].unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                            {recordedAudioUri ? 
+                            strings[language].flashcardViewPage.greatAnswerReplayOrFeedback : 
+                            strings[language].flashcardViewPage.recordAnswerGetFeedback}
+                          </Text>
+                          <LottieView
+                            source={theme === 'dark' ? require('@/assets/animations/DownArrowAnimationDarkMode.json') : require('@/assets/animations/DownArrowAnimation.json')}
+                            autoPlay
+                            loop
+                            style={styles.voiceAnswerAnimation}
+                          />
+                        </>
+                      )}
                     </>
                   ) : (
                     <LottieView
@@ -1817,13 +2310,18 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                         shadowColor: Colors[theme].text,
                         ...(isFlipping ? { shadowOpacity: 0, elevation: 0 } : {})
                       },
-                      pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }],
+                      pressed && !isLoadingEvaluation && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }],
                       isRecording && [styles.recordingButton, { backgroundColor: Colors[theme].alertColor }]
                     ]}
-                    onPressIn={startRecording}
-                    onPressOut={stopRecording}
+                    onPressIn={isLoadingEvaluation ? undefined : startRecording}
+                    onPressOut={isLoadingEvaluation ? undefined : stopRecording}
+                    disabled={isLoadingEvaluation}
                   >
-                    <MicIcon width={36} height={36} />
+                    {isLoadingEvaluation ? (
+                      theme === 'dark' ? <MicGreyDarkMode width={36} height={36} /> : <MicGrey width={36} height={36} />
+                    ) : (
+                      <MicIcon width={36} height={36} />
+                    )}
                   </Pressable>
                   <Pressable 
                     style={({ pressed }) => [
@@ -1867,11 +2365,40 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
-                    onPress={() => {
+                    onPress={async () => {
+                      if (recordedAudioUri) {
+                        try {
+                          console.log('🤖 AI Chat button pressed - starting transcription and evaluation...');
+                          setIsLoadingEvaluation(true);
+                          // Extract question context (text from flashcard question)
+                          const questionContext = flashcardQnType === 'text' && typeof flashcardQn === 'string' ? flashcardQn : undefined;
+                          const response = await transcribeAudio(recordedAudioUri, voiceLanguage, questionContext);
+                          console.log('🎯 Final transcribed text:', response.transcript);
+                          
+                          // Set the AI evaluation to display on the flashcard
+                          if (response.evaluation && (response.evaluation.concise || response.evaluation.detailed)) {
+                            setAiEvaluationConcise(response.evaluation.concise);
+                            setAiEvaluationDetailed(response.evaluation.detailed);
+                            setShowDetailedEvaluation(false); // Default to concise view
+                            console.log('✅ AI Evaluation set successfully');
+                          } else {
+                            setAiEvaluationConcise('No evaluation available');
+                            setAiEvaluationDetailed('No evaluation available');
+                            console.log('⚠️ No evaluation received');
+                          }
+                        } catch (error) {
+                          console.error('❌ Transcription/Evaluation failed:', error);
+                          Alert.alert('Error', 'Failed to transcribe audio and get evaluation. Please try again.');
+                          setAiEvaluationConcise(null);
+                          setAiEvaluationDetailed(null);
+                        } finally {
+                          setIsLoadingEvaluation(false);
+                        }
+                      }
                     }}
-                    disabled={!recordedAudioUri}
+                    disabled={!recordedAudioUri || isLoadingEvaluation}
                   >
-                    {recordedAudioUri ? <AIChatIcon width={36} height={36}/> : (theme === 'dark' ? <AIChatIconDarkMode width={36} height={36}/> : <AIChatIconGrey width={36} height={36} />)}
+                    {(recordedAudioUri && !isLoadingEvaluation) ? <AIChatIcon width={36} height={36}/> : (theme === 'dark' ? <AIChatIconDarkMode width={36} height={36}/> : <AIChatIconGrey width={36} height={36} />)}
                   </Pressable>
                 </View>
               )}
@@ -1967,6 +2494,17 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                     language={language}
                   />
                 </View>
+              )}
+              {flashcardAnswerType === 'voice' && (aiEvaluationConcise || aiEvaluationDetailed) && (
+                <EvaluationToggle 
+                  showDetailed={showDetailedEvaluation}
+                  onToggle={() => {
+                    stopSpeech(); // Stop any playing/paused speech when switching modes
+                    setShowDetailedEvaluation(!showDetailedEvaluation);
+                  }}
+                  theme={theme}
+                  language={language}
+                />
               )}
             </Animated.View>
             
@@ -2249,6 +2787,37 @@ export default function FlashcardViewPage() {
   // Add voice recording state (lifted from FlippableFlashcard)
   const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
 
+  // AI evaluation state (lifted from FlippableFlashcard)
+  const [aiEvaluationConcise, setAiEvaluationConcise] = useState<string | null>(null);
+  const [aiEvaluationDetailed, setAiEvaluationDetailed] = useState<string | null>(null);
+  const [showDetailedEvaluation, setShowDetailedEvaluation] = useState(false); // Toggle between concise and detailed
+  const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(false);
+
+  // Voice language state for speech-to-text detection
+  // NOTE: This is ONLY for speech-to-text language detection, NOT for app UI language
+  // The app UI language is managed separately by LanguageContext
+  const [voiceLanguage, setVoiceLanguage] = useState<string>('English');
+
+  // Toast state for unsupported language errors
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Load user's voice language from database (for speech-to-text detection)
+  useEffect(() => {
+    const loadVoiceLanguage = async () => {
+      const userLanguage = await getUserVoiceLanguage();
+      setVoiceLanguage(userLanguage);
+    };
+    loadVoiceLanguage();
+  }, []);
+
+  // Handler for voice language change (for speech-to-text detection only)
+  // TODO: Add functionality to use this language for speech-to-text detection
+  // Currently only updates local state, does not persist to database
+  const handleVoiceLanguageChange = (newLanguage: string) => {
+    setVoiceLanguage(newLanguage);
+  };
+
   // Load flashcards from database when component mounts
   useEffect(() => {
     const loadFlashcards = async () => {
@@ -2501,6 +3070,10 @@ export default function FlashcardViewPage() {
       setHasFlippedCard(false);
       setHasSubmittedMCQ(false);
       setRecordedAudioUri(null);
+      setAiEvaluationConcise(null);
+      setAiEvaluationDetailed(null);
+      setShowDetailedEvaluation(false);
+      setIsLoadingEvaluation(false);
 
       // Close the delete modal
     handleDismissDeleteModal();
@@ -2588,6 +3161,21 @@ export default function FlashcardViewPage() {
     }
   };
 
+  // Helper function to check if a language is supported by expo-speech
+  const checkLanguageSupport = async (languageCode: string): Promise<boolean> => {
+    try {
+      const availableVoices = await Speech.getAvailableVoicesAsync();
+      // Check if any voice supports the detected language
+      const isSupported = availableVoices.some(voice => 
+        voice.language.startsWith(languageCode.split('-')[0]) // Match language prefix (e.g., 'en' from 'en-US')
+      );
+      return isSupported;
+    } catch (error) {
+      console.error('Error checking language support:', error);
+      return false;
+    }
+  };
+
   const handleAudioPressTopBar = async () => {
     const currentFlashcard = flashcards[currentIdx];
     try {
@@ -2603,11 +3191,46 @@ export default function FlashcardViewPage() {
         const answerType = currentFlashcard?.flashcardAnswerType;
         const answer = currentFlashcard?.flashcardAnswer;
         if (answerType === 'text' && typeof answer === 'string') {
+          const detectedLanguage = detectLanguageForSpeech(answer);
+          
+          // Check if the detected language is supported (highest priority)
+          const isSupported = await checkLanguageSupport(detectedLanguage);
+          if (!isSupported) {
+            console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+            setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+            setShowToast(true);
+            return; // Don't play audio
+          }
+          // Check if defaulting to English due to low confidence or short Latin text
+          else if (detectedLanguage === 'en-US') {
+            const hasNonLatinScript = detectNonLatinScript(answer);
+            const normalized = normalizeText(answer);
+            if (!hasNonLatinScript && normalized.length > 0) {
+              if (normalized.length >= 150) {
+                // Text is long enough, check if confidence was too low (medium priority)
+                const results = francAll(normalized);
+                if (results.length > 0) {
+                  const [topLang, confidence] = results[0];
+                  if (confidence < 0.98) {
+                    console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                    setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                    setShowToast(true);
+                  }
+                }
+              }
+              // else {
+              //   // Text too short (lowest priority) - toast commented out per user request
+              //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+              //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+              //   setShowToast(true);
+              // }
+            }
+          }
+          
           await Speech.speak(answer, {
-            language: 'en-US',
+            language: detectedLanguage,
             pitch: 1.1,
             rate: 0.6,
-            voice: 'com.apple.ttsbundle.Samantha-compact',
             onStart: () => {
               setIsSpeechPlaying(true);
               setIsSpeechPaused(false);
@@ -2637,11 +3260,46 @@ export default function FlashcardViewPage() {
               return `Option ${letter}: ${option.choice}`;
             }).join('. ');
           }
+          const detectedLanguage = detectLanguageForSpeech(mcqText);
+          
+          // Check if the detected language is supported (highest priority)
+          const isSupported = await checkLanguageSupport(detectedLanguage);
+          if (!isSupported) {
+            console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+            setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+            setShowToast(true);
+            return; // Don't play audio
+          }
+          // Check if defaulting to English due to low confidence or short Latin text
+          else if (detectedLanguage === 'en-US') {
+            const hasNonLatinScript = detectNonLatinScript(mcqText);
+            const normalized = normalizeText(mcqText);
+            if (!hasNonLatinScript && normalized.length > 0) {
+              if (normalized.length >= 150) {
+                // Text is long enough, check if confidence was too low (medium priority)
+                const results = francAll(normalized);
+                if (results.length > 0) {
+                  const [topLang, confidence] = results[0];
+                  if (confidence < 0.98) {
+                    console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                    setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                    setShowToast(true);
+                  }
+                }
+              }
+              // else {
+              //   // Text too short (lowest priority) - toast commented out per user request
+              //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+              //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+              //   setShowToast(true);
+              // }
+            }
+          }
+          
           await Speech.speak(mcqText, {
-            language: 'en-US',
+            language: detectedLanguage,
             pitch: 1.1,
             rate: 0.6,
-            voice: 'com.apple.ttsbundle.Samantha-compact',
             onStart: () => {
               setIsSpeechPlaying(true);
               setIsSpeechPaused(false);
@@ -2659,16 +3317,113 @@ export default function FlashcardViewPage() {
               setIsSpeechPaused(false);
             },
           });
+        } else if (answerType === 'voice' && (aiEvaluationConcise || aiEvaluationDetailed)) {
+          // Read the AI evaluation based on toggle state
+          const evaluationText = showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise;
+          if (evaluationText) {
+            const detectedLanguage = detectLanguageForSpeech(evaluationText);
+            
+            // Check if the detected language is supported (highest priority)
+            const isSupported = await checkLanguageSupport(detectedLanguage);
+            if (!isSupported) {
+              console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+              setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+              setShowToast(true);
+              return; // Don't play audio
+            }
+            // Check if defaulting to English due to low confidence or short Latin text
+            else if (detectedLanguage === 'en-US') {
+              const hasNonLatinScript = detectNonLatinScript(evaluationText);
+              const normalized = normalizeText(evaluationText);
+              if (!hasNonLatinScript && normalized.length > 0) {
+                if (normalized.length >= 150) {
+                  // Text is long enough, check if confidence was too low (medium priority)
+                  const results = francAll(normalized);
+                  if (results.length > 0) {
+                    const [topLang, confidence] = results[0];
+                    if (confidence < 0.98) {
+                      console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                      setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                      setShowToast(true);
+                    }
+                  }
+                }
+                // else {
+                //   // Text too short (lowest priority) - toast commented out per user request
+                //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+                //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+                //   setShowToast(true);
+                // }
+              }
+            }
+            
+            await Speech.speak(evaluationText, {
+              language: detectedLanguage,
+              pitch: 1.1,
+              rate: 0.6,
+              onStart: () => {
+                setIsSpeechPlaying(true);
+                setIsSpeechPaused(false);
+              },
+              onDone: () => {
+                setIsSpeechPlaying(false);
+                setIsSpeechPaused(false);
+              },
+              onStopped: () => {
+                setIsSpeechPlaying(false);
+                setIsSpeechPaused(false);
+              },
+              onError: () => {
+                setIsSpeechPlaying(false);
+                setIsSpeechPaused(false);
+              },
+            });
+          }
         }
       } else {
         const questionType = currentFlashcard?.flashcardQnType;
         const question = currentFlashcard?.flashcardQn;
         if (questionType === 'text' && typeof question === 'string') {
+          const detectedLanguage = detectLanguageForSpeech(question);
+          
+          // Check if the detected language is supported (highest priority)
+          const isSupported = await checkLanguageSupport(detectedLanguage);
+          if (!isSupported) {
+            console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+            setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+            setShowToast(true);
+            return; // Don't play audio
+          }
+          // Check if defaulting to English due to low confidence or short Latin text
+          else if (detectedLanguage === 'en-US') {
+            const hasNonLatinScript = detectNonLatinScript(question);
+            const normalized = normalizeText(question);
+            if (!hasNonLatinScript && normalized.length > 0) {
+              if (normalized.length >= 150) {
+                // Text is long enough, check if confidence was too low (medium priority)
+                const results = francAll(normalized);
+                if (results.length > 0) {
+                  const [topLang, confidence] = results[0];
+                  if (confidence < 0.98) {
+                    console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                    setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                    setShowToast(true);
+                  }
+                }
+              } 
+              // else {
+              //   // Text too short (lowest priority)
+              //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+              //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+              //   setShowToast(true);
+              // }
+            }
+          }
+          
           await Speech.speak(question, {
-            language: 'en-US',
+            language: detectedLanguage,
             pitch: 1.1,
             rate: 0.6,
-            voice: 'com.apple.ttsbundle.Samantha-compact',
             onStart: () => {
               setIsSpeechPlaying(true);
               setIsSpeechPaused(false);
@@ -2735,7 +3490,14 @@ export default function FlashcardViewPage() {
     if (isFlipped) {
       // Back side
       const answerType = currentFlashcard?.flashcardAnswerType;
-      return answerType === 'text' || answerType === 'mcq';
+      // Enable for text/MCQ, or voice with AI evaluation
+      if (answerType === 'text' || answerType === 'mcq') {
+        return true;
+      }
+      if (answerType === 'voice' && (aiEvaluationConcise || aiEvaluationDetailed)) {
+        return true;
+      }
+      return false;
     } else {
       // Front side
       const questionType = currentFlashcard?.flashcardQnType;
@@ -3120,6 +3882,9 @@ export default function FlashcardViewPage() {
               isAudioButtonEnabled={isAudioButtonEnabled(isFlipped)} 
               isSpeechPlaying={isSpeechPlaying}
               isSpeechPaused={isSpeechPaused}
+              answerType={flashcards[currentIdx]?.flashcardAnswerType}
+              voiceLanguage={voiceLanguage}
+              onVoiceLanguageChange={handleVoiceLanguageChange}
             />
           </View>
           <View style={[styles.middleContentContainer, { top: getContentTopHeight(), bottom: 104 + getBottomSafeAreaHeight() }]}>
@@ -3161,6 +3926,15 @@ export default function FlashcardViewPage() {
               language={language}
               deckID={deckID as string}
               isAIDeckParam={isAIDeckParam as string}
+              voiceLanguage={voiceLanguage}
+              aiEvaluationConcise={aiEvaluationConcise}
+              aiEvaluationDetailed={aiEvaluationDetailed}
+              showDetailedEvaluation={showDetailedEvaluation}
+              setShowDetailedEvaluation={setShowDetailedEvaluation}
+              isLoadingEvaluation={isLoadingEvaluation}
+              setAiEvaluationConcise={setAiEvaluationConcise}
+              setAiEvaluationDetailed={setAiEvaluationDetailed}
+              setIsLoadingEvaluation={setIsLoadingEvaluation}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>
@@ -3350,6 +4124,15 @@ export default function FlashcardViewPage() {
 
       {/* In-app notifications */}
       <BackgroundTaskNotification />
+      
+      {/* Toast for unsupported language errors */}
+      <Toast 
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+        duration={3000}
+        backgroundColor={Colors[theme].alertColor}
+      />
     </View>
   )
   );
@@ -3691,6 +4474,26 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
   },
+  evaluationScrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  evaluationScrollViewContent: {
+    flexGrow: 1,
+    alignContent: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  evaluationText: {
+    fontSize: 22,
+    textAlign: 'center',
+    lineHeight: 28,
+    ...(Platform.OS === 'android' && { lineHeight: 27 }),
+  },
+  evaluationBottomSpacer: {
+    height: 70, // Height of audio buttons row
+    width: '100%',
+  },
   micButtonsContainer: {
     position: 'absolute',
     bottom: 0,
@@ -3731,5 +4534,45 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+  },
+  evaluationToggleContainer: {
+    width: '100%',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingLeft: 10,
+  },
+  evaluationToggleBackground: {
+    width: 180,
+    height: 40,
+    borderRadius: 20,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  evaluationToggleSlider: {
+    position: 'absolute',
+    width: 90,
+    height: 36,
+    borderRadius: 18,
+    top: 2,
+    left: 2,
+    zIndex: 1,
+  },
+  evaluationToggleLabelsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    zIndex: 2,
+  },
+  evaluationToggleLabel: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  evaluationToggleText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 });  

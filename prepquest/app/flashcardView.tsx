@@ -351,54 +351,47 @@ const normalizeText = (text: string): string => {
 // Helper function to detect language by script (non-Latin scripts ONLY)
 // This is the primary and most reliable detection method
 const detectNonLatinScript = (text: string): string | null => {
-  // CJK Scripts (East Asian)
-  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN'; // Chinese (Mandarin) - 885M
-  if (/[ぁ-んァ-ン]/.test(text)) return 'ja-JP'; // Japanese - 125M
-  if (/[가-힣]/.test(text)) return 'ko-KR'; // Korean - 75M
-  
-  // Cyrillic Scripts (Slavic & Central Asian)
-  if (/[а-яёіїєґўӯқғҳ]/i.test(text)) {
-    if (/[іїєґ]/i.test(text)) return 'uk-UA'; // Ukrainian - 41M
-    if (/[ўӯ]/i.test(text)) return 'be-BY'; // Belarusian - 10M
-    if (/[қғҳ]/i.test(text)) return 'kk-KZ'; // Kazakh - 8M
-    // Note: Bulgarian (9M) uses standard Cyrillic → defaults to Russian (acceptable)
-    // Serbian Cyrillic (21M), Uzbek Cyrillic (18M), Azerbaijani Cyrillic (14M), Bosnian Cyrillic (21M)
-    // all use standard Cyrillic and will default to Russian
-    return 'ru-RU'; // Russian - 288M (default for standard Cyrillic)
+  // === East Asian Scripts ===
+  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN'; // Mandarin Chinese
+  if (/[ぁ-んァ-ン]/.test(text)) return 'ja-JP'; // Japanese
+  if (/[가-힣]/.test(text)) return 'ko-KR'; // Korean
+
+  // === Cyrillic Scripts ===
+  if (/[а-яёіїєґўқғҳҷ]/i.test(text)) {
+    if (/[іїєґ]/i.test(text)) return 'uk-UA'; // Ukrainian
+    if (/[ў]/i.test(text)) return 'be-BY'; // Belarusian
+    if (/[қғҳҷ]/i.test(text)) return 'kk-KZ'; // Kazakh
+    return 'ru-RU'; // Russian (default for Cyrillic)
   }
-  
-  // Arabic & Perso-Arabic Scripts
+
+  // === Arabic & Perso-Arabic Scripts ===
   if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) {
-    // Covers: Arabic (280M), Urdu (54M), Persian (33M), Kurdish (20M), Pashto (10M)
-    return 'ar-SA'; // Default to Standard Arabic
+    return 'ar-SA'; // Arabic (default)
   }
-  
-  // South Asian Scripts (Indic)
-  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Devanagari: Hindi (182M), Marathi (65M), Nepali (16M), Maithili (35M), Magahi (11M)
-  if (/[\u0980-\u09FF]/.test(text)) return 'bn-BD'; // Bengali - 196M
-  if (/[\u0A80-\u0AFF]/.test(text)) return 'gu-IN'; // Gujarati - 44M
-  if (/[\u0A00-\u0A7F]/.test(text)) return 'pa-IN'; // Gurmukhi (Punjabi) - 26M
-  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN'; // Tamil - 62M
-  if (/[\u0C00-\u0C7F]/.test(text)) return 'te-IN'; // Telugu - 73M
-  if (/[\u0C80-\u0CFF]/.test(text)) return 'kn-IN'; // Kannada - 38M
-  if (/[\u0D00-\u0D7F]/.test(text)) return 'ml-IN'; // Malayalam - 34M
-  if (/[\u0D80-\u0DFF]/.test(text)) return 'si-LK'; // Sinhala - 13M
-  
-  // Southeast Asian Scripts
-  if (/[\u0E00-\u0E7F]/.test(text)) return 'th-TH'; // Thai - 21M
-  if (/[\u1000-\u109F]/.test(text)) return 'my-MM'; // Burmese - 31M
-  if (/[\uA980-\uA9DF]/.test(text)) return 'jv-ID'; // Javanese (Javanese script) - 76M
-  if (/[\u1B80-\u1BBF]/.test(text)) return 'su-ID'; // Sundanese (Sundanese script) - 27M
-  
-  // Other Scripts
-  if (/[\u0370-\u03FF]/.test(text)) return 'el-GR'; // Greek - 12M
-  if (/[\u0590-\u05FF]/.test(text)) return 'he-IL'; // Hebrew
-  if (/[\u1200-\u137F]/.test(text)) return 'am-ET'; // Ethiopic (Amharic) - 23M
-  
-  // If no non-Latin script detected, return null
+
+  // === Indic Scripts ===
+  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Hindi
+  if (/[\u0980-\u09FF]/.test(text)) return 'bn-BD'; // Bengali
+  if (/[\u0A00-\u0A7F]/.test(text)) return 'pa-IN'; // Punjabi (Gurmukhi)
+  if (/[\u0A80-\u0AFF]/.test(text)) return 'gu-IN'; // Gujarati
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN'; // Tamil
+  if (/[\u0C00-\u0C7F]/.test(text)) return 'te-IN'; // Telugu
+  if (/[\u0C80-\u0CFF]/.test(text)) return 'kn-IN'; // Kannada
+  if (/[\u0D00-\u0D7F]/.test(text)) return 'ml-IN'; // Malayalam
+  if (/[\u0D80-\u0DFF]/.test(text)) return 'si-LK'; // Sinhala
+
+  // === Southeast Asian Scripts ===
+  if (/[\u0E00-\u0E7F]/.test(text)) return 'th-TH'; // Thai
+  if (/[\u1000-\u109F]/.test(text)) return 'my-MM'; // Burmese
+  if (/[\uA980-\uA9DF]/.test(text)) return 'jv-ID'; // Javanese
+  if (/[\u1B80-\u1BBF]/.test(text)) return 'su-ID'; // Sundanese
+
+  // === Other Non-Latin Scripts ===
+  if (/[\u0370-\u03FF]/.test(text)) return 'el-GR'; // Greek
+  if (/[\u1200-\u137F]/.test(text)) return 'am-ET'; // Amharic
+
   return null;
 };
-
 // Helper function to detect Latin-script language using franc (only for longer text)
 const detectLatinLanguage = (text: string): string | null => {
   const normalized = normalizeText(text);
@@ -419,83 +412,78 @@ const detectLatinLanguage = (text: string): string | null => {
     const [topLang, confidence] = results[0];
     console.log(`Franc result: ${topLang} (confidence: ${confidence}, text length: ${normalized.length})`);
     
-    // Map of franc codes to BCP-47 locales for Latin-script languages
-    const latinLanguageMap: { [key: string]: string } = {
-      // Major European languages
-      'eng': 'en-US',      // English - 322M
-      'spa': 'es-ES',      // Spanish - 332M
-      'por': 'pt-PT',      // Portuguese - 182M
-      'fra': 'fr-FR',      // French - 124M
-      'deu': 'de-DE',      // German - 121M
-      'ita': 'it-IT',      // Italian - 63M
-      'nld': 'nl-NL',      // Dutch - 21M
-      'pol': 'pl-PL',      // Polish - 44M
-      'ron': 'ro-RO',      // Romanian - 26M
-      'hun': 'hu-HU',      // Hungarian - 15M
-      'ces': 'cs-CZ',      // Czech - 12M
-      'swe': 'sv-SE',      // Swedish - 9M
-      'dan': 'da-DK',      // Danish
-      'nor': 'nb-NO',      // Norwegian
-      'fin': 'fi-FI',      // Finnish
-      'slk': 'sk-SK',      // Slovak
-      'slv': 'sl-SI',      // Slovenian
-      'hrv': 'hr-HR',      // Croatian - 21M
-      'bos': 'bs-BA',      // Bosnian (Latin) - 21M
-      'srp': 'sr-RS',      // Serbian (Latin) - 21M
-      'est': 'et-EE',      // Estonian
-      'lav': 'lv-LV',      // Latvian
-      'lit': 'lt-LT',      // Lithuanian
-      'isl': 'is-IS',      // Icelandic
-      'sqi': 'sq-AL',      // Albanian
-      'cat': 'ca-ES',      // Catalan
-      'eus': 'eu-ES',      // Basque
-      'glg': 'gl-ES',      // Galician
-      'cym': 'cy-GB',      // Welsh
-      'afr': 'af-ZA',      // Afrikaans
+    // Map of franc-min ISO 639-3 codes → BCP-47 locales
+    const latinLanguageMap: Record<string, string> = {
+      // Indo-European (Latin)
+      eng: 'en-US',
+      spa: 'es-ES',
+      por: 'pt-PT',
+      fra: 'fr-FR',
+      deu: 'de-DE',
+      ita: 'it-IT',
+      nld: 'nl-NL',
+      pol: 'pl-PL',
+      ron: 'ro-RO',
+      hun: 'hu-HU',
+      ces: 'cs-CZ',
+      swe: 'sv-SE',
+      bos: 'bs-BA',
+      hrv: 'hr-HR',
+      srp: 'sr-RS',
       
-      // Asian Latin-script languages
-      'ind': 'id-ID',      // Indonesian - 140M
-      'vie': 'vi-VN',      // Vietnamese - 67M
-      'tgl': 'fil-PH',     // Tagalog - 15M
-      'jav': 'jv-ID',      // Javanese (Latin) - 76M
-      'zlm': 'ms-MY',      // Malay (Latin) - 18M
-      'sun': 'su-ID',      // Sundanese - 27M
-      'ceb': 'en-US',      // Cebuano - 15M (no specific TTS)
-      'ilo': 'en-US',      // Iloko - 8M (no specific TTS)
-      'mad': 'en-US',      // Madurese - 10M (no specific TTS)
-      
-      // Turkic Latin-script languages
-      'tur': 'tr-TR',      // Turkish - 59M
-      'uzn': 'uz-UZ',      // Uzbek (Latin) - 18M
-      'azj': 'az-AZ',      // Azerbaijani (Latin) - 14M
-      
-      // African Latin-script languages
-      'swa': 'sw-KE',      // Swahili - 30M
-      'swh': 'sw-KE',      // Swahili (alt code) - 30M
-      'hau': 'ha-NG',      // Hausa - 22M
-      'yor': 'yo-NG',      // Yoruba - 20M
-      'ibo': 'ig-NG',      // Igbo - 17M
-      'fuv': 'en-US',      // Fulfulde - 22M (no specific TTS)
-      'zul': 'zu-ZA',      // Zulu - 9M
-      'som': 'so-SO',      // Somali - 8M
-      'kin': 'rw-RW',      // Kinyarwanda - 9M
-      'run': 'en-US',      // Rundi - 11M (no specific TTS)
-      'nya': 'en-US',      // Nyanja - 10M (no specific TTS)
-      'lin': 'ln-CD',      // Lingala - 8M
-      
-      // Other Latin-script languages
-      'plt': 'en-US',      // Malagasy - 10M (no specific TTS)
-      'qug': 'es-ES',      // Quichua - 10M (use Spanish)
-      'hnj': 'en-US',      // Hmong Njua - 8M (no specific TTS)
-      'hms': 'en-US',      // Qiandong Miao - 8M (no specific TTS)
-      'zyb': 'zh-CN',      // Yongbei Zhuang - 10M (use Chinese as fallback)
-      'msa': 'ms-MY',      // Malay (alternative code)
-      'fil': 'fil-PH',     // Filipino (alternative to 'tgl')
-    };
+      // South / Southeast / East Asia (Latin)
+      ind: 'id-ID',
+      vie: 'vi-VN',
+      jav: 'jv-ID',
+      sun: 'su-ID',
+      zlm: 'ms-MY',
+      tgl: 'fil-PH',
+      ceb: 'fil-PH',
+      mad: 'id-ID',
+      ilo: 'fil-PH',
     
+      // Indo-Aryan
+      mar: 'mr-IN',
+      mai: 'mai-IN',
+      bho: 'bho-IN',
+      mag: 'mag-IN',
+    
+      // Turkic
+      tur: 'tr-TR',
+      uzn: 'uz-UZ',
+      azj: 'az-AZ',
+    
+      // African
+      swh: 'sw-KE',
+      hau: 'ha-NG',
+      yor: 'yo-NG',
+      ibo: 'ig-NG',
+      fuv: 'ff-NG',
+      kin: 'rw-RW',
+      run: 'rn-BI',
+      zul: 'zu-ZA',
+      som: 'so-SO',
+      lin: 'ln-CD',
+      plt: 'mg-MG',
+      nya: 'ny-MW',
+    
+      // Miscellaneous
+      qug: 'qu-EC',
+      hnj: 'hmn-US',
+      hms: 'hmn-US',
+      zyb: 'za-CN',
+    
+      // Missing from original (added)
+      skr: 'skr-PK',
+      npi: 'ne-NP',
+      bul: 'bg-BG',
+      koi: 'kv-RU',
+      pbu: 'ps-AF',
+    };
+
     // Only trust franc for Latin languages with EXTREMELY high confidence and very long text
     // Requirements are intentionally very strict to avoid false positives
-    if (latinLanguageMap[topLang] && confidence >= 0.98 && normalized.length >= 150) {
+    if (latinLanguageMap[topLang] && confidence >= 0.98 && normalized.length >= 10) {
       console.log(`Very high confidence Latin language: ${topLang} → ${latinLanguageMap[topLang]} (confidence: ${confidence}, length: ${normalized.length})`);
       return latinLanguageMap[topLang];
     }

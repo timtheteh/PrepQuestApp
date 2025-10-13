@@ -122,7 +122,7 @@ export function Toast({ visible, message, onHide, duration = 3000, backgroundCol
         style={[styles.toast, { backgroundColor: backgroundColor || colors.alertColor }]}
         {...panResponder.panHandlers}
       >
-        <Text style={[styles.message, { color: colors.background }]}>{message}</Text>
+        <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
       </Animated.View>
     </Animated.View>
   );

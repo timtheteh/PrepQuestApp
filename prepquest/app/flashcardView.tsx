@@ -53,6 +53,7 @@ import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, u
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import CountdownCircle from '@/components/general/CountdownCircle';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { Toast } from '@/components/general/Toast';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -483,7 +484,7 @@ const detectLatinLanguage = (text: string): string | null => {
 
     // Only trust franc for Latin languages with EXTREMELY high confidence and very long text
     // Requirements are intentionally very strict to avoid false positives
-    if (latinLanguageMap[topLang] && confidence >= 0.98 && normalized.length >= 10) {
+    if (latinLanguageMap[topLang] && confidence >= 0.98 && normalized.length >= 150) {
       console.log(`Very high confidence Latin language: ${topLang} → ${latinLanguageMap[topLang]} (confidence: ${confidence}, length: ${normalized.length})`);
       return latinLanguageMap[topLang];
     }
@@ -2797,6 +2798,10 @@ export default function FlashcardViewPage() {
   // The app UI language is managed separately by LanguageContext
   const [voiceLanguage, setVoiceLanguage] = useState<string>('English');
 
+  // Toast state for unsupported language errors
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
   // Load user's voice language from database (for speech-to-text detection)
   useEffect(() => {
     const loadVoiceLanguage = async () => {
@@ -3156,6 +3161,21 @@ export default function FlashcardViewPage() {
     }
   };
 
+  // Helper function to check if a language is supported by expo-speech
+  const checkLanguageSupport = async (languageCode: string): Promise<boolean> => {
+    try {
+      const availableVoices = await Speech.getAvailableVoicesAsync();
+      // Check if any voice supports the detected language
+      const isSupported = availableVoices.some(voice => 
+        voice.language.startsWith(languageCode.split('-')[0]) // Match language prefix (e.g., 'en' from 'en-US')
+      );
+      return isSupported;
+    } catch (error) {
+      console.error('Error checking language support:', error);
+      return false;
+    }
+  };
+
   const handleAudioPressTopBar = async () => {
     const currentFlashcard = flashcards[currentIdx];
     try {
@@ -3172,6 +3192,41 @@ export default function FlashcardViewPage() {
         const answer = currentFlashcard?.flashcardAnswer;
         if (answerType === 'text' && typeof answer === 'string') {
           const detectedLanguage = detectLanguageForSpeech(answer);
+          
+          // Check if the detected language is supported (highest priority)
+          const isSupported = await checkLanguageSupport(detectedLanguage);
+          if (!isSupported) {
+            console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+            setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+            setShowToast(true);
+            return; // Don't play audio
+          }
+          // Check if defaulting to English due to low confidence or short Latin text
+          else if (detectedLanguage === 'en-US') {
+            const hasNonLatinScript = detectNonLatinScript(answer);
+            const normalized = normalizeText(answer);
+            if (!hasNonLatinScript && normalized.length > 0) {
+              if (normalized.length >= 150) {
+                // Text is long enough, check if confidence was too low (medium priority)
+                const results = francAll(normalized);
+                if (results.length > 0) {
+                  const [topLang, confidence] = results[0];
+                  if (confidence < 0.98) {
+                    console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                    setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                    setShowToast(true);
+                  }
+                }
+              }
+              // else {
+              //   // Text too short (lowest priority) - toast commented out per user request
+              //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+              //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+              //   setShowToast(true);
+              // }
+            }
+          }
+          
           await Speech.speak(answer, {
             language: detectedLanguage,
             pitch: 1.1,
@@ -3206,6 +3261,41 @@ export default function FlashcardViewPage() {
             }).join('. ');
           }
           const detectedLanguage = detectLanguageForSpeech(mcqText);
+          
+          // Check if the detected language is supported (highest priority)
+          const isSupported = await checkLanguageSupport(detectedLanguage);
+          if (!isSupported) {
+            console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+            setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+            setShowToast(true);
+            return; // Don't play audio
+          }
+          // Check if defaulting to English due to low confidence or short Latin text
+          else if (detectedLanguage === 'en-US') {
+            const hasNonLatinScript = detectNonLatinScript(mcqText);
+            const normalized = normalizeText(mcqText);
+            if (!hasNonLatinScript && normalized.length > 0) {
+              if (normalized.length >= 150) {
+                // Text is long enough, check if confidence was too low (medium priority)
+                const results = francAll(normalized);
+                if (results.length > 0) {
+                  const [topLang, confidence] = results[0];
+                  if (confidence < 0.98) {
+                    console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                    setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                    setShowToast(true);
+                  }
+                }
+              }
+              // else {
+              //   // Text too short (lowest priority) - toast commented out per user request
+              //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+              //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+              //   setShowToast(true);
+              // }
+            }
+          }
+          
           await Speech.speak(mcqText, {
             language: detectedLanguage,
             pitch: 1.1,
@@ -3232,6 +3322,41 @@ export default function FlashcardViewPage() {
           const evaluationText = showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise;
           if (evaluationText) {
             const detectedLanguage = detectLanguageForSpeech(evaluationText);
+            
+            // Check if the detected language is supported (highest priority)
+            const isSupported = await checkLanguageSupport(detectedLanguage);
+            if (!isSupported) {
+              console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+              setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+              setShowToast(true);
+              return; // Don't play audio
+            }
+            // Check if defaulting to English due to low confidence or short Latin text
+            else if (detectedLanguage === 'en-US') {
+              const hasNonLatinScript = detectNonLatinScript(evaluationText);
+              const normalized = normalizeText(evaluationText);
+              if (!hasNonLatinScript && normalized.length > 0) {
+                if (normalized.length >= 150) {
+                  // Text is long enough, check if confidence was too low (medium priority)
+                  const results = francAll(normalized);
+                  if (results.length > 0) {
+                    const [topLang, confidence] = results[0];
+                    if (confidence < 0.98) {
+                      console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                      setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                      setShowToast(true);
+                    }
+                  }
+                }
+                // else {
+                //   // Text too short (lowest priority) - toast commented out per user request
+                //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+                //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+                //   setShowToast(true);
+                // }
+              }
+            }
+            
             await Speech.speak(evaluationText, {
               language: detectedLanguage,
               pitch: 1.1,
@@ -3260,6 +3385,41 @@ export default function FlashcardViewPage() {
         const question = currentFlashcard?.flashcardQn;
         if (questionType === 'text' && typeof question === 'string') {
           const detectedLanguage = detectLanguageForSpeech(question);
+          
+          // Check if the detected language is supported (highest priority)
+          const isSupported = await checkLanguageSupport(detectedLanguage);
+          if (!isSupported) {
+            console.warn(`Detected language ${detectedLanguage} is not supported by device TTS`);
+            setToastMessage(strings[language].flashcardViewPage.toastMessages.detectedUnsupportedLanguage);
+            setShowToast(true);
+            return; // Don't play audio
+          }
+          // Check if defaulting to English due to low confidence or short Latin text
+          else if (detectedLanguage === 'en-US') {
+            const hasNonLatinScript = detectNonLatinScript(question);
+            const normalized = normalizeText(question);
+            if (!hasNonLatinScript && normalized.length > 0) {
+              if (normalized.length >= 150) {
+                // Text is long enough, check if confidence was too low (medium priority)
+                const results = francAll(normalized);
+                if (results.length > 0) {
+                  const [topLang, confidence] = results[0];
+                  if (confidence < 0.98) {
+                    console.log(`Latin language confidence too low (${confidence}), defaulting to English`);
+                    setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishLowConfidence);
+                    setShowToast(true);
+                  }
+                }
+              } 
+              // else {
+              //   // Text too short (lowest priority)
+              //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
+              //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
+              //   setShowToast(true);
+              // }
+            }
+          }
+          
           await Speech.speak(question, {
             language: detectedLanguage,
             pitch: 1.1,
@@ -3964,6 +4124,15 @@ export default function FlashcardViewPage() {
 
       {/* In-app notifications */}
       <BackgroundTaskNotification />
+      
+      {/* Toast for unsupported language errors */}
+      <Toast 
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+        duration={3000}
+        backgroundColor={Colors[theme].alertColor}
+      />
     </View>
   )
   );

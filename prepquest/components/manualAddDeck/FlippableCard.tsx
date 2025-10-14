@@ -93,11 +93,11 @@ const DrawingRenderer = React.memo(({ drawingData, style }: { drawingData: { pat
       <Path
         key={index}
         d={pathData.path}
-        stroke={colors.text}
+        stroke={colors.normalIconColor}
         strokeWidth={pathData.strokeWidth}
         fill="none"
       />
-    )), [drawingData, colors.text]
+    )), [drawingData, colors.normalIconColor]
   );
   
   return (
@@ -349,15 +349,15 @@ const DrawingCanvas = forwardRef<{ undo: () => void; redo: () => void; hasConten
           <Path
             key={index}
             d={pathData.path}
-            stroke={colors.text}
+            stroke={colors.normalIconColor}
             strokeWidth={pathData.strokeWidth}
             fill="none"
           />
-        )), [paths, colors.text])}
+        )), [paths, colors.normalIconColor])}
         {currentPath && !isEraserMode && (
           <Path
             d={currentPath}
-            stroke={colors.text}
+            stroke={colors.normalIconColor}
             strokeWidth={strokeWidth}
             fill="none"
           />

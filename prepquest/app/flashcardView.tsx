@@ -2106,7 +2106,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                               <Path
                                 key={index}
                                 d={path.d}
-                                stroke={path.stroke}
+                                stroke={Colors[theme].normalIconColor}
                                 strokeWidth={path.strokeWidth}
                                 fill={path.fill}
                               />
@@ -2504,7 +2504,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                               <Path
                                 key={index}
                                 d={path.d}
-                                stroke={path.stroke}
+                                stroke={Colors[theme].normalIconColor}
                                 strokeWidth={path.strokeWidth}
                                 fill={path.fill}
                               />

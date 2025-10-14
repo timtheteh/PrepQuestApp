@@ -1077,6 +1077,7 @@ interface FlippableFlashcardProps {
   setIsLoadingEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
   checkNetworkConnectivity: () => Promise<boolean>;
   handleShowNetworkErrorModal: () => void;
+  handleShowAudioTimeLimitModal: () => void;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -1128,7 +1129,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     setAiEvaluationDetailed,
     setIsLoadingEvaluation,
     checkNetworkConnectivity,
-    handleShowNetworkErrorModal
+    handleShowNetworkErrorModal,
+    handleShowAudioTimeLimitModal
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -1157,6 +1159,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordingStartTimeRef = useRef<number | null>(null);
+  const MAX_RECORDING_DURATION = 300000; // 5 minutes in milliseconds
 
   // Generate MCQ options with letters ONCE per card
   const previousCardIndexRef = useRef<number>(currentIdx);
@@ -1628,6 +1633,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         audioSoundRef.current.unloadAsync();
         audioSoundRef.current = null;
       }
+      // Clear recording timer if it exists
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
     };
   }, [currentIdx]);
 
@@ -1667,22 +1677,43 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
       });
       recordingRef.current = recording;
       setIsRecording(true);
+      
+      // Track recording start time
+      recordingStartTimeRef.current = Date.now();
+      
+      // Set up timer to automatically stop recording after 5 minutes
+      recordingTimerRef.current = setTimeout(async () => {
+        console.log('⏱️ Recording time limit reached (5 minutes)');
+        await stopRecording(true); // Pass true to indicate time limit reached
+      }, MAX_RECORDING_DURATION);
     } catch (err) {
       // console.error('Failed to start recording', err);
     }
   };
 
-  const stopRecording = async () => {
+  const stopRecording = async (timeLimitReached: boolean = false) => {
     if (!recordingRef.current) return;
 
     try {
+      // Clear the timer if it exists
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+      
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
       setIsRecording(false);
+      recordingStartTimeRef.current = null;
       
       if (uri) {
         setRecordedAudioUri(uri);
+      }
+      
+      // Show modal if time limit was reached
+      if (timeLimitReached) {
+        handleShowAudioTimeLimitModal();
       }
     } catch (err) {
       console.error('Failed to stop recording', err);
@@ -2381,7 +2412,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       isRecording && [styles.recordingButton, { backgroundColor: Colors[theme].alertColor }]
                     ]}
                     onPressIn={isLoadingEvaluation ? undefined : startRecording}
-                    onPressOut={isLoadingEvaluation ? undefined : stopRecording}
+                    onPressOut={isLoadingEvaluation ? undefined : () => stopRecording(false)}
                     disabled={isLoadingEvaluation}
                   >
                     {isLoadingEvaluation ? (
@@ -2902,6 +2933,11 @@ export default function FlashcardViewPage() {
   const networkErrorOverlayOpacity = useRef(new Animated.Value(0)).current;
   const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
 
+  // Audio time limit modal state
+  const [isAudioTimeLimitModalOpen, setIsAudioTimeLimitModalOpen] = useState(false);
+  const audioTimeLimitOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const audioTimeLimitModalOpacity = useRef(new Animated.Value(0)).current;
+
   // Load user's voice language from database (for speech-to-text detection)
   useEffect(() => {
     const loadVoiceLanguage = async () => {
@@ -2974,6 +3010,40 @@ export default function FlashcardViewPage() {
       setIsNetworkErrorModalOpen(false);
     });
   }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
+  // Audio time limit modal handlers
+  const handleShowAudioTimeLimitModal = useCallback(() => {
+    setIsAudioTimeLimitModalOpen(true);
+    Animated.parallel([
+      Animated.timing(audioTimeLimitOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(audioTimeLimitModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [audioTimeLimitOverlayOpacity, audioTimeLimitModalOpacity]);
+
+  const handleDismissAudioTimeLimitModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(audioTimeLimitOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(audioTimeLimitModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsAudioTimeLimitModalOpen(false);
+    });
+  }, [audioTimeLimitOverlayOpacity, audioTimeLimitModalOpacity]);
 
   // Load flashcards from database when component mounts
   useEffect(() => {
@@ -4094,6 +4164,7 @@ export default function FlashcardViewPage() {
               setIsLoadingEvaluation={setIsLoadingEvaluation}
               checkNetworkConnectivity={checkNetworkConnectivity}
               handleShowNetworkErrorModal={handleShowNetworkErrorModal}
+              handleShowAudioTimeLimitModal={handleShowAudioTimeLimitModal}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>
@@ -4306,6 +4377,21 @@ export default function FlashcardViewPage() {
         Icon={DeleteModalIcon}
         buttons="single"
         onConfirm={handleDismissNetworkErrorModal}
+      />
+
+      {/* Audio Time Limit Modal */}
+      <GreyOverlayBackground 
+        visible={isAudioTimeLimitModalOpen}
+        opacity={audioTimeLimitOverlayOpacity}
+        onPress={handleDismissAudioTimeLimitModal}
+      />
+      <GenericModal
+        visible={isAudioTimeLimitModalOpen}
+        opacity={audioTimeLimitModalOpacity}
+        text={strings[language].flashcardViewPage.audioTimeLimitExceeded}
+        Icon={DeleteModalIcon}
+        buttons="single"
+        onConfirm={handleDismissAudioTimeLimitModal}
       />
     </View>
   )

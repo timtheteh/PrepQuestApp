@@ -941,6 +941,7 @@ export const strings: Record<string, any> = {
           defaultingToEnglishLowConfidence: 'Defaulting to English due to low language detection confidence',
         },
         networkErrorMessage: 'Failed to evaluate answer due to network error!',
+        audioTimeLimitExceeded: 'Audio input cannot be more than 5 minutes',
     },
   // General UI components
   progressBar: {
@@ -1223,6 +1224,7 @@ export const strings: Record<string, any> = {
           defaultingToEnglishLowConfidence: '由于语言检测置信度较低，默认使用英语',
         },
         networkErrorMessage: '由于网络错误，无法评估答案！',
+        audioTimeLimitExceeded: '音频输入不能超过5分钟',
     },
   // General UI components
   progressBar: {

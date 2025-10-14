@@ -902,6 +902,23 @@ async function transcribeAudio(audioUri: string, language: string = 'English', q
     
   } catch (error) {
     console.error('❌ Error in transcribeAudio:', error);
+    
+    // Check if this is a network error
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      // Network connectivity issue
+      console.error('🌐 Network error detected during API call');
+      throw new Error('NETWORK_ERROR');
+    } else if (error instanceof Error && error.message.includes('AbortError')) {
+      // Request timeout
+      console.error('⏰ Request timeout detected');
+      throw new Error('NETWORK_ERROR');
+    } else if (error instanceof Error && (error.message.includes('Network request failed') || error.message.includes('network'))) {
+      // General network error
+      console.error('🌐 General network error detected');
+      throw new Error('NETWORK_ERROR');
+    }
+    
+    // Re-throw other errors as-is
     throw error;
   }
 }
@@ -2402,8 +2419,17 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                           }
                         } catch (error) {
                           console.error('❌ Transcription/Evaluation failed:', error);
-                          // Show custom network error modal instead of system alert
-                          handleShowNetworkErrorModal();
+                          
+                          // Check if this is a network error
+                          if (error instanceof Error && error.message === 'NETWORK_ERROR') {
+                            console.error('🌐 Network error during API call - showing custom modal');
+                            handleShowNetworkErrorModal();
+                          } else {
+                            // For other errors, show the network error modal as well (since most API failures are network-related)
+                            console.error('🔧 Other error during API call - showing custom modal');
+                            handleShowNetworkErrorModal();
+                          }
+                          
                           setAiEvaluationConcise(null);
                           setAiEvaluationDetailed(null);
                         } finally {

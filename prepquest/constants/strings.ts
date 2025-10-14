@@ -935,11 +935,12 @@ export const strings: Record<string, any> = {
       timeFormatMinutesSeconds: '{minutes}min {seconds}s',
       timeFormatSeconds: '{seconds}s',
       // Toast messages for TTS
-      toastMessages: {
-        detectedUnsupportedLanguage: 'Detected unsupported language',
-        defaultingToEnglishInsufficientText: 'Defaulting to English due to insufficient text length (150 characters minimum)',
-        defaultingToEnglishLowConfidence: 'Defaulting to English due to low language detection confidence',
-      },
+        toastMessages: {
+          detectedUnsupportedLanguage: 'Detected unsupported language',
+          defaultingToEnglishInsufficientText: 'Defaulting to English due to insufficient text length (150 characters minimum)',
+          defaultingToEnglishLowConfidence: 'Defaulting to English due to low language detection confidence',
+        },
+        networkErrorMessage: 'Failed to evaluate answer due to network error!',
     },
   // General UI components
   progressBar: {
@@ -1216,11 +1217,12 @@ export const strings: Record<string, any> = {
       timeFormatMinutesSeconds: '{minutes}分{seconds}秒',
       timeFormatSeconds: '{seconds}秒',
       // Toast messages for TTS
-      toastMessages: {
-        detectedUnsupportedLanguage: '检测到不支持的语言',
-        defaultingToEnglishInsufficientText: '由于文本长度不足（最少150个字符），默认使用英语',
-        defaultingToEnglishLowConfidence: '由于语言检测置信度较低，默认使用英语',
-      },
+        toastMessages: {
+          detectedUnsupportedLanguage: '检测到不支持的语言',
+          defaultingToEnglishInsufficientText: '由于文本长度不足（最少150个字符），默认使用英语',
+          defaultingToEnglishLowConfidence: '由于语言检测置信度较低，默认使用英语',
+        },
+        networkErrorMessage: '由于网络错误，无法评估答案！',
     },
   // General UI components
   progressBar: {

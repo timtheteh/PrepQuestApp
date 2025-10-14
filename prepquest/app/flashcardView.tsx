@@ -1022,6 +1022,8 @@ interface FlippableFlashcardProps {
   setAiEvaluationConcise: React.Dispatch<React.SetStateAction<string | null>>;
   setAiEvaluationDetailed: React.Dispatch<React.SetStateAction<string | null>>;
   setIsLoadingEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
+  checkNetworkConnectivity: () => Promise<boolean>;
+  handleShowNetworkErrorModal: () => void;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -1071,7 +1073,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     isLoadingEvaluation,
     setAiEvaluationConcise,
     setAiEvaluationDetailed,
-    setIsLoadingEvaluation
+    setIsLoadingEvaluation,
+    checkNetworkConnectivity,
+    handleShowNetworkErrorModal
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -2368,7 +2372,17 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                     onPress={async () => {
                       if (recordedAudioUri) {
                         try {
-                          console.log('🤖 AI Chat button pressed - starting transcription and evaluation...');
+                          console.log('🤖 AI Chat button pressed - checking network connectivity...');
+                          
+                          // Check network connectivity first
+                          const isNetworkConnected = await checkNetworkConnectivity();
+                          if (!isNetworkConnected) {
+                            console.error('❌ Network error - showing modal');
+                            handleShowNetworkErrorModal();
+                            return;
+                          }
+                          
+                          console.log('✅ Network connected - starting transcription and evaluation...');
                           setIsLoadingEvaluation(true);
                           // Extract question context (text from flashcard question)
                           const questionContext = flashcardQnType === 'text' && typeof flashcardQn === 'string' ? flashcardQn : undefined;
@@ -2388,7 +2402,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                           }
                         } catch (error) {
                           console.error('❌ Transcription/Evaluation failed:', error);
-                          Alert.alert('Error', 'Failed to transcribe audio and get evaluation. Please try again.');
+                          // Show custom network error modal instead of system alert
+                          handleShowNetworkErrorModal();
                           setAiEvaluationConcise(null);
                           setAiEvaluationDetailed(null);
                         } finally {
@@ -2802,6 +2817,11 @@ export default function FlashcardViewPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
+  // Network error modal state
+  const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
+  const networkErrorOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
+
   // Load user's voice language from database (for speech-to-text detection)
   useEffect(() => {
     const loadVoiceLanguage = async () => {
@@ -2817,6 +2837,63 @@ export default function FlashcardViewPage() {
   const handleVoiceLanguageChange = (newLanguage: string) => {
     setVoiceLanguage(newLanguage);
   };
+
+  // Network connectivity check function
+  const checkNetworkConnectivity = useCallback(async (): Promise<boolean> => {
+    try {
+      // Create an AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      // Try to fetch a small resource to test network connectivity
+      const response = await fetch('https://www.google.com/favicon.ico', {
+        method: 'HEAD',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      const isConnected = response.ok;
+      console.log('Network connectivity check:', { isConnected, status: response.status });
+      return isConnected;
+    } catch (error) {
+      console.error('Error checking network connectivity:', error);
+      return false;
+    }
+  }, []);
+
+  // Network error modal handlers
+  const handleShowNetworkErrorModal = useCallback(() => {
+    setIsNetworkErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
+  const handleDismissNetworkErrorModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsNetworkErrorModalOpen(false);
+    });
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
 
   // Load flashcards from database when component mounts
   useEffect(() => {
@@ -3410,9 +3487,9 @@ export default function FlashcardViewPage() {
                     setShowToast(true);
                   }
                 }
-              } 
+              }
               // else {
-              //   // Text too short (lowest priority)
+              //   // Text too short (lowest priority) - toast commented out per user request
               //   console.log(`Latin text too short (${normalized.length} chars), defaulting to English`);
               //   setToastMessage(strings[language].flashcardViewPage.toastMessages.defaultingToEnglishInsufficientText);
               //   setShowToast(true);
@@ -3935,6 +4012,8 @@ export default function FlashcardViewPage() {
               setAiEvaluationConcise={setAiEvaluationConcise}
               setAiEvaluationDetailed={setAiEvaluationDetailed}
               setIsLoadingEvaluation={setIsLoadingEvaluation}
+              checkNetworkConnectivity={checkNetworkConnectivity}
+              handleShowNetworkErrorModal={handleShowNetworkErrorModal}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>
@@ -4132,6 +4211,21 @@ export default function FlashcardViewPage() {
         onHide={() => setShowToast(false)}
         duration={3000}
         backgroundColor={Colors[theme].alertColor}
+      />
+
+      {/* Network Error Modal */}
+      <GreyOverlayBackground 
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorOverlayOpacity}
+        onPress={handleDismissNetworkErrorModal}
+      />
+      <GenericModal
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorModalOpacity}
+        text={strings[language].flashcardViewPage.networkErrorMessage}
+        Icon={DeleteModalIcon}
+        buttons="single"
+        onConfirm={handleDismissNetworkErrorModal}
       />
     </View>
   )

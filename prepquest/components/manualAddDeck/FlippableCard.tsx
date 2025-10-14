@@ -25,6 +25,24 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { strings } from '@/constants/strings';
 
+// Helper function to determine font size based on text length
+const getDynamicFontSize = (text: string): number => {
+  const textLength = text.length;
+  
+  // Define thresholds and corresponding font sizes
+  if (textLength <= 50) {
+    return 24; // Default size for short text
+  } else if (textLength <= 100) {
+    return 20; // Slightly smaller for medium text
+  } else if (textLength <= 200) {
+    return 18; // Smaller for longer text
+  } else if (textLength <= 300) {
+    return 16; // Even smaller for very long text
+  } else {
+    return 14; // Smallest size for extremely long text
+  }
+};
+
 interface CardContent {
   content: React.ReactNode;
   type: 'camera' | 'marker' | 'mic' | 'text' | 'none';
@@ -410,14 +428,31 @@ export const FlippableCard = forwardRef<FlippableCardRef, FlippableCardProps>(({
           }
         } else {
           // Determine which side to update based on current flip state
+          const dynamicFontSize = getDynamicFontSize(typedText);
           if (isFlipped) {
             setBackContent({
-              content: <Text style={[styles.contentText, { color: colors.text }, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
+              content: <Text style={[
+                styles.contentText, 
+                { 
+                  color: colors.text, 
+                  fontSize: dynamicFontSize,
+                  lineHeight: dynamicFontSize + 4,
+                  ...(/[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 })
+                }
+              ]}>{typedText}</Text>,
               type: cardType
             });
           } else {
             setFrontContent({
-              content: <Text style={[styles.contentText, { color: colors.text }, /[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 }]}>{typedText}</Text>,
+              content: <Text style={[
+                styles.contentText, 
+                { 
+                  color: colors.text, 
+                  fontSize: dynamicFontSize,
+                  lineHeight: dynamicFontSize + 4,
+                  ...(/[\u4e00-\u9fff]/.test(typedText) && { paddingTop: 10 })
+                }
+              ]}>{typedText}</Text>,
               type: cardType
             });
           }
@@ -1412,9 +1447,8 @@ const styles = StyleSheet.create({
   },
   contentText: {
     fontFamily: Fonts.bodyMedium,
-    fontSize: 24,
-    lineHeight: 24,
     textAlign: 'center',
+    // fontSize and lineHeight are now set dynamically based on text length
   },
   bottomBar: {
     height: 45,

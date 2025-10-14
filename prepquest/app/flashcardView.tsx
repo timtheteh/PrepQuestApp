@@ -349,6 +349,24 @@ const normalizeText = (text: string): string => {
     .toLowerCase();
 };
 
+// Helper function to determine font size based on text length
+const getDynamicFontSize = (text: string): number => {
+  const textLength = text.length;
+  
+  // Define thresholds and corresponding font sizes
+  if (textLength <= 50) {
+    return 32; // Default size for short text
+  } else if (textLength <= 100) {
+    return 28; // Slightly smaller for medium text
+  } else if (textLength <= 200) {
+    return 24; // Smaller for longer text
+  } else if (textLength <= 300) {
+    return 20; // Even smaller for very long text
+  } else {
+    return 16; // Smallest size for extremely long text
+  }
+};
+
 // Helper function to detect language by script (non-Latin scripts ONLY)
 // This is the primary and most reliable detection method
 const detectNonLatinScript = (text: string): string | null => {
@@ -657,9 +675,19 @@ const LoadingBar = React.memo(({ currentIdx, totalCards, isStudyMode, hasFlipped
 function renderQuestionWithBlanks(text: string, theme: 'light' | 'dark') {
   const parts = text.split(/<blank>/g);
   const elements: React.ReactNode[] = [];
+  const dynamicFontSize = getDynamicFontSize(text);
+  
   parts.forEach((part, idx) => {
     elements.push(
-      <Text key={`text-${idx}`} style={[styles.questionText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
+      <Text key={`text-${idx}`} style={[
+        styles.questionText, 
+        { 
+          color: Colors[theme].text, 
+          fontFamily: Fonts.bodyMedium,
+          fontSize: dynamicFontSize,
+          ...(Platform.OS === 'android' && { lineHeight: dynamicFontSize + 8 })
+        }
+      ]}>
         {part}
       </Text>
     );
@@ -673,7 +701,15 @@ function renderQuestionWithBlanks(text: string, theme: 'light' | 'dark') {
     }
   });
   return (
-    <Text style={[styles.questionText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
+    <Text style={[
+      styles.questionText, 
+      { 
+        color: Colors[theme].text, 
+        fontFamily: Fonts.bodyMedium,
+        fontSize: dynamicFontSize,
+        ...(Platform.OS === 'android' && { lineHeight: dynamicFontSize + 8 })
+      }
+    ]}>
       {elements}
     </Text>
   );
@@ -2289,7 +2325,17 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                             contentContainerStyle={styles.evaluationScrollViewContent}
                             showsVerticalScrollIndicator={false}
                           >
-                            <Text style={[styles.evaluationText, { color: Colors[theme].text, fontFamily: Fonts.bodyMedium }]}>
+                            <Text style={[
+                              styles.evaluationText, 
+                              { 
+                                color: Colors[theme].text, 
+                                fontFamily: Fonts.bodyMedium,
+                                fontSize: getDynamicFontSize(showDetailedEvaluation ? (aiEvaluationDetailed || '') : (aiEvaluationConcise || '')),
+                                ...(Platform.OS === 'android' && { 
+                                  lineHeight: getDynamicFontSize(showDetailedEvaluation ? (aiEvaluationDetailed || '') : (aiEvaluationConcise || '')) + 6 
+                                })
+                              }
+                            ]}>
                               {showDetailedEvaluation ? aiEvaluationDetailed : aiEvaluationConcise}
                             </Text>
                           </ScrollView>
@@ -2590,10 +2636,18 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
 // Local MCQ Option component
 const MCQOption = React.memo(({ text, selected, onPress, disabled }: { text: string; selected: boolean; onPress: () => void; disabled?: boolean }) => {
   const { theme } = useTheme();
+  const dynamicFontSize = getDynamicFontSize(text);
   return (
     <View style={styles.mcqOptionContainer}>
       <SmallCircleSelectButton selected={selected} onPress={onPress} disabled={disabled} />
-                      <Text style={[styles.mcqOptionLabelText, { color: disabled ? Colors[theme].unselectedText : Colors[theme].text }]}>{text}</Text>
+                      <Text style={[
+                        styles.mcqOptionLabelText, 
+                        { 
+                          color: disabled ? Colors[theme].unselectedText : Colors[theme].text,
+                          fontSize: dynamicFontSize,
+                          ...(Platform.OS === 'android' && { lineHeight: dynamicFontSize + 4 })
+                        }
+                      ]}>{text}</Text>
     </View>
   );
 });
@@ -4428,9 +4482,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   questionText: {
-    fontSize: 32,
     textAlign: 'center',
-    ...(Platform.OS === 'android' && { lineHeight: 40 }),
+    // fontSize is now set dynamically based on text length
   },
   blankUnderlineView: {
     borderBottomWidth: 2,

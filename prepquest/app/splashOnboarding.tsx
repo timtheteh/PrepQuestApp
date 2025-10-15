@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground } from 'react-native';
 import LottieView from 'lottie-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
@@ -15,9 +16,11 @@ interface SplashOnboardingProps {
 export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) {
   const { language } = useLanguage();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // State for background transition
   const [showSvgBackground, setShowSvgBackground] = useState(false);
+  const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
 
   // Animation refs
   const animationRef = useRef<LottieView>(null);
@@ -44,9 +47,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       logoAnimationRef.current.play();
     }
 
-    // Set timer to switch to SVG background after 3 seconds
-    const timer = setTimeout(() => {
-      setShowSvgBackground(true);
+    // Set timer to hide logo animation after 3 seconds
+    const logoTimer = setTimeout(() => {
+      setHideLogoAnimation(true);
     }, 3000);
 
     // Cleanup function to stop animations and clear timer when component unmounts
@@ -57,12 +60,17 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       if (logoAnimationRef.current) {
         logoAnimationRef.current.pause();
       }
-      clearTimeout(timer);
+      clearTimeout(logoTimer);
     };
   }, []);
 
   const handleSkipPress = () => {
     onComplete();
+  };
+
+  const handleNextPress = () => {
+    // Show PNG background when Next is clicked
+    setShowSvgBackground(true);
   };
 
   return (
@@ -85,22 +93,24 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             }}
           />
           
-          {/* Logo animation centered */}
-          <View style={styles.logoContainer}>
-            <LottieView
-              ref={logoAnimationRef}
-              source={logoAnimationSource}
-              autoPlay
-              loop={false}
-              style={styles.logoAnimation}
-              speed={1}
-              cacheComposition={true}
-              renderMode="HARDWARE"
-              onAnimationFailure={(error) => {
-                console.error('Logo animation failed to load:', error);
-              }}
-            />
-          </View>
+          {/* Logo animation centered - only show for first 3 seconds */}
+          {!hideLogoAnimation && (
+            <View style={styles.logoContainer}>
+              <LottieView
+                ref={logoAnimationRef}
+                source={logoAnimationSource}
+                autoPlay
+                loop={false}
+                style={styles.logoAnimation}
+                speed={1}
+                cacheComposition={true}
+                renderMode="HARDWARE"
+                onAnimationFailure={(error) => {
+                  console.error('Logo animation failed to load:', error);
+                }}
+              />
+            </View>
+          )}
         </>
       ) : (
         /* PNG background that covers the whole screen */
@@ -111,10 +121,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         />
       )}
 
-      {/* Skip button at the top center - always visible */}
-      <View style={styles.skipButtonContainer}>
+      {/* Top button row with Skip and Next - always visible */}
+      <View style={[styles.topButtonRow, { top: insets.top }]}>
         <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
           <Text style={styles.skipButtonText}>Skip</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+          <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -155,26 +169,34 @@ const styles = StyleSheet.create({
     width: 200, // Adjust size as needed
     height: 200, // Adjust size as needed
   },
-  skipButtonContainer: {
+  topButtonRow: {
     position: 'absolute',
-    top: 60,
     left: 0,
     right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 10, // Ensure skip button is above animations
+    paddingHorizontal: 20,
+    zIndex: 10, // Ensure buttons are above animations
   },
   skipButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: Colors.light.brandColor2,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Semi-transparent white background
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   skipButtonText: {
     fontSize: 16,
     fontFamily: Fonts.bodyMedium,
-    color: Colors.light.brandColor2,
+    color: 'black',
+    textAlign: 'center',
+  },
+  nextButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  nextButtonText: {
+    fontSize: 16,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
     textAlign: 'center',
   },
 });

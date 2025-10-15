@@ -6,12 +6,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import LanguageSelector from '@/components/onboarding/LanguageSelector';
 
 const { height } = Dimensions.get('window');
+
 
 interface SplashOnboardingProps {
   onComplete: () => void;
 }
+
 
 export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) {
   const { language } = useLanguage();
@@ -21,6 +24,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   // State for background transition
   const [showSvgBackground, setShowSvgBackground] = useState(false);
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<'Chinese' | 'English' | 'French' | 'Hindi' | 'Japanese' | 'Korean' | 'Malay'>(language as any);
+
 
   // Animation refs
   const animationRef = useRef<LottieView>(null);
@@ -73,6 +78,10 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     setShowSvgBackground(true);
   };
 
+  const handleLanguageChange = (languageKey: string) => {
+    setSelectedLanguage(languageKey as any);
+  };
+
   return (
     <View style={styles.container}>
       {!showSvgBackground ? (
@@ -110,6 +119,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 }}
               />
             </View>
+          )}
+
+          {/* Language selection - show after logo animation disappears */}
+          {hideLogoAnimation && (
+            <LanguageSelector
+              initialLanguage={selectedLanguage}
+              onLanguageChange={handleLanguageChange}
+            />
           )}
         </>
       ) : (

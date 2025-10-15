@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, Text, Dimensions, TouchableOpacity } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
@@ -15,17 +15,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const { language } = useLanguage();
   const { theme } = useTheme();
 
-  useEffect(() => {
-    // Show onboarding for 3 seconds
-    const timer = setTimeout(() => {
-      onComplete();
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+  const handleSkipPress = () => {
+    onComplete();
+  };
 
   return (
     <View style={styles.container}>
+      {/* Skip button at the top center */}
+      <View style={styles.skipButtonContainer}>
+        <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+          <Text style={styles.skipButtonText}>Skip</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {/* Main content */}
       <View style={styles.content}>
         <Text style={styles.title}>Onboarding</Text>
       </View>
@@ -39,6 +42,27 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  skipButtonContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  skipButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Colors.light.brandColor2,
+    backgroundColor: 'transparent',
+  },
+  skipButtonText: {
+    fontSize: 16,
+    fontFamily: Fonts.bodyMedium,
+    color: Colors.light.brandColor2,
+    textAlign: 'center',
   },
   content: {
     justifyContent: 'center',

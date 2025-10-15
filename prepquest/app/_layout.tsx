@@ -97,9 +97,9 @@ function AppContent() {
     setShowSplash(false);
   };
 
-  // Function to handle onboarding completion
+  // Function to handle onboarding completion (skip button clicked)
   const handleOnboardingComplete = async () => {
-    console.log(`🕐 Onboarding complete - transitioning to regular splash`);
+    console.log(`🕐 Skip button clicked - starting database initialization`);
     
     // Set firstTimeInstalled to false so onboarding doesn't show again
     await AsyncStorage.setItem('firstTimeInstalled', 'false');
@@ -108,61 +108,7 @@ function AppContent() {
     setShowOnboarding(false);
     setShowSplash(true);
     
-    // If database is ready, we can proceed to the main app
-    if (isDatabaseReady) {
-      setShowSplash(false);
-    }
-  };
-
-  // Show splash screen when user is not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setShowSplash(true);
-    }
-    // For authenticated users, let the splash screen handle the transition via handleAuthComplete
-  }, [isAuthenticated, isLoading]);
-
-  // Handle database ready state when onboarding is complete
-  useEffect(() => {
-    if (isDatabaseReady && !showOnboarding && !isLoading && !isAuthenticated) {
-      // If database is ready and we're not showing onboarding, show the regular splash
-      setShowSplash(true);
-    }
-  }, [isDatabaseReady, showOnboarding, isLoading, isAuthenticated]);
-  
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    'Satoshi-Medium': require('../assets/fonts/Satoshi-Medium.otf'),
-    'Satoshi-Italic': require('../assets/fonts/Satoshi-Italic.otf'),
-    'Satoshi-MediumItalic': require('../assets/fonts/Satoshi-MediumItalic.otf'),
-    'CedarvilleCursive-Regular': require('../assets/fonts/CedarvilleCursive-Regular.ttf'),
-    'Neuton-Regular': require('../assets/fonts/Neuton-Regular.ttf'),
-    'Neuton-Bold': require('../assets/fonts/Neuton-Bold.ttf'),
-    'Neuton-ExtraBold': require('../assets/fonts/Neuton-ExtraBold.ttf'),
-    'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
-    'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
-    'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
-  });
-
-  // Check for first time installation and initialize database
-  useEffect(() => {
-    let notificationResponseSubscription: Notifications.EventSubscription | undefined;
-
-    const initApp = async () => {
-      try {
-        // Check if this is the first time the app is installed
-        const firstTimeInstalled = await AsyncStorage.getItem('firstTimeInstalled');
-        
-        if (firstTimeInstalled === 'true') {
-          // Show onboarding immediately for first-time users
-          setShowOnboarding(true);
-          setShowSplash(false);
-        }
-      } catch (error) {
-        console.error('❌ Error checking first time installation:', error);
-      }
-    };
-
+    // Start database initialization
     const initDatabase = async () => {
       try {
         console.log('🚀 Starting database initialization and dummy data population...');
@@ -183,7 +129,7 @@ function AppContent() {
         console.log('✅ Notifications initialized successfully');
         
         // Set up notification response handler
-        notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+        const notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
           const data = response.notification.request.content.data as any;
           console.log('Notification tapped:', data);
           
@@ -224,15 +170,64 @@ function AppContent() {
       }
     };
     
-    // Initialize app and database
-    initApp().then(() => {
-      initDatabase();
-    });
+    // Start database initialization
+    initDatabase();
+  };
+
+  // Show splash screen when user is not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setShowSplash(true);
+    }
+    // For authenticated users, let the splash screen handle the transition via handleAuthComplete
+  }, [isAuthenticated, isLoading]);
+
+  // Handle database ready state when onboarding is complete
+  useEffect(() => {
+    if (isDatabaseReady && !showOnboarding && !isLoading && !isAuthenticated) {
+      // If database is ready and we're not showing onboarding, show the regular splash
+      setShowSplash(true);
+    }
+  }, [isDatabaseReady, showOnboarding, isLoading, isAuthenticated]);
+  
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'Satoshi-Medium': require('../assets/fonts/Satoshi-Medium.otf'),
+    'Satoshi-Italic': require('../assets/fonts/Satoshi-Italic.otf'),
+    'Satoshi-MediumItalic': require('../assets/fonts/Satoshi-MediumItalic.otf'),
+    'CedarvilleCursive-Regular': require('../assets/fonts/CedarvilleCursive-Regular.ttf'),
+    'Neuton-Regular': require('../assets/fonts/Neuton-Regular.ttf'),
+    'Neuton-Bold': require('../assets/fonts/Neuton-Bold.ttf'),
+    'Neuton-ExtraBold': require('../assets/fonts/Neuton-ExtraBold.ttf'),
+    'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
+    'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
+    'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
+  });
+
+  // Check for first time installation and initialize database
+  useEffect(() => {
+
+    const initApp = async () => {
+      try {
+        // Always set firstTimeInstalled to 'true' when app opens to show onboarding
+        await AsyncStorage.setItem('firstTimeInstalled', 'true');
+        
+        // Always show onboarding screen first
+        setShowOnboarding(true);
+        setShowSplash(false);
+        
+        console.log('✅ First time installed flag set to true - showing onboarding');
+      } catch (error) {
+        console.error('❌ Error setting first time installation flag:', error);
+      }
+    };
+
+    
+    // Initialize app (database will be initialized after skip button is clicked)
+    initApp();
     
     return () => {
-      try {
-        notificationResponseSubscription?.remove();
-      } catch {}
+      // Cleanup if needed
     };
   }, [splashStartTime]);
 

@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
+import SplashOnboarding from './splashOnboarding';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
@@ -85,6 +86,7 @@ function AppContent() {
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [splashStartTime] = useState(Date.now());
 
   // Function to handle authentication completion
@@ -95,6 +97,23 @@ function AppContent() {
     setShowSplash(false);
   };
 
+  // Function to handle onboarding completion
+  const handleOnboardingComplete = async () => {
+    console.log(`🕐 Onboarding complete - transitioning to regular splash`);
+    
+    // Set firstTimeInstalled to false so onboarding doesn't show again
+    await AsyncStorage.setItem('firstTimeInstalled', 'false');
+    
+    // Hide onboarding and show regular splash
+    setShowOnboarding(false);
+    setShowSplash(true);
+    
+    // If database is ready, we can proceed to the main app
+    if (isDatabaseReady) {
+      setShowSplash(false);
+    }
+  };
+
   // Show splash screen when user is not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -102,6 +121,14 @@ function AppContent() {
     }
     // For authenticated users, let the splash screen handle the transition via handleAuthComplete
   }, [isAuthenticated, isLoading]);
+
+  // Handle database ready state when onboarding is complete
+  useEffect(() => {
+    if (isDatabaseReady && !showOnboarding && !isLoading && !isAuthenticated) {
+      // If database is ready and we're not showing onboarding, show the regular splash
+      setShowSplash(true);
+    }
+  }, [isDatabaseReady, showOnboarding, isLoading, isAuthenticated]);
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -117,9 +144,24 @@ function AppContent() {
     'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
   });
 
-  // Initialize database and notifications when app starts
+  // Check for first time installation and initialize database
   useEffect(() => {
     let notificationResponseSubscription: Notifications.EventSubscription | undefined;
+
+    const initApp = async () => {
+      try {
+        // Check if this is the first time the app is installed
+        const firstTimeInstalled = await AsyncStorage.getItem('firstTimeInstalled');
+        
+        if (firstTimeInstalled === 'true') {
+          // Show onboarding immediately for first-time users
+          setShowOnboarding(true);
+          setShowSplash(false);
+        }
+      } catch (error) {
+        console.error('❌ Error checking first time installation:', error);
+      }
+    };
 
     const initDatabase = async () => {
       try {
@@ -182,7 +224,10 @@ function AppContent() {
       }
     };
     
-    initDatabase();
+    // Initialize app and database
+    initApp().then(() => {
+      initDatabase();
+    });
     
     return () => {
       try {
@@ -193,13 +238,18 @@ function AppContent() {
 
   return (
     <ThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
-      {/* Show splash screen while fonts are loading or database is not ready, or while auth splash is active */}
-      {(!loaded || !isDatabaseReady || showSplash) ? (
-          <SplashScreen 
-            isDatabaseReady={isDatabaseReady} 
-            onAuthComplete={handleAuthComplete}
-          />
+      {/* Show onboarding screen on first install */}
+      {showOnboarding ? (
+        <SplashOnboarding onComplete={handleOnboardingComplete} />
       ) : (
+        <>
+          {/* Show splash screen while fonts are loading or database is not ready, or while auth splash is active */}
+          {(!loaded || !isDatabaseReady || showSplash) ? (
+              <SplashScreen 
+                isDatabaseReady={isDatabaseReady} 
+                onAuthComplete={handleAuthComplete}
+              />
+          ) : (
         <>
           <Stack
             screenOptions={{
@@ -303,9 +353,11 @@ function AppContent() {
               }} 
             />
           </Stack>
-          <BackgroundTaskNotification />
-          <ImportTaskNotification />
-          <StatusBar style="auto" />
+            <BackgroundTaskNotification />
+            <ImportTaskNotification />
+            <StatusBar style="auto" />
+          </>
+        )}
         </>
       )}
     </ThemeProvider>

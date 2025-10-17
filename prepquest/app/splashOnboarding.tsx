@@ -24,7 +24,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   // State for background transition
   const [showSvgBackground, setShowSvgBackground] = useState(false);
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<'Chinese' | 'English' | 'French' | 'Hindi' | 'Japanese' | 'Korean' | 'Malay'>(language as any);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
 
 
   // Animation refs

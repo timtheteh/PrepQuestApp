@@ -25,6 +25,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [showSvgBackground, setShowSvgBackground] = useState(false);
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
+  const [showButtons, setShowButtons] = useState(false);
 
 
   // Animation refs
@@ -47,11 +48,13 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [showLanguageSelector, setShowLanguageSelector] = useState(true); // Pre-render to prevent glitch
   const logoFadeAnim = useRef(new Animated.Value(1)).current;
   const languageSelectorFadeAnim = useRef(new Animated.Value(0)).current;
+  const pngBackgroundFadeAnim = useRef(new Animated.Value(0)).current;
   
   // Initialize animation values to prevent glitch
   useEffect(() => {
     logoFadeAnim.setValue(1);
     languageSelectorFadeAnim.setValue(0);
+    pngBackgroundFadeAnim.setValue(0);
   }, []);
 
   // Start animations on mount and set timer for background transition
@@ -87,7 +90,10 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             toValue: 1,
             duration: Platform.OS === 'android' ? 600 : 500, // Longer fade in on Android
             useNativeDriver: true,
-          }).start();
+          }).start(() => {
+            // Show buttons after language selector fade-in completes
+            setShowButtons(true);
+          });
         }, Platform.OS === 'android' ? 50 : 0); // Small delay on Android
       });
     }, 5000); // Extended to 5 seconds
@@ -111,8 +117,33 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   };
 
   const handleNextPress = () => {
-    // Show PNG background when Next is clicked
+    // Show PNG background and start fade-in animation when Next is clicked
     setShowSvgBackground(true);
+    
+    // Start fade-in animation for PNG background
+    Animated.timing(pngBackgroundFadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleBackPress = () => {
+    // Start fade-out animation for PNG background
+    Animated.timing(pngBackgroundFadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      // Reset all states to go back to language selection
+      setShowSvgBackground(false);
+      setHideLogoAnimation(true); // Keep logo hidden (past the 5-second mark)
+      setShowLanguageSelector(true); // Show language selector again
+      setShowButtons(true); // Show buttons again
+      
+      // Reset language selector fade animation to visible
+      languageSelectorFadeAnim.setValue(1);
+    });
   };
 
   const handleLanguageChange = (languageKey: string) => {
@@ -179,26 +210,51 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           )}
         </>
       ) : (
-        /* PNG background that covers the whole screen */
-        <ImageBackground
-          source={require('../assets/onboarding/onboardingBackground.png')}
-          style={styles.imageBackground}
-          resizeMode="cover"
-        />
+        /* PNG background that covers the whole screen with fade animation */
+        <Animated.View style={[styles.imageBackgroundContainer, { opacity: pngBackgroundFadeAnim }]}>
+          <ImageBackground
+            source={require('../assets/onboarding/onboardingBackground.png')}
+            style={styles.imageBackground}
+            resizeMode="cover"
+          />
+        </Animated.View>
       )}
 
-      {/* Top button row with Skip and Next - always visible */}
-      <View style={[styles.topButtonRow, { top: insets.top }]}>
-        {/* Skip button positioned absolutely in center */}
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-          <Text style={styles.skipButtonText}>Skip</Text>
-        </TouchableOpacity>
-        
-        {/* Next button stays on the right */}
-        <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Top button row with conditional buttons - only show after logo animation */}
+      {showButtons && (
+        <View style={[styles.topButtonRow, { top: insets.top }]}>
+          {!showSvgBackground ? (
+            <>
+              {/* Skip button positioned absolutely in center */}
+              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+                <Text style={styles.skipButtonText}>Skip</Text>
+              </TouchableOpacity>
+              
+              {/* Next button stays on the right */}
+              <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+                <Text style={styles.nextButtonText}>Next</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              {/* Back button on the left when on PNG background */}
+              <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+              
+              {/* Skip button still centered */}
+              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+                <Text style={styles.skipButtonText}>Skip</Text>
+              </TouchableOpacity>
+              
+              {/* Next button still on the right */}
+              <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+                <Text style={styles.nextButtonText}>Next</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -214,7 +270,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  imageBackground: {
+  imageBackgroundContainer: {
     flex: 1,
     width: '100%',
     height: '100%',
@@ -223,6 +279,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  imageBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   logoContainer: {
     position: 'absolute',
@@ -262,11 +323,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   nextButton: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     paddingVertical: 5,
     minWidth: 60,
   },
   nextButtonText: {
+    fontSize: 16,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    paddingHorizontal: 0,
+    paddingVertical: 5,
+    minWidth: 60,
+  },
+  backButtonText: {
     fontSize: 16,
     fontFamily: Fonts.bodyMedium,
     color: 'black',

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -43,6 +43,11 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   );
 
 
+  // Animation state for transitions
+  const [showLanguageSelector, setShowLanguageSelector] = useState(true); // Pre-render to prevent glitch
+  const logoFadeAnim = useRef(new Animated.Value(1)).current;
+  const languageSelectorFadeAnim = useRef(new Animated.Value(0)).current;
+
   // Start animations on mount and set timer for background transition
   useEffect(() => {
     if (animationRef.current) {
@@ -52,10 +57,28 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       logoAnimationRef.current.play();
     }
 
-    // Set timer to hide logo animation after 3 seconds
+    // Set timer to start transition after 5 seconds
     const logoTimer = setTimeout(() => {
-      setHideLogoAnimation(true);
-    }, 3000);
+      // Start fade out animation for logo
+      Animated.timing(logoFadeAnim, {
+        toValue: 0,
+        duration: Platform.OS === 'android' ? 300 : 500, // Faster on Android
+        useNativeDriver: true,
+      }).start(() => {
+        // Hide logo animation and show language selector
+        setHideLogoAnimation(true);
+        
+        // Small delay before starting fade in to prevent glitch
+        setTimeout(() => {
+          // Start fade in animation for language selector
+          Animated.timing(languageSelectorFadeAnim, {
+            toValue: 1,
+            duration: Platform.OS === 'android' ? 600 : 500, // Longer fade in on Android
+            useNativeDriver: true,
+          }).start();
+        }, Platform.OS === 'android' ? 50 : 0); // Small delay on Android
+      });
+    }, 5000); // Extended to 5 seconds
 
     // Cleanup function to stop animations and clear timer when component unmounts
     return () => {
@@ -67,7 +90,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       }
       clearTimeout(logoTimer);
     };
-  }, []);
+  }, [logoFadeAnim, languageSelectorFadeAnim]);
 
   const handleSkipPress = () => {
     onComplete();
@@ -102,9 +125,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             }}
           />
           
-          {/* Logo animation centered - only show for first 3 seconds */}
+          {/* Logo animation centered with fade animation */}
           {!hideLogoAnimation && (
-            <View style={styles.logoContainer}>
+            <Animated.View style={[styles.logoContainer, { opacity: logoFadeAnim }]}>
               <LottieView
                 ref={logoAnimationRef}
                 source={logoAnimationSource}
@@ -118,15 +141,25 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                   console.error('Logo animation failed to load:', error);
                 }}
               />
-            </View>
+            </Animated.View>
           )}
 
-          {/* Language selection - show after logo animation disappears */}
-          {hideLogoAnimation && (
-            <LanguageSelector
-              initialLanguage={selectedLanguage}
-              onLanguageChange={handleLanguageChange}
-            />
+          {/* Language selection with fade animation */}
+          {showLanguageSelector && (
+            <Animated.View style={{ 
+              opacity: languageSelectorFadeAnim,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 5
+            }}>
+              <LanguageSelector
+                initialLanguage={selectedLanguage}
+                onLanguageChange={handleLanguageChange}
+              />
+            </Animated.View>
           )}
         </>
       ) : (

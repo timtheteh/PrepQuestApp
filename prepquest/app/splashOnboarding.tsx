@@ -47,15 +47,27 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [showLanguageSelector, setShowLanguageSelector] = useState(true); // Pre-render to prevent glitch
   const logoFadeAnim = useRef(new Animated.Value(1)).current;
   const languageSelectorFadeAnim = useRef(new Animated.Value(0)).current;
+  
+  // Initialize animation values to prevent glitch
+  useEffect(() => {
+    logoFadeAnim.setValue(1);
+    languageSelectorFadeAnim.setValue(0);
+  }, []);
 
   // Start animations on mount and set timer for background transition
   useEffect(() => {
-    if (animationRef.current) {
-      animationRef.current.play();
-    }
-    if (logoAnimationRef.current) {
-      logoAnimationRef.current.play();
-    }
+    // Staggered animation startup for smoother performance
+    const backgroundDelay = setTimeout(() => {
+      if (animationRef.current) {
+        animationRef.current.play();
+      }
+    }, Platform.OS === 'android' ? 80 : 30); // Start background first
+    
+    const logoDelay = setTimeout(() => {
+      if (logoAnimationRef.current) {
+        logoAnimationRef.current.play();
+      }
+    }, Platform.OS === 'android' ? 120 : 60); // Start logo slightly later
 
     // Set timer to start transition after 5 seconds
     const logoTimer = setTimeout(() => {
@@ -82,6 +94,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
     // Cleanup function to stop animations and clear timer when component unmounts
     return () => {
+      clearTimeout(backgroundDelay);
+      clearTimeout(logoDelay);
       if (animationRef.current) {
         animationRef.current.pause();
       }
@@ -113,13 +127,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           <LottieView
             ref={animationRef}
             source={backgroundAnimationSource}
-            autoPlay
+            autoPlay={false}
             loop={true}
             style={styles.animation}
             resizeMode="cover"
             speed={1}
             cacheComposition={true}
             renderMode="HARDWARE"
+            colorFilters={[]}
             onAnimationFailure={(error) => {
               console.error('Background animation failed to load:', error);
             }}
@@ -131,12 +146,13 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               <LottieView
                 ref={logoAnimationRef}
                 source={logoAnimationSource}
-                autoPlay
+                autoPlay={false}
                 loop={false}
                 style={styles.logoAnimation}
                 speed={1}
                 cacheComposition={true}
                 renderMode="HARDWARE"
+                colorFilters={[]}
                 onAnimationFailure={(error) => {
                   console.error('Logo animation failed to load:', error);
                 }}

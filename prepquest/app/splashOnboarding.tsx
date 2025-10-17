@@ -189,10 +189,12 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
       {/* Top button row with Skip and Next - always visible */}
       <View style={[styles.topButtonRow, { top: insets.top }]}>
+        {/* Skip button positioned absolutely in center */}
         <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
           <Text style={styles.skipButtonText}>Skip</Text>
         </TouchableOpacity>
         
+        {/* Next button stays on the right */}
         <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
@@ -240,12 +242,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end', // Align content to the right
     alignItems: 'center',
     paddingHorizontal: 20,
     zIndex: 10, // Ensure buttons are above animations
   },
   skipButton: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -258,6 +264,7 @@ const styles = StyleSheet.create({
   nextButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
+    minWidth: 60,
   },
   nextButtonText: {
     fontSize: 16,

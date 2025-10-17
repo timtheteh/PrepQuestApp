@@ -212,7 +212,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
       {/* Top button row with conditional buttons */}
       <View style={[styles.topButtonRow, { top: insets.top }]}>
-        {!showSvgBackground ? (
+        {!showSvgBackground && hideLogoAnimation ? (
           <>
             {/* Skip button positioned absolutely in center */}
             <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
@@ -224,7 +224,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
           </>
-        ) : (
+        ) : showSvgBackground ? (
           <>
             {/* Back button on the left when on PNG background */}
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
@@ -241,7 +241,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
           </>
-        )}
+        ) : null}
       </View>
     </View>
   );

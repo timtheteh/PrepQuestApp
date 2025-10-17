@@ -25,7 +25,6 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [showSvgBackground, setShowSvgBackground] = useState(false);
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
-  const [showButtons, setShowButtons] = useState(false);
 
 
   // Animation refs
@@ -90,10 +89,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             toValue: 1,
             duration: Platform.OS === 'android' ? 600 : 500, // Longer fade in on Android
             useNativeDriver: true,
-          }).start(() => {
-            // Show buttons after language selector fade-in completes
-            setShowButtons(true);
-          });
+          }).start();
         }, Platform.OS === 'android' ? 50 : 0); // Small delay on Android
       });
     }, 5000); // Extended to 5 seconds
@@ -135,14 +131,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      // Reset all states to go back to language selection
+      // Hide PNG background after fade-out completes
       setShowSvgBackground(false);
-      setHideLogoAnimation(true); // Keep logo hidden (past the 5-second mark)
-      setShowLanguageSelector(true); // Show language selector again
-      setShowButtons(true); // Show buttons again
-      
-      // Reset language selector fade animation to visible
-      languageSelectorFadeAnim.setValue(1);
     });
   };
 
@@ -220,41 +210,39 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         </Animated.View>
       )}
 
-      {/* Top button row with conditional buttons - only show after logo animation */}
-      {showButtons && (
-        <View style={[styles.topButtonRow, { top: insets.top }]}>
-          {!showSvgBackground ? (
-            <>
-              {/* Skip button positioned absolutely in center */}
-              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-                <Text style={styles.skipButtonText}>Skip</Text>
-              </TouchableOpacity>
-              
-              {/* Next button stays on the right */}
-              <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
-                <Text style={styles.nextButtonText}>Next</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              {/* Back button on the left when on PNG background */}
-              <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-                <Text style={styles.backButtonText}>Back</Text>
-              </TouchableOpacity>
-              
-              {/* Skip button still centered */}
-              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-                <Text style={styles.skipButtonText}>Skip</Text>
-              </TouchableOpacity>
-              
-              {/* Next button still on the right */}
-              <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
-                <Text style={styles.nextButtonText}>Next</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      )}
+      {/* Top button row with conditional buttons */}
+      <View style={[styles.topButtonRow, { top: insets.top }]}>
+        {!showSvgBackground ? (
+          <>
+            {/* Skip button positioned absolutely in center */}
+            <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+              <Text style={styles.skipButtonText}>Skip</Text>
+            </TouchableOpacity>
+            
+            {/* Next button stays on the right */}
+            <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+              <Text style={styles.nextButtonText}>Next</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            {/* Back button on the left when on PNG background */}
+            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+            
+            {/* Skip button still centered */}
+            <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+              <Text style={styles.skipButtonText}>Skip</Text>
+            </TouchableOpacity>
+            
+            {/* Next button still on the right */}
+            <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+              <Text style={styles.nextButtonText}>Next</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
     </View>
   );
 }

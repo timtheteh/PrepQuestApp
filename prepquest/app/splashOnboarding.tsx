@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform } from 'react-native';
+import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,6 +32,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
+  const [subjectInput, setSubjectInput] = useState<string>('');
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -478,6 +480,29 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               
               {/* Fourth row: Which subject(s)... */}
               <Text style={styles.subjectQuestionText}>{getTranslatedText(selectedLanguage, 'whichSubjects')}</Text>
+              
+              {/* Text input field with cancel icon inside */}
+              <View style={styles.textInputContainer}>
+                <TextInput
+                  style={styles.subjectTextInput}
+                  placeholder="Type here!"
+                  placeholderTextColor={Colors.light.unselectedText}
+                  value={subjectInput}
+                  onChangeText={setSubjectInput}
+                />
+                {subjectInput.length > 0 && (
+                  <TouchableOpacity 
+                    style={styles.cancelIconButton}
+                    onPress={() => setSubjectInput('')}
+                  >
+                    <MaterialIcons 
+                      name="cancel" 
+                      size={20} 
+                      color={Colors.light.unselectedText} 
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </Animated.View>
         </Animated.View>
@@ -827,5 +852,32 @@ const styles = StyleSheet.create({
     color: 'black',
     textAlign: 'center',
     marginTop: 12,
+  },
+  textInputContainer: {
+    position: 'relative',
+    marginTop: 12,
+  },
+  subjectTextInput: {
+    backgroundColor: 'white',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: Colors.light.unselectedText,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingRight: 50, // Make space for the cancel icon
+    fontSize: 16,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'left',
+    width: '100%',
+  },
+  cancelIconButton: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
   },
 });

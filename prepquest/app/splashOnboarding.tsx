@@ -389,7 +389,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <View style={styles.imageContainer}>
                       <StudyOnboardingImage width="100%" height="100%" />
                     </View>
-                    <Text style={styles.cardText}>{getTranslatedText(selectedLanguage, 'studyPrep')}</Text>
+                    <Text 
+                      style={[
+                        styles.cardText,
+                        getTranslatedText(selectedLanguage, 'studyPrep').length > 8 && styles.cardTextSmall
+                      ]}
+                    >
+                      {getTranslatedText(selectedLanguage, 'studyPrep')}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.card, selectedCard === 'interview' && styles.selectedCard]} 
@@ -398,7 +405,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <View style={styles.imageContainer}>
                       <InterviewOnboardingImage width="100%" height="100%" />
                     </View>
-                    <Text style={styles.cardText}>{getTranslatedText(selectedLanguage, 'interviewPrep')}</Text>
+                    <Text 
+                      style={[
+                        styles.cardText,
+                        getTranslatedText(selectedLanguage, 'interviewPrep').length > 8 && styles.cardTextSmall
+                      ]}
+                    >
+                      {getTranslatedText(selectedLanguage, 'interviewPrep')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -725,6 +739,9 @@ const styles = StyleSheet.create({
     bottom: 4,
     left: 0,
     right: 0,
+  },
+  cardTextSmall: {
+    fontSize: 12,
   },
   selectedCard: {
     backgroundColor: '#D5D4DD',

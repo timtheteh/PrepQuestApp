@@ -7,6 +7,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import LanguageSelector from '@/components/onboarding/LanguageSelector';
+import StudyOnboardingImage from '@/assets/onboarding/studyOnboardingImage.svg';
+import InterviewOnboardingImage from '@/assets/onboarding/interviewOnboardingImage.svg';
 
 const { height } = Dimensions.get('window');
 
@@ -25,6 +27,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1'>('logoAnimation');
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
+  const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
 
 
   // Animation refs
@@ -39,6 +42,11 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
   const logoAnimationSource = useMemo(() => 
     require('../assets/animations/splashScreenLogoAnimation.json'), 
+    []
+  );
+
+  const loadingAnimation1Source = useMemo(() => 
+    require('../assets/animations/LoadingAnimation1.json'), 
     []
   );
 
@@ -218,7 +226,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           
           {/* Logo animation centered with fade animation */}
           {!hideLogoAnimation && (
-            <Animated.View style={[styles.logoContainer, { opacity: logoFadeAnim }]}>
+            <Animated.View style={[styles.logoAnimationContainer, { opacity: logoFadeAnim }]}>
               <LottieView
                 ref={logoAnimationRef}
                 source={logoAnimationSource}
@@ -262,6 +270,59 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             style={styles.imageBackground}
             resizeMode="cover"
           />
+          
+          {/* Centered container for onboardingPage1 content */}
+          <View style={[styles.onboardingContainer, { paddingBottom: Platform.OS === 'android' ? insets.bottom : 0 }]}>
+            <View style={styles.onboardingContent}>
+              {/* Welcome text section */}
+              <View style={styles.welcomeSection}>
+                <Text style={styles.welcomeTitle}>Welcome to</Text>
+                <Text style={styles.appTitle}>PrepQuest!</Text>
+              </View>
+              
+              {/* Animation section */}
+              <View style={styles.animationSection}>
+                <LottieView
+                  source={loadingAnimation1Source}
+                  autoPlay
+                  loop={true}
+                  style={styles.loadingAnimation}
+                  resizeMode="contain"
+                  speed={1}
+                  cacheComposition={true}
+                  renderMode="HARDWARE"
+                />
+              </View>
+              
+              {/* Second row: Question and cards */}
+              <View style={styles.secondRow}>
+                {/* Question text */}
+                <Text style={styles.questionText}>What are you prepping for?</Text>
+                
+                {/* Two column cards */}
+                <View style={styles.cardsContainer}>
+                  <TouchableOpacity 
+                    style={[styles.card, selectedCard === 'study' && styles.selectedCard]} 
+                    onPress={() => setSelectedCard('study')}
+                  >
+                    <View style={styles.imageContainer}>
+                      <StudyOnboardingImage width="100%" height="100%" />
+                    </View>
+                    <Text style={styles.cardText}>Study Prep</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.card, selectedCard === 'interview' && styles.selectedCard]} 
+                    onPress={() => setSelectedCard('interview')}
+                  >
+                    <View style={styles.imageContainer}>
+                      <InterviewOnboardingImage width="100%" height="100%" />
+                    </View>
+                    <Text style={styles.cardText}>Interview Prep</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
         </Animated.View>
       )}
 
@@ -332,7 +393,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  logoContainer: {
+  logoAnimationContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -396,5 +457,103 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bodyMedium,
     color: 'black',
     textAlign: 'center',
+  },
+  onboardingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  onboardingContent: {
+    width: '100%',
+    maxHeight: Dimensions.get('window').height * 0.77, // 80% of screen height
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flex: 1,
+  },
+  welcomeSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 0,
+    padding: 10,
+  },
+  welcomeTitle: {
+    fontSize: 32,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
+    marginBottom: 0,
+  },
+  appTitle: {
+    fontSize: 48,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+  },
+  animationSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginTop: 0,
+    padding: 10,
+  },
+  loadingAnimation: {
+    width: Dimensions.get('window').height * 0.8, // 15% of device height
+    height: Dimensions.get('window').height * 0.3, // 15% of device height
+  },
+  secondRow: {
+    width: '100%',
+    paddingHorizontal: 0,
+    paddingTop: 12,
+    flex: 1, // Expand to fill available space
+    justifyContent: 'flex-start',
+  },
+  questionText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
+  },
+  cardsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'stretch',
+    marginTop: 12,
+    flex: 1, // Expand to fill remaining space in secondRow
+  },
+  card: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: '#4F41D8',
+    marginHorizontal: 8,
+    position: 'relative',
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 26, // 4 (text bottom) + 24 (text height) + 4 (margin) = 32
+  },
+  imageContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardText: {
+    fontSize: 16,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    position: 'absolute',
+    bottom: 4,
+    left: 0,
+    right: 0,
+  },
+  selectedCard: {
+    backgroundColor: '#D5D4DD',
   },
 });

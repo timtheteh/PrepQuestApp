@@ -374,13 +374,18 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             </View>
             
             {/* Next button still on the right */}
-            <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+            <TouchableOpacity 
+              style={[styles.nextButton, !selectedCard && styles.disabledButton]} 
+              onPress={selectedCard ? handleNextPress : undefined}
+              disabled={!selectedCard}
+            >
               <View style={styles.buttonWithIcon}>
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={[styles.nextButtonText, !selectedCard && styles.disabledButtonText]}>Next</Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"
                     fill={Colors.light.text}
+                    opacity={!selectedCard ? 0.8 : 1}
                   />
                 </Svg>
               </View>
@@ -585,5 +590,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  disabledButtonText: {
+    color: '#000000',
+    opacity: 0.8,
   },
 });

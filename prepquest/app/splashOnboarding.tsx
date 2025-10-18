@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput } from 'react-native';
+import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -467,7 +467,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           />
           
           {/* Content container */}
-          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 30, opacity: onboardingPage2ContentFadeAnim }]}>
+          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage2ContentFadeAnim }]}>
             <View style={styles.onboardingPage2Content}>
               {/* First row: Great! */}
               <Text style={styles.greatText}>{getTranslatedText(selectedLanguage, 'great')}</Text>
@@ -503,6 +503,69 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                   </TouchableOpacity>
                 )}
               </View>
+              
+              {/* Suggestions text */}
+              <Text style={styles.suggestionsText}>Suggestions</Text>
+              
+              {/* ScrollView with suggestion cards */}
+              <ScrollView 
+                style={styles.suggestionsScrollView}
+                showsVerticalScrollIndicator={false}
+              >
+                {selectedCard === 'study' && (
+                  <View style={styles.suggestionsContainer}>
+                    {/* Row 1 */}
+                    <View style={styles.cardRow}>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Mathematics</Text>
+                      </View>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Physics</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Row 2 */}
+                    <View style={styles.cardRow}>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Chemistry</Text>
+                      </View>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Biology</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Row 3 */}
+                    <View style={styles.cardRow}>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Computer Science</Text>
+                      </View>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Engineering</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Row 4 */}
+                    <View style={styles.cardRow}>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Medicine</Text>
+                      </View>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Psychology</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Row 5 */}
+                    <View style={styles.cardRow}>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Business</Text>
+                      </View>
+                      <View style={styles.suggestionCard}>
+                        <Text style={styles.suggestionCardText}>Economics</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
             </View>
           </Animated.View>
         </Animated.View>
@@ -825,6 +888,7 @@ const styles = StyleSheet.create({
   },
   onboardingPage2Content: {
     width: '100%',
+    flex: 1,
   },
   greatText: {
     fontSize: 28,
@@ -844,7 +908,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bodyBold,
     color: 'black',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 12,
   },
   subjectQuestionText: {
     fontSize: 20,
@@ -879,5 +943,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 4,
+  },
+  suggestionsText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'left',
+    marginTop: 12,
+  },
+  suggestionsScrollView: {
+    flex: 1,
+    marginTop: 12,
+  },
+  suggestionsContainer: {
+    paddingBottom: 0,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  suggestionCard: {
+    width: '48%',
+    height: Dimensions.get('window').height * 0.2,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: '#4F41D8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  suggestionCardText: {
+    fontSize: 16,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
   },
 });

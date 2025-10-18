@@ -33,6 +33,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
   const [subjectInput, setSubjectInput] = useState<string>('');
+  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -285,6 +286,18 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     }
   };
 
+  const handleSuggestionPress = (suggestion: string) => {
+    setSelectedSuggestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(suggestion)) {
+        newSet.delete(suggestion);
+      } else {
+        newSet.add(suggestion);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <View style={styles.container}>
       {currentSection === 'logoAnimation' || currentSection === 'languageSelection' ? (
@@ -514,55 +527,153 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               >
                 {selectedCard === 'study' && (
                   <View style={styles.suggestionsContainer}>
-                    {/* Row 1 */}
-                    <View style={styles.cardRow}>
-                      <View style={styles.suggestionCard}>
-                        <Text style={styles.suggestionCardText}>Mathematics</Text>
+                      {/* Row 1 */}
+                      <View style={styles.cardRow}>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Mathematics') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Mathematics')}
+                        >
+                          <Text style={styles.suggestionCardText}>Mathematics</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Physics') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Physics')}
+                        >
+                          <Text style={styles.suggestionCardText}>Physics</Text>
+                        </TouchableOpacity>
                       </View>
-                      <View style={styles.suggestionCard}>
-                        <Text style={styles.suggestionCardText}>Physics</Text>
-                      </View>
-                    </View>
                     
                     {/* Row 2 */}
                     <View style={styles.cardRow}>
-                      <View style={styles.suggestionCard}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Chemistry') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Chemistry')}
+                      >
                         <Text style={styles.suggestionCardText}>Chemistry</Text>
-                      </View>
-                      <View style={styles.suggestionCard}>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Biology') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Biology')}
+                      >
                         <Text style={styles.suggestionCardText}>Biology</Text>
-                      </View>
+                      </TouchableOpacity>
                     </View>
                     
                     {/* Row 3 */}
                     <View style={styles.cardRow}>
-                      <View style={styles.suggestionCard}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Computer Science') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Computer Science')}
+                      >
                         <Text style={styles.suggestionCardText}>Computer Science</Text>
-                      </View>
-                      <View style={styles.suggestionCard}>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Engineering') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Engineering')}
+                      >
                         <Text style={styles.suggestionCardText}>Engineering</Text>
-                      </View>
+                      </TouchableOpacity>
                     </View>
                     
                     {/* Row 4 */}
                     <View style={styles.cardRow}>
-                      <View style={styles.suggestionCard}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Medicine') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Medicine')}
+                      >
                         <Text style={styles.suggestionCardText}>Medicine</Text>
-                      </View>
-                      <View style={styles.suggestionCard}>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Psychology') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Psychology')}
+                      >
                         <Text style={styles.suggestionCardText}>Psychology</Text>
-                      </View>
+                      </TouchableOpacity>
                     </View>
                     
                     {/* Row 5 */}
                     <View style={styles.cardRow}>
-                      <View style={styles.suggestionCard}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Business') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Business')}
+                      >
                         <Text style={styles.suggestionCardText}>Business</Text>
-                      </View>
-                      <View style={styles.suggestionCard}>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedSuggestions.has('Economics') && styles.selectedSuggestionCard]}
+                        onPress={() => handleSuggestionPress('Economics')}
+                      >
                         <Text style={styles.suggestionCardText}>Economics</Text>
-                      </View>
+                      </TouchableOpacity>
                     </View>
+                  </View>
+                )}
+                
+                {selectedCard === 'interview' && (
+                  <View style={styles.suggestionsContainer}>
+                      {/* Row 1 */}
+                      <View style={styles.cardRow}>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Software Engineering') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Software Engineering')}
+                        >
+                          <Text style={styles.suggestionCardText}>Software Engineering</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Data Science') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Data Science')}
+                        >
+                          <Text style={styles.suggestionCardText}>Data Science</Text>
+                        </TouchableOpacity>
+                      </View>
+                    
+                      {/* Row 2 */}
+                      <View style={styles.cardRow}>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Product Management') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Product Management')}
+                        >
+                          <Text style={styles.suggestionCardText}>Product Management</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Consulting') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Consulting')}
+                        >
+                          <Text style={styles.suggestionCardText}>Consulting</Text>
+                        </TouchableOpacity>
+                      </View>
+                    
+                      {/* Row 3 */}
+                      <View style={styles.cardRow}>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Finance') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Finance')}
+                        >
+                          <Text style={styles.suggestionCardText}>Finance</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Marketing') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Marketing')}
+                        >
+                          <Text style={styles.suggestionCardText}>Marketing</Text>
+                        </TouchableOpacity>
+                      </View>
+                    
+                      {/* Row 4 */}
+                      <View style={styles.cardRow}>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Sales') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Sales')}
+                        >
+                          <Text style={styles.suggestionCardText}>Sales</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.suggestionCard, selectedSuggestions.has('Operations') && styles.selectedSuggestionCard]}
+                          onPress={() => handleSuggestionPress('Operations')}
+                        >
+                          <Text style={styles.suggestionCardText}>Operations</Text>
+                        </TouchableOpacity>
+                      </View>
                   </View>
                 )}
               </ScrollView>
@@ -979,5 +1090,8 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bodyMedium,
     color: 'black',
     textAlign: 'center',
+  },
+  selectedSuggestionCard: {
+    backgroundColor: '#D5D4DD',
   },
 });

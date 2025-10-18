@@ -14,7 +14,7 @@ export const stringsOnboarding = {
     great: 'Great!',
     justAFewMoreQuestions: 'Just a few more questions to get you started...',
     progress: '1/3',
-    whichSubjects: 'Which subject(s) are you prepping for?*',
+    whichSubjects: 'Which subject(s) are you prepping for?',
   },
   Chinese: {
     skip: '跳过',
@@ -30,7 +30,7 @@ export const stringsOnboarding = {
     great: '太好了！',
     justAFewMoreQuestions: '再问几个问题来帮你开始...',
     progress: '1/3',
-    whichSubjects: '你在准备哪些科目？*',
+    whichSubjects: '你在准备哪些科目？',
   },
   Malay: {
     skip: 'Langkau',
@@ -46,7 +46,7 @@ export const stringsOnboarding = {
     great: 'Hebat!',
     justAFewMoreQuestions: 'Hanya beberapa soalan lagi untuk memulakan...',
     progress: '1/3',
-    whichSubjects: 'Subjek mana yang anda sediakan?*',
+    whichSubjects: 'Subjek mana yang anda sediakan?',
   },
   Hindi: {
     skip: 'छोड़ें',
@@ -62,7 +62,7 @@ export const stringsOnboarding = {
     great: 'बहुत बढ़िया!',
     justAFewMoreQuestions: 'आपको शुरू करने के लिए बस कुछ और प्रश्न...',
     progress: '1/3',
-    whichSubjects: 'आप किन विषयों की तैयारी कर रहे हैं?*',
+    whichSubjects: 'आप किन विषयों की तैयारी कर रहे हैं?',
   },
   French: {
     skip: 'Passer',
@@ -78,7 +78,7 @@ export const stringsOnboarding = {
     great: 'Parfait !',
     justAFewMoreQuestions: 'Juste quelques questions de plus pour vous aider à commencer...',
     progress: '1/3',
-    whichSubjects: 'Pour quelles matières vous préparez-vous ?*',
+    whichSubjects: 'Pour quelles matières vous préparez-vous ?',
   },
   Japanese: {
     skip: 'スキップ',
@@ -94,7 +94,7 @@ export const stringsOnboarding = {
     great: '素晴らしい！',
     justAFewMoreQuestions: '始めるためにあと数問だけ...',
     progress: '1/3',
-    whichSubjects: 'どの科目の準備をしていますか？*',
+    whichSubjects: 'どの科目の準備をしていますか？',
   },
   Korean: {
     skip: '건너뛰기',
@@ -110,7 +110,7 @@ export const stringsOnboarding = {
     great: '훌륭해요!',
     justAFewMoreQuestions: '시작하기 위해 몇 가지 질문만 더...',
     progress: '1/3',
-    whichSubjects: '어떤 과목을 준비하고 계신가요?*',
+    whichSubjects: '어떤 과목을 준비하고 계신가요?',
   },
   Spanish: {
     skip: 'Omitir',
@@ -126,7 +126,7 @@ export const stringsOnboarding = {
     great: '¡Genial!',
     justAFewMoreQuestions: 'Solo unas preguntas más para comenzar...',
     progress: '1/3',
-    whichSubjects: '¿Para qué materia(s) te estás preparando?*',
+    whichSubjects: '¿Para qué materia(s) te estás preparando?',
   },
   German: {
     skip: 'Überspringen',
@@ -142,7 +142,7 @@ export const stringsOnboarding = {
     great: 'Großartig!',
     justAFewMoreQuestions: 'Nur noch ein paar Fragen, um loszulegen...',
     progress: '1/3',
-    whichSubjects: 'Für welche Fächer bereiten Sie sich vor?*',
+    whichSubjects: 'Für welche Fächer bereiten Sie sich vor?',
   },
   Portuguese: {
     skip: 'Pular',
@@ -158,7 +158,7 @@ export const stringsOnboarding = {
     great: 'Ótimo!',
     justAFewMoreQuestions: 'Apenas algumas perguntas mais para começar...',
     progress: '1/3',
-    whichSubjects: 'Para quais matérias você está se preparando?*',
+    whichSubjects: 'Para quais matérias você está se preparando?',
   },
   Italian: {
     skip: 'Salta',
@@ -174,7 +174,7 @@ export const stringsOnboarding = {
     great: 'Fantastico!',
     justAFewMoreQuestions: 'Solo alcune domande in più per iniziare...',
     progress: '1/3',
-    whichSubjects: 'Per quali materie ti stai preparando?*',
+    whichSubjects: 'Per quali materie ti stai preparando?',
   },
   Russian: {
     skip: 'Пропустить',
@@ -190,7 +190,7 @@ export const stringsOnboarding = {
     great: 'Отлично!',
     justAFewMoreQuestions: 'Еще несколько вопросов, чтобы начать...',
     progress: '1/3',
-    whichSubjects: 'По каким предметам вы готовитесь?*',
+    whichSubjects: 'По каким предметам вы готовитесь?',
   },
   Arabic: {
     skip: 'تخطي',
@@ -206,7 +206,7 @@ export const stringsOnboarding = {
     great: 'رائع!',
     justAFewMoreQuestions: 'بضع أسئلة أخرى للبدء...',
     progress: '1/3',
-    whichSubjects: 'أي مادة تحضر لها؟*',
+    whichSubjects: 'أي مادة تحضر لها؟',
   },
   Indonesian: {
     skip: 'Lewati',
@@ -222,7 +222,7 @@ export const stringsOnboarding = {
     great: 'Hebat!',
     justAFewMoreQuestions: 'Beberapa pertanyaan lagi untuk memulai...',
     progress: '1/3',
-    whichSubjects: 'Mata pelajaran apa yang Anda persiapkan?*',
+    whichSubjects: 'Mata pelajaran apa yang Anda persiapkan?',
   },
   Thai: {
     skip: 'ข้าม',
@@ -238,7 +238,7 @@ export const stringsOnboarding = {
     great: 'เยี่ยม!',
     justAFewMoreQuestions: 'คำถามอีกไม่กี่ข้อเพื่อเริ่มต้น...',
     progress: '1/3',
-    whichSubjects: 'คุณกำลังเตรียมตัวสำหรับวิชาใด?*',
+    whichSubjects: 'คุณกำลังเตรียมตัวสำหรับวิชาใด?',
   },
   Vietnamese: {
     skip: 'Bỏ qua',
@@ -254,7 +254,7 @@ export const stringsOnboarding = {
     great: 'Tuyệt vời!',
     justAFewMoreQuestions: 'Chỉ còn một vài câu hỏi nữa để bắt đầu...',
     progress: '1/3',
-    whichSubjects: 'Bạn đang chuẩn bị cho môn học nào?*',
+    whichSubjects: 'Bạn đang chuẩn bị cho môn học nào?',
   },
   Turkish: {
     skip: 'Atla',
@@ -270,7 +270,7 @@ export const stringsOnboarding = {
     great: 'Harika!',
     justAFewMoreQuestions: 'Başlamak için sadece birkaç soru daha...',
     progress: '1/3',
-    whichSubjects: 'Hangi konulara hazırlanıyorsunuz?*',
+    whichSubjects: 'Hangi konulara hazırlanıyorsunuz?',
   },
   Dutch: {
     skip: 'Overslaan',
@@ -286,7 +286,7 @@ export const stringsOnboarding = {
     great: 'Geweldig!',
     justAFewMoreQuestions: 'Nog een paar vragen om te beginnen...',
     progress: '1/3',
-    whichSubjects: 'Voor welke vakken bereid je je voor?*',
+    whichSubjects: 'Voor welke vakken bereid je je voor?',
   },
   Polish: {
     skip: 'Pomiń',
@@ -302,7 +302,7 @@ export const stringsOnboarding = {
     great: 'Świetnie!',
     justAFewMoreQuestions: 'Jeszcze kilka pytań, aby zacząć...',
     progress: '1/3',
-    whichSubjects: 'Do jakich przedmiotów się przygotowujesz?*',
+    whichSubjects: 'Do jakich przedmiotów się przygotowujesz?',
   },
   Swedish: {
     skip: 'Hoppa över',
@@ -318,7 +318,7 @@ export const stringsOnboarding = {
     great: 'Fantastiskt!',
     justAFewMoreQuestions: 'Bara några frågor till för att komma igång...',
     progress: '1/3',
-    whichSubjects: 'Vilka ämnen förbereder du dig för?*',
+    whichSubjects: 'Vilka ämnen förbereder du dig för?',
   },
   Czech: {
     skip: 'Přeskočit',
@@ -334,7 +334,7 @@ export const stringsOnboarding = {
     great: 'Skvělé!',
     justAFewMoreQuestions: 'Ještě několik otázek k začátku...',
     progress: '1/3',
-    whichSubjects: 'Pro jaké předměty se připravujete?*',
+    whichSubjects: 'Pro jaké předměty se připravujete?',
   },
   Greek: {
     skip: 'Παράλειψη',
@@ -350,7 +350,7 @@ export const stringsOnboarding = {
     great: 'Τέλεια!',
     justAFewMoreQuestions: 'Μόνο λίγες ακόμα ερωτήσεις για να ξεκινήσετε...',
     progress: '1/3',
-    whichSubjects: 'Για ποια μαθήματα προετοιμάζεστε;*',
+    whichSubjects: 'Για ποια μαθήματα προετοιμάζεστε;',
   },
   Hebrew: {
     skip: 'דלג',
@@ -366,7 +366,7 @@ export const stringsOnboarding = {
     great: 'נהדר!',
     justAFewMoreQuestions: 'רק עוד כמה שאלות כדי להתחיל...',
     progress: '1/3',
-    whichSubjects: 'איזה נושאים אתם מתכוננים?*',
+    whichSubjects: 'איזה נושאים אתם מתכוננים?',
   },
   Tagalog: {
     skip: 'Laktawan',
@@ -382,7 +382,7 @@ export const stringsOnboarding = {
     great: 'Mahusay!',
     justAFewMoreQuestions: 'Ilang tanong pa lang para makapagsimula...',
     progress: '1/3',
-    whichSubjects: 'Para saang mga paksa kayo naghahanda?*',
+    whichSubjects: 'Para saang mga paksa kayo naghahanda?',
   },
   Tamil: {
     skip: 'தவிர்க்க',
@@ -398,7 +398,7 @@ export const stringsOnboarding = {
     great: 'அருமை!',
     justAFewMoreQuestions: 'தொடங்க சில கேள்விகள் மட்டும்...',
     progress: '1/3',
-    whichSubjects: 'நீங்கள் எந்த பாடங்களுக்கு தயாராகிறீர்கள்?*',
+    whichSubjects: 'நீங்கள் எந்த பாடங்களுக்கு தயாராகிறீர்கள்?',
   },
   Bengali: {
     skip: 'এড়িয়ে যান',
@@ -414,7 +414,7 @@ export const stringsOnboarding = {
     great: 'দারুণ!',
     justAFewMoreQuestions: 'শুরু করার জন্য আরও কয়েকটি প্রশ্ন...',
     progress: '1/3',
-    whichSubjects: 'আপনি কোন বিষয়ের জন্য প্রস্তুত হচ্ছেন?*',
+    whichSubjects: 'আপনি কোন বিষয়ের জন্য প্রস্তুত হচ্ছেন?',
   },
   Ukrainian: {
     skip: 'Пропустити',
@@ -430,7 +430,7 @@ export const stringsOnboarding = {
     great: 'Чудово!',
     justAFewMoreQuestions: 'Ще кілька питань для початку...',
     progress: '1/3',
-    whichSubjects: 'З яких предметів ви готуєтеся?*',
+    whichSubjects: 'З яких предметів ви готуєтеся?',
   },
   Romanian: {
     skip: 'Omite',
@@ -446,7 +446,7 @@ export const stringsOnboarding = {
     great: 'Minunat!',
     justAFewMoreQuestions: 'Doar câteva întrebări în plus pentru a începe...',
     progress: '1/3',
-    whichSubjects: 'Pentru ce materii te pregătești?*',
+    whichSubjects: 'Pentru ce materii te pregătești?',
   },
   Hungarian: {
     skip: 'Kihagyás',
@@ -462,7 +462,7 @@ export const stringsOnboarding = {
     great: 'Nagyszerű!',
     justAFewMoreQuestions: 'Csak néhány kérdés még, hogy elkezdhesd...',
     progress: '1/3',
-    whichSubjects: 'Milyen tantárgyakhoz készülsz fel?*',
+    whichSubjects: 'Milyen tantárgyakhoz készülsz fel?',
   },
   Farsi: {
     skip: 'رد کردن',
@@ -478,7 +478,7 @@ export const stringsOnboarding = {
     great: 'عالی!',
     justAFewMoreQuestions: 'فقط چند سؤال دیگر برای شروع...',
     progress: '1/3',
-    whichSubjects: 'برای چه موضوعاتی آماده می‌شوید؟*',
+    whichSubjects: 'برای چه موضوعاتی آماده می‌شوید؟',
   },
   Swahili: {
     skip: 'Ruka',
@@ -494,7 +494,7 @@ export const stringsOnboarding = {
     great: 'Vizuri!',
     justAFewMoreQuestions: 'Maswali machache tu ya kuanza...',
     progress: '1/3',
-    whichSubjects: 'Unaandaa masomo gani?*',
+    whichSubjects: 'Unaandaa masomo gani?',
   },
   Afrikaans: {
     skip: 'Slaan Oor',
@@ -510,7 +510,7 @@ export const stringsOnboarding = {
     great: 'Geweldig!',
     justAFewMoreQuestions: 'Net nog \'n paar vrae om te begin...',
     progress: '1/3',
-    whichSubjects: 'Vir watter vakke berei jy jou voor?*',
+    whichSubjects: 'Vir watter vakke berei jy jou voor?',
   },
   Finnish: {
     skip: 'Ohita',
@@ -526,7 +526,7 @@ export const stringsOnboarding = {
     great: 'Hienoa!',
     justAFewMoreQuestions: 'Vain muutama kysymys lisää aloittamiseen...',
     progress: '1/3',
-    whichSubjects: 'Mihin aineisiin valmistaudut?*',
+    whichSubjects: 'Mihin aineisiin valmistaudut?',
   },
   Norwegian: {
     skip: 'Hopp Over',
@@ -542,7 +542,7 @@ export const stringsOnboarding = {
     great: 'Flott!',
     justAFewMoreQuestions: 'Bare noen få spørsmål til for å komme i gang...',
     progress: '1/3',
-    whichSubjects: 'Hvilke fag forbereder du deg på?*',
+    whichSubjects: 'Hvilke fag forbereder du deg på?',
   },
   Danish: {
     skip: 'Spring Over',
@@ -558,7 +558,7 @@ export const stringsOnboarding = {
     great: 'Fantastisk!',
     justAFewMoreQuestions: 'Bare et par spørgsmål mere for at komme i gang...',
     progress: '1/3',
-    whichSubjects: 'Hvilke fag forbereder du dig på?*',
+    whichSubjects: 'Hvilke fag forbereder du dig på?',
   },
 };
 

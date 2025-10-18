@@ -384,7 +384,24 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 <View style={styles.cardsContainer}>
                   <TouchableOpacity 
                     style={[styles.card, selectedCard === 'study' && styles.selectedCard]} 
-                    onPress={() => setSelectedCard('study')}
+                    onPress={() => {
+                      setSelectedCard('study');
+                      // Auto-navigate to onboardingPage2 after selection
+                      setTimeout(() => {
+                        Animated.timing(onboardingPage1ContentFadeAnim, {
+                          toValue: 0,
+                          duration: 300,
+                          useNativeDriver: true,
+                        }).start(() => {
+                          setCurrentSection('onboardingPage2');
+                          Animated.timing(onboardingPage2ContentFadeAnim, {
+                            toValue: 1,
+                            duration: 300,
+                            useNativeDriver: true,
+                          }).start();
+                        });
+                      }, 500); // Small delay to show selection feedback
+                    }}
                   >
                     <View style={styles.imageContainer}>
                       <StudyOnboardingImage width="100%" height="100%" />
@@ -400,7 +417,24 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.card, selectedCard === 'interview' && styles.selectedCard]} 
-                    onPress={() => setSelectedCard('interview')}
+                    onPress={() => {
+                      setSelectedCard('interview');
+                      // Auto-navigate to onboardingPage2 after selection
+                      setTimeout(() => {
+                        Animated.timing(onboardingPage1ContentFadeAnim, {
+                          toValue: 0,
+                          duration: 300,
+                          useNativeDriver: true,
+                        }).start(() => {
+                          setCurrentSection('onboardingPage2');
+                          Animated.timing(onboardingPage2ContentFadeAnim, {
+                            toValue: 1,
+                            duration: 300,
+                            useNativeDriver: true,
+                          }).start();
+                        });
+                      }, 500); // Small delay to show selection feedback
+                    }}
                   >
                     <View style={styles.imageContainer}>
                       <InterviewOnboardingImage width="100%" height="100%" />
@@ -431,7 +465,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           />
           
           {/* Content container */}
-          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 60, opacity: onboardingPage2ContentFadeAnim }]}>
+          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 30, opacity: onboardingPage2ContentFadeAnim }]}>
             <View style={styles.onboardingPage2Content}>
               {/* First row: Great! */}
               <Text style={styles.greatText}>{getTranslatedText(selectedLanguage, 'great')}</Text>

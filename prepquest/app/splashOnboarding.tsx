@@ -9,6 +9,7 @@ import { Fonts } from '@/constants/Fonts';
 import LanguageSelector from '@/components/onboarding/LanguageSelector';
 import StudyOnboardingImage from '@/assets/onboarding/studyOnboardingImage.svg';
 import InterviewOnboardingImage from '@/assets/onboarding/interviewOnboardingImage.svg';
+import { Svg, Polygon } from 'react-native-svg';
 
 const { height } = Dimensions.get('window');
 
@@ -339,14 +340,30 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             
             {/* Next button stays on the right */}
             <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
-              <Text style={styles.nextButtonText}>Next</Text>
+              <View style={styles.buttonWithIcon}>
+                <Text style={styles.nextButtonText}>Next</Text>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="12,6 0,0 0,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+              </View>
             </TouchableOpacity>
           </>
         ) : currentSection === 'onboardingPage1' ? (
           <>
             {/* Back button on the left when on PNG background */}
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-              <Text style={styles.backButtonText}>Back</Text>
+              <View style={styles.buttonWithIcon}>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="0,6 12,0 12,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+                <Text style={styles.backButtonText}>Back</Text>
+              </View>
             </TouchableOpacity>
             
             {/* Skip button still centered */}
@@ -358,7 +375,15 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             
             {/* Next button still on the right */}
             <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
-              <Text style={styles.nextButtonText}>Next</Text>
+              <View style={styles.buttonWithIcon}>
+                <Text style={styles.nextButtonText}>Next</Text>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="12,6 0,0 0,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+              </View>
             </TouchableOpacity>
           </>
         ) : null}
@@ -555,5 +580,10 @@ const styles = StyleSheet.create({
   },
   selectedCard: {
     backgroundColor: '#D5D4DD',
+  },
+  buttonWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 });

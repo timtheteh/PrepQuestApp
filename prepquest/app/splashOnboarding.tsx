@@ -10,6 +10,8 @@ import LanguageSelector from '@/components/onboarding/LanguageSelector';
 import StudyOnboardingImage from '@/assets/onboarding/studyOnboardingImage.svg';
 import InterviewOnboardingImage from '@/assets/onboarding/interviewOnboardingImage.svg';
 import { Svg, Polygon } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getTranslatedText } from '@/constants/stringsOnboarding';
 
 const { height } = Dimensions.get('window');
 
@@ -200,8 +202,13 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     });
   };
 
-  const handleLanguageChange = (languageKey: string) => {
+  const handleLanguageChange = async (languageKey: string) => {
     setSelectedLanguage(languageKey as any);
+    try {
+      await AsyncStorage.setItem('languagePreferenceOnboarding', languageKey);
+    } catch (error) {
+      console.error('Error saving language preference:', error);
+    }
   };
 
   return (
@@ -259,6 +266,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               <LanguageSelector
                 initialLanguage={selectedLanguage}
                 onLanguageChange={handleLanguageChange}
+                title={getTranslatedText(selectedLanguage, 'selectLanguage')}
               />
             </Animated.View>
           )}
@@ -277,8 +285,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             <View style={styles.onboardingContent}>
               {/* Welcome text section */}
               <View style={styles.welcomeSection}>
-                <Text style={styles.welcomeTitle}>Welcome to</Text>
-                <Text style={styles.appTitle}>PrepQuest!</Text>
+                <Text style={styles.welcomeTitle}>{getTranslatedText(selectedLanguage, 'welcomeTo')}</Text>
+                <Text style={styles.appTitle}>{getTranslatedText(selectedLanguage, 'prepQuest')}</Text>
               </View>
               
               {/* Animation section */}
@@ -298,7 +306,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               {/* Second row: Question and cards */}
               <View style={styles.secondRow}>
                 {/* Question text */}
-                <Text style={styles.questionText}>What are you prepping for?</Text>
+                <Text style={styles.questionText}>{getTranslatedText(selectedLanguage, 'whatAreYouPreppingFor')}</Text>
                 
                 {/* Two column cards */}
                 <View style={styles.cardsContainer}>
@@ -309,7 +317,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <View style={styles.imageContainer}>
                       <StudyOnboardingImage width="100%" height="100%" />
                     </View>
-                    <Text style={styles.cardText}>Study Prep</Text>
+                    <Text style={styles.cardText}>{getTranslatedText(selectedLanguage, 'studyPrep')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.card, selectedCard === 'interview' && styles.selectedCard]} 
@@ -318,7 +326,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <View style={styles.imageContainer}>
                       <InterviewOnboardingImage width="100%" height="100%" />
                     </View>
-                    <Text style={styles.cardText}>Interview Prep</Text>
+                    <Text style={styles.cardText}>{getTranslatedText(selectedLanguage, 'interviewPrep')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -334,14 +342,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             {/* Skip button positioned absolutely in center */}
             <View style={styles.skipButtonContainer}>
               <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-                <Text style={styles.skipButtonText}>Skip</Text>
+                <Text style={styles.skipButtonText}>{getTranslatedText(selectedLanguage, 'skip')}</Text>
               </TouchableOpacity>
             </View>
             
             {/* Next button stays on the right */}
             <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
               <View style={styles.buttonWithIcon}>
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={styles.nextButtonText}>{getTranslatedText(selectedLanguage, 'next')}</Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"
@@ -362,14 +370,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     fill={Colors.light.text}
                   />
                 </Svg>
-                <Text style={styles.backButtonText}>Back</Text>
+                <Text style={styles.backButtonText}>{getTranslatedText(selectedLanguage, 'back')}</Text>
               </View>
             </TouchableOpacity>
             
             {/* Skip button still centered */}
             <View style={styles.skipButtonContainer}>
               <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-                <Text style={styles.skipButtonText}>Skip</Text>
+                <Text style={styles.skipButtonText}>{getTranslatedText(selectedLanguage, 'skip')}</Text>
               </TouchableOpacity>
             </View>
             
@@ -380,7 +388,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               disabled={!selectedCard}
             >
               <View style={styles.buttonWithIcon}>
-                <Text style={[styles.nextButtonText, !selectedCard && styles.disabledButtonText]}>Next</Text>
+                <Text style={[styles.nextButtonText, !selectedCard && styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"

@@ -94,6 +94,7 @@ const getFlagComponent = (languageKey: string) => {
 interface LanguageSelectorProps {
   initialLanguage?: string;
   onLanguageChange?: (language: string) => void;
+  title?: string;
 }
 
 // Language picker component
@@ -351,7 +352,8 @@ const createLanguagePickerStyles = () => StyleSheet.create({
 
 export default function LanguageSelector({ 
   initialLanguage = 'English', 
-  onLanguageChange 
+  onLanguageChange,
+  title = 'Choose Language'
 }: LanguageSelectorProps) {
   // Available languages - sorted alphabetically by label
   const availableLanguages = [
@@ -399,7 +401,7 @@ export default function LanguageSelector({
     <View style={styles.languageSelectionContainer}>
       {/* White rectangle container - same as login/sign-up */}
       <View style={styles.whiteContainer}>
-        <Text style={styles.languageSelectionTitle}>Choose Language</Text>
+        <Text style={styles.languageSelectionTitle}>{title}</Text>
         <View style={styles.languagePickerContainer}>
           <LanguagePicker
             initialLanguage={initialLanguage}

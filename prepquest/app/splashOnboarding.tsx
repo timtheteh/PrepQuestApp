@@ -32,6 +32,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
 
+  // Load language preference from AsyncStorage
+  useEffect(() => {
+    const loadLanguagePreference = async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem('languagePreferenceOnboarding');
+        if (savedLanguage) {
+          setSelectedLanguage(savedLanguage);
+        }
+      } catch (error) {
+        console.error('Error loading language preference:', error);
+      }
+    };
+    loadLanguagePreference();
+  }, []);
 
   // Animation refs
   const animationRef = useRef<LottieView>(null);
@@ -59,12 +73,16 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const logoFadeAnim = useRef(new Animated.Value(1)).current;
   const languageSelectorFadeAnim = useRef(new Animated.Value(0)).current;
   const pngBackgroundFadeAnim = useRef(new Animated.Value(0)).current;
+  const onboardingPage1ContentFadeAnim = useRef(new Animated.Value(0)).current;
+  const onboardingPage2ContentFadeAnim = useRef(new Animated.Value(0)).current;
   
   // Initialize animation values to prevent glitch
   useEffect(() => {
     logoFadeAnim.setValue(1);
     languageSelectorFadeAnim.setValue(0);
     pngBackgroundFadeAnim.setValue(0);
+    onboardingPage1ContentFadeAnim.setValue(0);
+    onboardingPage2ContentFadeAnim.setValue(0);
   }, []);
 
   // Start animations on mount and set timer for background transition
@@ -144,6 +162,22 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     }
   }, [currentSection]);
 
+  // Handle content fade-in when transitioning to onboardingPage1
+  useEffect(() => {
+    if (currentSection === 'onboardingPage1') {
+      // Small delay to ensure smooth transition
+      const fadeDelay = setTimeout(() => {
+        Animated.timing(onboardingPage1ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }, 100);
+
+      return () => clearTimeout(fadeDelay);
+    }
+  }, [currentSection, onboardingPage1ContentFadeAnim]);
+
   const handleSkipPress = () => {
     onComplete();
   };
@@ -167,8 +201,22 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         }).start();
       });
     } else if (currentSection === 'onboardingPage1') {
-      // Transition to onboardingPage2
-      setCurrentSection('onboardingPage2');
+      // Fade out onboardingPage1 content first
+      Animated.timing(onboardingPage1ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition to onboardingPage2
+        setCurrentSection('onboardingPage2');
+        
+        // Then fade in onboardingPage2 content
+        Animated.timing(onboardingPage2ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -207,8 +255,22 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         }).start();
       });
     } else if (currentSection === 'onboardingPage2') {
-      // Go back to onboardingPage1
-      setCurrentSection('onboardingPage1');
+      // Fade out onboardingPage2 content first
+      Animated.timing(onboardingPage2ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition back to onboardingPage1
+        setCurrentSection('onboardingPage1');
+        
+        // Then fade in onboardingPage1 content
+        Animated.timing(onboardingPage1ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -291,7 +353,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           />
           
           {/* Centered container for onboardingPage1 content */}
-          <View style={[styles.onboardingContainer, { paddingBottom: Platform.OS === 'android' ? insets.bottom : 0 }]}>
+          <Animated.View style={[styles.onboardingContainer, { paddingBottom: Platform.OS === 'android' ? insets.bottom : 0, opacity: onboardingPage1ContentFadeAnim }]}>
             <View style={styles.onboardingContent}>
               {/* Welcome text section */}
               <View style={styles.welcomeSection}>
@@ -341,7 +403,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 </View>
               </View>
             </View>
-          </View>
+          </Animated.View>
         </Animated.View>
       )}
 
@@ -353,6 +415,23 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             style={styles.imageBackground}
             resizeMode="cover"
           />
+          
+          {/* Content container */}
+          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 60, opacity: onboardingPage2ContentFadeAnim }]}>
+            <View style={styles.onboardingPage2Content}>
+              {/* First row: Great! */}
+              <Text style={styles.greatText}>{getTranslatedText(selectedLanguage, 'great')}</Text>
+              
+              {/* Second row: Just a few more questions... */}
+              <Text style={styles.questionsText}>{getTranslatedText(selectedLanguage, 'justAFewMoreQuestions')}</Text>
+              
+              {/* Third row: 1/3 */}
+              <Text style={styles.progressText}>{getTranslatedText(selectedLanguage, 'progress')}</Text>
+              
+              {/* Fourth row: Which subject(s)... */}
+              <Text style={styles.subjectQuestionText}>{getTranslatedText(selectedLanguage, 'whichSubjects')}</Text>
+            </View>
+          </Animated.View>
         </Animated.View>
       )}
 
@@ -661,5 +740,41 @@ const styles = StyleSheet.create({
   disabledButtonText: {
     color: '#000000',
     opacity: 0.8,
+  },
+  onboardingPage2Container: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    paddingHorizontal: 12,
+  },
+  onboardingPage2Content: {
+    width: '100%',
+  },
+  greatText: {
+    fontSize: 28,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+  },
+  questionsText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'left',
+    marginTop: 12,
+  },
+  progressText: {
+    fontSize: 28,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  subjectQuestionText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 12,
   },
 });

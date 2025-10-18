@@ -21,8 +21,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // State for background transition
-  const [showSvgBackground, setShowSvgBackground] = useState(false);
+  // State for section navigation
+  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1'>('logoAnimation');
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
 
@@ -84,6 +84,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         
         // Small delay before starting fade in to prevent glitch
         setTimeout(() => {
+          // Transition to language selection section
+          setCurrentSection('languageSelection');
           // Start fade in animation for language selector
           Animated.timing(languageSelectorFadeAnim, {
             toValue: 1,
@@ -108,31 +110,84 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     };
   }, [logoFadeAnim, languageSelectorFadeAnim]);
 
+  // Ensure background animation is playing when in language selection section
+  useEffect(() => {
+    if (currentSection === 'languageSelection' && animationRef.current) {
+      // Small delay to ensure smooth transition on Android
+      const animationDelay = setTimeout(() => {
+        if (animationRef.current) {
+          if (Platform.OS === 'android') {
+            animationRef.current.reset();
+            setTimeout(() => {
+              if (animationRef.current) {
+                animationRef.current.play();
+              }
+            }, 100);
+          } else {
+            animationRef.current.play();
+          }
+        }
+      }, Platform.OS === 'android' ? 200 : 50);
+
+      return () => clearTimeout(animationDelay);
+    }
+  }, [currentSection]);
+
   const handleSkipPress = () => {
     onComplete();
   };
 
   const handleNextPress = () => {
-    // Show PNG background and start fade-in animation when Next is clicked
-    setShowSvgBackground(true);
-    
-    // Start fade-in animation for PNG background
-    Animated.timing(pngBackgroundFadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleBackPress = () => {
-    // Start fade-out animation for PNG background
-    Animated.timing(pngBackgroundFadeAnim, {
+    // Start fade-out of language selector first
+    Animated.timing(languageSelectorFadeAnim, {
       toValue: 0,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      // Hide PNG background after fade-out completes
-      setShowSvgBackground(false);
+      // After language selector fades out, transition to onboardingPage1
+      setCurrentSection('onboardingPage1');
+      
+      // Then fade in the PNG background smoothly
+      Animated.timing(pngBackgroundFadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const handleBackPress = () => {
+    // Start smooth fade-out of PNG background first
+    Animated.timing(pngBackgroundFadeAnim, {
+      toValue: 0,
+      duration: 600,
+      useNativeDriver: true,
+    }).start(() => {
+      // After PNG fades out, transition to language selection
+      setCurrentSection('languageSelection');
+      setShowLanguageSelector(true);
+      
+      // Ensure background animation is playing with Android-specific handling
+      if (animationRef.current) {
+        // For Android, we need to restart the animation more explicitly
+        if (Platform.OS === 'android') {
+          animationRef.current.reset();
+          setTimeout(() => {
+            if (animationRef.current) {
+              animationRef.current.play();
+            }
+          }, 50);
+        } else {
+          animationRef.current.play();
+        }
+      }
+      
+      // Then fade in the language selector smoothly
+      Animated.timing(languageSelectorFadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
     });
   };
 
@@ -142,7 +197,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
   return (
     <View style={styles.container}>
-      {!showSvgBackground ? (
+      {currentSection === 'logoAnimation' || currentSection === 'languageSelection' ? (
         <>
           {/* Background animation that fills the screen */}
           <LottieView
@@ -182,7 +237,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           )}
 
           {/* Language selection with fade animation */}
-          {showLanguageSelector && (
+          {currentSection === 'languageSelection' && showLanguageSelector && (
             <Animated.View style={{ 
               opacity: languageSelectorFadeAnim,
               position: 'absolute',
@@ -212,19 +267,21 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
       {/* Top button row with conditional buttons */}
       <View style={[styles.topButtonRow, { top: insets.top }]}>
-        {!showSvgBackground && hideLogoAnimation ? (
+        {currentSection === 'languageSelection' ? (
           <>
             {/* Skip button positioned absolutely in center */}
-            <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-              <Text style={styles.skipButtonText}>Skip</Text>
-            </TouchableOpacity>
+            <View style={styles.skipButtonContainer}>
+              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+                <Text style={styles.skipButtonText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
             
             {/* Next button stays on the right */}
             <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
               <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
           </>
-        ) : showSvgBackground ? (
+        ) : currentSection === 'onboardingPage1' ? (
           <>
             {/* Back button on the left when on PNG background */}
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
@@ -232,9 +289,11 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             </TouchableOpacity>
             
             {/* Skip button still centered */}
-            <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-              <Text style={styles.skipButtonText}>Skip</Text>
-            </TouchableOpacity>
+            <View style={styles.skipButtonContainer}>
+              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+                <Text style={styles.skipButtonText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
             
             {/* Next button still on the right */}
             <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
@@ -296,13 +355,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 10, // Ensure buttons are above animations
   },
-  skipButton: {
+  skipButtonContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
     alignItems: 'center',
+  },
+  skipButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
+    minWidth: 60,
+    alignItems: 'center',
   },
   skipButtonText: {
     fontSize: 16,

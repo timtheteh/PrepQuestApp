@@ -71,6 +71,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [experienceLevelInput, setExperienceLevelInput] = useState<string>('');
   const [companyInput, setCompanyInput] = useState<string>('');
   const [topicsInput, setTopicsInput] = useState<string>('');
+  const [examInput, setExamInput] = useState<string>('');
+  const [studyTopicsInput, setStudyTopicsInput] = useState<string>('');
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -1198,104 +1200,176 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.onboardingPage4ScrollContent}
               >
-                {/* Experience Level Question */}
-                <Text style={styles.questionTextLeft}>
-                  {getTranslatedText(selectedLanguage, 'experienceLevelQuestion')}
-                </Text>
-                
-                {/* Experience Level Text Input */}
-                <View style={styles.textInputContainer}>
-                  <TextInput
-                    style={styles.subjectTextInput}
-                    placeholder="Type here!"
-                    placeholderTextColor={Colors.light.unselectedText}
-                    value={experienceLevelInput}
-                    onChangeText={setExperienceLevelInput}
-                  />
-                  {experienceLevelInput.length > 0 && (
-                    <TouchableOpacity 
-                      style={styles.cancelIconButton}
-                      onPress={() => setExperienceLevelInput('')}
-                    >
-                      <MaterialIcons 
-                        name="cancel" 
-                        size={20} 
-                        color={Colors.light.unselectedText} 
+                {selectedCard === 'study' ? (
+                  <>
+                    {/* Exam Question - Study Mode Only */}
+                    <Text style={styles.questionTextLeft}>
+                      {getTranslatedText(selectedLanguage, 'examQuestion')}
+                    </Text>
+                    
+                    {/* Exam Text Input */}
+                    <View style={styles.textInputContainer}>
+                      <TextInput
+                        style={styles.subjectTextInput}
+                        placeholder="Type here!"
+                        placeholderTextColor={Colors.light.unselectedText}
+                        value={examInput}
+                        onChangeText={setExamInput}
                       />
-                    </TouchableOpacity>
-                  )}
-                </View>
-                
-                {/* Experience Level Helper Text */}
-                <Text style={styles.helperText}>
-                  {getTranslatedText(selectedLanguage, 'experienceLevelHelper')}
-                </Text>
-                
-                {/* Company Question */}
-                <Text style={styles.questionTextLeft}>
-                  {getTranslatedText(selectedLanguage, 'companyQuestion')}
-                </Text>
-                
-                {/* Company Text Input */}
-                <View style={styles.textInputContainer}>
-                  <TextInput
-                    style={styles.subjectTextInput}
-                    placeholder="Type here!"
-                    placeholderTextColor={Colors.light.unselectedText}
-                    value={companyInput}
-                    onChangeText={setCompanyInput}
-                  />
-                  {companyInput.length > 0 && (
-                    <TouchableOpacity 
-                      style={styles.cancelIconButton}
-                      onPress={() => setCompanyInput('')}
-                    >
-                      <MaterialIcons 
-                        name="cancel" 
-                        size={20} 
-                        color={Colors.light.unselectedText} 
+                      {examInput.length > 0 && (
+                        <TouchableOpacity 
+                          style={styles.cancelIconButton}
+                          onPress={() => setExamInput('')}
+                        >
+                          <MaterialIcons 
+                            name="cancel" 
+                            size={20} 
+                            color={Colors.light.unselectedText} 
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    
+                    {/* Exam Helper Text */}
+                    <Text style={styles.helperText}>
+                      {getTranslatedText(selectedLanguage, 'examHelper')}
+                    </Text>
+                    
+                    {/* Study Topics Question */}
+                    <Text style={styles.questionTextLeft}>
+                      {getTranslatedText(selectedLanguage, 'studyTopicsQuestion')}
+                    </Text>
+                    
+                    {/* Study Topics Text Input */}
+                    <View style={styles.textInputContainer}>
+                      <TextInput
+                        style={styles.subjectTextInput}
+                        placeholder="Type here!"
+                        placeholderTextColor={Colors.light.unselectedText}
+                        value={studyTopicsInput}
+                        onChangeText={setStudyTopicsInput}
                       />
-                    </TouchableOpacity>
-                  )}
-                </View>
-                
-                {/* Company Helper Text */}
-                <Text style={styles.helperText}>
-                  {getTranslatedText(selectedLanguage, 'companyHelper')}
-                </Text>
-                
-                {/* Topics Question */}
-                <Text style={styles.questionTextLeft}>
-                  {getTranslatedText(selectedLanguage, 'topicsQuestion')}
-                </Text>
-                
-                {/* Topics Text Input */}
-                <View style={styles.textInputContainer}>
-                  <TextInput
-                    style={styles.subjectTextInput}
-                    placeholder="Type here!"
-                    placeholderTextColor={Colors.light.unselectedText}
-                    value={topicsInput}
-                    onChangeText={setTopicsInput}
-                  />
-                  {topicsInput.length > 0 && (
-                    <TouchableOpacity 
-                      style={styles.cancelIconButton}
-                      onPress={() => setTopicsInput('')}
-                    >
-                      <MaterialIcons 
-                        name="cancel" 
-                        size={20} 
-                        color={Colors.light.unselectedText} 
+                      {studyTopicsInput.length > 0 && (
+                        <TouchableOpacity 
+                          style={styles.cancelIconButton}
+                          onPress={() => setStudyTopicsInput('')}
+                        >
+                          <MaterialIcons 
+                            name="cancel" 
+                            size={20} 
+                            color={Colors.light.unselectedText} 
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    
+                    {/* Study Topics Helper Text */}
+                    <Text style={styles.helperText}>
+                      {getTranslatedText(selectedLanguage, 'studyTopicsHelper')}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    {/* Experience Level Question - Interview Mode Only */}
+                    <Text style={styles.questionTextLeft}>
+                      {getTranslatedText(selectedLanguage, 'experienceLevelQuestion')}
+                    </Text>
+                    
+                    {/* Experience Level Text Input */}
+                    <View style={styles.textInputContainer}>
+                      <TextInput
+                        style={styles.subjectTextInput}
+                        placeholder="Type here!"
+                        placeholderTextColor={Colors.light.unselectedText}
+                        value={experienceLevelInput}
+                        onChangeText={setExperienceLevelInput}
                       />
-                    </TouchableOpacity>
-                  )}
-                </View>
-                
-                {/* Topics Helper Text */}
-                <Text style={styles.helperText}>
-                  {getTranslatedText(selectedLanguage, 'topicsHelper')}
-                </Text>
+                      {experienceLevelInput.length > 0 && (
+                        <TouchableOpacity 
+                          style={styles.cancelIconButton}
+                          onPress={() => setExperienceLevelInput('')}
+                        >
+                          <MaterialIcons 
+                            name="cancel" 
+                            size={20} 
+                            color={Colors.light.unselectedText} 
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    
+                    {/* Experience Level Helper Text */}
+                    <Text style={styles.helperText}>
+                      {getTranslatedText(selectedLanguage, 'experienceLevelHelper')}
+                    </Text>
+                    
+                    {/* Company Question */}
+                    <Text style={styles.questionTextLeft}>
+                      {getTranslatedText(selectedLanguage, 'companyQuestion')}
+                    </Text>
+                    
+                    {/* Company Text Input */}
+                    <View style={styles.textInputContainer}>
+                      <TextInput
+                        style={styles.subjectTextInput}
+                        placeholder="Type here!"
+                        placeholderTextColor={Colors.light.unselectedText}
+                        value={companyInput}
+                        onChangeText={setCompanyInput}
+                      />
+                      {companyInput.length > 0 && (
+                        <TouchableOpacity 
+                          style={styles.cancelIconButton}
+                          onPress={() => setCompanyInput('')}
+                        >
+                          <MaterialIcons 
+                            name="cancel" 
+                            size={20} 
+                            color={Colors.light.unselectedText} 
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    
+                    {/* Company Helper Text */}
+                    <Text style={styles.helperText}>
+                      {getTranslatedText(selectedLanguage, 'companyHelper')}
+                    </Text>
+                    
+                    {/* Topics Question */}
+                    <Text style={styles.questionTextLeft}>
+                      {getTranslatedText(selectedLanguage, 'topicsQuestion')}
+                    </Text>
+                    
+                    {/* Topics Text Input */}
+                    <View style={styles.textInputContainer}>
+                      <TextInput
+                        style={styles.subjectTextInput}
+                        placeholder="Type here!"
+                        placeholderTextColor={Colors.light.unselectedText}
+                        value={topicsInput}
+                        onChangeText={setTopicsInput}
+                      />
+                      {topicsInput.length > 0 && (
+                        <TouchableOpacity 
+                          style={styles.cancelIconButton}
+                          onPress={() => setTopicsInput('')}
+                        >
+                          <MaterialIcons 
+                            name="cancel" 
+                            size={20} 
+                            color={Colors.light.unselectedText} 
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    
+                    {/* Topics Helper Text */}
+                    <Text style={styles.helperText}>
+                      {getTranslatedText(selectedLanguage, 'topicsHelper')}
+                    </Text>
+                  </>
+                )}
               </ScrollView>
             </View>
           </Animated.View>

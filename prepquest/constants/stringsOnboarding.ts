@@ -61,6 +61,11 @@ export const stringsOnboarding = {
     companyHelper: 'E.g. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Which topic(s) or subtopic(s) do you want to practice more of?',
     topicsHelper: 'E.g. Operating Systems, System Design, Market Sizing',
+    // Study mode specific strings for onboardingPage4
+    examQuestion: 'Which exam or quiz are you prepping for?',
+    examHelper: 'E.g. SAT Physics Subject Test, GCE A Level Exams',
+    studyTopicsQuestion: 'Which topic(s) or subtopic(s) do you want to practice more of?',
+    studyTopicsHelper: 'E.g. Newton\'s Laws of Motion, Organic Chemistry, Computer Architecture',
   },
   Chinese: {
     skip: '跳过',
@@ -120,6 +125,11 @@ export const stringsOnboarding = {
     companyHelper: '例如：谷歌、波士顿咨询集团、Meta、微软',
     topicsQuestion: '您想练习哪些主题或子主题？',
     topicsHelper: '例如：操作系统、系统设计、市场规模',
+    // Study mode specific strings for onboardingPage4
+    examQuestion: '您准备参加哪个考试或测验？',
+    examHelper: '例如：SAT物理科目考试、GCE A级考试',
+    studyTopicsQuestion: '您想练习哪些主题或子主题？',
+    studyTopicsHelper: '例如：牛顿运动定律、有机化学、计算机体系结构',
   },
   Malay: {
     skip: 'Langkau',
@@ -474,6 +484,11 @@ export const stringsOnboarding = {
     companyHelper: 'Ej. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: '¿Qué tema(s) o subtema(s) quieres practicar más?',
     topicsHelper: 'Ej. Sistemas Operativos, Diseño de Sistemas, Dimensionamiento de Mercado',
+    // Study mode specific strings for onboardingPage4
+    examQuestion: '¿Para qué examen o prueba te estás preparando?',
+    examHelper: 'Ej. SAT Physics Subject Test, Exámenes GCE A Level',
+    studyTopicsQuestion: '¿Qué tema(s) o subtema(s) quieres practicar más?',
+    studyTopicsHelper: 'Ej. Leyes de Newton del Movimiento, Química Orgánica, Arquitectura de Computadoras',
   },
   German: {
     skip: 'Überspringen',

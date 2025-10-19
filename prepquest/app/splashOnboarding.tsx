@@ -75,51 +75,62 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [examInput, setExamInput] = useState<string>('');
   const [studyTopicsInput, setStudyTopicsInput] = useState<string>('');
   const [currentCarouselPage, setCurrentCarouselPage] = useState<number>(0);
+  const carouselTranslateX = useRef(new Animated.Value(0)).current;
+  const containerWidth = useRef(0);
+  const isAnimating = useRef(false);
 
-  // Carousel data
-  const carouselPages = [
+  // Carousel data - create extended array with duplicates for circular navigation
+  const originalCarouselPages = [
     {
       id: 1,
       title: '1/7',
       subtitle: 'Recall-based Questions',
-      bodyText: 'E.g.\nWhat are 3 examples of fruits?',
+      bodyText: 'E.g. What are 3 examples of fruits?',
     },
     {
       id: 2,
       title: '2/7',
       subtitle: 'Application Questions',
-      bodyText: 'E.g.\nHow would you apply Newton\'s laws to explain a car crash?',
+      bodyText: 'E.g. How would you apply Newton\'s laws to explain a car crash?',
     },
     {
       id: 3,
       title: '3/7',
       subtitle: 'Analysis Questions',
-      bodyText: 'E.g.\nCompare and contrast the advantages of renewable vs non-renewable energy sources.',
+      bodyText: 'E.g. Compare and contrast the advantages of renewable vs non-renewable energy sources.',
     },
     {
       id: 4,
       title: '4/7',
       subtitle: 'Synthesis Questions',
-      bodyText: 'E.g.\nDesign a solution that combines AI and sustainability to address climate change.',
+      bodyText: 'E.g. Design a solution that combines AI and sustainability to address climate change.',
     },
     {
       id: 5,
       title: '5/7',
       subtitle: 'Evaluation Questions',
-      bodyText: 'E.g.\nEvaluate the effectiveness of remote work policies in improving productivity.',
+      bodyText: 'E.g. Evaluate the effectiveness of remote work policies in improving productivity.',
     },
     {
       id: 6,
       title: '6/7',
       subtitle: 'Creative Questions',
-      bodyText: 'E.g.\nInvent a new product that solves a problem you\'ve never seen solved before.',
+      bodyText: 'E.g. Invent a new product that solves a problem you\'ve never seen solved before.',
     },
     {
       id: 7,
       title: '7/7',
       subtitle: 'Critical Thinking Questions',
-      bodyText: 'E.g.\nAnalyze the potential risks and benefits of implementing universal basic income.',
+      bodyText: 'E.g. Analyze the potential risks and benefits of implementing universal basic income.',
     },
+  ];
+
+  // Create extended carousel with duplicates for circular navigation
+  // Add last page at the beginning and first page at the end
+  const carouselPages = [
+    { ...originalCarouselPages[6], id: 0 }, // Duplicate last page at start
+    ...originalCarouselPages,
+    { ...originalCarouselPages[0], id: 8 }, // Duplicate first page at end
   ];
 
   // Load language preference from AsyncStorage
@@ -136,6 +147,24 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     };
     loadLanguagePreference();
   }, []);
+
+  // Initialize carousel position - start at index 1 (first real page)
+  useEffect(() => {
+    const initialPage = 1; // Start at the first real page (not the duplicate)
+    carouselTranslateX.setValue(-initialPage * containerWidth.current);
+    setCurrentCarouselPage(initialPage);
+    isAnimating.current = false;
+  }, []);
+
+  // Reset carousel when entering onboardingPage5
+  useEffect(() => {
+    if (currentSection === 'onboardingPage5') {
+      const initialPage = 1; // Start at the first real page (not the duplicate)
+      setCurrentCarouselPage(initialPage);
+      carouselTranslateX.setValue(-initialPage * containerWidth.current);
+      isAnimating.current = false;
+    }
+  }, [currentSection]);
 
   // Animation refs
   const animationRef = useRef<LottieView>(null);
@@ -550,23 +579,82 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   };
 
   const handleCarouselSwipe = (direction: 'left' | 'right') => {
-    if (direction === 'right' && currentCarouselPage < carouselPages.length - 1) {
-      setCurrentCarouselPage(prev => prev + 1);
-    } else if (direction === 'left' && currentCarouselPage > 0) {
-      setCurrentCarouselPage(prev => prev - 1);
+    if (isAnimating.current) return;
+    
+    isAnimating.current = true;
+    let newPage;
+    
+    if (direction === 'right') {
+      // Swipe right - go to next page (wrap around to first page if on last page)
+      newPage = (currentCarouselPage + 1) % carouselPages.length;
+    } else {
+      // Swipe left - go to previous page (wrap around to last page if on first page)
+      newPage = currentCarouselPage === 0 ? carouselPages.length - 1 : currentCarouselPage - 1;
     }
+    
+    setCurrentCarouselPage(newPage);
+    
+    Animated.spring(carouselTranslateX, {
+      toValue: -newPage * containerWidth.current,
+      useNativeDriver: true,
+      tension: 120,
+      friction: 8,
+    }).start(() => {
+      isAnimating.current = false;
+    });
   };
 
   const handlePanGesture = (event: any) => {
-    const { translationX, state } = event.nativeEvent;
+    const { translationX, velocityX, state } = event.nativeEvent;
     
-    if (state === State.END) {
-      const threshold = 50;
-      if (translationX > threshold) {
-        handleCarouselSwipe('left');
-      } else if (translationX < -threshold) {
-        handleCarouselSwipe('right');
+    if (containerWidth.current === 0) return;
+    
+    if (state === State.BEGAN) {
+      carouselTranslateX.stopAnimation();
+      isAnimating.current = false;
+    } else if (state === State.ACTIVE) {
+      // Keep content in place during swipe - don't move with finger
+      // Content should stay put until swipe is complete
+      const baseOffset = -currentCarouselPage * containerWidth.current;
+      carouselTranslateX.setValue(baseOffset);
+    } else if (state === State.END) {
+      const threshold = containerWidth.current * 0.25;
+      const velocityThreshold = 300;
+      
+      let targetPage = currentCarouselPage;
+      
+      if (translationX < -threshold || velocityX < -velocityThreshold) {
+        // Swipe left - go to next page
+        targetPage = currentCarouselPage + 1;
+      } else if (translationX > threshold || velocityX > velocityThreshold) {
+        // Swipe right - go to previous page
+        targetPage = currentCarouselPage - 1;
       }
+      
+      setCurrentCarouselPage(targetPage);
+      isAnimating.current = true;
+      
+      // Use spring animation for all transitions to maintain consistent feel
+      Animated.spring(carouselTranslateX, {
+        toValue: -targetPage * containerWidth.current,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 10,
+      }).start(() => {
+        // Handle wrap-around transitions
+        if (targetPage === 0) {
+          // If we're at the duplicate last page, jump to the real last page
+          const realLastPage = 7; // Index of real last page
+          setCurrentCarouselPage(realLastPage);
+          carouselTranslateX.setValue(-realLastPage * containerWidth.current);
+        } else if (targetPage === 8) {
+          // If we're at the duplicate first page, jump to the real first page
+          const realFirstPage = 1; // Index of real first page
+          setCurrentCarouselPage(realFirstPage);
+          carouselTranslateX.setValue(-realFirstPage * containerWidth.current);
+        }
+        isAnimating.current = false;
+      });
     }
   };
 
@@ -1604,36 +1692,70 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               {/* Carousel container */}
               <View style={styles.rectangleContainer}>
                 <GestureHandlerRootView style={styles.gestureContainer}>
-                  <PanGestureHandler onHandlerStateChange={handlePanGesture}>
+                  <PanGestureHandler 
+                    onHandlerStateChange={handlePanGesture}
+                    activeOffsetX={[-10, 10]}
+                    failOffsetY={[-50, 50]}
+                  >
                     <View style={styles.carouselPage}>
-                      <Text style={styles.carouselTitle}>
-                        {carouselPages[currentCarouselPage].title}
-                      </Text>
-                      
-                      <Text style={styles.carouselSubtitle}>
-                        {carouselPages[currentCarouselPage].subtitle}
-                      </Text>
-                      
-                      <Text style={styles.carouselBodyText}>
-                        {carouselPages[currentCarouselPage].bodyText}
-                      </Text>
-                      
-                      {/* Placeholder for SVG image */}
-                      <View style={styles.carouselImagePlaceholder}>
-                        {/* SVG will be added here later */}
+                      <View 
+                        style={styles.carouselContainer}
+                        onLayout={(event) => {
+                          containerWidth.current = event.nativeEvent.layout.width;
+                        }}
+                      >
+                        <Animated.View 
+                          style={[
+                            styles.carouselPageContent,
+                            {
+                              transform: [{ translateX: carouselTranslateX }]
+                            }
+                          ]}
+                        >
+                          {carouselPages.map((page, index) => (
+                            <View 
+                              key={page.id} 
+                              style={styles.carouselSinglePage}
+                            >
+                              <Text style={styles.carouselTitle}>
+                                {page.title}
+                              </Text>
+                              
+                              <Text style={styles.carouselSubtitle}>
+                                {page.subtitle}
+                              </Text>
+                              
+                              <Text style={styles.carouselBodyText}>
+                                {page.bodyText}
+                              </Text>
+                              
+                              {/* Placeholder for SVG image */}
+                              <View style={styles.carouselImagePlaceholder}>
+                                {/* SVG will be added here later */}
+                              </View>
+                            </View>
+                          ))}
+                        </Animated.View>
                       </View>
                       
-                      {/* Navigation indicators */}
+                      {/* Navigation indicators - only show 7 dots for real pages */}
                       <View style={styles.carouselNavigation}>
-                        {carouselPages.map((_, index) => (
-                          <View
-                            key={index}
-                            style={[
-                              styles.carouselDot,
-                              index === currentCarouselPage && styles.carouselDotActive
-                            ]}
-                          />
-                        ))}
+                        {originalCarouselPages.map((_, index) => {
+                          // Map current page to the correct dot (0-6 for real pages)
+                          const realPageIndex = currentCarouselPage === 0 ? 6 : // Duplicate last page maps to real last page
+                                            currentCarouselPage === 8 ? 0 : // Duplicate first page maps to real first page
+                                            currentCarouselPage - 1; // Real pages (1-7) map to dots (0-6)
+                          
+                          return (
+                            <View
+                              key={index}
+                              style={[
+                                styles.carouselDot,
+                                index === realPageIndex && styles.carouselDotActive
+                              ]}
+                            />
+                          );
+                        })}
                       </View>
                     </View>
                   </PanGestureHandler>
@@ -2373,6 +2495,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingVertical: 20,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  carouselContainer: {
+    flex: 1,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  carouselPageContent: {
+    flexDirection: 'row',
+    height: '100%',
+    width: '900%', // 9 pages * 100% (7 real + 2 duplicates)
+  },
+  carouselSinglePage: {
+    width: '11.1111%', // 100% / 9 pages
+    height: '100%',
     justifyContent: 'space-between',
     alignItems: 'center',
   },

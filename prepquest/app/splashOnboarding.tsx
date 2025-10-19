@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput, ScrollView } from 'react-native';
+import { PanGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -73,6 +74,53 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [topicsInput, setTopicsInput] = useState<string>('');
   const [examInput, setExamInput] = useState<string>('');
   const [studyTopicsInput, setStudyTopicsInput] = useState<string>('');
+  const [currentCarouselPage, setCurrentCarouselPage] = useState<number>(0);
+
+  // Carousel data
+  const carouselPages = [
+    {
+      id: 1,
+      title: '1/7',
+      subtitle: 'Recall-based Questions',
+      bodyText: 'E.g.\nWhat are 3 examples of fruits?',
+    },
+    {
+      id: 2,
+      title: '2/7',
+      subtitle: 'Application Questions',
+      bodyText: 'E.g.\nHow would you apply Newton\'s laws to explain a car crash?',
+    },
+    {
+      id: 3,
+      title: '3/7',
+      subtitle: 'Analysis Questions',
+      bodyText: 'E.g.\nCompare and contrast the advantages of renewable vs non-renewable energy sources.',
+    },
+    {
+      id: 4,
+      title: '4/7',
+      subtitle: 'Synthesis Questions',
+      bodyText: 'E.g.\nDesign a solution that combines AI and sustainability to address climate change.',
+    },
+    {
+      id: 5,
+      title: '5/7',
+      subtitle: 'Evaluation Questions',
+      bodyText: 'E.g.\nEvaluate the effectiveness of remote work policies in improving productivity.',
+    },
+    {
+      id: 6,
+      title: '6/7',
+      subtitle: 'Creative Questions',
+      bodyText: 'E.g.\nInvent a new product that solves a problem you\'ve never seen solved before.',
+    },
+    {
+      id: 7,
+      title: '7/7',
+      subtitle: 'Critical Thinking Questions',
+      bodyText: 'E.g.\nAnalyze the potential risks and benefits of implementing universal basic income.',
+    },
+  ];
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -498,6 +546,27 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         }
         return newSet;
       });
+    }
+  };
+
+  const handleCarouselSwipe = (direction: 'left' | 'right') => {
+    if (direction === 'right' && currentCarouselPage < carouselPages.length - 1) {
+      setCurrentCarouselPage(prev => prev + 1);
+    } else if (direction === 'left' && currentCarouselPage > 0) {
+      setCurrentCarouselPage(prev => prev - 1);
+    }
+  };
+
+  const handlePanGesture = (event: any) => {
+    const { translationX, state } = event.nativeEvent;
+    
+    if (state === State.END) {
+      const threshold = 50;
+      if (translationX > threshold) {
+        handleCarouselSwipe('left');
+      } else if (translationX < -threshold) {
+        handleCarouselSwipe('right');
+      }
     }
   };
 
@@ -1532,8 +1601,42 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 {getTranslatedText(selectedLanguage, 'tailorFlashcardsParagraph')}
               </Text>
               
-              {/* Rectangle container */}
-              <View style={styles.rectangleContainer} />
+              {/* Carousel container */}
+              <GestureHandlerRootView style={styles.rectangleContainer}>
+                <PanGestureHandler onHandlerStateChange={handlePanGesture}>
+                  <View style={styles.carouselPage}>
+                    <Text style={styles.carouselTitle}>
+                      {carouselPages[currentCarouselPage].title}
+                    </Text>
+                    
+                    <Text style={styles.carouselSubtitle}>
+                      {carouselPages[currentCarouselPage].subtitle}
+                    </Text>
+                    
+                    <Text style={styles.carouselBodyText}>
+                      {carouselPages[currentCarouselPage].bodyText}
+                    </Text>
+                    
+                    {/* Placeholder for SVG image */}
+                    <View style={styles.carouselImagePlaceholder}>
+                      {/* SVG will be added here later */}
+                    </View>
+                    
+                    {/* Navigation indicators */}
+                    <View style={styles.carouselNavigation}>
+                      {carouselPages.map((_, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.carouselDot,
+                            index === currentCarouselPage && styles.carouselDotActive
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                </PanGestureHandler>
+              </GestureHandlerRootView>
             </View>
           </Animated.View>
         </Animated.View>
@@ -2059,8 +2162,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
-    borderWidth: 2,
-    borderColor: 'red',
   },
   onboardingPage5Content: {
     width: '100%',
@@ -2253,5 +2354,57 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 30,
     marginTop: 20,
+  },
+  carouselPage: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  carouselTitle: {
+    fontSize: 28,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  carouselSubtitle: {
+    fontSize: 28,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  carouselBodyText: {
+    fontSize: 18,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 20,
+    lineHeight: 24,
+  },
+  carouselImagePlaceholder: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  carouselNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  carouselDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#CCCCCC',
+    marginHorizontal: 4,
+  },
+  carouselDotActive: {
+    backgroundColor: '#4F41D8',
   },
 });

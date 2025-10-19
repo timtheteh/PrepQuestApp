@@ -82,43 +82,43 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       id: 1,
       title: '1/7',
       subtitle: 'Recall-based Questions',
-      bodyText: 'E.g. What are 3 examples of fruits?',
+      bodyText: 'E.g.\nWhat are 3 examples of fruits?',
     },
     {
       id: 2,
       title: '2/7',
       subtitle: 'Application Questions',
-      bodyText: 'E.g. How would you apply Newton\'s laws to explain a car crash?',
+      bodyText: 'E.g.\nHow would you apply Newton\'s laws to explain a car crash?',
     },
     {
       id: 3,
       title: '3/7',
       subtitle: 'Analysis Questions',
-      bodyText: 'E.g. Compare and contrast the advantages of renewable vs non-renewable energy sources.',
+      bodyText: 'E.g.\nCompare and contrast the advantages of renewable vs non-renewable energy sources.',
     },
     {
       id: 4,
       title: '4/7',
       subtitle: 'Synthesis Questions',
-      bodyText: 'E.g. Design a solution that combines AI and sustainability to address climate change.',
+      bodyText: 'E.g.\nDesign a solution that combines AI and sustainability to address climate change.',
     },
     {
       id: 5,
       title: '5/7',
       subtitle: 'Evaluation Questions',
-      bodyText: 'E.g Evaluate the effectiveness of remote work policies in improving productivity.',
+      bodyText: 'E.g.\nEvaluate the effectiveness of remote work policies in improving productivity.',
     },
     {
       id: 6,
       title: '6/7',
       subtitle: 'Creative Questions',
-      bodyText: 'E.g. Invent a new product that solves a problem you\'ve never seen solved before.',
+      bodyText: 'E.g.\nInvent a new product that solves a problem you\'ve never seen solved before.',
     },
     {
       id: 7,
       title: '7/7',
       subtitle: 'Critical Thinking Questions',
-      bodyText: 'E.g. Analyze the potential risks and benefits of implementing universal basic income.',
+      bodyText: 'E.g.\nAnalyze the potential risks and benefits of implementing universal basic income.',
     },
   ];
 
@@ -1602,41 +1602,43 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               </Text> */}
               
               {/* Carousel container */}
-              <GestureHandlerRootView style={styles.rectangleContainer}>
-                <PanGestureHandler onHandlerStateChange={handlePanGesture}>
-                  <View style={[styles.carouselPage, styles.carouselPageRounded]}>
-                    <Text style={styles.carouselTitle}>
-                      {carouselPages[currentCarouselPage].title}
-                    </Text>
-                    
-                    <Text style={styles.carouselSubtitle}>
-                      {carouselPages[currentCarouselPage].subtitle}
-                    </Text>
-                    
-                    <Text style={styles.carouselBodyText}>
-                      {carouselPages[currentCarouselPage].bodyText}
-                    </Text>
-                    
-                    {/* Placeholder for SVG image */}
-                    <View style={styles.carouselImagePlaceholder}>
-                      {/* SVG will be added here later */}
+              <View style={styles.rectangleContainer}>
+                <GestureHandlerRootView style={styles.gestureContainer}>
+                  <PanGestureHandler onHandlerStateChange={handlePanGesture}>
+                    <View style={styles.carouselPage}>
+                      <Text style={styles.carouselTitle}>
+                        {carouselPages[currentCarouselPage].title}
+                      </Text>
+                      
+                      <Text style={styles.carouselSubtitle}>
+                        {carouselPages[currentCarouselPage].subtitle}
+                      </Text>
+                      
+                      <Text style={styles.carouselBodyText}>
+                        {carouselPages[currentCarouselPage].bodyText}
+                      </Text>
+                      
+                      {/* Placeholder for SVG image */}
+                      <View style={styles.carouselImagePlaceholder}>
+                        {/* SVG will be added here later */}
+                      </View>
+                      
+                      {/* Navigation indicators */}
+                      <View style={styles.carouselNavigation}>
+                        {carouselPages.map((_, index) => (
+                          <View
+                            key={index}
+                            style={[
+                              styles.carouselDot,
+                              index === currentCarouselPage && styles.carouselDotActive
+                            ]}
+                          />
+                        ))}
+                      </View>
                     </View>
-                    
-                    {/* Navigation indicators */}
-                    <View style={styles.carouselNavigation}>
-                      {carouselPages.map((_, index) => (
-                        <View
-                          key={index}
-                          style={[
-                            styles.carouselDot,
-                            index === currentCarouselPage && styles.carouselDotActive
-                          ]}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                </PanGestureHandler>
-              </GestureHandlerRootView>
+                  </PanGestureHandler>
+                </GestureHandlerRootView>
+              </View>
             </View>
           </Animated.View>
         </Animated.View>
@@ -2351,7 +2353,21 @@ const styles = StyleSheet.create({
   },
   rectangleContainer: {
     flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 30,
     marginTop: 20,
+    overflow: 'hidden',
+    ...Platform.select({
+      android: {
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+      },
+    }),
+  },
+  gestureContainer: {
+    flex: 1,
   },
   carouselPage: {
     flex: 1,
@@ -2359,11 +2375,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  carouselPageRounded: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 30,
-    overflow: 'hidden',
   },
   carouselTitle: {
     fontSize: 24,

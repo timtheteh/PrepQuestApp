@@ -28,6 +28,16 @@ import ManagementConsultingImage from '@/assets/onboarding/managementConsulting.
 import CriminalLawyerImage from '@/assets/onboarding/criminalLawyer.svg';
 import ElectricalEngineerImage from '@/assets/onboarding/electricalEngineer.svg';
 import ProductManagerImage from '@/assets/onboarding/productManager.svg';
+import HighSchoolImage from '@/assets/onboarding/highSchool.svg';
+import CollegeImage from '@/assets/onboarding/college.svg';
+import GraduateImage from '@/assets/onboarding/graduate.svg';
+import AdultLearnerImage from '@/assets/onboarding/adultLearner.svg';
+import MiddleSchoolImage from '@/assets/onboarding/middleSchool.svg';
+import ElementarySchoolImage from '@/assets/onboarding/elementarySchool.svg';
+import TechnicalImage from '@/assets/onboarding/technical.svg';
+import BehavioralImage from '@/assets/onboarding/behavioral.svg';
+import CaseStudyImage from '@/assets/onboarding/caseStudy.svg';
+import BrainteasersImage from '@/assets/onboarding/brainteasers.svg';
 import { Svg, Polygon } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTranslatedText } from '@/constants/stringsOnboarding';
@@ -962,6 +972,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('High School') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('High School')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <HighSchoolImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'highSchool')}
                         </Text>
@@ -970,6 +983,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('Undergraduate') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Undergraduate')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <CollegeImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'undergraduate')}
                         </Text>
@@ -981,6 +997,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('Graduate') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Graduate')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <GraduateImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'graduate')}
                         </Text>
@@ -989,6 +1008,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('PhD') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('PhD')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <AdultLearnerImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'phd')}
                         </Text>
@@ -1000,6 +1022,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('Professional') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Professional')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <MiddleSchoolImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'professional')}
                         </Text>
@@ -1008,6 +1033,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('Certification') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Certification')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <ElementarySchoolImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'certification')}
                         </Text>
@@ -1024,6 +1052,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('Technical') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Technical')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <TechnicalImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'technical')}
                         </Text>
@@ -1032,6 +1063,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('Behavioral') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Behavioral')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <BehavioralImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'behavioral')}
                         </Text>
@@ -1043,16 +1077,22 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         style={[styles.suggestionCard, selectedEducationSuggestions.has('Case Study') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Case Study')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <CaseStudyImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
                           {getTranslatedText(selectedLanguage, 'caseStudy')}
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Panel') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('Panel')}
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Brainteasers') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Brainteasers')}
                       >
+                        <View style={styles.suggestionCardImageContainer}>
+                          <BrainteasersImage width="100%" height="100%" />
+                        </View>
                         <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'panel')}
+                          {getTranslatedText(selectedLanguage, 'brainteasers')}
                         </Text>
                       </TouchableOpacity>
                     </View>

@@ -1531,6 +1531,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               <Text style={styles.paragraphText}>
                 {getTranslatedText(selectedLanguage, 'tailorFlashcardsParagraph')}
               </Text>
+              
+              {/* Rectangle container */}
+              <View style={styles.rectangleContainer} />
             </View>
           </Animated.View>
         </Animated.View>
@@ -2243,6 +2246,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bodyMedium,
     color: 'black',
     textAlign: 'center',
-    marginTop: 12,
+    marginTop: 20,
+  },
+  rectangleContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 30,
+    marginTop: 20,
   },
 });

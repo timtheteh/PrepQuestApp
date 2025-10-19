@@ -109,6 +109,26 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     []
   );
 
+  const onboardingPage4InterviewQn1AnimationSource = useMemo(() => 
+    require('../assets/onboarding/onboardingPage4InterviewQn1Animation.json'), 
+    []
+  );
+
+  const onboardingPage4InterviewQn2AnimationSource = useMemo(() => 
+    require('../assets/onboarding/onboardingPage4InterviewQn2Animation.json'), 
+    []
+  );
+
+  const bookFlippingAnimationSource = useMemo(() => 
+    require('../assets/onboarding/bookFlippingAnimation.json'), 
+    []
+  );
+
+  const onboardingPage4StudyQn1AnimationSource = useMemo(() => 
+    require('../assets/onboarding/onboardingPage4StudyQn1Animation.json'), 
+    []
+  );
+
 
   // Animation state for transitions
   const [showLanguageSelector, setShowLanguageSelector] = useState(true); // Pre-render to prevent glitch
@@ -627,7 +647,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           />
           
           {/* Content container */}
-          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage2ContentFadeAnim, borderWidth: 2, borderColor: 'red'}]}>
+          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage2ContentFadeAnim}]}>
             <View style={styles.onboardingPage2Content}>
               {/* First row: Great! */}
               <Text style={styles.greatText}>{getTranslatedText(selectedLanguage, 'great')}</Text>
@@ -1235,6 +1255,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {getTranslatedText(selectedLanguage, 'examHelper')}
                     </Text>
                     
+                    {/* Exam Animation */}
+                    <View style={styles.animationContainer}>
+                      <LottieView
+                        source={onboardingPage4StudyQn1AnimationSource}
+                        autoPlay
+                        loop={true}
+                        style={styles.questionAnimation}
+                        resizeMode="contain"
+                        speed={1}
+                        cacheComposition={true}
+                        renderMode="HARDWARE"
+                      />
+                    </View>
+                    
                     {/* Study Topics Question */}
                     <Text style={styles.questionTextLeft}>
                       {getTranslatedText(selectedLanguage, 'studyTopicsQuestion')}
@@ -1267,6 +1301,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <Text style={styles.helperText}>
                       {getTranslatedText(selectedLanguage, 'studyTopicsHelper')}
                     </Text>
+                    
+                    {/* Study Topics Animation */}
+                    <View style={styles.animationContainer}>
+                      <LottieView
+                        source={bookFlippingAnimationSource}
+                        autoPlay
+                        loop={true}
+                        style={styles.questionAnimation}
+                        resizeMode="contain"
+                        speed={1}
+                        cacheComposition={true}
+                        renderMode="HARDWARE"
+                      />
+                    </View>
                   </>
                 ) : (
                   <>
@@ -1303,6 +1351,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {getTranslatedText(selectedLanguage, 'experienceLevelHelper')}
                     </Text>
                     
+                    {/* Experience Level Animation */}
+                    <View style={styles.animationContainer}>
+                      <LottieView
+                        source={onboardingPage4InterviewQn1AnimationSource}
+                        autoPlay
+                        loop={true}
+                        style={styles.questionAnimation}
+                        resizeMode="contain"
+                        speed={1}
+                        cacheComposition={true}
+                        renderMode="HARDWARE"
+                      />
+                    </View>
+                    
                     {/* Company Question */}
                     <Text style={styles.questionTextLeft}>
                       {getTranslatedText(selectedLanguage, 'companyQuestion')}
@@ -1336,6 +1398,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {getTranslatedText(selectedLanguage, 'companyHelper')}
                     </Text>
                     
+                    {/* Company Animation */}
+                    <View style={styles.animationContainer}>
+                      <LottieView
+                        source={onboardingPage4InterviewQn2AnimationSource}
+                        autoPlay
+                        loop={true}
+                        style={styles.questionAnimation}
+                        resizeMode="contain"
+                        speed={1}
+                        cacheComposition={true}
+                        renderMode="HARDWARE"
+                      />
+                    </View>
+                    
                     {/* Topics Question */}
                     <Text style={styles.questionTextLeft}>
                       {getTranslatedText(selectedLanguage, 'topicsQuestion')}
@@ -1368,6 +1444,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <Text style={styles.helperText}>
                       {getTranslatedText(selectedLanguage, 'topicsHelper')}
                     </Text>
+                    
+                    {/* Topics Animation */}
+                    <View style={styles.animationContainer}>
+                      <LottieView
+                        source={bookFlippingAnimationSource}
+                        autoPlay
+                        loop={true}
+                        style={styles.questionAnimation}
+                        resizeMode="contain"
+                        speed={1}
+                        cacheComposition={true}
+                        renderMode="HARDWARE"
+                      />
+                    </View>
                   </>
                 )}
               </ScrollView>
@@ -1848,8 +1938,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
-    borderWidth: 2,
-    borderColor: 'red',
   },
   onboardingPage4Content: {
     width: '100%',
@@ -2019,5 +2107,15 @@ const styles = StyleSheet.create({
     bottom: 48, // 16 (margin) + 24 (text height) = 40
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  animationContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  questionAnimation: {
+    width: 200,
+    height: 120,
   },
 });

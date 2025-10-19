@@ -930,8 +930,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             selectedCard === 'interview' 
               ? { 
                   ...styles.onboardingPage3ContainerInterview,
-                  top: insets.top + 60,
-                  bottom: insets.bottom + 20
+                  top: insets.top,
+                  bottom: insets.bottom
                 }
               : { top: insets.top + 30, bottom: insets.bottom + 5 },
             { opacity: onboardingPage3ContentFadeAnim }
@@ -977,7 +977,10 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               )}
               
               {/* Suggestions text */}
-              <Text style={styles.suggestionsText}>
+              <Text style={[
+                styles.suggestionsText,
+                selectedCard === 'interview' && styles.suggestionsTextInterview
+              ]}>
                 {selectedCard === 'interview' 
                   ? getTranslatedText(selectedLanguage, 'pickAny')
                   : getTranslatedText(selectedLanguage, 'suggestions')
@@ -1542,7 +1545,7 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     paddingHorizontal: 12,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   onboardingPage3Content: {
@@ -1551,7 +1554,9 @@ const styles = StyleSheet.create({
   },
   onboardingPage3ContentInterview: {
     width: '100%',
-    flex: 0,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'stretch',
   },
   greatText: {
     fontSize: 28,
@@ -1634,6 +1639,9 @@ const styles = StyleSheet.create({
     color: 'black',
     textAlign: 'left',
     marginTop: 12,
+  },
+  suggestionsTextInterview: {
+    textAlign: 'left',
   },
   suggestionsScrollView: {
     flex: 1,

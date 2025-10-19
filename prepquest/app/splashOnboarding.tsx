@@ -56,7 +56,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const insets = useSafeAreaInsets();
 
   // State for section navigation
-  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3' | 'onboardingPage4'>('logoAnimation');
+  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3' | 'onboardingPage4' | 'onboardingPage5'>('logoAnimation');
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
@@ -139,6 +139,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const onboardingPage2ContentFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage3ContentFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage4ContentFadeAnim = useRef(new Animated.Value(0)).current;
+  const onboardingPage5ContentFadeAnim = useRef(new Animated.Value(0)).current;
   
   // Initialize animation values to prevent glitch
   useEffect(() => {
@@ -149,6 +150,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     onboardingPage2ContentFadeAnim.setValue(0);
     onboardingPage3ContentFadeAnim.setValue(0);
     onboardingPage4ContentFadeAnim.setValue(0);
+    onboardingPage5ContentFadeAnim.setValue(0);
   }, []);
 
   // Start animations on mount and set timer for background transition
@@ -317,6 +319,23 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           useNativeDriver: true,
         }).start();
       });
+    } else if (currentSection === 'onboardingPage4') {
+      // Fade out onboardingPage4 content first
+      Animated.timing(onboardingPage4ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition to onboardingPage5
+        setCurrentSection('onboardingPage5');
+        
+        // Then fade in onboardingPage5 content
+        Animated.timing(onboardingPage5ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -400,6 +419,23 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         
         // Then fade in onboardingPage3 content
         Animated.timing(onboardingPage3ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
+    } else if (currentSection === 'onboardingPage5') {
+      // Fade out onboardingPage5 content first
+      Animated.timing(onboardingPage5ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition back to onboardingPage4
+        setCurrentSection('onboardingPage4');
+        
+        // Then fade in onboardingPage4 content
+        Animated.timing(onboardingPage4ContentFadeAnim, {
           toValue: 1,
           duration: 300,
           useNativeDriver: true,
@@ -1466,6 +1502,30 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         </Animated.View>
       )}
 
+      {/* onboardingPage5 - Final page */}
+      {currentSection === 'onboardingPage5' && (
+        <Animated.View style={[styles.imageBackgroundContainer, { opacity: pngBackgroundFadeAnim }]}>
+          <ImageBackground
+            source={require('../assets/onboarding/onboardingBackground.png')}
+            style={styles.imageBackground}
+            resizeMode="cover"
+          />
+          
+          {/* Content container */}
+          <Animated.View style={[
+            styles.onboardingPage5Container,
+            { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage5ContentFadeAnim }
+          ]}>
+            <View style={styles.onboardingPage5Content}>
+              {/* Progress text: 4/4 */}
+              <Text style={styles.progressText}>4/4</Text>
+              
+              {/* Content will be added later */}
+            </View>
+          </Animated.View>
+        </Animated.View>
+      )}
+
       {/* Top button row with conditional buttons */}
       <View style={[styles.topButtonRow, { top: insets.top }]}>
         {currentSection === 'languageSelection' ? (
@@ -1653,6 +1713,44 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         ) : currentSection === 'onboardingPage4' ? (
           <>
             {/* Back button on the left when on onboardingPage4 */}
+            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+              <View style={styles.buttonWithIcon}>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="0,6 12,0 12,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+                <Text style={styles.backButtonText}>{getTranslatedText(selectedLanguage, 'back')}</Text>
+              </View>
+            </TouchableOpacity>
+            
+            {/* Skip button still centered */}
+            <View style={styles.skipButtonContainer}>
+              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+                <Text style={styles.skipButtonText}>{getTranslatedText(selectedLanguage, 'skip')}</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Next button still on the right */}
+            <TouchableOpacity 
+              style={styles.nextButton} 
+              onPress={handleNextPress}
+            >
+              <View style={styles.buttonWithIcon}>
+                <Text style={styles.nextButtonText}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="12,6 0,0 0,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+              </View>
+            </TouchableOpacity>
+          </>
+        ) : currentSection === 'onboardingPage5' ? (
+          <>
+            {/* Back button on the left when on onboardingPage5 */}
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
               <View style={styles.buttonWithIcon}>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
@@ -1940,6 +2038,18 @@ const styles = StyleSheet.create({
     right: 12,
   },
   onboardingPage4Content: {
+    width: '100%',
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+  onboardingPage5Container: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    borderWidth: 2,
+    borderColor: 'red',
+  },
+  onboardingPage5Content: {
     width: '100%',
     flex: 1,
     paddingHorizontal: 12,

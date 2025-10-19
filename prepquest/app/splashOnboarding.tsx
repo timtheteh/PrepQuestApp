@@ -887,8 +887,21 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           />
           
           {/* Content container */}
-          <Animated.View style={[styles.onboardingPage3Container, { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage3ContentFadeAnim }]}>
-            <View style={styles.onboardingPage3Content}>
+          <Animated.View style={[
+            styles.onboardingPage3Container, 
+            selectedCard === 'interview' 
+              ? { 
+                  ...styles.onboardingPage3ContainerInterview,
+                  top: insets.top + 60,
+                  bottom: insets.bottom + 20
+                }
+              : { top: insets.top + 30, bottom: insets.bottom + 5 },
+            { opacity: onboardingPage3ContentFadeAnim }
+          ]}>
+            <View style={[
+              styles.onboardingPage3Content,
+              selectedCard === 'interview' && styles.onboardingPage3ContentInterview
+            ]}>
               {/* Progress text: 2/3 */}
               <Text style={styles.progressText}>{getTranslatedText(selectedLanguage, 'progress2')}</Text>
               
@@ -928,7 +941,10 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               
               {/* ScrollView with suggestion cards */}
               <ScrollView 
-                style={styles.suggestionsScrollView}
+                style={[
+                  styles.suggestionsScrollView,
+                  selectedCard === 'interview' && styles.suggestionsScrollViewInterview
+                ]}
                 showsVerticalScrollIndicator={false}
               >
                 {selectedCard === 'study' && (
@@ -1411,9 +1427,21 @@ const styles = StyleSheet.create({
     right: 12,
     paddingHorizontal: 12,
   },
+  onboardingPage3ContainerInterview: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    paddingHorizontal: 12,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
   onboardingPage3Content: {
     width: '100%',
     flex: 1,
+  },
+  onboardingPage3ContentInterview: {
+    width: '100%',
+    flex: 0,
   },
   greatText: {
     fontSize: 28,
@@ -1499,6 +1527,10 @@ const styles = StyleSheet.create({
   },
   suggestionsScrollView: {
     flex: 1,
+    marginTop: 12,
+  },
+  suggestionsScrollViewInterview: {
+    flex: 0,
     marginTop: 12,
   },
   suggestionsContainer: {

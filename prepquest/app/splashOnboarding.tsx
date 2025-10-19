@@ -60,10 +60,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
-  const [subjectInput, setSubjectInput] = useState<string>('');
-  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
-  const [educationInput, setEducationInput] = useState<string>('');
-  const [selectedEducationSuggestions, setSelectedEducationSuggestions] = useState<Set<string>>(new Set());
+  const [studySubjectInput, setStudySubjectInput] = useState<string>('');
+  const [studySelectedSuggestions, setStudySelectedSuggestions] = useState<Set<string>>(new Set());
+  const [interviewSubjectInput, setInterviewSubjectInput] = useState<string>('');
+  const [interviewSelectedSuggestions, setInterviewSelectedSuggestions] = useState<Set<string>>(new Set());
+  const [studyEducationInput, setStudyEducationInput] = useState<string>('');
+  const [studySelectedEducationSuggestions, setStudySelectedEducationSuggestions] = useState<Set<string>>(new Set());
+  const [interviewEducationInput, setInterviewEducationInput] = useState<string>('');
+  const [interviewSelectedEducationSuggestions, setInterviewSelectedEducationSuggestions] = useState<Set<string>>(new Set());
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -353,27 +357,51 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   };
 
   const handleSuggestionPress = (suggestion: string) => {
-    setSelectedSuggestions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(suggestion)) {
-        newSet.delete(suggestion);
-      } else {
-        newSet.add(suggestion);
-      }
-      return newSet;
-    });
+    if (selectedCard === 'study') {
+      setStudySelectedSuggestions(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(suggestion)) {
+          newSet.delete(suggestion);
+        } else {
+          newSet.add(suggestion);
+        }
+        return newSet;
+      });
+    } else if (selectedCard === 'interview') {
+      setInterviewSelectedSuggestions(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(suggestion)) {
+          newSet.delete(suggestion);
+        } else {
+          newSet.add(suggestion);
+        }
+        return newSet;
+      });
+    }
   };
 
   const handleEducationSuggestionPress = (suggestion: string) => {
-    setSelectedEducationSuggestions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(suggestion)) {
-        newSet.delete(suggestion);
-      } else {
-        newSet.add(suggestion);
-      }
-      return newSet;
-    });
+    if (selectedCard === 'study') {
+      setStudySelectedEducationSuggestions(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(suggestion)) {
+          newSet.delete(suggestion);
+        } else {
+          newSet.add(suggestion);
+        }
+        return newSet;
+      });
+    } else if (selectedCard === 'interview') {
+      setInterviewSelectedEducationSuggestions(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(suggestion)) {
+          newSet.delete(suggestion);
+        } else {
+          newSet.add(suggestion);
+        }
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -583,13 +611,13 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                   style={styles.subjectTextInput}
                   placeholder="Type here!"
                   placeholderTextColor={Colors.light.unselectedText}
-                  value={subjectInput}
-                  onChangeText={setSubjectInput}
+                  value={selectedCard === 'study' ? studySubjectInput : interviewSubjectInput}
+                  onChangeText={selectedCard === 'study' ? setStudySubjectInput : setInterviewSubjectInput}
                 />
-                {subjectInput.length > 0 && (
+                {(selectedCard === 'study' ? studySubjectInput : interviewSubjectInput).length > 0 && (
                   <TouchableOpacity 
                     style={styles.cancelIconButton}
-                    onPress={() => setSubjectInput('')}
+                    onPress={() => selectedCard === 'study' ? setStudySubjectInput('') : setInterviewSubjectInput('')}
                   >
                     <MaterialIcons 
                       name="cancel" 
@@ -613,7 +641,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {/* Row 1 */}
                       <View style={styles.cardRow}>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('History') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, studySelectedSuggestions.has('History') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('History')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -624,7 +652,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Physics') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, studySelectedSuggestions.has('Physics') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Physics')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -639,7 +667,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     {/* Row 2 */}
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Chemistry') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Chemistry') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Chemistry')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -652,7 +680,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Biology') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Biology') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Biology')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -669,7 +697,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     {/* Row 3 */}
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Geography') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Geography') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Geography')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -682,7 +710,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Math') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Math') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Math')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -699,7 +727,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     {/* Row 4 */}
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Medicine') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Medicine') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Medicine')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -712,7 +740,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Law') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Law') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Law')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -729,7 +757,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     {/* Row 5 */}
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Finance') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Finance') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Finance')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -742,7 +770,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedSuggestions.has('Computing') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedSuggestions.has('Computing') && styles.selectedSuggestionCard]}
                         onPress={() => handleSuggestionPress('Computing')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -763,7 +791,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {/* Row 1 */}
                       <View style={styles.cardRow}>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Software Engineering') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Software Engineering') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Software Engineering')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -776,7 +804,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Investment Banking') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Investment Banking') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Investment Banking')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -793,7 +821,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {/* Row 2 */}
                       <View style={styles.cardRow}>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Medical Residency') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Medical Residency') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Medical Residency')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -806,7 +834,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Quantitative Researcher') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Quantitative Researcher') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Quantitative Researcher')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -823,7 +851,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {/* Row 3 */}
                       <View style={styles.cardRow}>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Management Consulting') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Management Consulting') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Management Consulting')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -836,7 +864,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Criminal Lawyer') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Criminal Lawyer') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Criminal Lawyer')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -853,7 +881,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       {/* Row 4 */}
                       <View style={styles.cardRow}>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Electrical Engineer') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Electrical Engineer') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Electrical Engineer')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -866,7 +894,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                          style={[styles.suggestionCard, selectedSuggestions.has('Product Manager') && styles.selectedSuggestionCard]}
+                          style={[styles.suggestionCard, interviewSelectedSuggestions.has('Product Manager') && styles.selectedSuggestionCard]}
                           onPress={() => handleSuggestionPress('Product Manager')}
                         >
                           <View style={styles.suggestionCardImageContainer}>
@@ -930,13 +958,13 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     style={styles.educationTextInput}
                     placeholder="Type here!"
                     placeholderTextColor={Colors.light.unselectedText}
-                    value={educationInput}
-                    onChangeText={setEducationInput}
+                    value={studyEducationInput}
+                    onChangeText={setStudyEducationInput}
                   />
-                  {educationInput.length > 0 && (
+                  {studyEducationInput.length > 0 && (
                     <TouchableOpacity 
                       style={styles.cancelIconButton}
-                      onPress={() => setEducationInput('')}
+                      onPress={() => setStudyEducationInput('')}
                     >
                       <MaterialIcons 
                         name="cancel" 
@@ -966,7 +994,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     {/* Study Education Levels - 6 cards */}
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('High School') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedEducationSuggestions.has('High School') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('High School')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -977,7 +1005,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Undergraduate') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedEducationSuggestions.has('Undergraduate') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Undergraduate')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -991,7 +1019,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Graduate') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedEducationSuggestions.has('Graduate') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Graduate')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -1002,7 +1030,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('PhD') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedEducationSuggestions.has('PhD') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('PhD')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -1016,7 +1044,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Professional') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedEducationSuggestions.has('Professional') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Professional')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -1027,7 +1055,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Certification') && styles.selectedSuggestionCard]}
+                        style={[styles.suggestionCard, studySelectedEducationSuggestions.has('Certification') && styles.selectedSuggestionCard]}
                         onPress={() => handleEducationSuggestionPress('Certification')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
@@ -1045,7 +1073,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                   {/* Interview Types - 4 cards */}
                   <View style={styles.cardRow}>
                     <TouchableOpacity 
-                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Technical') && styles.selectedSuggestionCard]}
+                      style={[styles.suggestionCard, interviewSelectedEducationSuggestions.has('Technical') && styles.selectedSuggestionCard]}
                       onPress={() => handleEducationSuggestionPress('Technical')}
                     >
                       <View style={styles.suggestionCardImageContainer}>
@@ -1056,7 +1084,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Behavioral') && styles.selectedSuggestionCard]}
+                      style={[styles.suggestionCard, interviewSelectedEducationSuggestions.has('Behavioral') && styles.selectedSuggestionCard]}
                       onPress={() => handleEducationSuggestionPress('Behavioral')}
                     >
                       <View style={styles.suggestionCardImageContainer}>
@@ -1070,7 +1098,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                   
                   <View style={styles.cardRow}>
                     <TouchableOpacity 
-                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Case Study') && styles.selectedSuggestionCard]}
+                      style={[styles.suggestionCard, interviewSelectedEducationSuggestions.has('Case Study') && styles.selectedSuggestionCard]}
                       onPress={() => handleEducationSuggestionPress('Case Study')}
                     >
                       <View style={styles.suggestionCardImageContainer}>
@@ -1081,7 +1109,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Brainteasers') && styles.selectedSuggestionCard]}
+                      style={[styles.suggestionCard, interviewSelectedEducationSuggestions.has('Brainteasers') && styles.selectedSuggestionCard]}
                       onPress={() => handleEducationSuggestionPress('Brainteasers')}
                     >
                       <View style={styles.suggestionCardImageContainer}>
@@ -1187,17 +1215,37 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             
             {/* Next button still on the right */}
             <TouchableOpacity 
-              style={[styles.nextButton, (!subjectInput.trim() && selectedSuggestions.size === 0) && styles.disabledButton]} 
-              onPress={(!subjectInput.trim() && selectedSuggestions.size === 0) ? undefined : handleNextPress}
-              disabled={!subjectInput.trim() && selectedSuggestions.size === 0}
+              style={[
+                styles.nextButton, 
+                ((selectedCard === 'study' && (!studySubjectInput.trim() && studySelectedSuggestions.size === 0)) ||
+                 (selectedCard === 'interview' && (!interviewSubjectInput.trim() && interviewSelectedSuggestions.size === 0))) && styles.disabledButton
+              ]} 
+              onPress={
+                ((selectedCard === 'study' && (!studySubjectInput.trim() && studySelectedSuggestions.size === 0)) ||
+                 (selectedCard === 'interview' && (!interviewSubjectInput.trim() && interviewSelectedSuggestions.size === 0))) 
+                  ? undefined : handleNextPress
+              }
+              disabled={
+                (selectedCard === 'study' && (!studySubjectInput.trim() && studySelectedSuggestions.size === 0)) ||
+                (selectedCard === 'interview' && (!interviewSubjectInput.trim() && interviewSelectedSuggestions.size === 0))
+              }
             >
               <View style={styles.buttonWithIcon}>
-                <Text style={[styles.nextButtonText, (!subjectInput.trim() && selectedSuggestions.size === 0) && styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Text style={[
+                  styles.nextButtonText, 
+                  ((selectedCard === 'study' && (!studySubjectInput.trim() && studySelectedSuggestions.size === 0)) ||
+                   (selectedCard === 'interview' && (!interviewSubjectInput.trim() && interviewSelectedSuggestions.size === 0))) && styles.disabledButtonText
+                ]}>
+                  {getTranslatedText(selectedLanguage, 'next')}
+                </Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"
                     fill={Colors.light.text}
-                    opacity={(!subjectInput.trim() && selectedSuggestions.size === 0) ? 0.8 : 1}
+                    opacity={
+                      ((selectedCard === 'study' && (!studySubjectInput.trim() && studySelectedSuggestions.size === 0)) ||
+                       (selectedCard === 'interview' && (!interviewSubjectInput.trim() && interviewSelectedSuggestions.size === 0))) ? 0.8 : 1
+                    }
                   />
                 </Svg>
               </View>
@@ -1227,17 +1275,37 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             
             {/* Next button still on the right */}
             <TouchableOpacity 
-              style={[styles.nextButton, (selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) && styles.disabledButton]} 
-              onPress={(selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) ? undefined : handleNextPress}
-              disabled={selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0}
+              style={[
+                styles.nextButton, 
+                ((selectedCard === 'study' && (!studyEducationInput.trim() && studySelectedEducationSuggestions.size === 0)) ||
+                 (selectedCard === 'interview' && interviewSelectedEducationSuggestions.size === 0)) && styles.disabledButton
+              ]} 
+              onPress={
+                ((selectedCard === 'study' && (!studyEducationInput.trim() && studySelectedEducationSuggestions.size === 0)) ||
+                 (selectedCard === 'interview' && interviewSelectedEducationSuggestions.size === 0)) 
+                  ? undefined : handleNextPress
+              }
+              disabled={
+                (selectedCard === 'study' && (!studyEducationInput.trim() && studySelectedEducationSuggestions.size === 0)) ||
+                (selectedCard === 'interview' && interviewSelectedEducationSuggestions.size === 0)
+              }
             >
               <View style={styles.buttonWithIcon}>
-                <Text style={[styles.nextButtonText, (selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) && styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Text style={[
+                  styles.nextButtonText, 
+                  ((selectedCard === 'study' && (!studyEducationInput.trim() && studySelectedEducationSuggestions.size === 0)) ||
+                   (selectedCard === 'interview' && interviewSelectedEducationSuggestions.size === 0)) && styles.disabledButtonText
+                ]}>
+                  {getTranslatedText(selectedLanguage, 'next')}
+                </Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"
                     fill={Colors.light.text}
-                    opacity={(selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) ? 0.8 : 1}
+                    opacity={
+                      ((selectedCard === 'study' && (!studyEducationInput.trim() && studySelectedEducationSuggestions.size === 0)) ||
+                       (selectedCard === 'interview' && interviewSelectedEducationSuggestions.size === 0)) ? 0.8 : 1
+                    }
                   />
                 </Svg>
               </View>

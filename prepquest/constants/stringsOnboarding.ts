@@ -15,6 +15,9 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Just a few more questions to get you started...',
     progress: '1/3',
     whichSubjects: 'Which subject(s) are you prepping for?',
+    progress2: '2/3',
+    educationLevelQuestion: 'What level of education are you currently prepping for?',
+    interviewTypeQuestion: 'What kind of interview are you currently prepping for?',
     // Study subjects
     history: 'History',
     physics: 'Physics',
@@ -36,6 +39,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Electrical Engineer',
     productManager: 'Product Manager',
     suggestions: 'Suggestions',
+    // Education levels
+    highSchool: 'High School',
+    undergraduate: 'Undergraduate',
+    graduate: 'Graduate',
+    phd: 'PhD',
+    professional: 'Professional',
+    certification: 'Certification',
+    // Interview types
+    technical: 'Technical',
+    behavioral: 'Behavioral',
+    caseStudy: 'Case Study',
+    panel: 'Panel',
   },
   Chinese: {
     skip: '跳过',
@@ -73,6 +88,18 @@ export const stringsOnboarding = {
     electricalEngineer: '电气工程师',
     productManager: '产品经理',
     suggestions: '建议',
+    // Education levels
+    highSchool: '高中',
+    undergraduate: '本科',
+    graduate: '研究生',
+    phd: '博士',
+    professional: '专业',
+    certification: '认证',
+    // Interview types
+    technical: '技术',
+    behavioral: '行为',
+    caseStudy: '案例研究',
+    panel: '小组',
   },
   Malay: {
     skip: 'Langkau',
@@ -110,6 +137,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Jurutera Elektrik',
     productManager: 'Pengurus Produk',
     suggestions: 'Cadangan',
+    // Education levels
+    highSchool: 'Sekolah Menengah',
+    undergraduate: 'Ijazah Sarjana Muda',
+    graduate: 'Ijazah Sarjana',
+    phd: 'PhD',
+    professional: 'Profesional',
+    certification: 'Pensijilan',
+    // Interview types
+    technical: 'Teknikal',
+    behavioral: 'Tingkah Laku',
+    caseStudy: 'Kajian Kes',
+    panel: 'Panel',
   },
   Hindi: {
     skip: 'छोड़ें',
@@ -147,6 +186,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'इलेक्ट्रिकल इंजीनियर',
     productManager: 'उत्पाद प्रबंधक',
     suggestions: 'सुझाव',
+    // Education levels
+    highSchool: 'हाई स्कूल',
+    undergraduate: 'स्नातक',
+    graduate: 'स्नातकोत्तर',
+    phd: 'पीएचडी',
+    professional: 'व्यावसायिक',
+    certification: 'प्रमाणन',
+    // Interview types
+    technical: 'तकनीकी',
+    behavioral: 'व्यवहारिक',
+    caseStudy: 'केस स्टडी',
+    panel: 'पैनल',
   },
   French: {
     skip: 'Passer',
@@ -184,6 +235,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ingénieur Électricien',
     productManager: 'Gestionnaire de Produit',
     suggestions: 'Suggestions',
+    // Education levels
+    highSchool: 'Lycée',
+    undergraduate: 'Licence',
+    graduate: 'Master',
+    phd: 'Doctorat',
+    professional: 'Professionnel',
+    certification: 'Certification',
+    // Interview types
+    technical: 'Technique',
+    behavioral: 'Comportemental',
+    caseStudy: 'Étude de Cas',
+    panel: 'Panel',
   },
   Japanese: {
     skip: 'スキップ',
@@ -221,6 +284,18 @@ export const stringsOnboarding = {
     electricalEngineer: '電気技師',
     productManager: 'プロダクトマネージャー',
     suggestions: '提案',
+    // Education levels
+    highSchool: '高校',
+    undergraduate: '学部',
+    graduate: '大学院',
+    phd: '博士',
+    professional: '専門職',
+    certification: '資格',
+    // Interview types
+    technical: '技術',
+    behavioral: '行動',
+    caseStudy: 'ケーススタディ',
+    panel: 'パネル',
   },
   Korean: {
     skip: '건너뛰기',
@@ -258,6 +333,18 @@ export const stringsOnboarding = {
     electricalEngineer: '전기 엔지니어',
     productManager: '제품 관리자',
     suggestions: '제안',
+    // Education levels
+    highSchool: '고등학교',
+    undergraduate: '학부',
+    graduate: '대학원',
+    phd: '박사',
+    professional: '전문직',
+    certification: '자격증',
+    // Interview types
+    technical: '기술',
+    behavioral: '행동',
+    caseStudy: '케이스 스터디',
+    panel: '패널',
   },
   Spanish: {
     skip: 'Omitir',
@@ -295,6 +382,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ingeniero Eléctrico',
     productManager: 'Gerente de Producto',
     suggestions: 'Sugerencias',
+    // Education levels
+    highSchool: 'Escuela Secundaria',
+    undergraduate: 'Pregrado',
+    graduate: 'Posgrado',
+    phd: 'Doctorado',
+    professional: 'Profesional',
+    certification: 'Certificación',
+    // Interview types
+    technical: 'Técnico',
+    behavioral: 'Comportamental',
+    caseStudy: 'Estudio de Caso',
+    panel: 'Panel',
   },
   German: {
     skip: 'Überspringen',
@@ -332,6 +431,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingenieur',
     productManager: 'Produktmanager',
     suggestions: 'Vorschläge',
+    // Education levels
+    highSchool: 'Gymnasium',
+    undergraduate: 'Bachelor',
+    graduate: 'Master',
+    phd: 'Promotion',
+    professional: 'Beruflich',
+    certification: 'Zertifizierung',
+    // Interview types
+    technical: 'Technisch',
+    behavioral: 'Verhaltensbezogen',
+    caseStudy: 'Fallstudie',
+    panel: 'Panel',
   },
   Portuguese: {
     skip: 'Pular',
@@ -369,6 +480,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Engenheiro Elétrico',
     productManager: 'Gerente de Produto',
     suggestions: 'Sugestões',
+    // Education levels
+    highSchool: 'Ensino Médio',
+    undergraduate: 'Graduação',
+    graduate: 'Pós-graduação',
+    phd: 'Doutorado',
+    professional: 'Profissional',
+    certification: 'Certificação',
+    // Interview types
+    technical: 'Técnico',
+    behavioral: 'Comportamental',
+    caseStudy: 'Estudo de Caso',
+    panel: 'Painel',
   },
   Italian: {
     skip: 'Salta',
@@ -406,6 +529,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ingegnere Elettrico',
     productManager: 'Product Manager',
     suggestions: 'Suggerimenti',
+    // Education levels
+    highSchool: 'Scuola Superiore',
+    undergraduate: 'Laurea Triennale',
+    graduate: 'Laurea Magistrale',
+    phd: 'Dottorato',
+    professional: 'Professionale',
+    certification: 'Certificazione',
+    // Interview types
+    technical: 'Tecnico',
+    behavioral: 'Comportamentale',
+    caseStudy: 'Studio di Caso',
+    panel: 'Panel',
   },
   Russian: {
     skip: 'Пропустить',
@@ -443,6 +578,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Инженер-электрик',
     productManager: 'Менеджер по продукту',
     suggestions: 'Предложения',
+    // Education levels
+    highSchool: 'Средняя школа',
+    undergraduate: 'Бакалавриат',
+    graduate: 'Магистратура',
+    phd: 'Аспирантура',
+    professional: 'Профессиональное',
+    certification: 'Сертификация',
+    // Interview types
+    technical: 'Техническое',
+    behavioral: 'Поведенческое',
+    caseStudy: 'Кейс-стади',
+    panel: 'Панельное',
   },
   Arabic: {
     skip: 'تخطي',
@@ -480,6 +627,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'مهندس كهربائي',
     productManager: 'مدير المنتج',
     suggestions: 'اقتراحات',
+    // Education levels
+    highSchool: 'المدرسة الثانوية',
+    undergraduate: 'الدرجة الجامعية الأولى',
+    graduate: 'الدراسات العليا',
+    phd: 'الدكتوراه',
+    professional: 'المهني',
+    certification: 'الشهادة المهنية',
+    // Interview types
+    technical: 'التقني',
+    behavioral: 'السلوكي',
+    caseStudy: 'دراسة الحالة',
+    panel: 'اللوحة',
   },
   Indonesian: {
     skip: 'Lewati',
@@ -517,6 +676,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Insinyur Listrik',
     productManager: 'Manajer Produk',
     suggestions: 'Saran',
+    // Education levels
+    highSchool: 'Sekolah Menengah Atas',
+    undergraduate: 'Sarjana',
+    graduate: 'Magister',
+    phd: 'Doktor',
+    professional: 'Profesional',
+    certification: 'Sertifikasi',
+    // Interview types
+    technical: 'Teknis',
+    behavioral: 'Perilaku',
+    caseStudy: 'Studi Kasus',
+    panel: 'Panel',
   },
   Thai: {
     skip: 'ข้าม',
@@ -554,6 +725,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'วิศวกรไฟฟ้า',
     productManager: 'ผู้จัดการผลิตภัณฑ์',
     suggestions: 'ข้อเสนอแนะ',
+    // Education levels
+    highSchool: 'มัธยมปลาย',
+    undergraduate: 'ปริญญาตรี',
+    graduate: 'ปริญญาโท',
+    phd: 'ปริญญาเอก',
+    professional: 'วิชาชีพ',
+    certification: 'ใบรับรอง',
+    // Interview types
+    technical: 'เทคนิค',
+    behavioral: 'พฤติกรรม',
+    caseStudy: 'กรณีศึกษา',
+    panel: 'คณะกรรมการ',
   },
   Vietnamese: {
     skip: 'Bỏ qua',
@@ -591,6 +774,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Kỹ sư điện',
     productManager: 'Quản lý sản phẩm',
     suggestions: 'Đề xuất',
+    // Education levels
+    highSchool: 'Trung học phổ thông',
+    undergraduate: 'Đại học',
+    graduate: 'Thạc sĩ',
+    phd: 'Tiến sĩ',
+    professional: 'Chuyên nghiệp',
+    certification: 'Chứng chỉ',
+    // Interview types
+    technical: 'Kỹ thuật',
+    behavioral: 'Hành vi',
+    caseStudy: 'Nghiên cứu tình huống',
+    panel: 'Hội đồng',
   },
   Turkish: {
     skip: 'Atla',
@@ -628,6 +823,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektrik Mühendisi',
     productManager: 'Ürün Müdürü',
     suggestions: 'Öneriler',
+    // Education levels
+    highSchool: 'Lise',
+    undergraduate: 'Lisans',
+    graduate: 'Yüksek Lisans',
+    phd: 'Doktora',
+    professional: 'Mesleki',
+    certification: 'Sertifika',
+    // Interview types
+    technical: 'Teknik',
+    behavioral: 'Davranışsal',
+    caseStudy: 'Vaka Çalışması',
+    panel: 'Panel',
   },
   Dutch: {
     skip: 'Overslaan',
@@ -665,6 +872,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektrotechnisch Ingenieur',
     productManager: 'Product Manager',
     suggestions: 'Suggesties',
+    // Education levels
+    highSchool: 'Middelbare School',
+    undergraduate: 'Bachelor',
+    graduate: 'Master',
+    phd: 'PhD',
+    professional: 'Professioneel',
+    certification: 'Certificering',
+    // Interview types
+    technical: 'Technisch',
+    behavioral: 'Gedragsmatig',
+    caseStudy: 'Casestudy',
+    panel: 'Panel',
   },
   Polish: {
     skip: 'Pomiń',
@@ -702,6 +921,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Inżynier Elektryk',
     productManager: 'Menedżer Produktu',
     suggestions: 'Sugestie',
+    // Education levels
+    highSchool: 'Liceum',
+    undergraduate: 'Licencjat',
+    graduate: 'Magister',
+    phd: 'Doktorat',
+    professional: 'Zawodowy',
+    certification: 'Certyfikacja',
+    // Interview types
+    technical: 'Techniczny',
+    behavioral: 'Behawioralny',
+    caseStudy: 'Studium Przypadku',
+    panel: 'Panel',
   },
   Swedish: {
     skip: 'Hoppa över',
@@ -739,6 +970,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingenjör',
     productManager: 'Produktchef',
     suggestions: 'Förslag',
+    // Education levels
+    highSchool: 'Gymnasium',
+    undergraduate: 'Kandidatexamen',
+    graduate: 'Magisterexamen',
+    phd: 'Doktorsexamen',
+    professional: 'Professionell',
+    certification: 'Certifiering',
+    // Interview types
+    technical: 'Teknisk',
+    behavioral: 'Beteende',
+    caseStudy: 'Fallstudie',
+    panel: 'Panel',
   },
   Czech: {
     skip: 'Přeskočit',
@@ -776,6 +1019,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektrotechnický inženýr',
     productManager: 'Produktový manažer',
     suggestions: 'Návrhy',
+    // Education levels
+    highSchool: 'Střední škola',
+    undergraduate: 'Bakalářský',
+    graduate: 'Magisterský',
+    phd: 'Doktorský',
+    professional: 'Profesionální',
+    certification: 'Certifikace',
+    // Interview types
+    technical: 'Technický',
+    behavioral: 'Behaviorální',
+    caseStudy: 'Případová studie',
+    panel: 'Panel',
   },
   Greek: {
     skip: 'Παράλειψη',
@@ -813,6 +1068,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ηλεκτρολόγος Μηχανικός',
     productManager: 'Διαχειριστής Προϊόντος',
     suggestions: 'Προτάσεις',
+    // Education levels
+    highSchool: 'Λύκειο',
+    undergraduate: 'Πτυχίο',
+    graduate: 'Μεταπτυχιακό',
+    phd: 'Διδακτορικό',
+    professional: 'Επαγγελματικό',
+    certification: 'Πιστοποίηση',
+    // Interview types
+    technical: 'Τεχνικό',
+    behavioral: 'Συμπεριφορικό',
+    caseStudy: 'Μελέτη Περίπτωσης',
+    panel: 'Πάνελ',
   },
   Hebrew: {
     skip: 'דלג',
@@ -850,6 +1117,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'מהנדס חשמל',
     productManager: 'מנהל מוצר',
     suggestions: 'הצעות',
+    // Education levels
+    highSchool: 'תיכון',
+    undergraduate: 'תואר ראשון',
+    graduate: 'תואר שני',
+    phd: 'דוקטורט',
+    professional: 'מקצועי',
+    certification: 'הסמכה',
+    // Interview types
+    technical: 'טכני',
+    behavioral: 'התנהגותי',
+    caseStudy: 'מחקר מקרה',
+    panel: 'פאנל',
   },
   Tagalog: {
     skip: 'Laktawan',
@@ -887,6 +1166,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Electrical Engineer',
     productManager: 'Product Manager',
     suggestions: 'Mga Mungkahi',
+    // Education levels
+    highSchool: 'Mataas na Paaralan',
+    undergraduate: 'Bachelor',
+    graduate: 'Master',
+    phd: 'PhD',
+    professional: 'Propesyonal',
+    certification: 'Sertipikasyon',
+    // Interview types
+    technical: 'Teknikal',
+    behavioral: 'Asal',
+    caseStudy: 'Pag-aaral ng Kaso',
+    panel: 'Panel',
   },
   Tamil: {
     skip: 'தவிர்க்க',
@@ -924,6 +1215,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'மின் பொறியாளர்',
     productManager: 'தயாரிப்பு மேலாளர்',
     suggestions: 'பரிந்துரைகள்',
+    // Education levels
+    highSchool: 'உயர்நிலைப் பள்ளி',
+    undergraduate: 'இளங்கலை',
+    graduate: 'முதுகலை',
+    phd: 'முனைவர்',
+    professional: 'தொழில்முறை',
+    certification: 'சான்றிதழ்',
+    // Interview types
+    technical: 'தொழில்நுட்ப',
+    behavioral: 'நடத்தை',
+    caseStudy: 'வழக்கு ஆய்வு',
+    panel: 'குழு',
   },
   Bengali: {
     skip: 'এড়িয়ে যান',
@@ -961,6 +1264,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'তড়িৎ প্রকৌশলী',
     productManager: 'পণ্য ব্যবস্থাপক',
     suggestions: 'পরামর্শ',
+    // Education levels
+    highSchool: 'উচ্চ বিদ্যালয়',
+    undergraduate: 'স্নাতক',
+    graduate: 'স্নাতকোত্তর',
+    phd: 'পিএইচডি',
+    professional: 'পেশাদার',
+    certification: 'সার্টিফিকেশন',
+    // Interview types
+    technical: 'প্রযুক্তিগত',
+    behavioral: 'আচরণগত',
+    caseStudy: 'কেস স্টাডি',
+    panel: 'প্যানেল',
   },
   Ukrainian: {
     skip: 'Пропустити',
@@ -998,6 +1313,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Інженер-електрик',
     productManager: 'Менеджер продукту',
     suggestions: 'Пропозиції',
+    // Education levels
+    highSchool: 'Середня школа',
+    undergraduate: 'Бакалаврат',
+    graduate: 'Магістратура',
+    phd: 'Аспірантура',
+    professional: 'Професійне',
+    certification: 'Сертифікація',
+    // Interview types
+    technical: 'Технічне',
+    behavioral: 'Поведінкове',
+    caseStudy: 'Кейс-стаді',
+    panel: 'Панельне',
   },
   Romanian: {
     skip: 'Omite',
@@ -1035,6 +1362,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Inginer Electrician',
     productManager: 'Manager de Produs',
     suggestions: 'Sugestii',
+    // Education levels
+    highSchool: 'Liceu',
+    undergraduate: 'Licență',
+    graduate: 'Masterat',
+    phd: 'Doctorat',
+    professional: 'Profesional',
+    certification: 'Certificare',
+    // Interview types
+    technical: 'Tehnic',
+    behavioral: 'Comportamental',
+    caseStudy: 'Studiu de Caz',
+    panel: 'Panel',
   },
   Hungarian: {
     skip: 'Kihagyás',
@@ -1072,6 +1411,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektromérnök',
     productManager: 'Termék Menedzser',
     suggestions: 'Javaslatok',
+    // Education levels
+    highSchool: 'Gimnázium',
+    undergraduate: 'Alapképzés',
+    graduate: 'Mesterképzés',
+    phd: 'Doktori',
+    professional: 'Szakmai',
+    certification: 'Tanúsítvány',
+    // Interview types
+    technical: 'Műszaki',
+    behavioral: 'Viselkedési',
+    caseStudy: 'Esettanulmány',
+    panel: 'Panel',
   },
   Farsi: {
     skip: 'رد کردن',
@@ -1109,6 +1460,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'مهندس برق',
     productManager: 'مدیر محصول',
     suggestions: 'پیشنهادات',
+    // Education levels
+    highSchool: 'دبیرستان',
+    undergraduate: 'کارشناسی',
+    graduate: 'کارشناسی ارشد',
+    phd: 'دکتری',
+    professional: 'حرفه‌ای',
+    certification: 'گواهینامه',
+    // Interview types
+    technical: 'فنی',
+    behavioral: 'رفتاری',
+    caseStudy: 'مطالعه موردی',
+    panel: 'پنل',
   },
   Swahili: {
     skip: 'Ruka',
@@ -1146,6 +1509,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Mhandisi wa Umeme',
     productManager: 'Msimamizi wa Bidhaa',
     suggestions: 'Mapendekezo',
+    // Education levels
+    highSchool: 'Shule ya Sekondari',
+    undergraduate: 'Shahada ya Kwanza',
+    graduate: 'Shahada ya Uzamili',
+    phd: 'Shahada ya Uzamivu',
+    professional: 'Kitaaluma',
+    certification: 'Cheti',
+    // Interview types
+    technical: 'Kitaalamu',
+    behavioral: 'Tabia',
+    caseStudy: 'Uchunguzi wa Kesi',
+    panel: 'Bodi',
   },
   Afrikaans: {
     skip: 'Slaan Oor',
@@ -1183,6 +1558,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektriese Ingenieur',
     productManager: 'Produkbestuurder',
     suggestions: 'Voorstelle',
+    // Education levels
+    highSchool: 'Hoërskool',
+    undergraduate: 'Voorgraadse',
+    graduate: 'Nagraadse',
+    phd: 'PhD',
+    professional: 'Professioneel',
+    certification: 'Sertifisering',
+    // Interview types
+    technical: 'Tegnies',
+    behavioral: 'Gedragsmatig',
+    caseStudy: 'Gevalstudie',
+    panel: 'Paneel',
   },
   Finnish: {
     skip: 'Ohita',
@@ -1220,6 +1607,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Sähköinsinööri',
     productManager: 'Tuotepäällikkö',
     suggestions: 'Ehdotukset',
+    // Education levels
+    highSchool: 'Lukio',
+    undergraduate: 'Kandidaatti',
+    graduate: 'Maisteri',
+    phd: 'Tohtori',
+    professional: 'Ammatillinen',
+    certification: 'Sertifikaatti',
+    // Interview types
+    technical: 'Tekninen',
+    behavioral: 'Käyttäytymis',
+    caseStudy: 'Tapaustutkimus',
+    panel: 'Paneeli',
   },
   Norwegian: {
     skip: 'Hopp Over',
@@ -1257,6 +1656,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingeniør',
     productManager: 'Produktleder',
     suggestions: 'Forslag',
+    // Education levels
+    highSchool: 'Videregående skole',
+    undergraduate: 'Bachelorgrad',
+    graduate: 'Mastergrad',
+    phd: 'Doktorgrad',
+    professional: 'Profesjonell',
+    certification: 'Sertifisering',
+    // Interview types
+    technical: 'Teknisk',
+    behavioral: 'Atferdsmessig',
+    caseStudy: 'Kasusstudie',
+    panel: 'Panel',
   },
   Danish: {
     skip: 'Spring Over',
@@ -1294,6 +1705,18 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingeniør',
     productManager: 'Produktleder',
     suggestions: 'Forslag',
+    // Education levels
+    highSchool: 'Gymnasium',
+    undergraduate: 'Bachelorgrad',
+    graduate: 'Kandidatgrad',
+    phd: 'Ph.d.',
+    professional: 'Professionel',
+    certification: 'Certificering',
+    // Interview types
+    technical: 'Teknisk',
+    behavioral: 'Adfærdsmæssig',
+    caseStudy: 'Casestudie',
+    panel: 'Panel',
   },
 };
 

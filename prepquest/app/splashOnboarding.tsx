@@ -46,12 +46,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const insets = useSafeAreaInsets();
 
   // State for section navigation
-  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2'>('logoAnimation');
+  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3'>('logoAnimation');
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
   const [subjectInput, setSubjectInput] = useState<string>('');
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
+  const [educationInput, setEducationInput] = useState<string>('');
+  const [selectedEducationSuggestions, setSelectedEducationSuggestions] = useState<Set<string>>(new Set());
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -96,6 +98,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const pngBackgroundFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage1ContentFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage2ContentFadeAnim = useRef(new Animated.Value(0)).current;
+  const onboardingPage3ContentFadeAnim = useRef(new Animated.Value(0)).current;
   
   // Initialize animation values to prevent glitch
   useEffect(() => {
@@ -104,6 +107,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     pngBackgroundFadeAnim.setValue(0);
     onboardingPage1ContentFadeAnim.setValue(0);
     onboardingPage2ContentFadeAnim.setValue(0);
+    onboardingPage3ContentFadeAnim.setValue(0);
   }, []);
 
   // Start animations on mount and set timer for background transition
@@ -238,6 +242,23 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           useNativeDriver: true,
         }).start();
       });
+    } else if (currentSection === 'onboardingPage2') {
+      // Fade out onboardingPage2 content first
+      Animated.timing(onboardingPage2ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition to onboardingPage3
+        setCurrentSection('onboardingPage3');
+        
+        // Then fade in onboardingPage3 content
+        Animated.timing(onboardingPage3ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -292,6 +313,23 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           useNativeDriver: true,
         }).start();
       });
+    } else if (currentSection === 'onboardingPage3') {
+      // Fade out onboardingPage3 content first
+      Animated.timing(onboardingPage3ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition back to onboardingPage2
+        setCurrentSection('onboardingPage2');
+        
+        // Then fade in onboardingPage2 content
+        Animated.timing(onboardingPage2ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -306,6 +344,18 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
   const handleSuggestionPress = (suggestion: string) => {
     setSelectedSuggestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(suggestion)) {
+        newSet.delete(suggestion);
+      } else {
+        newSet.add(suggestion);
+      }
+      return newSet;
+    });
+  };
+
+  const handleEducationSuggestionPress = (suggestion: string) => {
+    setSelectedEducationSuggestions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(suggestion)) {
         newSet.delete(suggestion);
@@ -822,6 +872,170 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         </Animated.View>
       )}
 
+      {/* onboardingPage3 - Education/Interview Level Selection */}
+      {currentSection === 'onboardingPage3' && (
+        <Animated.View style={[styles.imageBackgroundContainer, { opacity: pngBackgroundFadeAnim }]}>
+          <ImageBackground
+            source={require('../assets/onboarding/onboardingBackground.png')}
+            style={styles.imageBackground}
+            resizeMode="cover"
+          />
+          
+          {/* Content container */}
+          <Animated.View style={[styles.onboardingPage3Container, { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage3ContentFadeAnim }]}>
+            <View style={styles.onboardingPage3Content}>
+              {/* Progress text: 2/3 */}
+              <Text style={styles.progressText}>{getTranslatedText(selectedLanguage, 'progress2')}</Text>
+              
+              {/* Question text */}
+              <Text style={styles.educationQuestionText}>
+                {selectedCard === 'study' 
+                  ? getTranslatedText(selectedLanguage, 'educationLevelQuestion')
+                  : getTranslatedText(selectedLanguage, 'interviewTypeQuestion')
+                }
+              </Text>
+              
+              {/* Text input field with cancel icon inside */}
+              <View style={styles.textInputContainer}>
+                <TextInput
+                  style={styles.educationTextInput}
+                  placeholder="Type here!"
+                  placeholderTextColor={Colors.light.unselectedText}
+                  value={educationInput}
+                  onChangeText={setEducationInput}
+                />
+                {educationInput.length > 0 && (
+                  <TouchableOpacity 
+                    style={styles.cancelIconButton}
+                    onPress={() => setEducationInput('')}
+                  >
+                    <MaterialIcons 
+                      name="cancel" 
+                      size={20} 
+                      color={Colors.light.unselectedText} 
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              {/* Suggestions text */}
+              <Text style={styles.suggestionsText}>{getTranslatedText(selectedLanguage, 'suggestions')}</Text>
+              
+              {/* ScrollView with suggestion cards */}
+              <ScrollView 
+                style={styles.suggestionsScrollView}
+                showsVerticalScrollIndicator={false}
+              >
+                {selectedCard === 'study' && (
+                  <View style={styles.suggestionsContainer}>
+                    {/* Study Education Levels - 6 cards */}
+                    <View style={styles.cardRow}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('High School') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('High School')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'highSchool')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Undergraduate') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Undergraduate')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'undergraduate')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <View style={styles.cardRow}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Graduate') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Graduate')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'graduate')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('PhD') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('PhD')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'phd')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <View style={styles.cardRow}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Professional') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Professional')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'professional')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Certification') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Certification')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'certification')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                
+                {selectedCard === 'interview' && (
+                  <View style={styles.suggestionsContainer}>
+                    {/* Interview Types - 4 cards */}
+                    <View style={styles.cardRow}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Technical') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Technical')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'technical')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Behavioral') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Behavioral')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'behavioral')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <View style={styles.cardRow}>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Case Study') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Case Study')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'caseStudy')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Panel') && styles.selectedSuggestionCard]}
+                        onPress={() => handleEducationSuggestionPress('Panel')}
+                      >
+                        <Text style={styles.suggestionCardText}>
+                          {getTranslatedText(selectedLanguage, 'panel')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      )}
+
       {/* Top button row with conditional buttons */}
       <View style={[styles.topButtonRow, { top: insets.top }]}>
         {currentSection === 'languageSelection' ? (
@@ -921,6 +1135,46 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     points="12,6 0,0 0,12"
                     fill={Colors.light.text}
                     opacity={(!subjectInput.trim() && selectedSuggestions.size === 0) ? 0.8 : 1}
+                  />
+                </Svg>
+              </View>
+            </TouchableOpacity>
+          </>
+        ) : currentSection === 'onboardingPage3' ? (
+          <>
+            {/* Back button on the left when on onboardingPage3 */}
+            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+              <View style={styles.buttonWithIcon}>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="0,6 12,0 12,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+                <Text style={styles.backButtonText}>{getTranslatedText(selectedLanguage, 'back')}</Text>
+              </View>
+            </TouchableOpacity>
+            
+            {/* Skip button still centered */}
+            <View style={styles.skipButtonContainer}>
+              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+                <Text style={styles.skipButtonText}>{getTranslatedText(selectedLanguage, 'skip')}</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Next button still on the right */}
+            <TouchableOpacity 
+              style={[styles.nextButton, (!educationInput.trim() && selectedEducationSuggestions.size === 0) && styles.disabledButton]} 
+              onPress={(!educationInput.trim() && selectedEducationSuggestions.size === 0) ? undefined : handleNextPress}
+              disabled={!educationInput.trim() && selectedEducationSuggestions.size === 0}
+            >
+              <View style={styles.buttonWithIcon}>
+                <Text style={[styles.nextButtonText, (!educationInput.trim() && selectedEducationSuggestions.size === 0) && styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="12,6 0,0 0,12"
+                    fill={Colors.light.text}
+                    opacity={(!educationInput.trim() && selectedEducationSuggestions.size === 0) ? 0.8 : 1}
                   />
                 </Svg>
               </View>
@@ -1146,6 +1400,16 @@ const styles = StyleSheet.create({
     width: '100%',
     flex: 1,
   },
+  onboardingPage3Container: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    paddingHorizontal: 12,
+  },
+  onboardingPage3Content: {
+    width: '100%',
+    flex: 1,
+  },
   greatText: {
     fontSize: 28,
     fontFamily: Fonts.bodyBold,
@@ -1173,11 +1437,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
+  educationQuestionText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 20,
+  },
   textInputContainer: {
     position: 'relative',
     marginTop: 12,
   },
   subjectTextInput: {
+    backgroundColor: 'white',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: Colors.light.unselectedText,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingRight: 50, // Make space for the cancel icon
+    fontSize: 16,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'left',
+    width: '100%',
+  },
+  educationTextInput: {
     backgroundColor: 'white',
     borderRadius: 30,
     borderWidth: 1,

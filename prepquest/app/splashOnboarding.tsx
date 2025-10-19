@@ -2553,7 +2553,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#CCCCCC',
-    marginHorizontal: 4,
+    marginHorizontal: 8,
   },
   carouselDotActive: {
     backgroundColor: '#4F41D8',

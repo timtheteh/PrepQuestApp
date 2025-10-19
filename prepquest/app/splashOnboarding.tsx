@@ -82,43 +82,43 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       id: 1,
       title: '1/7',
       subtitle: 'Recall-based Questions',
-      bodyText: 'E.g.\nWhat are 3 examples of fruits?',
+      bodyText: 'E.g. What are 3 examples of fruits?',
     },
     {
       id: 2,
       title: '2/7',
       subtitle: 'Application Questions',
-      bodyText: 'E.g.\nHow would you apply Newton\'s laws to explain a car crash?',
+      bodyText: 'E.g. How would you apply Newton\'s laws to explain a car crash?',
     },
     {
       id: 3,
       title: '3/7',
       subtitle: 'Analysis Questions',
-      bodyText: 'E.g.\nCompare and contrast the advantages of renewable vs non-renewable energy sources.',
+      bodyText: 'E.g. Compare and contrast the advantages of renewable vs non-renewable energy sources.',
     },
     {
       id: 4,
       title: '4/7',
       subtitle: 'Synthesis Questions',
-      bodyText: 'E.g.\nDesign a solution that combines AI and sustainability to address climate change.',
+      bodyText: 'E.g. Design a solution that combines AI and sustainability to address climate change.',
     },
     {
       id: 5,
       title: '5/7',
       subtitle: 'Evaluation Questions',
-      bodyText: 'E.g.\nEvaluate the effectiveness of remote work policies in improving productivity.',
+      bodyText: 'E.g Evaluate the effectiveness of remote work policies in improving productivity.',
     },
     {
       id: 6,
       title: '6/7',
       subtitle: 'Creative Questions',
-      bodyText: 'E.g.\nInvent a new product that solves a problem you\'ve never seen solved before.',
+      bodyText: 'E.g. Invent a new product that solves a problem you\'ve never seen solved before.',
     },
     {
       id: 7,
       title: '7/7',
       subtitle: 'Critical Thinking Questions',
-      bodyText: 'E.g.\nAnalyze the potential risks and benefits of implementing universal basic income.',
+      bodyText: 'E.g. Analyze the potential risks and benefits of implementing universal basic income.',
     },
   ];
 
@@ -1596,15 +1596,15 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 {getTranslatedText(selectedLanguage, 'cognitiveQuestionsParagraph')}
               </Text>
               
-              {/* Second paragraph */}
+              {/* Second paragraph
               <Text style={styles.paragraphText}>
                 {getTranslatedText(selectedLanguage, 'tailorFlashcardsParagraph')}
-              </Text>
+              </Text> */}
               
               {/* Carousel container */}
               <GestureHandlerRootView style={styles.rectangleContainer}>
                 <PanGestureHandler onHandlerStateChange={handlePanGesture}>
-                  <View style={styles.carouselPage}>
+                  <View style={[styles.carouselPage, styles.carouselPageRounded]}>
                     <Text style={styles.carouselTitle}>
                       {carouselPages[currentCarouselPage].title}
                     </Text>
@@ -2351,8 +2351,6 @@ const styles = StyleSheet.create({
   },
   rectangleContainer: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 30,
     marginTop: 20,
   },
   carouselPage: {
@@ -2362,15 +2360,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  carouselPageRounded: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 30,
+    overflow: 'hidden',
+  },
   carouselTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: Fonts.bodyBold,
     color: 'black',
     textAlign: 'center',
-    marginTop: 12,
   },
   carouselSubtitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontFamily: Fonts.bodyBold,
     color: 'black',
     textAlign: 'center',

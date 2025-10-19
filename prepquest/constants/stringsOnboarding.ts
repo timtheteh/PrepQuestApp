@@ -53,6 +53,14 @@ export const stringsOnboarding = {
     behavioral: 'Behavioral',
     caseStudy: 'Case Study',
     brainteasers: 'Brainteasers',
+    // onboardingPage4 strings
+    optionalQuestions: 'Optional Questions',
+    experienceLevelQuestion: 'For which experience level are you prepping for?',
+    experienceLevelHelper: 'E.g. Junior Analyst, Senior Engineer, Senior Manager',
+    companyQuestion: 'For which company is this interview for?',
+    companyHelper: 'E.g. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Which topic(s) or subtopic(s) do you want to practice more of?',
+    topicsHelper: 'E.g. Operating Systems, System Design, Market Sizing',
   },
   Chinese: {
     skip: '跳过',
@@ -104,6 +112,14 @@ export const stringsOnboarding = {
     behavioral: '行为',
     caseStudy: '案例研究',
     brainteasers: '脑筋急转弯',
+    // onboardingPage4 strings
+    optionalQuestions: '可选问题',
+    experienceLevelQuestion: '您准备哪个经验水平？',
+    experienceLevelHelper: '例如：初级分析师、高级工程师、高级经理',
+    companyQuestion: '这次面试是哪家公司？',
+    companyHelper: '例如：谷歌、波士顿咨询集团、Meta、微软',
+    topicsQuestion: '您想练习哪些主题或子主题？',
+    topicsHelper: '例如：操作系统、系统设计、市场规模',
   },
   Malay: {
     skip: 'Langkau',
@@ -155,6 +171,14 @@ export const stringsOnboarding = {
     behavioral: 'Tingkah Laku',
     caseStudy: 'Kajian Kes',
     brainteasers: 'Teka-teki',
+    // onboardingPage4 strings
+    optionalQuestions: 'Soalan Pilihan',
+    experienceLevelQuestion: 'Untuk tahap pengalaman mana anda bersedia?',
+    experienceLevelHelper: 'Contoh: Analis Junior, Jurutera Kanan, Pengurus Kanan',
+    companyQuestion: 'Untuk syarikat mana temuduga ini?',
+    companyHelper: 'Contoh: Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Topik atau subtopik mana yang anda mahu praktik lebih?',
+    topicsHelper: 'Contoh: Sistem Operasi, Reka Bentuk Sistem, Saiz Pasaran',
   },
   Hindi: {
     skip: 'छोड़ें',
@@ -206,6 +230,14 @@ export const stringsOnboarding = {
     behavioral: 'व्यवहारिक',
     caseStudy: 'केस स्टडी',
     brainteasers: 'पहेलियाँ',
+    // onboardingPage4 strings
+    optionalQuestions: 'वैकल्पिक प्रश्न',
+    experienceLevelQuestion: 'आप किस अनुभव स्तर की तैयारी कर रहे हैं?',
+    experienceLevelHelper: 'उदाहरण: जूनियर एनालिस्ट, सीनियर इंजीनियर, सीनियर मैनेजर',
+    companyQuestion: 'यह इंटरव्यू किस कंपनी के लिए है?',
+    companyHelper: 'उदाहरण: गूगल, बोस्टन कंसल्टिंग ग्रुप, मेटा, माइक्रोसॉफ्ट',
+    topicsQuestion: 'आप किन विषयों या उप-विषयों का अभ्यास करना चाहते हैं?',
+    topicsHelper: 'उदाहरण: ऑपरेटिंग सिस्टम, सिस्टम डिजाइन, मार्केट साइज़िंग',
   },
   French: {
     skip: 'Passer',
@@ -257,6 +289,14 @@ export const stringsOnboarding = {
     behavioral: 'Comportemental',
     caseStudy: 'Étude de Cas',
     brainteasers: 'Casse-têtes',
+    // onboardingPage4 strings
+    optionalQuestions: 'Questions Optionnelles',
+    experienceLevelQuestion: 'Pour quel niveau d\'expérience vous préparez-vous?',
+    experienceLevelHelper: 'Ex. Analyste Junior, Ingénieur Senior, Manager Senior',
+    companyQuestion: 'Pour quelle entreprise est cet entretien?',
+    companyHelper: 'Ex. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Quel(s) sujet(s) ou sous-sujet(s) voulez-vous pratiquer davantage?',
+    topicsHelper: 'Ex. Systèmes d\'Exploitation, Conception Système, Dimensionnement Marché',
   },
   Japanese: {
     skip: 'スキップ',
@@ -308,6 +348,14 @@ export const stringsOnboarding = {
     behavioral: '行動',
     caseStudy: 'ケーススタディ',
     brainteasers: '脳トレ',
+    // onboardingPage4 strings
+    optionalQuestions: 'オプション質問',
+    experienceLevelQuestion: 'どの経験レベルに備えていますか？',
+    experienceLevelHelper: '例：ジュニアアナリスト、シニアエンジニア、シニアマネージャー',
+    companyQuestion: 'この面接はどの会社のためですか？',
+    companyHelper: '例：グーグル、ボストンコンサルティンググループ、メタ、マイクロソフト',
+    topicsQuestion: 'どのトピックやサブトピックをより練習したいですか？',
+    topicsHelper: '例：オペレーティングシステム、システム設計、市場規模測定',
   },
   Korean: {
     skip: '건너뛰기',
@@ -359,6 +407,14 @@ export const stringsOnboarding = {
     behavioral: '행동',
     caseStudy: '케이스 스터디',
     brainteasers: '두뇌퀴즈',
+    // onboardingPage4 strings
+    optionalQuestions: '선택 질문',
+    experienceLevelQuestion: '어떤 경험 수준에 대비하고 계신가요?',
+    experienceLevelHelper: '예: 주니어 애널리스트, 시니어 엔지니어, 시니어 매니저',
+    companyQuestion: '이 면접은 어떤 회사를 위한 것인가요?',
+    companyHelper: '예: 구글, 보스턴 컨설팅 그룹, 메타, 마이크로소프트',
+    topicsQuestion: '어떤 주제나 하위 주제를 더 연습하고 싶으신가요?',
+    topicsHelper: '예: 운영체제, 시스템 설계, 시장 규모 측정',
   },
   Spanish: {
     skip: 'Omitir',
@@ -410,6 +466,14 @@ export const stringsOnboarding = {
     behavioral: 'Comportamental',
     caseStudy: 'Estudio de Caso',
     brainteasers: 'Acertijos',
+    // onboardingPage4 strings
+    optionalQuestions: 'Preguntas Opcionales',
+    experienceLevelQuestion: '¿Para qué nivel de experiencia te estás preparando?',
+    experienceLevelHelper: 'Ej. Analista Junior, Ingeniero Senior, Gerente Senior',
+    companyQuestion: '¿Para qué empresa es esta entrevista?',
+    companyHelper: 'Ej. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: '¿Qué tema(s) o subtema(s) quieres practicar más?',
+    topicsHelper: 'Ej. Sistemas Operativos, Diseño de Sistemas, Dimensionamiento de Mercado',
   },
   German: {
     skip: 'Überspringen',
@@ -461,6 +525,14 @@ export const stringsOnboarding = {
     behavioral: 'Verhaltensbezogen',
     caseStudy: 'Fallstudie',
     brainteasers: 'Denksportaufgaben',
+    // onboardingPage4 strings
+    optionalQuestions: 'Optionale Fragen',
+    experienceLevelQuestion: 'Für welches Erfahrungsniveau bereiten Sie sich vor?',
+    experienceLevelHelper: 'Z.B. Junior Analyst, Senior Engineer, Senior Manager',
+    companyQuestion: 'Für welche Firma ist dieses Vorstellungsgespräch?',
+    companyHelper: 'Z.B. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Welche Themen oder Unterthemen möchten Sie mehr üben?',
+    topicsHelper: 'Z.B. Betriebssysteme, Systemdesign, Marktgrößenbestimmung',
   },
   Portuguese: {
     skip: 'Pular',
@@ -512,6 +584,14 @@ export const stringsOnboarding = {
     behavioral: 'Comportamental',
     caseStudy: 'Estudo de Caso',
     brainteasers: 'Quebra-cabeças',
+    // onboardingPage4 strings
+    optionalQuestions: 'Perguntas Opcionais',
+    experienceLevelQuestion: 'Para qual nível de experiência você está se preparando?',
+    experienceLevelHelper: 'Ex. Analista Júnior, Engenheiro Sênior, Gerente Sênior',
+    companyQuestion: 'Para qual empresa é esta entrevista?',
+    companyHelper: 'Ex. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Quais tópicos ou subtópicos você quer praticar mais?',
+    topicsHelper: 'Ex. Sistemas Operacionais, Design de Sistema, Dimensionamento de Mercado',
   },
   Italian: {
     skip: 'Salta',
@@ -563,6 +643,14 @@ export const stringsOnboarding = {
     behavioral: 'Comportamentale',
     caseStudy: 'Studio di Caso',
     brainteasers: 'Indovinelli',
+    // onboardingPage4 strings
+    optionalQuestions: 'Domande Opzionali',
+    experienceLevelQuestion: 'Per quale livello di esperienza ti stai preparando?',
+    experienceLevelHelper: 'Es. Analista Junior, Ingegnere Senior, Manager Senior',
+    companyQuestion: 'Per quale azienda è questo colloquio?',
+    companyHelper: 'Es. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Quali argomenti o sottotemi vuoi praticare di più?',
+    topicsHelper: 'Es. Sistemi Operativi, Progettazione Sistema, Dimensionamento Mercato',
   },
   Russian: {
     skip: 'Пропустить',
@@ -614,6 +702,14 @@ export const stringsOnboarding = {
     behavioral: 'Поведенческое',
     caseStudy: 'Кейс-стади',
     brainteasers: 'Головоломки',
+    // onboardingPage4 strings
+    optionalQuestions: 'Дополнительные Вопросы',
+    experienceLevelQuestion: 'К какому уровню опыта вы готовитесь?',
+    experienceLevelHelper: 'Напр. Младший Аналитик, Старший Инженер, Старший Менеджер',
+    companyQuestion: 'Для какой компании это собеседование?',
+    companyHelper: 'Напр. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Какие темы или подтемы вы хотите практиковать больше?',
+    topicsHelper: 'Напр. Операционные Системы, Проектирование Систем, Оценка Размера Рынка',
   },
   Arabic: {
     skip: 'تخطي',
@@ -665,6 +761,14 @@ export const stringsOnboarding = {
     behavioral: 'السلوكي',
     caseStudy: 'دراسة الحالة',
     brainteasers: 'الألغاز',
+    // onboardingPage4 strings
+    optionalQuestions: 'أسئلة اختيارية',
+    experienceLevelQuestion: 'أي مستوى خبرة تستعد له؟',
+    experienceLevelHelper: 'مثال: محلل مبتدئ، مهندس أول، مدير أول',
+    companyQuestion: 'لأي شركة هذه المقابلة؟',
+    companyHelper: 'مثال: جوجل، مجموعة بوسطن الاستشارية، ميتا، مايكروسوفت',
+    topicsQuestion: 'أي مواضيع أو مواضيع فرعية تريد ممارستها أكثر؟',
+    topicsHelper: 'مثال: أنظمة التشغيل، تصميم النظام، تحديد حجم السوق',
   },
   Indonesian: {
     skip: 'Lewati',
@@ -716,6 +820,14 @@ export const stringsOnboarding = {
     behavioral: 'Perilaku',
     caseStudy: 'Studi Kasus',
     brainteasers: 'Teka-teki',
+    // onboardingPage4 strings
+    optionalQuestions: 'Pertanyaan Opsional',
+    experienceLevelQuestion: 'Untuk level pengalaman mana Anda mempersiapkan diri?',
+    experienceLevelHelper: 'Contoh: Analis Junior, Insinyur Senior, Manajer Senior',
+    companyQuestion: 'Untuk perusahaan mana wawancara ini?',
+    companyHelper: 'Contoh: Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Topik atau sub-topik mana yang ingin Anda praktikkan lebih banyak?',
+    topicsHelper: 'Contoh: Sistem Operasi, Desain Sistem, Ukuran Pasar',
   },
   Thai: {
     skip: 'ข้าม',
@@ -767,6 +879,14 @@ export const stringsOnboarding = {
     behavioral: 'พฤติกรรม',
     caseStudy: 'กรณีศึกษา',
     brainteasers: 'ปริศนา',
+    // onboardingPage4 strings
+    optionalQuestions: 'คำถามเพิ่มเติม',
+    experienceLevelQuestion: 'คุณกำลังเตรียมตัวสำหรับระดับประสบการณ์ใด?',
+    experienceLevelHelper: 'เช่น นักวิเคราะห์จูเนียร์ วิศวกรอาวุโส ผู้จัดการอาวุโส',
+    companyQuestion: 'การสัมภาษณ์นี้สำหรับบริษัทใด?',
+    companyHelper: 'เช่น Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'คุณต้องการฝึกฝนหัวข้อหรือหัวข้อย่อยใดมากขึ้น?',
+    topicsHelper: 'เช่น ระบบปฏิบัติการ การออกแบบระบบ การประเมินขนาดตลาด',
   },
   Vietnamese: {
     skip: 'Bỏ qua',
@@ -818,6 +938,14 @@ export const stringsOnboarding = {
     behavioral: 'Hành vi',
     caseStudy: 'Nghiên cứu tình huống',
     brainteasers: 'Câu đố',
+    // onboardingPage4 strings
+    optionalQuestions: 'Câu hỏi tùy chọn',
+    experienceLevelQuestion: 'Bạn đang chuẩn bị cho cấp độ kinh nghiệm nào?',
+    experienceLevelHelper: 'Ví dụ: Chuyên viên phân tích cơ sở, Kỹ sư cao cấp, Quản lý cao cấp',
+    companyQuestion: 'Cuộc phỏng vấn này dành cho công ty nào?',
+    companyHelper: 'Ví dụ: Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Bạn muốn thực hành thêm chủ đề hoặc chủ đề phụ nào?',
+    topicsHelper: 'Ví dụ: Hệ điều hành, Thiết kế hệ thống, Định cỡ thị trường',
   },
   Turkish: {
     skip: 'Atla',
@@ -869,6 +997,14 @@ export const stringsOnboarding = {
     behavioral: 'Davranışsal',
     caseStudy: 'Vaka Çalışması',
     brainteasers: 'Bulgular',
+    // onboardingPage4 strings
+    optionalQuestions: 'İsteğe Bağlı Sorular',
+    experienceLevelQuestion: 'Hangi deneyim seviyesi için hazırlanıyorsunuz?',
+    experienceLevelHelper: 'Örn. Junior Analist, Senior Mühendis, Senior Müdür',
+    companyQuestion: 'Bu mülakat hangi şirket için?',
+    companyHelper: 'Örn. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Hangi konu veya alt konuları daha fazla pratik yapmak istiyorsunuz?',
+    topicsHelper: 'Örn. İşletim Sistemleri, Sistem Tasarımı, Pazar Büyüklüğü',
   },
   Dutch: {
     skip: 'Overslaan',
@@ -920,6 +1056,14 @@ export const stringsOnboarding = {
     behavioral: 'Gedragsmatig',
     caseStudy: 'Casestudy',
     brainteasers: 'Puzzels',
+    // onboardingPage4 strings
+    optionalQuestions: 'Optionele Vragen',
+    experienceLevelQuestion: 'Voor welk ervaringsniveau bereidt u zich voor?',
+    experienceLevelHelper: 'Bijv. Junior Analist, Senior Engineer, Senior Manager',
+    companyQuestion: 'Voor welk bedrijf is dit sollicitatiegesprek?',
+    companyHelper: 'Bijv. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Welke onderwerpen of subonderwerpen wilt u meer oefenen?',
+    topicsHelper: 'Bijv. Besturingssystemen, Systeemontwerp, Marktgrootte',
   },
   Polish: {
     skip: 'Pomiń',
@@ -971,6 +1115,14 @@ export const stringsOnboarding = {
     behavioral: 'Behawioralny',
     caseStudy: 'Studium Przypadku',
     brainteasers: 'Zagadki',
+    // onboardingPage4 strings
+    optionalQuestions: 'Opcjonalne Pytania',
+    experienceLevelQuestion: 'Na jaki poziom doświadczenia się przygotowujesz?',
+    experienceLevelHelper: 'Np. Junior Analityk, Senior Inżynier, Senior Manager',
+    companyQuestion: 'Dla jakiej firmy jest ta rozmowa?',
+    companyHelper: 'Np. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Jakie tematy lub podtematy chcesz więcej ćwiczyć?',
+    topicsHelper: 'Np. Systemy Operacyjne, Projektowanie Systemu, Wielkość Rynku',
   },
   Swedish: {
     skip: 'Hoppa över',
@@ -1022,6 +1174,14 @@ export const stringsOnboarding = {
     behavioral: 'Beteende',
     caseStudy: 'Fallstudie',
     brainteasers: 'Pussel',
+    // onboardingPage4 strings
+    optionalQuestions: 'Valfria Frågor',
+    experienceLevelQuestion: 'För vilken erfarenhetsnivå förbereder du dig?',
+    experienceLevelHelper: 'T.ex. Junior Analyst, Senior Ingenjör, Senior Manager',
+    companyQuestion: 'För vilket företag är denna intervju?',
+    companyHelper: 'T.ex. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Vilka ämnen eller delämnen vill du öva mer på?',
+    topicsHelper: 'T.ex. Operativsystem, Systemdesign, Marknadsstorlek',
   },
   Czech: {
     skip: 'Přeskočit',
@@ -1073,6 +1233,14 @@ export const stringsOnboarding = {
     behavioral: 'Behaviorální',
     caseStudy: 'Případová studie',
     brainteasers: 'Hádanky',
+    // onboardingPage4 strings
+    optionalQuestions: 'Volitelné Otázky',
+    experienceLevelQuestion: 'Na jakou úroveň zkušeností se připravujete?',
+    experienceLevelHelper: 'Např. Junior Analytik, Senior Inženýr, Senior Manager',
+    companyQuestion: 'Pro jakou firmu je tento pohovor?',
+    companyHelper: 'Např. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Jaká témata nebo podtémata chcete více procvičovat?',
+    topicsHelper: 'Např. Operační Systémy, Návrh Systému, Velikost Trhu',
   },
   Greek: {
     skip: 'Παράλειψη',
@@ -1124,6 +1292,14 @@ export const stringsOnboarding = {
     behavioral: 'Συμπεριφορικό',
     caseStudy: 'Μελέτη Περίπτωσης',
     brainteasers: 'Γρίφοι',
+    // onboardingPage4 strings
+    optionalQuestions: 'Επιλογικές Ερωτήσεις',
+    experienceLevelQuestion: 'Για ποιο επίπεδο εμπειρίας προετοιμάζεστε;',
+    experienceLevelHelper: 'Π.χ. Junior Analyst, Senior Engineer, Senior Manager',
+    companyQuestion: 'Για ποια εταιρεία είναι αυτή η συνέντευξη;',
+    companyHelper: 'Π.χ. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Ποια θέματα ή υποθέματα θέλετε να εξασκηθείτε περισσότερο;',
+    topicsHelper: 'Π.χ. Λειτουργικά Συστήματα, Σχεδιασμός Συστήματος, Μέγεθος Αγοράς',
   },
   Hebrew: {
     skip: 'דלג',
@@ -1175,6 +1351,14 @@ export const stringsOnboarding = {
     behavioral: 'התנהגותי',
     caseStudy: 'מחקר מקרה',
     brainteasers: 'חידות',
+    // onboardingPage4 strings
+    optionalQuestions: 'שאלות אופציונליות',
+    experienceLevelQuestion: 'לאיזה רמת ניסיון אתם מתכוננים?',
+    experienceLevelHelper: 'למשל: אנליסט זוטר, מהנדס בכיר, מנהל בכיר',
+    companyQuestion: 'לאיזו חברה הראיון הזה?',
+    companyHelper: 'למשל: גוגל, בוסטון קונסלטינג גרופ, מטא, מיקרוסופט',
+    topicsQuestion: 'איזה נושאים או תת-נושאים אתם רוצים לתרגל יותר?',
+    topicsHelper: 'למשל: מערכות הפעלה, עיצוב מערכת, הערכת גודל שוק',
   },
   Tagalog: {
     skip: 'Laktawan',
@@ -1226,6 +1410,14 @@ export const stringsOnboarding = {
     behavioral: 'Asal',
     caseStudy: 'Pag-aaral ng Kaso',
     brainteasers: 'Bugtong',
+    // onboardingPage4 strings
+    optionalQuestions: 'Opsyonal na Tanong',
+    experienceLevelQuestion: 'Para sa aling antas ng karanasan kayo naghahanda?',
+    experienceLevelHelper: 'Hal. Junior Analyst, Senior Engineer, Senior Manager',
+    companyQuestion: 'Para sa aling kumpanya ang panayam na ito?',
+    companyHelper: 'Hal. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Aling mga paksa o sub-paksa ang gusto ninyong praktisin pa?',
+    topicsHelper: 'Hal. Operating Systems, System Design, Market Sizing',
   },
   Tamil: {
     skip: 'தவிர்க்க',
@@ -1277,6 +1469,14 @@ export const stringsOnboarding = {
     behavioral: 'நடத்தை',
     caseStudy: 'வழக்கு ஆய்வு',
     brainteasers: 'புதிர்கள்',
+    // onboardingPage4 strings
+    optionalQuestions: 'விருப்ப வினாக்கள்',
+    experienceLevelQuestion: 'எந்த அனுபவ நிலைக்கு நீங்கள் தயாராகிறீர்கள்?',
+    experienceLevelHelper: 'எ.கா: ஜூனியர் அனலிஸ்ட், சீனியர் இன்ஜினியர், சீனியர் மேனேஜர்',
+    companyQuestion: 'இந்த நேர்காணல் எந்த நிறுவனத்திற்காக?',
+    companyHelper: 'எ.கா: கூகிள், பாஸ்டன் கன்சல்டிங் குழு, மெட்டா, மைக்ரோசாஃப்ட்',
+    topicsQuestion: 'எந்த தலைப்புகள் அல்லது துணை தலைப்புகளை நீங்கள் மேலும் பயிற்சி செய்ய விரும்புகிறீர்கள்?',
+    topicsHelper: 'எ.கா: இயங்குதள அமைப்புகள், அமைப்பு வடிவமைப்பு, சந்தை அளவு',
   },
   Bengali: {
     skip: 'এড়িয়ে যান',
@@ -1328,6 +1528,14 @@ export const stringsOnboarding = {
     behavioral: 'আচরণগত',
     caseStudy: 'কেস স্টাডি',
     brainteasers: 'ধাঁধা',
+    // onboardingPage4 strings
+    optionalQuestions: 'ঐচ্ছিক প্রশ্ন',
+    experienceLevelQuestion: 'আপনি কোন অভিজ্ঞতার স্তরের জন্য প্রস্তুত হচ্ছেন?',
+    experienceLevelHelper: 'যেমন: জুনিয়র অ্যানালিস্ট, সিনিয়র ইঞ্জিনিয়ার, সিনিয়র ম্যানেজার',
+    companyQuestion: 'এই সাক্ষাত্কার কোন কোম্পানির জন্য?',
+    companyHelper: 'যেমন: গুগল, বোস্টন কনসাল্টিং গ্রুপ, মেটা, মাইক্রোসফ্ট',
+    topicsQuestion: 'আপনি কোন বিষয় বা উপবিষয়গুলি আরও অনুশীলন করতে চান?',
+    topicsHelper: 'যেমন: অপারেটিং সিস্টেম, সিস্টেম ডিজাইন, বাজার আকার',
   },
   Ukrainian: {
     skip: 'Пропустити',
@@ -1379,6 +1587,14 @@ export const stringsOnboarding = {
     behavioral: 'Поведінкове',
     caseStudy: 'Кейс-стаді',
     brainteasers: 'Головоломки',
+    // onboardingPage4 strings
+    optionalQuestions: 'Додаткові Питання',
+    experienceLevelQuestion: 'До якого рівня досвіду ви готуєтеся?',
+    experienceLevelHelper: 'Напр. Молодший Аналітик, Старший Інженер, Старший Менеджер',
+    companyQuestion: 'Для якої компанії це співбесіда?',
+    companyHelper: 'Напр. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Які теми або підтеми ви хочете більше практикувати?',
+    topicsHelper: 'Напр. Операційні Системи, Проектування Системи, Оцінка Розміру Ринку',
   },
   Romanian: {
     skip: 'Omite',
@@ -1430,6 +1646,14 @@ export const stringsOnboarding = {
     behavioral: 'Comportamental',
     caseStudy: 'Studiu de Caz',
     brainteasers: 'Ghicitori',
+    // onboardingPage4 strings
+    optionalQuestions: 'Întrebări Opționale',
+    experienceLevelQuestion: 'Pentru ce nivel de experiență te pregătești?',
+    experienceLevelHelper: 'Ex. Analist Junior, Inginer Senior, Manager Senior',
+    companyQuestion: 'Pentru ce companie este acest interviu?',
+    companyHelper: 'Ex. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Ce subiecte sau sub-subiecte vrei să practici mai mult?',
+    topicsHelper: 'Ex. Sisteme de Operare, Design Sistem, Mărimea Pieței',
   },
   Hungarian: {
     skip: 'Kihagyás',
@@ -1481,6 +1705,14 @@ export const stringsOnboarding = {
     behavioral: 'Viselkedési',
     caseStudy: 'Esettanulmány',
     brainteasers: 'Rejtvények',
+    // onboardingPage4 strings
+    optionalQuestions: 'Opcionális Kérdések',
+    experienceLevelQuestion: 'Milyen tapasztalati szintre készülsz fel?',
+    experienceLevelHelper: 'Pl. Junior Analista, Senior Mérnök, Senior Menedzser',
+    companyQuestion: 'Melyik cégnek szól ez az interjú?',
+    companyHelper: 'Pl. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Milyen témákat vagy altémákat szeretnél többet gyakorolni?',
+    topicsHelper: 'Pl. Operációs Rendszerek, Rendszer Tervezés, Piac Méretezés',
   },
   Farsi: {
     skip: 'رد کردن',
@@ -1532,6 +1764,14 @@ export const stringsOnboarding = {
     behavioral: 'رفتاری',
     caseStudy: 'مطالعه موردی',
     brainteasers: 'معما',
+    // onboardingPage4 strings
+    optionalQuestions: 'سوالات اختیاری',
+    experienceLevelQuestion: 'برای چه سطح تجربه آماده می‌شوید؟',
+    experienceLevelHelper: 'مثال: تحلیلگر جونیور، مهندس ارشد، مدیر ارشد',
+    companyQuestion: 'این مصاحبه برای کدام شرکت است؟',
+    companyHelper: 'مثال: گوگل، گروه مشاوره بوستون، متا، مایکروسافت',
+    topicsQuestion: 'کدام موضوعات یا زیرموضوعات را می‌خواهید بیشتر تمرین کنید؟',
+    topicsHelper: 'مثال: سیستم‌های عامل، طراحی سیستم، اندازه‌گیری بازار',
   },
   Swahili: {
     skip: 'Ruka',
@@ -1583,6 +1823,14 @@ export const stringsOnboarding = {
     behavioral: 'Tabia',
     caseStudy: 'Uchunguzi wa Kesi',
     brainteasers: 'Vitendawili',
+    // onboardingPage4 strings
+    optionalQuestions: 'Maswali ya Hiari',
+    experienceLevelQuestion: 'Unajiandaa kwa kiwango gani cha uzoefu?',
+    experienceLevelHelper: 'Kwa mfano: Mchambuzi wa Chini, Mhandisi Mkubwa, Meneja Mkubwa',
+    companyQuestion: 'Mahojiano haya ni ya kampuni gani?',
+    companyHelper: 'Kwa mfano: Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Je, unataka kufanya mazoezi zaidi ya mada au mada ndogo zipi?',
+    topicsHelper: 'Kwa mfano: Mifumo ya Uendeshaji, Ubunifu wa Mfumo, Ukubwa wa Soko',
   },
   Afrikaans: {
     skip: 'Slaan Oor',
@@ -1634,6 +1882,14 @@ export const stringsOnboarding = {
     behavioral: 'Gedragsmatig',
     caseStudy: 'Gevalstudie',
     brainteasers: 'Raaisels',
+    // onboardingPage4 strings
+    optionalQuestions: 'Opsionele Vrae',
+    experienceLevelQuestion: 'Vir watter ervaringsvlak berei jy jou voor?',
+    experienceLevelHelper: 'Bv. Junior Analis, Senior Ingenieur, Senior Bestuurder',
+    companyQuestion: 'Vir watter maatskappy is hierdie onderhoud?',
+    companyHelper: 'Bv. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Watter onderwerpe of sub-onderwerpe wil jy meer oefen?',
+    topicsHelper: 'Bv. Bedryfstelsels, Stelselontwerp, Markgrootte',
   },
   Finnish: {
     skip: 'Ohita',
@@ -1685,6 +1941,14 @@ export const stringsOnboarding = {
     behavioral: 'Käyttäytymis',
     caseStudy: 'Tapaustutkimus',
     brainteasers: 'Arvoitukset',
+    // onboardingPage4 strings
+    optionalQuestions: 'Valinnaiset Kysymykset',
+    experienceLevelQuestion: 'Mihin kokemustasoon valmistaudut?',
+    experienceLevelHelper: 'Esim. Junior Analyytikko, Senior Insinööri, Senior Johtaja',
+    companyQuestion: 'Mille yritykselle tämä haastattelu on?',
+    companyHelper: 'Esim. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Mitä aiheita tai aliaiheita haluat harjoitella enemmän?',
+    topicsHelper: 'Esim. Käyttöjärjestelmät, Järjestelmäsuunnittelu, Markkinakoko',
   },
   Norwegian: {
     skip: 'Hopp Over',
@@ -1736,6 +2000,14 @@ export const stringsOnboarding = {
     behavioral: 'Atferdsmessig',
     caseStudy: 'Kasusstudie',
     brainteasers: 'Puslespill',
+    // onboardingPage4 strings
+    optionalQuestions: 'Valgfrie Spørsmål',
+    experienceLevelQuestion: 'For hvilken erfaringnivå forbereder du deg?',
+    experienceLevelHelper: 'F.eks. Junior Analyst, Senior Ingeniør, Senior Leder',
+    companyQuestion: 'For hvilket selskap er dette intervjuet?',
+    companyHelper: 'F.eks. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Hvilke emner eller underemner vil du øve mer på?',
+    topicsHelper: 'F.eks. Operativsystemer, Systemdesign, Markedsstørrelse',
   },
   Danish: {
     skip: 'Spring Over',
@@ -1787,6 +2059,14 @@ export const stringsOnboarding = {
     behavioral: 'Adfærdsmæssig',
     caseStudy: 'Casestudie',
     brainteasers: 'Gåder',
+    // onboardingPage4 strings
+    optionalQuestions: 'Valgfrie Spørgsmål',
+    experienceLevelQuestion: 'For hvilket erfaringniveau forbereder du dig?',
+    experienceLevelHelper: 'F.eks. Junior Analyst, Senior Ingeniør, Senior Leder',
+    companyQuestion: 'For hvilket firma er dette interview?',
+    companyHelper: 'F.eks. Google, Boston Consulting Group, Meta, Microsoft',
+    topicsQuestion: 'Hvilke emner eller underemner vil du øve mere på?',
+    topicsHelper: 'F.eks. Operativsystemer, Systemdesign, Markedsstørrelse',
   },
 };
 

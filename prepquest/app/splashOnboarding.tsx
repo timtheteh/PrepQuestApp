@@ -56,7 +56,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const insets = useSafeAreaInsets();
 
   // State for section navigation
-  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3'>('logoAnimation');
+  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3' | 'onboardingPage4'>('logoAnimation');
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
@@ -68,6 +68,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const [studySelectedEducationSuggestions, setStudySelectedEducationSuggestions] = useState<Set<string>>(new Set());
   const [interviewEducationInput, setInterviewEducationInput] = useState<string>('');
   const [interviewSelectedEducationSuggestions, setInterviewSelectedEducationSuggestions] = useState<Set<string>>(new Set());
+  const [experienceLevelInput, setExperienceLevelInput] = useState<string>('');
+  const [companyInput, setCompanyInput] = useState<string>('');
+  const [topicsInput, setTopicsInput] = useState<string>('');
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -113,6 +116,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const onboardingPage1ContentFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage2ContentFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage3ContentFadeAnim = useRef(new Animated.Value(0)).current;
+  const onboardingPage4ContentFadeAnim = useRef(new Animated.Value(0)).current;
   
   // Initialize animation values to prevent glitch
   useEffect(() => {
@@ -122,6 +126,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     onboardingPage1ContentFadeAnim.setValue(0);
     onboardingPage2ContentFadeAnim.setValue(0);
     onboardingPage3ContentFadeAnim.setValue(0);
+    onboardingPage4ContentFadeAnim.setValue(0);
   }, []);
 
   // Start animations on mount and set timer for background transition
@@ -273,6 +278,23 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           useNativeDriver: true,
         }).start();
       });
+    } else if (currentSection === 'onboardingPage3') {
+      // Fade out onboardingPage3 content first
+      Animated.timing(onboardingPage3ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition to onboardingPage4
+        setCurrentSection('onboardingPage4');
+        
+        // Then fade in onboardingPage4 content
+        Animated.timing(onboardingPage4ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
     }
   };
 
@@ -339,6 +361,23 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         
         // Then fade in onboardingPage2 content
         Animated.timing(onboardingPage2ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
+    } else if (currentSection === 'onboardingPage4') {
+      // Fade out onboardingPage4 content first
+      Animated.timing(onboardingPage4ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, transition back to onboardingPage3
+        setCurrentSection('onboardingPage3');
+        
+        // Then fade in onboardingPage3 content
+        Animated.timing(onboardingPage3ContentFadeAnim, {
           toValue: 1,
           duration: 300,
           useNativeDriver: true,
@@ -586,7 +625,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           />
           
           {/* Content container */}
-          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage2ContentFadeAnim }]}>
+          <Animated.View style={[styles.onboardingPage2Container, { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage2ContentFadeAnim, borderWidth: 2, borderColor: 'red'}]}>
             <View style={styles.onboardingPage2Content}>
               {/* First row: Great! */}
               <Text style={styles.greatText}>{getTranslatedText(selectedLanguage, 'great')}</Text>
@@ -1130,6 +1169,139 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         </Animated.View>
       )}
 
+      {/* onboardingPage4 - Final page */}
+      {currentSection === 'onboardingPage4' && (
+        <Animated.View style={[styles.imageBackgroundContainer, { opacity: pngBackgroundFadeAnim }]}>
+          <ImageBackground
+            source={require('../assets/onboarding/onboardingBackground.png')}
+            style={styles.imageBackground}
+            resizeMode="cover"
+          />
+          
+          {/* Content container */}
+          <Animated.View style={[
+            styles.onboardingPage4Container,
+            { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage4ContentFadeAnim }
+          ]}>
+            <View style={styles.onboardingPage4Content}>
+              {/* Progress text: 3/3 */}
+              <Text style={styles.progressText}>3/3</Text>
+              
+              {/* Optional Questions */}
+              <Text style={styles.optionalQuestionsText}>
+                {getTranslatedText(selectedLanguage, 'optionalQuestions')}
+              </Text>
+              
+              {/* ScrollView for questions only */}
+              <ScrollView 
+                style={styles.onboardingPage4ScrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.onboardingPage4ScrollContent}
+              >
+                {/* Experience Level Question */}
+                <Text style={styles.questionTextLeft}>
+                  {getTranslatedText(selectedLanguage, 'experienceLevelQuestion')}
+                </Text>
+                
+                {/* Experience Level Text Input */}
+                <View style={styles.textInputContainer}>
+                  <TextInput
+                    style={styles.subjectTextInput}
+                    placeholder="Type here!"
+                    placeholderTextColor={Colors.light.unselectedText}
+                    value={experienceLevelInput}
+                    onChangeText={setExperienceLevelInput}
+                  />
+                  {experienceLevelInput.length > 0 && (
+                    <TouchableOpacity 
+                      style={styles.cancelIconButton}
+                      onPress={() => setExperienceLevelInput('')}
+                    >
+                      <MaterialIcons 
+                        name="cancel" 
+                        size={20} 
+                        color={Colors.light.unselectedText} 
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                
+                {/* Experience Level Helper Text */}
+                <Text style={styles.helperText}>
+                  {getTranslatedText(selectedLanguage, 'experienceLevelHelper')}
+                </Text>
+                
+                {/* Company Question */}
+                <Text style={styles.questionTextLeft}>
+                  {getTranslatedText(selectedLanguage, 'companyQuestion')}
+                </Text>
+                
+                {/* Company Text Input */}
+                <View style={styles.textInputContainer}>
+                  <TextInput
+                    style={styles.subjectTextInput}
+                    placeholder="Type here!"
+                    placeholderTextColor={Colors.light.unselectedText}
+                    value={companyInput}
+                    onChangeText={setCompanyInput}
+                  />
+                  {companyInput.length > 0 && (
+                    <TouchableOpacity 
+                      style={styles.cancelIconButton}
+                      onPress={() => setCompanyInput('')}
+                    >
+                      <MaterialIcons 
+                        name="cancel" 
+                        size={20} 
+                        color={Colors.light.unselectedText} 
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                
+                {/* Company Helper Text */}
+                <Text style={styles.helperText}>
+                  {getTranslatedText(selectedLanguage, 'companyHelper')}
+                </Text>
+                
+                {/* Topics Question */}
+                <Text style={styles.questionTextLeft}>
+                  {getTranslatedText(selectedLanguage, 'topicsQuestion')}
+                </Text>
+                
+                {/* Topics Text Input */}
+                <View style={styles.textInputContainer}>
+                  <TextInput
+                    style={styles.subjectTextInput}
+                    placeholder="Type here!"
+                    placeholderTextColor={Colors.light.unselectedText}
+                    value={topicsInput}
+                    onChangeText={setTopicsInput}
+                  />
+                  {topicsInput.length > 0 && (
+                    <TouchableOpacity 
+                      style={styles.cancelIconButton}
+                      onPress={() => setTopicsInput('')}
+                    >
+                      <MaterialIcons 
+                        name="cancel" 
+                        size={20} 
+                        color={Colors.light.unselectedText} 
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                
+                {/* Topics Helper Text */}
+                <Text style={styles.helperText}>
+                  {getTranslatedText(selectedLanguage, 'topicsHelper')}
+                </Text>
+              </ScrollView>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      )}
+
       {/* Top button row with conditional buttons */}
       <View style={[styles.topButtonRow, { top: insets.top }]}>
         {currentSection === 'languageSelection' ? (
@@ -1309,6 +1481,46 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       ((selectedCard === 'study' && (!studyEducationInput.trim() && studySelectedEducationSuggestions.size === 0)) ||
                        (selectedCard === 'interview' && interviewSelectedEducationSuggestions.size === 0)) ? 0.8 : 1
                     }
+                  />
+                </Svg>
+              </View>
+            </TouchableOpacity>
+          </>
+        ) : currentSection === 'onboardingPage4' ? (
+          <>
+            {/* Back button on the left when on onboardingPage4 */}
+            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+              <View style={styles.buttonWithIcon}>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="0,6 12,0 12,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+                <Text style={styles.backButtonText}>{getTranslatedText(selectedLanguage, 'back')}</Text>
+              </View>
+            </TouchableOpacity>
+            
+            {/* Skip button still centered */}
+            <View style={styles.skipButtonContainer}>
+              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
+                <Text style={styles.skipButtonText}>{getTranslatedText(selectedLanguage, 'skip')}</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Next button still on the right - disabled for now */}
+            <TouchableOpacity 
+              style={[styles.nextButton, styles.disabledButton]} 
+              onPress={undefined}
+              disabled={true}
+            >
+              <View style={styles.buttonWithIcon}>
+                <Text style={[styles.nextButtonText, styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="12,6 0,0 0,12"
+                    fill={Colors.light.text}
+                    opacity={0.8}
                   />
                 </Svg>
               </View>
@@ -1557,6 +1769,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'stretch',
+  },
+  onboardingPage4Container: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    borderWidth: 2,
+    borderColor: 'red',
+  },
+  onboardingPage4Content: {
+    width: '100%',
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+  onboardingPage4ScrollView: {
+    flex: 1,
+  },
+  onboardingPage4ScrollContent: {
+    paddingBottom: 20,
+  },
+  optionalQuestionsText: {
+    fontSize: 28,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  questionTextLeft: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'left',
+    marginTop: 12,
+  },
+  helperText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyItalicLight,
+    color: 'black',
+    textAlign: 'left',
+    marginTop: 4,
   },
   greatText: {
     fontSize: 28,

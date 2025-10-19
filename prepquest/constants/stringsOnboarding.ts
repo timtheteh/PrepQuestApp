@@ -66,6 +66,10 @@ export const stringsOnboarding = {
     examHelper: 'E.g. SAT Physics Subject Test, GCE A Level Exams',
     studyTopicsQuestion: 'Which topic(s) or subtopic(s) do you want to practice more of?',
     studyTopicsHelper: 'E.g. Newton\'s Laws of Motion, Organic Chemistry, Computer Architecture',
+    // onboardingPage5 strings
+    oneLastThing: 'One last thing!',
+    cognitiveQuestionsParagraph: 'PrepQuest has identified the 7 different types of cognitive questions that are asked in exams, quizzes and in your job interviews.',
+    tailorFlashcardsParagraph: 'With PrepQuest, you can now tailor your flashcards to the kinds of questions you need more practice for!',
   },
   Chinese: {
     skip: '跳过',
@@ -130,6 +134,10 @@ export const stringsOnboarding = {
     examHelper: '例如：SAT物理科目考试、GCE A级考试',
     studyTopicsQuestion: '您想练习哪些主题或子主题？',
     studyTopicsHelper: '例如：牛顿运动定律、有机化学、计算机体系结构',
+    // onboardingPage5 strings
+    oneLastThing: '最后一件事！',
+    cognitiveQuestionsParagraph: 'PrepQuest已经识别出考试、测验和求职面试中提出的7种不同类型的认知问题。',
+    tailorFlashcardsParagraph: '通过PrepQuest，你现在可以根据需要更多练习的问题类型来定制你的闪卡！',
   },
   Malay: {
     skip: 'Langkau',
@@ -189,6 +197,10 @@ export const stringsOnboarding = {
     companyHelper: 'Contoh: Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Topik atau subtopik mana yang anda mahu praktik lebih?',
     topicsHelper: 'Contoh: Sistem Operasi, Reka Bentuk Sistem, Saiz Pasaran',
+    // onboardingPage5 strings
+    oneLastThing: 'Satu perkara terakhir!',
+    cognitiveQuestionsParagraph: 'PrepQuest telah mengenal pasti 7 jenis soalan kognitif yang berbeza yang ditanya dalam peperiksaan, kuiz dan dalam temuduga kerja anda.',
+    tailorFlashcardsParagraph: 'Dengan PrepQuest, anda kini boleh menyesuaikan kad kilat anda kepada jenis soalan yang anda perlukan lebih banyak latihan!',
   },
   Hindi: {
     skip: 'छोड़ें',
@@ -248,6 +260,10 @@ export const stringsOnboarding = {
     companyHelper: 'उदाहरण: गूगल, बोस्टन कंसल्टिंग ग्रुप, मेटा, माइक्रोसॉफ्ट',
     topicsQuestion: 'आप किन विषयों या उप-विषयों का अभ्यास करना चाहते हैं?',
     topicsHelper: 'उदाहरण: ऑपरेटिंग सिस्टम, सिस्टम डिजाइन, मार्केट साइज़िंग',
+    // onboardingPage5 strings
+    oneLastThing: 'एक आखिरी बात!',
+    cognitiveQuestionsParagraph: 'PrepQuest ने परीक्षाओं, क्विज़ और आपके नौकरी साक्षात्कार में पूछे जाने वाले 7 विभिन्न प्रकार के संज्ञानात्मक प्रश्नों की पहचान की है।',
+    tailorFlashcardsParagraph: 'PrepQuest के साथ, आप अब अपने फ्लैशकार्ड्स को उन प्रश्नों के प्रकारों के अनुसार अनुकूलित कर सकते हैं जिनके लिए आपको अधिक अभ्यास की आवश्यकता है!',
   },
   French: {
     skip: 'Passer',
@@ -307,6 +323,10 @@ export const stringsOnboarding = {
     companyHelper: 'Ex. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Quel(s) sujet(s) ou sous-sujet(s) voulez-vous pratiquer davantage?',
     topicsHelper: 'Ex. Systèmes d\'Exploitation, Conception Système, Dimensionnement Marché',
+    // onboardingPage5 strings
+    oneLastThing: 'Une dernière chose !',
+    cognitiveQuestionsParagraph: 'PrepQuest a identifié les 7 différents types de questions cognitives qui sont posées dans les examens, quiz et dans vos entretiens d\'embauche.',
+    tailorFlashcardsParagraph: 'Avec PrepQuest, vous pouvez maintenant adapter vos flashcards aux types de questions pour lesquelles vous avez besoin de plus de pratique !',
   },
   Japanese: {
     skip: 'スキップ',
@@ -366,6 +386,10 @@ export const stringsOnboarding = {
     companyHelper: '例：グーグル、ボストンコンサルティンググループ、メタ、マイクロソフト',
     topicsQuestion: 'どのトピックやサブトピックをより練習したいですか？',
     topicsHelper: '例：オペレーティングシステム、システム設計、市場規模測定',
+    // onboardingPage5 strings
+    oneLastThing: '最後に一つ！',
+    cognitiveQuestionsParagraph: 'PrepQuestは、試験、クイズ、面接で聞かれる7つの異なるタイプの認知問題を特定しました。',
+    tailorFlashcardsParagraph: 'PrepQuestで、今すぐ練習が必要な問題の種類に合わせてフラッシュカードをカスタマイズできます！',
   },
   Korean: {
     skip: '건너뛰기',
@@ -425,6 +449,10 @@ export const stringsOnboarding = {
     companyHelper: '예: 구글, 보스턴 컨설팅 그룹, 메타, 마이크로소프트',
     topicsQuestion: '어떤 주제나 하위 주제를 더 연습하고 싶으신가요?',
     topicsHelper: '예: 운영체제, 시스템 설계, 시장 규모 측정',
+    // onboardingPage5 strings
+    oneLastThing: '마지막으로 한 가지!',
+    cognitiveQuestionsParagraph: 'PrepQuest는 시험, 퀴즈, 면접에서 묻는 7가지 다른 유형의 인지적 질문을 식별했습니다.',
+    tailorFlashcardsParagraph: 'PrepQuest로 이제 더 많은 연습이 필요한 질문 유형에 맞춰 플래시카드를 맞춤화할 수 있습니다!',
   },
   Spanish: {
     skip: 'Omitir',
@@ -489,6 +517,10 @@ export const stringsOnboarding = {
     examHelper: 'Ej. SAT Physics Subject Test, Exámenes GCE A Level',
     studyTopicsQuestion: '¿Qué tema(s) o subtema(s) quieres practicar más?',
     studyTopicsHelper: 'Ej. Leyes de Newton del Movimiento, Química Orgánica, Arquitectura de Computadoras',
+    // onboardingPage5 strings
+    oneLastThing: '¡Una última cosa!',
+    cognitiveQuestionsParagraph: 'PrepQuest ha identificado los 7 tipos diferentes de preguntas cognitivas que se hacen en exámenes, pruebas y en tus entrevistas de trabajo.',
+    tailorFlashcardsParagraph: '¡Con PrepQuest, ahora puedes personalizar tus tarjetas de memoria a los tipos de preguntas para las que necesitas más práctica!',
   },
   German: {
     skip: 'Überspringen',
@@ -548,6 +580,10 @@ export const stringsOnboarding = {
     companyHelper: 'Z.B. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Welche Themen oder Unterthemen möchten Sie mehr üben?',
     topicsHelper: 'Z.B. Betriebssysteme, Systemdesign, Marktgrößenbestimmung',
+    // onboardingPage5 strings
+    oneLastThing: 'Eine letzte Sache!',
+    cognitiveQuestionsParagraph: 'PrepQuest hat die 7 verschiedenen Arten von kognitiven Fragen identifiziert, die in Prüfungen, Tests und in Ihren Jobinterviews gestellt werden.',
+    tailorFlashcardsParagraph: 'Mit PrepQuest können Sie jetzt Ihre Lernkarten auf die Arten von Fragen zuschneiden, für die Sie mehr Übung benötigen!',
   },
   Portuguese: {
     skip: 'Pular',
@@ -607,6 +643,10 @@ export const stringsOnboarding = {
     companyHelper: 'Ex. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Quais tópicos ou subtópicos você quer praticar mais?',
     topicsHelper: 'Ex. Sistemas Operacionais, Design de Sistema, Dimensionamento de Mercado',
+    // onboardingPage5 strings
+    oneLastThing: 'Uma última coisa!',
+    cognitiveQuestionsParagraph: 'PrepQuest identificou os 7 tipos diferentes de questões cognitivas que são feitas em exames, testes e em suas entrevistas de emprego.',
+    tailorFlashcardsParagraph: 'Com PrepQuest, agora você pode personalizar seus flashcards para os tipos de questões que você precisa praticar mais!',
   },
   Italian: {
     skip: 'Salta',
@@ -666,6 +706,10 @@ export const stringsOnboarding = {
     companyHelper: 'Es. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Quali argomenti o sottotemi vuoi praticare di più?',
     topicsHelper: 'Es. Sistemi Operativi, Progettazione Sistema, Dimensionamento Mercato',
+    // onboardingPage5 strings
+    oneLastThing: 'Un\'ultima cosa!',
+    cognitiveQuestionsParagraph: 'PrepQuest ha identificato i 7 diversi tipi di domande cognitive che vengono poste negli esami, quiz e nelle tue interviste di lavoro.',
+    tailorFlashcardsParagraph: 'Con PrepQuest, ora puoi personalizzare le tue flashcard ai tipi di domande per cui hai bisogno di più pratica!',
   },
   Russian: {
     skip: 'Пропустить',
@@ -725,6 +769,10 @@ export const stringsOnboarding = {
     companyHelper: 'Напр. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Какие темы или подтемы вы хотите практиковать больше?',
     topicsHelper: 'Напр. Операционные Системы, Проектирование Систем, Оценка Размера Рынка',
+    // onboardingPage5 strings
+    oneLastThing: 'Последняя вещь!',
+    cognitiveQuestionsParagraph: 'PrepQuest выявил 7 различных типов когнитивных вопросов, которые задаются на экзаменах, викторинах и в ваших собеседованиях.',
+    tailorFlashcardsParagraph: 'С PrepQuest вы теперь можете настроить свои карточки под типы вопросов, которые требуют больше практики!',
   },
   Arabic: {
     skip: 'تخطي',
@@ -784,6 +832,10 @@ export const stringsOnboarding = {
     companyHelper: 'مثال: جوجل، مجموعة بوسطن الاستشارية، ميتا، مايكروسوفت',
     topicsQuestion: 'أي مواضيع أو مواضيع فرعية تريد ممارستها أكثر؟',
     topicsHelper: 'مثال: أنظمة التشغيل، تصميم النظام، تحديد حجم السوق',
+    // onboardingPage5 strings
+    oneLastThing: 'شيء أخير!',
+    cognitiveQuestionsParagraph: 'PrepQuest حدد 7 أنواع مختلفة من الأسئلة المعرفية التي تُطرح في الامتحانات والاختبارات ومقابلات العمل.',
+    tailorFlashcardsParagraph: 'مع PrepQuest، يمكنك الآن تخصيص بطاقاتك التعليمية لأنواع الأسئلة التي تحتاج لممارسة أكثر!',
   },
   Indonesian: {
     skip: 'Lewati',
@@ -843,6 +895,10 @@ export const stringsOnboarding = {
     companyHelper: 'Contoh: Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Topik atau sub-topik mana yang ingin Anda praktikkan lebih banyak?',
     topicsHelper: 'Contoh: Sistem Operasi, Desain Sistem, Ukuran Pasar',
+    // onboardingPage5 strings
+    oneLastThing: 'Satu hal terakhir!',
+    cognitiveQuestionsParagraph: 'PrepQuest telah mengidentifikasi 7 jenis pertanyaan kognitif yang berbeda yang ditanyakan dalam ujian, kuis, dan wawancara kerja Anda.',
+    tailorFlashcardsParagraph: 'Dengan PrepQuest, Anda sekarang dapat menyesuaikan flashcard Anda dengan jenis pertanyaan yang memerlukan lebih banyak latihan!',
   },
   Thai: {
     skip: 'ข้าม',
@@ -902,6 +958,10 @@ export const stringsOnboarding = {
     companyHelper: 'เช่น Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'คุณต้องการฝึกฝนหัวข้อหรือหัวข้อย่อยใดมากขึ้น?',
     topicsHelper: 'เช่น ระบบปฏิบัติการ การออกแบบระบบ การประเมินขนาดตลาด',
+    // onboardingPage5 strings
+    oneLastThing: 'สิ่งสุดท้าย!',
+    cognitiveQuestionsParagraph: 'PrepQuest ได้ระบุคำถามทางปัญญา 7 ประเภทที่แตกต่างกันซึ่งถูกถามในการสอบ แบบทดสอบ และการสัมภาษณ์งานของคุณ',
+    tailorFlashcardsParagraph: 'ด้วย PrepQuest ตอนนี้คุณสามารถปรับแต่งการ์ดของคุณให้เหมาะกับประเภทคำถามที่คุณต้องการฝึกฝนมากขึ้น!',
   },
   Vietnamese: {
     skip: 'Bỏ qua',
@@ -961,6 +1021,10 @@ export const stringsOnboarding = {
     companyHelper: 'Ví dụ: Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Bạn muốn thực hành thêm chủ đề hoặc chủ đề phụ nào?',
     topicsHelper: 'Ví dụ: Hệ điều hành, Thiết kế hệ thống, Định cỡ thị trường',
+    // onboardingPage5 strings
+    oneLastThing: 'Một điều cuối cùng!',
+    cognitiveQuestionsParagraph: 'PrepQuest đã xác định 7 loại câu hỏi nhận thức khác nhau được hỏi trong các kỳ thi, bài kiểm tra và phỏng vấn việc làm của bạn.',
+    tailorFlashcardsParagraph: 'Với PrepQuest, giờ đây bạn có thể tùy chỉnh thẻ ghi nhớ của mình cho các loại câu hỏi mà bạn cần thực hành thêm!',
   },
   Turkish: {
     skip: 'Atla',
@@ -1020,6 +1084,10 @@ export const stringsOnboarding = {
     companyHelper: 'Örn. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Hangi konu veya alt konuları daha fazla pratik yapmak istiyorsunuz?',
     topicsHelper: 'Örn. İşletim Sistemleri, Sistem Tasarımı, Pazar Büyüklüğü',
+    // onboardingPage5 strings
+    oneLastThing: 'Son bir şey!',
+    cognitiveQuestionsParagraph: 'PrepQuest, sınavlar, testler ve iş görüşmelerinizde sorulan 7 farklı bilişsel soru türünü belirledi.',
+    tailorFlashcardsParagraph: 'PrepQuest ile artık daha fazla pratik yapmanız gereken soru türlerine göre flash kartlarınızı özelleştirebilirsiniz!',
   },
   Dutch: {
     skip: 'Overslaan',
@@ -1079,6 +1147,10 @@ export const stringsOnboarding = {
     companyHelper: 'Bijv. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Welke onderwerpen of subonderwerpen wilt u meer oefenen?',
     topicsHelper: 'Bijv. Besturingssystemen, Systeemontwerp, Marktgrootte',
+    // onboardingPage5 strings
+    oneLastThing: 'Een laatste ding!',
+    cognitiveQuestionsParagraph: 'PrepQuest heeft de 7 verschillende soorten cognitieve vragen geïdentificeerd die worden gesteld in examens, tests en in uw sollicitatiegesprekken.',
+    tailorFlashcardsParagraph: 'Met PrepQuest kunt u nu uw flashcards aanpassen aan de soorten vragen waarvoor u meer oefening nodig heeft!',
   },
   Polish: {
     skip: 'Pomiń',
@@ -1138,6 +1210,10 @@ export const stringsOnboarding = {
     companyHelper: 'Np. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Jakie tematy lub podtematy chcesz więcej ćwiczyć?',
     topicsHelper: 'Np. Systemy Operacyjne, Projektowanie Systemu, Wielkość Rynku',
+    // onboardingPage5 strings
+    oneLastThing: 'Jeszcze jedna rzecz!',
+    cognitiveQuestionsParagraph: 'PrepQuest zidentyfikował 7 różnych typów pytań poznawczych zadawanych na egzaminach, testach i podczas rozmów kwalifikacyjnych.',
+    tailorFlashcardsParagraph: 'Z PrepQuest możesz teraz dostosować swoje fiszki do typów pytań, które wymagają więcej praktyki!',
   },
   Swedish: {
     skip: 'Hoppa över',
@@ -1197,6 +1273,10 @@ export const stringsOnboarding = {
     companyHelper: 'T.ex. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Vilka ämnen eller delämnen vill du öva mer på?',
     topicsHelper: 'T.ex. Operativsystem, Systemdesign, Marknadsstorlek',
+    // onboardingPage5 strings
+    oneLastThing: 'En sista sak!',
+    cognitiveQuestionsParagraph: 'PrepQuest har identifierat de 7 olika typerna av kognitiva frågor som ställs på tentor, quiz och i dina jobbintervjuer.',
+    tailorFlashcardsParagraph: 'Med PrepQuest kan du nu skräddarsy dina flashcards till de typer av frågor som du behöver mer träning på!',
   },
   Czech: {
     skip: 'Přeskočit',
@@ -1256,6 +1336,10 @@ export const stringsOnboarding = {
     companyHelper: 'Např. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Jaká témata nebo podtémata chcete více procvičovat?',
     topicsHelper: 'Např. Operační Systémy, Návrh Systému, Velikost Trhu',
+    // onboardingPage5 strings
+    oneLastThing: 'Poslední věc!',
+    cognitiveQuestionsParagraph: 'PrepQuest identifikoval 7 různých typů kognitivních otázek, které se kladou u zkoušek, testů a při pracovních pohovorech.',
+    tailorFlashcardsParagraph: 'S PrepQuest nyní můžete přizpůsobit své kartičky typům otázek, které potřebujete více procvičovat!',
   },
   Greek: {
     skip: 'Παράλειψη',
@@ -1315,6 +1399,10 @@ export const stringsOnboarding = {
     companyHelper: 'Π.χ. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Ποια θέματα ή υποθέματα θέλετε να εξασκηθείτε περισσότερο;',
     topicsHelper: 'Π.χ. Λειτουργικά Συστήματα, Σχεδιασμός Συστήματος, Μέγεθος Αγοράς',
+    // onboardingPage5 strings
+    oneLastThing: 'Ένα τελευταίο πράγμα!',
+    cognitiveQuestionsParagraph: 'Το PrepQuest έχει εντοπίσει τις 7 διαφορετικές κατηγορίες γνωστικών ερωτήσεων που τίθενται σε εξετάσεις, κουίζ και στις συνεντεύξεις εργασίας σας.',
+    tailorFlashcardsParagraph: 'Με το PrepQuest, μπορείτε τώρα να προσαρμόσετε τις κάρτες σας στις κατηγορίες ερωτήσεων για τις οποίες χρειάζεστε περισσότερη εξάσκηση!',
   },
   Hebrew: {
     skip: 'דלג',
@@ -1374,6 +1462,10 @@ export const stringsOnboarding = {
     companyHelper: 'למשל: גוגל, בוסטון קונסלטינג גרופ, מטא, מיקרוסופט',
     topicsQuestion: 'איזה נושאים או תת-נושאים אתם רוצים לתרגל יותר?',
     topicsHelper: 'למשל: מערכות הפעלה, עיצוב מערכת, הערכת גודל שוק',
+    // onboardingPage5 strings
+    oneLastThing: 'דבר אחרון!',
+    cognitiveQuestionsParagraph: 'PrepQuest זיהה את 7 סוגי השאלות הקוגניטיביות השונות שנשאלות בבחינות, חידונים ובראיונות העבודה שלכם.',
+    tailorFlashcardsParagraph: 'עם PrepQuest, אתם יכולים כעת להתאים את הכרטיסים שלכם לסוגי השאלות שאתם צריכים לתרגל יותר!',
   },
   Tagalog: {
     skip: 'Laktawan',
@@ -1433,6 +1525,10 @@ export const stringsOnboarding = {
     companyHelper: 'Hal. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Aling mga paksa o sub-paksa ang gusto ninyong praktisin pa?',
     topicsHelper: 'Hal. Operating Systems, System Design, Market Sizing',
+    // onboardingPage5 strings
+    oneLastThing: 'Isang huling bagay!',
+    cognitiveQuestionsParagraph: 'Nakilala ng PrepQuest ang 7 magkakaibang uri ng mga tanong sa pag-iisip na itinatanong sa mga pagsusulit, quiz at sa inyong mga job interview.',
+    tailorFlashcardsParagraph: 'Sa PrepQuest, maaari na ninyong i-customize ang inyong mga flashcards sa mga uri ng tanong na kailangan ninyong mas praktisin pa!',
   },
   Tamil: {
     skip: 'தவிர்க்க',
@@ -1492,6 +1588,10 @@ export const stringsOnboarding = {
     companyHelper: 'எ.கா: கூகிள், பாஸ்டன் கன்சல்டிங் குழு, மெட்டா, மைக்ரோசாஃப்ட்',
     topicsQuestion: 'எந்த தலைப்புகள் அல்லது துணை தலைப்புகளை நீங்கள் மேலும் பயிற்சி செய்ய விரும்புகிறீர்கள்?',
     topicsHelper: 'எ.கா: இயங்குதள அமைப்புகள், அமைப்பு வடிவமைப்பு, சந்தை அளவு',
+    // onboardingPage5 strings
+    oneLastThing: 'கடைசி ஒரு விஷயம்!',
+    cognitiveQuestionsParagraph: 'PrepQuest தேர்வுகள், வினாடி வினாக்கள் மற்றும் வேலை நேர்காணல்களில் கேட்கப்படும் 7 வெவ்வேறு வகையான அறிவாற்றல் கேள்விகளை அடையாளம் கண்டுள்ளது.',
+    tailorFlashcardsParagraph: 'PrepQuest உடன், இப்போது நீங்கள் உங்கள் பிளாஷ் கார்டுகளை நீங்கள் மேலும் பயிற்சி தேவைப்படும் கேள்வி வகைகளுக்கு ஏற்ப தனிப்பயனாக்கலாம்!',
   },
   Bengali: {
     skip: 'এড়িয়ে যান',
@@ -1551,6 +1651,10 @@ export const stringsOnboarding = {
     companyHelper: 'যেমন: গুগল, বোস্টন কনসাল্টিং গ্রুপ, মেটা, মাইক্রোসফ্ট',
     topicsQuestion: 'আপনি কোন বিষয় বা উপবিষয়গুলি আরও অনুশীলন করতে চান?',
     topicsHelper: 'যেমন: অপারেটিং সিস্টেম, সিস্টেম ডিজাইন, বাজার আকার',
+    // onboardingPage5 strings
+    oneLastThing: 'একটি শেষ জিনিস!',
+    cognitiveQuestionsParagraph: 'PrepQuest পরীক্ষা, কুইজ এবং আপনার চাকরির সাক্ষাৎকারে জিজ্ঞাসিত 7 ধরনের বিভিন্ন জ্ঞানীয় প্রশ্ন চিহ্নিত করেছে।',
+    tailorFlashcardsParagraph: 'PrepQuest এর সাথে, এখন আপনি আপনার ফ্ল্যাশকার্ডগুলি সেই প্রশ্নের ধরণগুলির সাথে কাস্টমাইজ করতে পারেন যেগুলির জন্য আপনার আরও অনুশীলন প্রয়োজন!',
   },
   Ukrainian: {
     skip: 'Пропустити',
@@ -1610,6 +1714,10 @@ export const stringsOnboarding = {
     companyHelper: 'Напр. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Які теми або підтеми ви хочете більше практикувати?',
     topicsHelper: 'Напр. Операційні Системи, Проектування Системи, Оцінка Розміру Ринку',
+    // onboardingPage5 strings
+    oneLastThing: 'Остання річ!',
+    cognitiveQuestionsParagraph: 'PrepQuest виявив 7 різних типів когнітивних питань, які ставляться на іспитах, вікторинах і в ваших співбесідах.',
+    tailorFlashcardsParagraph: 'З PrepQuest ви тепер можете налаштувати свої картки під типи питань, для яких вам потрібна більша практика!',
   },
   Romanian: {
     skip: 'Omite',
@@ -1669,6 +1777,10 @@ export const stringsOnboarding = {
     companyHelper: 'Ex. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Ce subiecte sau sub-subiecte vrei să practici mai mult?',
     topicsHelper: 'Ex. Sisteme de Operare, Design Sistem, Mărimea Pieței',
+    // onboardingPage5 strings
+    oneLastThing: 'Un ultim lucru!',
+    cognitiveQuestionsParagraph: 'PrepQuest a identificat 7 tipuri diferite de întrebări cognitive care sunt puse în examene, teste și în interviurile tale de muncă.',
+    tailorFlashcardsParagraph: 'Cu PrepQuest, acum poți personaliza cardurile tale pentru tipurile de întrebări pentru care ai nevoie de mai multă practică!',
   },
   Hungarian: {
     skip: 'Kihagyás',
@@ -1728,6 +1840,10 @@ export const stringsOnboarding = {
     companyHelper: 'Pl. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Milyen témákat vagy altémákat szeretnél többet gyakorolni?',
     topicsHelper: 'Pl. Operációs Rendszerek, Rendszer Tervezés, Piac Méretezés',
+    // onboardingPage5 strings
+    oneLastThing: 'Egy utolsó dolog!',
+    cognitiveQuestionsParagraph: 'A PrepQuest azonosította a 7 különböző típusú kognitív kérdést, amelyeket vizsgákon, kvízekben és állásinterjúkon tesznek fel.',
+    tailorFlashcardsParagraph: 'A PrepQuest-tel most testreszabhatod a kártyáidat azokhoz a kérdéstípusokhoz, amelyekhez több gyakorlásra van szükséged!',
   },
   Farsi: {
     skip: 'رد کردن',
@@ -1787,6 +1903,10 @@ export const stringsOnboarding = {
     companyHelper: 'مثال: گوگل، گروه مشاوره بوستون، متا، مایکروسافت',
     topicsQuestion: 'کدام موضوعات یا زیرموضوعات را می‌خواهید بیشتر تمرین کنید؟',
     topicsHelper: 'مثال: سیستم‌های عامل، طراحی سیستم، اندازه‌گیری بازار',
+    // onboardingPage5 strings
+    oneLastThing: 'یک چیز آخر!',
+    cognitiveQuestionsParagraph: 'PrepQuest هفت نوع مختلف از سوالات شناختی که در امتحانات، آزمون‌ها و مصاحبه‌های شغلی شما پرسیده می‌شود را شناسایی کرده است.',
+    tailorFlashcardsParagraph: 'با PrepQuest، حالا می‌توانید فلش‌کارت‌های خود را برای انواع سوالاتی که نیاز به تمرین بیشتری دارید سفارشی کنید!',
   },
   Swahili: {
     skip: 'Ruka',
@@ -1846,6 +1966,10 @@ export const stringsOnboarding = {
     companyHelper: 'Kwa mfano: Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Je, unataka kufanya mazoezi zaidi ya mada au mada ndogo zipi?',
     topicsHelper: 'Kwa mfano: Mifumo ya Uendeshaji, Ubunifu wa Mfumo, Ukubwa wa Soko',
+    // onboardingPage5 strings
+    oneLastThing: 'Jambo la mwisho!',
+    cognitiveQuestionsParagraph: 'PrepQuest imeainisha aina 7 tofauti za maswali ya akili ambayo yanaulizwa katika mitihani, majaribio na mahojiano yako ya kazi.',
+    tailorFlashcardsParagraph: 'Kwa PrepQuest, sasa unaweza kurekebisha kadi zako za kujifunza kwa aina za maswali ambazo unahitaji mazoezi zaidi!',
   },
   Afrikaans: {
     skip: 'Slaan Oor',
@@ -1905,6 +2029,10 @@ export const stringsOnboarding = {
     companyHelper: 'Bv. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Watter onderwerpe of sub-onderwerpe wil jy meer oefen?',
     topicsHelper: 'Bv. Bedryfstelsels, Stelselontwerp, Markgrootte',
+    // onboardingPage5 strings
+    oneLastThing: 'Een laaste ding!',
+    cognitiveQuestionsParagraph: 'PrepQuest het die 7 verskillende tipes kognitiewe vrae geïdentifiseer wat in eksamens, toetse en in jou werksonderhoude gevra word.',
+    tailorFlashcardsParagraph: 'Met PrepQuest kan jy nou jou flitskaarte aanpas vir die tipes vrae waarvoor jy meer oefening nodig het!',
   },
   Finnish: {
     skip: 'Ohita',
@@ -1964,6 +2092,10 @@ export const stringsOnboarding = {
     companyHelper: 'Esim. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Mitä aiheita tai aliaiheita haluat harjoitella enemmän?',
     topicsHelper: 'Esim. Käyttöjärjestelmät, Järjestelmäsuunnittelu, Markkinakoko',
+    // onboardingPage5 strings
+    oneLastThing: 'Viimeinen asia!',
+    cognitiveQuestionsParagraph: 'PrepQuest on tunnistanut 7 erilaista kognitiivista kysymystä, joita kysytään kokeissa, tenteissä ja työhaastatteluissa.',
+    tailorFlashcardsParagraph: 'PrepQuestin avulla voit nyt räätälöidä muistikorttisi niihin kysymystyyppeihin, joita tarvitset harjoitella enemmän!',
   },
   Norwegian: {
     skip: 'Hopp Over',
@@ -2023,6 +2155,10 @@ export const stringsOnboarding = {
     companyHelper: 'F.eks. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Hvilke emner eller underemner vil du øve mer på?',
     topicsHelper: 'F.eks. Operativsystemer, Systemdesign, Markedsstørrelse',
+    // onboardingPage5 strings
+    oneLastThing: 'En siste ting!',
+    cognitiveQuestionsParagraph: 'PrepQuest har identifisert de 7 forskjellige typene kognitive spørsmål som stilles på eksamener, quiz og i dine jobbintervjuer.',
+    tailorFlashcardsParagraph: 'Med PrepQuest kan du nå skreddersy flashkortene dine til de typer spørsmål du trenger mer øvelse på!',
   },
   Danish: {
     skip: 'Spring Over',
@@ -2082,6 +2218,10 @@ export const stringsOnboarding = {
     companyHelper: 'F.eks. Google, Boston Consulting Group, Meta, Microsoft',
     topicsQuestion: 'Hvilke emner eller underemner vil du øve mere på?',
     topicsHelper: 'F.eks. Operativsystemer, Systemdesign, Markedsstørrelse',
+    // onboardingPage5 strings
+    oneLastThing: 'En sidste ting!',
+    cognitiveQuestionsParagraph: 'PrepQuest har identificeret de 7 forskellige typer kognitive spørgsmål, der stilles i eksamener, quiz og i dine jobinterviews.',
+    tailorFlashcardsParagraph: 'Med PrepQuest kan du nu tilpasse dine flashkort til de typer spørgsmål, du har brug for mere træning på!',
   },
 };
 

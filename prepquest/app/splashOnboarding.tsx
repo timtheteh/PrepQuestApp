@@ -1517,10 +1517,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage5ContentFadeAnim }
           ]}>
             <View style={styles.onboardingPage5Content}>
-              {/* Progress text: 4/4 */}
-              <Text style={styles.progressText}>4/4</Text>
+              {/* One last thing! */}
+              <Text style={styles.progressText}>
+                {getTranslatedText(selectedLanguage, 'oneLastThing')}
+              </Text>
               
-              {/* Content will be added later */}
+              {/* First paragraph */}
+              <Text style={styles.paragraphText}>
+                {getTranslatedText(selectedLanguage, 'cognitiveQuestionsParagraph')}
+              </Text>
+              
+              {/* Second paragraph */}
+              <Text style={styles.paragraphText}>
+                {getTranslatedText(selectedLanguage, 'tailorFlashcardsParagraph')}
+              </Text>
             </View>
           </Animated.View>
         </Animated.View>
@@ -2227,5 +2237,12 @@ const styles = StyleSheet.create({
   questionAnimation: {
     width: 200,
     height: 120,
+  },
+  paragraphText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyMedium,
+    color: 'black',
+    textAlign: 'center',
+    marginTop: 12,
   },
 });

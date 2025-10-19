@@ -956,15 +956,12 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 }
               </Text>
               
-              {/* ScrollView with suggestion cards */}
-              <ScrollView 
-                style={[
-                  styles.suggestionsScrollView,
-                  selectedCard === 'interview' && styles.suggestionsScrollViewInterview
-                ]}
-                showsVerticalScrollIndicator={false}
-              >
-                {selectedCard === 'study' && (
+              {/* Cards container - ScrollView for study mode, regular View for interview mode */}
+              {selectedCard === 'study' ? (
+                <ScrollView 
+                  style={styles.suggestionsScrollView}
+                  showsVerticalScrollIndicator={false}
+                >
                   <View style={styles.suggestionsContainer}>
                     {/* Study Education Levels - 6 cards */}
                     <View style={styles.cardRow}>
@@ -1042,63 +1039,61 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       </TouchableOpacity>
                     </View>
                   </View>
-                )}
-                
-                {selectedCard === 'interview' && (
-                  <View style={styles.suggestionsContainer}>
-                    {/* Interview Types - 4 cards */}
-                    <View style={styles.cardRow}>
-                      <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Technical') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('Technical')}
-                      >
-                        <View style={styles.suggestionCardImageContainer}>
-                          <TechnicalImage width="100%" height="100%" />
-                        </View>
-                        <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'technical')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Behavioral') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('Behavioral')}
-                      >
-                        <View style={styles.suggestionCardImageContainer}>
-                          <BehavioralImage width="100%" height="100%" />
-                        </View>
-                        <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'behavioral')}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                    
-                    <View style={styles.cardRow}>
-                      <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Case Study') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('Case Study')}
-                      >
-                        <View style={styles.suggestionCardImageContainer}>
-                          <CaseStudyImage width="100%" height="100%" />
-                        </View>
-                        <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'caseStudy')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.suggestionCard, selectedEducationSuggestions.has('Brainteasers') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('Brainteasers')}
-                      >
-                        <View style={styles.suggestionCardImageContainer}>
-                          <BrainteasersImage width="100%" height="100%" />
-                        </View>
-                        <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'brainteasers')}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                </ScrollView>
+              ) : (
+                <View style={[styles.suggestionsContainer, {paddingTop: 10}]}>
+                  {/* Interview Types - 4 cards */}
+                  <View style={styles.cardRow}>
+                    <TouchableOpacity 
+                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Technical') && styles.selectedSuggestionCard]}
+                      onPress={() => handleEducationSuggestionPress('Technical')}
+                    >
+                      <View style={styles.suggestionCardImageContainer}>
+                        <TechnicalImage width="100%" height="100%" />
+                      </View>
+                      <Text style={styles.suggestionCardText}>
+                        {getTranslatedText(selectedLanguage, 'technical')}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Behavioral') && styles.selectedSuggestionCard]}
+                      onPress={() => handleEducationSuggestionPress('Behavioral')}
+                    >
+                      <View style={styles.suggestionCardImageContainer}>
+                        <BehavioralImage width="100%" height="100%" />
+                      </View>
+                      <Text style={styles.suggestionCardText}>
+                        {getTranslatedText(selectedLanguage, 'behavioral')}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                )}
-              </ScrollView>
+                  
+                  <View style={styles.cardRow}>
+                    <TouchableOpacity 
+                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Case Study') && styles.selectedSuggestionCard]}
+                      onPress={() => handleEducationSuggestionPress('Case Study')}
+                    >
+                      <View style={styles.suggestionCardImageContainer}>
+                        <CaseStudyImage width="100%" height="100%" />
+                      </View>
+                      <Text style={styles.suggestionCardText}>
+                        {getTranslatedText(selectedLanguage, 'caseStudy')}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.suggestionCard, selectedEducationSuggestions.has('Brainteasers') && styles.selectedSuggestionCard]}
+                      onPress={() => handleEducationSuggestionPress('Brainteasers')}
+                    >
+                      <View style={styles.suggestionCardImageContainer}>
+                        <BrainteasersImage width="100%" height="100%" />
+                      </View>
+                      <Text style={styles.suggestionCardText}>
+                        {getTranslatedText(selectedLanguage, 'brainteasers')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </View>
           </Animated.View>
         </Animated.View>

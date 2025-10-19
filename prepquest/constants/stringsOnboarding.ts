@@ -40,6 +40,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Electrical Engineer',
     productManager: 'Product Manager',
     suggestions: 'Suggestions',
+    pickAny: 'Pick any',
     // Education levels
     highSchool: 'High School',
     undergraduate: 'Undergraduate',
@@ -90,6 +91,7 @@ export const stringsOnboarding = {
     electricalEngineer: '电气工程师',
     productManager: '产品经理',
     suggestions: '建议',
+    pickAny: '选择任意',
     // Education levels
     highSchool: '高中',
     undergraduate: '本科',
@@ -140,6 +142,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Jurutera Elektrik',
     productManager: 'Pengurus Produk',
     suggestions: 'Cadangan',
+    pickAny: 'Pilih mana-mana',
     // Education levels
     highSchool: 'Sekolah Menengah',
     undergraduate: 'Ijazah Sarjana Muda',
@@ -190,6 +193,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'इलेक्ट्रिकल इंजीनियर',
     productManager: 'उत्पाद प्रबंधक',
     suggestions: 'सुझाव',
+    pickAny: 'कोई भी चुनें',
     // Education levels
     highSchool: 'हाई स्कूल',
     undergraduate: 'स्नातक',
@@ -240,6 +244,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ingénieur Électricien',
     productManager: 'Gestionnaire de Produit',
     suggestions: 'Suggestions',
+    pickAny: 'Choisissez n\'importe lequel',
     // Education levels
     highSchool: 'Lycée',
     undergraduate: 'Licence',
@@ -290,6 +295,7 @@ export const stringsOnboarding = {
     electricalEngineer: '電気技師',
     productManager: 'プロダクトマネージャー',
     suggestions: '提案',
+    pickAny: 'どれでも選択',
     // Education levels
     highSchool: '高校',
     undergraduate: '学部',
@@ -340,6 +346,7 @@ export const stringsOnboarding = {
     electricalEngineer: '전기 엔지니어',
     productManager: '제품 관리자',
     suggestions: '제안',
+    pickAny: '아무거나 선택',
     // Education levels
     highSchool: '고등학교',
     undergraduate: '학부',
@@ -390,6 +397,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ingeniero Eléctrico',
     productManager: 'Gerente de Producto',
     suggestions: 'Sugerencias',
+    pickAny: 'Elige cualquiera',
     // Education levels
     highSchool: 'Escuela Secundaria',
     undergraduate: 'Pregrado',
@@ -440,6 +448,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingenieur',
     productManager: 'Produktmanager',
     suggestions: 'Vorschläge',
+    pickAny: 'Wählen Sie beliebige',
     // Education levels
     highSchool: 'Gymnasium',
     undergraduate: 'Bachelor',
@@ -490,6 +499,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Engenheiro Elétrico',
     productManager: 'Gerente de Produto',
     suggestions: 'Sugestões',
+    pickAny: 'Escolha qualquer',
     // Education levels
     highSchool: 'Ensino Médio',
     undergraduate: 'Graduação',
@@ -540,6 +550,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ingegnere Elettrico',
     productManager: 'Product Manager',
     suggestions: 'Suggerimenti',
+    pickAny: 'Scegli qualsiasi',
     // Education levels
     highSchool: 'Scuola Superiore',
     undergraduate: 'Laurea Triennale',
@@ -590,6 +601,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Инженер-электрик',
     productManager: 'Менеджер по продукту',
     suggestions: 'Предложения',
+    pickAny: 'Выберите любой',
     // Education levels
     highSchool: 'Средняя школа',
     undergraduate: 'Бакалавриат',
@@ -640,6 +652,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'مهندس كهربائي',
     productManager: 'مدير المنتج',
     suggestions: 'اقتراحات',
+    pickAny: 'اختر أيًا كان',
     // Education levels
     highSchool: 'المدرسة الثانوية',
     undergraduate: 'الدرجة الجامعية الأولى',
@@ -690,6 +703,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Insinyur Listrik',
     productManager: 'Manajer Produk',
     suggestions: 'Saran',
+    pickAny: 'Pilih yang mana saja',
     // Education levels
     highSchool: 'Sekolah Menengah Atas',
     undergraduate: 'Sarjana',
@@ -740,6 +754,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'วิศวกรไฟฟ้า',
     productManager: 'ผู้จัดการผลิตภัณฑ์',
     suggestions: 'ข้อเสนอแนะ',
+    pickAny: 'เลือกอะไรก็ได้',
     // Education levels
     highSchool: 'มัธยมปลาย',
     undergraduate: 'ปริญญาตรี',
@@ -790,6 +805,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Kỹ sư điện',
     productManager: 'Quản lý sản phẩm',
     suggestions: 'Đề xuất',
+    pickAny: 'Chọn bất kỳ',
     // Education levels
     highSchool: 'Trung học phổ thông',
     undergraduate: 'Đại học',
@@ -840,6 +856,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektrik Mühendisi',
     productManager: 'Ürün Müdürü',
     suggestions: 'Öneriler',
+    pickAny: 'Herhangi birini seçin',
     // Education levels
     highSchool: 'Lise',
     undergraduate: 'Lisans',
@@ -890,6 +907,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektrotechnisch Ingenieur',
     productManager: 'Product Manager',
     suggestions: 'Suggesties',
+    pickAny: 'Kies willekeurig',
     // Education levels
     highSchool: 'Middelbare School',
     undergraduate: 'Bachelor',
@@ -940,6 +958,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Inżynier Elektryk',
     productManager: 'Menedżer Produktu',
     suggestions: 'Sugestie',
+    pickAny: 'Wybierz dowolny',
     // Education levels
     highSchool: 'Liceum',
     undergraduate: 'Licencjat',
@@ -990,6 +1009,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingenjör',
     productManager: 'Produktchef',
     suggestions: 'Förslag',
+    pickAny: 'Välj vilken som helst',
     // Education levels
     highSchool: 'Gymnasium',
     undergraduate: 'Kandidatexamen',
@@ -1040,6 +1060,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektrotechnický inženýr',
     productManager: 'Produktový manažer',
     suggestions: 'Návrhy',
+    pickAny: 'Vyberte libovolný',
     // Education levels
     highSchool: 'Střední škola',
     undergraduate: 'Bakalářský',
@@ -1090,6 +1111,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Ηλεκτρολόγος Μηχανικός',
     productManager: 'Διαχειριστής Προϊόντος',
     suggestions: 'Προτάσεις',
+    pickAny: 'Επιλέξτε οποιοδήποτε',
     // Education levels
     highSchool: 'Λύκειο',
     undergraduate: 'Πτυχίο',
@@ -1140,6 +1162,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'מהנדס חשמל',
     productManager: 'מנהל מוצר',
     suggestions: 'הצעות',
+    pickAny: 'בחר כל אחד',
     // Education levels
     highSchool: 'תיכון',
     undergraduate: 'תואר ראשון',
@@ -1190,6 +1213,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Electrical Engineer',
     productManager: 'Product Manager',
     suggestions: 'Mga Mungkahi',
+    pickAny: 'Pumili ng kahit ano',
     // Education levels
     highSchool: 'Mataas na Paaralan',
     undergraduate: 'Bachelor',
@@ -1240,6 +1264,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'மின் பொறியாளர்',
     productManager: 'தயாரிப்பு மேலாளர்',
     suggestions: 'பரிந்துரைகள்',
+    pickAny: 'எதையும் தேர்ந்தெடுக்கவும்',
     // Education levels
     highSchool: 'உயர்நிலைப் பள்ளி',
     undergraduate: 'இளங்கலை',
@@ -1290,6 +1315,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'তড়িৎ প্রকৌশলী',
     productManager: 'পণ্য ব্যবস্থাপক',
     suggestions: 'পরামর্শ',
+    pickAny: 'যেকোনো একটি বেছে নিন',
     // Education levels
     highSchool: 'উচ্চ বিদ্যালয়',
     undergraduate: 'স্নাতক',
@@ -1340,6 +1366,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Інженер-електрик',
     productManager: 'Менеджер продукту',
     suggestions: 'Пропозиції',
+    pickAny: 'Виберіть будь-який',
     // Education levels
     highSchool: 'Середня школа',
     undergraduate: 'Бакалаврат',
@@ -1390,6 +1417,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Inginer Electrician',
     productManager: 'Manager de Produs',
     suggestions: 'Sugestii',
+    pickAny: 'Alegeți oricare',
     // Education levels
     highSchool: 'Liceu',
     undergraduate: 'Licență',
@@ -1440,6 +1468,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektromérnök',
     productManager: 'Termék Menedzser',
     suggestions: 'Javaslatok',
+    pickAny: 'Válasszon bármelyiket',
     // Education levels
     highSchool: 'Gimnázium',
     undergraduate: 'Alapképzés',
@@ -1490,6 +1519,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'مهندس برق',
     productManager: 'مدیر محصول',
     suggestions: 'پیشنهادات',
+    pickAny: 'هر کدام را انتخاب کنید',
     // Education levels
     highSchool: 'دبیرستان',
     undergraduate: 'کارشناسی',
@@ -1540,6 +1570,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Mhandisi wa Umeme',
     productManager: 'Msimamizi wa Bidhaa',
     suggestions: 'Mapendekezo',
+    pickAny: 'Chagua yoyote',
     // Education levels
     highSchool: 'Shule ya Sekondari',
     undergraduate: 'Shahada ya Kwanza',
@@ -1590,6 +1621,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektriese Ingenieur',
     productManager: 'Produkbestuurder',
     suggestions: 'Voorstelle',
+    pickAny: 'Kies enige een',
     // Education levels
     highSchool: 'Hoërskool',
     undergraduate: 'Voorgraadse',
@@ -1640,6 +1672,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Sähköinsinööri',
     productManager: 'Tuotepäällikkö',
     suggestions: 'Ehdotukset',
+    pickAny: 'Valitse mikä tahansa',
     // Education levels
     highSchool: 'Lukio',
     undergraduate: 'Kandidaatti',
@@ -1690,6 +1723,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingeniør',
     productManager: 'Produktleder',
     suggestions: 'Forslag',
+    pickAny: 'Velg hvilken som helst',
     // Education levels
     highSchool: 'Videregående skole',
     undergraduate: 'Bachelorgrad',
@@ -1740,6 +1774,7 @@ export const stringsOnboarding = {
     electricalEngineer: 'Elektroingeniør',
     productManager: 'Produktleder',
     suggestions: 'Forslag',
+    pickAny: 'Vælg hvilken som helst',
     // Education levels
     highSchool: 'Gymnasium',
     undergraduate: 'Bachelorgrad',

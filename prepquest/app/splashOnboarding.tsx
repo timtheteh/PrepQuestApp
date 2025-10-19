@@ -913,31 +913,38 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 }
               </Text>
               
-              {/* Text input field with cancel icon inside */}
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  style={styles.educationTextInput}
-                  placeholder="Type here!"
-                  placeholderTextColor={Colors.light.unselectedText}
-                  value={educationInput}
-                  onChangeText={setEducationInput}
-                />
-                {educationInput.length > 0 && (
-                  <TouchableOpacity 
-                    style={styles.cancelIconButton}
-                    onPress={() => setEducationInput('')}
-                  >
-                    <MaterialIcons 
-                      name="cancel" 
-                      size={20} 
-                      color={Colors.light.unselectedText} 
-                    />
-                  </TouchableOpacity>
-                )}
-              </View>
+              {/* Text input field with cancel icon inside - only show for study mode */}
+              {selectedCard === 'study' && (
+                <View style={styles.textInputContainer}>
+                  <TextInput
+                    style={styles.educationTextInput}
+                    placeholder="Type here!"
+                    placeholderTextColor={Colors.light.unselectedText}
+                    value={educationInput}
+                    onChangeText={setEducationInput}
+                  />
+                  {educationInput.length > 0 && (
+                    <TouchableOpacity 
+                      style={styles.cancelIconButton}
+                      onPress={() => setEducationInput('')}
+                    >
+                      <MaterialIcons 
+                        name="cancel" 
+                        size={20} 
+                        color={Colors.light.unselectedText} 
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
               
               {/* Suggestions text */}
-              <Text style={styles.suggestionsText}>{getTranslatedText(selectedLanguage, 'suggestions')}</Text>
+              <Text style={styles.suggestionsText}>
+                {selectedCard === 'interview' 
+                  ? getTranslatedText(selectedLanguage, 'pickAny')
+                  : getTranslatedText(selectedLanguage, 'suggestions')
+                }
+              </Text>
               
               {/* ScrollView with suggestion cards */}
               <ScrollView 
@@ -1185,17 +1192,17 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             
             {/* Next button still on the right */}
             <TouchableOpacity 
-              style={[styles.nextButton, (!educationInput.trim() && selectedEducationSuggestions.size === 0) && styles.disabledButton]} 
-              onPress={(!educationInput.trim() && selectedEducationSuggestions.size === 0) ? undefined : handleNextPress}
-              disabled={!educationInput.trim() && selectedEducationSuggestions.size === 0}
+              style={[styles.nextButton, (selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) && styles.disabledButton]} 
+              onPress={(selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) ? undefined : handleNextPress}
+              disabled={selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0}
             >
               <View style={styles.buttonWithIcon}>
-                <Text style={[styles.nextButtonText, (!educationInput.trim() && selectedEducationSuggestions.size === 0) && styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Text style={[styles.nextButtonText, (selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) && styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"
                     fill={Colors.light.text}
-                    opacity={(!educationInput.trim() && selectedEducationSuggestions.size === 0) ? 0.8 : 1}
+                    opacity={(selectedCard === 'study' ? (!educationInput.trim() && selectedEducationSuggestions.size === 0) : selectedEducationSuggestions.size === 0) ? 0.8 : 1}
                   />
                 </Svg>
               </View>

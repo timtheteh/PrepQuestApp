@@ -554,12 +554,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <View style={styles.suggestionCardImageContainer}>
                             <HistoryImage width="100%" height="100%" />
                           </View>
-                          <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'history').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
-                          >
+                          <Text style={styles.suggestionCardText}>
                             {getTranslatedText(selectedLanguage, 'history')}
                           </Text>
                         </TouchableOpacity>
@@ -570,12 +565,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <View style={styles.suggestionCardImageContainer}>
                             <PhysicsImage width="100%" height="100%" />
                           </View>
-                          <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'physics').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
-                          >
+                          <Text style={styles.suggestionCardText}>
                             {getTranslatedText(selectedLanguage, 'physics')}
                           </Text>
                         </TouchableOpacity>
@@ -591,10 +581,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <ChemistryImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'chemistry').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'chemistry')}
                         </Text>
@@ -607,10 +594,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <BiologyImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'biology').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'biology')}
                         </Text>
@@ -627,10 +611,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <GeographyImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'geography').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'geography')}
                         </Text>
@@ -643,10 +624,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <MathImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'math').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'math')}
                         </Text>
@@ -663,10 +641,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <MedicineImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'medicine').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'medicine')}
                         </Text>
@@ -679,10 +654,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <LawImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'law').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'law')}
                         </Text>
@@ -699,10 +671,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <FinanceImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'finance').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'finance')}
                         </Text>
@@ -715,10 +684,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <ComputingImage width="100%" height="100%" />
                         </View>
                         <Text 
-                          style={[
-                            styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'computing').length >= 15 && styles.suggestionCardTextSmall
-                          ]}
+                            style={styles.suggestionCardText}
                         >
                           {getTranslatedText(selectedLanguage, 'computing')}
                         </Text>
@@ -739,10 +705,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <SoftwareEngineeringImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'softwareEngineering').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'softwareEngineering')}
                           </Text>
@@ -755,10 +718,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <InvestmentBankingImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'investmentBanking').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'investmentBanking')}
                           </Text>
@@ -775,10 +735,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <MedicalResidencyImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'medicalResidency').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'medicalResidency')}
                           </Text>
@@ -791,10 +748,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <QuantitativeResearcherImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'quantitativeResearcher').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'quantitativeResearcher')}
                           </Text>
@@ -811,10 +765,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <ManagementConsultingImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'managementConsulting').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'managementConsulting')}
                           </Text>
@@ -827,10 +778,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <CriminalLawyerImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'criminalLawyer').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'criminalLawyer')}
                           </Text>
@@ -847,10 +795,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <ElectricalEngineerImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'electricalEngineer').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'electricalEngineer')}
                           </Text>
@@ -863,10 +808,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                             <ProductManagerImage width="100%" height="100%" />
                           </View>
                           <Text 
-                            style={[
-                              styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'productManager').length >= 15 && styles.suggestionCardTextSmall
-                            ]}
+                            style={styles.suggestionCardText}
                           >
                             {getTranslatedText(selectedLanguage, 'productManager')}
                           </Text>
@@ -1284,7 +1226,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   suggestionCardText: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: Fonts.bodyMedium,
     color: 'black',
     textAlign: 'center',
@@ -1301,10 +1243,10 @@ const styles = StyleSheet.create({
   },
   suggestionCardImageContainer: {
     position: 'absolute',
-    top: 8,
+    top: 16,
     left: 8,
     right: 8,
-    bottom: 32, // 8 (margin) + 24 (text height) = 32
+    bottom: 48, // 16 (margin) + 24 (text height) = 40
     justifyContent: 'center',
     alignItems: 'center',
   },

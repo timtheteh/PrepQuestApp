@@ -15,6 +15,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Just a few more questions to get you started...',
     progress: '1/3',
     whichSubjects: 'Which subject(s) are you prepping for?',
+    whichJob: 'Which job/role are you prepping for?',
     progress2: '2/3',
     educationLevelQuestion: 'What level of education are you currently prepping for?',
     interviewTypeQuestion: 'What kind of interview are you currently prepping for?',
@@ -67,6 +68,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: '再问几个问题来帮你开始...',
     progress: '1/3',
     whichSubjects: '你在准备哪些科目？',
+    whichJob: '你在准备什么工作/职位？',
     // Study subjects
     history: '历史',
     physics: '物理',
@@ -116,6 +118,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Hanya beberapa soalan lagi untuk memulakan...',
     progress: '1/3',
     whichSubjects: 'Subjek mana yang anda sediakan?',
+    whichJob: 'Pekerjaan/jawatan mana yang anda sediakan?',
     // Study subjects
     history: 'Sejarah',
     physics: 'Fizik',
@@ -165,6 +168,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'आपको शुरू करने के लिए बस कुछ और प्रश्न...',
     progress: '1/3',
     whichSubjects: 'आप किन विषयों की तैयारी कर रहे हैं?',
+    whichJob: 'आप किस नौकरी/भूमिका की तैयारी कर रहे हैं?',
     // Study subjects
     history: 'इतिहास',
     physics: 'भौतिकी',
@@ -214,6 +218,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Juste quelques questions de plus pour vous aider à commencer...',
     progress: '1/3',
     whichSubjects: 'Pour quelles matières vous préparez-vous ?',
+    whichJob: 'Pour quel emploi/rôle vous préparez-vous ?',
     // Study subjects
     history: 'Histoire',
     physics: 'Physique',
@@ -263,6 +268,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: '始めるためにあと数問だけ...',
     progress: '1/3',
     whichSubjects: 'どの科目の準備をしていますか？',
+    whichJob: 'どの仕事/役職の準備をしていますか？',
     // Study subjects
     history: '歴史',
     physics: '物理学',
@@ -312,6 +318,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: '시작하기 위해 몇 가지 질문만 더...',
     progress: '1/3',
     whichSubjects: '어떤 과목을 준비하고 계신가요?',
+    whichJob: '어떤 직업/역할을 준비하고 계신가요?',
     // Study subjects
     history: '역사',
     physics: '물리학',
@@ -361,6 +368,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Solo unas preguntas más para comenzar...',
     progress: '1/3',
     whichSubjects: '¿Para qué materia(s) te estás preparando?',
+    whichJob: '¿Para qué trabajo/rol te estás preparando?',
     // Study subjects
     history: 'Historia',
     physics: 'Física',
@@ -410,6 +418,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Nur noch ein paar Fragen, um loszulegen...',
     progress: '1/3',
     whichSubjects: 'Für welche Fächer bereiten Sie sich vor?',
+    whichJob: 'Für welchen Job/Rolle bereiten Sie sich vor?',
     // Study subjects
     history: 'Geschichte',
     physics: 'Physik',
@@ -459,6 +468,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Apenas algumas perguntas mais para começar...',
     progress: '1/3',
     whichSubjects: 'Para quais matérias você está se preparando?',
+    whichJob: 'Para qual trabalho/função você está se preparando?',
     // Study subjects
     history: 'História',
     physics: 'Física',
@@ -508,6 +518,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Solo alcune domande in più per iniziare...',
     progress: '1/3',
     whichSubjects: 'Per quali materie ti stai preparando?',
+    whichJob: 'Per quale lavoro/ruolo ti stai preparando?',
     // Study subjects
     history: 'Storia',
     physics: 'Fisica',
@@ -557,6 +568,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Еще несколько вопросов, чтобы начать...',
     progress: '1/3',
     whichSubjects: 'По каким предметам вы готовитесь?',
+    whichJob: 'К какой работе/роли вы готовитесь?',
     // Study subjects
     history: 'История',
     physics: 'Физика',
@@ -606,6 +618,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'بضع أسئلة أخرى للبدء...',
     progress: '1/3',
     whichSubjects: 'أي مادة تحضر لها؟',
+    whichJob: 'أي وظيفة/دور تحضر لها؟',
     // Study subjects
     history: 'التاريخ',
     physics: 'الفيزياء',
@@ -655,6 +668,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Beberapa pertanyaan lagi untuk memulai...',
     progress: '1/3',
     whichSubjects: 'Mata pelajaran apa yang Anda persiapkan?',
+    whichJob: 'Pekerjaan/peran apa yang Anda persiapkan?',
     // Study subjects
     history: 'Sejarah',
     physics: 'Fisika',
@@ -704,6 +718,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'คำถามอีกไม่กี่ข้อเพื่อเริ่มต้น...',
     progress: '1/3',
     whichSubjects: 'คุณกำลังเตรียมตัวสำหรับวิชาใด?',
+    whichJob: 'คุณกำลังเตรียมตัวสำหรับงาน/ตำแหน่งใด?',
     // Study subjects
     history: 'ประวัติศาสตร์',
     physics: 'ฟิสิกส์',
@@ -753,6 +768,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Chỉ còn một vài câu hỏi nữa để bắt đầu...',
     progress: '1/3',
     whichSubjects: 'Bạn đang chuẩn bị cho môn học nào?',
+    whichJob: 'Bạn đang chuẩn bị cho công việc/vai trò nào?',
     // Study subjects
     history: 'Lịch sử',
     physics: 'Vật lý',
@@ -802,6 +818,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Başlamak için sadece birkaç soru daha...',
     progress: '1/3',
     whichSubjects: 'Hangi konulara hazırlanıyorsunuz?',
+    whichJob: 'Hangi iş/rol için hazırlanıyorsunuz?',
     // Study subjects
     history: 'Tarih',
     physics: 'Fizik',
@@ -851,6 +868,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Nog een paar vragen om te beginnen...',
     progress: '1/3',
     whichSubjects: 'Voor welke vakken bereid je je voor?',
+    whichJob: 'Voor welke baan/rol bereid je je voor?',
     // Study subjects
     history: 'Geschiedenis',
     physics: 'Natuurkunde',
@@ -900,6 +918,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Jeszcze kilka pytań, aby zacząć...',
     progress: '1/3',
     whichSubjects: 'Do jakich przedmiotów się przygotowujesz?',
+    whichJob: 'Do jakiej pracy/roli się przygotowujesz?',
     // Study subjects
     history: 'Historia',
     physics: 'Fizyka',
@@ -949,6 +968,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Bara några frågor till för att komma igång...',
     progress: '1/3',
     whichSubjects: 'Vilka ämnen förbereder du dig för?',
+    whichJob: 'Vilket jobb/roll förbereder du dig för?',
     // Study subjects
     history: 'Historia',
     physics: 'Fysik',
@@ -998,6 +1018,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Ještě několik otázek k začátku...',
     progress: '1/3',
     whichSubjects: 'Pro jaké předměty se připravujete?',
+    whichJob: 'Pro jakou práci/roli se připravujete?',
     // Study subjects
     history: 'Dějepis',
     physics: 'Fyzika',
@@ -1047,6 +1068,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Μόνο λίγες ακόμα ερωτήσεις για να ξεκινήσετε...',
     progress: '1/3',
     whichSubjects: 'Για ποια μαθήματα προετοιμάζεστε;',
+    whichJob: 'Για ποια δουλειά/ρόλο προετοιμάζεστε;',
     // Study subjects
     history: 'Ιστορία',
     physics: 'Φυσική',
@@ -1096,6 +1118,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'רק עוד כמה שאלות כדי להתחיל...',
     progress: '1/3',
     whichSubjects: 'איזה נושאים אתם מתכוננים?',
+    whichJob: 'איזו עבודה/תפקיד אתם מתכוננים?',
     // Study subjects
     history: 'היסטוריה',
     physics: 'פיזיקה',
@@ -1145,6 +1168,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Ilang tanong pa lang para makapagsimula...',
     progress: '1/3',
     whichSubjects: 'Para saang mga paksa kayo naghahanda?',
+    whichJob: 'Para saang trabaho/posisyon kayo naghahanda?',
     // Study subjects
     history: 'Kasaysayan',
     physics: 'Pisika',
@@ -1194,6 +1218,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'தொடங்க சில கேள்விகள் மட்டும்...',
     progress: '1/3',
     whichSubjects: 'நீங்கள் எந்த பாடங்களுக்கு தயாராகிறீர்கள்?',
+    whichJob: 'நீங்கள் எந்த வேலை/பாத்திரத்திற்கு தயாராகிறீர்கள்?',
     // Study subjects
     history: 'வரலாறு',
     physics: 'இயற்பியல்',
@@ -1243,6 +1268,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'শুরু করার জন্য আরও কয়েকটি প্রশ্ন...',
     progress: '1/3',
     whichSubjects: 'আপনি কোন বিষয়ের জন্য প্রস্তুত হচ্ছেন?',
+    whichJob: 'আপনি কোন চাকরি/ভূমিকার জন্য প্রস্তুত হচ্ছেন?',
     // Study subjects
     history: 'ইতিহাস',
     physics: 'পদার্থবিজ্ঞান',
@@ -1292,6 +1318,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Ще кілька питань для початку...',
     progress: '1/3',
     whichSubjects: 'З яких предметів ви готуєтеся?',
+    whichJob: 'До якої роботи/ролі ви готуєтеся?',
     // Study subjects
     history: 'Історія',
     physics: 'Фізика',
@@ -1341,6 +1368,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Doar câteva întrebări în plus pentru a începe...',
     progress: '1/3',
     whichSubjects: 'Pentru ce materii te pregătești?',
+    whichJob: 'Pentru ce job/rol te pregătești?',
     // Study subjects
     history: 'Istorie',
     physics: 'Fizică',
@@ -1390,6 +1418,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Csak néhány kérdés még, hogy elkezdhesd...',
     progress: '1/3',
     whichSubjects: 'Milyen tantárgyakhoz készülsz fel?',
+    whichJob: 'Milyen munka/szerepkörhöz készülsz fel?',
     // Study subjects
     history: 'Történelem',
     physics: 'Fizika',
@@ -1439,6 +1468,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'فقط چند سؤال دیگر برای شروع...',
     progress: '1/3',
     whichSubjects: 'برای چه موضوعاتی آماده می‌شوید؟',
+    whichJob: 'برای چه شغل/نقشی آماده می‌شوید؟',
     // Study subjects
     history: 'تاریخ',
     physics: 'فیزیک',
@@ -1488,6 +1518,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Maswali machache tu ya kuanza...',
     progress: '1/3',
     whichSubjects: 'Unaandaa masomo gani?',
+    whichJob: 'Unaandaa kazi/jukumu gani?',
     // Study subjects
     history: 'Historia',
     physics: 'Fizikia',
@@ -1537,6 +1568,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Net nog \'n paar vrae om te begin...',
     progress: '1/3',
     whichSubjects: 'Vir watter vakke berei jy jou voor?',
+    whichJob: 'Vir watter werk/rol berei jy jou voor?',
     // Study subjects
     history: 'Geskiedenis',
     physics: 'Fisika',
@@ -1586,6 +1618,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Vain muutama kysymys lisää aloittamiseen...',
     progress: '1/3',
     whichSubjects: 'Mihin aineisiin valmistaudut?',
+    whichJob: 'Mihin työhön/rooliin valmistaudut?',
     // Study subjects
     history: 'Historia',
     physics: 'Fysiikka',
@@ -1635,6 +1668,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Bare noen få spørsmål til for å komme i gang...',
     progress: '1/3',
     whichSubjects: 'Hvilke fag forbereder du deg på?',
+    whichJob: 'Hvilket jobb/rolle forbereder du deg på?',
     // Study subjects
     history: 'Historie',
     physics: 'Fysikk',
@@ -1684,6 +1718,7 @@ export const stringsOnboarding = {
     justAFewMoreQuestions: 'Bare et par spørgsmål mere for at komme i gang...',
     progress: '1/3',
     whichSubjects: 'Hvilke fag forbereder du dig på?',
+    whichJob: 'Hvilket job/rolle forbereder du dig på?',
     // Study subjects
     history: 'Historie',
     physics: 'Fysik',

@@ -560,7 +560,12 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               <Text style={styles.progressText}>{getTranslatedText(selectedLanguage, 'progress')}</Text>
               
               {/* Fourth row: Which subject(s)... */}
-              <Text style={styles.subjectQuestionText}>{getTranslatedText(selectedLanguage, 'whichSubjects')}</Text>
+              <Text style={styles.subjectQuestionText}>
+                {selectedCard === 'study' 
+                  ? getTranslatedText(selectedLanguage, 'whichSubjects')
+                  : getTranslatedText(selectedLanguage, 'whichJob')
+                }
+              </Text>
               
               {/* Text input field with cancel icon inside */}
               <View style={styles.textInputContainer}>

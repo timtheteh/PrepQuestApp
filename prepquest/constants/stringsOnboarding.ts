@@ -35,6 +35,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Criminal Lawyer',
     electricalEngineer: 'Electrical Engineer',
     productManager: 'Product Manager',
+    suggestions: 'Suggestions',
   },
   Chinese: {
     skip: '跳过',
@@ -71,6 +72,7 @@ export const stringsOnboarding = {
     criminalLawyer: '刑事律师',
     electricalEngineer: '电气工程师',
     productManager: '产品经理',
+    suggestions: '建议',
   },
   Malay: {
     skip: 'Langkau',
@@ -107,6 +109,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Peguam Jenayah',
     electricalEngineer: 'Jurutera Elektrik',
     productManager: 'Pengurus Produk',
+    suggestions: 'Cadangan',
   },
   Hindi: {
     skip: 'छोड़ें',
@@ -143,6 +146,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'आपराधिक वकील',
     electricalEngineer: 'इलेक्ट्रिकल इंजीनियर',
     productManager: 'उत्पाद प्रबंधक',
+    suggestions: 'सुझाव',
   },
   French: {
     skip: 'Passer',
@@ -179,6 +183,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Avocat Pénal',
     electricalEngineer: 'Ingénieur Électricien',
     productManager: 'Gestionnaire de Produit',
+    suggestions: 'Suggestions',
   },
   Japanese: {
     skip: 'スキップ',
@@ -215,6 +220,7 @@ export const stringsOnboarding = {
     criminalLawyer: '刑事弁護士',
     electricalEngineer: '電気技師',
     productManager: 'プロダクトマネージャー',
+    suggestions: '提案',
   },
   Korean: {
     skip: '건너뛰기',
@@ -251,6 +257,7 @@ export const stringsOnboarding = {
     criminalLawyer: '형사 변호사',
     electricalEngineer: '전기 엔지니어',
     productManager: '제품 관리자',
+    suggestions: '제안',
   },
   Spanish: {
     skip: 'Omitir',
@@ -287,6 +294,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Abogado Penal',
     electricalEngineer: 'Ingeniero Eléctrico',
     productManager: 'Gerente de Producto',
+    suggestions: 'Sugerencias',
   },
   German: {
     skip: 'Überspringen',
@@ -323,6 +331,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Strafverteidiger',
     electricalEngineer: 'Elektroingenieur',
     productManager: 'Produktmanager',
+    suggestions: 'Vorschläge',
   },
   Portuguese: {
     skip: 'Pular',
@@ -359,6 +368,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Advogado Criminal',
     electricalEngineer: 'Engenheiro Elétrico',
     productManager: 'Gerente de Produto',
+    suggestions: 'Sugestões',
   },
   Italian: {
     skip: 'Salta',
@@ -395,6 +405,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Avvocato Penale',
     electricalEngineer: 'Ingegnere Elettrico',
     productManager: 'Product Manager',
+    suggestions: 'Suggerimenti',
   },
   Russian: {
     skip: 'Пропустить',
@@ -431,6 +442,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Уголовный адвокат',
     electricalEngineer: 'Инженер-электрик',
     productManager: 'Менеджер по продукту',
+    suggestions: 'Предложения',
   },
   Arabic: {
     skip: 'تخطي',
@@ -467,6 +479,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'محامي جنائي',
     electricalEngineer: 'مهندس كهربائي',
     productManager: 'مدير المنتج',
+    suggestions: 'اقتراحات',
   },
   Indonesian: {
     skip: 'Lewati',
@@ -503,6 +516,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Pengacara Kriminal',
     electricalEngineer: 'Insinyur Listrik',
     productManager: 'Manajer Produk',
+    suggestions: 'Saran',
   },
   Thai: {
     skip: 'ข้าม',
@@ -539,6 +553,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'ทนายความคดีอาญา',
     electricalEngineer: 'วิศวกรไฟฟ้า',
     productManager: 'ผู้จัดการผลิตภัณฑ์',
+    suggestions: 'ข้อเสนอแนะ',
   },
   Vietnamese: {
     skip: 'Bỏ qua',
@@ -575,6 +590,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Luật sư hình sự',
     electricalEngineer: 'Kỹ sư điện',
     productManager: 'Quản lý sản phẩm',
+    suggestions: 'Đề xuất',
   },
   Turkish: {
     skip: 'Atla',
@@ -611,6 +627,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Ceza Avukatı',
     electricalEngineer: 'Elektrik Mühendisi',
     productManager: 'Ürün Müdürü',
+    suggestions: 'Öneriler',
   },
   Dutch: {
     skip: 'Overslaan',
@@ -647,6 +664,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Strafrechtadvocaat',
     electricalEngineer: 'Elektrotechnisch Ingenieur',
     productManager: 'Product Manager',
+    suggestions: 'Suggesties',
   },
   Polish: {
     skip: 'Pomiń',
@@ -683,6 +701,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Adwokat Karny',
     electricalEngineer: 'Inżynier Elektryk',
     productManager: 'Menedżer Produktu',
+    suggestions: 'Sugestie',
   },
   Swedish: {
     skip: 'Hoppa över',
@@ -719,6 +738,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Brottmålsadvokat',
     electricalEngineer: 'Elektroingenjör',
     productManager: 'Produktchef',
+    suggestions: 'Förslag',
   },
   Czech: {
     skip: 'Přeskočit',
@@ -755,6 +775,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Trestní právník',
     electricalEngineer: 'Elektrotechnický inženýr',
     productManager: 'Produktový manažer',
+    suggestions: 'Návrhy',
   },
   Greek: {
     skip: 'Παράλειψη',
@@ -791,6 +812,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Ποινικός Δικηγόρος',
     electricalEngineer: 'Ηλεκτρολόγος Μηχανικός',
     productManager: 'Διαχειριστής Προϊόντος',
+    suggestions: 'Προτάσεις',
   },
   Hebrew: {
     skip: 'דלג',
@@ -827,6 +849,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'עורך דין פלילי',
     electricalEngineer: 'מהנדס חשמל',
     productManager: 'מנהל מוצר',
+    suggestions: 'הצעות',
   },
   Tagalog: {
     skip: 'Laktawan',
@@ -863,6 +886,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Criminal Lawyer',
     electricalEngineer: 'Electrical Engineer',
     productManager: 'Product Manager',
+    suggestions: 'Mga Mungkahi',
   },
   Tamil: {
     skip: 'தவிர்க்க',
@@ -899,6 +923,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'குற்றவியல் வழக்கறிஞர்',
     electricalEngineer: 'மின் பொறியாளர்',
     productManager: 'தயாரிப்பு மேலாளர்',
+    suggestions: 'பரிந்துரைகள்',
   },
   Bengali: {
     skip: 'এড়িয়ে যান',
@@ -935,6 +960,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'অপরাধী আইনজীবী',
     electricalEngineer: 'তড়িৎ প্রকৌশলী',
     productManager: 'পণ্য ব্যবস্থাপক',
+    suggestions: 'পরামর্শ',
   },
   Ukrainian: {
     skip: 'Пропустити',
@@ -971,6 +997,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Кримінальний адвокат',
     electricalEngineer: 'Інженер-електрик',
     productManager: 'Менеджер продукту',
+    suggestions: 'Пропозиції',
   },
   Romanian: {
     skip: 'Omite',
@@ -1007,6 +1034,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Avocat Penal',
     electricalEngineer: 'Inginer Electrician',
     productManager: 'Manager de Produs',
+    suggestions: 'Sugestii',
   },
   Hungarian: {
     skip: 'Kihagyás',
@@ -1043,6 +1071,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Büntetőjog Ügyvéd',
     electricalEngineer: 'Elektromérnök',
     productManager: 'Termék Menedzser',
+    suggestions: 'Javaslatok',
   },
   Farsi: {
     skip: 'رد کردن',
@@ -1079,6 +1108,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'وکیل جنایی',
     electricalEngineer: 'مهندس برق',
     productManager: 'مدیر محصول',
+    suggestions: 'پیشنهادات',
   },
   Swahili: {
     skip: 'Ruka',
@@ -1115,6 +1145,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Mwanasheria wa Jinai',
     electricalEngineer: 'Mhandisi wa Umeme',
     productManager: 'Msimamizi wa Bidhaa',
+    suggestions: 'Mapendekezo',
   },
   Afrikaans: {
     skip: 'Slaan Oor',
@@ -1151,6 +1182,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Kriminele Prokureur',
     electricalEngineer: 'Elektriese Ingenieur',
     productManager: 'Produkbestuurder',
+    suggestions: 'Voorstelle',
   },
   Finnish: {
     skip: 'Ohita',
@@ -1187,6 +1219,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Rikosoikeuden asianajaja',
     electricalEngineer: 'Sähköinsinööri',
     productManager: 'Tuotepäällikkö',
+    suggestions: 'Ehdotukset',
   },
   Norwegian: {
     skip: 'Hopp Over',
@@ -1223,6 +1256,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Strafferettsadvokat',
     electricalEngineer: 'Elektroingeniør',
     productManager: 'Produktleder',
+    suggestions: 'Forslag',
   },
   Danish: {
     skip: 'Spring Over',
@@ -1259,6 +1293,7 @@ export const stringsOnboarding = {
     criminalLawyer: 'Strafferetsadvokat',
     electricalEngineer: 'Elektroingeniør',
     productManager: 'Produktleder',
+    suggestions: 'Forslag',
   },
 };
 

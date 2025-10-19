@@ -536,7 +536,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               </View>
               
               {/* Suggestions text */}
-              <Text style={styles.suggestionsText}>Suggestions</Text>
+              <Text style={styles.suggestionsText}>{getTranslatedText(selectedLanguage, 'suggestions')}</Text>
               
               {/* ScrollView with suggestion cards */}
               <ScrollView 

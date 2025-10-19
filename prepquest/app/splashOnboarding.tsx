@@ -442,7 +442,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <Text 
                       style={[
                         styles.cardText,
-                        getTranslatedText(selectedLanguage, 'studyPrep').length > 8 && styles.cardTextSmall
+                        getTranslatedText(selectedLanguage, 'studyPrep').length >= 15 && styles.cardTextSmall
                       ]}
                     >
                       {getTranslatedText(selectedLanguage, 'studyPrep')}
@@ -475,7 +475,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     <Text 
                       style={[
                         styles.cardText,
-                        getTranslatedText(selectedLanguage, 'interviewPrep').length > 8 && styles.cardTextSmall
+                        getTranslatedText(selectedLanguage, 'interviewPrep').length >= 15 && styles.cardTextSmall
                       ]}
                     >
                       {getTranslatedText(selectedLanguage, 'interviewPrep')}
@@ -557,7 +557,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'history').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'history').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'history')}
@@ -573,7 +573,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'physics').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'physics').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'physics')}
@@ -593,7 +593,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'chemistry').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'chemistry').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'chemistry')}
@@ -609,7 +609,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'biology').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'biology').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'biology')}
@@ -629,7 +629,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'geography').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'geography').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'geography')}
@@ -645,7 +645,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'math').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'math').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'math')}
@@ -665,7 +665,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'medicine').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'medicine').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'medicine')}
@@ -681,7 +681,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'law').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'law').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'law')}
@@ -701,7 +701,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'finance').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'finance').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'finance')}
@@ -717,7 +717,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         <Text 
                           style={[
                             styles.suggestionCardText,
-                            getTranslatedText(selectedLanguage, 'computing').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'computing').length >= 15 && styles.suggestionCardTextSmall
                           ]}
                         >
                           {getTranslatedText(selectedLanguage, 'computing')}
@@ -741,7 +741,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'softwareEngineering').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'softwareEngineering').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'softwareEngineering')}
@@ -757,7 +757,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'investmentBanking').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'investmentBanking').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'investmentBanking')}
@@ -777,7 +777,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'medicalResidency').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'medicalResidency').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'medicalResidency')}
@@ -793,7 +793,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'quantitativeResearcher').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'quantitativeResearcher').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'quantitativeResearcher')}
@@ -813,7 +813,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'managementConsulting').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'managementConsulting').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'managementConsulting')}
@@ -829,7 +829,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'criminalLawyer').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'criminalLawyer').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'criminalLawyer')}
@@ -849,7 +849,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'electricalEngineer').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'electricalEngineer').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'electricalEngineer')}
@@ -865,7 +865,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                           <Text 
                             style={[
                               styles.suggestionCardText,
-                              getTranslatedText(selectedLanguage, 'productManager').length > 12 && styles.suggestionCardTextSmall
+                              getTranslatedText(selectedLanguage, 'productManager').length >= 15 && styles.suggestionCardTextSmall
                             ]}
                           >
                             {getTranslatedText(selectedLanguage, 'productManager')}

@@ -909,13 +909,18 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             </View>
             
             {/* Next button still on the right */}
-            <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+            <TouchableOpacity 
+              style={[styles.nextButton, (!subjectInput.trim() && selectedSuggestions.size === 0) && styles.disabledButton]} 
+              onPress={(!subjectInput.trim() && selectedSuggestions.size === 0) ? undefined : handleNextPress}
+              disabled={!subjectInput.trim() && selectedSuggestions.size === 0}
+            >
               <View style={styles.buttonWithIcon}>
-                <Text style={styles.nextButtonText}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Text style={[styles.nextButtonText, (!subjectInput.trim() && selectedSuggestions.size === 0) && styles.disabledButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"
                     fill={Colors.light.text}
+                    opacity={(!subjectInput.trim() && selectedSuggestions.size === 0) ? 0.8 : 1}
                   />
                 </Svg>
               </View>

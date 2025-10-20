@@ -56,7 +56,7 @@ import CarouselPage7Image3 from '@/assets/onboarding/CarouselPage7Image3.svg';
 import CarouselPage7Image4 from '@/assets/onboarding/CarouselPage7Image4.svg';
 import { Svg, Polygon } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getTranslatedText } from '@/constants/stringsOnboarding';
+import { stringsOnboarding, getTranslatedText } from '@/constants/stringsOnboarding';
 
 const { height } = Dimensions.get('window');
 
@@ -67,7 +67,7 @@ interface SplashOnboardingProps {
 
 
 export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) {
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -96,65 +96,65 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const autoplayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Carousel data - create extended array with duplicates for circular navigation
-  const originalCarouselPages = [
+  const originalCarouselPages = useMemo(() => [
     {
       id: 1,
       title: '1/7',
-      subtitle: 'Recall-based Questions',
-      bodyText: 'E.g. What are 3 examples of fruits?',
+      subtitle: getTranslatedText(language, 'recallBasedQuestions'),
+      bodyText: getTranslatedText(language, 'recallBasedExample'),
       image: CarouselPage1Image,
     },
     {
       id: 2,
       title: '2/7',
-      subtitle: 'Application Questions',
-      bodyText: 'E.g. How would you apply Newton\'s laws to explain a car crash?',
+      subtitle: getTranslatedText(language, 'comprehensionQuestions'),
+      bodyText: getTranslatedText(language, 'comprehensionExample'),
       images: [CarouselPage2Image1, CarouselPage2Image2],
     },
     {
       id: 3,
       title: '3/7',
-      subtitle: 'Analysis Questions',
-      bodyText: 'E.g. Compare and contrast the advantages of renewable vs non-renewable energy sources.',
+      subtitle: getTranslatedText(language, 'applicationQuestions'),
+      bodyText: getTranslatedText(language, 'applicationExample'),
       image: CarouselPage3Image,
     },
     {
       id: 4,
       title: '4/7',
-      subtitle: 'Synthesis Questions',
-      bodyText: 'E.g. Design a solution that combines AI and sustainability to address climate change.',
+      subtitle: getTranslatedText(language, 'analysisQuestions'),
+      bodyText: getTranslatedText(language, 'analysisExample'),
       images: [CarouselPage4Image1, CarouselPage4Image2],
     },
     {
       id: 5,
       title: '5/7',
-      subtitle: 'Evaluation Questions',
-      bodyText: 'E.g. Evaluate the effectiveness of remote work policies in improving productivity.',
+      subtitle: getTranslatedText(language, 'evaluationQuestions'),
+      bodyText: getTranslatedText(language, 'evaluationExample'),
       images: [CarouselPage5Image1, CarouselPage5Image2],
     },
     {
       id: 6,
       title: '6/7',
-      subtitle: 'Creative Questions',
-      bodyText: 'E.g. Invent a new product that solves a problem you\'ve never seen solved before.',
+      subtitle: getTranslatedText(language, 'problemSolvingQuestions'),
+      bodyText: getTranslatedText(language, 'problemSolvingExample'),
       images: [CarouselPage6Image1, CarouselPage6Image2, CarouselPage6Image3],
     },
     {
       id: 7,
       title: '7/7',
-      subtitle: 'Critical Thinking Questions',
-      bodyText: 'E.g. Analyze the potential risks and benefits of implementing universal basic income.',
+      subtitle: getTranslatedText(language, 'criticalThinkingQuestions'),
+      bodyText: getTranslatedText(language, 'criticalThinkingExample'),
       images: [CarouselPage7Image1, CarouselPage7Image2, CarouselPage7Image3, CarouselPage7Image4],
     },
-  ];
+  ], [language]);
 
   // Create extended carousel with duplicates for circular navigation
   // Add last page at the beginning and first page at the end
-  const carouselPages = [
+  const carouselPages = useMemo(() => [
     { ...originalCarouselPages[6], duplicateId: 0 }, // Duplicate last page at start (keep original id: 7)
     ...originalCarouselPages,
     { ...originalCarouselPages[0], duplicateId: 8 }, // Duplicate first page at end (keep original id: 1)
-  ];
+  ], [originalCarouselPages]);
 
   // Load language preference from AsyncStorage
   useEffect(() => {
@@ -256,6 +256,15 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       startAutoplay();
     }
   }, [currentCarouselPage, currentSection]);
+
+  // Reset carousel when language changes
+  useEffect(() => {
+    if (currentSection === 'onboardingPage5') {
+      // Reset to first page when language changes
+      setCurrentCarouselPage(1);
+      carouselTranslateX.setValue(-containerWidth.current);
+    }
+  }, [language]);
 
   // Animation refs
   const animationRef = useRef<LottieView>(null);
@@ -614,6 +623,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
   const handleLanguageChange = async (languageKey: string) => {
     setSelectedLanguage(languageKey as any);
+    // Also update the context language for the carousel
+    setLanguage(languageKey as any);
     try {
       await AsyncStorage.setItem('languagePreferenceOnboarding', languageKey);
     } catch (error) {

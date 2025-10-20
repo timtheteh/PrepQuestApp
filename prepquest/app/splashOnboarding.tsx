@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput, ScrollView, Image } from 'react-native';
 import { PanGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
@@ -156,6 +156,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     { ...originalCarouselPages[0], duplicateId: 8 }, // Duplicate first page at end (keep original id: 1)
   ], [originalCarouselPages]);
 
+
   // Load language preference from AsyncStorage
   useEffect(() => {
     const loadLanguagePreference = async () => {
@@ -179,9 +180,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     isAnimating.current = false;
   }, []);
 
-  // Reset carousel when entering onboardingPage5
+  // Reset carousel when entering onboardingPage5 or onboardingPage6
   useEffect(() => {
-    if (currentSection === 'onboardingPage5') {
+    if (currentSection === 'onboardingPage5' || currentSection === 'onboardingPage6') {
       // Stop any existing autoplay and reset state
       stopAutoplay();
       isAnimating.current = false;
@@ -213,6 +214,13 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           currentCarouselPage <= 7) {
         handleCarouselSwipe('right'); // Move to next page
         // Don't call startAutoplay() here - let the useEffect handle it
+      } else if (!isAnimating.current && 
+          currentSection === 'onboardingPage6' && 
+          containerWidth.current > 0 &&
+          currentCarouselPage >= 1 && 
+          currentCarouselPage <= 6) {
+        handleCarouselSwipe('right'); // Move to next page
+        // Don't call startAutoplay() here - let the useEffect handle it
       }
     }, 10000); // 10 seconds
   };
@@ -224,9 +232,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     }
   };
 
-  // Start autoplay when entering onboardingPage5
+  // Start autoplay when entering onboardingPage5 or onboardingPage6
   useEffect(() => {
-    if (currentSection === 'onboardingPage5') {
+    if (currentSection === 'onboardingPage5' || currentSection === 'onboardingPage6') {
       // Stop any existing autoplay first
       stopAutoplay();
       
@@ -251,7 +259,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
   // Simple autoplay restart on every page change
   useEffect(() => {
-    if (currentSection === 'onboardingPage5') {
+    if (currentSection === 'onboardingPage5' || currentSection === 'onboardingPage6') {
       // Always restart autoplay when page changes, regardless of how we got there
       startAutoplay();
     }
@@ -259,7 +267,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
 
   // Reset carousel when language changes
   useEffect(() => {
-    if (currentSection === 'onboardingPage5') {
+    if (currentSection === 'onboardingPage5' || currentSection === 'onboardingPage6') {
       // Reset to first page when language changes
       setCurrentCarouselPage(1);
       carouselTranslateX.setValue(-containerWidth.current);
@@ -311,6 +319,54 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     []
   );
 
+  const rubiksCubeAnimationSource = useMemo(() => 
+    require('../assets/onboarding/rubiksCube.json'), 
+    []
+  );
+
+  const aiAssistanceAnimationSource = useMemo(() => 
+    require('../assets/onboarding/AIAssistance.json'), 
+    []
+  );
+
+
+  // Carousel data for onboardingPage6 - different content structure
+  const onboardingPage6CarouselPages = useMemo(() => [
+    {
+      id: 1,
+      title: 'Organize your Decks & Flashcards with ease',
+      animation: rubiksCubeAnimationSource,
+    },
+    {
+      id: 2,
+      title: 'Leverage AI to prepare for your next quiz or interview!',
+      animation: aiAssistanceAnimationSource,
+    },
+    {
+      id: 3,
+      title: "Add decks from any method! We've got you covered",
+      image: require('../assets/onboarding/addDecksFromAnyMethod.png'),
+    },
+    {
+      id: 4,
+      title: 'Customize your study experience',
+    },
+    {
+      id: 5,
+      title: 'Get instant feedback & track your performance!',
+    },
+    {
+      id: 6,
+      title: 'Quiz & challenge yourself to ace that quiz or interview!',
+    },
+  ], [rubiksCubeAnimationSource, aiAssistanceAnimationSource]);
+
+  // Create extended carousel for onboardingPage6 with duplicates for circular navigation
+  const onboardingPage6ExtendedCarousel = useMemo(() => [
+    { ...onboardingPage6CarouselPages[5], duplicateId: 0 }, // Duplicate last page at start (index 5)
+    ...onboardingPage6CarouselPages,
+    { ...onboardingPage6CarouselPages[0], duplicateId: 7 }, // Duplicate first page at end (index 7)
+  ], [onboardingPage6CarouselPages]);
 
   // Animation state for transitions
   const [showLanguageSelector, setShowLanguageSelector] = useState(true); // Pre-render to prevent glitch
@@ -1997,12 +2053,88 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 </Text>
               </View>
               
-              {/* Middle section with rectangle container */}
+              {/* Middle section with carousel */}
               <View style={styles.onboardingPage6MiddleSection}>
-                <View style={styles.onboardingPage6RectangleContainer}>
-                  <Text style={styles.onboardingPage6RectangleText}>
-                    Organize your Decks &{'\n'}Flashcards with ease
-                  </Text>
+                <View style={styles.onboardingPage6CarouselContainer}>
+                  <GestureHandlerRootView style={styles.gestureContainer}>
+                    <PanGestureHandler 
+                      onHandlerStateChange={handlePanGesture}
+                      activeOffsetX={[-5, 5]}
+                      activeOffsetY={[-30, 30]}
+                    >
+                      <View style={styles.carouselPage}>
+                        <View 
+                          style={styles.carouselContainer}
+                          onLayout={(event) => {
+                            containerWidth.current = event.nativeEvent.layout.width;
+                          }}
+                        >
+                          <Animated.View 
+                            style={[
+                              styles.carouselPageContent,
+                              {
+                                transform: [{ translateX: carouselTranslateX }]
+                              }
+                            ]}
+                          >
+                            {onboardingPage6ExtendedCarousel.map((page, index) => (
+                              <View 
+                                key={`page-${index}`} 
+                                style={styles.carouselSinglePage}
+                              >
+                                <Text style={styles.carouselTitle}>
+                                  {page.title}
+                                </Text>
+                                
+                                {/* Animation/Image container with proper margins */}
+                                <View style={styles.onboardingPage6AnimationContainer}>
+                                  {page.animation && (
+                                    <LottieView
+                                      source={page.animation}
+                                      autoPlay
+                                      loop={true}
+                                      style={styles.onboardingPage6Animation}
+                                      resizeMode="contain"
+                                      speed={1}
+                                      cacheComposition={true}
+                                      renderMode="HARDWARE"
+                                    />
+                                  )}
+                                  {page.image && (
+                                    <Image
+                                      source={page.image}
+                                      style={styles.onboardingPage6Animation}
+                                      resizeMode="contain"
+                                    />
+                                  )}
+                                </View>
+                              </View>
+                            ))}
+                          </Animated.View>
+                        </View>
+                        
+                        {/* Navigation indicators - only show 6 dots for real pages */}
+                        <View style={styles.carouselNavigation}>
+                          {onboardingPage6CarouselPages.map((_, index) => {
+                            // Map current page to the correct dot (0-5 for real pages)
+                            const realPageIndex = currentCarouselPage === 0 ? 5 : // Duplicate last page maps to real last page
+                                              currentCarouselPage === 7 ? 0 : // Duplicate first page maps to real first page
+                                              currentCarouselPage - 1; // Real pages (1-6) map to dots (0-5)
+                            
+                            return (
+                              <View
+                                key={index}
+                                style={[
+                                  styles.carouselDot,
+                                  index === realPageIndex && styles.carouselDotActive
+                                ]}
+                              />
+                            );
+                          })}
+                        </View>
+                      </View>
+                    </PanGestureHandler>
+                  </GestureHandlerRootView>
                 </View>
               </View>
               
@@ -2621,6 +2753,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     minHeight: 0,
   },
+  onboardingPage6CarouselContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 30,
+    overflow: 'hidden',
+    ...Platform.select({
+      android: {
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+      },
+    }),
+  },
   onboardingPage6BottomSection: {
     alignItems: 'center',
   },
@@ -3042,5 +3188,17 @@ const styles = StyleSheet.create({
   },
   carouselDotActive: {
     backgroundColor: '#4F41D8',
+  },
+  onboardingPage6AnimationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 12,
+    width: '100%',
+  },
+  onboardingPage6Animation: {
+    width: '100%',
+    height: '100%',
   },
 });

@@ -50,6 +50,10 @@ import CarouselPage5Image2 from '@/assets/onboarding/carouselPage5Image2.svg';
 import CarouselPage6Image1 from '@/assets/onboarding/carouselPage6Image1.svg';
 import CarouselPage6Image2 from '@/assets/onboarding/carouselPage6Image2.svg';
 import CarouselPage6Image3 from '@/assets/onboarding/carouselPage6Image3.svg';
+import CarouselPage7Image1 from '@/assets/onboarding/CarouselPage7Image1.svg';
+import CarouselPage7Image2 from '@/assets/onboarding/CarouselPage7Image2.svg';
+import CarouselPage7Image3 from '@/assets/onboarding/CarouselPage7Image3.svg';
+import CarouselPage7Image4 from '@/assets/onboarding/CarouselPage7Image4.svg';
 import { Svg, Polygon } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTranslatedText } from '@/constants/stringsOnboarding';
@@ -139,15 +143,16 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       title: '7/7',
       subtitle: 'Critical Thinking Questions',
       bodyText: 'E.g. Analyze the potential risks and benefits of implementing universal basic income.',
+      images: [CarouselPage7Image1, CarouselPage7Image2, CarouselPage7Image3, CarouselPage7Image4],
     },
   ];
 
   // Create extended carousel with duplicates for circular navigation
   // Add last page at the beginning and first page at the end
   const carouselPages = [
-    { ...originalCarouselPages[6], id: 0 }, // Duplicate last page at start
+    { ...originalCarouselPages[6], duplicateId: 0 }, // Duplicate last page at start (keep original id: 7)
     ...originalCarouselPages,
-    { ...originalCarouselPages[0], id: 8 }, // Duplicate first page at end
+    { ...originalCarouselPages[0], duplicateId: 8 }, // Duplicate first page at end (keep original id: 1)
   ];
 
   // Load language preference from AsyncStorage
@@ -1733,7 +1738,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                         >
                           {carouselPages.map((page, index) => (
                             <View 
-                              key={page.id} 
+                              key={`page-${index}`} 
                               style={styles.carouselSinglePage}
                             >
                               <Text style={styles.carouselTitle}>
@@ -1765,6 +1770,25 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                                         </View>
                                         <View style={styles.carouselBottomRightImage}>
                                           {React.createElement(page.images[2], { width: "100%", height: "100%" })}
+                                        </View>
+                                      </View>
+                                    </View>
+                                  ) : page.id === 7 ? (
+                                    <View style={styles.carouselFourImagesContainer}>
+                                      <View style={styles.carouselTopRow}>
+                                        <View style={styles.carouselTopRowImage}>
+                                          {React.createElement(page.images[0], { width: "100%", height: "100%" })}
+                                        </View>
+                                        <View style={styles.carouselTopRowImage}>
+                                          {React.createElement(page.images[1], { width: "100%", height: "100%" })}
+                                        </View>
+                                        <View style={styles.carouselTopRowImage}>
+                                          {React.createElement(page.images[2], { width: "100%", height: "100%" })}
+                                        </View>
+                                      </View>
+                                      <View style={styles.carouselBottomRow}>
+                                        <View style={styles.carouselBottomRowImage}>
+                                          {React.createElement(page.images[3], { width: "100%", height: "100%" })}
                                         </View>
                                       </View>
                                     </View>
@@ -2650,6 +2674,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '70%',
+  },
+  carouselFourImagesContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+    gap: 20,
+  },
+  carouselTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    gap: 16,
+    flex: 1,
+  },
+  carouselTopRowImage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    maxHeight: 120,
+  },
+  carouselBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    flex: 1,
+  },
+  carouselBottomRowImage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    maxHeight: 120,
   },
   carouselNavigation: {
     flexDirection: 'row',

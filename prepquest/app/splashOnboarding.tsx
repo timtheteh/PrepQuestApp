@@ -619,8 +619,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     Animated.spring(carouselTranslateX, {
       toValue: -newPage * containerWidth.current,
       useNativeDriver: true,
-      tension: 120,
-      friction: 8,
+      tension: 140,
+      friction: 12,
     }).start(() => {
       isAnimating.current = false;
     });
@@ -640,8 +640,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       const baseOffset = -currentCarouselPage * containerWidth.current;
       carouselTranslateX.setValue(baseOffset);
     } else if (state === State.END) {
-      const threshold = containerWidth.current * 0.25;
-      const velocityThreshold = 300;
+      const threshold = containerWidth.current * 0.2;
+      const velocityThreshold = 250;
       
       let targetPage = currentCarouselPage;
       
@@ -660,8 +660,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       Animated.spring(carouselTranslateX, {
         toValue: -targetPage * containerWidth.current,
         useNativeDriver: true,
-        tension: 100,
-        friction: 10,
+        tension: 140,
+        friction: 12,
       }).start(() => {
         // Handle wrap-around transitions
         if (targetPage === 0) {
@@ -1718,8 +1718,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 <GestureHandlerRootView style={styles.gestureContainer}>
                   <PanGestureHandler 
                     onHandlerStateChange={handlePanGesture}
-                    activeOffsetX={[-10, 10]}
-                    failOffsetY={[-50, 50]}
+                    activeOffsetX={[-5, 5]}
+                    activeOffsetY={[-30, 30]}
                   >
                     <View style={styles.carouselPage}>
                       <View 

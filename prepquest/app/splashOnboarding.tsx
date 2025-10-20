@@ -93,6 +93,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const carouselTranslateX = useRef(new Animated.Value(0)).current;
   const containerWidth = useRef(0);
   const isAnimating = useRef(false);
+  const autoplayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Carousel data - create extended array with duplicates for circular navigation
   const originalCarouselPages = [
@@ -181,12 +182,80 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   // Reset carousel when entering onboardingPage5
   useEffect(() => {
     if (currentSection === 'onboardingPage5') {
+      // Stop any existing autoplay and reset state
+      stopAutoplay();
+      isAnimating.current = false;
+      
+      // Always reset to first real page, regardless of container width
       const initialPage = 1; // Start at the first real page (not the duplicate)
       setCurrentCarouselPage(initialPage);
-      carouselTranslateX.setValue(-initialPage * containerWidth.current);
-      isAnimating.current = false;
+      
+      // Reset position after a short delay to ensure state is updated
+      setTimeout(() => {
+        if (containerWidth.current > 0) {
+          carouselTranslateX.setValue(-initialPage * containerWidth.current);
+        }
+      }, 100);
     }
   }, [currentSection]);
+
+  // Autoplay functionality
+  const startAutoplay = () => {
+    if (autoplayTimer.current) {
+      clearTimeout(autoplayTimer.current);
+    }
+    
+    autoplayTimer.current = setTimeout(() => {
+      if (!isAnimating.current && 
+          currentSection === 'onboardingPage5' && 
+          containerWidth.current > 0 &&
+          currentCarouselPage >= 1 && 
+          currentCarouselPage <= 7) {
+        handleCarouselSwipe('right'); // Move to next page
+        // Don't call startAutoplay() here - let the useEffect handle it
+      }
+    }, 10000); // 10 seconds
+  };
+
+  const stopAutoplay = () => {
+    if (autoplayTimer.current) {
+      clearTimeout(autoplayTimer.current);
+      autoplayTimer.current = null;
+    }
+  };
+
+  // Start autoplay when entering onboardingPage5
+  useEffect(() => {
+    if (currentSection === 'onboardingPage5') {
+      // Stop any existing autoplay first
+      stopAutoplay();
+      
+      // Wait longer for carousel to be fully initialized and positioned
+      setTimeout(() => {
+        // Ensure we're at the correct starting page and autoplay is ready
+        if (containerWidth.current > 0 && currentCarouselPage === 1) {
+          // Double check that we're positioned correctly before starting autoplay
+          carouselTranslateX.setValue(-1 * containerWidth.current);
+          startAutoplay();
+        }
+      }, 1200);
+    } else {
+      stopAutoplay();
+    }
+
+    // Cleanup on unmount or section change
+    return () => {
+      stopAutoplay();
+    };
+  }, [currentSection]);
+
+  // Simple autoplay restart on every page change
+  useEffect(() => {
+    if (currentSection === 'onboardingPage5') {
+      // Always restart autoplay when page changes, regardless of how we got there
+      startAutoplay();
+    }
+  }, [currentCarouselPage, currentSection]);
 
   // Animation refs
   const animationRef = useRef<LottieView>(null);
@@ -622,6 +691,18 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       tension: 140,
       friction: 12,
     }).start(() => {
+      // Handle wrap-around transitions
+      if (newPage === 0) {
+        // If we're at the duplicate last page, jump to the real last page
+        const realLastPage = 7; // Index of real last page
+        setCurrentCarouselPage(realLastPage);
+        carouselTranslateX.setValue(-realLastPage * containerWidth.current);
+      } else if (newPage === 8) {
+        // If we're at the duplicate first page, jump to the real first page
+        const realFirstPage = 1; // Index of real first page
+        setCurrentCarouselPage(realFirstPage);
+        carouselTranslateX.setValue(-realFirstPage * containerWidth.current);
+      }
       isAnimating.current = false;
     });
   };

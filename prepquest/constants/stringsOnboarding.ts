@@ -102,6 +102,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: '你在准备哪些科目？',
     whichJob: '你在准备什么工作/职位？',
+    progress2: '2/3',
+    educationLevelQuestion: '你目前准备什么教育水平？',
+    interviewTypeQuestion: '你准备什么类型的面试？',
     // Study subjects
     history: '历史',
     physics: '物理',
@@ -185,6 +188,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Subjek mana yang anda sediakan?',
     whichJob: 'Pekerjaan/jawatan mana yang anda sediakan?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Tahap pendidikan mana yang anda sediakan sekarang?',
+    interviewTypeQuestion: 'Jenis temuduga apa yang anda sediakan?',
     // Study subjects
     history: 'Sejarah',
     physics: 'Fizik',
@@ -263,6 +269,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'आप किन विषयों की तैयारी कर रहे हैं?',
     whichJob: 'आप किस नौकरी/भूमिका की तैयारी कर रहे हैं?',
+    progress2: '2/3',
+    educationLevelQuestion: 'आप वर्तमान में किस शिक्षा स्तर की तैयारी कर रहे हैं?',
+    interviewTypeQuestion: 'आप किस प्रकार के साक्षात्कार की तैयारी कर रहे हैं?',
     // Study subjects
     history: 'इतिहास',
     physics: 'भौतिकी',
@@ -341,6 +350,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Pour quelles matières vous préparez-vous ?',
     whichJob: 'Pour quel emploi/rôle vous préparez-vous ?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Pour quel niveau d\'éducation vous préparez-vous actuellement ?',
+    interviewTypeQuestion: 'Pour quel type d\'entretien vous préparez-vous ?',
     // Study subjects
     history: 'Histoire',
     physics: 'Physique',
@@ -419,6 +431,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'どの科目の準備をしていますか？',
     whichJob: 'どの仕事/役職の準備をしていますか？',
+    progress2: '2/3',
+    educationLevelQuestion: '現在どの教育レベルの準備をしていますか？',
+    interviewTypeQuestion: 'どの種類の面接の準備をしていますか？',
     // Study subjects
     history: '歴史',
     physics: '物理学',
@@ -497,6 +512,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: '어떤 과목을 준비하고 계신가요?',
     whichJob: '어떤 직업/역할을 준비하고 계신가요?',
+    progress2: '2/3',
+    educationLevelQuestion: '현재 어떤 교육 수준을 준비하고 계신가요?',
+    interviewTypeQuestion: '어떤 종류의 면접을 준비하고 계신가요?',
     // Study subjects
     history: '역사',
     physics: '물리학',
@@ -575,6 +593,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: '¿Para qué materia(s) te estás preparando?',
     whichJob: '¿Para qué trabajo/rol te estás preparando?',
+    progress2: '2/3',
+    educationLevelQuestion: '¿Para qué nivel de educación te estás preparando actualmente?',
+    interviewTypeQuestion: '¿Para qué tipo de entrevista te estás preparando?',
     // Study subjects
     history: 'Historia',
     physics: 'Física',
@@ -658,6 +679,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Für welche Fächer bereiten Sie sich vor?',
     whichJob: 'Für welchen Job/Rolle bereiten Sie sich vor?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Für welches Bildungsniveau bereiten Sie sich derzeit vor?',
+    interviewTypeQuestion: 'Für welche Art von Vorstellungsgespräch bereiten Sie sich vor?',
     // Study subjects
     history: 'Geschichte',
     physics: 'Physik',
@@ -736,6 +760,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Para quais matérias você está se preparando?',
     whichJob: 'Para qual trabalho/função você está se preparando?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Para qual nível de educação você está se preparando atualmente?',
+    interviewTypeQuestion: 'Para que tipo de entrevista você está se preparando?',
     // Study subjects
     history: 'História',
     physics: 'Física',
@@ -814,6 +841,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Per quali materie ti stai preparando?',
     whichJob: 'Per quale lavoro/ruolo ti stai preparando?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Per quale livello di istruzione ti stai preparando attualmente?',
+    interviewTypeQuestion: 'Per che tipo di colloquio ti stai preparando?',
     // Study subjects
     history: 'Storia',
     physics: 'Fisica',
@@ -892,6 +922,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'По каким предметам вы готовитесь?',
     whichJob: 'К какой работе/роли вы готовитесь?',
+    progress2: '2/3',
+    educationLevelQuestion: 'К какому уровню образования вы готовитесь в настоящее время?',
+    interviewTypeQuestion: 'К какому типу собеседования вы готовитесь?',
     // Study subjects
     history: 'История',
     physics: 'Физика',
@@ -970,6 +1003,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'أي مادة تحضر لها؟',
     whichJob: 'أي وظيفة/دور تحضر لها؟',
+    progress2: '2/3',
+    educationLevelQuestion: 'أي مستوى تعليمي تحضر له حالياً؟',
+    interviewTypeQuestion: 'أي نوع من المقابلة تحضر لها؟',
     // Study subjects
     history: 'التاريخ',
     physics: 'الفيزياء',
@@ -1048,6 +1084,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Mata pelajaran apa yang Anda persiapkan?',
     whichJob: 'Pekerjaan/peran apa yang Anda persiapkan?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Tingkat pendidikan apa yang Anda persiapkan saat ini?',
+    interviewTypeQuestion: 'Jenis wawancara apa yang Anda persiapkan?',
     // Study subjects
     history: 'Sejarah',
     physics: 'Fisika',
@@ -1126,6 +1165,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'คุณกำลังเตรียมตัวสำหรับวิชาใด?',
     whichJob: 'คุณกำลังเตรียมตัวสำหรับงาน/ตำแหน่งใด?',
+    progress2: '2/3',
+    educationLevelQuestion: 'คุณกำลังเตรียมตัวสำหรับระดับการศึกษาใดในปัจจุบัน?',
+    interviewTypeQuestion: 'คุณกำลังเตรียมตัวสำหรับการสัมภาษณ์ประเภทใด?',
     // Study subjects
     history: 'ประวัติศาสตร์',
     physics: 'ฟิสิกส์',
@@ -1204,6 +1246,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Bạn đang chuẩn bị cho môn học nào?',
     whichJob: 'Bạn đang chuẩn bị cho công việc/vai trò nào?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Bạn hiện đang chuẩn bị cho trình độ học vấn nào?',
+    interviewTypeQuestion: 'Bạn đang chuẩn bị cho loại phỏng vấn nào?',
     // Study subjects
     history: 'Lịch sử',
     physics: 'Vật lý',
@@ -1282,6 +1327,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Hangi konulara hazırlanıyorsunuz?',
     whichJob: 'Hangi iş/rol için hazırlanıyorsunuz?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Şu anda hangi eğitim seviyesi için hazırlanıyorsunuz?',
+    interviewTypeQuestion: 'Hangi tür mülakat için hazırlanıyorsunuz?',
     // Study subjects
     history: 'Tarih',
     physics: 'Fizik',
@@ -1360,6 +1408,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Voor welke vakken bereid je je voor?',
     whichJob: 'Voor welke baan/rol bereid je je voor?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Voor welk onderwijsniveau bereid je je momenteel voor?',
+    interviewTypeQuestion: 'Voor welk type sollicitatie bereid je je voor?',
     // Study subjects
     history: 'Geschiedenis',
     physics: 'Natuurkunde',
@@ -1438,6 +1489,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Do jakich przedmiotów się przygotowujesz?',
     whichJob: 'Do jakiej pracy/roli się przygotowujesz?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Do jakiego poziomu wykształcenia przygotowujesz się obecnie?',
+    interviewTypeQuestion: 'Do jakiego typu rozmowy przygotowujesz się?',
     // Study subjects
     history: 'Historia',
     physics: 'Fizyka',
@@ -1516,6 +1570,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Vilka ämnen förbereder du dig för?',
     whichJob: 'Vilket jobb/roll förbereder du dig för?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Vilken utbildningsnivå förbereder du dig för för närvarande?',
+    interviewTypeQuestion: 'Vilken typ av intervju förbereder du dig för?',
     // Study subjects
     history: 'Historia',
     physics: 'Fysik',
@@ -1594,6 +1651,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Pro jaké předměty se připravujete?',
     whichJob: 'Pro jakou práci/roli se připravujete?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Pro jakou úroveň vzdělání se momentálně připravujete?',
+    interviewTypeQuestion: 'Pro jaký typ rozhovoru se připravujete?',
     // Study subjects
     history: 'Dějepis',
     physics: 'Fyzika',
@@ -1672,6 +1732,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Για ποια μαθήματα προετοιμάζεστε;',
     whichJob: 'Για ποια δουλειά/ρόλο προετοιμάζεστε;',
+    progress2: '2/3',
+    educationLevelQuestion: 'Για ποιο επίπεδο εκπαίδευσης προετοιμάζεστε αυτή τη στιγμή;',
+    interviewTypeQuestion: 'Για ποιον τύπο συνέντευξης προετοιμάζεστε;',
     // Study subjects
     history: 'Ιστορία',
     physics: 'Φυσική',
@@ -1750,6 +1813,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'איזה נושאים אתם מתכוננים?',
     whichJob: 'איזו עבודה/תפקיד אתם מתכוננים?',
+    progress2: '2/3',
+    educationLevelQuestion: 'לאיזה רמת השכלה אתם מתכוננים כרגע?',
+    interviewTypeQuestion: 'לאיזה סוג ראיון אתם מתכוננים?',
     // Study subjects
     history: 'היסטוריה',
     physics: 'פיזיקה',
@@ -1828,6 +1894,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Para saang mga paksa kayo naghahanda?',
     whichJob: 'Para saang trabaho/posisyon kayo naghahanda?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Para saang antas ng edukasyon kayo naghahanda sa kasalukuyan?',
+    interviewTypeQuestion: 'Para saang uri ng panayam kayo naghahanda?',
     // Study subjects
     history: 'Kasaysayan',
     physics: 'Pisika',
@@ -1906,6 +1975,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'நீங்கள் எந்த பாடங்களுக்கு தயாராகிறீர்கள்?',
     whichJob: 'நீங்கள் எந்த வேலை/பாத்திரத்திற்கு தயாராகிறீர்கள்?',
+    progress2: '2/3',
+    educationLevelQuestion: 'நீங்கள் தற்போது எந்த கல்வி நிலைக்கு தயாராகிறீர்கள்?',
+    interviewTypeQuestion: 'நீங்கள் எந்த வகை நேர்காணலுக்கு தயாராகிறீர்கள்?',
     // Study subjects
     history: 'வரலாறு',
     physics: 'இயற்பியல்',
@@ -1984,6 +2056,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'আপনি কোন বিষয়ের জন্য প্রস্তুত হচ্ছেন?',
     whichJob: 'আপনি কোন চাকরি/ভূমিকার জন্য প্রস্তুত হচ্ছেন?',
+    progress2: '2/3',
+    educationLevelQuestion: 'আপনি বর্তমানে কোন শিক্ষার স্তরের জন্য প্রস্তুত হচ্ছেন?',
+    interviewTypeQuestion: 'আপনি কোন ধরনের সাক্ষাত্কারের জন্য প্রস্তুত হচ্ছেন?',
     // Study subjects
     history: 'ইতিহাস',
     physics: 'পদার্থবিজ্ঞান',
@@ -2062,6 +2137,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'З яких предметів ви готуєтеся?',
     whichJob: 'До якої роботи/ролі ви готуєтеся?',
+    progress2: '2/3',
+    educationLevelQuestion: 'До якого рівня освіти ви готуєтеся зараз?',
+    interviewTypeQuestion: 'До якого типу співбесіди ви готуєтеся?',
     // Study subjects
     history: 'Історія',
     physics: 'Фізика',
@@ -2140,6 +2218,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Pentru ce materii te pregătești?',
     whichJob: 'Pentru ce job/rol te pregătești?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Pentru ce nivel de educație te pregătești în prezent?',
+    interviewTypeQuestion: 'Pentru ce tip de interviu te pregătești?',
     // Study subjects
     history: 'Istorie',
     physics: 'Fizică',
@@ -2218,6 +2299,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Milyen tantárgyakhoz készülsz fel?',
     whichJob: 'Milyen munka/szerepkörhöz készülsz fel?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Milyen oktatási szinthez készülsz fel jelenleg?',
+    interviewTypeQuestion: 'Milyen típusú interjúhoz készülsz fel?',
     // Study subjects
     history: 'Történelem',
     physics: 'Fizika',
@@ -2296,6 +2380,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'برای چه موضوعاتی آماده می‌شوید؟',
     whichJob: 'برای چه شغل/نقشی آماده می‌شوید؟',
+    progress2: '2/3',
+    educationLevelQuestion: 'در حال حاضر برای چه سطح آموزشی آماده می‌شوید؟',
+    interviewTypeQuestion: 'برای چه نوع مصاحبه‌ای آماده می‌شوید؟',
     // Study subjects
     history: 'تاریخ',
     physics: 'فیزیک',
@@ -2374,6 +2461,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Unaandaa masomo gani?',
     whichJob: 'Unaandaa kazi/jukumu gani?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Unaandaa kiwango gani cha elimu kwa sasa?',
+    interviewTypeQuestion: 'Unaandaa aina gani ya mahojiano?',
     // Study subjects
     history: 'Historia',
     physics: 'Fizikia',
@@ -2452,6 +2542,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Vir watter vakke berei jy jou voor?',
     whichJob: 'Vir watter werk/rol berei jy jou voor?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Vir watter onderwysvlak berei jy jou tans voor?',
+    interviewTypeQuestion: 'Vir watter tipe onderhoud berei jy jou voor?',
     // Study subjects
     history: 'Geskiedenis',
     physics: 'Fisika',
@@ -2530,6 +2623,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Mihin aineisiin valmistaudut?',
     whichJob: 'Mihin työhön/rooliin valmistaudut?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Mihin koulutustasoon valmistaudut tällä hetkellä?',
+    interviewTypeQuestion: 'Mihin tyyppiin haastatteluun valmistaudut?',
     // Study subjects
     history: 'Historia',
     physics: 'Fysiikka',
@@ -2608,6 +2704,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Hvilke fag forbereder du deg på?',
     whichJob: 'Hvilket jobb/rolle forbereder du deg på?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Hvilket utdanningsnivå forbereder du deg på for øyeblikket?',
+    interviewTypeQuestion: 'Hvilken type intervju forbereder du deg på?',
     // Study subjects
     history: 'Historie',
     physics: 'Fysikk',
@@ -2686,6 +2785,9 @@ export const stringsOnboarding = {
     progress: '1/3',
     whichSubjects: 'Hvilke fag forbereder du dig på?',
     whichJob: 'Hvilket job/rolle forbereder du dig på?',
+    progress2: '2/3',
+    educationLevelQuestion: 'Hvilket uddannelsesniveau forbereder du dig på i øjeblikket?',
+    interviewTypeQuestion: 'Hvilken type interview forbereder du dig på?',
     // Study subjects
     history: 'Historie',
     physics: 'Fysik',

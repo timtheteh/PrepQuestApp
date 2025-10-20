@@ -42,6 +42,14 @@ import BrainteasersImage from '@/assets/onboarding/brainteasers.svg';
 import CarouselPage1Image from '@/assets/onboarding/carouselPage1Image.svg';
 import CarouselPage2Image1 from '@/assets/onboarding/carouselPage2Image1.svg';
 import CarouselPage2Image2 from '@/assets/onboarding/carouselPage2Image2.svg';
+import CarouselPage3Image from '@/assets/onboarding/carouselPage3Image.svg';
+import CarouselPage4Image1 from '@/assets/onboarding/carouselPage4Image1.svg';
+import CarouselPage4Image2 from '@/assets/onboarding/carouselPage4Image2.svg';
+import CarouselPage5Image1 from '@/assets/onboarding/carouselPage5Image1.svg';
+import CarouselPage5Image2 from '@/assets/onboarding/carouselPage5Image2.svg';
+import CarouselPage6Image1 from '@/assets/onboarding/carouselPage6Image1.svg';
+import CarouselPage6Image2 from '@/assets/onboarding/carouselPage6Image2.svg';
+import CarouselPage6Image3 from '@/assets/onboarding/carouselPage6Image3.svg';
 import { Svg, Polygon } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTranslatedText } from '@/constants/stringsOnboarding';
@@ -103,24 +111,28 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       title: '3/7',
       subtitle: 'Analysis Questions',
       bodyText: 'E.g. Compare and contrast the advantages of renewable vs non-renewable energy sources.',
+      image: CarouselPage3Image,
     },
     {
       id: 4,
       title: '4/7',
       subtitle: 'Synthesis Questions',
       bodyText: 'E.g. Design a solution that combines AI and sustainability to address climate change.',
+      images: [CarouselPage4Image1, CarouselPage4Image2],
     },
     {
       id: 5,
       title: '5/7',
       subtitle: 'Evaluation Questions',
       bodyText: 'E.g. Evaluate the effectiveness of remote work policies in improving productivity.',
+      images: [CarouselPage5Image1, CarouselPage5Image2],
     },
     {
       id: 6,
       title: '6/7',
       subtitle: 'Creative Questions',
       bodyText: 'E.g. Invent a new product that solves a problem you\'ve never seen solved before.',
+      images: [CarouselPage6Image1, CarouselPage6Image2, CarouselPage6Image3],
     },
     {
       id: 7,
@@ -1742,13 +1754,35 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                                   <page.image width="100%" height="100%" />
                                 )}
                                 {page.images && (
-                                  <View style={styles.carouselMultipleImagesContainer}>
-                                    {page.images.map((ImageComponent, index) => (
-                                      <View key={index} style={styles.carouselMultipleImageItem}>
-                                        <ImageComponent width="100%" height="100%" />
+                                  page.id === 6 ? (
+                                    <View style={styles.carouselThreeImagesContainer}>
+                                      <View style={styles.carouselLeftImage}>
+                                        {React.createElement(page.images[0], { width: "100%", height: "100%" })}
                                       </View>
-                                    ))}
-                                  </View>
+                                      <View style={styles.carouselRightImages}>
+                                        <View style={styles.carouselTopRightImage}>
+                                          {React.createElement(page.images[1], { width: "100%", height: "100%" })}
+                                        </View>
+                                        <View style={styles.carouselBottomRightImage}>
+                                          {React.createElement(page.images[2], { width: "100%", height: "100%" })}
+                                        </View>
+                                      </View>
+                                    </View>
+                                  ) : (
+                                    <View style={[
+                                      styles.carouselMultipleImagesContainer,
+                                      (page.id === 4 || page.id === 5) && styles.carouselMultipleImagesContainerLargeGap
+                                    ]}>
+                                      {page.images.map((ImageComponent, index) => (
+                                        <View key={index} style={styles.carouselMultipleImageItem}>
+                                          <ImageComponent width="100%" height="100%" />
+                                        </View>
+                                      ))}
+                                      {(page.id === 4 || page.id === 5) && (
+                                        <Text style={styles.carouselVsText}>vs</Text>
+                                      )}
+                                    </View>
+                                  )
                                 )}
                               </View>
                             </View>
@@ -2567,10 +2601,55 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 12,
   },
+  carouselMultipleImagesContainerLargeGap: {
+    gap: 48,
+  },
   carouselMultipleImageItem: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  carouselVsText: {
+    position: 'absolute',
+    fontSize: 24,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    alignSelf: 'center',
+    zIndex: 1,
+  },
+  carouselThreeImagesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+    gap: 4,
+  },
+  carouselLeftImage: {
+    width: '40%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+  },
+  carouselRightImages: {
+    width: '40%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    gap: 12,
+  },
+  carouselTopRightImage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '70%',
+  },
+  carouselBottomRightImage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '70%',
   },
   carouselNavigation: {
     flexDirection: 'row',

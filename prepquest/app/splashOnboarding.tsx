@@ -39,6 +39,9 @@ import TechnicalImage from '@/assets/onboarding/technical.svg';
 import BehavioralImage from '@/assets/onboarding/behavioral.svg';
 import CaseStudyImage from '@/assets/onboarding/caseStudy.svg';
 import BrainteasersImage from '@/assets/onboarding/brainteasers.svg';
+import CarouselPage1Image from '@/assets/onboarding/carouselPage1Image.svg';
+import CarouselPage2Image1 from '@/assets/onboarding/carouselPage2Image1.svg';
+import CarouselPage2Image2 from '@/assets/onboarding/carouselPage2Image2.svg';
 import { Svg, Polygon } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTranslatedText } from '@/constants/stringsOnboarding';
@@ -86,12 +89,14 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       title: '1/7',
       subtitle: 'Recall-based Questions',
       bodyText: 'E.g. What are 3 examples of fruits?',
+      image: CarouselPage1Image,
     },
     {
       id: 2,
       title: '2/7',
       subtitle: 'Application Questions',
       bodyText: 'E.g. How would you apply Newton\'s laws to explain a car crash?',
+      images: [CarouselPage2Image1, CarouselPage2Image2],
     },
     {
       id: 3,
@@ -1684,10 +1689,12 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                 {getTranslatedText(selectedLanguage, 'cognitiveQuestionsParagraph')}
               </Text>
               
-              {/* Second paragraph
-              <Text style={styles.paragraphText}>
-                {getTranslatedText(selectedLanguage, 'tailorFlashcardsParagraph')}
-              </Text> */}
+              {/* Second paragraph - only show on devices with large height */}
+              {Dimensions.get('window').height > 700 && (
+                <Text style={styles.paragraphText}>
+                  {getTranslatedText(selectedLanguage, 'tailorFlashcardsParagraph')}
+                </Text>
+              )}
               
               {/* Carousel container */}
               <View style={styles.rectangleContainer}>
@@ -1729,9 +1736,20 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                                 {page.bodyText}
                               </Text>
                               
-                              {/* Placeholder for SVG image */}
+                              {/* SVG image(s) */}
                               <View style={styles.carouselImagePlaceholder}>
-                                {/* SVG will be added here later */}
+                                {page.image && (
+                                  <page.image width="100%" height="100%" />
+                                )}
+                                {page.images && (
+                                  <View style={styles.carouselMultipleImagesContainer}>
+                                    {page.images.map((ImageComponent, index) => (
+                                      <View key={index} style={styles.carouselMultipleImageItem}>
+                                        <ImageComponent width="100%" height="100%" />
+                                      </View>
+                                    ))}
+                                  </View>
+                                )}
                               </View>
                             </View>
                           ))}
@@ -2541,6 +2559,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 20,
+  },
+  carouselMultipleImagesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    gap: 12,
+  },
+  carouselMultipleImageItem: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   carouselNavigation: {
     flexDirection: 'row',

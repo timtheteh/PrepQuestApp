@@ -306,6 +306,11 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     []
   );
 
+  const downArrowAnimationSource = useMemo(() => 
+    require('../assets/animations/DownArrowAnimation.json'), 
+    []
+  );
+
 
   // Animation state for transitions
   const [showLanguageSelector, setShowLanguageSelector] = useState(true); // Pre-render to prevent glitch
@@ -1985,7 +1990,48 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             { top: insets.top + 30, bottom: insets.bottom + 5, opacity: onboardingPage6ContentFadeAnim }
           ]}>
             <View style={styles.onboardingPage6Content}>
-              {/* Content will be added here */}
+              {/* Top section with awesome text */}
+              <View style={styles.onboardingPage6TopSection}>
+                <Text style={styles.awesomeText}>
+                  Awesome!{'\n'}You're all set!
+                </Text>
+              </View>
+              
+              {/* Middle section with rectangle container */}
+              <View style={styles.onboardingPage6MiddleSection}>
+                <View style={styles.onboardingPage6RectangleContainer}>
+                  <Text style={styles.onboardingPage6RectangleText}>
+                    Organize your Decks &{'\n'}Flashcards with ease
+                  </Text>
+                </View>
+              </View>
+              
+              {/* Bottom section with signup text, arrow, and button */}
+              <View style={styles.onboardingPage6BottomSection}>
+                <Text style={styles.signUpText}>
+                  Sign up with us to continue
+                </Text>
+                <View style={styles.onboardingPage6ArrowContainer}>
+                  <LottieView
+                    source={downArrowAnimationSource}
+                    autoPlay
+                    loop={true}
+                    style={styles.downArrowAnimation}
+                    resizeMode="contain"
+                    speed={1}
+                    cacheComposition={true}
+                    renderMode="HARDWARE"
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.onboardingPage6Button}
+                  onPress={handleNextPress}
+                >
+                  <Text style={styles.onboardingPage6ButtonText}>
+                    {getTranslatedText(selectedLanguage, 'next')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </Animated.View>
         </Animated.View>
@@ -2564,6 +2610,78 @@ const styles = StyleSheet.create({
     width: '100%',
     flex: 1,
     paddingHorizontal: 12,
+    justifyContent: 'space-between',
+  },
+  onboardingPage6TopSection: {
+    alignItems: 'center',
+  },
+  onboardingPage6MiddleSection: {
+    flex: 1,
+    alignItems: 'stretch',
+    paddingVertical: 12,
+    minHeight: 0,
+  },
+  onboardingPage6BottomSection: {
+    alignItems: 'center',
+  },
+  onboardingPage6ArrowContainer: {
+    // marginBottom: 12,
+  },
+  onboardingPage6Button: {
+    backgroundColor: '#4F41D8',
+    borderRadius: 100,
+    width: Dimensions.get('window').width * 0.7,
+    height: Dimensions.get('window').height * 0.07,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  onboardingPage6ButtonText: {
+    fontSize: 16,
+    fontFamily: Fonts.bodyBold,
+    color: 'white',
+    textAlign: 'center',
+  },
+  awesomeText: {
+    fontSize: 32,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+  },
+  onboardingPage6RectangleContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 30,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    // marginHorizontal: 12,
+    ...Platform.select({
+      android: {
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+      },
+    }),
+  },
+  onboardingPage6RectangleText: {
+    fontSize: 20,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  signUpText: {
+    fontSize: 28,
+    fontFamily: Fonts.bodyBold,
+    color: 'black',
+    textAlign: 'center',
+    // marginBottom: 12,
+  },
+  downArrowAnimation: {
+    width: 40,
+    height: 40,
   },
   onboardingPage4ScrollView: {
     flex: 1,

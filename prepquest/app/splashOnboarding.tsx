@@ -329,13 +329,33 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     []
   );
 
+  const customizeStudyExperienceAnimationSource = useMemo(() => 
+    require('../assets/onboarding/customizeStudyExperience.json'), 
+    []
+  );
+
+  const trackProgressAnimationSource = useMemo(() => 
+    require('../assets/onboarding/trackProgress.json'), 
+    []
+  );
+
+  const aceInterviewAnimationSource = useMemo(() =>   
+    require('../assets/onboarding/aceInterview.json'), 
+    []
+  );
+
+  const booksAnimationSource = useMemo(() => 
+    require('../assets/onboarding/books.json'), 
+    []
+  );
+
 
   // Carousel data for onboardingPage6 - different content structure
   const onboardingPage6CarouselPages = useMemo(() => [
     {
       id: 1,
       title: 'Organize your Decks & Flashcards with ease',
-      animation: rubiksCubeAnimationSource,
+      animation: booksAnimationSource,
     },
     {
       id: 2,
@@ -350,14 +370,17 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     {
       id: 4,
       title: 'Customize your study experience',
+      animation: customizeStudyExperienceAnimationSource,
     },
     {
       id: 5,
       title: 'Get instant feedback & track your performance!',
+      animation: trackProgressAnimationSource,
     },
     {
       id: 6,
       title: 'Quiz & challenge yourself to ace that quiz or interview!',
+      animation: aceInterviewAnimationSource,
     },
   ], [rubiksCubeAnimationSource, aiAssistanceAnimationSource]);
 
@@ -2062,7 +2085,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                       activeOffsetX={[-5, 5]}
                       activeOffsetY={[-30, 30]}
                     >
-                      <View style={styles.carouselPage}>
+                      <View style={styles.onboardingPage6CarouselPage}>
                         <View 
                           style={styles.carouselContainer}
                           onLayout={(event) => {
@@ -2103,7 +2126,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                                   {page.image && (
                                     <Image
                                       source={page.image}
-                                      style={styles.onboardingPage6Animation}
+                                      style={[styles.onboardingPage6Animation, { width: '70%' }]}
                                       resizeMode="contain"
                                     />
                                   )}
@@ -2735,8 +2758,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
-    borderWidth: 1,
-    borderColor: 'red',
   },
   onboardingPage6Content: {
     width: '100%',
@@ -3035,6 +3056,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  onboardingPage6CarouselPage: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   carouselContainer: {
     flex: 1,
     width: '100%',
@@ -3177,7 +3205,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   carouselDot: {
     width: 8,

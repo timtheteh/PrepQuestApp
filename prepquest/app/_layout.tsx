@@ -85,8 +85,8 @@ function AppContent() {
   const { theme } = useTheme();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [showSplash, setShowSplash] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
   const [splashStartTime] = useState(Date.now());
 
   // Function to handle authentication completion
@@ -180,13 +180,14 @@ function AppContent() {
     initDatabase();
   };
 
-  // Show splash screen when user is not authenticated
+  // Show splash screen when user is not authenticated (only after onboarding is complete)
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !showOnboarding) {
+      // Only show splash if we're not in onboarding mode
       setShowSplash(true);
     }
     // For authenticated users, let the splash screen handle the transition via handleAuthComplete
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, showOnboarding]);
 
   // Handle database ready state when onboarding is complete
   useEffect(() => {
@@ -212,22 +213,15 @@ function AppContent() {
 
   // Check for first time installation and initialize database
   useEffect(() => {
-
     const initApp = async () => {
       try {
         // Always set firstTimeInstalled to 'true' when app opens to show onboarding
         await AsyncStorage.setItem('firstTimeInstalled', 'true');
-        
-        // Always show onboarding screen first
-        setShowOnboarding(true);
-        setShowSplash(false);
-        
-        console.log('✅ First time installed flag set to true - showing onboarding');
+        console.log('✅ First time installed flag set to true - onboarding will show');
       } catch (error) {
         console.error('❌ Error setting first time installation flag:', error);
       }
     };
-
     
     // Initialize app (database will be initialized after skip button is clicked)
     initApp();

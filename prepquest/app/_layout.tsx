@@ -90,11 +90,17 @@ function AppContent() {
   const [splashStartTime] = useState(Date.now());
 
   // Function to handle authentication completion
-  const handleAuthComplete = () => {
+  const handleAuthComplete = async () => {
     console.log(`🕐 Auth complete - transitioning to main app`);
     
-    // Immediately hide splash screen without fade animation to prevent blank white screen
-    setShowSplash(false);
+    // If coming from onboarding, need to initialize database first
+    if (showOnboarding) {
+      console.log(`🕐 Auth complete during onboarding - initializing database first`);
+      await handleOnboardingComplete();
+    } else {
+      // Immediately hide splash screen without fade animation to prevent blank white screen
+      setShowSplash(false);
+    }
   };
 
   // Function to handle onboarding completion (skip button clicked)
@@ -235,7 +241,10 @@ function AppContent() {
     <ThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
       {/* Show onboarding screen on first install */}
       {showOnboarding ? (
-        <SplashOnboarding onComplete={handleOnboardingComplete} />
+        <SplashOnboarding 
+          onComplete={handleOnboardingComplete}
+          onAuthComplete={handleAuthComplete}
+        />
       ) : (
         <>
           {/* Show splash screen while fonts are loading or database is not ready, or while auth splash is active */}

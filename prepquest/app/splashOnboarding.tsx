@@ -1558,11 +1558,15 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
 
   // Handle authentication state changes
   useEffect(() => {
-    if (!isLoading && isAuthenticated && isFreshAuth) {
+    if (!isLoading && isAuthenticated) {
       const handleAuthComplete = async () => {
         try {
           if (user?.id) {
+            // Store userID in AsyncStorage for compatibility with existing database operations
             await AsyncStorage.setItem('userID', user.id);
+            
+            // Check if user exists in local database, if not create them
+            // This handles both new Clerk signups and social login users
             const dbSuccess = await createUser(user.id);
             if (!dbSuccess) {
               console.warn('Failed to create user in local database, but Clerk auth succeeded');
@@ -1573,20 +1577,37 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
         }
       };
       
+      // Handle user creation if there's a user object (new auth), otherwise just proceed (existing auth)
       if (user) {
         handleAuthComplete();
       }
       
+      // Complete auth after ensuring minimum splash duration
       const elapsedTime = Date.now() - splashStartTime.current;
       const remainingTime = Math.max(0, 3000 - elapsedTime);
       
+      console.log(`🕐 Splash (auth complete): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms, isFreshAuth: ${isFreshAuth}`);
+      
       setTimeout(() => {
+        // Always ensure loading overlay is hidden before completing auth
         setShowLoadingOverlay(false);
+        // Reset fresh auth flag
         setIsFreshAuth(false);
         onAuthComplete?.();
       }, remainingTime);
     }
-  }, [isLoading, isAuthenticated, user, onAuthComplete, isFreshAuth]);
+  }, [isLoading, isAuthenticated, user, onAuthComplete]);
+
+  // Clear any existing session when component mounts
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      // Ensure AsyncStorage is cleared when not signed in
+      AsyncStorage.removeItem('userID');
+      // Reset fresh auth state when not authenticated
+      setIsFreshAuth(false);
+      setShowLoadingOverlay(false);
+    }
+  }, [isLoading, isAuthenticated]);
 
   // Handle resend code countdown
   useEffect(() => {

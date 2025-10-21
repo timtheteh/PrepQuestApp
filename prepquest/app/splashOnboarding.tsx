@@ -354,35 +354,35 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const onboardingPage6CarouselPages = useMemo(() => [
     {
       id: 1,
-      title: 'Organize your Decks & Flashcards with ease',
+      title: getTranslatedText(language, 'organizeDecksFlashcards'),
       animation: booksAnimationSource,
     },
     {
       id: 2,
-      title: 'Leverage AI to prepare for your next quiz or interview!',
+      title: getTranslatedText(language, 'leverageAI'),
       animation: aiAssistanceAnimationSource,
     },
     {
       id: 3,
-      title: "Add decks from any method! We've got you covered",
+      title: getTranslatedText(language, 'addDecksAnyMethod'),
       image: require('../assets/onboarding/addDecksFromAnyMethod.png'),
     },
     {
       id: 4,
-      title: 'Customize your study experience',
+      title: getTranslatedText(language, 'customizeStudyExperience'),
       animation: customizeStudyExperienceAnimationSource,
     },
     {
       id: 5,
-      title: 'Get instant feedback & track your performance!',
+      title: getTranslatedText(language, 'instantFeedbackTrack'),
       animation: trackProgressAnimationSource,
     },
     {
       id: 6,
-      title: 'Quiz & challenge yourself to ace that quiz or interview!',
+      title: getTranslatedText(language, 'quizChallengeYourself'),
       animation: aceInterviewAnimationSource,
     },
-  ], [rubiksCubeAnimationSource, aiAssistanceAnimationSource]);
+  ], [language, booksAnimationSource, aiAssistanceAnimationSource, customizeStudyExperienceAnimationSource, trackProgressAnimationSource, aceInterviewAnimationSource]);
 
   // Create extended carousel for onboardingPage6 with duplicates for circular navigation
   const onboardingPage6ExtendedCarousel = useMemo(() => [

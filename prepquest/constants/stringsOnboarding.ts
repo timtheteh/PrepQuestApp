@@ -85,6 +85,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'E.g. How do you prevent wastage of fruits if you accidentally bought too many fruits?',
     criticalThinkingQuestions: 'Critical Thinking Questions',
     criticalThinkingExample: 'E.g. Design a new fruit-based smoothie that balances flavor and nutrition.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organize your Decks & Flashcards with ease',
+    leverageAI: 'Leverage AI to prepare for your next quiz or interview!',
+    addDecksAnyMethod: 'Add decks from any method! We\'ve got you covered',
+    customizeStudyExperience: 'Customize your study experience',
+    instantFeedbackTrack: 'Get instant feedback & track your performance!',
+    quizChallengeYourself: 'Quiz & challenge yourself to ace that quiz or interview!',
   },
   Chinese: {
     skip: '跳过',
@@ -171,6 +178,13 @@ export const stringsOnboarding = {
     problemSolvingExample: '例如：如果你意外买了太多水果，如何防止浪费？',
     criticalThinkingQuestions: '批判性思维问题',
     criticalThinkingExample: '例如：设计一款平衡风味和营养的新型水果冰沙。',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: '轻松整理您的牌组和闪卡',
+    leverageAI: '利用AI为您的下一次测验或面试做准备！',
+    addDecksAnyMethod: '通过任何方法添加牌组！我们为您提供支持',
+    customizeStudyExperience: '自定义您的学习体验',
+    instantFeedbackTrack: '获得即时反馈并跟踪您的表现！',
+    quizChallengeYourself: '测验并挑战自己，在测验或面试中取得优异成绩！',
   },
   Malay: {
     skip: 'Langkau',
@@ -252,6 +266,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Contoh: Bagaimana anda mencegah pembaziran buah jika anda tidak sengaja membeli terlalu banyak buah?',
     criticalThinkingQuestions: 'Soalan Pemikiran Kritikal',
     criticalThinkingExample: 'Contoh: Reka bentuk smoothie berasaskan buah baru yang mengimbangi rasa dan pemakanan.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Aturkan Dek dan Kad Imbas anda dengan mudah',
+    leverageAI: 'Manfaatkan AI untuk mempersiapkan kuiz atau temuduga seterusnya!',
+    addDecksAnyMethod: 'Tambah dek dengan sebarang kaedah! Kami ada untuk anda',
+    customizeStudyExperience: 'Sesuaikan pengalaman pembelajaran anda',
+    instantFeedbackTrack: 'Dapatkan maklum balas segera & jejak prestasi anda!',
+    quizChallengeYourself: 'Kuiz & cabar diri anda untuk menguasai kuiz atau temuduga itu!',
   },
   Hindi: {
     skip: 'छोड़ें',
@@ -333,6 +354,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'उदाहरण: यदि आपने गलती से बहुत सारे फल खरीद लिए हैं तो फलों की बर्बादी को कैसे रोकेंगे?',
     criticalThinkingQuestions: 'आलोचनात्मक सोच प्रश्न',
     criticalThinkingExample: 'उदाहरण: एक नया फल-आधारित स्मूदी डिज़ाइन करें जो स्वाद और पोषण को संतुलित करे।',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'अपने डेक और फ्लैशकार्ड को आसानी से व्यवस्थित करें',
+    leverageAI: 'अपनी अगली क्विज़ या साक्षात्कार के लिए तैयारी करने के लिए AI का लाभ उठाएं!',
+    addDecksAnyMethod: 'किसी भी तरीके से डेक जोड़ें! हम आपके लिए हैं',
+    customizeStudyExperience: 'अपने अध्ययन अनुभव को अनुकूलित करें',
+    instantFeedbackTrack: 'तत्काल प्रतिक्रिया प्राप्त करें और अपने प्रदर्शन को ट्रैक करें!',
+    quizChallengeYourself: 'क्विज़ करें और खुद को चुनौती दें कि उस क्विज़ या साक्षात्कार में सफल हों!',
   },
   French: {
     skip: 'Passer',
@@ -414,6 +442,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Ex: Comment éviter le gaspillage de fruits si vous avez accidentellement acheté trop de fruits ?',
     criticalThinkingQuestions: 'Questions de pensée critique',
     criticalThinkingExample: 'Ex: Concevez un nouveau smoothie aux fruits qui équilibre saveur et nutrition.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organisez vos paquets et cartes flash avec facilité',
+    leverageAI: 'Tirez parti de l\'IA pour préparer votre prochain quiz ou entretien !',
+    addDecksAnyMethod: 'Ajoutez des paquets par n\'importe quelle méthode ! Nous sommes là pour vous',
+    customizeStudyExperience: 'Personnalisez votre expérience d\'étude',
+    instantFeedbackTrack: 'Obtenez des commentaires instantanés et suivez vos performances !',
+    quizChallengeYourself: 'Quiz et défiez-vous pour réussir ce quiz ou entretien !',
   },
   Japanese: {
     skip: 'スキップ',
@@ -495,6 +530,13 @@ export const stringsOnboarding = {
     problemSolvingExample: '例：誤って果物を買いすぎた場合、果物の無駄をどのように防ぎますか？',
     criticalThinkingQuestions: '批判的思考の質問',
     criticalThinkingExample: '例：味と栄養のバランスを取る新しいフルーツベースのスムージーをデザインしてください。',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'デッキとフラッシュカードを簡単に整理',
+    leverageAI: 'AIを活用して次のクイズや面接の準備をしましょう！',
+    addDecksAnyMethod: 'どのような方法でもデッキを追加！私たちがサポートします',
+    customizeStudyExperience: '学習体験をカスタマイズ',
+    instantFeedbackTrack: '即座のフィードバックを取得し、パフォーマンスを追跡！',
+    quizChallengeYourself: 'クイズに挑戦し、そのクイズや面接で成功を収めましょう！',
   },
   Korean: {
     skip: '건너뛰기',
@@ -576,6 +618,13 @@ export const stringsOnboarding = {
     problemSolvingExample: '예: 실수로 과일을 너무 많이 샀을 때 과일 낭비를 어떻게 방지하시겠어요?',
     criticalThinkingQuestions: '비판적 사고 질문',
     criticalThinkingExample: '예: 맛과 영양의 균형을 맞춘 새로운 과일 기반 스무디를 디자인해보세요.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: '덱과 플래시카드를 쉽게 정리하세요',
+    leverageAI: 'AI를 활용하여 다음 퀴즈나 면접을 준비하세요!',
+    addDecksAnyMethod: '어떤 방법으로든 덱을 추가하세요! 우리가 도와드립니다',
+    customizeStudyExperience: '학습 경험을 맞춤화하세요',
+    instantFeedbackTrack: '즉시 피드백을 받고 성과를 추적하세요!',
+    quizChallengeYourself: '퀴즈를 풀고 도전하여 그 퀴즈나 면접에서 성공하세요!',
   },
   Spanish: {
     skip: 'Omitir',
@@ -662,6 +711,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Ej: ¿Cómo previenes el desperdicio de frutas si accidentalmente compraste demasiadas frutas?',
     criticalThinkingQuestions: 'Preguntas de pensamiento crítico',
     criticalThinkingExample: 'Ej: Diseña un nuevo batido a base de frutas que equilibre sabor y nutrición.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organiza tus mazos y tarjetas flash con facilidad',
+    leverageAI: '¡Aprovecha la IA para preparar tu próximo quiz o entrevista!',
+    addDecksAnyMethod: '¡Agrega mazos por cualquier método! Estamos aquí para ti',
+    customizeStudyExperience: 'Personaliza tu experiencia de estudio',
+    instantFeedbackTrack: '¡Obtén retroalimentación instantánea y rastrea tu rendimiento!',
+    quizChallengeYourself: '¡Haz quiz y desafíate a ti mismo para dominar ese quiz o entrevista!',
   },
   German: {
     skip: 'Überspringen',
@@ -743,6 +799,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Z.B: Wie verhindern Sie Verschwendung von Früchten, wenn Sie versehentlich zu viele Früchte gekauft haben?',
     criticalThinkingQuestions: 'Kritisches Denken Fragen',
     criticalThinkingExample: 'Z.B: Entwerfen Sie einen neuen fruchtbasierten Smoothie, der Geschmack und Ernährung ausbalanciert.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organisieren Sie Ihre Decks und Lernkarten mit Leichtigkeit',
+    leverageAI: 'Nutzen Sie KI, um sich auf Ihr nächstes Quiz oder Interview vorzubereiten!',
+    addDecksAnyMethod: 'Fügen Sie Decks mit jeder Methode hinzu! Wir sind für Sie da',
+    customizeStudyExperience: 'Passen Sie Ihre Lernerfahrung an',
+    instantFeedbackTrack: 'Erhalten Sie sofortiges Feedback und verfolgen Sie Ihre Leistung!',
+    quizChallengeYourself: 'Quiz und fordern Sie sich selbst heraus, um dieses Quiz oder Interview zu meistern!',
   },
   Portuguese: {
     skip: 'Pular',
@@ -824,6 +887,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Ex: Como você previne o desperdício de frutas se acidentalmente comprou muitas frutas?',
     criticalThinkingQuestions: 'Questões de pensamento crítico',
     criticalThinkingExample: 'Ex: Projete um novo smoothie à base de frutas que equilibre sabor e nutrição.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organize seus baralhos e cartões flash com facilidade',
+    leverageAI: 'Aproveite a IA para se preparar para seu próximo quiz ou entrevista!',
+    addDecksAnyMethod: 'Adicione baralhos por qualquer método! Estamos aqui para você',
+    customizeStudyExperience: 'Personalize sua experiência de estudo',
+    instantFeedbackTrack: 'Obtenha feedback instantâneo e acompanhe seu desempenho!',
+    quizChallengeYourself: 'Faça quiz e desafie-se a dominar aquele quiz ou entrevista!',
   },
   Italian: {
     skip: 'Salta',
@@ -905,6 +975,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Es: Come previeni lo spreco di frutta se hai accidentalmente comprato troppa frutta?',
     criticalThinkingQuestions: 'Domande di pensiero critico',
     criticalThinkingExample: 'Es: Progetta un nuovo frullato a base di frutta che bilanci sapore e nutrizione.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organizza i tuoi mazzi e flashcard con facilità',
+    leverageAI: 'Sfrutta l\'IA per prepararti al tuo prossimo quiz o colloquio!',
+    addDecksAnyMethod: 'Aggiungi mazzi con qualsiasi metodo! Siamo qui per te',
+    customizeStudyExperience: 'Personalizza la tua esperienza di studio',
+    instantFeedbackTrack: 'Ottieni feedback istantaneo e traccia le tue prestazioni!',
+    quizChallengeYourself: 'Quiz e sfida te stesso per padroneggiare quel quiz o colloquio!',
   },
   Russian: {
     skip: 'Пропустить',
@@ -986,6 +1063,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Напр: Как вы предотвратите отходы фруктов, если случайно купили слишком много фруктов?',
     criticalThinkingQuestions: 'Вопросы на критическое мышление',
     criticalThinkingExample: 'Напр: Спроектируйте новый фруктовый смузи, который сбалансирует вкус и питание.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Организуйте свои колоды и карточки с легкостью',
+    leverageAI: 'Используйте ИИ для подготовки к следующей викторине или собеседованию!',
+    addDecksAnyMethod: 'Добавляйте колоды любым способом! Мы здесь для вас',
+    customizeStudyExperience: 'Настройте свой учебный опыт',
+    instantFeedbackTrack: 'Получайте мгновенную обратную связь и отслеживайте свою производительность!',
+    quizChallengeYourself: 'Викторины и бросайте себе вызов, чтобы освоить эту викторину или собеседование!',
   },
   Arabic: {
     skip: 'تخطي',
@@ -1067,6 +1151,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'مثلاً: كيف تمنع هدر الفواكه إذا اشتريت بالخطأ فواكه كثيرة؟',
     criticalThinkingQuestions: 'أسئلة التفكير النقدي',
     criticalThinkingExample: 'مثلاً: صمم عصير فواكه جديد يوازن بين الطعم والتغذية.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'نظم مجموعاتك وبطاقاتك التعليمية بسهولة',
+    leverageAI: 'استفد من الذكاء الاصطناعي للتحضير لاختبارك أو مقابلتك القادمة!',
+    addDecksAnyMethod: 'أضف المجموعات بأي طريقة! نحن هنا من أجلك',
+    customizeStudyExperience: 'خصص تجربة دراستك',
+    instantFeedbackTrack: 'احصل على ملاحظات فورية وتتبع أداءك!',
+    quizChallengeYourself: 'اختبر وتحدى نفسك لإتقان ذلك الاختبار أو المقابلة!',
   },
   Indonesian: {
     skip: 'Lewati',
@@ -1148,6 +1239,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Mis: Bagaimana Anda mencegah pemborosan buah jika Anda tidak sengaja membeli terlalu banyak buah?',
     criticalThinkingQuestions: 'Pertanyaan Berpikir Kritis',
     criticalThinkingExample: 'Mis: Rancang smoothie berbasis buah baru yang menyeimbangkan rasa dan nutrisi.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Atur dek dan kartu flash Anda dengan mudah',
+    leverageAI: 'Manfaatkan AI untuk mempersiapkan kuis atau wawancara berikutnya!',
+    addDecksAnyMethod: 'Tambahkan dek dengan metode apa pun! Kami ada untuk Anda',
+    customizeStudyExperience: 'Sesuaikan pengalaman belajar Anda',
+    instantFeedbackTrack: 'Dapatkan umpan balik instan dan lacak kinerja Anda!',
+    quizChallengeYourself: 'Kuis dan tantang diri Anda untuk menguasai kuis atau wawancara itu!',
   },
   Thai: {
     skip: 'ข้าม',
@@ -1229,6 +1327,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'เช่น: คุณจะป้องกันการสูญเสียผลไม้อย่างไรหากคุณซื้อผลไม้มากเกินไปโดยไม่ได้ตั้งใจ?',
     criticalThinkingQuestions: 'คำถามการคิดอย่างมีวิจารณญาณ',
     criticalThinkingExample: 'เช่น: ออกแบบสมูทตี้ผลไม้ใหม่ที่สมดุลระหว่างรสชาติและโภชนาการ',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'จัดระเบียบเด็คและแฟลชการ์ดของคุณได้อย่างง่ายดาย',
+    leverageAI: 'ใช้ประโยชน์จาก AI เพื่อเตรียมความพร้อมสำหรับควิซหรือการสัมภาษณ์ครั้งต่อไป!',
+    addDecksAnyMethod: 'เพิ่มเด็คด้วยวิธีใดก็ได้! เราอยู่ที่นี่เพื่อคุณ',
+    customizeStudyExperience: 'ปรับแต่งประสบการณ์การเรียนของคุณ',
+    instantFeedbackTrack: 'รับข้อเสนอแนะทันทีและติดตามผลการทำงานของคุณ!',
+    quizChallengeYourself: 'ทำควิซและท้าทายตัวเองเพื่อคว้าชัยชนะในควิซหรือการสัมภาษณ์นั้น!',
   },
   Vietnamese: {
     skip: 'Bỏ qua',
@@ -1310,6 +1415,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Vd: Làm thế nào bạn ngăn chặn lãng phí trái cây nếu bạn vô tình mua quá nhiều trái cây?',
     criticalThinkingQuestions: 'Câu hỏi tư duy phản biện',
     criticalThinkingExample: 'Vd: Thiết kế một loại sinh tố trái cây mới cân bằng hương vị và dinh dưỡng.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Tổ chức bộ bài và thẻ ghi nhớ của bạn một cách dễ dàng',
+    leverageAI: 'Tận dụng AI để chuẩn bị cho bài kiểm tra hoặc cuộc phỏng vấn tiếp theo!',
+    addDecksAnyMethod: 'Thêm bộ bài bằng bất kỳ phương pháp nào! Chúng tôi ở đây để hỗ trợ bạn',
+    customizeStudyExperience: 'Tùy chỉnh trải nghiệm học tập của bạn',
+    instantFeedbackTrack: 'Nhận phản hồi tức thì và theo dõi hiệu suất của bạn!',
+    quizChallengeYourself: 'Làm bài kiểm tra và thử thách bản thân để thành thạo bài kiểm tra hoặc cuộc phỏng vấn đó!',
   },
   Turkish: {
     skip: 'Atla',
@@ -1391,6 +1503,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Örn: Yanlışlıkla çok fazla meyve aldıysanız, meyve israfını nasıl önlersiniz?',
     criticalThinkingQuestions: 'Eleştirel Düşünme Soruları',
     criticalThinkingExample: 'Örn: Tat ve beslenmeyi dengeleyen yeni bir meyve bazlı smoothie tasarlayın.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Deste ve flash kartlarınızı kolayca organize edin',
+    leverageAI: 'Bir sonraki quiz veya mülakatınız için hazırlanmak için AI\'dan yararlanın!',
+    addDecksAnyMethod: 'Herhangi bir yöntemle deste ekleyin! Sizin için buradayız',
+    customizeStudyExperience: 'Öğrenme deneyiminizi özelleştirin',
+    instantFeedbackTrack: 'Anında geri bildirim alın ve performansınızı takip edin!',
+    quizChallengeYourself: 'Quiz yapın ve o quiz veya mülakatı başarmak için kendinizi zorlayın!',
   },
   Dutch: {
     skip: 'Overslaan',
@@ -1472,6 +1591,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Bijv: Hoe voorkom je verspilling van fruit als je per ongeluk te veel fruit hebt gekocht?',
     criticalThinkingQuestions: 'Kritisch denken vragen',
     criticalThinkingExample: 'Bijv: Ontwerp een nieuwe fruit-gebaseerde smoothie die smaak en voeding in balans brengt.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organiseer je decks en flashcards met gemak',
+    leverageAI: 'Benut AI om je voor te bereiden op je volgende quiz of interview!',
+    addDecksAnyMethod: 'Voeg decks toe met elke methode! We zijn er voor je',
+    customizeStudyExperience: 'Pas je studie-ervaring aan',
+    instantFeedbackTrack: 'Krijg directe feedback en volg je prestaties!',
+    quizChallengeYourself: 'Quiz en daag jezelf uit om die quiz of interview te beheersen!',
   },
   Polish: {
     skip: 'Pomiń',
@@ -1553,6 +1679,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Np: Jak zapobiegniesz marnotrawstwu owoców, jeśli przypadkowo kupiłeś za dużo owoców?',
     criticalThinkingQuestions: 'Pytania myślenia krytycznego',
     criticalThinkingExample: 'Np: Zaprojektuj nowy koktajl owocowy, który równoważy smak i odżywianie.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organizuj swoje talie i fiszki z łatwością',
+    leverageAI: 'Wykorzystaj AI, aby przygotować się do następnego quizu lub rozmowy!',
+    addDecksAnyMethod: 'Dodawaj talie dowolną metodą! Jesteśmy tu dla Ciebie',
+    customizeStudyExperience: 'Dostosuj swoje doświadczenie nauki',
+    instantFeedbackTrack: 'Otrzymuj natychmiastową informację zwrotną i śledź swoje wyniki!',
+    quizChallengeYourself: 'Quiz i wyzwij się, aby opanować ten quiz lub rozmowę!',
   },
   Swedish: {
     skip: 'Hoppa över',
@@ -1634,6 +1767,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'T.ex: Hur förhindrar du fruktspill om du av misstag köpte för mycket frukt?',
     criticalThinkingQuestions: 'Kritiskt tänkande frågor',
     criticalThinkingExample: 'T.ex: Designa en ny fruktbaserad smoothie som balanserar smak och näring.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organisera dina kortlekar och flashcards med lätthet',
+    leverageAI: 'Utnyttja AI för att förbereda dig för din nästa quiz eller intervju!',
+    addDecksAnyMethod: 'Lägg till kortlekar med vilken metod som helst! Vi är här för dig',
+    customizeStudyExperience: 'Anpassa din studieupplevelse',
+    instantFeedbackTrack: 'Få omedelbar feedback och spåra din prestanda!',
+    quizChallengeYourself: 'Quiz och utmana dig själv att bemästra den quizen eller intervjun!',
   },
   Czech: {
     skip: 'Přeskočit',
@@ -1715,6 +1855,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Např: Jak zabráníte plýtvání ovocem, pokud jste omylem koupili příliš mnoho ovoce?',
     criticalThinkingQuestions: 'Otázky kritického myšlení',
     criticalThinkingExample: 'Např: Navrhněte nový ovocný koktejl, který vyvažuje chuť a výživu.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organizujte své balíčky a kartičky s lehkostí',
+    leverageAI: 'Využijte AI k přípravě na váš další kvíz nebo pohovor!',
+    addDecksAnyMethod: 'Přidejte balíčky jakoukoli metodou! Jsme tu pro vás',
+    customizeStudyExperience: 'Přizpůsobte si své studijní zážitky',
+    instantFeedbackTrack: 'Získejte okamžitou zpětnou vazbu a sledujte svůj výkon!',
+    quizChallengeYourself: 'Kvíz a vyzvěte se k zvládnutí toho kvízu nebo pohovoru!',
   },
   Greek: {
     skip: 'Παράλειψη',
@@ -1796,6 +1943,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Π.χ: Πώς αποτρέπετε τη σπατάλη φρούτων αν αγοράσατε κατά λάθος πάρα πολλά φρούτα;',
     criticalThinkingQuestions: 'Ερωτήσεις κριτικής σκέψης',
     criticalThinkingExample: 'Π.χ: Σχεδιάστε ένα νέο smoothie φρούτων που ισορροπεί γεύση και διατροφή.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Οργανώστε τις τράπουλες και τις κάρτες σας με ευκολία',
+    leverageAI: 'Αξιοποιήστε την AI για να προετοιμαστείτε για το επόμενο κουίζ ή συνέντευξη!',
+    addDecksAnyMethod: 'Προσθέστε τράπουλες με οποιαδήποτε μέθοδο! Είμαστε εδώ για εσάς',
+    customizeStudyExperience: 'Προσαρμόστε την εμπειρία σπουδών σας',
+    instantFeedbackTrack: 'Λάβετε άμεση ανατροφοδότηση και παρακολουθήστε την απόδοσή σας!',
+    quizChallengeYourself: 'Κουίζ και προκαλέστε τον εαυτό σας να κυριαρχήσει σε αυτό το κουίζ ή συνέντευξη!',
   },
   Hebrew: {
     skip: 'דלג',
@@ -1877,6 +2031,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'לדוגמה: איך תמנע בזבוז פירות אם בטעות קנית יותר מדי פירות?',
     criticalThinkingQuestions: 'שאלות חשיבה ביקורתית',
     criticalThinkingExample: 'לדוגמה: עיצב שייק פירות חדש שמאזן בין טעם ותזונה.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'ארגן את החפיסות והכרטיסים שלך בקלות',
+    leverageAI: 'נצל AI כדי להתכונן לשאלון או הראיון הבא שלך!',
+    addDecksAnyMethod: 'הוסף חפיסות בכל שיטה! אנחנו כאן בשבילך',
+    customizeStudyExperience: 'התאם את חוויית הלימוד שלך',
+    instantFeedbackTrack: 'קבל משוב מיידי ועקוב אחר הביצועים שלך!',
+    quizChallengeYourself: 'שאלון ואתגר את עצמך לשלוט בשאלון או הראיון הזה!',
   },
   Tagalog: {
     skip: 'Laktawan',
@@ -1958,6 +2119,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Hal: Paano mo mapipigilan ang pag-aaksaya ng prutas kung hindi sinasadyang bumili ka ng masyadong maraming prutas?',
     criticalThinkingQuestions: 'Mga tanong sa kritikal na pag-iisip',
     criticalThinkingExample: 'Hal: Magdisenyo ng bagong fruit-based smoothie na nagbabalanse ng lasa at nutrisyon.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Ayusin ang inyong mga deck at flashcards nang madali',
+    leverageAI: 'Samantalahin ang AI upang maghanda para sa inyong susunod na quiz o interview!',
+    addDecksAnyMethod: 'Magdagdag ng mga deck sa anumang paraan! Nandito kami para sa inyo',
+    customizeStudyExperience: 'I-customize ang inyong study experience',
+    instantFeedbackTrack: 'Kumuha ng instant feedback at i-track ang inyong performance!',
+    quizChallengeYourself: 'Quiz at hamunin ang inyong sarili na ma-master ang quiz o interview na iyon!',
   },
   Tamil: {
     skip: 'தவிர்க்க',
@@ -2039,6 +2207,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'எ.கா: தவறுதலாக அதிக பழங்களை வாங்கினால் பழங்களின் வீணடிப்பை எவ்வாறு தடுப்பீர்கள்?',
     criticalThinkingQuestions: 'விமர்சன சிந்தனை கேள்விகள்',
     criticalThinkingExample: 'எ.கா: சுவை மற்றும் ஊட்டச்சத்தை சமநிலைப்படுத்தும் புதிய பழ-அடிப்படையிலான ஸ்மூத்தி வடிவமைக்கவும்.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'உங்கள் டெக்குகள் மற்றும் ஃப்ளாஷ் கார்டுகளை எளிதாக ஒழுங்கமைக்கவும்',
+    leverageAI: 'உங்கள் அடுத்த வினாடி வினா அல்லது நேர்காணலுக்கு தயாராக AI-ஐ பயன்படுத்தவும்!',
+    addDecksAnyMethod: 'எந்த முறையிலும் டெக்குகளை சேர்க்கவும்! நாங்கள் உங்களுக்காக இருக்கிறோம்',
+    customizeStudyExperience: 'உங்கள் கற்றல் அனுபவத்தை தனிப்பயனாக்கவும்',
+    instantFeedbackTrack: 'உடனடி கருத்தை பெறுங்கள் மற்றும் உங்கள் செயல்திறனை கண்காணிக்கவும்!',
+    quizChallengeYourself: 'வினாடி வினா மற்றும் அந்த வினாடி வினா அல்லது நேர்காணலில் வெற்றி பெற உங்களை சவால் செய்யுங்கள்!',
   },
   Bengali: {
     skip: 'এড়িয়ে যান',
@@ -2120,6 +2295,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'যেমন: আপনি যদি ভুল করে অনেক ফল কিনে থাকেন তবে ফলের অপচয় কীভাবে প্রতিরোধ করবেন?',
     criticalThinkingQuestions: 'সমালোচনামূলক চিন্তা প্রশ্ন',
     criticalThinkingExample: 'যেমন: স্বাদ এবং পুষ্টির ভারসাম্য রক্ষাকারী একটি নতুন ফল-ভিত্তিক স্মুদি ডিজাইন করুন।',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'আপনার ডেক এবং ফ্ল্যাশকার্ডগুলি সহজেই সংগঠিত করুন',
+    leverageAI: 'আপনার পরবর্তী কুইজ বা সাক্ষাত্কারের জন্য প্রস্তুত করতে AI ব্যবহার করুন!',
+    addDecksAnyMethod: 'যেকোনো পদ্ধতিতে ডেক যোগ করুন! আমরা আপনার জন্য আছি',
+    customizeStudyExperience: 'আপনার অধ্যয়নের অভিজ্ঞতা কাস্টমাইজ করুন',
+    instantFeedbackTrack: 'তাৎক্ষণিক প্রতিক্রিয়া পান এবং আপনার কর্মক্ষমতা ট্র্যাক করুন!',
+    quizChallengeYourself: 'কুইজ এবং সেই কুইজ বা সাক্ষাত্কারে দক্ষতা অর্জনের জন্য নিজেকে চ্যালেঞ্জ করুন!',
   },
   Ukrainian: {
     skip: 'Пропустити',
@@ -2201,6 +2383,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Напр: Як ви запобігаєте витрачанню фруктів, якщо ви випадково купили занадто багато фруктів?',
     criticalThinkingQuestions: 'Питання критичного мислення',
     criticalThinkingExample: 'Напр: Створіть новий фруктовий смузі, який збалансовує смак і харчування.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Організуйте свої колоди та картки з легкістю',
+    leverageAI: 'Використовуйте ШІ для підготовки до наступного квізу або співбесіди!',
+    addDecksAnyMethod: 'Додавайте колоди будь-яким способом! Ми тут для вас',
+    customizeStudyExperience: 'Налаштуйте свій навчальний досвід',
+    instantFeedbackTrack: 'Отримуйте миттєвий зворотний зв\'язок і відстежуйте свою ефективність!',
+    quizChallengeYourself: 'Квіз і кидайте виклик собі, щоб оволодіти цим квізом або співбесідою!',
   },
   Romanian: {
     skip: 'Omite',
@@ -2282,6 +2471,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'De ex: Cum previi irosirea fructelor dacă ai cumpărat din greșeală prea multe fructe?',
     criticalThinkingQuestions: 'Întrebări de gândire critică',
     criticalThinkingExample: 'De ex: Proiectează un smoothie nou bazat pe fructe care echilibrează gustul și nutriția.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organizează-ți pachetele și cardurile cu ușurință',
+    leverageAI: 'Folosește AI pentru a te pregăti pentru următorul quiz sau interviu!',
+    addDecksAnyMethod: 'Adaugă pachete prin orice metodă! Suntem aici pentru tine',
+    customizeStudyExperience: 'Personalizează experiența ta de studiu',
+    instantFeedbackTrack: 'Primește feedback instant și urmărește-ți performanța!',
+    quizChallengeYourself: 'Quiz și provoacă-te să stăpânești acel quiz sau interviu!',
   },
   Hungarian: {
     skip: 'Kihagyás',
@@ -2363,6 +2559,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Pl: Hogyan megelőzöd a gyümölcsök pazarlását, ha véletlenül túl sok gyümölcsöt vásároltál?',
     criticalThinkingQuestions: 'Kritikus gondolkodási kérdések',
     criticalThinkingExample: 'Pl: Tervezz egy új gyümölcsalapú smoothie-t, amely egyensúlyba hozza az ízt és a táplálkozást.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Rendezze pakliját és kártyáit könnyedén',
+    leverageAI: 'Használja az MI-t a következő kvíz vagy interjúra való felkészüléshez!',
+    addDecksAnyMethod: 'Adjon hozzá paklikat bármilyen módszerrel! Itt vagyunk önért',
+    customizeStudyExperience: 'Testreszabhatja tanulási élményét',
+    instantFeedbackTrack: 'Azonnali visszajelzés és teljesítménykövetés!',
+    quizChallengeYourself: 'Kvíz és hívja ki magát, hogy elsajátítsa azt a kvízt vagy interjút!',
   },
   Farsi: {
     skip: 'رد کردن',
@@ -2444,6 +2647,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'مثال: چگونه از اتلاف میوه جلوگیری می‌کنید اگر تصادفاً میوه زیادی خریده باشید؟',
     criticalThinkingQuestions: 'سوالات تفکر انتقادی',
     criticalThinkingExample: 'مثال: یک اسموتی میوه‌ای جدید طراحی کنید که طعم و تغذیه را متعادل کند.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'دسته‌ها و فلش‌کارت‌های خود را به راحتی سازماندهی کنید',
+    leverageAI: 'از هوش مصنوعی برای آماده شدن برای آزمون یا مصاحبه بعدی استفاده کنید!',
+    addDecksAnyMethod: 'دسته‌ها را با هر روشی اضافه کنید! ما برای شما هستیم',
+    customizeStudyExperience: 'تجربه مطالعه خود را سفارشی کنید',
+    instantFeedbackTrack: 'بازخورد فوری بگیرید و عملکرد خود را دنبال کنید!',
+    quizChallengeYourself: 'آزمون بگیرید و خود را به چالش بکشید تا در آن آزمون یا مصاحبه مسلط شوید!',
   },
   Swahili: {
     skip: 'Ruka',
@@ -2525,6 +2735,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Mf: Unawezaje kuzuia kupoteza matunda ikiwa kwa bahati mbaya unanunua matunda mengi sana?',
     criticalThinkingQuestions: 'Maswali ya mawazo ya kina',
     criticalThinkingExample: 'Mf: Tengeneza smoothie mpya ya matunda ambayo inaweka usawa wa ladha na lishe.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Panga Decks na Flashcards zako kwa urahisi',
+    leverageAI: 'Tumia AI kujiandaa kwa jaribio lako au mahojiano yajayo!',
+    addDecksAnyMethod: 'Ongeza decks kwa njia yoyote! Tuko hapa kwa ajili yako',
+    customizeStudyExperience: 'Rekebisha uzoefu wako wa kusoma',
+    instantFeedbackTrack: 'Pata maoni ya papo hapo na fuatilia utendaji wako!',
+    quizChallengeYourself: 'Jaribio na jitahidi kufaulu jaribio lilo au mahojiano!',
   },
   Afrikaans: {
     skip: 'Slaan Oor',
@@ -2606,6 +2823,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Bv: Hoe voorkom jy vermorsing van vrugte as jy per ongeluk te veel vrugte gekoop het?',
     criticalThinkingQuestions: 'Kritiese denke vrae',
     criticalThinkingExample: 'Bv: Ontwerp \'n nuwe vrugte-gebaseerde smoothie wat smaak en voeding balanseer.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organiseer jou kaartspelle en flitskaarte met gemak',
+    leverageAI: 'Benut KI om voor te berei vir jou volgende vasvra of onderhoud!',
+    addDecksAnyMethod: 'Voeg kaartspelle by met enige metode! Ons is hier vir jou',
+    customizeStudyExperience: 'Pas jou studie-ervaring aan',
+    instantFeedbackTrack: 'Kry onmiddellike terugvoer en volg jou prestasie!',
+    quizChallengeYourself: 'Vasvra en daag jouself uit om daardie vasvra of onderhoud te bemeester!',
   },
   Finnish: {
     skip: 'Ohita',
@@ -2687,6 +2911,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'Esim: Miten estät hedelmien tuhlausta, jos ostit vahingossa liikaa hedelmiä?',
     criticalThinkingQuestions: 'Kriittisen ajattelun kysymykset',
     criticalThinkingExample: 'Esim: Suunnittele uusi hedelmäpohjainen smoothie, joka tasapainottaa maun ja ravitsemuksen.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Järjestä pakkasi ja muistikortit helposti',
+    leverageAI: 'Hyödynnä tekoälyä valmistautuaksesi seuraavaan tietokilpailuun tai haastatteluun!',
+    addDecksAnyMethod: 'Lisää pakkoja millä tahansa menetelmällä! Olemme täällä sinua varten',
+    customizeStudyExperience: 'Mukauta oppimiskokemustasi',
+    instantFeedbackTrack: 'Saa välitön palaute ja seuraa suoritustasi!',
+    quizChallengeYourself: 'Tietokilpailu ja haasta itsesi hallitsemaan tietokilpailu tai haastattelu!',
   },
   Norwegian: {
     skip: 'Hopp Over',
@@ -2768,6 +2999,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'F.eks: Hvordan forhindrer du fruktbortkast hvis du ved en feil kjøpte for mye frukt?',
     criticalThinkingQuestions: 'Kritisk tenkning spørsmål',
     criticalThinkingExample: 'F.eks: Design en ny fruktbasert smoothie som balanserer smak og ernæring.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organiser dine kortstokker og flashkort med letthet',
+    leverageAI: 'Utnytt AI til å forberede deg til neste quiz eller intervju!',
+    addDecksAnyMethod: 'Legg til kortstokker med hvilken som helst metode! Vi er her for deg',
+    customizeStudyExperience: 'Tilpass din studieopplevelse',
+    instantFeedbackTrack: 'Få øyeblikkelig tilbakemelding og spor din ytelse!',
+    quizChallengeYourself: 'Quiz og utfordre deg selv til å mestre den quizen eller intervjuet!',
   },
   Danish: {
     skip: 'Spring Over',
@@ -2849,6 +3087,13 @@ export const stringsOnboarding = {
     problemSolvingExample: 'F.eks: Hvordan forhindrer du frugtspild, hvis du ved en fejl købte for meget frugt?',
     criticalThinkingQuestions: 'Kritisk tænkning spørgsmål',
     criticalThinkingExample: 'F.eks: Design en ny frugtbaseret smoothie, der balancerer smag og ernæring.',
+    // OnboardingPage6 carousel
+    organizeDecksFlashcards: 'Organiser dine bundter og flashcards med lethed',
+    leverageAI: 'Udnyt AI til at forberede dig til næste quiz eller interview!',
+    addDecksAnyMethod: 'Tilføj bundter med enhver metode! Vi er her for dig',
+    customizeStudyExperience: 'Tilpas din studieoplevelse',
+    instantFeedbackTrack: 'Få øjeblikkelig feedback og spor din præstation!',
+    quizChallengeYourself: 'Quiz og udfordre dig selv til at mestre den quiz eller interview!',
   },
 };
 

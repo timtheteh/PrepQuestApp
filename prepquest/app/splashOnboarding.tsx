@@ -1,14 +1,22 @@
-import React, { useRef, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput, ScrollView, Image } from 'react-native';
+import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react';
+import { View, StyleSheet, Text, Dimensions, TouchableOpacity, ImageBackground, Animated, Platform, TextInput, ScrollView, Image, Modal } from 'react-native';
 import { PanGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Feather } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSignUp, useSignIn } from '@clerk/clerk-expo';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { Toast } from '@/components/general/Toast';
+import { useHybridAuth } from '@/contexts/HybridAuthContext';
+import { createUser } from '@/db/users';
 import LanguageSelector from '@/components/onboarding/LanguageSelector';
+import PrepQuestLogo from '@/assets/icons/loginIcons/PrepQuestLogo.svg';
+import GoogleLoginIcon from '@/assets/icons/loginIcons/GoogleLoginIcon.svg';
+import AppleLoginIcon from '@/assets/icons/loginIcons/AppleLoginIcon.svg';
+import FacebookLoginIcon from '@/assets/icons/loginIcons/FacebookLoginIcon.svg';
 import StudyOnboardingImage from '@/assets/onboarding/studyOnboardingImage.svg';
 import InterviewOnboardingImage from '@/assets/onboarding/interviewOnboardingImage.svg';
 import HistoryImage from '@/assets/onboarding/history.svg';
@@ -63,16 +71,36 @@ const { height } = Dimensions.get('window');
 
 interface SplashOnboardingProps {
   onComplete: () => void;
+  onAuthComplete?: () => void;
 }
 
 
-export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) {
+export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashOnboardingProps) {
   const { language, setLanguage } = useLanguage();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  
+  // Authentication hooks and context
+  const { 
+    isAuthenticated, 
+    user, 
+    isLoading,
+    signInWithEmail,
+    signInWithGoogle,
+    signInWithFacebook,
+    signInWithApple,
+    signOut
+  } = useHybridAuth();
+  
+  const { signUp, setActive } = useSignUp();
+  const { signIn } = useSignIn();
+  
+  // Track splash screen start time
+  const splashStartTime = useRef(Date.now());
+  const [isFreshAuth, setIsFreshAuth] = useState(false);
 
   // State for section navigation
-  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3' | 'onboardingPage4' | 'onboardingPage5' | 'onboardingPage6'>('logoAnimation');
+  const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3' | 'onboardingPage4' | 'onboardingPage5' | 'onboardingPage6' | 'signupPage'>('logoAnimation');
   const [hideLogoAnimation, setHideLogoAnimation] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedCard, setSelectedCard] = useState<'study' | 'interview' | null>(null);
@@ -94,6 +122,48 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const containerWidth = useRef(0);
   const isAnimating = useRef(false);
   const autoplayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Authentication state
+  const [isSignIn, setIsSignIn] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBackgroundColor, setToastBackgroundColor] = useState<string | undefined>(undefined);
+  
+  // Forgot password modal state
+  const [forgotPasswordModalVisible, setForgotPasswordModalVisible] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [passwordResetStep, setPasswordResetStep] = useState<'email' | 'code' | 'newPassword'>('email');
+  const [passwordResetCode, setPasswordResetCode] = useState(['', '', '', '', '', '']);
+  const [isVerifyingResetCode, setIsVerifyingResetCode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [pendingPasswordReset, setPendingPasswordReset] = useState<any>(null);
+  const passwordResetInputRefs = useRef<(TextInput | null)[]>([]);
+  const passwordResetFadeAnim = useRef(new Animated.Value(1)).current;
+  const [hasPasswordResetError, setHasPasswordResetError] = useState(false);
+  
+  // Email verification modal state
+  const [verificationModalVisible, setVerificationModalVisible] = useState(false);
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResendingCode, setIsResendingCode] = useState(false);
+  const [pendingSignUpAttempt, setPendingSignUpAttempt] = useState<any>(null);
+  const [hasVerificationError, setHasVerificationError] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(15);
+  const [canResendCode, setCanResendCode] = useState(false);
+  const verificationInputRefs = useRef<(TextInput | null)[]>([]);
+  const resendTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  // Loading overlay state
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+  const loadingOverlayRef = useRef<LottieView>(null);
 
   // Carousel data - create extended array with duplicates for circular navigation
   const originalCarouselPages = useMemo(() => [
@@ -402,6 +472,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
   const onboardingPage4ContentFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage5ContentFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingPage6ContentFadeAnim = useRef(new Animated.Value(0)).current;
+  const signupPageFadeAnim = useRef(new Animated.Value(0)).current;
+  const signupToggleFadeAnim = useRef(new Animated.Value(1)).current;
   
   // Initialize animation values to prevent glitch
   useEffect(() => {
@@ -414,6 +486,8 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
     onboardingPage4ContentFadeAnim.setValue(0);
     onboardingPage5ContentFadeAnim.setValue(0);
     onboardingPage6ContentFadeAnim.setValue(0);
+    signupPageFadeAnim.setValue(0);
+    signupToggleFadeAnim.setValue(1);
   }, []);
 
   // Start animations on mount and set timer for background transition
@@ -616,6 +690,30 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           useNativeDriver: true,
         }).start();
       });
+    } else if (currentSection === 'onboardingPage6') {
+      // Fade out onboardingPage6 content first
+      Animated.timing(onboardingPage6ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, fade out PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition to signup page
+          setCurrentSection('signupPage');
+          
+          // Then fade in signup page content
+          Animated.timing(signupPageFadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        });
+      });
     }
   };
 
@@ -737,6 +835,30 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
           duration: 300,
           useNativeDriver: true,
         }).start();
+      });
+    } else if (currentSection === 'signupPage') {
+      // Fade out signup page content first
+      Animated.timing(signupPageFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // Then fade in PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition back to onboardingPage6
+          setCurrentSection('onboardingPage6');
+          
+          // Then fade in onboardingPage6 content
+          Animated.timing(onboardingPage6ContentFadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        });
       });
     }
   };
@@ -891,6 +1013,618 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
       });
     }
   };
+
+  // Authentication handlers
+  const handleHideToast = useCallback(() => {
+    setToastVisible(false);
+    setToastBackgroundColor(undefined);
+  }, []);
+
+  const showSuccessToast = useCallback((message: string) => {
+    setToastMessage(message);
+    setToastBackgroundColor('#44B88A');
+    setToastVisible(true);
+  }, []);
+
+  const showErrorToast = useCallback((message: string) => {
+    setToastMessage(message);
+    setToastBackgroundColor(undefined);
+    setToastVisible(true);
+  }, []);
+
+  const startResendCountdown = useCallback(() => {
+    setCanResendCode(false);
+    setResendCountdown(5);
+  }, []);
+
+  const transitionPasswordResetStep = useCallback((newStep: 'email' | 'code' | 'newPassword') => {
+    Animated.timing(passwordResetFadeAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setPasswordResetStep(newStep);
+      Animated.timing(passwordResetFadeAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [passwordResetFadeAnim]);
+
+  const validateSignUp = useCallback(() => {
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      showErrorToast(getTranslatedText(language, 'fillUpBothEmailAndPassword'));
+      return false;
+    }
+    if (password !== confirmPassword) {
+      showErrorToast(getTranslatedText(language, 'passwordsDontMatch'));
+      return false;
+    }
+    return true;
+  }, [email, password, confirmPassword, language, showErrorToast]);
+
+  const handleSignUp = useCallback(async () => {
+    if (validateSignUp()) {
+      try {
+        if (!signUp) {
+          setToastMessage(getTranslatedText(language, 'signUpFailed'));
+          setToastVisible(true);
+          return;
+        }
+
+        const result = await signUp.create({
+          emailAddress: email.trim(),
+          password,
+        });
+
+        if (result.status === 'complete') {
+          if (setActive) {
+            await setActive({ session: result.createdSessionId });
+          }
+          setIsFreshAuth(true);
+          setShowLoadingOverlay(true);
+          showSuccessToast(getTranslatedText(language, 'accountCreatedSuccessfully'));
+        } else if (result.status === 'missing_requirements') {
+          await result.prepareEmailAddressVerification({ strategy: 'email_code' });
+          setPendingSignUpAttempt(result);
+          setHasVerificationError(false);
+          startResendCountdown();
+          setVerificationModalVisible(true);
+          showSuccessToast(getTranslatedText(language, 'verificationCodeSent'));
+        } else {
+          showErrorToast(getTranslatedText(language, 'signUpFailed'));
+        }
+      } catch (error: any) {
+        const errorMessage = error.errors?.[0]?.message || error?.message || getTranslatedText(language, 'signUpFailed');
+        showErrorToast(errorMessage);
+      }
+    }
+  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast, startResendCountdown]);
+
+  const handleSignIn = useCallback(async () => {
+    if (!email.trim() || !password.trim()) {
+      showErrorToast(getTranslatedText(language, 'fillUpBothEmailAndPassword'));
+      return;
+    }
+    
+    try {
+      const result = await signInWithEmail(email.trim(), password);
+
+      if (result.success) {
+        setIsFreshAuth(true);
+        setShowLoadingOverlay(true);
+      } else {
+        let errorMessage = result.error || getTranslatedText(language, 'signInFailed');
+        
+        if (result.error?.includes('identifier') || result.error?.includes('not found')) {
+          errorMessage = result.error;
+        } else if (result.error?.includes('password') || result.error?.includes('credentials')) {
+          errorMessage = result.error;
+        }
+        
+        showErrorToast(errorMessage);
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || getTranslatedText(language, 'signInFailed');
+      showErrorToast(errorMessage);
+    }
+  }, [email, password, signInWithEmail, language, showErrorToast]);
+
+  const handleSocialLogin = useCallback(async (provider: 'google' | 'facebook' | 'apple') => {
+    try {
+      let oauthFunction;
+      switch (provider) {
+        case 'google':
+          oauthFunction = signInWithGoogle;
+          break;
+        case 'facebook':
+          oauthFunction = signInWithFacebook;
+          break;
+        case 'apple':
+          oauthFunction = signInWithApple;
+          break;
+        default:
+          showErrorToast(getTranslatedText(language, 'providerNotSupported'));
+          return;
+      }
+    
+      await oauthFunction();
+      
+      setIsFreshAuth(true);
+      setShowLoadingOverlay(true);
+    } catch (error: any) {
+      setShowLoadingOverlay(false);
+      setIsFreshAuth(false);
+      
+      if (error?.code === 'oauth_canceled') {
+        return;
+      }
+      
+      let errorMessage;
+      switch (provider) {
+        case 'google':
+          errorMessage = error?.message || getTranslatedText(language, 'googleSignInFailed');
+          break;
+        case 'facebook':
+          errorMessage = error?.message || getTranslatedText(language, 'facebookSignInFailed');
+          break;
+        case 'apple':
+          errorMessage = error?.message || getTranslatedText(language, 'appleSignInFailed');
+          break;
+        default:
+          errorMessage = error?.message || getTranslatedText(language, 'signInFailed');
+      }
+      showErrorToast(errorMessage);
+    }
+  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast]);
+
+  const handleTogglePassword = useCallback(() => {
+    setShowPassword(!showPassword);
+  }, [showPassword]);
+
+  const handleEmailChange = useCallback((text: string) => {
+    setEmail(text);
+  }, []);
+
+  const handlePasswordChange = useCallback((text: string) => {
+    setPassword(text);
+  }, []);
+
+  const handleConfirmPasswordChange = useCallback((text: string) => {
+    setConfirmPassword(text);
+  }, []);
+
+  const handleForgotPassword = useCallback(() => {
+    setForgotPasswordModalVisible(true);
+    setForgotPasswordEmail(email.trim());
+  }, [email]);
+
+  const handlePasswordReset = useCallback(async () => {
+    if (!forgotPasswordEmail.trim()) {
+      showErrorToast(getTranslatedText(language, 'pleaseEnterYourEmailAddress'));
+      return;
+    }
+
+    setIsResettingPassword(true);
+
+    try {
+      if (!signIn) {
+        showErrorToast(getTranslatedText(language, 'signInNotAvailable'));
+        setIsResettingPassword(false);
+        return;
+      }
+
+      const result = await signIn.create({
+        identifier: forgotPasswordEmail.trim(),
+      });
+
+      const resetPasswordFactor = result.supportedFirstFactors?.find(
+        (factor: any) => factor.strategy === 'reset_password_email_code'
+      );
+
+      if (!resetPasswordFactor) {
+        showErrorToast(getTranslatedText(language, 'passwordResetNotAvailable'));
+        setIsResettingPassword(false);
+        return;
+      }
+
+      await result.prepareFirstFactor({
+        strategy: 'reset_password_email_code',
+        emailAddressId: (resetPasswordFactor as any).emailAddressId,
+      });
+
+      setPendingPasswordReset(result);
+      setHasPasswordResetError(false);
+      transitionPasswordResetStep('code');
+      showSuccessToast(getTranslatedText(language, 'passwordResetEmailSent'));
+    } catch (error: any) {
+      const errorMessage = error?.message || getTranslatedText(language, 'failedToSendResetEmail');
+      showErrorToast(errorMessage);
+    }
+
+    setIsResettingPassword(false);
+  }, [forgotPasswordEmail, signIn, language, showSuccessToast, showErrorToast, transitionPasswordResetStep]);
+
+  const handleCloseModal = useCallback(() => {
+    setForgotPasswordModalVisible(false);
+    setPasswordResetStep('email');
+    setPasswordResetCode(['', '', '', '', '', '']);
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPendingPasswordReset(null);
+    setForgotPasswordEmail('');
+    setHasPasswordResetError(false);
+    passwordResetFadeAnim.setValue(1);
+  }, [passwordResetFadeAnim]);
+
+  const handleVerifyResetCode = useCallback(async () => {
+    const code = passwordResetCode.join('');
+    if (code.length !== 6) {
+      setHasPasswordResetError(true);
+      return;
+    }
+
+    if (!pendingPasswordReset) {
+      showErrorToast(getTranslatedText(language, 'passwordResetSessionExpired'));
+      return;
+    }
+
+    setIsVerifyingResetCode(true);
+
+    try {
+      const result = await pendingPasswordReset.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
+      });
+
+      if (result.status === 'needs_new_password') {
+        transitionPasswordResetStep('newPassword');
+        setPasswordResetCode(['', '', '', '', '', '']);
+        setHasPasswordResetError(false);
+      } else {
+        setHasPasswordResetError(true);
+      }
+    } catch (error: any) {
+      setHasPasswordResetError(true);
+    }
+
+    setIsVerifyingResetCode(false);
+  }, [passwordResetCode, pendingPasswordReset, showErrorToast, transitionPasswordResetStep, language]);
+
+  const handleSetNewPassword = useCallback(async () => {
+    if (!newPassword.trim() || !confirmNewPassword.trim()) {
+      showErrorToast(getTranslatedText(language, 'pleaseFillBothPasswordFields'));
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      showErrorToast(getTranslatedText(language, 'passwordsDoNotMatch'));
+      return;
+    }
+
+    if (!pendingPasswordReset) {
+      showErrorToast(getTranslatedText(language, 'passwordResetSessionExpired'));
+      return;
+    }
+
+    try {
+      await pendingPasswordReset.resetPassword({
+        password: newPassword,
+      });
+
+      try {
+        await signOut();
+      } catch {
+        console.log('No session to clear after password reset');
+      }
+
+      setForgotPasswordModalVisible(false);
+      showSuccessToast(getTranslatedText(language, 'passwordResetSuccess'));
+      
+      setPasswordResetStep('email');
+      setPasswordResetCode(['', '', '', '', '', '']);
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setPendingPasswordReset(null);
+      setForgotPasswordEmail('');
+      setHasPasswordResetError(false);
+      
+      passwordResetFadeAnim.setValue(1);
+      
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || getTranslatedText(language, 'failedToResetPassword');
+      showErrorToast(errorMessage);
+    }
+  }, [newPassword, confirmNewPassword, pendingPasswordReset, showErrorToast, showSuccessToast, language, signOut, passwordResetFadeAnim]);
+
+  const handlePasswordResetCodeChange = useCallback((text: string, index: number) => {
+    if (hasPasswordResetError) {
+      setHasPasswordResetError(false);
+    }
+
+    if (text.length > 1) {
+      const chars = text.slice(0, 6).split('');
+      const newCode = [...passwordResetCode];
+      chars.forEach((char, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = char;
+        }
+      });
+      setPasswordResetCode(newCode);
+      return;
+    }
+
+    const newCode = [...passwordResetCode];
+    newCode[index] = text;
+    setPasswordResetCode(newCode);
+
+    if (text && index < 5) {
+      const nextInput = passwordResetInputRefs.current[index + 1];
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+  }, [passwordResetCode, hasPasswordResetError]);
+
+  const handlePasswordResetCodeKeyPress = useCallback((key: string, index: number) => {
+    if (key === 'Backspace' && !passwordResetCode[index] && index > 0) {
+      const prevInput = passwordResetInputRefs.current[index - 1];
+      if (prevInput) {
+        prevInput.focus();
+      }
+    }
+  }, [passwordResetCode]);
+
+  const handleVerificationCodeChange = useCallback((text: string, index: number) => {
+    if (hasVerificationError) {
+      setHasVerificationError(false);
+    }
+
+    if (text.length > 1) {
+      const chars = text.slice(0, 6).split('');
+      const newCode = [...verificationCode];
+      chars.forEach((char, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = char;
+        }
+      });
+      setVerificationCode(newCode);
+      return;
+    }
+
+    const newCode = [...verificationCode];
+    newCode[index] = text;
+    setVerificationCode(newCode);
+
+    if (text && index < 5) {
+      const nextInput = verificationInputRefs.current[index + 1];
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+  }, [verificationCode, hasVerificationError]);
+
+  const handleVerificationCodeKeyPress = useCallback((key: string, index: number) => {
+    if (key === 'Backspace' && !verificationCode[index] && index > 0) {
+      const prevInput = verificationInputRefs.current[index - 1];
+      if (prevInput) {
+        prevInput.focus();
+      }
+    }
+  }, [verificationCode]);
+
+  const handleVerifyCode = useCallback(async () => {
+    const code = verificationCode.join('');
+    if (code.length !== 6) {
+      showErrorToast(getTranslatedText(language, 'pleaseEnterAllDigits'));
+      return;
+    }
+
+    if (!pendingSignUpAttempt) {
+      showErrorToast(getTranslatedText(language, 'verificationFailed'));
+      return;
+    }
+
+    setIsVerifying(true);
+
+    try {
+      const result = await pendingSignUpAttempt.attemptEmailAddressVerification({
+        code,
+      });
+
+      if (result.status === 'complete') {
+        if (setActive) {
+          await setActive({ session: result.createdSessionId });
+        }
+        setVerificationModalVisible(false);
+        setVerificationCode(['', '', '', '', '', '']);
+        setPendingSignUpAttempt(null);
+        setHasVerificationError(false);
+        setIsFreshAuth(true);
+        setShowLoadingOverlay(true);
+        showSuccessToast(getTranslatedText(language, 'accountCreatedSuccessfully'));
+      } else {
+        setHasVerificationError(true);
+      }
+    } catch (error: any) {
+      setHasVerificationError(true);
+    }
+
+    setIsVerifying(false);
+  }, [verificationCode, pendingSignUpAttempt, setActive, language, showSuccessToast, showErrorToast]);
+
+  const handleResendCode = useCallback(async () => {
+    if (!pendingSignUpAttempt) {
+      return;
+    }
+
+    setIsResendingCode(true);
+
+    try {
+      await pendingSignUpAttempt.prepareEmailAddressVerification({ strategy: 'email_code' });
+      showSuccessToast(getTranslatedText(language, 'verificationCodeSent'));
+      startResendCountdown();
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || getTranslatedText(language, 'verificationFailed');
+      showErrorToast(errorMessage);
+    }
+
+    setIsResendingCode(false);
+  }, [pendingSignUpAttempt, language, showSuccessToast, showErrorToast, startResendCountdown]);
+
+  const handleCloseVerificationModal = useCallback(() => {
+    setVerificationModalVisible(false);
+    setVerificationCode(['', '', '', '', '', '']);
+    setPendingSignUpAttempt(null);
+    setHasVerificationError(false);
+    setCanResendCode(false);
+    setResendCountdown(5);
+    if (resendTimerRef.current) {
+      clearInterval(resendTimerRef.current);
+      resendTimerRef.current = null;
+    }
+  }, []);
+
+  const handleSignInPress = useCallback(() => {
+    if (isSignIn) {
+      handleSignIn();
+    } else {
+      handleSignUp();
+    }
+  }, [isSignIn, handleSignIn, handleSignUp]);
+
+  const handleGoogleLogin = useCallback(() => {
+    handleSocialLogin('google');
+  }, [handleSocialLogin]);
+
+  const handleAppleLogin = useCallback(() => {
+    handleSocialLogin('apple');
+  }, [handleSocialLogin]);
+
+  const handleFacebookLogin = useCallback(() => {
+    handleSocialLogin('facebook');
+  }, [handleSocialLogin]);
+
+  const handleToggleSignIn = useCallback(() => {
+    if (!isSignIn) {
+      Animated.timing(signupToggleFadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsSignIn(true);
+        Animated.timing(signupToggleFadeAnim, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  }, [isSignIn, signupToggleFadeAnim]);
+
+  const handleToggleSignUp = useCallback(() => {
+    if (isSignIn) {
+      Animated.timing(signupToggleFadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsSignIn(false);
+        Animated.timing(signupToggleFadeAnim, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  }, [isSignIn, signupToggleFadeAnim]);
+
+  const handleForgotPasswordEmailChange = useCallback((text: string) => {
+    setForgotPasswordEmail(text);
+  }, []);
+
+  const handleNewPasswordChange = useCallback((text: string) => {
+    setNewPassword(text);
+  }, []);
+
+  const handleConfirmNewPasswordChange = useCallback((text: string) => {
+    setConfirmNewPassword(text);
+  }, []);
+
+  // Handle authentication state changes
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && isFreshAuth) {
+      const handleAuthComplete = async () => {
+        try {
+          if (user?.id) {
+            await AsyncStorage.setItem('userID', user.id);
+            const dbSuccess = await createUser(user.id);
+            if (!dbSuccess) {
+              console.warn('Failed to create user in local database, but Clerk auth succeeded');
+            }
+          }
+        } catch (error) {
+          console.error('Error handling user creation:', error);
+        }
+      };
+      
+      if (user) {
+        handleAuthComplete();
+      }
+      
+      const elapsedTime = Date.now() - splashStartTime.current;
+      const remainingTime = Math.max(0, 3000 - elapsedTime);
+      
+      setTimeout(() => {
+        setShowLoadingOverlay(false);
+        setIsFreshAuth(false);
+        onAuthComplete?.();
+      }, remainingTime);
+    }
+  }, [isLoading, isAuthenticated, user, onAuthComplete, isFreshAuth]);
+
+  // Handle resend code countdown
+  useEffect(() => {
+    if (!canResendCode && resendCountdown > 0) {
+      resendTimerRef.current = setInterval(() => {
+        setResendCountdown((prev) => {
+          if (prev <= 1) {
+            setCanResendCode(true);
+            if (resendTimerRef.current) {
+              clearInterval(resendTimerRef.current);
+              resendTimerRef.current = null;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (resendTimerRef.current) {
+          clearInterval(resendTimerRef.current);
+          resendTimerRef.current = null;
+        }
+      };
+    }
+  }, [canResendCode, resendCountdown]);
+
+  // Cleanup animations on unmount
+  useEffect(() => {
+    return () => {
+      signupToggleFadeAnim.stopAnimation();
+      passwordResetFadeAnim.stopAnimation();
+      if (resendTimerRef.current) {
+        clearInterval(resendTimerRef.current);
+        resendTimerRef.current = null;
+      }
+    };
+  }, [signupToggleFadeAnim, passwordResetFadeAnim]);
 
   return (
     <View style={styles.container}>
@@ -2192,6 +2926,624 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
         </Animated.View>
       )}
 
+      {/* signupPage - Sign in/Sign up page with onboarding animation */}
+      {currentSection === 'signupPage' && (
+        <>
+          {/* Background animation that fills the screen */}
+          <LottieView
+            ref={animationRef}
+            source={backgroundAnimationSource}
+            autoPlay
+            loop={true}
+            style={styles.animation}
+            resizeMode="cover"
+            speed={1}
+            cacheComposition={true}
+            renderMode="HARDWARE"
+            onAnimationFailure={(error) => {
+              console.error('Background animation failed to load:', error);
+            }}
+          />
+          
+          <Animated.View style={[
+            styles.signInContainer, 
+            { 
+              paddingTop: insets.top,
+              paddingBottom: insets.bottom,
+              opacity: signupPageFadeAnim 
+            }
+          ]}>
+            <View style={styles.whiteContainer}>
+              <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Logo row at the top */}
+                <View style={styles.logoRow}>
+                  <PrepQuestLogo 
+                    width={height * 0.25}
+                    height={height * 0.125}
+                  />
+                </View>
+                
+                {/* Sign In / Sign Up Toggle */}
+                <View style={styles.toggleContainer}>
+                  <TouchableOpacity 
+                    style={styles.toggleOption}
+                    onPress={handleToggleSignIn}
+                  >
+                    <Text style={[
+                      styles.toggleText,
+                      { 
+                        color: isSignIn ? Colors.light.text : Colors.light.unselectedText,
+                        fontFamily: Fonts.bodyMedium
+                      }
+                    ]}>
+                      {getTranslatedText(language, 'signIn')}
+                    </Text>
+                    {isSignIn && <View style={[styles.underline, { backgroundColor: Colors.light.brandColor2 }]} />}
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.toggleOption}
+                    onPress={handleToggleSignUp}
+                  >
+                    <Text style={[
+                      styles.toggleText,
+                      { 
+                        color: !isSignIn ? Colors.light.text : Colors.light.unselectedText,
+                        fontFamily: Fonts.bodyMedium
+                      }
+                    ]}>
+                      {getTranslatedText(language, 'signUp')}
+                    </Text>
+                    {!isSignIn && <View style={[styles.underline, { backgroundColor: Colors.light.brandColor2 }]} />}
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Animated content that changes between sign in and sign up */}
+                <Animated.View style={{ opacity: signupToggleFadeAnim, width: '100%' }}>
+                  {/* Welcome text for sign in/sign up state */}
+                  {isSignIn ? (
+                    <View style={styles.welcomeContainer}>
+                      <Text style={[styles.welcomeText, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                        {getTranslatedText(language, 'welcomeBack')}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.welcomeContainer}>
+                      <Text style={[styles.welcomeText, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                        {getTranslatedText(language, 'welcomeAboard')}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {/* Input fields */}
+                  <View style={styles.inputContainer}>
+                    {/* Email/Username input */}
+                    <View style={styles.inputWrapper}>
+                      <TextInput
+                        style={[
+                          styles.textInput, 
+                          { 
+                            borderColor: Colors.light.unselectedText,
+                            color: Colors.light.text,
+                            fontFamily: Fonts.bodyBold
+                          }
+                        ]}
+                        placeholder={getTranslatedText(language, 'email')}
+                        placeholderTextColor={Colors.light.unselectedText}
+                        value={email}
+                        onChangeText={handleEmailChange}
+                      />
+                    </View>
+                    
+                    {/* Password input */}
+                    <View style={styles.inputWrapper}>
+                      <TextInput
+                        style={[
+                          styles.textInput, 
+                          { 
+                            borderColor: Colors.light.unselectedText,
+                            color: Colors.light.text,
+                            fontFamily: Fonts.bodyBold
+                          }
+                        ]}
+                        placeholder={getTranslatedText(language, 'password')}
+                        placeholderTextColor={Colors.light.unselectedText}
+                        secureTextEntry={!showPassword}
+                        value={password}
+                        onChangeText={handlePasswordChange}
+                      />
+                      <TouchableOpacity 
+                        style={styles.passwordToggle}
+                        onPress={handleTogglePassword}
+                      >
+                        <Feather 
+                          name={showPassword ? 'eye' : 'eye-off'} 
+                          size={20} 
+                          color={Colors.light.normalIconColor}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    
+                    {/* Confirm Password input - only in sign up state */}
+                    {!isSignIn && (
+                      <View style={styles.inputWrapper}>
+                        <TextInput
+                          style={[
+                            styles.textInput, 
+                            { 
+                              borderColor: Colors.light.unselectedText,
+                              color: Colors.light.text,
+                              fontFamily: Fonts.bodyBold
+                            }
+                          ]}
+                          placeholder={getTranslatedText(language, 'confirmPassword')}
+                          placeholderTextColor={Colors.light.unselectedText}
+                          secureTextEntry={!showPassword}
+                          value={confirmPassword}
+                          onChangeText={handleConfirmPasswordChange}
+                        />
+                        <TouchableOpacity 
+                          style={styles.passwordToggle}
+                          onPress={handleTogglePassword}
+                        >
+                          <Feather 
+                            name={showPassword ? 'eye' : 'eye-off'} 
+                            size={20} 
+                            color={Colors.light.normalIconColor}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                  
+                  {/* Sign In/Sign Up button */}
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity 
+                      style={[styles.signInButton, { backgroundColor: Colors.light.brandColor2 }]}
+                      onPress={handleSignInPress}
+                    >
+                      <Text style={[styles.signInButtonText, { color: Colors.light.background, fontFamily: Fonts.bodyBold }]}>
+                        {isSignIn ? getTranslatedText(language, 'signIn') : getTranslatedText(language, 'signUp')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {/* Forgot Password text - visible in sign in state */}
+                  {isSignIn && (
+                    <View style={styles.forgotPasswordContainer}>
+                      <TouchableOpacity onPress={handleForgotPassword}>
+                        <Text style={[styles.forgotPasswordText, { color: Colors.light.text, fontFamily: Fonts.bodyBold }]}>
+                          {getTranslatedText(language, 'forgotPassword')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </Animated.View>
+                
+                {/* Social login section */}
+                <View style={styles.forgotPasswordContainer}>
+                  <Text style={[styles.signInWithText, { color: Colors.light.text, fontFamily: Fonts.bodyBold }]}>
+                    {isSignIn ? getTranslatedText(language, 'orSignInWith') : getTranslatedText(language, 'orSignUpWith')}
+                  </Text>
+                  
+                  {/* Social login buttons */}
+                  <View style={styles.socialLoginContainer}>
+                    {/* Google login */}
+                    <TouchableOpacity 
+                      style={[styles.socialLoginButton, { borderColor: Colors.light.unselectedText }]}
+                      onPress={handleGoogleLogin}
+                    >
+                      <View style={styles.iconContainer}>
+                        <GoogleLoginIcon width={24} height={24} />
+                      </View>
+                      <View style={styles.textContainer}>
+                        <Text style={[styles.socialLoginText, { color: Colors.light.text, fontFamily: Fonts.bodyBold }]}>
+                          {getTranslatedText(language, 'continueWithGoogle')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                    
+                    {/* Apple login - only on iOS */}
+                    {Platform.OS === 'ios' && (
+                      <TouchableOpacity 
+                        style={[styles.socialLoginButton, { borderColor: Colors.light.unselectedText }]}
+                        onPress={handleAppleLogin}
+                      >
+                        <View style={styles.iconContainer}>
+                          <AppleLoginIcon width={24} height={24} />
+                        </View>
+                        <View style={styles.textContainer}>
+                          <Text style={[styles.socialLoginText, { color: Colors.light.text, fontFamily: Fonts.bodyBold }]}>
+                            {getTranslatedText(language, 'continueWithApple')}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                    
+                    {/* Facebook login */}
+                    <TouchableOpacity 
+                      style={[styles.socialLoginButton, { borderColor: Colors.light.unselectedText }]}
+                      onPress={handleFacebookLogin}
+                    >
+                      <View style={styles.iconContainer}>
+                        <FacebookLoginIcon width={24} height={24} />
+                      </View>
+                      <View style={styles.textContainer}>
+                        <Text style={[styles.socialLoginText, { color: Colors.light.text, fontFamily: Fonts.bodyBold }]}>
+                          {getTranslatedText(language, 'continueWithFacebook')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+            </View>
+          </Animated.View>
+        </>
+      )}
+
+      {/* Toast component */}
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        onHide={handleHideToast}
+        duration={3000}
+        backgroundColor={toastBackgroundColor}
+      />
+
+      {/* Forgot Password Modal */}
+      <Modal
+        visible={forgotPasswordModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseModal}
+        statusBarTranslucent={Platform.OS === 'android'}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: Colors.light.background }]}>
+            <Animated.View style={{ opacity: passwordResetFadeAnim, width: '100%' }}>
+              {passwordResetStep === 'email' && (
+              <>
+                <Text style={[styles.modalTitle, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                  {getTranslatedText(language, 'resetPassword')}
+                </Text>
+                <Text style={[styles.modalSubtitle, { color: Colors.light.unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                  {getTranslatedText(language, 'resetPasswordSubtitle')}
+                </Text>
+                
+                <TextInput
+                  style={[
+                    styles.modalInput, 
+                    { 
+                      borderColor: Colors.light.unselectedText,
+                      color: Colors.light.text,
+                      fontFamily: Fonts.bodyBold
+                    }
+                  ]}
+                  placeholder={getTranslatedText(language, 'enterYourEmail')}
+                  placeholderTextColor={Colors.light.unselectedText}
+                  value={forgotPasswordEmail}
+                  onChangeText={handleForgotPasswordEmailChange}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity 
+                    style={[styles.modalCancelButton, { borderColor: Colors.light.unselectedText }]}
+                    onPress={handleCloseModal}
+                  >
+                    <Text style={[styles.modalCancelButtonText, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                      {getTranslatedText(language, 'cancel')}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.modalConfirmButton, 
+                      { backgroundColor: Colors.light.brandColor2 },
+                      isResettingPassword && { backgroundColor: Colors.light.unselectedText, opacity: 0.6 }
+                    ]}
+                    onPress={handlePasswordReset}
+                    disabled={isResettingPassword}
+                  >
+                    <Text style={[styles.modalConfirmButtonText, { color: Colors.light.background, fontFamily: Fonts.bodyMedium }]}>
+                      {isResettingPassword ? getTranslatedText(language, 'sending') : getTranslatedText(language, 'sendEmail')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {passwordResetStep === 'code' && (
+              <>
+                <Text style={[styles.modalTitle, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                  {getTranslatedText(language, 'verifyYourEmail')}
+                </Text>
+                <Text style={[styles.modalSubtitle, { color: Colors.light.unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                  {getTranslatedText(language, 'firstKeyInCodeToVerify')}
+                </Text>
+                
+                {/* Password Reset Code Input Grid */}
+                <View style={styles.verificationCodeContainer}>
+                  {passwordResetCode.map((digit, index) => (
+                    <TextInput
+                      key={index}
+                      ref={(ref) => {
+                        passwordResetInputRefs.current[index] = ref;
+                      }}
+                      style={[
+                        styles.verificationCodeInput,
+                        {
+                          borderColor: hasPasswordResetError ? '#FF4444' : Colors.light.unselectedText,
+                          color: Colors.light.text,
+                          backgroundColor: Colors.light.background,
+                          fontFamily: Fonts.bodyBold
+                        }
+                      ]}
+                      value={digit}
+                      onChangeText={(text) => handlePasswordResetCodeChange(text, index)}
+                      onKeyPress={({ nativeEvent }) => handlePasswordResetCodeKeyPress(nativeEvent.key, index)}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      textAlign="center"
+                      selectTextOnFocus={true}
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                </View>
+                
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity 
+                    style={[styles.modalCancelButton, { borderColor: Colors.light.unselectedText }]}
+                    onPress={handleCloseModal}
+                  >
+                    <Text style={[styles.modalCancelButtonText, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                      {getTranslatedText(language, 'cancel')}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.modalConfirmButton, 
+                      { backgroundColor: Colors.light.brandColor2 },
+                      isVerifyingResetCode && { backgroundColor: Colors.light.unselectedText, opacity: 0.6 }
+                    ]}
+                    onPress={handleVerifyResetCode}
+                    disabled={isVerifyingResetCode}
+                  >
+                    <Text style={[styles.modalConfirmButtonText, { color: Colors.light.background, fontFamily: Fonts.bodyMedium }]}>
+                      {isVerifyingResetCode ? getTranslatedText(language, 'verifying') : getTranslatedText(language, 'verify')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {passwordResetStep === 'newPassword' && (
+              <>
+                <Text style={[styles.modalTitle, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                  {getTranslatedText(language, 'setNewPassword')}
+                </Text>
+                <Text style={[styles.modalSubtitle, { color: Colors.light.unselectedText, fontFamily: Fonts.bodyMedium }]}>
+                  {getTranslatedText(language, 'enterYourNewPassword')}
+                </Text>
+                
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[
+                      styles.modalInput, 
+                      { 
+                        borderColor: Colors.light.unselectedText,
+                        color: Colors.light.text,
+                        fontFamily: Fonts.bodyBold
+                      }
+                    ]}
+                    placeholder={getTranslatedText(language, 'newPassword')}
+                    placeholderTextColor={Colors.light.unselectedText}
+                    secureTextEntry={!showPassword}
+                    value={newPassword}
+                    onChangeText={handleNewPasswordChange}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity 
+                    style={styles.passwordToggle}
+                    onPress={handleTogglePassword}
+                  >
+                    <Feather 
+                      name={showPassword ? 'eye' : 'eye-off'} 
+                      size={20} 
+                      color={Colors.light.normalIconColor}
+                    />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[
+                      styles.modalInput, 
+                      { 
+                        borderColor: Colors.light.unselectedText,
+                        color: Colors.light.text,
+                        fontFamily: Fonts.bodyBold
+                      }
+                    ]}
+                    placeholder={getTranslatedText(language, 'confirmNewPassword')}
+                    placeholderTextColor={Colors.light.unselectedText}
+                    secureTextEntry={!showPassword}
+                    value={confirmNewPassword}
+                    onChangeText={handleConfirmNewPasswordChange}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity 
+                    style={styles.passwordToggle}
+                    onPress={handleTogglePassword}
+                  >
+                    <Feather 
+                      name={showPassword ? 'eye' : 'eye-off'} 
+                      size={20} 
+                      color={Colors.light.normalIconColor}
+                    />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity 
+                    style={[styles.modalCancelButton, { borderColor: Colors.light.unselectedText }]}
+                    onPress={handleCloseModal}
+                  >
+                    <Text style={[styles.modalCancelButtonText, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                      {getTranslatedText(language, 'cancel')}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[styles.modalConfirmButton, { backgroundColor: Colors.light.brandColor2 }]}
+                    onPress={handleSetNewPassword}
+                  >
+                    <Text style={[styles.modalConfirmButtonText, { color: Colors.light.background, fontFamily: Fonts.bodyMedium }]}>
+                      {getTranslatedText(language, 'done')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+            </Animated.View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Email Verification Modal */}
+      <Modal
+        visible={verificationModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseVerificationModal}
+        statusBarTranslucent={Platform.OS === 'android'}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: Colors.light.background }]}>
+            <Text style={[styles.modalTitle, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+              {getTranslatedText(language, 'verifyEmail')}
+            </Text>
+            <Text style={[styles.modalSubtitle, { color: Colors.light.unselectedText, fontFamily: Fonts.bodyMedium }]}>
+              {getTranslatedText(language, 'verifyEmailSubtitle')}
+            </Text>
+            
+            {/* Verification Code Input Grid */}
+            <View style={styles.verificationCodeContainer}>
+              {verificationCode.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => {
+                    verificationInputRefs.current[index] = ref;
+                  }}
+                  style={[
+                    styles.verificationCodeInput,
+                    {
+                      borderColor: hasVerificationError ? '#FF4444' : Colors.light.unselectedText,
+                      color: Colors.light.text,
+                      backgroundColor: Colors.light.background,
+                      fontFamily: Fonts.bodyBold
+                    }
+                  ]}
+                  value={digit}
+                  onChangeText={(text) => handleVerificationCodeChange(text, index)}
+                  onKeyPress={({ nativeEvent }) => handleVerificationCodeKeyPress(nativeEvent.key, index)}
+                  keyboardType="numeric"
+                  maxLength={6}
+                  textAlign="center"
+                  selectTextOnFocus={true}
+                  autoFocus={index === 0}
+                />
+              ))}
+            </View>
+            
+            {/* Resend Code Button */}
+            <TouchableOpacity 
+              style={[
+                styles.resendButton,
+                { 
+                  borderColor: canResendCode ? Colors.light.brandColor2 : Colors.light.unselectedText,
+                  opacity: canResendCode ? 1 : 0.5
+                }
+              ]}
+              onPress={handleResendCode}
+              disabled={!canResendCode || isResendingCode}
+            >
+              <Text style={[
+                styles.resendButtonText,
+                { 
+                  color: canResendCode ? Colors.light.brandColor2 : Colors.light.unselectedText, 
+                  fontFamily: Fonts.bodyMedium 
+                }
+              ]}>
+                {isResendingCode 
+                  ? getTranslatedText(language, 'resendingCode')
+                  : canResendCode 
+                    ? getTranslatedText(language, 'resendCode')
+                    : `${getTranslatedText(language, 'resendCode')} (${resendCountdown}s)`
+                }
+              </Text>
+            </TouchableOpacity>
+            
+            {/* Action Buttons */}
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity 
+                style={[styles.modalCancelButton, { borderColor: Colors.light.unselectedText }]}
+                onPress={handleCloseVerificationModal}
+              >
+                <Text style={[styles.modalCancelButtonText, { color: Colors.light.text, fontFamily: Fonts.bodyMedium }]}>
+                  {getTranslatedText(language, 'cancel')}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.modalConfirmButton, 
+                  { backgroundColor: Colors.light.brandColor2 },
+                  isVerifying && { backgroundColor: Colors.light.unselectedText, opacity: 0.6 }
+                ]}
+                onPress={handleVerifyCode}
+                disabled={isVerifying}
+              >
+                <Text style={[styles.modalConfirmButtonText, { color: Colors.light.background, fontFamily: Fonts.bodyMedium }]}>
+                  {isVerifying ? getTranslatedText(language, 'verifying') : getTranslatedText(language, 'verify')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Loading Overlay */}
+      {showLoadingOverlay && (
+        <View style={[styles.loadingOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}>
+          <View style={styles.loadingAnimationContainer}>
+            <LottieView
+              ref={loadingOverlayRef}
+              source={require('../assets/animations/addDeckLoadingAnimation.json')}
+              autoPlay
+              loop={true}
+              style={styles.loadingAnimation}
+              speed={1}
+              cacheComposition={true}
+              renderMode="HARDWARE"
+              onAnimationFailure={(error) => {
+                console.error('Loading overlay animation failed to load:', error);
+              }}
+            />
+          </View>
+        </View>
+      )}
+
       {/* Top button row with conditional buttons */}
       <View style={[styles.topButtonRow, { top: insets.top }]}>
         {currentSection === 'languageSelection' ? (
@@ -2486,6 +3838,21 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                     fill={Colors.light.text}
                   />
                 </Svg>
+              </View>
+            </TouchableOpacity>
+          </>
+        ) : currentSection === 'signupPage' ? (
+          <>
+            {/* Back button on the left when on signupPage */}
+            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+              <View style={styles.buttonWithIcon}>
+                <Svg width="12" height="12" viewBox="0 0 12 12">
+                  <Polygon
+                    points="0,6 12,0 12,12"
+                    fill={Colors.light.text}
+                  />
+                </Svg>
+                <Text style={styles.backButtonText}>{getTranslatedText(language, 'back')}</Text>
               </View>
             </TouchableOpacity>
           </>
@@ -3227,5 +4594,245 @@ const styles = StyleSheet.create({
   onboardingPage6Animation: {
     width: '100%',
     height: '100%',
+  },
+  // Signup page styles
+  signInContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+  whiteContainer: {
+    width: '90%',
+    height: height * 0.85,
+    opacity: 0.95,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.light.background,
+  },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginTop: 12,
+    width: '100%',
+  },
+  toggleOption: {
+    marginHorizontal: 20,
+    alignItems: 'center',
+  },
+  toggleText: {
+    fontSize: 20,
+    paddingVertical: 8,
+  },
+  underline: {
+    height: 3,
+    width: '200%',
+    marginTop: 2,
+  },
+  welcomeContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  welcomeText: {
+    fontSize: 24,
+  },
+  inputContainer: {
+    width: '100%',
+    flexDirection: 'column',
+    gap: 16,
+  },
+  inputWrapper: {
+    position: 'relative',
+  },
+  textInput: {
+    height: 50,
+    borderWidth: 2,
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    fontSize: 16,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 15,
+    top: 12,
+    padding: 5,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  signInButton: {
+    borderRadius: 10,
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+  },
+  signInButtonText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  forgotPasswordContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    fontSize: 16,
+  },
+  signInWithText: {
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  socialLoginContainer: {
+    width: '100%',
+    flexDirection: 'column',
+    gap: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  socialLoginButton: {
+    width: '90%',
+    height: 50,
+    borderWidth: 2,
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  socialLoginText: {
+    fontSize: 16,
+  },
+  iconContainer: {
+    width: '20%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    borderRadius: 20,
+    padding: 24,
+    margin: 20,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  modalInput: {
+    height: 50,
+    borderWidth: 2,
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    height: 50,
+    borderWidth: 2,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCancelButtonText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalConfirmButtonText: {
+    fontSize: 16,
+  },
+  // Verification code modal styles
+  verificationCodeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  verificationCodeInput: {
+    width: 45,
+    height: 55,
+    borderWidth: 2,
+    borderRadius: 12,
+    fontSize: 24,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  resendButton: {
+    borderWidth: 1,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  resendButtonText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  // Loading overlay styles
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+  },
+  loadingAnimationContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

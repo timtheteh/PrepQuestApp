@@ -92,6 +92,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Customize your study experience',
     instantFeedbackTrack: 'Get instant feedback & track your performance!',
     quizChallengeYourself: 'Quiz & challenge yourself to ace that quiz or interview!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Awesome!\nYou\'re all set!',
+    signUpWithUsToContinue: 'Sign up with us to continue',
+    signUp: 'Sign Up',
   },
   Chinese: {
     skip: '跳过',
@@ -185,6 +189,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: '自定义您的学习体验',
     instantFeedbackTrack: '获得即时反馈并跟踪您的表现！',
     quizChallengeYourself: '测验并挑战自己，在测验或面试中取得优异成绩！',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: '太棒了！\n您已准备就绪！',
+    signUpWithUsToContinue: '注册加入我们以继续',
+    signUp: '注册',
   },
   Malay: {
     skip: 'Langkau',
@@ -273,6 +281,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Sesuaikan pengalaman pembelajaran anda',
     instantFeedbackTrack: 'Dapatkan maklum balas segera & jejak prestasi anda!',
     quizChallengeYourself: 'Kuiz & cabar diri anda untuk menguasai kuiz atau temuduga itu!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Hebat!\nAnda sudah bersedia!',
+    signUpWithUsToContinue: 'Daftar bersama kami untuk meneruskan',
+    signUp: 'Daftar',
   },
   Hindi: {
     skip: 'छोड़ें',
@@ -361,6 +373,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'अपने अध्ययन अनुभव को अनुकूलित करें',
     instantFeedbackTrack: 'तत्काल प्रतिक्रिया प्राप्त करें और अपने प्रदर्शन को ट्रैक करें!',
     quizChallengeYourself: 'क्विज़ करें और खुद को चुनौती दें कि उस क्विज़ या साक्षात्कार में सफल हों!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'शानदार!\nआप तैयार हैं!',
+    signUpWithUsToContinue: 'जारी रखने के लिए हमारे साथ साइन अप करें',
+    signUp: 'साइन अप',
   },
   French: {
     skip: 'Passer',
@@ -449,6 +465,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Personnalisez votre expérience d\'étude',
     instantFeedbackTrack: 'Obtenez des commentaires instantanés et suivez vos performances !',
     quizChallengeYourself: 'Quiz et défiez-vous pour réussir ce quiz ou entretien !',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Génial !\nVous êtes prêt !',
+    signUpWithUsToContinue: 'Inscrivez-vous avec nous pour continuer',
+    signUp: 'S\'inscrire',
   },
   Japanese: {
     skip: 'スキップ',
@@ -537,6 +557,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: '学習体験をカスタマイズ',
     instantFeedbackTrack: '即座のフィードバックを取得し、パフォーマンスを追跡！',
     quizChallengeYourself: 'クイズに挑戦し、そのクイズや面接で成功を収めましょう！',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: '素晴らしい！\n準備完了です！',
+    signUpWithUsToContinue: '続行するために私たちとサインアップしてください',
+    signUp: 'サインアップ',
   },
   Korean: {
     skip: '건너뛰기',
@@ -625,6 +649,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: '학습 경험을 맞춤화하세요',
     instantFeedbackTrack: '즉시 피드백을 받고 성과를 추적하세요!',
     quizChallengeYourself: '퀴즈를 풀고 도전하여 그 퀴즈나 면접에서 성공하세요!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: '훌륭해요!\n준비 완료입니다!',
+    signUpWithUsToContinue: '계속하려면 우리와 함께 가입하세요',
+    signUp: '가입',
   },
   Spanish: {
     skip: 'Omitir',
@@ -718,6 +746,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Personaliza tu experiencia de estudio',
     instantFeedbackTrack: '¡Obtén retroalimentación instantánea y rastrea tu rendimiento!',
     quizChallengeYourself: '¡Haz quiz y desafíate a ti mismo para dominar ese quiz o entrevista!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: '¡Increíble!\n¡Estás listo!',
+    signUpWithUsToContinue: 'Regístrate con nosotros para continuar',
+    signUp: 'Registrarse',
   },
   German: {
     skip: 'Überspringen',
@@ -806,6 +838,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Passen Sie Ihre Lernerfahrung an',
     instantFeedbackTrack: 'Erhalten Sie sofortiges Feedback und verfolgen Sie Ihre Leistung!',
     quizChallengeYourself: 'Quiz und fordern Sie sich selbst heraus, um dieses Quiz oder Interview zu meistern!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Großartig!\nSie sind bereit!',
+    signUpWithUsToContinue: 'Melden Sie sich bei uns an, um fortzufahren',
+    signUp: 'Anmelden',
   },
   Portuguese: {
     skip: 'Pular',
@@ -894,6 +930,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Personalize sua experiência de estudo',
     instantFeedbackTrack: 'Obtenha feedback instantâneo e acompanhe seu desempenho!',
     quizChallengeYourself: 'Faça quiz e desafie-se a dominar aquele quiz ou entrevista!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Incrível!\nVocê está pronto!',
+    signUpWithUsToContinue: 'Cadastre-se conosco para continuar',
+    signUp: 'Cadastrar',
   },
   Italian: {
     skip: 'Salta',
@@ -982,6 +1022,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Personalizza la tua esperienza di studio',
     instantFeedbackTrack: 'Ottieni feedback istantaneo e traccia le tue prestazioni!',
     quizChallengeYourself: 'Quiz e sfida te stesso per padroneggiare quel quiz o colloquio!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Fantastico!\nSei pronto!',
+    signUpWithUsToContinue: 'Registrati con noi per continuare',
+    signUp: 'Registrati',
   },
   Russian: {
     skip: 'Пропустить',
@@ -1070,6 +1114,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Настройте свой учебный опыт',
     instantFeedbackTrack: 'Получайте мгновенную обратную связь и отслеживайте свою производительность!',
     quizChallengeYourself: 'Викторины и бросайте себе вызов, чтобы освоить эту викторину или собеседование!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Потрясающе!\nВы готовы!',
+    signUpWithUsToContinue: 'Зарегистрируйтесь с нами, чтобы продолжить',
+    signUp: 'Зарегистрироваться',
   },
   Arabic: {
     skip: 'تخطي',
@@ -1158,6 +1206,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'خصص تجربة دراستك',
     instantFeedbackTrack: 'احصل على ملاحظات فورية وتتبع أداءك!',
     quizChallengeYourself: 'اختبر وتحدى نفسك لإتقان ذلك الاختبار أو المقابلة!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'رائع!\nأنت جاهز!',
+    signUpWithUsToContinue: 'سجل معنا للمتابعة',
+    signUp: 'تسجيل',
   },
   Indonesian: {
     skip: 'Lewati',
@@ -1246,6 +1298,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Sesuaikan pengalaman belajar Anda',
     instantFeedbackTrack: 'Dapatkan umpan balik instan dan lacak kinerja Anda!',
     quizChallengeYourself: 'Kuis dan tantang diri Anda untuk menguasai kuis atau wawancara itu!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Luar biasa!\nAnda siap!',
+    signUpWithUsToContinue: 'Daftar dengan kami untuk melanjutkan',
+    signUp: 'Daftar',
   },
   Thai: {
     skip: 'ข้าม',
@@ -1334,6 +1390,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'ปรับแต่งประสบการณ์การเรียนของคุณ',
     instantFeedbackTrack: 'รับข้อเสนอแนะทันทีและติดตามผลการทำงานของคุณ!',
     quizChallengeYourself: 'ทำควิซและท้าทายตัวเองเพื่อคว้าชัยชนะในควิซหรือการสัมภาษณ์นั้น!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'ยอดเยี่ยม!\nคุณพร้อมแล้ว!',
+    signUpWithUsToContinue: 'สมัครสมาชิกกับเราเพื่อดำเนินการต่อ',
+    signUp: 'สมัครสมาชิก',
   },
   Vietnamese: {
     skip: 'Bỏ qua',
@@ -1422,6 +1482,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Tùy chỉnh trải nghiệm học tập của bạn',
     instantFeedbackTrack: 'Nhận phản hồi tức thì và theo dõi hiệu suất của bạn!',
     quizChallengeYourself: 'Làm bài kiểm tra và thử thách bản thân để thành thạo bài kiểm tra hoặc cuộc phỏng vấn đó!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Tuyệt vời!\nBạn đã sẵn sàng!',
+    signUpWithUsToContinue: 'Đăng ký với chúng tôi để tiếp tục',
+    signUp: 'Đăng ký',
   },
   Turkish: {
     skip: 'Atla',
@@ -1510,6 +1574,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Öğrenme deneyiminizi özelleştirin',
     instantFeedbackTrack: 'Anında geri bildirim alın ve performansınızı takip edin!',
     quizChallengeYourself: 'Quiz yapın ve o quiz veya mülakatı başarmak için kendinizi zorlayın!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Harika!\nHazırsınız!',
+    signUpWithUsToContinue: 'Devam etmek için bizimle kayıt olun',
+    signUp: 'Kayıt Ol',
   },
   Dutch: {
     skip: 'Overslaan',
@@ -1598,6 +1666,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Pas je studie-ervaring aan',
     instantFeedbackTrack: 'Krijg directe feedback en volg je prestaties!',
     quizChallengeYourself: 'Quiz en daag jezelf uit om die quiz of interview te beheersen!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Geweldig!\nJe bent klaar!',
+    signUpWithUsToContinue: 'Meld je aan bij ons om door te gaan',
+    signUp: 'Aanmelden',
   },
   Polish: {
     skip: 'Pomiń',
@@ -1686,6 +1758,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Dostosuj swoje doświadczenie nauki',
     instantFeedbackTrack: 'Otrzymuj natychmiastową informację zwrotną i śledź swoje wyniki!',
     quizChallengeYourself: 'Quiz i wyzwij się, aby opanować ten quiz lub rozmowę!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Świetnie!\nJesteś gotowy!',
+    signUpWithUsToContinue: 'Zarejestruj się z nami, aby kontynuować',
+    signUp: 'Zarejestruj się',
   },
   Swedish: {
     skip: 'Hoppa över',
@@ -1774,6 +1850,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Anpassa din studieupplevelse',
     instantFeedbackTrack: 'Få omedelbar feedback och spåra din prestanda!',
     quizChallengeYourself: 'Quiz och utmana dig själv att bemästra den quizen eller intervjun!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Fantastiskt!\nDu är redo!',
+    signUpWithUsToContinue: 'Registrera dig hos oss för att fortsätta',
+    signUp: 'Registrera dig',
   },
   Czech: {
     skip: 'Přeskočit',
@@ -1862,6 +1942,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Přizpůsobte si své studijní zážitky',
     instantFeedbackTrack: 'Získejte okamžitou zpětnou vazbu a sledujte svůj výkon!',
     quizChallengeYourself: 'Kvíz a vyzvěte se k zvládnutí toho kvízu nebo pohovoru!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Skvělé!\nJste připraveni!',
+    signUpWithUsToContinue: 'Zaregistrujte se u nás pro pokračování',
+    signUp: 'Zaregistrovat se',
   },
   Greek: {
     skip: 'Παράλειψη',
@@ -1950,6 +2034,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Προσαρμόστε την εμπειρία σπουδών σας',
     instantFeedbackTrack: 'Λάβετε άμεση ανατροφοδότηση και παρακολουθήστε την απόδοσή σας!',
     quizChallengeYourself: 'Κουίζ και προκαλέστε τον εαυτό σας να κυριαρχήσει σε αυτό το κουίζ ή συνέντευξη!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Φανταστικά!\nΕίστε έτοιμοι!',
+    signUpWithUsToContinue: 'Εγγραφείτε μαζί μας για να συνεχίσετε',
+    signUp: 'Εγγραφή',
   },
   Hebrew: {
     skip: 'דלג',
@@ -2038,6 +2126,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'התאם את חוויית הלימוד שלך',
     instantFeedbackTrack: 'קבל משוב מיידי ועקוב אחר הביצועים שלך!',
     quizChallengeYourself: 'שאלון ואתגר את עצמך לשלוט בשאלון או הראיון הזה!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'מדהים!\nאתה מוכן!',
+    signUpWithUsToContinue: 'הירשם איתנו כדי להמשיך',
+    signUp: 'הירשם',
   },
   Tagalog: {
     skip: 'Laktawan',
@@ -2126,6 +2218,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'I-customize ang inyong study experience',
     instantFeedbackTrack: 'Kumuha ng instant feedback at i-track ang inyong performance!',
     quizChallengeYourself: 'Quiz at hamunin ang inyong sarili na ma-master ang quiz o interview na iyon!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Astig!\nHanda na kayo!',
+    signUpWithUsToContinue: 'Mag-sign up sa amin para magpatuloy',
+    signUp: 'Mag-sign up',
   },
   Tamil: {
     skip: 'தவிர்க்க',
@@ -2214,6 +2310,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'உங்கள் கற்றல் அனுபவத்தை தனிப்பயனாக்கவும்',
     instantFeedbackTrack: 'உடனடி கருத்தை பெறுங்கள் மற்றும் உங்கள் செயல்திறனை கண்காணிக்கவும்!',
     quizChallengeYourself: 'வினாடி வினா மற்றும் அந்த வினாடி வினா அல்லது நேர்காணலில் வெற்றி பெற உங்களை சவால் செய்யுங்கள்!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'அருமை!\nநீங்கள் தயாராக இருக்கிறீர்கள்!',
+    signUpWithUsToContinue: 'தொடர நம்முடன் பதிவு செய்யுங்கள்',
+    signUp: 'பதிவு செய்',
   },
   Bengali: {
     skip: 'এড়িয়ে যান',
@@ -2302,6 +2402,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'আপনার অধ্যয়নের অভিজ্ঞতা কাস্টমাইজ করুন',
     instantFeedbackTrack: 'তাৎক্ষণিক প্রতিক্রিয়া পান এবং আপনার কর্মক্ষমতা ট্র্যাক করুন!',
     quizChallengeYourself: 'কুইজ এবং সেই কুইজ বা সাক্ষাত্কারে দক্ষতা অর্জনের জন্য নিজেকে চ্যালেঞ্জ করুন!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'চমৎকার!\nআপনি প্রস্তুত!',
+    signUpWithUsToContinue: 'চালিয়ে যেতে আমাদের সাথে সাইন আপ করুন',
+    signUp: 'সাইন আপ',
   },
   Ukrainian: {
     skip: 'Пропустити',
@@ -2390,6 +2494,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Налаштуйте свій навчальний досвід',
     instantFeedbackTrack: 'Отримуйте миттєвий зворотний зв\'язок і відстежуйте свою ефективність!',
     quizChallengeYourself: 'Квіз і кидайте виклик собі, щоб оволодіти цим квізом або співбесідою!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Чудово!\nВи готові!',
+    signUpWithUsToContinue: 'Зареєструйтеся з нами, щоб продовжити',
+    signUp: 'Зареєструватися',
   },
   Romanian: {
     skip: 'Omite',
@@ -2478,6 +2586,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Personalizează experiența ta de studiu',
     instantFeedbackTrack: 'Primește feedback instant și urmărește-ți performanța!',
     quizChallengeYourself: 'Quiz și provoacă-te să stăpânești acel quiz sau interviu!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Uimitor!\nEști gata!',
+    signUpWithUsToContinue: 'Înregistrează-te cu noi pentru a continua',
+    signUp: 'Înregistrează-te',
   },
   Hungarian: {
     skip: 'Kihagyás',
@@ -2566,6 +2678,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Testreszabhatja tanulási élményét',
     instantFeedbackTrack: 'Azonnali visszajelzés és teljesítménykövetés!',
     quizChallengeYourself: 'Kvíz és hívja ki magát, hogy elsajátítsa azt a kvízt vagy interjút!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Fantasztikus!\nKészen áll!',
+    signUpWithUsToContinue: 'Regisztráljon nálunk a folytatáshoz',
+    signUp: 'Regisztráció',
   },
   Farsi: {
     skip: 'رد کردن',
@@ -2654,6 +2770,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'تجربه مطالعه خود را سفارشی کنید',
     instantFeedbackTrack: 'بازخورد فوری بگیرید و عملکرد خود را دنبال کنید!',
     quizChallengeYourself: 'آزمون بگیرید و خود را به چالش بکشید تا در آن آزمون یا مصاحبه مسلط شوید!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'عالی!\nشما آماده هستید!',
+    signUpWithUsToContinue: 'برای ادامه با ما ثبت نام کنید',
+    signUp: 'ثبت نام',
   },
   Swahili: {
     skip: 'Ruka',
@@ -2742,6 +2862,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Rekebisha uzoefu wako wa kusoma',
     instantFeedbackTrack: 'Pata maoni ya papo hapo na fuatilia utendaji wako!',
     quizChallengeYourself: 'Jaribio na jitahidi kufaulu jaribio lilo au mahojiano!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Vizuri sana!\nUko tayari!',
+    signUpWithUsToContinue: 'Jisajili nasi ili kuendelea',
+    signUp: 'Jisajili',
   },
   Afrikaans: {
     skip: 'Slaan Oor',
@@ -2830,6 +2954,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Pas jou studie-ervaring aan',
     instantFeedbackTrack: 'Kry onmiddellike terugvoer en volg jou prestasie!',
     quizChallengeYourself: 'Vasvra en daag jouself uit om daardie vasvra of onderhoud te bemeester!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Fantasties!\nJy is gereed!',
+    signUpWithUsToContinue: 'Registreer by ons om voort te gaan',
+    signUp: 'Registreer',
   },
   Finnish: {
     skip: 'Ohita',
@@ -2918,6 +3046,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Mukauta oppimiskokemustasi',
     instantFeedbackTrack: 'Saa välitön palaute ja seuraa suoritustasi!',
     quizChallengeYourself: 'Tietokilpailu ja haasta itsesi hallitsemaan tietokilpailu tai haastattelu!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Mahtavaa!\nOlet valmis!',
+    signUpWithUsToContinue: 'Rekisteröidy kanssamme jatkaaksesi',
+    signUp: 'Rekisteröidy',
   },
   Norwegian: {
     skip: 'Hopp Over',
@@ -3006,6 +3138,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Tilpass din studieopplevelse',
     instantFeedbackTrack: 'Få øyeblikkelig tilbakemelding og spor din ytelse!',
     quizChallengeYourself: 'Quiz og utfordre deg selv til å mestre den quizen eller intervjuet!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Fantastisk!\nDu er klar!',
+    signUpWithUsToContinue: 'Registrer deg hos oss for å fortsette',
+    signUp: 'Registrer deg',
   },
   Danish: {
     skip: 'Spring Over',
@@ -3094,6 +3230,10 @@ export const stringsOnboarding = {
     customizeStudyExperience: 'Tilpas din studieoplevelse',
     instantFeedbackTrack: 'Få øjeblikkelig feedback og spor din præstation!',
     quizChallengeYourself: 'Quiz og udfordre dig selv til at mestre den quiz eller interview!',
+    // OnboardingPage6 texts
+    awesomeYoureAllSet: 'Fantastisk!\nDu er klar!',
+    signUpWithUsToContinue: 'Tilmeld dig hos os for at fortsætte',
+    signUp: 'Tilmeld dig',
   },
 };
 

@@ -2072,7 +2072,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               {/* Top section with awesome text */}
               <View style={styles.onboardingPage6TopSection}>
                 <Text style={styles.awesomeText}>
-                  Awesome!{'\n'}You're all set!
+                  {getTranslatedText(language, 'awesomeYoureAllSet')}
                 </Text>
               </View>
               
@@ -2164,7 +2164,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
               {/* Bottom section with signup text, arrow, and button */}
               <View style={styles.onboardingPage6BottomSection}>
                 <Text style={styles.signUpText}>
-                  Sign up with us to continue
+                  {getTranslatedText(language, 'signUpWithUsToContinue')}
                 </Text>
                 <View style={styles.onboardingPage6ArrowContainer}>
                   <LottieView
@@ -2183,7 +2183,7 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
                   onPress={handleNextPress}
                 >
                   <Text style={styles.onboardingPage6ButtonText}>
-                    {getTranslatedText(selectedLanguage, 'next')}
+                    {getTranslatedText(selectedLanguage, 'signUp')}
                   </Text>
                 </TouchableOpacity>
               </View>

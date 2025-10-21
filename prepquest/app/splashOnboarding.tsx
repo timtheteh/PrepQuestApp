@@ -261,12 +261,17 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
       const initialPage = 1; // Start at the first real page (not the duplicate)
       setCurrentCarouselPage(initialPage);
       
-      // Reset position after a short delay to ensure state is updated
-      setTimeout(() => {
-        if (containerWidth.current > 0) {
-          carouselTranslateX.setValue(-initialPage * containerWidth.current);
-        }
-      }, 100);
+      // Reset position immediately if container width is available, otherwise wait
+      if (containerWidth.current > 0) {
+        carouselTranslateX.setValue(-initialPage * containerWidth.current);
+      } else {
+        // Wait for container to be measured
+        setTimeout(() => {
+          if (containerWidth.current > 0) {
+            carouselTranslateX.setValue(-initialPage * containerWidth.current);
+          }
+        }, 50);
+      }
     }
   }, [currentSection]);
 
@@ -305,18 +310,13 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
   // Start autoplay when entering onboardingPage5 or onboardingPage6
   useEffect(() => {
     if (currentSection === 'onboardingPage5' || currentSection === 'onboardingPage6') {
-      // Stop any existing autoplay first
-      stopAutoplay();
-      
-      // Wait longer for carousel to be fully initialized and positioned
+      // Wait for carousel to be fully initialized and positioned
       setTimeout(() => {
         // Ensure we're at the correct starting page and autoplay is ready
         if (containerWidth.current > 0 && currentCarouselPage === 1) {
-          // Double check that we're positioned correctly before starting autoplay
-          carouselTranslateX.setValue(-1 * containerWidth.current);
           startAutoplay();
         }
-      }, 1200);
+      }, 800); // Reduced delay to prevent conflicts
     } else {
       stopAutoplay();
     }
@@ -340,7 +340,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
     if (currentSection === 'onboardingPage5' || currentSection === 'onboardingPage6') {
       // Reset to first page when language changes
       setCurrentCarouselPage(1);
-      carouselTranslateX.setValue(-containerWidth.current);
+      if (containerWidth.current > 0) {
+        carouselTranslateX.setValue(-containerWidth.current);
+      }
     }
   }, [language]);
 
@@ -666,12 +668,15 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
         // After content fades out, transition to onboardingPage5
         setCurrentSection('onboardingPage5');
         
-        // Then fade in onboardingPage5 content
-        Animated.timing(onboardingPage5ContentFadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
+        // Ensure carousel is properly positioned before showing content
+        setTimeout(() => {
+          // Then fade in onboardingPage5 content
+          Animated.timing(onboardingPage5ContentFadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        }, 50); // Small delay to ensure carousel is positioned
       });
     } else if (currentSection === 'onboardingPage5') {
       // Fade out onboardingPage5 content first
@@ -829,12 +834,15 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
         // After content fades out, transition back to onboardingPage5
         setCurrentSection('onboardingPage5');
         
-        // Then fade in onboardingPage5 content
-        Animated.timing(onboardingPage5ContentFadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
+        // Ensure carousel is properly positioned before showing content
+        setTimeout(() => {
+          // Then fade in onboardingPage5 content
+          Animated.timing(onboardingPage5ContentFadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        }, 50); // Small delay to ensure carousel is positioned
       });
     } else if (currentSection === 'signupPage') {
       // Fade out signup page content first

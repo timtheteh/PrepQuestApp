@@ -2477,10 +2477,9 @@ export default function SplashOnboarding({ onComplete }: SplashOnboardingProps) 
             {/* Next button still on the right */}
             <TouchableOpacity 
               style={styles.nextButton} 
-              onPress={handleNextPress}
             >
-              <View style={styles.buttonWithIcon}>
-                <Text style={styles.nextButtonText}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+              <View style={[styles.buttonWithIcon, { opacity: 0 }]}>
+                <Text style={[styles.nextButtonText]}>{getTranslatedText(selectedLanguage, 'next')}</Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"

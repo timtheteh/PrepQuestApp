@@ -72,10 +72,11 @@ const { height } = Dimensions.get('window');
 interface SplashOnboardingProps {
   onComplete: () => void;
   onAuthComplete?: () => void;
+  onHideLoadingOverlay?: (callback: () => void) => void;
 }
 
 
-export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashOnboardingProps) {
+export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoadingOverlay }: SplashOnboardingProps) {
   const { language, setLanguage } = useLanguage();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -164,6 +165,18 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
   // Loading overlay state
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
   const loadingOverlayRef = useRef<LottieView>(null);
+  
+  // Function to hide loading overlay (exposed to parent)
+  const hideLoadingOverlay = useCallback(() => {
+    setShowLoadingOverlay(false);
+  }, []);
+  
+  // Expose hideLoadingOverlay to parent component
+  useEffect(() => {
+    if (onHideLoadingOverlay) {
+      onHideLoadingOverlay(hideLoadingOverlay);
+    }
+  }, [onHideLoadingOverlay, hideLoadingOverlay]);
 
   // Carousel data - create extended array with duplicates for circular navigation
   const originalCarouselPages = useMemo(() => [
@@ -1597,8 +1610,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
       console.log(`🕐 Splash (auth complete): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms, isFreshAuth: ${isFreshAuth}`);
       
       setTimeout(() => {
-        // Always ensure loading overlay is hidden before completing auth
-        setShowLoadingOverlay(false);
+        // Don't hide loading overlay here - let _layout.tsx handle it after database initialization
         // Reset fresh auth flag
         setIsFreshAuth(false);
         onAuthComplete?.();
@@ -3561,7 +3573,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete }: SplashO
               source={require('../assets/animations/addDeckLoadingAnimation.json')}
               autoPlay
               loop={true}
-              style={styles.loadingAnimation}
+              style={styles.loadingAnimationAfterSignIn}
               speed={1}
               cacheComposition={true}
               renderMode="HARDWARE"
@@ -4028,6 +4040,10 @@ const styles = StyleSheet.create({
   loadingAnimation: {
     width: Dimensions.get('window').height * 0.8, // 15% of device height
     height: Dimensions.get('window').height * 0.3, // 15% of device height
+  },
+  loadingAnimationAfterSignIn:{
+    width: 96, // Same size as the original splash screen
+    height: 96,
   },
   secondRow: {
     width: '100%',

@@ -88,6 +88,7 @@ function AppContent() {
   const [showSplash, setShowSplash] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [splashStartTime] = useState(Date.now());
+  const [hideLoadingOverlayCallback, setHideLoadingOverlayCallback] = useState<(() => void) | null>(null);
 
   // Function to handle authentication completion
   const handleAuthComplete = async () => {
@@ -96,7 +97,68 @@ function AppContent() {
     // If coming from onboarding, need to initialize database first
     if (showOnboarding) {
       console.log(`🕐 Auth complete during onboarding - initializing database first`);
-      await handleOnboardingComplete();
+      
+      // Set firstTimeInstalled to false so onboarding doesn't show again
+      await AsyncStorage.setItem('firstTimeInstalled', 'false');
+      
+      // Hide onboarding but keep loading overlay visible
+      setShowOnboarding(false);
+      
+      // Start database initialization
+      const initDatabase = async () => {
+        try {
+          console.log('🚀 Starting database initialization and dummy data population...');
+          setIsInitializing(true);
+          
+          // Stop all background tasks first
+          await stopAllBackgroundTasks();
+          
+          const startTime = Date.now();
+          await setupDatabase();
+          const endTime = Date.now();
+          
+          console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
+          
+          // Initialize notifications
+          console.log('🔔 Initializing notifications...');
+          await NotificationService.getInstance().initialize();
+          console.log('✅ Notifications initialized successfully');
+          
+          setIsDatabaseReady(true);
+          setIsInitializing(false);
+          
+          // Hide loading overlay first, then hide splash screen
+          if (hideLoadingOverlayCallback) {
+            hideLoadingOverlayCallback();
+          }
+          
+          // Now hide splash screen and show main app
+          setShowSplash(false);
+        } catch (error) {
+          console.error('❌ Error during database initialization:', error);
+          setIsInitializing(false);
+          
+          // Ensure minimum 3 seconds even on error
+          const elapsedTime = Date.now() - splashStartTime;
+          const remainingTime = Math.max(0, 3000 - elapsedTime);
+          
+          console.log(`🕐 Database error: elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
+          
+          setTimeout(() => {
+            setIsDatabaseReady(true);
+            
+            // Hide loading overlay first, then hide splash screen
+            if (hideLoadingOverlayCallback) {
+              hideLoadingOverlayCallback();
+            }
+            
+            setShowSplash(false);
+          }, remainingTime);
+        }
+      };
+      
+      // Start database initialization
+      initDatabase();
     } else {
       // Immediately hide splash screen without fade animation to prevent blank white screen
       setShowSplash(false);
@@ -238,6 +300,7 @@ function AppContent() {
         <SplashOnboarding 
           onComplete={handleOnboardingComplete}
           onAuthComplete={handleAuthComplete}
+          onHideLoadingOverlay={setHideLoadingOverlayCallback}
         />
       ) : (
         <>

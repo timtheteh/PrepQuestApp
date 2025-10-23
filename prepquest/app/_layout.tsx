@@ -94,71 +94,20 @@ function AppContent() {
   const handleAuthComplete = async () => {
     console.log(`🕐 Auth complete - transitioning to main app`);
     
-    // If coming from onboarding, need to initialize database first
+    // If coming from onboarding, database initialization is handled in splashOnboarding.tsx
     if (showOnboarding) {
-      console.log(`🕐 Auth complete during onboarding - initializing database first`);
+      console.log(`🕐 Auth complete during onboarding - database initialization handled in splashOnboarding`);
       
       // Set firstTimeInstalled to false so onboarding doesn't show again
       await AsyncStorage.setItem('firstTimeInstalled', 'false');
       
-      // Hide onboarding but keep loading overlay visible
+      // Mark database as ready since it was initialized in splashOnboarding.tsx
+      setIsDatabaseReady(true);
+      setIsInitializing(false);
+      
+      // Hide onboarding and go directly to main app
       setShowOnboarding(false);
-      
-      // Start database initialization
-      const initDatabase = async () => {
-        try {
-          console.log('🚀 Starting database initialization and dummy data population...');
-          setIsInitializing(true);
-          
-          // Stop all background tasks first
-          await stopAllBackgroundTasks();
-          
-          const startTime = Date.now();
-          await setupDatabase();
-          const endTime = Date.now();
-          
-          console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
-          
-          // Initialize notifications
-          console.log('🔔 Initializing notifications...');
-          await NotificationService.getInstance().initialize();
-          console.log('✅ Notifications initialized successfully');
-          
-          setIsDatabaseReady(true);
-          setIsInitializing(false);
-          
-          // Hide loading overlay first, then hide splash screen
-          if (hideLoadingOverlayCallback) {
-            hideLoadingOverlayCallback();
-          }
-          
-          // Now hide splash screen and show main app
-          setShowSplash(false);
-        } catch (error) {
-          console.error('❌ Error during database initialization:', error);
-          setIsInitializing(false);
-          
-          // Ensure minimum 3 seconds even on error
-          const elapsedTime = Date.now() - splashStartTime;
-          const remainingTime = Math.max(0, 3000 - elapsedTime);
-          
-          console.log(`🕐 Database error: elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms`);
-          
-          setTimeout(() => {
-            setIsDatabaseReady(true);
-            
-            // Hide loading overlay first, then hide splash screen
-            if (hideLoadingOverlayCallback) {
-              hideLoadingOverlayCallback();
-            }
-            
-            setShowSplash(false);
-          }, remainingTime);
-        }
-      };
-      
-      // Start database initialization
-      initDatabase();
+      setShowSplash(false);
     } else {
       // Immediately hide splash screen without fade animation to prevent blank white screen
       setShowSplash(false);
@@ -277,15 +226,59 @@ function AppContent() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Always set firstTimeInstalled to 'true' when app opens to show onboarding
-        await AsyncStorage.setItem('firstTimeInstalled', 'true');
-        console.log('✅ First time installed flag set to true - onboarding will show');
+        // Check if this is the first time the app is being installed
+        const firstTimeInstalled = await AsyncStorage.getItem('firstTimeInstalled');
+        
+        if (firstTimeInstalled === null || firstTimeInstalled === 'true') {
+          // First time install - show onboarding
+          console.log('✅ First time installation detected - showing onboarding');
+          setShowOnboarding(true);
+          setShowSplash(false);
+        } else {
+          // Not first time - show splash and initialize database
+          console.log('✅ Not first time - showing splash and initializing database');
+          setShowOnboarding(false);
+          setShowSplash(true);
+          
+          // Initialize database immediately for returning users
+          const initDatabase = async () => {
+            try {
+              console.log('🚀 Starting database initialization...');
+              setIsInitializing(true);
+              
+              // Stop all background tasks first
+              await stopAllBackgroundTasks();
+              
+              const startTime = Date.now();
+              await setupDatabase();
+              const endTime = Date.now();
+              
+              console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
+              
+              // Initialize notifications
+              console.log('🔔 Initializing notifications...');
+              await NotificationService.getInstance().initialize();
+              console.log('✅ Notifications initialized successfully');
+              
+              setIsDatabaseReady(true);
+              setIsInitializing(false);
+            } catch (error) {
+              console.error('❌ Error during database initialization:', error);
+              setIsInitializing(false);
+            }
+          };
+          
+          initDatabase();
+        }
       } catch (error) {
-        console.error('❌ Error setting first time installation flag:', error);
+        console.error('❌ Error checking first time installation flag:', error);
+        // On error, default to showing onboarding to be safe
+        setShowOnboarding(true);
+        setShowSplash(false);
       }
     };
     
-    // Initialize app (database will be initialized after skip button is clicked)
+    // Initialize app
     initApp();
     
     return () => {

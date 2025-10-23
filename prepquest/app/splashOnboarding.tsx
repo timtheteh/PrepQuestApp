@@ -12,6 +12,7 @@ import { Fonts } from '@/constants/Fonts';
 import { Toast } from '@/components/general/Toast';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { createUser } from '@/db/users';
+import BackgroundService from 'react-native-background-actions';
 import LanguageSelector from '@/components/onboarding/LanguageSelector';
 import PrepQuestLogo from '@/assets/icons/loginIcons/PrepQuestLogo.svg';
 import GoogleLoginIcon from '@/assets/icons/loginIcons/GoogleLoginIcon.svg';
@@ -1610,10 +1611,70 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       console.log(`🕐 Splash (auth complete): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms, isFreshAuth: ${isFreshAuth}`);
       
       setTimeout(() => {
-        // Don't hide loading overlay here - let _layout.tsx handle it after database initialization
-        // Reset fresh auth flag
-        setIsFreshAuth(false);
-        onAuthComplete?.();
+        // Handle database initialization directly in splashOnboarding
+        // This ensures loading animation stays visible throughout the entire process
+        const handleDatabaseInitialization = async () => {
+          try {
+            console.log('🚀 Starting database initialization from splashOnboarding...');
+            
+            // Import the necessary functions
+            const { setupDatabase } = await import('@/db/index');
+            const NotificationService = (await import('@/utils/notifications')).default;
+            
+            // Stop all background tasks first
+            const stopAllBackgroundTasks = async () => {
+              try {
+                console.log('🛑 Stopping all background tasks on app startup...');
+                
+                // Stop backup background task
+                if (BackgroundService.isRunning()) {
+                  await BackgroundService.stop();
+                  console.log('✅ Backup background task stopped');
+                }
+                
+                // Stop any other background tasks if they exist
+                // Add more background task stops here as needed
+                
+                console.log('✅ All background tasks stopped successfully');
+              } catch (error) {
+                console.error('❌ Error stopping background tasks:', error);
+              }
+            };
+            
+            await stopAllBackgroundTasks();
+            
+            const startTime = Date.now();
+            await setupDatabase();
+            const endTime = Date.now();
+            
+            console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
+            
+            // Initialize notifications
+            console.log('🔔 Initializing notifications...');
+            await NotificationService.getInstance().initialize();
+            console.log('✅ Notifications initialized successfully');
+            
+            // Hide loading overlay and transition to main app
+            setShowLoadingOverlay(false);
+            setIsFreshAuth(false);
+            
+            // Signal that database is ready before calling onAuthComplete
+            // This ensures the main app will show instead of splash screen
+            console.log('✅ Database ready - transitioning to main app');
+            onAuthComplete?.();
+            
+          } catch (error) {
+            console.error('❌ Error during database initialization:', error);
+            
+            // Hide loading overlay even on error and transition to main app
+            setShowLoadingOverlay(false);
+            setIsFreshAuth(false);
+            onAuthComplete?.();
+          }
+        };
+        
+        // Start database initialization
+        handleDatabaseInitialization();
       }, remainingTime);
     }
   }, [isLoading, isAuthenticated, user, onAuthComplete]);

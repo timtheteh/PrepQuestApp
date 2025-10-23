@@ -275,17 +275,26 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       const initialPage = 1; // Start at the first real page (not the duplicate)
       setCurrentCarouselPage(initialPage);
       
-      // Reset position immediately if container width is available, otherwise wait
-      if (containerWidth.current > 0) {
-        carouselTranslateX.setValue(-initialPage * containerWidth.current);
-      } else {
-        // Wait for container to be measured
-        setTimeout(() => {
-          if (containerWidth.current > 0) {
-            carouselTranslateX.setValue(-initialPage * containerWidth.current);
-          }
-        }, 50);
-      }
+      // Reset position with multiple attempts to ensure it sticks
+      const resetPosition = () => {
+        if (containerWidth.current > 0) {
+          carouselTranslateX.setValue(-initialPage * containerWidth.current);
+          console.log(`🔄 Carousel reset to page ${initialPage} at position ${-initialPage * containerWidth.current}`);
+        }
+      };
+      
+      // Try immediately
+      resetPosition();
+      
+      // Try again after a short delay to ensure container is measured
+      setTimeout(() => {
+        resetPosition();
+      }, 100);
+      
+      // Try one more time after a longer delay to catch any late measurements
+      setTimeout(() => {
+        resetPosition();
+      }, 300);
     }
   }, [currentSection]);
 
@@ -326,11 +335,16 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
     if (currentSection === 'onboardingPage5' || currentSection === 'onboardingPage6') {
       // Wait for carousel to be fully initialized and positioned
       setTimeout(() => {
-        // Ensure we're at the correct starting page and autoplay is ready
+        // Double-check that we're at the correct starting page before starting autoplay
         if (containerWidth.current > 0 && currentCarouselPage === 1) {
+          // Ensure position is correct before starting autoplay
+          carouselTranslateX.setValue(-1 * containerWidth.current);
+          console.log(`🎯 Starting autoplay from page 1 at position ${-1 * containerWidth.current}`);
           startAutoplay();
+        } else {
+          console.log(`⚠️ Autoplay not started - containerWidth: ${containerWidth.current}, currentPage: ${currentCarouselPage}`);
         }
-      }, 800); // Reduced delay to prevent conflicts
+      }, 1000); // Increased delay to ensure carousel is properly positioned
     } else {
       stopAutoplay();
     }

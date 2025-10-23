@@ -4134,14 +4134,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
               </View>
             </TouchableOpacity>
             
-            {/* Skip button still centered */}
-            <View style={styles.skipButtonContainer}>
-              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-                <Text style={styles.skipButtonText}>{getTranslatedText(selectedLanguage, 'skip')}</Text>
-              </TouchableOpacity>
-            </View>
-            
-            {/* Next button still on the right */}
+            {/* Next button on the right */}
             <TouchableOpacity 
               style={styles.nextButton} 
             >

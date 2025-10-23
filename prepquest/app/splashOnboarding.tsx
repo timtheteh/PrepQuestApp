@@ -369,7 +369,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       // Reset to first page when language changes
       setCurrentCarouselPage(1);
       if (containerWidth.current > 0) {
-        carouselTranslateX.setValue(-containerWidth.current);
+      carouselTranslateX.setValue(-containerWidth.current);
       }
     }
   }, [language]);
@@ -614,7 +614,213 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
   }, [currentSection, onboardingPage1ContentFadeAnim]);
 
   const handleSkipPress = () => {
-    onComplete();
+    // Navigate to signup page within splashOnboarding instead of going to regular splash
+    console.log(`🔄 Skip button pressed from ${currentSection} - transitioning to signup page`);
+    
+    if (currentSection === 'onboardingPage6') {
+      // Fade out onboardingPage6 content first
+      Animated.timing(onboardingPage6ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, fade out PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition to signup page
+          setCurrentSection('signupPage');
+          
+          // Ensure signup page starts hidden, then fade in
+          signupPageFadeAnim.setValue(0);
+          
+          // Small delay to ensure section change is processed
+          setTimeout(() => {
+            Animated.timing(signupPageFadeAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              console.log('✅ Transition to signup page complete');
+            });
+          }, 50);
+        });
+      });
+    } else if (currentSection === 'onboardingPage5') {
+      // Fade out onboardingPage5 content first
+      Animated.timing(onboardingPage5ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, fade out PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition to signup page
+          setCurrentSection('signupPage');
+          
+          // Ensure signup page starts hidden, then fade in
+          signupPageFadeAnim.setValue(0);
+          
+          // Small delay to ensure section change is processed
+          setTimeout(() => {
+            Animated.timing(signupPageFadeAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              console.log('✅ Transition to signup page complete');
+            });
+          }, 50);
+        });
+      });
+    } else if (currentSection === 'onboardingPage4') {
+      // Fade out onboardingPage4 content first
+      Animated.timing(onboardingPage4ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, fade out PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition to signup page
+          setCurrentSection('signupPage');
+          
+          // Ensure signup page starts hidden, then fade in
+          signupPageFadeAnim.setValue(0);
+          
+          // Small delay to ensure section change is processed
+          setTimeout(() => {
+            Animated.timing(signupPageFadeAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              console.log('✅ Transition to signup page complete');
+            });
+          }, 50);
+        });
+      });
+    } else if (currentSection === 'onboardingPage3') {
+      // Fade out onboardingPage3 content first
+      Animated.timing(onboardingPage3ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, fade out PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition to signup page
+          setCurrentSection('signupPage');
+          
+          // Ensure signup page starts hidden, then fade in
+          signupPageFadeAnim.setValue(0);
+          
+          // Small delay to ensure section change is processed
+          setTimeout(() => {
+            Animated.timing(signupPageFadeAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              console.log('✅ Transition to signup page complete');
+            });
+          }, 50);
+        });
+      });
+    } else if (currentSection === 'onboardingPage2') {
+      // Fade out onboardingPage2 content first
+      Animated.timing(onboardingPage2ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, fade out PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition to signup page
+          setCurrentSection('signupPage');
+          
+          // Ensure signup page starts hidden, then fade in
+          signupPageFadeAnim.setValue(0);
+          
+          // Small delay to ensure section change is processed
+          setTimeout(() => {
+            Animated.timing(signupPageFadeAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              console.log('✅ Transition to signup page complete');
+            });
+          }, 50);
+        });
+      });
+    } else if (currentSection === 'onboardingPage1') {
+      // Fade out onboardingPage1 content first
+      Animated.timing(onboardingPage1ContentFadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After content fades out, fade out PNG background
+        Animated.timing(pngBackgroundFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Transition to signup page
+          setCurrentSection('signupPage');
+          
+          // Ensure signup page starts hidden, then fade in
+          signupPageFadeAnim.setValue(0);
+          
+          // Small delay to ensure section change is processed
+          setTimeout(() => {
+            Animated.timing(signupPageFadeAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              console.log('✅ Transition to signup page complete');
+            });
+          }, 50);
+        });
+      });
+    } else {
+      // For language selection or other pages, go directly to signup page
+      setCurrentSection('signupPage');
+      
+      // Ensure signup page starts hidden, then fade in
+      signupPageFadeAnim.setValue(0);
+      
+      // Small delay to ensure section change is processed
+      setTimeout(() => {
+        Animated.timing(signupPageFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          console.log('✅ Transition to signup page complete');
+        });
+      }, 50);
+    }
   };
 
   const handleNextPress = () => {
@@ -698,12 +904,12 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         
         // Ensure carousel is properly positioned before showing content
         setTimeout(() => {
-          // Then fade in onboardingPage5 content
-          Animated.timing(onboardingPage5ContentFadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
+        // Then fade in onboardingPage5 content
+        Animated.timing(onboardingPage5ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
         }, 50); // Small delay to ensure carousel is positioned
       });
     } else if (currentSection === 'onboardingPage5') {
@@ -864,12 +1070,12 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         
         // Ensure carousel is properly positioned before showing content
         setTimeout(() => {
-          // Then fade in onboardingPage5 content
-          Animated.timing(onboardingPage5ContentFadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
+        // Then fade in onboardingPage5 content
+        Animated.timing(onboardingPage5ContentFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
         }, 50); // Small delay to ensure carousel is positioned
       });
     } else if (currentSection === 'signupPage') {

@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
+import SplashOnboarding from './splashOnboarding';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
@@ -84,43 +85,47 @@ function AppContent() {
   const { theme } = useTheme();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
   const [splashStartTime] = useState(Date.now());
+  const [hideLoadingOverlayCallback, setHideLoadingOverlayCallback] = useState<(() => void) | null>(null);
 
   // Function to handle authentication completion
-  const handleAuthComplete = () => {
+  const handleAuthComplete = async () => {
     console.log(`🕐 Auth complete - transitioning to main app`);
     
-    // Immediately hide splash screen without fade animation to prevent blank white screen
-    setShowSplash(false);
+    // If coming from onboarding, database initialization is handled in splashOnboarding.tsx
+    if (showOnboarding) {
+      console.log(`🕐 Auth complete during onboarding - database initialization handled in splashOnboarding`);
+      
+      // Set firstTimeInstalled to false so onboarding doesn't show again
+      await AsyncStorage.setItem('firstTimeInstalled', 'false');
+      
+      // Mark database as ready since it was initialized in splashOnboarding.tsx
+      setIsDatabaseReady(true);
+      setIsInitializing(false);
+      
+      // Hide onboarding and go directly to main app
+      setShowOnboarding(false);
+      setShowSplash(false);
+    } else {
+      // Immediately hide splash screen without fade animation to prevent blank white screen
+      setShowSplash(false);
+    }
   };
 
-  // Show splash screen when user is not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setShowSplash(true);
-    }
-    // For authenticated users, let the splash screen handle the transition via handleAuthComplete
-  }, [isAuthenticated, isLoading]);
-  
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    'Satoshi-Medium': require('../assets/fonts/Satoshi-Medium.otf'),
-    'Satoshi-Italic': require('../assets/fonts/Satoshi-Italic.otf'),
-    'Satoshi-MediumItalic': require('../assets/fonts/Satoshi-MediumItalic.otf'),
-    'CedarvilleCursive-Regular': require('../assets/fonts/CedarvilleCursive-Regular.ttf'),
-    'Neuton-Regular': require('../assets/fonts/Neuton-Regular.ttf'),
-    'Neuton-Bold': require('../assets/fonts/Neuton-Bold.ttf'),
-    'Neuton-ExtraBold': require('../assets/fonts/Neuton-ExtraBold.ttf'),
-    'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
-    'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
-    'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
-  });
-
-  // Initialize database and notifications when app starts
-  useEffect(() => {
-    let notificationResponseSubscription: Notifications.EventSubscription | undefined;
-
+  // Function to handle onboarding completion (skip button clicked)
+  const handleOnboardingComplete = async () => {
+    console.log(`🕐 Skip button clicked - starting database initialization`);
+    
+    // Set firstTimeInstalled to false so onboarding doesn't show again
+    await AsyncStorage.setItem('firstTimeInstalled', 'false');
+    
+    // Hide onboarding and show regular splash
+    setShowOnboarding(false);
+    setShowSplash(true);
+    
+    // Start database initialization
     const initDatabase = async () => {
       try {
         console.log('🚀 Starting database initialization and dummy data population...');
@@ -141,7 +146,7 @@ function AppContent() {
         console.log('✅ Notifications initialized successfully');
         
         // Set up notification response handler
-        notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+        const notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
           const data = response.notification.request.content.data as any;
           console.log('Notification tapped:', data);
           
@@ -182,24 +187,123 @@ function AppContent() {
       }
     };
     
+    // Start database initialization
     initDatabase();
+  };
+
+  // Show splash screen when user is not authenticated (only after onboarding is complete)
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !showOnboarding) {
+      // Only show splash if we're not in onboarding mode
+      setShowSplash(true);
+    }
+    // For authenticated users, let the splash screen handle the transition via handleAuthComplete
+  }, [isAuthenticated, isLoading, showOnboarding]);
+
+  // Handle database ready state when onboarding is complete
+  useEffect(() => {
+    if (isDatabaseReady && !showOnboarding && !isLoading && !isAuthenticated) {
+      // If database is ready and we're not showing onboarding, show the regular splash
+      setShowSplash(true);
+    }
+  }, [isDatabaseReady, showOnboarding, isLoading, isAuthenticated]);
+  
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'Satoshi-Medium': require('../assets/fonts/Satoshi-Medium.otf'),
+    'Satoshi-Italic': require('../assets/fonts/Satoshi-Italic.otf'),
+    'Satoshi-MediumItalic': require('../assets/fonts/Satoshi-MediumItalic.otf'),
+    'CedarvilleCursive-Regular': require('../assets/fonts/CedarvilleCursive-Regular.ttf'),
+    'Neuton-Regular': require('../assets/fonts/Neuton-Regular.ttf'),
+    'Neuton-Bold': require('../assets/fonts/Neuton-Bold.ttf'),
+    'Neuton-ExtraBold': require('../assets/fonts/Neuton-ExtraBold.ttf'),
+    'Neuton-ExtraLight': require('../assets/fonts/Neuton-ExtraLight.ttf'),
+    'Neuton-Light': require('../assets/fonts/Neuton-Light.ttf'),
+    'Satoshi-Variable': require('../assets/fonts/Satoshi-Variable.ttf'),
+  });
+
+  // Check for first time installation and initialize database
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        // Check if this is the first time the app is being installed
+        const firstTimeInstalled = await AsyncStorage.getItem('firstTimeInstalled');
+        
+        if (firstTimeInstalled === null || firstTimeInstalled === 'true') {
+          // First time install - show onboarding
+          console.log('✅ First time installation detected - showing onboarding');
+          setShowOnboarding(true);
+          setShowSplash(false);
+        } else {
+          // Not first time - show splash and initialize database
+          console.log('✅ Not first time - showing splash and initializing database');
+          setShowOnboarding(false);
+          setShowSplash(true);
+          
+          // Initialize database immediately for returning users
+          const initDatabase = async () => {
+            try {
+              console.log('🚀 Starting database initialization...');
+              setIsInitializing(true);
+              
+              // Stop all background tasks first
+              await stopAllBackgroundTasks();
+              
+              const startTime = Date.now();
+              await setupDatabase();
+              const endTime = Date.now();
+              
+              console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
+              
+              // Initialize notifications
+              console.log('🔔 Initializing notifications...');
+              await NotificationService.getInstance().initialize();
+              console.log('✅ Notifications initialized successfully');
+              
+              setIsDatabaseReady(true);
+              setIsInitializing(false);
+            } catch (error) {
+              console.error('❌ Error during database initialization:', error);
+              setIsInitializing(false);
+            }
+          };
+          
+          initDatabase();
+        }
+      } catch (error) {
+        console.error('❌ Error checking first time installation flag:', error);
+        // On error, default to showing onboarding to be safe
+        setShowOnboarding(true);
+        setShowSplash(false);
+      }
+    };
+    
+    // Initialize app
+    initApp();
     
     return () => {
-      try {
-        notificationResponseSubscription?.remove();
-      } catch {}
+      // Cleanup if needed
     };
   }, [splashStartTime]);
 
   return (
     <ThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
-      {/* Show splash screen while fonts are loading or database is not ready, or while auth splash is active */}
-      {(!loaded || !isDatabaseReady || showSplash) ? (
-          <SplashScreen 
-            isDatabaseReady={isDatabaseReady} 
-            onAuthComplete={handleAuthComplete}
-          />
+      {/* Show onboarding screen on first install */}
+      {showOnboarding ? (
+        <SplashOnboarding 
+          onComplete={handleOnboardingComplete}
+          onAuthComplete={handleAuthComplete}
+          onHideLoadingOverlay={setHideLoadingOverlayCallback}
+        />
       ) : (
+        <>
+          {/* Show splash screen while fonts are loading or database is not ready, or while auth splash is active */}
+          {(!loaded || !isDatabaseReady || showSplash) ? (
+              <SplashScreen 
+                isDatabaseReady={isDatabaseReady} 
+                onAuthComplete={handleAuthComplete}
+              />
+          ) : (
         <>
           <Stack
             screenOptions={{
@@ -303,9 +407,11 @@ function AppContent() {
               }} 
             />
           </Stack>
-          <BackgroundTaskNotification />
-          <ImportTaskNotification />
-          <StatusBar style="auto" />
+            <BackgroundTaskNotification />
+            <ImportTaskNotification />
+            <StatusBar style="auto" />
+          </>
+        )}
         </>
       )}
     </ThemeProvider>

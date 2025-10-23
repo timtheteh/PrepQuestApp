@@ -23,6 +23,10 @@ export async function setupDatabase() {
     // Populate with dummy data for testing
     await populateDummyData();
     
+    // Set first time installed flag for onboarding
+    await AsyncStorage.setItem('firstTimeInstalled', 'true');
+    console.log('✅ First time installed flag set');
+    
     console.log('✅ Database setup completed - schema and dummy data loaded');
   } catch (error) {
     console.error('Error setting up database:', error);

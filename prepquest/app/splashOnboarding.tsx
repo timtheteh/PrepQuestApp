@@ -3870,14 +3870,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       <View style={[styles.topButtonRow, { top: insets.top }]}>
         {currentSection === 'languageSelection' ? (
           <>
-            {/* Skip button positioned absolutely in center */}
-            <View style={styles.skipButtonContainer}>
-              <TouchableOpacity style={styles.skipButton} onPress={handleSkipPress}>
-                <Text style={styles.skipButtonText}>{getTranslatedText(selectedLanguage, 'skip')}</Text>
-              </TouchableOpacity>
-            </View>
-            
-            {/* Next button stays on the right */}
+            {/* Next button only for language selection */}
             <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
               <View style={styles.buttonWithIcon}>
                 <Text style={styles.nextButtonText}>{getTranslatedText(selectedLanguage, 'next')}</Text>

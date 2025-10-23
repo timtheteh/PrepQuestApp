@@ -4163,21 +4163,6 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
               </View>
             </TouchableOpacity>
           </>
-        ) : currentSection === 'signupPage' ? (
-          <>
-            {/* Back button on the left when on signupPage */}
-            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-              <View style={styles.buttonWithIcon}>
-                <Svg width="12" height="12" viewBox="0 0 12 12">
-                  <Polygon
-                    points="0,6 12,0 12,12"
-                    fill={Colors.light.text}
-                  />
-                </Svg>
-                <Text style={styles.backButtonText}>{getTranslatedText(language, 'back')}</Text>
-              </View>
-            </TouchableOpacity>
-          </>
         ) : null}
       </View>
     </View>

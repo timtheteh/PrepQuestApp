@@ -66,7 +66,7 @@ import CarouselPage7Image4 from '@/assets/onboarding/CarouselPage7Image4.svg';
 import { Svg, Polygon } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { stringsOnboarding, getTranslatedText } from '@/constants/stringsOnboarding';
-import { generateOnboardingPrompts, OnboardingResponses } from '@/utils/onboardingPromptGeneration';
+import { generateOnboardingPromptsWithFormFields, OnboardingResponses } from '@/utils/onboardingPromptGeneration';
 
 const { height } = Dimensions.get('window');
 
@@ -1903,12 +1903,12 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                   topicsInput,
                   examInput,
                   studyTopicsInput,
-                  interviewType: 'technical', // Default interview type, can be made configurable based on user selection
+                  interviewType: Array.from(interviewSelectedEducationSuggestions).join(', ') || 'technical', // Use selected interview types
                   language: selectedLanguage
                 };
 
-                // Generate 3 prompts for free deck creation
-                const prompts = await generateOnboardingPrompts({
+                // Generate 3 prompts with their corresponding form fields for free deck creation
+                const { prompts, formFields } = await generateOnboardingPromptsWithFormFields({
                   responses: onboardingResponses,
                   isMcqEnabled: true,
                   isClozeEnabled: true,
@@ -1918,6 +1918,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                 });
 
                 console.log('✅ Generated 3 prompts for free decks:', prompts.length);
+                console.log('✅ Generated 3 form fields for free decks:', formFields.length);
                 
                 // Call backend function for each prompt and create AI decks
                 const { createAIDeckWithFlashcards, updateAIDeckUserID } = await import('@/db/decks');
@@ -1991,26 +1992,20 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                     const deckName = `Free Deck ${i + 1} - ${selectedCard === 'study' ? 'Study' : 'Interview'}`;
                     const mode = selectedCard === 'study' ? 'study' : 'interview';
                     
-                    // Create form fields based on the distributed responses
-                    const formFields = {
-                      studyEducationLevel: onboardingResponses.studyEducationInput || Array.from(onboardingResponses.studySelectedEducationSuggestions)[0],
-                      studySubjects: onboardingResponses.studySubjectInput || Array.from(onboardingResponses.studySelectedSuggestions)[0],
-                      studyTopics: onboardingResponses.studyTopicsInput,
-                      studyExam: onboardingResponses.examInput,
-                      interviewJobRole: onboardingResponses.interviewSubjectInput || Array.from(onboardingResponses.interviewSelectedSuggestions)[0],
-                      interviewType: onboardingResponses.interviewType,
-                      interviewCompany: onboardingResponses.companyInput,
-                      interviewExperienceLevel: onboardingResponses.experienceLevelInput,
-                      interviewTopics: onboardingResponses.topicsInput,
+                    // Use the distributed form fields for this specific prompt
+                    const distributedFormFields = {
+                      ...formFields[i],
                       numberOfQuestions: 10,
                       kindsOfQuestions: ''
                     };
+                    
+                    console.log(`🎯 Creating AI deck ${i + 1} with interviewType: "${distributedFormFields.interviewType}"`);
 
                     // Create deck with temporary user ID first
                     const result = await createAIDeckWithFlashcards({
                       deckName,
                       mode,
-                      formFields,
+                      formFields: distributedFormFields,
                       flashcards,
                       tempUserID: 'temp_onboarding_user' // Use temporary user ID
                     });

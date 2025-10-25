@@ -145,13 +145,25 @@ export const AIPromptModal = function AIPromptModal({
                 const cardDesign = AICardDesigns[deck.cardDesignIndex] || AICardDesigns[0];
                 const imageSource = imageSources.get(deck.deckID);
                 
+                // Handle multiple interview types by taking the first one for the pill display
+                let cardType = 'study';
+                if (deck.deckType === 'interview' && deck.interviewType) {
+                  // Split by comma and take the first interview type, convert to lowercase
+                  const interviewTypes = deck.interviewType.split(',').map(t => t.trim().toLowerCase());
+                  cardType = interviewTypes[0] || 'technical';
+                } else if (deck.deckType === 'study') {
+                  cardType = 'study';
+                }
+                
+                console.log(`🎯 AI Deck ${deck.deckID} cardType:`, cardType, 'from interviewType:', deck.interviewType);
+                
                 return (
                   <AIDeckCard
                     key={deck.deckID}
                     backgroundImage={cardDesign.background}
                     pressedBackgroundImage={cardDesign.pressed}
                     image={imageSource}
-                    cardType={deck.interviewType || 'study'}
+                    cardType={cardType}
                     title={deck.deckName}
                     flashcardCount={deck.flashcardCount || 0}
                     deckDetailsBackgroundIndex={deck.cardDesignIndex}

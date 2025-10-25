@@ -258,6 +258,94 @@ export const generateOnboardingPrompts = async (params: OnboardingPromptParams):
   }
   
   return prompts;
+}
+
+/**
+ * Generates 3 different prompts with their corresponding distributed form fields
+ * This allows us to get the correct interview type for each deck
+ */
+export const generateOnboardingPromptsWithFormFields = async (params: OnboardingPromptParams): Promise<{
+  prompts: string[];
+  formFields: Array<{
+    studyEducationLevel?: string;
+    studySubjects?: string;
+    studyTopics?: string;
+    studyExam?: string;
+    interviewJobRole?: string;
+    interviewType?: string;
+    interviewCompany?: string;
+    interviewExperienceLevel?: string;
+    interviewTopics?: string;
+  }>;
+}> => {
+  const { responses, isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled, numberOfQuestions, questionType } = params;
+  
+  // Determine the mode and language
+  const mode = responses.selectedCard || 'study';
+  const language = responses.language === 'Chinese' ? 'Chinese' : 'English';
+  
+  // Create 3 different prompt variations by distributing the responses
+  const prompts: string[] = [];
+  const formFields: Array<any> = [];
+  
+  for (let i = 0; i < 3; i++) {
+    // Create a copy of responses for this prompt
+    const promptResponses = { ...responses };
+    
+    // Distribute responses differently for each prompt
+    const distributedParams = distributeResponsesForPrompt(promptResponses, i, mode, language);
+    
+    // Store the distributed form fields for this prompt
+    formFields.push({
+      studyEducationLevel: distributedParams.studyMandatoryQuestion2,
+      studySubjects: distributedParams.studyMandatoryQuestion1,
+      studyTopics: distributedParams.studyOptionalQuestion2,
+      studyExam: distributedParams.studyOptionalQuestion1,
+      interviewJobRole: distributedParams.interviewMandatoryQuestion1,
+      interviewType: distributedParams.interviewType,
+      interviewCompany: distributedParams.interviewOptionalQuestion2,
+      interviewExperienceLevel: distributedParams.interviewOptionalQuestion1,
+      interviewTopics: distributedParams.interviewOptionalQuestion3,
+    });
+    
+    // Generate distribution of flashcards using the same method as genAIForm
+    // Use appropriate interview type based on mode
+    const interviewTypeForDistribution = mode === 'study' ? 'study' : (distributedParams.interviewType || 'technical');
+    const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
+      isMcqEnabled,
+      isClozeEnabled,
+      isVoiceRecordedEnabled,
+      interviewTypeForDistribution,
+      numberOfQuestions
+    );
+    
+    console.log(`📊 Prompt ${i + 1} distribution:`, {
+      interviewType: distributedParams.interviewType,
+      distributionOfFlashcards
+    });
+    
+    // Generate the prompt using the distributed parameters
+    const prompt = await generateOnboardingPrompt({
+      mode,
+      language,
+      studyMandatoryQuestion1: distributedParams.studyMandatoryQuestion1,
+      studyMandatoryQuestion2: distributedParams.studyMandatoryQuestion2,
+      studyOptionalQuestion1: distributedParams.studyOptionalQuestion1,
+      studyOptionalQuestion2: distributedParams.studyOptionalQuestion2,
+      interviewMandatoryQuestion1: distributedParams.interviewMandatoryQuestion1,
+      interviewType: distributedParams.interviewType,
+      interviewOptionalQuestion1: distributedParams.interviewOptionalQuestion1,
+      interviewOptionalQuestion2: distributedParams.interviewOptionalQuestion2,
+      interviewOptionalQuestion3: distributedParams.interviewOptionalQuestion3,
+      distributionOfFlashcards,
+      numberOfQuestions,
+      questionType
+    });
+    
+    prompts.push(prompt);
+  }
+  
+  return { prompts, formFields };
 };
 
 /**
@@ -386,9 +474,23 @@ function distributeInterviewResponses(responses: OnboardingResponses, promptInde
     ? responses.topicsInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
     : [];
   
-  // Distribute optional fields across prompts
-  // Use the user-selected interview type for all prompts (or default if not specified)
-  result.interviewType = responses.interviewType || 'technical';
+  // Distribute interview types across prompts
+  // Parse interview types from the comma-separated string
+  const interviewTypesFromInput = responses.interviewType 
+    ? responses.interviewType.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0)
+    : [];
+  
+  console.log(`🔍 Interview Prompt ${promptIndex + 1} distribution:`, {
+    originalInterviewType: responses.interviewType,
+    parsedInterviewTypes: interviewTypesFromInput,
+    promptIndex
+  });
+  
+  // Distribute interview types across 3 prompts with smart distribution
+  const promptInterviewTypes = distributeItemsAcrossPrompts(interviewTypesFromInput, promptIndex);
+  result.interviewType = promptInterviewTypes[0] || 'technical';
+  
+  console.log(`🎯 Interview Prompt ${promptIndex + 1} final type:`, result.interviewType);
   
   if (promptIndex === 0) {
     // First prompt: Use first items from each category

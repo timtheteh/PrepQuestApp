@@ -1028,6 +1028,13 @@ export async function getAIDecks(): Promise<AIDeck[]> {
     console.log('📊 AI decks query result:', result);
     console.log('📊 Number of AI decks found:', result?.length || 0);
     
+    // Debug each deck's interviewType
+    if (result && result.length > 0) {
+      result.forEach((deck: any, index: number) => {
+        console.log(`🎯 AI Deck ${index + 1} (ID: ${deck.deckID}): interviewType = "${deck.interviewType}"`);
+      });
+    }
+    
     return result as AIDeck[];
   } catch (error) {
     console.error('Error fetching AI decks:', error);
@@ -1597,19 +1604,33 @@ export async function getCompanyIconImageSource(companyName: string | null): Pro
   
   try {
     const userID = await getCurrentUserID();
-    const result = await db.getFirstAsync(`
+    
+    // First try exact match
+    let result = await db.getFirstAsync(`
       SELECT hex(icon) as iconHex
       FROM interviewCompanyIcons
       WHERE name = ?
     `, [companyName]);
 
+    // If no exact match, try case-insensitive match
     if (!result) {
+      result = await db.getFirstAsync(`
+        SELECT hex(icon) as iconHex
+        FROM interviewCompanyIcons
+        WHERE LOWER(name) = LOWER(?)
+      `, [companyName]);
+    }
+
+    if (!result) {
+      console.log(`🔍 No company icon found for: "${companyName}"`);
       return undefined;
     }
 
     const iconHex = (result as { iconHex: string }).iconHex;
+    console.log(`✅ Found company icon for: "${companyName}"`);
     return convertHexToImageSource(iconHex);
   } catch (error) {
+    console.error('Error fetching company icon:', error);
     return undefined;
   }
 }
@@ -1633,17 +1654,29 @@ export async function getAllCompanyNames(): Promise<string[]> {
 // Helper function to get company icon image source by name
 export async function getCompanyIconByName(companyName: string): Promise<{ uri: string } | undefined> {
   try {
-    const result = await db.getFirstAsync(`
+    // First try exact match
+    let result = await db.getFirstAsync(`
       SELECT hex(icon) as iconHex
       FROM interviewCompanyIcons
       WHERE name = ?
     `, [companyName]);
 
+    // If no exact match, try case-insensitive match
     if (!result) {
+      result = await db.getFirstAsync(`
+        SELECT hex(icon) as iconHex
+        FROM interviewCompanyIcons
+        WHERE LOWER(name) = LOWER(?)
+      `, [companyName]);
+    }
+
+    if (!result) {
+      console.log(`🔍 No company icon found for: "${companyName}"`);
       return undefined;
     }
 
     const iconHex = (result as { iconHex: string }).iconHex;
+    console.log(`✅ Found company icon for: "${companyName}"`);
     return convertHexToImageSource(iconHex);
   } catch (error) {
     console.error('Error fetching company icon:', error);
@@ -1969,6 +2002,7 @@ export async function createAIDeckWithFlashcards({
       const interviewCompanyIcon = formFields.interviewCompany || null;
       
       // Insert AI deck
+      console.log(`💾 Storing AI deck with interviewType: "${formFields.interviewType}" for deck: ${deckName}`);
       await db.execAsync(`
         INSERT INTO AIDecks (
           userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
@@ -3319,8 +3353,19 @@ export async function loadTopicsFromDatabase(deckId: string, isAIDeck: string): 
       return [];
     }
     
-    // Parse the JSON string to get the topics array safely
-    return safeParseJSON(topicsField, []);
+    console.log('🔍 Topics field value:', topicsField);
+    console.log('🔍 Topics field type:', typeof topicsField);
+    console.log('🔍 First character:', topicsField.charAt(0));
+    
+    // Check if it's already a JSON array or a comma-separated string
+    if (topicsField.startsWith('[') && topicsField.endsWith(']')) {
+      // It's a JSON array, parse it
+      return safeParseJSON(topicsField, []);
+    } else {
+      // It's a comma-separated string, split it
+      console.log('📝 Treating as comma-separated string');
+      return topicsField.split(',').map(topic => topic.trim()).filter(topic => topic.length > 0);
+    }
   } catch (error) {
     console.error('Error loading topics from database:', error);
     return [];

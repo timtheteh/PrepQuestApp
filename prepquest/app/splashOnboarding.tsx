@@ -66,6 +66,7 @@ import CarouselPage7Image4 from '@/assets/onboarding/CarouselPage7Image4.svg';
 import { Svg, Polygon } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { stringsOnboarding, getTranslatedText } from '@/constants/stringsOnboarding';
+import { generateOnboardingPrompts, OnboardingResponses } from '@/utils/onboardingPromptGeneration';
 
 const { height } = Dimensions.get('window');
 
@@ -1813,6 +1814,60 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
             if (!dbSuccess) {
               console.warn('Failed to create user in local database, but Clerk auth succeeded');
             }
+
+            // Generate 3 free decks for new signups only (not sign-ins)
+            if (isFreshAuth) {
+              try {
+                console.log('🎁 Generating 3 free decks for new user...');
+                
+                // Collect onboarding responses
+                const onboardingResponses: OnboardingResponses = {
+                  selectedCard,
+                  studySubjectInput,
+                  studySelectedSuggestions,
+                  interviewSubjectInput,
+                  interviewSelectedSuggestions,
+                  studyEducationInput,
+                  studySelectedEducationSuggestions,
+                  interviewEducationInput,
+                  interviewSelectedEducationSuggestions,
+                  experienceLevelInput,
+                  companyInput,
+                  topicsInput,
+                  examInput,
+                  studyTopicsInput,
+                  interviewType: 'technical', // Default interview type, can be made configurable based on user selection
+                  language: selectedLanguage
+                };
+
+                // Generate 3 prompts for free deck creation
+                const prompts = await generateOnboardingPrompts({
+                  responses: onboardingResponses,
+                  isMcqEnabled: true,
+                  isClozeEnabled: true,
+                  isVoiceRecordedEnabled: true,
+                  numberOfQuestions: 10,
+                  questionType: []
+                });
+
+                console.log('✅ Generated 3 prompts for free decks:', prompts.length);
+                
+                // TODO: Send prompts to Supabase edge function to generate decks
+                // This will be implemented when the edge function is ready
+                console.log('📝 Prompts ready for Supabase edge function:');
+                prompts.forEach((prompt, index) => {
+                  console.log(`\n${'='.repeat(80)}`);
+                  console.log(`🎯 PROMPT ${index + 1}/3`);
+                  console.log(`${'='.repeat(80)}`);
+                  console.log(prompt);
+                  console.log(`${'='.repeat(80)}\n`);
+                });
+                
+              } catch (error) {
+                console.error('❌ Error generating free deck prompts:', error);
+                // Don't block the auth flow if prompt generation fails
+              }
+            }
           }
         } catch (error) {
           console.error('Error handling user creation:', error);
@@ -2578,13 +2633,13 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={[styles.suggestionCard, studySelectedEducationSuggestions.has('PhD') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('PhD')}
+                        onPress={() => handleEducationSuggestionPress('Adult Learner')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
                           <AdultLearnerImage width="100%" height="100%" />
                         </View>
                         <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'phd')}
+                          {getTranslatedText(selectedLanguage, 'adultLearner')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -2592,24 +2647,24 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                     <View style={styles.cardRow}>
                       <TouchableOpacity 
                         style={[styles.suggestionCard, studySelectedEducationSuggestions.has('Professional') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('Professional')}
+                        onPress={() => handleEducationSuggestionPress('Middle School')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
                           <MiddleSchoolImage width="100%" height="100%" />
                         </View>
                         <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'professional')}
+                          {getTranslatedText(selectedLanguage, 'middleSchool')}
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={[styles.suggestionCard, studySelectedEducationSuggestions.has('Certification') && styles.selectedSuggestionCard]}
-                        onPress={() => handleEducationSuggestionPress('Certification')}
+                        onPress={() => handleEducationSuggestionPress('Elementary School')}
                       >
                         <View style={styles.suggestionCardImageContainer}>
                           <ElementarySchoolImage width="100%" height="100%" />
                         </View>
                         <Text style={styles.suggestionCardText}>
-                          {getTranslatedText(selectedLanguage, 'certification')}
+                          {getTranslatedText(selectedLanguage, 'elementarySchool')}
                         </Text>
                       </TouchableOpacity>
                     </View>

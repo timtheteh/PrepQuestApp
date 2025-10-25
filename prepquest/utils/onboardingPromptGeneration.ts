@@ -1,0 +1,411 @@
+import { promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
+
+/**
+ * Smart distribution function that distributes items across 3 prompts
+ * Follows specific distribution logic based on item count
+ */
+function distributeItemsAcrossPrompts(items: string[], promptIndex: number): string[] {
+  if (items.length === 0) return [];
+  
+  if (items.length === 1) {
+    // If only 1 item, all 3 prompts get that one
+    return [items[0]];
+  }
+  
+  if (items.length === 2) {
+    // If 2 items: first prompt gets first, second prompt gets second, third prompt gets random choice
+    if (promptIndex === 0) return [items[0]];
+    if (promptIndex === 1) return [items[1]];
+    // Third prompt gets random choice between the two items
+    return [items[Math.random() < 0.5 ? 0 : 1]]; // promptIndex === 2
+  }
+  
+  if (items.length === 3) {
+    // If 3 items, each prompt gets a unique one
+    return [items[promptIndex]];
+  }
+  
+  // If more than 3 items, randomly pick 3 and distribute them
+  const shuffledItems = [...items].sort(() => Math.random() - 0.5);
+  const selectedItems = shuffledItems.slice(0, 3);
+  
+  // Distribute the 3 selected items across prompts
+  if (promptIndex === 0) return [selectedItems[0]];
+  if (promptIndex === 1) return [selectedItems[1]];
+  return [selectedItems[2]]; // promptIndex === 2
+}
+
+export interface OnboardingResponses {
+  selectedCard: 'study' | 'interview' | null;
+  studySubjectInput: string;
+  studySelectedSuggestions: Set<string>;
+  interviewSubjectInput: string;
+  interviewSelectedSuggestions: Set<string>;
+  studyEducationInput: string;
+  studySelectedEducationSuggestions: Set<string>;
+  interviewEducationInput: string;
+  interviewSelectedEducationSuggestions: Set<string>;
+  experienceLevelInput: string;
+  companyInput: string;
+  topicsInput: string;
+  examInput: string;
+  studyTopicsInput: string;
+  interviewType?: string; // User-selected interview type
+  language: string;
+}
+
+export interface OnboardingPromptParams {
+  responses: OnboardingResponses;
+  isMcqEnabled: boolean;
+  isClozeEnabled: boolean;
+  isVoiceRecordedEnabled: boolean;
+  numberOfQuestions: number;
+  questionType: string[];
+}
+
+/**
+ * Generates a single onboarding prompt based on distributed parameters
+ * Similar to generateGenAIPrompt but specifically for onboarding with only 2 optional study questions
+ */
+export const generateOnboardingPrompt = async (params: {
+  mode: string;
+  language: 'English' | 'Chinese';
+  // Study mode fields
+  studyMandatoryQuestion1?: string; // subjects
+  studyMandatoryQuestion2?: string; // education level
+  studyOptionalQuestion1?: string; // exam
+  studyOptionalQuestion2?: string; // topics
+  // Interview mode fields
+  interviewMandatoryQuestion1?: string; // role
+  interviewOptionalQuestion1?: string; // experience level
+  interviewOptionalQuestion2?: string; // company
+  interviewOptionalQuestion3?: string; // topics
+  interviewType?: string;
+  // Common fields
+  numberOfQuestions: number;
+  questionType: string[];
+  distributionOfFlashcards?: Record<string, number> | null;
+}): Promise<string> => {
+  const {
+    mode,
+    language,
+    studyMandatoryQuestion1,
+    studyMandatoryQuestion2,
+    studyOptionalQuestion1,
+    studyOptionalQuestion2,
+    interviewMandatoryQuestion1,
+    interviewOptionalQuestion1,
+    interviewOptionalQuestion2,
+    interviewOptionalQuestion3,
+    interviewType,
+    numberOfQuestions,
+    questionType,
+    distributionOfFlashcards
+  } = params;
+
+  let prompt = "";
+
+  // Build mode-specific prompt sections
+  const modeStr = Array.isArray(mode) ? mode[0] : mode;
+  if (modeStr === 'interview' && language === 'English') {
+    prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `The experience level for this position is ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `The topics I would like to focus on are ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'interview' && language === 'Chinese') {
+    prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `这个职位的经验水平是${interviewOptionalQuestion1}。\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `我准备面试的公司是${interviewOptionalQuestion2}。\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `我想要聚焦的领域是${interviewOptionalQuestion3}。\n`
+    }
+  }
+
+  if (modeStr === 'study' && language === 'English') {
+    prompt += `I am studying for ${studyMandatoryQuestion1} and my education level is ${studyMandatoryQuestion2}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `The exam I am preparing for is ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `The topics I would like to focus on are ${studyOptionalQuestion2}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && language === 'Chinese') { 
+    prompt += `我正在准备${studyMandatoryQuestion1}考试，我的教育水平是${studyMandatoryQuestion2}。\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `我正在准备${studyOptionalQuestion1}考试。\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `我想要聚焦的领域是${studyOptionalQuestion2}。\n`
+    }
+  }
+
+  // Add flashcard distribution and type prompts
+  if (distributionOfFlashcards) {   
+    if (language === 'English') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
+        prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
+      }
+    } 
+    if (language === 'Chinese') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
+        prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
+      }
+    }
+  }
+
+  // Add final instructions
+  if (language === 'English' && modeStr === 'interview') { 
+    prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
+    prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+  }
+
+  if (language === 'Chinese' && modeStr === 'interview') { 
+    prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
+    prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+  }
+
+  if (language === 'English' && modeStr === 'study') { 
+    prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
+    prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
+  }
+
+  if (language === 'Chinese' && modeStr === 'study') { 
+    prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
+    prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
+  }
+
+  return prompt;
+};
+
+/**
+ * Generates 3 prompts for free deck creation based on onboarding responses
+ * Distributes user responses across 3 different prompts to create diverse decks
+ */
+export const generateOnboardingPrompts = async (params: OnboardingPromptParams): Promise<string[]> => {
+  const { responses, isMcqEnabled, isClozeEnabled, isVoiceRecordedEnabled, numberOfQuestions, questionType } = params;
+  
+  // Determine the mode and language
+  const mode = responses.selectedCard || 'study';
+  const language = responses.language === 'Chinese' ? 'Chinese' : 'English';
+  
+  // Create 3 different prompt variations by distributing the responses
+  const prompts: string[] = [];
+  
+  for (let i = 0; i < 3; i++) {
+    // Create a copy of responses for this prompt
+    const promptResponses = { ...responses };
+    
+    // Distribute responses differently for each prompt
+    const distributedParams = distributeResponsesForPrompt(promptResponses, i, mode, language);
+    
+    // Generate distribution of flashcards using the same method as genAIForm
+    // Use appropriate interview type based on mode
+    const interviewTypeForDistribution = mode === 'study' ? 'study' : (distributedParams.interviewType || 'technical');
+    const distributionOfFlashcards = getDistributionOfFlashcardsForInterviewType(
+      isMcqEnabled,
+      isClozeEnabled,
+      isVoiceRecordedEnabled,
+      interviewTypeForDistribution,
+      numberOfQuestions
+    );
+    
+    console.log(`📊 Prompt ${i + 1} distribution:`, {
+      mode,
+      interviewTypeForDistribution,
+      distributionOfFlashcards,
+      totalQuestions: numberOfQuestions
+    });
+    
+    // Generate the prompt using the dedicated onboarding function
+    const prompt = await generateOnboardingPrompt({
+      mode: mode,
+      language: language,
+      // Study mode fields
+      studyMandatoryQuestion1: distributedParams.studyMandatoryQuestion1,
+      studyMandatoryQuestion2: distributedParams.studyMandatoryQuestion2,
+      studyOptionalQuestion1: distributedParams.studyOptionalQuestion1,
+      studyOptionalQuestion2: distributedParams.studyOptionalQuestion2,
+      // Interview mode fields
+      interviewMandatoryQuestion1: distributedParams.interviewMandatoryQuestion1,
+      interviewOptionalQuestion1: distributedParams.interviewOptionalQuestion1,
+      interviewOptionalQuestion2: distributedParams.interviewOptionalQuestion2,
+      interviewOptionalQuestion3: distributedParams.interviewOptionalQuestion3,
+      interviewType: distributedParams.interviewType,
+      // Common fields
+      numberOfQuestions: numberOfQuestions,
+      questionType: questionType,
+      distributionOfFlashcards: distributionOfFlashcards
+    });
+    
+    prompts.push(prompt);
+  }
+  
+  return prompts;
+};
+
+/**
+ * Distributes user responses across 3 different prompts to create variety
+ */
+function distributeResponsesForPrompt(
+  responses: OnboardingResponses, 
+  promptIndex: number, 
+  mode: string, 
+  language: string
+): {
+  studyMandatoryQuestion1?: string;
+  studyMandatoryQuestion2?: string;
+  studyOptionalQuestion1?: string;
+  studyOptionalQuestion2?: string;
+  studyOptionalQuestion3?: string;
+  interviewMandatoryQuestion1?: string;
+  interviewOptionalQuestion1?: string;
+  interviewOptionalQuestion2?: string;
+  interviewOptionalQuestion3?: string;
+  interviewType?: string;
+} {
+  
+  if (mode === 'study') {
+    return distributeStudyResponses(responses, promptIndex);
+  } else {
+    return distributeInterviewResponses(responses, promptIndex);
+  }
+}
+
+/**
+ * Distributes study mode responses across 3 prompts
+ */
+function distributeStudyResponses(responses: OnboardingResponses, promptIndex: number) {
+  // Get all subjects from both suggestions and text input
+  const suggestionSubjects = Array.from(responses.studySelectedSuggestions);
+  const textInputSubjects = responses.studySubjectInput 
+    ? responses.studySubjectInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  const allSubjects = [...suggestionSubjects, ...textInputSubjects];
+  
+  // Get all education levels from both suggestions and text input
+  const suggestionEducationLevels = Array.from(responses.studySelectedEducationSuggestions);
+  const textInputEducationLevels = responses.studyEducationInput 
+    ? responses.studyEducationInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  const allEducationLevels = [...suggestionEducationLevels, ...textInputEducationLevels];
+  
+  // Parse study topics from text input (comma-separated)
+  const studyTopicsFromInput = responses.studyTopicsInput 
+    ? responses.studyTopicsInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  
+  // Distribute subjects across 3 prompts with smart distribution
+  const promptSubjects = distributeItemsAcrossPrompts(allSubjects, promptIndex);
+  
+  // Distribute education levels across 3 prompts with smart distribution
+  const promptEducationLevels = distributeItemsAcrossPrompts(allEducationLevels, promptIndex);
+  
+  console.log(`🔍 Study Prompt ${promptIndex + 1} distribution:`, {
+    allSubjects,
+    promptSubjects,
+    allEducationLevels,
+    promptEducationLevels,
+    studyTopicsFromInput
+  });
+  
+  // Create different combinations for each prompt
+  const result: any = {};
+  
+  // Mandatory fields - use the first available values
+  result.studyMandatoryQuestion1 = promptSubjects[0] || 'General Studies';
+  result.studyMandatoryQuestion2 = promptEducationLevels[0] || 'High School';
+  
+  // Parse ALL text inputs with comma-separated parsing
+  const examFromInput = responses.examInput 
+    ? responses.examInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  
+  // Optional fields - distribute different topics and details (only 2 optional questions for study)
+  if (promptIndex === 0) {
+    // First prompt: Use first items from each category
+    result.studyOptionalQuestion1 = examFromInput.length > 0 ? examFromInput[0] : undefined;
+    result.studyOptionalQuestion2 = studyTopicsFromInput.length > 0 ? studyTopicsFromInput[0] : undefined;
+  } else if (promptIndex === 1) {
+    // Second prompt: Use second items (or first if only one exists)
+    result.studyOptionalQuestion1 = examFromInput.length > 1 ? examFromInput[1] : (examFromInput.length > 0 ? examFromInput[0] : undefined);
+    result.studyOptionalQuestion2 = studyTopicsFromInput.length > 1 ? studyTopicsFromInput[1] : (studyTopicsFromInput.length > 0 ? studyTopicsFromInput[0] : undefined);
+  } else {
+    // Third prompt: Use third items (or first if only one exists)
+    result.studyOptionalQuestion1 = examFromInput.length > 2 ? examFromInput[2] : (examFromInput.length > 0 ? examFromInput[0] : undefined);
+    result.studyOptionalQuestion2 = studyTopicsFromInput.length > 2 ? studyTopicsFromInput[2] : (studyTopicsFromInput.length > 0 ? studyTopicsFromInput[0] : undefined);
+  }
+  
+  return result;
+}
+
+/**
+ * Distributes interview mode responses across 3 prompts
+ */
+function distributeInterviewResponses(responses: OnboardingResponses, promptIndex: number) {
+  // Get all roles from both suggestions and text input
+  const suggestionRoles = Array.from(responses.interviewSelectedSuggestions);
+  const textInputRoles = responses.interviewSubjectInput 
+    ? responses.interviewSubjectInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  const allRoles = [...suggestionRoles, ...textInputRoles];
+  
+  // Distribute roles across 3 prompts with smart distribution
+  const promptRoles = distributeItemsAcrossPrompts(allRoles, promptIndex);
+  
+  // Create different combinations for each prompt
+  const result: any = {};
+  
+  // Mandatory fields
+  result.interviewMandatoryQuestion1 = promptRoles[0] || 'Software Engineer';
+  
+  // Parse ALL text inputs with comma-separated parsing
+  const experienceFromInput = responses.experienceLevelInput 
+    ? responses.experienceLevelInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  const companyFromInput = responses.companyInput 
+    ? responses.companyInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  const topicsFromInput = responses.topicsInput 
+    ? responses.topicsInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    : [];
+  
+  // Distribute optional fields across prompts
+  // Use the user-selected interview type for all prompts (or default if not specified)
+  result.interviewType = responses.interviewType || 'technical';
+  
+  if (promptIndex === 0) {
+    // First prompt: Use first items from each category
+    result.interviewOptionalQuestion1 = experienceFromInput.length > 0 ? experienceFromInput[0] : undefined;
+    result.interviewOptionalQuestion2 = companyFromInput.length > 0 ? companyFromInput[0] : undefined;
+    result.interviewOptionalQuestion3 = topicsFromInput.length > 0 ? topicsFromInput.join(', ') : undefined;
+  } else if (promptIndex === 1) {
+    // Second prompt: Use second items (or first if only one exists)
+    result.interviewOptionalQuestion1 = experienceFromInput.length > 1 ? experienceFromInput[1] : (experienceFromInput.length > 0 ? experienceFromInput[0] : undefined);
+    result.interviewOptionalQuestion2 = companyFromInput.length > 1 ? companyFromInput[1] : (companyFromInput.length > 0 ? companyFromInput[0] : undefined);
+    result.interviewOptionalQuestion3 = topicsFromInput.length > 0 ? topicsFromInput.join(', ') : undefined;
+  } else {
+    // Third prompt: Use third items (or first if only one exists)
+    result.interviewOptionalQuestion1 = experienceFromInput.length > 2 ? experienceFromInput[2] : (experienceFromInput.length > 0 ? experienceFromInput[0] : undefined);
+    result.interviewOptionalQuestion2 = companyFromInput.length > 2 ? companyFromInput[2] : (companyFromInput.length > 0 ? companyFromInput[0] : undefined);
+    result.interviewOptionalQuestion3 = topicsFromInput.length > 0 ? topicsFromInput.join(', ') : undefined;
+  }
+  
+  return result;
+}

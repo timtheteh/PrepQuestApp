@@ -1010,6 +1010,8 @@ export interface AIDeck {
 export async function getAIDecks(): Promise<AIDeck[]> {
   try {
     const userID = await getCurrentUserID();
+    console.log('🔍 Fetching AI decks for userID:', userID);
+    
     const result = await db.getAllAsync(`
       SELECT 
         d.*,
@@ -1022,6 +1024,9 @@ export async function getAIDecks(): Promise<AIDeck[]> {
       ORDER BY d.dateAdded DESC
       LIMIT 3
     `, [userID]);
+    
+    console.log('📊 AI decks query result:', result);
+    console.log('📊 Number of AI decks found:', result?.length || 0);
     
     return result as AIDeck[];
   } catch (error) {
@@ -1918,6 +1923,219 @@ export async function createGenAIFlashcardsForDeck({
     }
   } catch (error) {
     console.error('Error creating GenAI flashcards for deck:', error);
+    return { success: false };
+  }
+}
+
+export async function createAIDeckWithFlashcards({
+  deckName,
+  mode,
+  formFields,
+  flashcards,
+  isFavorited = 0,
+  folderIDs = null,
+  tempUserID = null,
+}: {
+  deckName: string;
+  mode: 'study' | 'interview';
+  formFields: {
+    studyEducationLevel?: string;
+    studySubjects?: string;
+    studyTopics?: string;
+    studySubtopics?: string;
+    studyExam?: string;
+    interviewJobRole?: string;
+    interviewType?: string;
+    interviewCompany?: string;
+    interviewExperienceLevel?: string;
+    interviewTopics?: string;
+    numberOfQuestions?: number;
+    kindsOfQuestions?: string;
+  };
+  flashcards: Array<{ flashcardType: string; question: string; answer: any }>;
+  isFavorited?: number;
+  folderIDs?: string | null;
+  tempUserID?: string | null;
+}): Promise<{ success: boolean; deckId?: number }> {
+  try {
+    const userID = tempUserID || await getCurrentUserID();
+    console.log('🔧 Creating AI deck with userID:', userID, tempUserID ? '(temporary)' : '(current user)');
+    
+    await db.execAsync('BEGIN TRANSACTION');
+    try {
+      const currentDate = new Date().toISOString();
+      const cardDesignIndex = Math.floor(Math.random() * 3); // 0, 1, or 2 for AI decks
+      const creationMethod = 'AI Suggested';
+      const interviewCompanyIcon = formFields.interviewCompany || null;
+      
+      // Insert AI deck
+      await db.execAsync(`
+        INSERT INTO AIDecks (
+          userID, deckName, dateAdded, lastModifiedDate, isFavorited, deckType, creationMethod,
+          lastStudiedDate, lastQuizzedDate, cardDesignIndex, isAIDeck, folderIDs,
+          studyEducationLevel, studySubjects, studyTopicsSubtopics, studyExamQuiz,
+          interviewJobRole, interviewType, interviewCompany, interviewExperienceLevel, interviewTopics, interviewCompanyIcon
+        ) VALUES (
+          '${userID}', '${deckName.replace(/'/g, "''")}', '${currentDate}', '${currentDate}', ${isFavorited}, '${mode}', '${creationMethod}',
+          NULL, NULL, ${cardDesignIndex}, 1, ${folderIDs ? `'${folderIDs}'` : 'NULL'},
+          ${formFields.studyEducationLevel ? `'${formFields.studyEducationLevel.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.studySubjects ? `'${formFields.studySubjects.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.studyTopics || formFields.studySubtopics ? `'${[formFields.studyTopics, formFields.studySubtopics].filter(Boolean).join(', ').replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.studyExam ? `'${formFields.studyExam.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewJobRole ? `'${formFields.interviewJobRole.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewType ? `'${formFields.interviewType.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewCompany ? `'${formFields.interviewCompany.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewExperienceLevel ? `'${formFields.interviewExperienceLevel.replace(/'/g, "''")}'` : 'NULL'},
+          ${formFields.interviewTopics ? `'${formFields.interviewTopics.replace(/'/g, "''")}'` : 'NULL'},
+          ${interviewCompanyIcon ? `'${interviewCompanyIcon.replace(/'/g, "''")}'` : 'NULL'}
+        )
+      `);
+      
+      // Get the new AI deck ID
+      const newDeckIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as newDeckId');
+      const newDeckId = (newDeckIdResult as any).newDeckId;
+      
+      // Create AI flashcards for this deck
+      const flashcardResult = await createAIFlashcardsForDeck({
+        deckId: newDeckId,
+        flashcards,
+        isWithinTransaction: true
+      });
+      
+      if (!flashcardResult.success) {
+        throw new Error('Failed to create AI flashcards');
+      }
+      
+      await db.execAsync('COMMIT');
+      return { success: true, deckId: newDeckId };
+    } catch (error) {
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error creating AI deck:', error);
+    return { success: false };
+  }
+}
+
+export async function updateAIDeckUserID(deckId: number, newUserID: string): Promise<{ success: boolean }> {
+  try {
+    console.log(`🔄 Updating AI deck ${deckId} userID to: ${newUserID}`);
+    
+    await db.execAsync('BEGIN TRANSACTION');
+    try {
+      // Update the AI deck userID
+      await db.execAsync(`
+        UPDATE AIDecks 
+        SET userID = '${newUserID}'
+        WHERE deckID = ${deckId}
+      `);
+      
+      // Update all AI flashcards for this deck
+      await db.execAsync(`
+        UPDATE AIFlashcards 
+        SET userID = '${newUserID}'
+        WHERE deckID = ${deckId}
+      `);
+      
+      await db.execAsync('COMMIT');
+      console.log(`✅ Successfully updated AI deck ${deckId} userID to: ${newUserID}`);
+      return { success: true };
+    } catch (error) {
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error updating AI deck userID:', error);
+    return { success: false };
+  }
+}
+
+export async function createAIFlashcardsForDeck({
+  deckId,
+  flashcards,
+  isWithinTransaction = false
+}: {
+  deckId: number;
+  flashcards: Array<{ flashcardType: string; question: string; answer: any }>;
+  isWithinTransaction?: boolean;
+}): Promise<{ success: boolean; flashcardCount?: number; flashcardIds?: number[] }> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Only start a transaction if we're not already within one
+    if (!isWithinTransaction) {
+      await db.execAsync('BEGIN TRANSACTION');
+    }
+    
+    try {
+      let flashcardCount = 0;
+      let flashcardIds: number[] = [];
+      for (const card of flashcards) {
+        const mapping = (promptAndData as Record<string, any>)[card.flashcardType];
+        if (!mapping) continue;
+        const questionType = mapping.questionType;
+        const answerType = mapping.answerType;
+        const cognitiveQnType = mapping.cognitiveQnType;
+        let answerText = null;
+        let answerMCQ = null;
+        if (answerType === 'mcq') {
+          answerMCQ = JSON.stringify(card.answer);
+        } else {
+          answerText = typeof card.answer === 'string' ? card.answer : JSON.stringify(card.answer);
+        }
+        await db.execAsync(`
+          INSERT INTO AIFlashcards (
+            userID, deckID, difficultyRating, cognitiveQnType, isFavorited, questionType, questionText, questionBlob,
+            answerType, answerText, answerMCQ, answerBlob, timeTaken, isMcqAnswerRight, lastStudiedDate, lastQuizzedDate
+          ) VALUES (
+            '${userID}', ${deckId}, 'None', '${cognitiveQnType}', 0, '${questionType}',
+            ${card.question ? `'${card.question.replace(/'/g, "''")}'` : 'NULL'}, NULL,
+            '${answerType}', ${answerText ? `'${answerText.replace(/'/g, "''")}'` : 'NULL'},
+            ${answerMCQ ? `'${answerMCQ.replace(/'/g, "''")}'` : 'NULL'}, NULL,
+            NULL, NULL, NULL, NULL
+          )
+        `);
+        // Get the last inserted flashcardID
+        const lastIdResult = await db.getFirstAsync('SELECT last_insert_rowid() as id') as { id?: number };
+        if (lastIdResult && typeof lastIdResult.id !== 'undefined') {
+          flashcardIds.push(lastIdResult.id);
+        }
+        flashcardCount++;
+      }
+      // Update user statistics
+      if (flashcardCount > 0) {
+        const currentDate = new Date().toISOString();
+        await db.execAsync(`
+          UPDATE users 
+          SET 
+            accumulatedFlashcardsCreated = accumulatedFlashcardsCreated + ${flashcardCount},
+            lastUpdated = '${currentDate}'
+          WHERE userID = '${userID}'
+        `);
+        // Also update the AI deck's lastModifiedDate since new flashcards were created
+        await db.execAsync(`
+          UPDATE AIDecks
+          SET lastModifiedDate = '${currentDate}'
+          WHERE deckID = ${deckId}
+        `);
+      }
+      
+      // Only commit if we started the transaction
+      if (!isWithinTransaction) {
+        await db.execAsync('COMMIT');
+      }
+      
+      return { success: true, flashcardCount, flashcardIds };
+    } catch (error) {
+      // Only rollback if we started the transaction
+      if (!isWithinTransaction) {
+        await db.execAsync('ROLLBACK');
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error creating AI flashcards for deck:', error);
     return { success: false };
   }
 }

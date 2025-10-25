@@ -1799,6 +1799,65 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
     setConfirmNewPassword(text);
   }, []);
 
+  // Handle database initialization directly in splashOnboarding
+  // This ensures loading animation stays visible throughout the entire process
+  const handleDatabaseInitialization = async () => {
+    try {
+      console.log('🚀 Starting database initialization from splashOnboarding...');
+      
+      // Import the necessary functions
+      const { setupDatabase } = await import('@/db/index');
+      const NotificationService = (await import('@/utils/notifications')).default;
+        
+        // Stop all background tasks first
+        const stopAllBackgroundTasks = async () => {
+          try {
+            console.log('🛑 Stopping all background tasks on app startup...');
+            
+            // Stop backup background task
+            if (BackgroundService.isRunning()) {
+              await BackgroundService.stop();
+              console.log('✅ Backup background task stopped');
+            }
+            
+            // Stop any other background tasks if they exist
+            // Add more background task stops here as needed
+            
+            console.log('✅ All background tasks stopped successfully');
+          } catch (error) {
+            console.error('❌ Error stopping background tasks:', error);
+          }
+        };
+        
+        await stopAllBackgroundTasks();
+        
+        // Database initialization already completed before AI deck creation
+        console.log('✅ Database already initialized before AI deck creation');
+        
+        // Initialize notifications
+        console.log('🔔 Initializing notifications...');
+        await NotificationService.getInstance().initialize();
+        console.log('✅ Notifications initialized successfully');
+        
+        // Hide loading overlay and transition to main app
+        setShowLoadingOverlay(false);
+        setIsFreshAuth(false);
+        
+        // Signal that database is ready before calling onAuthComplete
+        // This ensures the main app will show instead of splash screen
+        console.log('✅ Database ready - transitioning to main app');
+        onAuthComplete?.();
+        
+      } catch (error) {
+        console.error('❌ Error during database initialization:', error);
+        
+        // Hide loading overlay even on error and transition to main app
+        setShowLoadingOverlay(false);
+        setIsFreshAuth(false);
+        onAuthComplete?.();
+      }
+    };
+
   // Handle authentication state changes
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -1814,6 +1873,14 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
             if (!dbSuccess) {
               console.warn('Failed to create user in local database, but Clerk auth succeeded');
             }
+
+            // Initialize database BEFORE creating AI decks to avoid wiping them out
+            console.log('🚀 Initializing database before AI deck creation...');
+            const { setupDatabase } = await import('@/db/index');
+            const startTime = Date.now();
+            await setupDatabase();
+            const endTime = Date.now();
+            console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
 
             // Generate 3 free decks for new signups only (not sign-ins)
             if (isFreshAuth) {
@@ -1852,8 +1919,10 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
 
                 console.log('✅ Generated 3 prompts for free decks:', prompts.length);
                 
-                // TODO: Send prompts to Supabase edge function to generate decks
-                // This will be implemented when the edge function is ready
+                // Call backend function for each prompt and create AI decks
+                const { createAIDeckWithFlashcards, updateAIDeckUserID } = await import('@/db/decks');
+                const createdDeckIds: number[] = [];
+                
                 console.log('📝 Prompts ready for Supabase edge function:');
                 prompts.forEach((prompt, index) => {
                   console.log(`\n${'='.repeat(80)}`);
@@ -1862,11 +1931,130 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                   console.log(prompt);
                   console.log(`${'='.repeat(80)}\n`);
                 });
+
+                for (let i = 0; i < prompts.length; i++) {
+                  try {
+                    console.log(`🚀 Calling backend for prompt ${i + 1}/3...`);
+                    
+                    // Call the Supabase Edge Function
+                    const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/genAIFlashcardsGeneration`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+                      },
+                      body: JSON.stringify({ prompt: prompts[i] }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`API request failed with status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    let flashcards = data.flashcards?.flashcards ?? data.flashcards;
+                    
+                    // Handle case where API returns flashcards as raw string
+                    if (typeof flashcards === 'string') {
+                      try {
+                        let cleanedString = flashcards.trim();
+                        if (cleanedString.endsWith(']')) {
+                          cleanedString = cleanedString.slice(0, -1);
+                        }
+                        if (cleanedString.startsWith('[')) {
+                          cleanedString = cleanedString.slice(1);
+                        }
+                        cleanedString = cleanedString.trim();
+                        
+                        if (!cleanedString.startsWith('{')) {
+                          throw new Error('Invalid flashcard format');
+                        }
+                        
+                        const parsedFlashcards = JSON.parse(cleanedString);
+                        flashcards = [parsedFlashcards];
+                      } catch (parseError) {
+                        console.error('Failed to parse flashcards string:', parseError);
+                        throw new Error('Invalid flashcards format from API');
+                      }
+                    }
+                    
+                    if (flashcards && !Array.isArray(flashcards)) {
+                      flashcards = [flashcards];
+                    }
+                    
+                    if (!flashcards || !Array.isArray(flashcards) || flashcards.length === 0) {
+                      throw new Error('No flashcards generated');
+                    }
+
+                    console.log(`✅ Generated ${flashcards.length} flashcards for prompt ${i + 1}`);
+
+                    // Create AI deck with flashcards using temporary user ID
+                    const deckName = `Free Deck ${i + 1} - ${selectedCard === 'study' ? 'Study' : 'Interview'}`;
+                    const mode = selectedCard === 'study' ? 'study' : 'interview';
+                    
+                    // Create form fields based on the distributed responses
+                    const formFields = {
+                      studyEducationLevel: onboardingResponses.studyEducationInput || Array.from(onboardingResponses.studySelectedEducationSuggestions)[0],
+                      studySubjects: onboardingResponses.studySubjectInput || Array.from(onboardingResponses.studySelectedSuggestions)[0],
+                      studyTopics: onboardingResponses.studyTopicsInput,
+                      studyExam: onboardingResponses.examInput,
+                      interviewJobRole: onboardingResponses.interviewSubjectInput || Array.from(onboardingResponses.interviewSelectedSuggestions)[0],
+                      interviewType: onboardingResponses.interviewType,
+                      interviewCompany: onboardingResponses.companyInput,
+                      interviewExperienceLevel: onboardingResponses.experienceLevelInput,
+                      interviewTopics: onboardingResponses.topicsInput,
+                      numberOfQuestions: 10,
+                      kindsOfQuestions: ''
+                    };
+
+                    // Create deck with temporary user ID first
+                    const result = await createAIDeckWithFlashcards({
+                      deckName,
+                      mode,
+                      formFields,
+                      flashcards,
+                      tempUserID: 'temp_onboarding_user' // Use temporary user ID
+                    });
+
+                    if (result.success && result.deckId) {
+                      createdDeckIds.push(result.deckId);
+                      console.log(`✅ Created AI deck ${i + 1} with ID: ${result.deckId} (temporary user ID)`);
+                    } else {
+                      console.error(`❌ Failed to create AI deck ${i + 1}`);
+                    }
+                  } catch (error) {
+                    console.error(`❌ Error processing prompt ${i + 1}:`, error);
+                    // Continue with other prompts even if one fails
+                  }
+                }
+
+                // Update all created decks to use the correct user ID
+                console.log('🔄 Updating AI decks to correct user ID...');
+                for (const deckId of createdDeckIds) {
+                  try {
+                    await updateAIDeckUserID(deckId, user.id);
+                    console.log(`✅ Updated AI deck ${deckId} to user ID: ${user.id}`);
+                  } catch (error) {
+                    console.error(`❌ Failed to update AI deck ${deckId} user ID:`, error);
+                  }
+                }
+
+                console.log(`🎉 Successfully created ${createdDeckIds.length}/3 free AI decks for new user!`);
+                console.log('📊 Created deck IDs:', createdDeckIds);
+                
+                // Store the completion status for the auth flow
+                (window as any).aiDeckCreationComplete = true;
+                (window as any).createdDeckIds = createdDeckIds;
                 
               } catch (error) {
                 console.error('❌ Error generating free deck prompts:', error);
                 // Don't block the auth flow if prompt generation fails
+                (window as any).aiDeckCreationComplete = true;
+                (window as any).createdDeckIds = [];
               }
+            } else {
+              // For existing users, mark as complete immediately
+              (window as any).aiDeckCreationComplete = true;
+              (window as any).createdDeckIds = [];
             }
           }
         } catch (error) {
@@ -1879,78 +2067,33 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         handleAuthComplete();
       }
       
-      // Complete auth after ensuring minimum splash duration
+      // Complete auth after ensuring minimum splash duration and AI deck creation
       const elapsedTime = Date.now() - splashStartTime.current;
       const remainingTime = Math.max(0, 3000 - elapsedTime);
       
       console.log(`🕐 Splash (auth complete): elapsed: ${elapsedTime}ms, remaining: ${remainingTime}ms, isFreshAuth: ${isFreshAuth}`);
       
-      setTimeout(() => {
-        // Handle database initialization directly in splashOnboarding
-        // This ensures loading animation stays visible throughout the entire process
-        const handleDatabaseInitialization = async () => {
-          try {
-            console.log('🚀 Starting database initialization from splashOnboarding...');
-            
-            // Import the necessary functions
-            const { setupDatabase } = await import('@/db/index');
-            const NotificationService = (await import('@/utils/notifications')).default;
-            
-            // Stop all background tasks first
-            const stopAllBackgroundTasks = async () => {
-              try {
-                console.log('🛑 Stopping all background tasks on app startup...');
-                
-                // Stop backup background task
-                if (BackgroundService.isRunning()) {
-                  await BackgroundService.stop();
-                  console.log('✅ Backup background task stopped');
-                }
-                
-                // Stop any other background tasks if they exist
-                // Add more background task stops here as needed
-                
-                console.log('✅ All background tasks stopped successfully');
-              } catch (error) {
-                console.error('❌ Error stopping background tasks:', error);
-              }
-            };
-            
-            await stopAllBackgroundTasks();
-            
-            const startTime = Date.now();
-            await setupDatabase();
-            const endTime = Date.now();
-            
-            console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
-            
-            // Initialize notifications
-            console.log('🔔 Initializing notifications...');
-            await NotificationService.getInstance().initialize();
-            console.log('✅ Notifications initialized successfully');
-            
-            // Hide loading overlay and transition to main app
-            setShowLoadingOverlay(false);
-            setIsFreshAuth(false);
-            
-            // Signal that database is ready before calling onAuthComplete
-            // This ensures the main app will show instead of splash screen
-            console.log('✅ Database ready - transitioning to main app');
-            onAuthComplete?.();
-            
-          } catch (error) {
-            console.error('❌ Error during database initialization:', error);
-            
-            // Hide loading overlay even on error and transition to main app
-            setShowLoadingOverlay(false);
-            setIsFreshAuth(false);
-            onAuthComplete?.();
-          }
-        };
+      // Wait for both minimum splash duration and AI deck creation completion
+      const waitForCompletion = async () => {
+        // Wait for minimum splash duration
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
         
-        // Start database initialization
+        // Wait for AI deck creation to complete (if it's a new user)
+        if (isFreshAuth) {
+          console.log('⏳ Waiting for AI deck creation to complete...');
+          while (!(window as any).aiDeckCreationComplete) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          console.log('✅ AI deck creation completed, proceeding with auth flow');
+        }
+        
+        // Proceed with database initialization
         handleDatabaseInitialization();
-      }, remainingTime);
+      };
+      
+      waitForCompletion();
     }
   }, [isLoading, isAuthenticated, user, onAuthComplete]);
 

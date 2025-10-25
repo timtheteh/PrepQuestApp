@@ -82,8 +82,11 @@ export const AIPromptModal = function AIPromptModal({
   useEffect(() => {
     const loadAIDecks = async () => {
       try {
+        console.log('🔄 AIPromptModal: Starting to load AI decks...');
         setLoading(true);
         const decks = await getAIDecks();
+        console.log('📋 AIPromptModal: Received decks:', decks);
+        console.log('📋 AIPromptModal: Number of decks:', decks?.length || 0);
         setAiDecks(decks);
         
         // Load image sources for each deck
@@ -93,8 +96,9 @@ export const AIPromptModal = function AIPromptModal({
           sources.set(deck.deckID, imageSource);
         }
         setImageSources(sources);
+        console.log('✅ AIPromptModal: Finished loading AI decks');
       } catch (error) {
-        console.error('Error loading AI decks:', error);
+        console.error('❌ AIPromptModal: Error loading AI decks:', error);
         setAiDecks([]);
       } finally {
         setLoading(false);
@@ -102,6 +106,7 @@ export const AIPromptModal = function AIPromptModal({
     };
 
     if (visible) {
+      console.log('👁️ AIPromptModal: Modal is visible, loading AI decks...');
       loadAIDecks();
     }
   }, [visible]);

@@ -9,6 +9,8 @@ import DecksStudiedIcon from '@/assets/icons/statsIcons/DecksStudiedIcon.svg';
 import DecksStudiedIconDarkMode from '@/assets/icons/statsIcons/DecksStudiedIconDarkMode.svg';
 import FlashcardsStudiedIcon from '@/assets/icons/statsIcons/FlashcardsStudiedIcon.svg';
 import FlashcardsStudiedIconDarkMode from '@/assets/icons/statsIcons/FlashcardsStudiedIconDarkMode.svg';
+import HexagonBadge from '@/components/awards/hexagonBadge.svg';
+import HexagonBadgeUnachieved from '@/components/awards/hexagonBadgeUnachieved.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
@@ -700,70 +702,81 @@ const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) =>
 const hexagonCache = new Map<string, { outerPointsStr: string, innerPointsStr: string }>();
 
 const Badge = React.memo(({ title, image, achieved, themeColors }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any }) => {
-  const size = 120;
-  const borderWidth = 3;
-  const padding = borderWidth;
-  const svgSize = size + 2 * padding;
-  
-  // Use cached hexagon calculations
-  const { outerPointsStr, innerPointsStr } = useMemo(() => {
-    const cacheKey = `${size}-${borderWidth}-${svgSize}`;
-    if (!hexagonCache.has(cacheKey)) {
-      hexagonCache.set(cacheKey, getHexagonPoints(size, borderWidth, svgSize));
-    }
-    return hexagonCache.get(cacheKey)!;
-  }, [size, borderWidth, svgSize]);
-
-  // Generate unique clipPath ID to avoid conflicts
-  const clipPathId = useMemo(() => `hexClip-${Math.random().toString(36).substr(2, 9)}`, []);
+  const badgeWidth = 146;
+  const badgeHeight = 179;
+  const borderWidth = 8;
+  const cornerRadius = 20;
 
   return (
-    <View style={{ alignItems: 'center', width: svgSize }}>
-      <Svg width={svgSize} height={svgSize} style={{ transform: [{ rotate: '90deg' }] }}>
-        {/* Border hexagon (no stroke, just fill) */}
-        <Polygon
-          points={outerPointsStr}
-          fill={achieved ? themeColors.text : themeColors.unselectedText}
-        />
-        {/* Fill hexagon (image or white) */}
-        {image ? (
-          <>
-            <Defs>
-              <ClipPath id={clipPathId}>
-                <Polygon points={innerPointsStr} />
-              </ClipPath>
-            </Defs>
-            <SvgImage
-              href={image}
-              width={svgSize}
-              height={svgSize}
-              preserveAspectRatio="xMidYMid slice"
-              clipPath={`url(#${clipPathId})`}
-            />
-          </>
-        ) : (
-          <Polygon points={innerPointsStr} fill={themeColors.background} />
-        )}
-        {/* Grey overlay for pending state */}
-        {!achieved && (
-          <Polygon
-            points={innerPointsStr}
-            fill={`${themeColors.unselectedText}33`}
-            pointerEvents="none"
-          />
-        )}
-      </Svg>
-      <Text
+    <View style={{ alignItems: 'center', width: badgeWidth, height: badgeHeight, position: 'relative' }}>
+      {/* Main badge container */}
+      <View
         style={{
-          fontFamily: Fonts.bodyMedium,
-          fontSize: 16,
-          color: achieved ? themeColors.text : `${themeColors.text}80`,
-          marginTop: 0,
-          textAlign: 'center',
+          width: badgeWidth,
+          height: badgeHeight,
+          borderRadius: cornerRadius,
+          borderWidth: borderWidth,
+          borderColor: achieved ? '#FFFFFF' : '#D5D4DD',
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
         }}
       >
-        {title}
-      </Text>
+        {/* Column layout inside container */}
+        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          {/* Hexagon badge SVG */}
+          {achieved ? (
+            <HexagonBadge width={97} height={97} />
+          ) : (
+            <HexagonBadgeUnachieved width={97} height={97} />
+          )}
+          
+          {/* First row of text */}
+          <Text
+            style={{
+              fontFamily: Fonts.bodyBold,
+              fontSize: 16,
+              color: achieved ? themeColors.text : themeColors.text,
+              opacity: achieved ? 1 : 0.3,
+              marginTop: 8,
+              textAlign: 'center',
+            }}
+          >
+            Text
+          </Text>
+          
+          {/* Second row of text */}
+          <Text
+            style={{
+              fontFamily: Fonts.bodyMedium,
+              fontSize: 12,
+              color: achieved ? themeColors.text : themeColors.text,
+              opacity: achieved ? 1 : 0.3,
+              marginTop: 2,
+              textAlign: 'center',
+            }}
+          >
+            Subtext
+          </Text>
+        </View>
+      </View>
+      
+      {/* Black overlay for unachieved badges */}
+      {!achieved && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: badgeWidth,
+            height: badgeHeight,
+            borderRadius: cornerRadius,
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
     </View>
   );
 });
@@ -777,8 +790,8 @@ type BadgeWallProps = {
 
 // Memoized BadgeRow component for better performance
 const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], themeColors: any }) => (
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-    <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingRight: 20 }}>
+  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+    <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingRight: 10 }}>
       {row[0] && (
         <Badge
           title={row[0].badgeTitle}
@@ -788,7 +801,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
         />
       )}
     </View>
-    <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingLeft: 20 }}>
+    <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingLeft: 10 }}>
       {row[1] && (
         <Badge
           title={row[1].badgeTitle}
@@ -824,9 +837,9 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
       ]);
     }
     
-    const rowHeight = 120 + 20; // badge size + marginBottom
-    const collapsed = rowHeight * 2 + 40; // 2 rows + extra margin
-    const expanded = rowHeight * rows.length + rows.length * 25;
+    const rowHeight = 179 + 12; // badge height + marginBottom
+    const collapsed = rowHeight * 2; // 2 rows, no extra margin
+    const expanded = rowHeight * rows.length; // Just the rows, no extra padding
     
     return { sortedBadges: sorted, badgeRows: rows, collapsedHeight: collapsed, expandedHeight: expanded };
   }, [badges]);
@@ -905,11 +918,11 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
       )}
       
       {/* Content column */}
-      <View style={{ margin: 10, flex: 1 }}>
+      <View style={{ margin: 16, flex: 1 }}>
         <Text style={titleStyle}>{title}</Text>
         
         {/* Animated badge grid */}
-        <Animated.View style={{ width: '100%', height: anim, overflow: 'hidden' }}>
+        <Animated.View style={{ width: '100%', height: anim, overflow: 'hidden', marginTop: 16 }}>
           {visibleRows.map((row, idx) => (
             <BadgeRow key={idx} row={row} themeColors={themeColors} />
           ))}
@@ -917,7 +930,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
       </View>
       
       {/* Toggle Button at the bottom */}
-      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+      <View style={{ alignItems: 'center', marginTop: 16, marginBottom: 20 }}>
         <TouchableOpacity onPress={toggleViewAll} style={buttonStyle}>
           <Text style={buttonTextStyle}>
             {viewAll ? strings[language].collapse : strings[language].viewAll}

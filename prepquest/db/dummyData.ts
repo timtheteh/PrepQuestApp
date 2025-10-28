@@ -1592,8 +1592,139 @@ export async function populateDummyData() {
 
     console.log('✅ AIFlashcards table populated successfully');
     
+    // Populate streakBadgesTable
+    console.log('📊 Step 9/9: Populating streakBadgesTable...');
+
+    // Clear existing streak badges data
+    await db.execAsync('DELETE FROM streakBadgesTable');
+    
+    const streakBadgesData = [
+      {
+        badgeName: 'First Flame',
+        badgeSubtext: '1-Day Streak',
+        dayStreakRequirement: 1,
+        badgeImageName: 'firstFlame',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr'])
+      },
+      {
+        badgeName: 'Ember',
+        badgeSubtext: '3-Day Streak',
+        dayStreakRequirement: 3,
+        badgeImageName: 'ember',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr'])
+      },
+      {
+        badgeName: 'Let him cook',
+        badgeSubtext: '5-Day Streak',
+        dayStreakRequirement: 5,
+        badgeImageName: 'letHimCook',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr'])
+      },
+      {
+        badgeName: 'Firefly',
+        badgeSubtext: '1-Week Streak',
+        dayStreakRequirement: 7,
+        badgeImageName: 'firefly',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Campfire',
+        badgeSubtext: '10-Day Streak',
+        dayStreakRequirement: 10,
+        badgeImageName: 'campfire',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Double Power',
+        badgeSubtext: '2-Week Streak',
+        dayStreakRequirement: 14,
+        badgeImageName: 'doublePower',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Star Student',
+        badgeSubtext: '3-Week Streak',
+        dayStreakRequirement: 21,
+        badgeImageName: 'starStudent',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Professor',
+        badgeSubtext: '1-Month Streak',
+        dayStreakRequirement: 30,
+        badgeImageName: 'professor',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Unstoppable',
+        badgeSubtext: '2-Month Streak',
+        dayStreakRequirement: 60,
+        badgeImageName: 'unstoppable',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Hot & Spicy',
+        badgeSubtext: '3-Month Streak',
+        dayStreakRequirement: 90,
+        badgeImageName: 'hot&Spicy',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Volcano',
+        badgeSubtext: '100-Day Streak',
+        dayStreakRequirement: 100,
+        badgeImageName: 'volcano',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Meteor',
+        badgeSubtext: '150-Day Streak',
+        dayStreakRequirement: 150,
+        badgeImageName: 'meteor',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Dragon',
+        badgeSubtext: '200-Day Streak',
+        dayStreakRequirement: 200,
+        badgeImageName: 'dragon',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Supernova',
+        badgeSubtext: '250-Day Streak',
+        dayStreakRequirement: 250,
+        badgeImageName: 'supernova',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Royalty',
+        badgeSubtext: '300-Day Streak',
+        dayStreakRequirement: 300,
+        badgeImageName: 'royalty',
+        userIDs: JSON.stringify([])
+      },
+      {
+        badgeName: 'Phoenix',
+        badgeSubtext: '1-Year Streak',
+        dayStreakRequirement: 365,
+        badgeImageName: 'phoenix',
+        userIDs: JSON.stringify([])
+      }
+    ];
+
+    // Insert streak badges
+    for (const badge of streakBadgesData) {
+      await db.execAsync(`
+        INSERT INTO streakBadgesTable (badgeName, badgeSubtext, dayStreakRequirement, achieved, badgeImageName, userIDs)
+        VALUES (${escapeSqlString(badge.badgeName)}, ${escapeSqlString(badge.badgeSubtext)}, ${badge.dayStreakRequirement}, ${escapeSqlString(badge.badgeImageName)}, ${escapeSqlString(badge.userIDs)})
+      `);
+    }
+
+    console.log('✅ StreakBadgesTable populated successfully');
+    
     // TODO: Continue with other tables (userFormEntries, etc.)
-    console.log('✅ Dummy data population completed for AIFlashcards table');
+    console.log('✅ Dummy data population completed for StreakBadgesTable');
     
     // Verify that data was loaded correctly
     console.log('\n=== VERIFYING DATA LOAD ===');
@@ -1637,6 +1768,10 @@ export async function verifyDataLoad() {
     const companyIconsResult = await db.getAllAsync('SELECT COUNT(*) as count FROM interviewCompanyIcons');
     console.log(`✅ InterviewCompanyIcons loaded: ${(companyIconsResult[0] as any).count} company icons`);
     
+    // Check streakBadgesTable
+    const streakBadgesResult = await db.getAllAsync('SELECT COUNT(*) as count FROM streakBadgesTable');
+    console.log(`✅ StreakBadgesTable loaded: ${(streakBadgesResult[0] as any).count} streak badges`);
+    
     // Show sample data
     console.log('\n=== SAMPLE DATA ===');
     
@@ -1664,6 +1799,10 @@ export async function verifyDataLoad() {
     const sampleCompanyIcons = await db.getAllAsync('SELECT name FROM interviewCompanyIcons');
     console.log('🏢 Sample company icons:', sampleCompanyIcons);
     
+    // Sample streak badges
+    const sampleStreakBadges = await db.getAllAsync('SELECT badgeName, dayStreakRequirement, achieved FROM streakBadgesTable LIMIT 5');
+    console.log('🔥 Sample streak badges:', sampleStreakBadges);
+    
     // Check deck types distribution
     const deckTypes = await db.getAllAsync('SELECT deckType, COUNT(*) as count FROM decks GROUP BY deckType');
     console.log('📊 Deck types distribution:', deckTypes);
@@ -1680,6 +1819,10 @@ export async function verifyDataLoad() {
     const aiFlashcardTypes = await db.getAllAsync('SELECT questionType, answerType, COUNT(*) as count FROM AIFlashcards GROUP BY questionType, answerType');
     console.log('📊 AI Flashcard types distribution:', aiFlashcardTypes);
     
+    // Check streak badges distribution
+    const streakBadgesDistribution = await db.getAllAsync('SELECT achieved, COUNT(*) as count FROM streakBadgesTable GROUP BY achieved');
+    console.log('📊 Streak badges distribution:', streakBadgesDistribution);
+    
     console.log('\n✅ Data verification completed successfully!');
     
     return {
@@ -1689,16 +1832,19 @@ export async function verifyDataLoad() {
       aiDecks: (aiDecksResult[0] as any).count,
       aiFlashcards: (aiFlashcardsResult[0] as any).count,
       companyIcons: (companyIconsResult[0] as any).count,
+      streakBadges: (streakBadgesResult[0] as any).count,
       sampleFolders,
       sampleDecks,
       sampleFlashcards,
       sampleAIDecks,
       sampleAIFlashcards,
       sampleCompanyIcons,
+      sampleStreakBadges,
       deckTypes,
       aiDeckTypes,
       flashcardTypes,
-      aiFlashcardTypes
+      aiFlashcardTypes,
+      streakBadgesDistribution
     };
     
   } catch (error) {

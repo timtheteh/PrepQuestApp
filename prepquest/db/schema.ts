@@ -193,6 +193,16 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
       )
     `);
 
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS streakBadgesTable (
+        badgeName TEXT NOT NULL,
+        badgeSubtext TEXT NOT NULL,
+        dayStreakRequirement INTEGER NOT NULL,
+        badgeImageName TEXT NOT NULL,
+        userIDs TEXT
+      )
+    `);
+
     // Create optimized indexes for performance (minimal set for maximum impact)
     console.log('Creating database indexes for performance...');
     
@@ -250,6 +260,10 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_userformentries_userID_formEntryType_formEntryMethod ON userFormEntries (userID, formEntryType, formEntryMethod)');
 
     // InterviewCompanyIcons table indexes - Essential only (name is already primary key)
+
+    // StreakBadgesTable indexes - Essential only (2 indexes)
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_streakbadges_achieved ON streakBadgesTable (achieved)');
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_streakbadges_dayStreakRequirement ON streakBadgesTable (dayStreakRequirement)');
 
     console.log('Database indexes created successfully');
 

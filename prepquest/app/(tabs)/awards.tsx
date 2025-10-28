@@ -11,10 +11,46 @@ import FlashcardsStudiedIcon from '@/assets/icons/statsIcons/FlashcardsStudiedIc
 import FlashcardsStudiedIconDarkMode from '@/assets/icons/statsIcons/FlashcardsStudiedIconDarkMode.svg';
 import HexagonBadge from '@/components/awards/hexagonBadge.svg';
 import HexagonBadgeUnachieved from '@/components/awards/hexagonBadgeUnachieved.svg';
+
+// Streak badge SVG imports
+import FirstFlame from '@/components/awards/streak/firstFlame.svg';
+import FirstFlameUnachieved from '@/components/awards/streak/firstFlameUnachieved.svg';
+import Ember from '@/components/awards/streak/ember.svg';
+import EmberUnachieved from '@/components/awards/streak/emberUnachieved.svg';
+import LetHimCook from '@/components/awards/streak/letHimCook.svg';
+import LetHimCookUnachieved from '@/components/awards/streak/letHimCookUnachieved.svg';
+import Firefly from '@/components/awards/streak/firefly.svg';
+import FireflyUnachieved from '@/components/awards/streak/fireflyUnachieved.svg';
+import Campfire from '@/components/awards/streak/campfire.svg';
+import CampfireUnachieved from '@/components/awards/streak/campfireUnachieved.svg';
+import DoublePower from '@/components/awards/streak/doublePower.svg';
+import DoublePowerUnachieved from '@/components/awards/streak/doublePowerUnachieved.svg';
+import StarStudent from '@/components/awards/streak/starStudent.svg';
+import StarStudentUnachieved from '@/components/awards/streak/starStudentUnachieved.svg';
+import Professor from '@/components/awards/streak/professor.svg';
+import ProfessorUnachieved from '@/components/awards/streak/professorUnachieved.svg';
+import Unstoppable from '@/components/awards/streak/unstoppable.svg';
+import UnstoppableUnachieved from '@/components/awards/streak/unstoppableUnachieved.svg';
+import HotSpicy from '@/components/awards/streak/hot&Spicy.svg';
+import HotSpicyUnachieved from '@/components/awards/streak/hot&SpicyUnachieved.svg';
+import Volcano from '@/components/awards/streak/volcano.svg';
+import VolcanoUnachieved from '@/components/awards/streak/volcanoUnachieved.svg';
+import Meteor from '@/components/awards/streak/metero.svg';
+import MeteorUnachieved from '@/components/awards/streak/meteorUnachieved.svg';
+import Dragon from '@/components/awards/streak/dragon.svg';
+import DragonUnachieved from '@/components/awards/streak/dragonUnachieved.svg';
+import Supernova from '@/components/awards/streak/supernova.svg';
+import SupernovaUnachieved from '@/components/awards/streak/supernovaUnachieved.svg';
+import Royalty from '@/components/awards/streak/royalty.svg';
+import RoyaltyUnachieved from '@/components/awards/streak/royaltyUnachieved.svg';
+import Phoenix from '@/components/awards/streak/phoenix.svg';
+import PhoenixUnachieved from '@/components/awards/streak/phoenixUnachieved.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
+import { db } from '@/db/index';
+import { getCurrentUserID } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -673,7 +709,75 @@ interface BadgeData {
   badgeImage?: any;
   badgeCreatedDate: string; // ISO string
   badgeExpiryDate?: string;
+  streakBadgeSVG?: any;
+  dayStreakRequirement?: number; // For streak badges ordering
 }
+
+interface StreakBadgeData {
+  badgeName: string;
+  badgeSubtext: string;
+  dayStreakRequirement: number;
+  badgeImageName: string;
+  userIDs: string;
+  achieved: boolean;
+}
+
+// Function to get streak badge SVG component
+const getStreakBadgeSVG = (badgeImageName: string, achieved: boolean) => {
+  const svgMap: { [key: string]: { achieved: any, unachieved: any } } = {
+    'firstFlame': { achieved: FirstFlame, unachieved: FirstFlameUnachieved },
+    'ember': { achieved: Ember, unachieved: EmberUnachieved },
+    'letHimCook': { achieved: LetHimCook, unachieved: LetHimCookUnachieved },
+    'firefly': { achieved: Firefly, unachieved: FireflyUnachieved },
+    'campfire': { achieved: Campfire, unachieved: CampfireUnachieved },
+    'doublePower': { achieved: DoublePower, unachieved: DoublePowerUnachieved },
+    'starStudent': { achieved: StarStudent, unachieved: StarStudentUnachieved },
+    'professor': { achieved: Professor, unachieved: ProfessorUnachieved },
+    'unstoppable': { achieved: Unstoppable, unachieved: UnstoppableUnachieved },
+    'hot&Spicy': { achieved: HotSpicy, unachieved: HotSpicyUnachieved },
+    'volcano': { achieved: Volcano, unachieved: VolcanoUnachieved },
+    'meteor': { achieved: Meteor, unachieved: MeteorUnachieved },
+    'dragon': { achieved: Dragon, unachieved: DragonUnachieved },
+    'supernova': { achieved: Supernova, unachieved: SupernovaUnachieved },
+    'royalty': { achieved: Royalty, unachieved: RoyaltyUnachieved },
+    'phoenix': { achieved: Phoenix, unachieved: PhoenixUnachieved },
+  };
+  
+  const svgComponents = svgMap[badgeImageName];
+  if (!svgComponents) {
+    console.warn(`Unknown badge image name: ${badgeImageName}`);
+    return null;
+  }
+  
+  return achieved ? svgComponents.achieved : svgComponents.unachieved;
+};
+
+// Function to fetch streak badges from database
+const fetchStreakBadges = async (): Promise<StreakBadgeData[]> => {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, dayStreakRequirement, badgeImageName, userIDs
+      FROM streakBadgesTable
+      ORDER BY dayStreakRequirement ASC
+    `);
+    
+    return result.map((badge: any) => {
+      const userIDs = JSON.parse(badge.userIDs || '[]');
+      return {
+        badgeName: badge.badgeName,
+        badgeSubtext: badge.badgeSubtext,
+        dayStreakRequirement: badge.dayStreakRequirement,
+        badgeImageName: badge.badgeImageName,
+        userIDs: badge.userIDs,
+        achieved: userIDs.includes(userID)
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching streak badges:', error);
+    return [];
+  }
+};
 
 // Pre-calculate hexagon points to avoid recalculation
 const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) => {
@@ -700,7 +804,7 @@ const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) =>
 // Cache hexagon calculations
 const hexagonCache = new Map<string, { outerPointsStr: string, innerPointsStr: string }>();
 
-const Badge = React.memo(({ title, image, achieved, themeColors }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any }) => {
+const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any }) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
@@ -731,6 +835,26 @@ const Badge = React.memo(({ title, image, achieved, themeColors }: { title: stri
             <HexagonBadgeUnachieved width={97} height={97} />
           )}
           
+          {/* Streak badge SVG in center of hexagon */}
+          {streakBadgeSVG && (
+            <View style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: 97, 
+              height: 97, 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              zIndex: 2
+            }}>
+              <View style={{
+                transform: [{ translateX: title === 'Double Power' ? 7 : 0 }]
+              }}>
+                {React.createElement(streakBadgeSVG, { width: 43, height: 43 })}
+              </View>
+            </View>
+          )}
+          
           {/* First row of text */}
           <Text
             style={{
@@ -742,7 +866,7 @@ const Badge = React.memo(({ title, image, achieved, themeColors }: { title: stri
               textAlign: 'center',
             }}
           >
-            Text
+            {title}
           </Text>
           
           {/* Second row of text */}
@@ -797,6 +921,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           achieved={row[0].achieved}
           image={row[0].badgeImage}
           themeColors={themeColors}
+          streakBadgeSVG={row[0].streakBadgeSVG}
         />
       )}
     </View>
@@ -807,6 +932,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           achieved={row[1].achieved}
           image={row[1].badgeImage}
           themeColors={themeColors}
+          streakBadgeSVG={row[1].streakBadgeSVG}
         />
       )}
     </View>
@@ -821,11 +947,20 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
   
   // Memoize expensive calculations
   const { sortedBadges, badgeRows, collapsedHeight, expandedHeight } = useMemo(() => {
-    // Sort badges: non-achieved first (desc by createdDate), then achieved (desc by createdDate)
-    const sorted = [
-      ...badges.filter(b => !b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
-      ...badges.filter(b => b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
-    ];
+    // Check if this is a streak badge wall (has dayStreakRequirement)
+    const isStreakBadgeWall = badges.some(b => b.dayStreakRequirement !== undefined);
+    
+    let sorted;
+    if (isStreakBadgeWall) {
+      // For streak badges, sort by dayStreakRequirement ascending regardless of achievement
+      sorted = [...badges].sort((a, b) => (a.dayStreakRequirement || 0) - (b.dayStreakRequirement || 0));
+    } else {
+      // For other badges, sort by achievement status and creation date
+      sorted = [
+        ...badges.filter(b => !b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+        ...badges.filter(b => b.achieved).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+      ];
+    }
     
     // Group into rows of 2
     const rows = [];
@@ -836,7 +971,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
       ]);
     }
     
-    const rowHeight = 179 + 12; // badge height + marginBottom
+    const rowHeight = 179 + 16; // badge height + marginBottom
     const collapsed = rowHeight * 2; // 2 rows, no extra margin
     const expanded = rowHeight * rows.length; // Just the rows, no extra padding
     
@@ -937,6 +1072,60 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
         </TouchableOpacity>
       </View>
     </View>
+  );
+});
+
+// Streak Badges Component
+const StreakBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+  const [streakBadges, setStreakBadges] = useState<BadgeData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStreakBadges = async () => {
+      try {
+        setIsLoading(true);
+        const badges = await fetchStreakBadges();
+        
+        const badgeData: BadgeData[] = badges.map((badge) => {
+          const streakBadgeSVG = getStreakBadgeSVG(badge.badgeImageName, badge.achieved);
+          return {
+            badgeTitle: badge.badgeName,
+            achieved: badge.achieved,
+            badgeImage: undefined,
+            badgeCreatedDate: new Date().toISOString(), // Use current date as placeholder
+            badgeExpiryDate: undefined,
+            streakBadgeSVG: streakBadgeSVG,
+            dayStreakRequirement: badge.dayStreakRequirement
+          };
+        });
+        
+        setStreakBadges(badgeData);
+      } catch (error) {
+        console.error('Error loading streak badges:', error);
+        setStreakBadges([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStreakBadges();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ alignItems: 'center', padding: 20 }}>
+        <Text style={{ color: themeColors.text }}>Loading streak badges...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <BadgeWall 
+      badges={streakBadges} 
+      backgroundImage={LargeMeshBackground2} 
+      title="Streak Badges" 
+      themeColors={themeColors} 
+    />
   );
 });
 
@@ -1086,153 +1275,6 @@ const dummyBadges1 = [
   },
   
 ];
-
-const dummyBadges2 = [
-  // 4 unachieved badges (most recent first)
-  {
-    badgeTitle: 'Unachieved 1',
-    achieved: false,
-    badgeCreatedDate: '2025-06-13T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 2',
-    achieved: false,
-    badgeCreatedDate: '2025-06-12T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 3',
-    achieved: false,
-    badgeCreatedDate: '2025-06-11T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 4',
-    achieved: false,
-    badgeCreatedDate: '2025-06-10T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  // 9 achieved badges (most recent first)
-  {
-    badgeTitle: 'Achieved 1',
-    achieved: true,
-    badgeCreatedDate: '2025-06-09T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 2',
-    achieved: true,
-    badgeCreatedDate: '2025-06-08T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 3',
-    achieved: true,
-    badgeCreatedDate: '2025-06-07T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 4',
-    achieved: true,
-    badgeCreatedDate: '2025-06-06T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 5',
-    achieved: true,
-    badgeCreatedDate: '2025-06-05T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 6',
-    achieved: true,
-    badgeCreatedDate: '2025-06-04T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 7',
-    achieved: true,
-    badgeCreatedDate: '2025-06-03T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 8',
-    achieved: true,
-    badgeCreatedDate: '2025-06-02T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  
-];
-
 
 const dummyBadges4 = [
   // 4 unachieved badges (most recent first)
@@ -1719,7 +1761,7 @@ export default function AwardsScreen() {
           >
             <View style={{ flexDirection: 'column', gap: 30 }}>
               <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />
-              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title={strings[language].streakBadges} themeColors={themeColors} />
+              <StreakBadges themeColors={themeColors} />
               <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title={strings[language].welcomeBadges} themeColors={themeColors} />
               <BadgeWall badges={dummyBadges5} backgroundImage={LargeMeshBackground1} title={strings[language].lifetimeBadges} themeColors={themeColors} />
             </View>

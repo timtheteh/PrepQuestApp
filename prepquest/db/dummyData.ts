@@ -1716,7 +1716,7 @@ export async function populateDummyData() {
     // Insert streak badges
     for (const badge of streakBadgesData) {
       await db.execAsync(`
-        INSERT INTO streakBadgesTable (badgeName, badgeSubtext, dayStreakRequirement, achieved, badgeImageName, userIDs)
+        INSERT INTO streakBadgesTable (badgeName, badgeSubtext, dayStreakRequirement, badgeImageName, userIDs)
         VALUES (${escapeSqlString(badge.badgeName)}, ${escapeSqlString(badge.badgeSubtext)}, ${badge.dayStreakRequirement}, ${escapeSqlString(badge.badgeImageName)}, ${escapeSqlString(badge.userIDs)})
       `);
     }
@@ -1800,7 +1800,7 @@ export async function verifyDataLoad() {
     console.log('🏢 Sample company icons:', sampleCompanyIcons);
     
     // Sample streak badges
-    const sampleStreakBadges = await db.getAllAsync('SELECT badgeName, dayStreakRequirement, achieved FROM streakBadgesTable LIMIT 5');
+    const sampleStreakBadges = await db.getAllAsync('SELECT badgeName, dayStreakRequirement, badgeImageName FROM streakBadgesTable LIMIT 5');
     console.log('🔥 Sample streak badges:', sampleStreakBadges);
     
     // Check deck types distribution
@@ -1820,7 +1820,7 @@ export async function verifyDataLoad() {
     console.log('📊 AI Flashcard types distribution:', aiFlashcardTypes);
     
     // Check streak badges distribution
-    const streakBadgesDistribution = await db.getAllAsync('SELECT achieved, COUNT(*) as count FROM streakBadgesTable GROUP BY achieved');
+    const streakBadgesDistribution = await db.getAllAsync('SELECT dayStreakRequirement, COUNT(*) as count FROM streakBadgesTable GROUP BY dayStreakRequirement ORDER BY dayStreakRequirement');
     console.log('📊 Streak badges distribution:', streakBadgesDistribution);
     
     console.log('\n✅ Data verification completed successfully!');

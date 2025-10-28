@@ -261,8 +261,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
 
     // InterviewCompanyIcons table indexes - Essential only (name is already primary key)
 
-    // StreakBadgesTable indexes - Essential only (2 indexes)
-    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_streakbadges_achieved ON streakBadgesTable (achieved)');
+    // StreakBadgesTable indexes - Essential only (1 index)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_streakbadges_dayStreakRequirement ON streakBadgesTable (dayStreakRequirement)');
 
     console.log('Database indexes created successfully');

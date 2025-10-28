@@ -711,6 +711,7 @@ interface BadgeData {
   badgeExpiryDate?: string;
   streakBadgeSVG?: any;
   dayStreakRequirement?: number; // For streak badges ordering
+  badgeSubtext?: string; // For badge subtext
 }
 
 interface StreakBadgeData {
@@ -804,7 +805,7 @@ const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) =>
 // Cache hexagon calculations
 const hexagonCache = new Map<string, { outerPointsStr: string, innerPointsStr: string }>();
 
-const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any }) => {
+const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG, subtext }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any, subtext?: string }) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
@@ -880,7 +881,7 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG 
               textAlign: 'center',
             }}
           >
-            Subtext
+            {subtext || 'Subtext'}
           </Text>
         </View>
       </View>
@@ -922,6 +923,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           image={row[0].badgeImage}
           themeColors={themeColors}
           streakBadgeSVG={row[0].streakBadgeSVG}
+          subtext={row[0].badgeSubtext}
         />
       )}
     </View>
@@ -933,6 +935,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           image={row[1].badgeImage}
           themeColors={themeColors}
           streakBadgeSVG={row[1].streakBadgeSVG}
+          subtext={row[1].badgeSubtext}
         />
       )}
     </View>
@@ -1064,7 +1067,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
       </View>
       
       {/* Toggle Button at the bottom */}
-      <View style={{ alignItems: 'center', marginTop: 16, marginBottom: 20 }}>
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <TouchableOpacity onPress={toggleViewAll} style={buttonStyle}>
           <Text style={buttonTextStyle}>
             {viewAll ? strings[language].collapse : strings[language].viewAll}
@@ -1095,7 +1098,8 @@ const StreakBadges = React.memo(({ themeColors }: { themeColors: any }) => {
             badgeCreatedDate: new Date().toISOString(), // Use current date as placeholder
             badgeExpiryDate: undefined,
             streakBadgeSVG: streakBadgeSVG,
-            dayStreakRequirement: badge.dayStreakRequirement
+            dayStreakRequirement: badge.dayStreakRequirement,
+            badgeSubtext: badge.badgeSubtext
           };
         });
         

@@ -25,7 +25,6 @@ import { getAnimationConfig } from '@/utils/animationConfig';
 import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 const LargeMeshBackground1 = require('@/assets/awardsBackgrounds/LargeMeshBackground1.png');
 const LargeMeshBackground2 = require('@/assets/awardsBackgrounds/LargeMeshBackground2.png');
-const LargeMeshBackground3 = require('@/assets/awardsBackgrounds/LargeMeshBackground3.png');
 const LargeMeshBackground4 = require('@/assets/awardsBackgrounds/LargeMeshBackground4.png');
 
 const CELL_HEIGHT = 90; // or any value you prefer
@@ -1234,151 +1233,6 @@ const dummyBadges2 = [
   
 ];
 
-const dummyBadges3 = [
-  // 4 unachieved badges (most recent first)
-  {
-    badgeTitle: 'Unachieved 1',
-    achieved: false,
-    badgeCreatedDate: '2025-06-13T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 2',
-    achieved: false,
-    badgeCreatedDate: '2025-06-12T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 3',
-    achieved: false,
-    badgeCreatedDate: '2025-06-11T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 4',
-    achieved: false,
-    badgeCreatedDate: '2025-06-10T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  // 9 achieved badges (most recent first)
-  {
-    badgeTitle: 'Achieved 1',
-    achieved: true,
-    badgeCreatedDate: '2025-06-09T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 2',
-    achieved: true,
-    badgeCreatedDate: '2025-06-08T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 3',
-    achieved: true,
-    badgeCreatedDate: '2025-06-07T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 4',
-    achieved: true,
-    badgeCreatedDate: '2025-06-06T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 5',
-    achieved: true,
-    badgeCreatedDate: '2025-06-05T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 6',
-    achieved: true,
-    badgeCreatedDate: '2025-06-04T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 7',
-    achieved: true,
-    badgeCreatedDate: '2025-06-03T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 8',
-    achieved: true,
-    badgeCreatedDate: '2025-06-02T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  
-];
 
 const dummyBadges4 = [
   // 4 unachieved badges (most recent first)
@@ -1865,8 +1719,7 @@ export default function AwardsScreen() {
           >
             <View style={{ flexDirection: 'column', gap: 30 }}>
               <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />
-              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title={strings[language].dailyStreakBadges} themeColors={themeColors} />
-              <BadgeWall badges={dummyBadges3} backgroundImage={LargeMeshBackground3} title={strings[language].weeklyStreakBadges} themeColors={themeColors} />
+              <BadgeWall badges={dummyBadges2} backgroundImage={LargeMeshBackground2} title={strings[language].streakBadges} themeColors={themeColors} />
               <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title={strings[language].welcomeBadges} themeColors={themeColors} />
               <BadgeWall badges={dummyBadges5} backgroundImage={LargeMeshBackground1} title={strings[language].lifetimeBadges} themeColors={themeColors} />
             </View>

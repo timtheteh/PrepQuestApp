@@ -71,6 +71,34 @@ import Diamond from '@/components/awards/welcome/diamond.svg';
 import DiamondUnachieved from '@/components/awards/welcome/diamondUnachieved.svg';
 import BestPals from '@/components/awards/welcome/bestPals.svg';
 import BestPalsUnachieved from '@/components/awards/welcome/bestPalsUnachieved.svg';
+
+// Lifetime badge SVG imports
+import FirstSprout from '@/components/awards/lifetime/firstSprout.svg';
+import FirstSproutUnachieved from '@/components/awards/lifetime/firstSproutUnachieved.svg';
+import Blooming from '@/components/awards/lifetime/blooming.svg';
+import BloomingUnachieved from '@/components/awards/lifetime/bloomingUnachieved.svg';
+import FruitsOfLabour from '@/components/awards/lifetime/fruitsOfLabour.svg';
+import FruitsOfLabourUnachieved from '@/components/awards/lifetime/fruitsOfLabourUnachieved.svg';
+import StrongAndSteady from '@/components/awards/lifetime/strong&Steady.svg';
+import StrongAndSteadyUnachieved from '@/components/awards/lifetime/strong&SteadyUnachieved.svg';
+import NewHeights from '@/components/awards/lifetime/newHeights.svg';
+import NewHeightsUnachieved from '@/components/awards/lifetime/newHeightsUnachieved.svg';
+import AboveAndBeyond from '@/components/awards/lifetime/above&Beyond.svg';
+import AboveAndBeyondUnachieved from '@/components/awards/lifetime/above&BeyondUnachieved.svg';
+import Bronze from '@/components/awards/lifetime/bronze.svg';
+import Silver from '@/components/awards/lifetime/silver.svg';
+import Gold from '@/components/awards/lifetime/gold.svg';
+import MedalUnachieved from '@/components/awards/lifetime/medalUnachieved.svg';
+import ToTheMoon from '@/components/awards/lifetime/toTheMoon.svg';
+import ToTheMoonUnachieved from '@/components/awards/lifetime/toTheMoonUnachieved.svg';
+import SlowAndSteady from '@/components/awards/lifetime/slow&Steady.svg';
+import SlowAndSteadyUnachieved from '@/components/awards/lifetime/slow&SteadyUnachieved.svg';
+import FastAndFurious from '@/components/awards/lifetime/fast&Furious.svg';
+import FastAndFuriousUnachieved from '@/components/awards/lifetime/fast&FuriousUnachieved.svg';
+import Formula1 from '@/components/awards/lifetime/formula1.svg';
+import Formula1Unachieved from '@/components/awards/lifetime/formula1Unachieved.svg';
+import Supersonic from '@/components/awards/lifetime/supersonic.svg';
+import SupersonicUnachieved from '@/components/awards/lifetime/supersonicUnachieved.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
@@ -737,6 +765,7 @@ interface BadgeData {
   badgeExpiryDate?: string;
   streakBadgeSVG?: any;
   welcomeBadgeSVG?: any;
+  lifetimeBadgeSVG?: any;
   dayStreakRequirement?: number; // For streak badges ordering
   badgeSubtext?: string; // For badge subtext
   badgeOrder?: number; // For welcome badges ordering
@@ -752,6 +781,15 @@ interface StreakBadgeData {
 }
 
 interface WelcomeBadgeData {
+  badgeName: string;
+  badgeSubtext: string;
+  badgeImageName: string;
+  userIDs: string;
+  achieved: boolean;
+  badgeOrder: number;
+}
+
+interface LifetimeBadgeData {
   badgeName: string;
   badgeSubtext: string;
   badgeImageName: string;
@@ -816,6 +854,34 @@ const getWelcomeBadgeSVG = (badgeImageName: string, achieved: boolean) => {
   return achieved ? svgComponents.achieved : svgComponents.unachieved;
 };
 
+// Function to get lifetime badge SVG component (uses lifetime badge SVGs)
+const getLifetimeBadgeSVG = (badgeImageName: string, achieved: boolean) => {
+  const svgMap: { [key: string]: { achieved: any, unachieved: any } } = {
+    'firstSprout': { achieved: FirstSprout, unachieved: FirstSproutUnachieved },
+    'blooming': { achieved: Blooming, unachieved: BloomingUnachieved },
+    'fruitsOfLabour': { achieved: FruitsOfLabour, unachieved: FruitsOfLabourUnachieved },
+    'strong&Steady': { achieved: StrongAndSteady, unachieved: StrongAndSteadyUnachieved },
+    'newHeights': { achieved: NewHeights, unachieved: NewHeightsUnachieved },
+    'above&Beyond': { achieved: AboveAndBeyond, unachieved: AboveAndBeyondUnachieved },
+    'bronze': { achieved: Bronze, unachieved: MedalUnachieved },
+    'silver': { achieved: Silver, unachieved: MedalUnachieved },
+    'gold': { achieved: Gold, unachieved: MedalUnachieved },
+    'toTheMoon': { achieved: ToTheMoon, unachieved: ToTheMoonUnachieved },
+    'slow&Steady': { achieved: SlowAndSteady, unachieved: SlowAndSteadyUnachieved },
+    'fast&Furious': { achieved: FastAndFurious, unachieved: FastAndFuriousUnachieved },
+    'formula1': { achieved: Formula1, unachieved: Formula1Unachieved },
+    'supersonic': { achieved: Supersonic, unachieved: SupersonicUnachieved },
+  };
+  
+  const svgComponents = svgMap[badgeImageName];
+  if (!svgComponents) {
+    console.warn(`Unknown lifetime badge image name: ${badgeImageName}`);
+    return null;
+  }
+  
+  return achieved ? svgComponents.achieved : svgComponents.unachieved;
+};
+
 // Function to fetch streak badges from database
 const fetchStreakBadges = async (): Promise<StreakBadgeData[]> => {
   try {
@@ -870,6 +936,33 @@ const fetchWelcomeBadges = async (): Promise<WelcomeBadgeData[]> => {
   }
 };
 
+// Function to fetch lifetime badges from database
+const fetchLifetimeBadges = async (): Promise<LifetimeBadgeData[]> => {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, badgeImageName, userIDs, badgeOrder
+      FROM lifetimeBadgesTable
+      ORDER BY badgeOrder ASC
+    `);
+    
+    return result.map((badge: any) => {
+      const userIDs = JSON.parse(badge.userIDs || '[]');
+      return {
+        badgeName: badge.badgeName,
+        badgeSubtext: badge.badgeSubtext,
+        badgeImageName: badge.badgeImageName,
+        userIDs: badge.userIDs,
+        achieved: userIDs.includes(userID),
+        badgeOrder: badge.badgeOrder
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching lifetime badges:', error);
+    return [];
+  }
+};
+
 // Pre-calculate hexagon points to avoid recalculation
 const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) => {
   const getHexPoints = (radius: number, cx: number, cy: number) =>
@@ -895,14 +988,14 @@ const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) =>
 // Cache hexagon calculations
 const hexagonCache = new Map<string, { outerPointsStr: string, innerPointsStr: string }>();
 
-const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG, welcomeBadgeSVG, subtext }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any, welcomeBadgeSVG?: any, subtext?: string }) => {
+const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG, welcomeBadgeSVG, lifetimeBadgeSVG, subtext }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any, welcomeBadgeSVG?: any, lifetimeBadgeSVG?: any, subtext?: string }) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
   const cornerRadius = 20;
   
-  // Use welcomeBadgeSVG if provided, otherwise use streakBadgeSVG
-  const badgeSVG = welcomeBadgeSVG || streakBadgeSVG;
+  // Use lifetimeBadgeSVG if provided, then welcomeBadgeSVG, then streakBadgeSVG
+  const badgeSVG = lifetimeBadgeSVG || welcomeBadgeSVG || streakBadgeSVG;
 
   return (
     <View style={{ alignItems: 'center', width: badgeWidth, height: badgeHeight, position: 'relative' }}>
@@ -944,7 +1037,10 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
                 zIndex: 2
               }}>
                 <View style={{
-                  transform: [{ translateX: title === 'Double Power' ? 2 : 0 }]
+                  transform: [
+                    { translateX: title === 'Double Power' ? 2 : 0 },
+                    { rotate: title === 'Supersonic' ? '45deg' : '0deg' }
+                  ]
                 }}>
                   {React.createElement(badgeSVG, { width: 43, height: 43 })}
                 </View>
@@ -1021,6 +1117,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           themeColors={themeColors}
           streakBadgeSVG={row[0].streakBadgeSVG}
           welcomeBadgeSVG={row[0].welcomeBadgeSVG}
+          lifetimeBadgeSVG={row[0].lifetimeBadgeSVG}
           subtext={row[0].badgeSubtext}
         />
       )}
@@ -1034,6 +1131,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           themeColors={themeColors}
           streakBadgeSVG={row[1].streakBadgeSVG}
           welcomeBadgeSVG={row[1].welcomeBadgeSVG}
+          lifetimeBadgeSVG={row[1].lifetimeBadgeSVG}
           subtext={row[1].badgeSubtext}
         />
       )}
@@ -1051,8 +1149,10 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
   const { sortedBadges, badgeRows, collapsedHeight, expandedHeight } = useMemo(() => {
     // Check if this is a streak badge wall (has dayStreakRequirement)
     const isStreakBadgeWall = badges.some(b => b.dayStreakRequirement !== undefined);
-    // Check if this is a welcome badge wall (has badgeOrder)
-    const isWelcomeBadgeWall = badges.some(b => b.badgeOrder !== undefined);
+    // Check if this is a welcome badge wall (has badgeOrder and welcomeBadgeSVG)
+    const isWelcomeBadgeWall = badges.some(b => b.badgeOrder !== undefined && b.welcomeBadgeSVG);
+    // Check if this is a lifetime badge wall (has badgeOrder and lifetimeBadgeSVG)
+    const isLifetimeBadgeWall = badges.some(b => b.badgeOrder !== undefined && b.lifetimeBadgeSVG);
     
     let sorted;
     if (isStreakBadgeWall) {
@@ -1060,6 +1160,13 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
       sorted = [...badges].sort((a, b) => (a.dayStreakRequirement || 0) - (b.dayStreakRequirement || 0));
     } else if (isWelcomeBadgeWall) {
       // For welcome badges, sort by achievement status first, then by badgeOrder
+      sorted = [...badges].sort((a, b) => {
+        if (a.achieved && !b.achieved) return -1; // a (achieved) comes first
+        if (!a.achieved && b.achieved) return 1;  // b (achieved) comes first
+        return (a.badgeOrder || 0) - (b.badgeOrder || 0); // Maintain ascending order within group
+      });
+    } else if (isLifetimeBadgeWall) {
+      // For lifetime badges, sort by achievement status first, then by badgeOrder
       sorted = [...badges].sort((a, b) => {
         if (a.achieved && !b.achieved) return -1; // a (achieved) comes first
         if (!a.achieved && b.achieved) return 1;  // b (achieved) comes first
@@ -1297,6 +1404,62 @@ const WelcomeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
   );
 });
 
+// Lifetime Badges Component
+const LifetimeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+  const { language } = useLanguage();
+  const [lifetimeBadges, setLifetimeBadges] = useState<BadgeData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadLifetimeBadges = async () => {
+      try {
+        setIsLoading(true);
+        const badges = await fetchLifetimeBadges();
+        
+        const badgeData: BadgeData[] = badges.map((badge) => {
+          const lifetimeBadgeSVG = getLifetimeBadgeSVG(badge.badgeImageName, badge.achieved);
+          return {
+            badgeTitle: badge.badgeName,
+            achieved: badge.achieved,
+            badgeImage: undefined,
+            badgeCreatedDate: new Date().toISOString(), // Use current date as placeholder
+            badgeExpiryDate: undefined,
+            lifetimeBadgeSVG: lifetimeBadgeSVG,
+            badgeSubtext: badge.badgeSubtext,
+            badgeOrder: badge.badgeOrder
+          };
+        });
+        
+        setLifetimeBadges(badgeData);
+      } catch (error) {
+        console.error('Error loading lifetime badges:', error);
+        setLifetimeBadges([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadLifetimeBadges();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ alignItems: 'center', padding: 20 }}>
+        <Text style={{ color: themeColors.text }}>Loading lifetime badges...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <BadgeWall 
+      badges={lifetimeBadges} 
+      backgroundImage={LargeMeshBackground1} 
+      title={strings[language].lifetimeBadges} 
+      themeColors={themeColors} 
+    />
+  );
+});
+
 // Dummy data for the first BadgeWall
 const dummyBadges1 = [
   // 4 unachieved badges (most recent first)
@@ -1445,152 +1608,6 @@ const dummyBadges1 = [
 ];
 
 const dummyBadges4 = [
-  // 4 unachieved badges (most recent first)
-  {
-    badgeTitle: 'Unachieved 1',
-    achieved: false,
-    badgeCreatedDate: '2025-06-13T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 2',
-    achieved: false,
-    badgeCreatedDate: '2025-06-12T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 3',
-    achieved: false,
-    badgeCreatedDate: '2025-06-11T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Unachieved 4',
-    achieved: false,
-    badgeCreatedDate: '2025-06-10T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  // 9 achieved badges (most recent first)
-  {
-    badgeTitle: 'Achieved 1',
-    achieved: true,
-    badgeCreatedDate: '2025-06-09T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 2',
-    achieved: true,
-    badgeCreatedDate: '2025-06-08T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 3',
-    achieved: true,
-    badgeCreatedDate: '2025-06-07T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 4',
-    achieved: true,
-    badgeCreatedDate: '2025-06-06T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 5',
-    achieved: true,
-    badgeCreatedDate: '2025-06-05T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 6',
-    achieved: true,
-    badgeCreatedDate: '2025-06-04T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 7',
-    achieved: true,
-    badgeCreatedDate: '2025-06-03T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 8',
-    achieved: true,
-    badgeCreatedDate: '2025-06-02T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-    {
-    badgeTitle: 'Achieved 9',
-    achieved: true,
-    badgeCreatedDate: '2025-06-01T10:00:00Z',
-    badgeImage: undefined,
-    badgeExpiryDate: undefined,
-  },
-  
-];
-
-const dummyBadges5 = [
   // 4 unachieved badges (most recent first)
   {
     badgeTitle: 'Unachieved 1',
@@ -1931,7 +1948,7 @@ export default function AwardsScreen() {
               <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />
               <StreakBadges themeColors={themeColors} />
               <WelcomeBadges themeColors={themeColors} />
-              <BadgeWall badges={dummyBadges5} backgroundImage={LargeMeshBackground1} title={strings[language].lifetimeBadges} themeColors={themeColors} />
+              <LifetimeBadges themeColors={themeColors} />
             </View>
           </ScrollView>
     </Animated.View>

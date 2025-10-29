@@ -1826,8 +1826,125 @@ export async function populateDummyData() {
 
     console.log('✅ WelcomeBadgesTable populated successfully');
     
+    // Populate lifetimeBadgesTable
+    console.log('📊 Step 11/11: Populating lifetimeBadgesTable...');
+
+    // Clear existing lifetime badges data
+    await db.execAsync('DELETE FROM lifetimeBadgesTable');
+    
+    const lifetimeBadgesData = [
+      {
+        badgeName: 'First Sprout',
+        badgeSubtext: '3 Decks Created',
+        badgeImageName: 'firstSprout',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        badgeOrder: 1
+      },
+      {
+        badgeName: 'Blooming',
+        badgeSubtext: '10 Decks Created',
+        badgeImageName: 'blooming',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 2
+      },
+      {
+        badgeName: 'Fruits of Labour',
+        badgeSubtext: '20 Decks Created',
+        badgeImageName: 'fruitsOfLabour',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        badgeOrder: 3
+      },
+      {
+        badgeName: 'Strong & Steady',
+        badgeSubtext: '30 Decks Created',
+        badgeImageName: 'strong&Steady',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 4
+      },
+      {
+        badgeName: 'New Heights',
+        badgeSubtext: '40 Decks Created',
+        badgeImageName: 'newHeights',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 5
+      },
+      {
+        badgeName: 'Above & Beyond',
+        badgeSubtext: '50 Decks Created',
+        badgeImageName: 'above&Beyond',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        badgeOrder: 6
+      },
+      {
+        badgeName: 'Bronze',
+        badgeSubtext: 'Scored 50%-59%',
+        badgeImageName: 'bronze',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 7
+      },
+      {
+        badgeName: 'Silver',
+        badgeSubtext: 'Scored 60%-79%',
+        badgeImageName: 'silver',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 8
+      },
+      {
+        badgeName: 'Gold',
+        badgeSubtext: 'Scored 80%-99%',
+        badgeImageName: 'gold',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 9
+      },
+      {
+        badgeName: 'To the moon!',
+        badgeSubtext: 'Scored 100%',
+        badgeImageName: 'toTheMoon',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 10
+      },
+      {
+        badgeName: 'Slow & Steady',
+        badgeSubtext: '60s / flashcard',
+        badgeImageName: 'slow&Steady',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 11
+      },
+      {
+        badgeName: 'Fast & Furious',
+        badgeSubtext: '45s / flashcard',
+        badgeImageName: 'fast&Furious',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 12
+      },
+      {
+        badgeName: 'Formula 1',
+        badgeSubtext: '30s / flashcard',
+        badgeImageName: 'formula1',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 13
+      },
+      {
+        badgeName: 'Supersonic',
+        badgeSubtext: '15s / flashcard',
+        badgeImageName: 'supersonic',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 14
+      },
+    ];
+
+    // Insert lifetime badges
+    for (const badge of lifetimeBadgesData) {
+      await db.execAsync(`
+        INSERT INTO lifetimeBadgesTable (badgeName, badgeSubtext, badgeImageName, userIDs, badgeOrder)
+        VALUES (${escapeSqlString(badge.badgeName)}, ${escapeSqlString(badge.badgeSubtext)}, ${escapeSqlString(badge.badgeImageName)}, ${escapeSqlString(badge.userIDs)}, ${badge.badgeOrder})
+      `);
+    }
+
+    console.log('✅ LifetimeBadgesTable populated successfully');
+    
     // TODO: Continue with other tables (userFormEntries, etc.)
-    console.log('✅ Dummy data population completed for WelcomeBadgesTable');
+    console.log('✅ Dummy data population completed for LifetimeBadgesTable');
     
     // Verify that data was loaded correctly
     console.log('\n=== VERIFYING DATA LOAD ===');
@@ -1879,6 +1996,10 @@ export async function verifyDataLoad() {
     const welcomeBadgesResult = await db.getAllAsync('SELECT COUNT(*) as count FROM welcomeBadgesTable');
     console.log(`✅ WelcomeBadgesTable loaded: ${(welcomeBadgesResult[0] as any).count} welcome badges`);
     
+    // Check lifetimeBadgesTable
+    const lifetimeBadgesResult = await db.getAllAsync('SELECT COUNT(*) as count FROM lifetimeBadgesTable');
+    console.log(`✅ LifetimeBadgesTable loaded: ${(lifetimeBadgesResult[0] as any).count} lifetime badges`);
+    
     // Show sample data
     console.log('\n=== SAMPLE DATA ===');
     
@@ -1914,6 +2035,10 @@ export async function verifyDataLoad() {
     const sampleWelcomeBadges = await db.getAllAsync('SELECT badgeName, badgeImageName FROM welcomeBadgesTable LIMIT 5');
     console.log('👋 Sample welcome badges:', sampleWelcomeBadges);
     
+    // Sample lifetime badges
+    const sampleLifetimeBadges = await db.getAllAsync('SELECT badgeName, badgeImageName FROM lifetimeBadgesTable LIMIT 5');
+    console.log('🏆 Sample lifetime badges:', sampleLifetimeBadges);
+    
     // Check deck types distribution
     const deckTypes = await db.getAllAsync('SELECT deckType, COUNT(*) as count FROM decks GROUP BY deckType');
     console.log('📊 Deck types distribution:', deckTypes);
@@ -1945,6 +2070,7 @@ export async function verifyDataLoad() {
       companyIcons: (companyIconsResult[0] as any).count,
       streakBadges: (streakBadgesResult[0] as any).count,
       welcomeBadges: (welcomeBadgesResult[0] as any).count,
+      lifetimeBadges: (lifetimeBadgesResult[0] as any).count,
       sampleFolders,
       sampleDecks,
       sampleFlashcards,
@@ -1953,6 +2079,7 @@ export async function verifyDataLoad() {
       sampleCompanyIcons,
       sampleStreakBadges,
       sampleWelcomeBadges,
+      sampleLifetimeBadges,
       deckTypes,
       aiDeckTypes,
       flashcardTypes,

@@ -12,6 +12,9 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync('DROP TABLE IF EXISTS folders');
     await db.execAsync('DROP TABLE IF EXISTS users');
     await db.execAsync('DROP TABLE IF EXISTS interviewCompanyIcons');
+    await db.execAsync('DROP TABLE IF EXISTS streakBadgesTable');
+    await db.execAsync('DROP TABLE IF EXISTS welcomeBadgesTable');
+    await db.execAsync('DROP TABLE IF EXISTS lifetimeBadgesTable');
     console.log('Existing tables dropped');
     
     // Now create tables with new schema - each in its own execAsync call
@@ -213,6 +216,16 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
       )
     `);
 
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS lifetimeBadgesTable (
+        badgeName TEXT NOT NULL,
+        badgeSubtext TEXT NOT NULL,
+        badgeImageName TEXT NOT NULL,
+        userIDs TEXT,
+        badgeOrder INTEGER NOT NULL
+      )
+    `);
+
     // Migration: Add badgeOrder column to existing welcomeBadgesTable if it doesn't exist
     try {
       await db.execAsync(`
@@ -287,6 +300,9 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
 
     // WelcomeBadgesTable indexes - Essential only (1 index)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_welcomebadges_badgeImageName ON welcomeBadgesTable (badgeImageName)');
+
+    // LifetimeBadgesTable indexes - Essential only (1 index)
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_lifetimebadges_badgeImageName ON lifetimeBadgesTable (badgeImageName)');
 
     console.log('Database indexes created successfully');
 

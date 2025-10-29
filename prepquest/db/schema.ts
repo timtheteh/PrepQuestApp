@@ -203,6 +203,27 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
       )
     `);
 
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS welcomeBadgesTable (
+        badgeName TEXT NOT NULL,
+        badgeSubtext TEXT NOT NULL,
+        badgeImageName TEXT NOT NULL,
+        userIDs TEXT,
+        badgeOrder INTEGER NOT NULL
+      )
+    `);
+
+    // Migration: Add badgeOrder column to existing welcomeBadgesTable if it doesn't exist
+    try {
+      await db.execAsync(`
+        ALTER TABLE welcomeBadgesTable ADD COLUMN badgeOrder INTEGER DEFAULT 0
+      `);
+      console.log('✅ Added badgeOrder column to welcomeBadgesTable');
+    } catch (error) {
+      // Column already exists, ignore error
+      console.log('ℹ️ badgeOrder column already exists in welcomeBadgesTable');
+    }
+
     // Create optimized indexes for performance (minimal set for maximum impact)
     console.log('Creating database indexes for performance...');
     
@@ -263,6 +284,9 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
 
     // StreakBadgesTable indexes - Essential only (1 index)
     await db.execAsync('CREATE INDEX IF NOT EXISTS idx_streakbadges_dayStreakRequirement ON streakBadgesTable (dayStreakRequirement)');
+
+    // WelcomeBadgesTable indexes - Essential only (1 index)
+    await db.execAsync('CREATE INDEX IF NOT EXISTS idx_welcomebadges_badgeImageName ON welcomeBadgesTable (badgeImageName)');
 
     console.log('Database indexes created successfully');
 

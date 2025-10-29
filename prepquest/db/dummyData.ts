@@ -1723,8 +1723,111 @@ export async function populateDummyData() {
 
     console.log('✅ StreakBadgesTable populated successfully');
     
+    // Populate welcomeBadgesTable
+    console.log('📊 Step 10/10: Populating welcomeBadgesTable...');
+
+    // Clear existing welcome badges data
+    await db.execAsync('DELETE FROM welcomeBadgesTable');
+    
+    const welcomeBadgesData = [
+      {
+        badgeName: 'Beginnings',
+        badgeSubtext: '1st Study Deck',
+        badgeImageName: 'beginnings',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        badgeOrder: 1
+      },
+      {
+        badgeName: 'First Steps',
+        badgeSubtext: '1st Interview Deck',
+        badgeImageName: 'firstSteps',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 2
+      },
+      {
+        badgeName: 'AI Connection',
+        badgeSubtext: '1st Gen-AI Deck',
+        badgeImageName: 'aiConnection',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        badgeOrder: 3
+      },
+      {
+        badgeName: 'File Frenzy',
+        badgeSubtext: '1st File-Upload Deck',
+        badgeImageName: 'fileFrenzy',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 4
+      },
+      {
+        badgeName: 'Resourceful',
+        badgeSubtext: '1st Youtube Deck',
+        badgeImageName: 'youtubeForm',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 5
+      },
+      {
+        badgeName: 'Personal Touch',
+        badgeSubtext: '1st Manual Deck',
+        badgeImageName: 'personalTouch',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 6
+      },
+      {
+        badgeName: 'Midnight Oil',
+        badgeSubtext: '1st Deck Studied',
+        badgeImageName: 'midnightOil',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 7
+      },
+      {
+        badgeName: "'A' for Effort",
+        badgeSubtext: '1st DeckQuizzed',
+        badgeImageName: 'aForEffort',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 8
+      },
+      {
+        badgeName: 'Nice Chatting!',
+        badgeSubtext: '1st Feedback by AI',
+        badgeImageName: 'niceChatting',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 9
+      },
+      {
+        badgeName: 'Ruby',
+        badgeSubtext: 'Pro Plan',
+        badgeImageName: 'ruby',
+        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        badgeOrder: 10
+      },
+      {
+        badgeName: 'Diamond',
+        badgeSubtext: 'Premium Plan',
+        badgeImageName: 'diamond',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 11
+      },
+      {
+        badgeName: 'Best Pals',
+        badgeSubtext: 'Shared with a Friend',
+        badgeImageName: 'bestPals',
+        userIDs: JSON.stringify([]),
+        badgeOrder: 12
+      }
+    ];
+
+    // Insert welcome badges
+    for (const badge of welcomeBadgesData) {
+      await db.execAsync(`
+        INSERT INTO welcomeBadgesTable (badgeName, badgeSubtext, badgeImageName, userIDs, badgeOrder)
+        VALUES (${escapeSqlString(badge.badgeName)}, ${escapeSqlString(badge.badgeSubtext)}, ${escapeSqlString(badge.badgeImageName)}, ${escapeSqlString(badge.userIDs)}, ${badge.badgeOrder})
+      `);
+    }
+
+    console.log('✅ WelcomeBadgesTable populated successfully');
+    
     // TODO: Continue with other tables (userFormEntries, etc.)
-    console.log('✅ Dummy data population completed for StreakBadgesTable');
+    console.log('✅ Dummy data population completed for WelcomeBadgesTable');
     
     // Verify that data was loaded correctly
     console.log('\n=== VERIFYING DATA LOAD ===');
@@ -1772,6 +1875,10 @@ export async function verifyDataLoad() {
     const streakBadgesResult = await db.getAllAsync('SELECT COUNT(*) as count FROM streakBadgesTable');
     console.log(`✅ StreakBadgesTable loaded: ${(streakBadgesResult[0] as any).count} streak badges`);
     
+    // Check welcomeBadgesTable
+    const welcomeBadgesResult = await db.getAllAsync('SELECT COUNT(*) as count FROM welcomeBadgesTable');
+    console.log(`✅ WelcomeBadgesTable loaded: ${(welcomeBadgesResult[0] as any).count} welcome badges`);
+    
     // Show sample data
     console.log('\n=== SAMPLE DATA ===');
     
@@ -1803,6 +1910,10 @@ export async function verifyDataLoad() {
     const sampleStreakBadges = await db.getAllAsync('SELECT badgeName, dayStreakRequirement, badgeImageName FROM streakBadgesTable LIMIT 5');
     console.log('🔥 Sample streak badges:', sampleStreakBadges);
     
+    // Sample welcome badges
+    const sampleWelcomeBadges = await db.getAllAsync('SELECT badgeName, badgeImageName FROM welcomeBadgesTable LIMIT 5');
+    console.log('👋 Sample welcome badges:', sampleWelcomeBadges);
+    
     // Check deck types distribution
     const deckTypes = await db.getAllAsync('SELECT deckType, COUNT(*) as count FROM decks GROUP BY deckType');
     console.log('📊 Deck types distribution:', deckTypes);
@@ -1833,6 +1944,7 @@ export async function verifyDataLoad() {
       aiFlashcards: (aiFlashcardsResult[0] as any).count,
       companyIcons: (companyIconsResult[0] as any).count,
       streakBadges: (streakBadgesResult[0] as any).count,
+      welcomeBadges: (welcomeBadgesResult[0] as any).count,
       sampleFolders,
       sampleDecks,
       sampleFlashcards,
@@ -1840,6 +1952,7 @@ export async function verifyDataLoad() {
       sampleAIFlashcards,
       sampleCompanyIcons,
       sampleStreakBadges,
+      sampleWelcomeBadges,
       deckTypes,
       aiDeckTypes,
       flashcardTypes,

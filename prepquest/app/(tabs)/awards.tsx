@@ -45,6 +45,32 @@ import Royalty from '@/components/awards/streak/royalty.svg';
 import RoyaltyUnachieved from '@/components/awards/streak/royaltyUnachieved.svg';
 import Phoenix from '@/components/awards/streak/phoenix.svg';
 import PhoenixUnachieved from '@/components/awards/streak/phoenixUnachieved.svg';
+
+// Welcome badge SVG imports
+import Beginnings from '@/components/awards/welcome/beginnings.svg';
+import BeginningsUnachieved from '@/components/awards/welcome/beginningsUnachieved.svg';
+import FirstSteps from '@/components/awards/welcome/firstSteps.svg';
+import FirstStepsUnachieved from '@/components/awards/welcome/firstStepsUnachieved.svg';
+import AiConnection from '@/components/awards/welcome/aiConnection.svg';
+import AiConnectionUnachieved from '@/components/awards/welcome/aiConnectionUnachieved.svg';
+import FileFrenzy from '@/components/awards/welcome/fileFrenzy.svg';
+import FileFrenzyUnachieved from '@/components/awards/welcome/fileFrenzyUnachieved.svg';
+import YoutubeForm from '@/components/awards/welcome/youtubeForm.svg';
+import YoutubeFormUnachieved from '@/components/awards/welcome/youtubeFormUnachieved.svg';
+import PersonalTouch from '@/components/awards/welcome/personalTouch.svg';
+import PersonalTouchUnachieved from '@/components/awards/welcome/personalTouchUnachieved.svg';
+import MidnightOil from '@/components/awards/welcome/midnightOil.svg';
+import MidnightOilUnachieved from '@/components/awards/welcome/midnightOilUnachieved.svg';
+import AForEffort from '@/components/awards/welcome/aForEffort.svg';
+import AForEffortUnachieved from '@/components/awards/welcome/aForEffortUnachieved.svg';
+import NiceChatting from '@/components/awards/welcome/niceChatting.svg';
+import NiceChattingUnachieved from '@/components/awards/welcome/niceChattingUnachieved.svg';
+import Ruby from '@/components/awards/welcome/ruby.svg';
+import RubyUnachieved from '@/components/awards/welcome/rubyUnachieved.svg';
+import Diamond from '@/components/awards/welcome/diamond.svg';
+import DiamondUnachieved from '@/components/awards/welcome/diamondUnachieved.svg';
+import BestPals from '@/components/awards/welcome/bestPals.svg';
+import BestPalsUnachieved from '@/components/awards/welcome/bestPalsUnachieved.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
@@ -710,8 +736,10 @@ interface BadgeData {
   badgeCreatedDate: string; // ISO string
   badgeExpiryDate?: string;
   streakBadgeSVG?: any;
+  welcomeBadgeSVG?: any;
   dayStreakRequirement?: number; // For streak badges ordering
   badgeSubtext?: string; // For badge subtext
+  badgeOrder?: number; // For welcome badges ordering
 }
 
 interface StreakBadgeData {
@@ -721,6 +749,15 @@ interface StreakBadgeData {
   badgeImageName: string;
   userIDs: string;
   achieved: boolean;
+}
+
+interface WelcomeBadgeData {
+  badgeName: string;
+  badgeSubtext: string;
+  badgeImageName: string;
+  userIDs: string;
+  achieved: boolean;
+  badgeOrder: number;
 }
 
 // Function to get streak badge SVG component
@@ -747,6 +784,32 @@ const getStreakBadgeSVG = (badgeImageName: string, achieved: boolean) => {
   const svgComponents = svgMap[badgeImageName];
   if (!svgComponents) {
     console.warn(`Unknown badge image name: ${badgeImageName}`);
+    return null;
+  }
+  
+  return achieved ? svgComponents.achieved : svgComponents.unachieved;
+};
+
+// Function to get welcome badge SVG component
+const getWelcomeBadgeSVG = (badgeImageName: string, achieved: boolean) => {
+  const svgMap: { [key: string]: { achieved: any, unachieved: any } } = {
+    'beginnings': { achieved: Beginnings, unachieved: BeginningsUnachieved },
+    'firstSteps': { achieved: FirstSteps, unachieved: FirstStepsUnachieved },
+    'aiConnection': { achieved: AiConnection, unachieved: AiConnectionUnachieved },
+    'fileFrenzy': { achieved: FileFrenzy, unachieved: FileFrenzyUnachieved },
+    'youtubeForm': { achieved: YoutubeForm, unachieved: YoutubeFormUnachieved },
+    'personalTouch': { achieved: PersonalTouch, unachieved: PersonalTouchUnachieved },
+    'midnightOil': { achieved: MidnightOil, unachieved: MidnightOilUnachieved },
+    'aForEffort': { achieved: AForEffort, unachieved: AForEffortUnachieved },
+    'niceChatting': { achieved: NiceChatting, unachieved: NiceChattingUnachieved },
+    'ruby': { achieved: Ruby, unachieved: RubyUnachieved },
+    'diamond': { achieved: Diamond, unachieved: DiamondUnachieved },
+    'bestPals': { achieved: BestPals, unachieved: BestPalsUnachieved },
+  };
+  
+  const svgComponents = svgMap[badgeImageName];
+  if (!svgComponents) {
+    console.warn(`Unknown welcome badge image name: ${badgeImageName}`);
     return null;
   }
   
@@ -780,6 +843,33 @@ const fetchStreakBadges = async (): Promise<StreakBadgeData[]> => {
   }
 };
 
+// Function to fetch welcome badges from database
+const fetchWelcomeBadges = async (): Promise<WelcomeBadgeData[]> => {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, badgeImageName, userIDs, badgeOrder
+      FROM welcomeBadgesTable
+      ORDER BY badgeOrder ASC
+    `);
+    
+    return result.map((badge: any) => {
+      const userIDs = JSON.parse(badge.userIDs || '[]');
+      return {
+        badgeName: badge.badgeName,
+        badgeSubtext: badge.badgeSubtext,
+        badgeImageName: badge.badgeImageName,
+        userIDs: badge.userIDs,
+        achieved: userIDs.includes(userID),
+        badgeOrder: badge.badgeOrder
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching welcome badges:', error);
+    return [];
+  }
+};
+
 // Pre-calculate hexagon points to avoid recalculation
 const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) => {
   const getHexPoints = (radius: number, cx: number, cy: number) =>
@@ -805,11 +895,14 @@ const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) =>
 // Cache hexagon calculations
 const hexagonCache = new Map<string, { outerPointsStr: string, innerPointsStr: string }>();
 
-const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG, subtext }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any, subtext?: string }) => {
+const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG, welcomeBadgeSVG, subtext }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any, welcomeBadgeSVG?: any, subtext?: string }) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
   const cornerRadius = 20;
+  
+  // Use welcomeBadgeSVG if provided, otherwise use streakBadgeSVG
+  const badgeSVG = welcomeBadgeSVG || streakBadgeSVG;
 
   return (
     <View style={{ alignItems: 'center', width: badgeWidth, height: badgeHeight, position: 'relative' }}>
@@ -829,32 +922,35 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
       >
         {/* Column layout inside container */}
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          {/* Hexagon badge SVG */}
-          {achieved ? (
-            <HexagonBadge width={97} height={97} />
-          ) : (
-            <HexagonBadgeUnachieved width={97} height={97} />
-          )}
-          
-          {/* Streak badge SVG in center of hexagon */}
-          {streakBadgeSVG && (
-            <View style={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              width: 97, 
-              height: 97, 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              zIndex: 2
-            }}>
-              <View style={{
-                transform: [{ translateX: title === 'Double Power' ? 7 : 0 }]
+          {/* Hexagon container with relative positioning */}
+          <View style={{ position: 'relative', width: 97, height: 97 }}>
+            {/* Hexagon badge SVG */}
+            {achieved ? (
+              <HexagonBadge width={97} height={97} />
+            ) : (
+              <HexagonBadgeUnachieved width={97} height={97} />
+            )}
+            
+            {/* Badge SVG in center of hexagon */}
+            {badgeSVG && (
+              <View style={{ 
+                position: 'absolute', 
+                top: 0, 
+                left: 0, 
+                right: 0,
+                bottom: 0,
+                justifyContent: 'center', 
+                alignItems: 'center',
+                zIndex: 2
               }}>
-                {React.createElement(streakBadgeSVG, { width: 43, height: 43 })}
+                <View style={{
+                  transform: [{ translateX: title === 'Double Power' ? 2 : 0 }]
+                }}>
+                  {React.createElement(badgeSVG, { width: 43, height: 43 })}
+                </View>
               </View>
-            </View>
-          )}
+            )}
+          </View>
           
           {/* First row of text */}
           <Text
@@ -898,6 +994,7 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
             borderRadius: cornerRadius,
             backgroundColor: 'rgba(0, 0, 0, 0.2)',
             pointerEvents: 'none',
+            zIndex: 3,
           }}
         />
       )}
@@ -923,6 +1020,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           image={row[0].badgeImage}
           themeColors={themeColors}
           streakBadgeSVG={row[0].streakBadgeSVG}
+          welcomeBadgeSVG={row[0].welcomeBadgeSVG}
           subtext={row[0].badgeSubtext}
         />
       )}
@@ -935,6 +1033,7 @@ const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], 
           image={row[1].badgeImage}
           themeColors={themeColors}
           streakBadgeSVG={row[1].streakBadgeSVG}
+          welcomeBadgeSVG={row[1].welcomeBadgeSVG}
           subtext={row[1].badgeSubtext}
         />
       )}
@@ -952,11 +1051,20 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
   const { sortedBadges, badgeRows, collapsedHeight, expandedHeight } = useMemo(() => {
     // Check if this is a streak badge wall (has dayStreakRequirement)
     const isStreakBadgeWall = badges.some(b => b.dayStreakRequirement !== undefined);
+    // Check if this is a welcome badge wall (has badgeOrder)
+    const isWelcomeBadgeWall = badges.some(b => b.badgeOrder !== undefined);
     
     let sorted;
     if (isStreakBadgeWall) {
       // For streak badges, sort by dayStreakRequirement ascending regardless of achievement
       sorted = [...badges].sort((a, b) => (a.dayStreakRequirement || 0) - (b.dayStreakRequirement || 0));
+    } else if (isWelcomeBadgeWall) {
+      // For welcome badges, sort by achievement status first, then by badgeOrder
+      sorted = [...badges].sort((a, b) => {
+        if (a.achieved && !b.achieved) return -1; // a (achieved) comes first
+        if (!a.achieved && b.achieved) return 1;  // b (achieved) comes first
+        return (a.badgeOrder || 0) - (b.badgeOrder || 0); // Maintain ascending order within group
+      });
     } else {
       // For other badges, sort by achievement status and creation date
       sorted = [
@@ -1128,6 +1236,62 @@ const StreakBadges = React.memo(({ themeColors }: { themeColors: any }) => {
       badges={streakBadges} 
       backgroundImage={LargeMeshBackground2} 
       title="Streak Badges" 
+      themeColors={themeColors} 
+    />
+  );
+});
+
+// Welcome Badges Component
+const WelcomeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+  const { language } = useLanguage();
+  const [welcomeBadges, setWelcomeBadges] = useState<BadgeData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadWelcomeBadges = async () => {
+      try {
+        setIsLoading(true);
+        const badges = await fetchWelcomeBadges();
+        
+        const badgeData: BadgeData[] = badges.map((badge) => {
+          const welcomeBadgeSVG = getWelcomeBadgeSVG(badge.badgeImageName, badge.achieved);
+          return {
+            badgeTitle: badge.badgeName,
+            achieved: badge.achieved,
+            badgeImage: undefined,
+            badgeCreatedDate: new Date().toISOString(), // Use current date as placeholder
+            badgeExpiryDate: undefined,
+            welcomeBadgeSVG: welcomeBadgeSVG,
+            badgeSubtext: badge.badgeSubtext,
+            badgeOrder: badge.badgeOrder
+          };
+        });
+        
+        setWelcomeBadges(badgeData);
+      } catch (error) {
+        console.error('Error loading welcome badges:', error);
+        setWelcomeBadges([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadWelcomeBadges();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ alignItems: 'center', padding: 20 }}>
+        <Text style={{ color: themeColors.text }}>Loading welcome badges...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <BadgeWall 
+      badges={welcomeBadges} 
+      backgroundImage={LargeMeshBackground4} 
+      title={strings[language].welcomeBadges} 
       themeColors={themeColors} 
     />
   );
@@ -1766,7 +1930,7 @@ export default function AwardsScreen() {
             <View style={{ flexDirection: 'column', gap: 30 }}>
               <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />
               <StreakBadges themeColors={themeColors} />
-              <BadgeWall badges={dummyBadges4} backgroundImage={LargeMeshBackground4} title={strings[language].welcomeBadges} themeColors={themeColors} />
+              <WelcomeBadges themeColors={themeColors} />
               <BadgeWall badges={dummyBadges5} backgroundImage={LargeMeshBackground1} title={strings[language].lifetimeBadges} themeColors={themeColors} />
             </View>
           </ScrollView>

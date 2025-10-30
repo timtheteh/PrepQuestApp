@@ -229,9 +229,10 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
 
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS customBadgesTable (
+        userID TEXT NOT NULL,
         badgeSubtext TEXT,
         badgeImageName TEXT,
-        userIDs TEXT,
+        achieved INTEGER DEFAULT 0,
         numberOfDecksPledged INTEGER,
         numberOfConsecutive INTEGER,
         dateCreated TEXT,

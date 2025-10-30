@@ -15,6 +15,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     await db.execAsync('DROP TABLE IF EXISTS streakBadgesTable');
     await db.execAsync('DROP TABLE IF EXISTS welcomeBadgesTable');
     await db.execAsync('DROP TABLE IF EXISTS lifetimeBadgesTable');
+    await db.execAsync('DROP TABLE IF EXISTS customBadgesTable');
     console.log('Existing tables dropped');
     
     // Now create tables with new schema - each in its own execAsync call
@@ -223,6 +224,18 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         badgeImageName TEXT NOT NULL,
         userIDs TEXT,
         badgeOrder INTEGER NOT NULL
+      )
+    `);
+
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS customBadgesTable (
+        badgeSubtext TEXT,
+        badgeImageName TEXT,
+        userIDs TEXT,
+        numberOfDecksPledged INTEGER,
+        numberOfConsecutive INTEGER,
+        dateCreated TEXT,
+        expiryDate TEXT
       )
     `);
 

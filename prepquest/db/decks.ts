@@ -4505,9 +4505,9 @@ export async function createCustomBadge({
     // Insert into customBadgesTable
     await db.execAsync(`
       INSERT INTO customBadgesTable (
-        userID, badgeSubtext, badgeImageName, achieved, numberOfDecksPledged, numberOfConsecutiveDays, dateCreated, expiryDate, dateToBeRemoved
+        userID, badgeSubtext, badgeImageName, achieved, numberOfDecksPledged, numberOfConsecutiveDays, dateCreated, expiryDate, boundForRemoval, dateToBeRemoved
       ) VALUES (
-        '${userID}', '${badgeSubtext.replace(/'/g, "''")}', '${randomBadgeImageName}', 0, ${numberOfDecksPledged}, ${numberOfConsecutiveDays}, '${dateCreated}', '${expiryDate}', '${dateToBeRemoved}'
+        '${userID}', '${badgeSubtext.replace(/'/g, "''")}', '${randomBadgeImageName}', 0, ${numberOfDecksPledged}, ${numberOfConsecutiveDays}, '${dateCreated}', '${expiryDate}', 0, '${dateToBeRemoved}'
       )
     `);
     

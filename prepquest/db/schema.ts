@@ -237,6 +237,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         numberOfConsecutiveDays INTEGER,
         dateCreated TEXT,
         expiryDate TEXT,
+        boundForRemoval INTEGER DEFAULT 0,
         dateToBeRemoved TEXT
       )
     `);

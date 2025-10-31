@@ -1098,6 +1098,85 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
   );
 });
 
+const CustomBadge = React.memo(({ image, achieved, themeColors, customBadgeSVG, subtext }: { image?: ImageSourcePropType, achieved: boolean, themeColors: any, customBadgeSVG?: any, subtext?: string }) => {
+  const badgeWidth = 146;
+  const badgeHeight = 179;
+  const borderWidth = 8;
+  const cornerRadius = 20;
+  
+  return (
+    <View style={{ alignItems: 'center', width: badgeWidth, height: badgeHeight, position: 'relative' }}>
+      {/* Main badge container */}
+      <View
+        style={{
+          width: badgeWidth,
+          height: badgeHeight,
+          borderRadius: cornerRadius,
+          borderWidth: borderWidth,
+          borderColor: achieved ? '#FFFFFF' : '#D5D4DD',
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          position: 'relative',
+          paddingBottom: 12,
+        }}
+      >
+        {/* Image container with margins */}
+        {(customBadgeSVG || image) && (
+          <View style={{
+            marginHorizontal: 12,
+            marginTop: 12,
+            marginBottom: 12,
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            {customBadgeSVG && (
+              <View>
+                {React.createElement(customBadgeSVG, { width: 43, height: 43 })}
+              </View>
+            )}
+            {image && (
+              <RNImage source={image} style={{ width: 43, height: 43, resizeMode: 'contain' }} />
+            )}
+          </View>
+        )}
+        
+        {/* Subtext at bottom */}
+        <Text
+          style={{
+            fontFamily: Fonts.bodyMedium,
+            fontSize: 12,
+            color: achieved ? themeColors.text : themeColors.text,
+            opacity: achieved ? 1 : 0.3,
+            textAlign: 'center',
+            paddingHorizontal: 12,
+          }}
+        >
+          {subtext || 'Subtext'}
+        </Text>
+      </View>
+      
+      {/* Black overlay for unachieved badges */}
+      {!achieved && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: badgeWidth,
+            height: badgeHeight,
+            borderRadius: cornerRadius,
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            pointerEvents: 'none',
+            zIndex: 3,
+          }}
+        />
+      )}
+    </View>
+  );
+});
+
 // Update BadgeWall props
 type BadgeWallProps = {
   badges: BadgeData[],

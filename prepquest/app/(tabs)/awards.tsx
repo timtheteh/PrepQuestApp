@@ -99,12 +99,26 @@ import Formula1 from '@/components/awards/lifetime/formula1.svg';
 import Formula1Unachieved from '@/components/awards/lifetime/formula1Unachieved.svg';
 import Supersonic from '@/components/awards/lifetime/supersonic.svg';
 import SupersonicUnachieved from '@/components/awards/lifetime/supersonicUnachieved.svg';
+
+// Custom badge SVG imports
+import DontWishJustWorkForIt from '@/components/awards/custom/dontWishJustWorkForIt.svg';
+import DoYourBest from '@/components/awards/custom/doYourBest.svg';
+import GoForIt from '@/components/awards/custom/goForIt.svg';
+import HungryForSuccess from '@/components/awards/custom/hungryForSuccess.svg';
+import KeepFighting from '@/components/awards/custom/keepFighting.svg';
+import KeepUpGoodWork from '@/components/awards/custom/keepUpGoodWork.svg';
+import MakeAComeback from '@/components/awards/custom/makeAComeback.svg';
+import NeverGiveUp from '@/components/awards/custom/neverGiveUp.svg';
+import SkysTheLimit from '@/components/awards/custom/skysTheLimit.svg';
+import StayStrong from '@/components/awards/custom/stayStrong.svg';
+import ThereYouGo from '@/components/awards/custom/thereYouGo.svg';
+import YouveGotThis from '@/components/awards/custom/youveGotThis.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
 import { db } from '@/db/index';
-import { getCurrentUserID, createCustomBadge } from '@/db/decks';
+import { getCurrentUserID, createCustomBadge, fetchCustomBadges, CustomBadgeData } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -783,9 +797,11 @@ interface BadgeData {
   streakBadgeSVG?: any;
   welcomeBadgeSVG?: any;
   lifetimeBadgeSVG?: any;
+  customBadgeSVG?: any;
   dayStreakRequirement?: number; // For streak badges ordering
   badgeSubtext?: string; // For badge subtext
   badgeOrder?: number; // For welcome badges ordering
+  expired?: boolean; // For custom badges
 }
 
 interface StreakBadgeData {
@@ -897,6 +913,32 @@ const getLifetimeBadgeSVG = (badgeImageName: string, achieved: boolean) => {
   }
   
   return achieved ? svgComponents.achieved : svgComponents.unachieved;
+};
+
+// Function to get custom badge SVG component
+const getCustomBadgeSVG = (badgeImageName: string) => {
+  const svgMap: { [key: string]: any } = {
+    'dontWishJustWorkForIt': DontWishJustWorkForIt,
+    'doYourBest': DoYourBest,
+    'goForIt': GoForIt,
+    'hungryForSuccess': HungryForSuccess,
+    'keepFighting': KeepFighting,
+    'keepUpGoodWork': KeepUpGoodWork,
+    'makeAComeback': MakeAComeback,
+    'neverGiveUp': NeverGiveUp,
+    'skysTheLimit': SkysTheLimit,
+    'stayStrong': StayStrong,
+    'thereYouGo': ThereYouGo,
+    'youveGotThis': YouveGotThis,
+  };
+  
+  const svgComponent = svgMap[badgeImageName];
+  if (!svgComponent) {
+    console.warn(`Unknown custom badge image name: ${badgeImageName}`);
+    return null;
+  }
+  
+  return svgComponent;
 };
 
 // Function to fetch streak badges from database
@@ -1232,34 +1274,54 @@ type BadgeWallProps = {
 };
 
 // Memoized BadgeRow component for better performance
-const BadgeRow = React.memo(({ row, themeColors }: { row: (BadgeData | null)[], themeColors: any }) => (
+const BadgeRow = React.memo(({ row, themeColors, isCustomBadge }: { row: (BadgeData | null)[], themeColors: any, isCustomBadge?: boolean }) => (
   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
     <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingRight: 10 }}>
       {row[0] && (
-        <Badge
-          title={row[0].badgeTitle}
-          achieved={row[0].achieved}
-          image={row[0].badgeImage}
-          themeColors={themeColors}
-          streakBadgeSVG={row[0].streakBadgeSVG}
-          welcomeBadgeSVG={row[0].welcomeBadgeSVG}
-          lifetimeBadgeSVG={row[0].lifetimeBadgeSVG}
-          subtext={row[0].badgeSubtext}
-        />
+        isCustomBadge ? (
+          <CustomBadge
+            achieved={row[0].achieved}
+            expired={row[0].expired}
+            themeColors={themeColors}
+            customBadgeSVG={row[0].customBadgeSVG}
+            subtext={row[0].badgeSubtext}
+          />
+        ) : (
+          <Badge
+            title={row[0].badgeTitle}
+            achieved={row[0].achieved}
+            image={row[0].badgeImage}
+            themeColors={themeColors}
+            streakBadgeSVG={row[0].streakBadgeSVG}
+            welcomeBadgeSVG={row[0].welcomeBadgeSVG}
+            lifetimeBadgeSVG={row[0].lifetimeBadgeSVG}
+            subtext={row[0].badgeSubtext}
+          />
+        )
       )}
     </View>
     <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingLeft: 10 }}>
       {row[1] && (
-        <Badge
-          title={row[1].badgeTitle}
-          achieved={row[1].achieved}
-          image={row[1].badgeImage}
-          themeColors={themeColors}
-          streakBadgeSVG={row[1].streakBadgeSVG}
-          welcomeBadgeSVG={row[1].welcomeBadgeSVG}
-          lifetimeBadgeSVG={row[1].lifetimeBadgeSVG}
-          subtext={row[1].badgeSubtext}
-        />
+        isCustomBadge ? (
+          <CustomBadge
+            achieved={row[1].achieved}
+            expired={row[1].expired}
+            themeColors={themeColors}
+            customBadgeSVG={row[1].customBadgeSVG}
+            subtext={row[1].badgeSubtext}
+          />
+        ) : (
+          <Badge
+            title={row[1].badgeTitle}
+            achieved={row[1].achieved}
+            image={row[1].badgeImage}
+            themeColors={themeColors}
+            streakBadgeSVG={row[1].streakBadgeSVG}
+            welcomeBadgeSVG={row[1].welcomeBadgeSVG}
+            lifetimeBadgeSVG={row[1].lifetimeBadgeSVG}
+            subtext={row[1].badgeSubtext}
+          />
+        )
       )}
     </View>
   </View>
@@ -1272,13 +1334,15 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
   const animationConfig = useMemo(() => getAnimationConfig(), []);
   
   // Memoize expensive calculations
-  const { sortedBadges, badgeRows, collapsedHeight, expandedHeight } = useMemo(() => {
+  const { sortedBadges, badgeRows, collapsedHeight, expandedHeight, isCustomBadgeWall } = useMemo(() => {
     // Check if this is a streak badge wall (has dayStreakRequirement)
     const isStreakBadgeWall = badges.some(b => b.dayStreakRequirement !== undefined);
     // Check if this is a welcome badge wall (has badgeOrder and welcomeBadgeSVG)
     const isWelcomeBadgeWall = badges.some(b => b.badgeOrder !== undefined && b.welcomeBadgeSVG);
     // Check if this is a lifetime badge wall (has badgeOrder and lifetimeBadgeSVG)
     const isLifetimeBadgeWall = badges.some(b => b.badgeOrder !== undefined && b.lifetimeBadgeSVG);
+    // Check if this is a custom badge wall (has customBadgeSVG)
+    const isCustomBadgeWall = badges.some(b => b.customBadgeSVG !== undefined);
     
     let sorted;
     if (isStreakBadgeWall) {
@@ -1319,7 +1383,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
     const collapsed = rowHeight * 2; // 2 rows, no extra margin
     const expanded = rowHeight * rows.length; // Just the rows, no extra padding
     
-    return { sortedBadges: sorted, badgeRows: rows, collapsedHeight: collapsed, expandedHeight: expanded };
+    return { sortedBadges: sorted, badgeRows: rows, collapsedHeight: collapsed, expandedHeight: expanded, isCustomBadgeWall };
   }, [badges]);
 
   const anim = useRef(new Animated.Value(collapsedHeight)).current;
@@ -1402,7 +1466,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
         {/* Animated badge grid */}
         <Animated.View style={{ width: '100%', height: anim, overflow: 'hidden', marginTop: 16 }}>
           {visibleRows.map((row, idx) => (
-            <BadgeRow key={idx} row={row} themeColors={themeColors} />
+            <BadgeRow key={idx} row={row} themeColors={themeColors} isCustomBadge={isCustomBadgeWall} />
           ))}
         </Animated.View>
       </View>
@@ -1581,6 +1645,63 @@ const LifetimeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
       badges={lifetimeBadges} 
       backgroundImage={LargeMeshBackground1} 
       title={strings[language].lifetimeBadges} 
+      themeColors={themeColors} 
+    />
+  );
+});
+
+// Custom Badges Component
+const CustomBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+  const { language } = useLanguage();
+  const [customBadges, setCustomBadges] = useState<BadgeData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCustomBadges = async () => {
+      try {
+        setIsLoading(true);
+        const badges = await fetchCustomBadges();
+        
+        const badgeData: BadgeData[] = badges.map((badge) => {
+          const customBadgeSVG = getCustomBadgeSVG(badge.badgeImageName);
+          return {
+            badgeTitle: '', // Custom badges don't have a title
+            achieved: badge.achieved === 1,
+            badgeImage: undefined,
+            badgeCreatedDate: badge.dateCreated,
+            badgeExpiryDate: badge.expiryDate,
+            customBadgeSVG: customBadgeSVG,
+            badgeSubtext: badge.badgeSubtext,
+            expired: badge.expired
+          };
+        });
+        
+        setCustomBadges(badgeData);
+      } catch (error) {
+        console.error('Error loading custom badges:', error);
+        setCustomBadges([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCustomBadges();
+  }, []);
+
+  if (isLoading) {
+    return null;
+  }
+
+  // Don't render anything if there are no custom badges
+  if (customBadges.length === 0) {
+    return null;
+  }
+
+  return (
+    <BadgeWall 
+      badges={customBadges} 
+      backgroundImage={LargeMeshBackground1} 
+      title={strings[language].customBadges} 
       themeColors={themeColors} 
     />
   );
@@ -2071,7 +2192,7 @@ export default function AwardsScreen() {
             }
           >
             <View style={{ flexDirection: 'column', gap: 30 }}>
-              <BadgeWall badges={dummyBadges1} backgroundImage={LargeMeshBackground1} title={strings[language].customBadges} themeColors={themeColors} />
+              <CustomBadges themeColors={themeColors} />
               <StreakBadges themeColors={themeColors} />
               <WelcomeBadges themeColors={themeColors} />
               <LifetimeBadges themeColors={themeColors} />

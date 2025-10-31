@@ -4518,3 +4518,174 @@ export async function createCustomBadge({
     return { success: false };
   }
 }
+
+// Interface for custom badge data
+export interface CustomBadgeData {
+  badgeSubtext: string;
+  badgeImageName: string;
+  achieved: number;
+  expired: boolean;
+  numberOfDecksPledged: number;
+  numberOfConsecutiveDays: number;
+  dateCreated: string;
+  expiryDate: string;
+  boundForRemoval: number;
+  dateToBeRemoved: string;
+}
+
+// Helper function to check if user completed required decks on consecutive days
+async function checkConsecutiveDaysCompletion(
+  userID: string,
+  dateCreated: string,
+  numberOfConsecutiveDays: number,
+  numberOfDecksPledged: number
+): Promise<boolean> {
+  try {
+    const startDate = new Date(dateCreated);
+    startDate.setHours(0, 0, 0, 0); // Start of day
+    
+    // Build an efficient query that counts distinct decks per day
+    // For each day in the range, check if user completed enough decks
+    for (let dayOffset = 0; dayOffset < numberOfConsecutiveDays; dayOffset++) {
+      const currentDay = new Date(startDate);
+      currentDay.setDate(currentDay.getDate() + dayOffset);
+      
+      const dayStart = currentDay.toISOString().split('T')[0]; // YYYY-MM-DD
+      const nextDay = new Date(currentDay);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const dayEnd = nextDay.toISOString().split('T')[0];
+      
+      // Count distinct decks that were studied or quizzed on this day
+      const result = await db.getFirstAsync(`
+        SELECT COUNT(DISTINCT deckID) as count
+        FROM (
+          SELECT deckID
+          FROM decks
+          WHERE userID = ?
+            AND (
+              (lastStudiedDate >= ? AND lastStudiedDate < ?)
+              OR (lastQuizzedDate >= ? AND lastQuizzedDate < ?)
+            )
+          UNION
+          SELECT deckID
+          FROM AIDecks
+          WHERE userID = ?
+            AND (
+              (lastStudiedDate >= ? AND lastStudiedDate < ?)
+              OR (lastQuizzedDate >= ? AND lastQuizzedDate < ?)
+            )
+        )
+      `, [userID, dayStart, dayEnd, dayStart, dayEnd, userID, dayStart, dayEnd, dayStart, dayEnd]);
+      
+      const deckCount = (result as any)?.count || 0;
+      
+      // If any day doesn't meet the requirement, return false
+      if (deckCount < numberOfDecksPledged) {
+        return false;
+      }
+    }
+    
+    // All days met the requirement
+    return true;
+  } catch (error) {
+    console.error('Error checking consecutive days completion:', error);
+    return false;
+  }
+}
+
+// Function to fetch and evaluate custom badges for the current user
+export async function fetchCustomBadges(): Promise<CustomBadgeData[]> {
+  try {
+    const userID = await getCurrentUserID();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Fetch all custom badges for this user
+    const result = await db.getAllAsync(`
+      SELECT 
+        badgeSubtext,
+        badgeImageName,
+        achieved,
+        numberOfDecksPledged,
+        numberOfConsecutiveDays,
+        dateCreated,
+        expiryDate,
+        boundForRemoval,
+        dateToBeRemoved
+      FROM customBadgesTable
+      WHERE userID = ?
+      ORDER BY dateCreated DESC
+    `, [userID]);
+    
+    const badges: CustomBadgeData[] = [];
+    
+    for (const badge of result as any[]) {
+      const expiryDate = new Date(badge.expiryDate);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const dateToBeRemoved = new Date(badge.dateToBeRemoved);
+      dateToBeRemoved.setHours(0, 0, 0, 0);
+      
+      // Check if badge should be removed entirely
+      if (badge.boundForRemoval === 1 && today > dateToBeRemoved) {
+        continue; // Skip this badge entirely
+      }
+      
+      let achieved = badge.achieved;
+      let expired = false;
+      let boundForRemoval = badge.boundForRemoval;
+      
+      // Only check completion if not already achieved
+      if (achieved === 0) {
+        // Check if user completed the goal
+        const isCompleted = await checkConsecutiveDaysCompletion(
+          userID,
+          badge.dateCreated,
+          badge.numberOfConsecutiveDays,
+          badge.numberOfDecksPledged
+        );
+        
+        if (isCompleted) {
+          // Update achieved status in database
+          achieved = 1;
+          await db.runAsync(`
+            UPDATE customBadgesTable
+            SET achieved = 1
+            WHERE userID = ? 
+              AND badgeSubtext = ?
+              AND dateCreated = ?
+          `, [userID, badge.badgeSubtext, badge.dateCreated]);
+        } else if (today > expiryDate) {
+          // Badge has expired without being achieved
+          expired = true;
+          boundForRemoval = 1;
+          await db.runAsync(`
+            UPDATE customBadgesTable
+            SET boundForRemoval = 1
+            WHERE userID = ? 
+              AND badgeSubtext = ?
+              AND dateCreated = ?
+          `, [userID, badge.badgeSubtext, badge.dateCreated]);
+        }
+      }
+      
+      badges.push({
+        badgeSubtext: badge.badgeSubtext,
+        badgeImageName: badge.badgeImageName,
+        achieved,
+        expired,
+        numberOfDecksPledged: badge.numberOfDecksPledged,
+        numberOfConsecutiveDays: badge.numberOfConsecutiveDays,
+        dateCreated: badge.dateCreated,
+        expiryDate: badge.expiryDate,
+        boundForRemoval,
+        dateToBeRemoved: badge.dateToBeRemoved
+      });
+    }
+    
+    return badges;
+  } catch (error) {
+    console.error('Error fetching custom badges:', error);
+    return [];
+  }
+}

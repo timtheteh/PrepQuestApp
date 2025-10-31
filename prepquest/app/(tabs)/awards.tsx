@@ -1115,11 +1115,14 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
   );
 });
 
-const CustomBadge = React.memo(({ image, achieved, themeColors, customBadgeSVG, subtext }: { image?: ImageSourcePropType, achieved: boolean, themeColors: any, customBadgeSVG?: any, subtext?: string }) => {
+const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customBadgeSVG, subtext }: { image?: ImageSourcePropType, achieved: boolean, expired?: boolean, themeColors: any, customBadgeSVG?: any, subtext?: string }) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
   const cornerRadius = 20;
+  
+  // Use expired state styling if expired, otherwise use achieved/unachieved
+  const isUnachieved = expired || !achieved;
   
   return (
     <View style={{ alignItems: 'center', width: badgeWidth, height: badgeHeight, position: 'relative' }}>
@@ -1130,7 +1133,7 @@ const CustomBadge = React.memo(({ image, achieved, themeColors, customBadgeSVG, 
           height: badgeHeight,
           borderRadius: cornerRadius,
           borderWidth: borderWidth,
-          borderColor: achieved ? '#FFFFFF' : '#D5D4DD',
+          borderColor: achieved && !expired ? '#FFFFFF' : '#D5D4DD',
           backgroundColor: 'rgba(255, 255, 255, 0.4)',
           justifyContent: 'flex-end',
           alignItems: 'center',
@@ -1164,8 +1167,8 @@ const CustomBadge = React.memo(({ image, achieved, themeColors, customBadgeSVG, 
           style={{
             fontFamily: Fonts.bodyMedium,
             fontSize: 12,
-            color: achieved ? themeColors.text : themeColors.text,
-            opacity: achieved ? 1 : 0.3,
+            color: achieved && !expired ? themeColors.text : themeColors.text,
+            opacity: achieved && !expired ? 1 : 0.3,
             textAlign: 'center',
             paddingHorizontal: 12,
           }}
@@ -1174,8 +1177,8 @@ const CustomBadge = React.memo(({ image, achieved, themeColors, customBadgeSVG, 
         </Text>
       </View>
       
-      {/* Black overlay for unachieved badges */}
-      {!achieved && (
+      {/* Black overlay for unachieved/expired badges */}
+      {isUnachieved && (
         <View
           style={{
             position: 'absolute',
@@ -1189,6 +1192,33 @@ const CustomBadge = React.memo(({ image, achieved, themeColors, customBadgeSVG, 
             zIndex: 3,
           }}
         />
+      )}
+      
+      {/* Expired text overlay */}
+      {expired && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 4,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: Fonts.bodyBold,
+              fontSize: 36,
+              color: themeColors.text,
+              transform: [{ rotate: '45deg' }],
+            }}
+          >
+            Expired
+          </Text>
+        </View>
       )}
     </View>
   );

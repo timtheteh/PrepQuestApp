@@ -234,9 +234,10 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         badgeImageName TEXT,
         achieved INTEGER DEFAULT 0,
         numberOfDecksPledged INTEGER,
-        numberOfConsecutive INTEGER,
+        numberOfConsecutiveDays INTEGER,
         dateCreated TEXT,
-        expiryDate TEXT
+        expiryDate TEXT,
+        dateToBeRemoved TEXT
       )
     `);
 

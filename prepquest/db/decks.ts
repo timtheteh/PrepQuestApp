@@ -4465,3 +4465,56 @@ export const loadQuizStatsForView = async (
     };
   }
 };
+
+// Function to create a custom badge from a custom goal submission
+export async function createCustomBadge({
+  numberOfDecksPledged,
+  numberOfConsecutiveDays
+}: {
+  numberOfDecksPledged: number;
+  numberOfConsecutiveDays: number;
+}): Promise<{ success: boolean }> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Randomly select a badge image name from the available options
+    const badgeImageNames = [
+      'dontWishJustWorkForIt',
+      'doYourBest',
+      'goForIt',
+      'hungryForSuccess',
+      'keepFighting',
+      'keepUpGoodWork',
+      'makeAComeback',
+      'neverGiveUp',
+      'skysTheLimit',
+      'stayStrong',
+      'thereYouGo',
+      'youveGotThis'
+    ];
+    const randomBadgeImageName = badgeImageNames[Math.floor(Math.random() * badgeImageNames.length)];
+    
+    // Create badge subtext
+    const badgeSubtext = `${numberOfDecksPledged} decks x ${numberOfConsecutiveDays} days`;
+    
+    // Calculate dates
+    const dateCreated = new Date().toISOString();
+    const expiryDate = new Date(new Date(dateCreated).getTime() + numberOfConsecutiveDays * 24 * 60 * 60 * 1000).toISOString();
+    const dateToBeRemoved = new Date(new Date(expiryDate).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Insert into customBadgesTable
+    await db.execAsync(`
+      INSERT INTO customBadgesTable (
+        userID, badgeSubtext, badgeImageName, achieved, numberOfDecksPledged, numberOfConsecutiveDays, dateCreated, expiryDate, dateToBeRemoved
+      ) VALUES (
+        '${userID}', '${badgeSubtext.replace(/'/g, "''")}', '${randomBadgeImageName}', 0, ${numberOfDecksPledged}, ${numberOfConsecutiveDays}, '${dateCreated}', '${expiryDate}', '${dateToBeRemoved}'
+      )
+    `);
+    
+    console.log(`✅ Custom badge created: ${badgeSubtext} with image ${randomBadgeImageName}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error creating custom badge:', error);
+    return { success: false };
+  }
+}

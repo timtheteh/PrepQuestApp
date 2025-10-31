@@ -104,7 +104,7 @@ import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
 import { db } from '@/db/index';
-import { getCurrentUserID } from '@/db/decks';
+import { getCurrentUserID, createCustomBadge } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -279,8 +279,25 @@ const CustomGoalForm = React.memo(({ setScrollEnabled, themeColors }: { setScrol
   }, [isSubmitCustomFormModalOpen]);
 
   // Handle submit
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!signature) return;
+    
+    // Create custom badge in database
+    try {
+      const result = await createCustomBadge({
+        numberOfDecksPledged: decks,
+        numberOfConsecutiveDays: days
+      });
+      
+      if (!result.success) {
+        console.error('Failed to create custom badge');
+        // Still show the modal even if badge creation fails
+      }
+    } catch (error) {
+      console.error('Error creating custom badge:', error);
+      // Still show the modal even if badge creation fails
+    }
+    
     setIsMenuOpen(true);
     setIsSubmitCustomFormModalOpen(true);
     Animated.parallel([
@@ -295,7 +312,7 @@ const CustomGoalForm = React.memo(({ setScrollEnabled, themeColors }: { setScrol
         useNativeDriver: true,
       })
     ]).start();
-  }, [signature, setIsMenuOpen, setIsSubmitCustomFormModalOpen, menuOverlayOpacity, submitCustomFormModalOpacity]);
+  }, [signature, decks, days, setIsMenuOpen, setIsSubmitCustomFormModalOpen, menuOverlayOpacity, submitCustomFormModalOpacity]);
 
   // PanResponder for drawing
   const panResponder = React.useRef(

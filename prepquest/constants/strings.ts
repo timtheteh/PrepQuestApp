@@ -958,6 +958,12 @@ export const strings: Record<string, any> = {
   progressBar: {
     itemsUploaded: 'items uploaded',
   },
+  // Streak badge notifications
+  streakBadgeNotification: {
+    congratulations: 'Congratulations! 🎉',
+    message: 'Congratulations for your {dayStreak}-day streak! You have been awarded the \'{badgeName}\' badge in Awards page.',
+    viewAwards: 'View Awards',
+  },
   // Background task notifications
   backgroundTaskNotification: {
     // Success messages
@@ -1240,6 +1246,12 @@ export const strings: Record<string, any> = {
   // General UI components
   progressBar: {
     itemsUploaded: '项已上传',
+  },
+  // Streak badge notifications
+  streakBadgeNotification: {
+    congratulations: '恭喜！🎉',
+    message: '恭喜您连续学习 {dayStreak} 天！您已在成就页面获得 \'{badgeName}\' 徽章。',
+    viewAwards: '查看成就',
   },
   // Background task notifications
   backgroundTaskNotification: {

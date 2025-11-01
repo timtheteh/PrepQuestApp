@@ -812,13 +812,18 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
 export async function getAllStudiedDates(): Promise<string[]> {
   try {
     const userID = await getCurrentUserID();
-    // Get all study and quiz dates from both tables
+    // Get all study and quiz dates from both flashcards and AIFlashcards tables
     const result = await db.getAllAsync(`
       SELECT lastStudiedDate, lastQuizzedDate
       FROM flashcards
       WHERE userID = ? 
         AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-    `, [userID]);
+      UNION ALL
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM AIFlashcards
+      WHERE userID = ? 
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+    `, [userID, userID]);
     const flashcards = result as Array<{
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
@@ -847,4 +852,201 @@ export async function getAllStudiedDates(): Promise<string[]> {
   } catch (error) {
     return [];
   }
-} 
+}
+
+// Calculate current streak (most recent consecutive days)
+export async function getCurrentStreak(): Promise<number> {
+  try {
+    const userID = await getCurrentUserID();
+    // Get all study and quiz dates from both flashcards and AIFlashcards tables
+    const result = await db.getAllAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM flashcards
+      WHERE userID = ? 
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+      UNION ALL
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM AIFlashcards
+      WHERE userID = ? 
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+    `, [userID, userID]);
+    const flashcards = result as Array<{
+      lastStudiedDate: string | null;
+      lastQuizzedDate: string | null;
+    }>;
+
+    if (!flashcards || flashcards.length === 0) {
+      return 0;
+    }
+
+    // Collect all unique dates
+    const allDates = new Set<string>();
+    flashcards.forEach((flashcard) => {
+      if (flashcard.lastStudiedDate) {
+        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
+        allDates.add(studyDate);
+      }
+      if (flashcard.lastQuizzedDate) {
+        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
+        allDates.add(quizDate);
+      }
+    });
+
+    const sortedDates = Array.from(allDates).sort().reverse(); // Most recent first
+
+    if (sortedDates.length === 0) {
+      console.log('🔥 No study dates found, streak = 0');
+      return 0;
+    }
+
+    console.log(`🔥 Found ${sortedDates.length} unique study dates. Most recent: ${sortedDates[0]}`);
+
+    // Calculate current streak starting from today or most recent date
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    console.log(`🔥 Today: ${today}, Yesterday: ${yesterdayStr}`);
+    
+    let currentStreak = 0;
+    let expectedDate = today;
+
+    for (let i = 0; i < sortedDates.length; i++) {
+      const date = sortedDates[i];
+      
+      // Check if this date matches the expected date (allowing for today or yesterday)
+      if (i === 0) {
+        // First date - check if it's today or yesterday
+        if (date === today || date === yesterdayStr) {
+          currentStreak = 1;
+          expectedDate = date;
+          console.log(`🔥 First date ${date} matches today/yesterday, streak starts at 1`);
+        } else {
+          // Streak broken - no active streak
+          console.log(`🔥 First date ${date} doesn't match today/yesterday, no active streak`);
+          break;
+        }
+      } else {
+        // Check if consecutive
+        const expectedDateObj = new Date(expectedDate);
+        const dayBeforeExpected = new Date(expectedDateObj);
+        dayBeforeExpected.setDate(dayBeforeExpected.getDate() - 1);
+        const dayBeforeStr = dayBeforeExpected.toISOString().split('T')[0];
+        
+        if (date === dayBeforeStr) {
+          currentStreak++;
+          expectedDate = date;
+          console.log(`🔥 Date ${date} is consecutive, streak now = ${currentStreak}`);
+        } else {
+          // Streak broken
+          console.log(`🔥 Date ${date} breaks streak (expected ${dayBeforeStr}), stopping at ${currentStreak}`);
+          break;
+        }
+      }
+    }
+
+    console.log(`🔥 Final calculated streak: ${currentStreak}`);
+    return currentStreak;
+  } catch (error) {
+    console.error('Error calculating current streak:', error);
+    return 0;
+  }
+}
+
+// Check and award streak badges based on current streak
+export interface StreakBadgeAward {
+  badgeName: string;
+  badgeSubtext: string;
+  dayStreakRequirement: number;
+  badgeImageName: string;
+  isNewAchievement: boolean;
+}
+
+export async function checkAndAwardStreakBadges(): Promise<StreakBadgeAward | null> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Add a small delay to ensure database writes are committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const currentStreak = await getCurrentStreak();
+    console.log(`🔥 Streak badge check: Current streak = ${currentStreak}, UserID = ${userID}`);
+    
+    if (currentStreak === 0) {
+      console.log('🔥 No active streak, skipping badge check');
+      return null;
+    }
+
+    // Get streak badge for this streak length
+    const badges = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, dayStreakRequirement, badgeImageName, userIDs
+      FROM streakBadgesTable
+      WHERE dayStreakRequirement = ?
+    `, [currentStreak]);
+
+    if (!badges || badges.length === 0) {
+      console.log(`🔥 No badge found for ${currentStreak}-day streak`);
+      return null;
+    }
+
+    const badge = badges[0] as any;
+    console.log(`🔥 Found badge: ${badge.badgeName} (${badge.dayStreakRequirement} days)`);
+    console.log(`🔥 Current userIDs string: ${badge.userIDs}`);
+    
+    // Parse userIDs - handle both JSON array and comma-separated string formats
+    let userIDs: string[] = [];
+    try {
+      if (badge.userIDs) {
+        if (badge.userIDs.startsWith('[')) {
+          // JSON array format
+          userIDs = JSON.parse(badge.userIDs);
+        } else {
+          // Try parsing as JSON anyway
+          userIDs = JSON.parse(badge.userIDs);
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing userIDs:', parseError);
+      // If parsing fails, treat as empty array
+      userIDs = [];
+    }
+    
+    console.log(`🔥 Parsed userIDs:`, userIDs);
+    console.log(`🔥 User already has badge: ${userIDs.includes(userID)}`);
+    
+    // Check if user already has this badge
+    const alreadyAchieved = userIDs.includes(userID);
+    
+    if (!alreadyAchieved) {
+      console.log(`🔥 Awarding badge ${badge.badgeName} to user ${userID}`);
+      
+      // Award the badge - add userID to the userIDs array
+      userIDs.push(userID);
+      const updatedUserIDs = JSON.stringify(userIDs);
+      
+      await db.runAsync(`
+        UPDATE streakBadgesTable
+        SET userIDs = ?
+        WHERE dayStreakRequirement = ?
+      `, [updatedUserIDs, currentStreak]);
+      
+      console.log(`🔥 Badge awarded successfully!`);
+      
+      return {
+        badgeName: badge.badgeName,
+        badgeSubtext: badge.badgeSubtext,
+        dayStreakRequirement: badge.dayStreakRequirement,
+        badgeImageName: badge.badgeImageName,
+        isNewAchievement: true
+      };
+    } else {
+      console.log(`🔥 User already has this badge, skipping`);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking and awarding streak badges:', error);
+    return null;
+  }
+}

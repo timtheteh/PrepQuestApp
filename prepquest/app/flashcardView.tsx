@@ -48,6 +48,9 @@ import {
   type TransformedFlashcard,
 } from '@/db/decks';
 import { getUserVoiceLanguage, incrementChatWithAIRequests } from '@/db/users';
+import { checkAndAwardStreakBadges } from '@/db/grades';
+import { useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
+import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
@@ -1423,8 +1426,11 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         props.updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, props.deckID, props.isAIDeckParam);
       }
       
-      // Update the deck's completion date when entire deck is finished
-      await updateDeckCompletionDate(isStudyMode, props.deckID, props.isAIDeckParam);
+      // Update the deck's completion date when entire deck is finished (this also checks for streak badges)
+      await props.updateDeckCompletionDate(isStudyMode, props.deckID, props.isAIDeckParam);
+      
+      // Small delay to ensure notification state is set before showing success screen
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // If all validation is passed, set success mode and return
       setIsSuccessMode(true);
@@ -2948,6 +2954,14 @@ export default function FlashcardViewPage() {
   const audioTimeLimitOverlayOpacity = useRef(new Animated.Value(0)).current;
   const audioTimeLimitModalOpacity = useRef(new Animated.Value(0)).current;
 
+  // Streak badge notification - use global context
+  const { 
+    showNotification: showStreakBadgeNotification, 
+    streakBadgeAward, 
+    showStreakBadgeNotification: showStreakBadgeNotificationState,
+    dismissNotification: dismissStreakBadgeNotification 
+  } = useStreakBadgeNotification();
+
   // Load user's voice language from database (for speech-to-text detection)
   useEffect(() => {
     const loadVoiceLanguage = async () => {
@@ -3158,6 +3172,21 @@ export default function FlashcardViewPage() {
   const updateDeckCompletionDateLocal = async (isStudyMode: boolean) => {
     try {
       await updateDeckCompletionDate(isStudyMode, deckID as string, isAIDeckParam as string);
+      
+      // Check and award streak badges after deck completion
+      try {
+        const badgeAward = await checkAndAwardStreakBadges();
+        console.log('🎖️ Badge award result:', badgeAward);
+        if (badgeAward && badgeAward.isNewAchievement) {
+          console.log('🎖️ Showing app-wide streak badge notification');
+          showStreakBadgeNotification(badgeAward);
+        } else {
+          console.log('🎖️ No badge award or already achieved');
+        }
+      } catch (error) {
+        console.error('Error checking streak badges:', error);
+        // Don't fail the entire operation if badge check fails
+      }
     } catch (error) {
       console.error(`Error updating deck completion date:`, error);
     }
@@ -3903,6 +3932,17 @@ export default function FlashcardViewPage() {
           opacity: successFadeAnim,
         }}
       >
+        {/* Streak badge notification on success screen */}
+        {streakBadgeAward && (
+          <StreakBadgeNotification
+            badgeName={streakBadgeAward.badgeName}
+            badgeSubtext={streakBadgeAward.badgeSubtext}
+            dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
+            visible={showStreakBadgeNotificationState}
+            onDismiss={dismissStreakBadgeNotification}
+          />
+        )}
+        
         {/* Home icon button at top left */}
         <TouchableOpacity
           style={{

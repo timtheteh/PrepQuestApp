@@ -21,7 +21,9 @@ import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskCon
 import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskContext';
 import { ClearDataBackgroundTaskProvider } from '@/contexts/ClearDataBackgroundTaskContext';
 import { DeleteAccountBackgroundTaskProvider } from '@/contexts/DeleteAccountBackgroundTaskContext';
+import { StreakBadgeNotificationProvider, useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
+import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
 
 import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
 import NotificationService from '@/utils/notifications';
@@ -79,6 +81,25 @@ const stopAllBackgroundTasks = async () => {
     console.error('❌ Error stopping background tasks:', error);
   }
 };
+
+// Component to render streak badge notification at app root level
+function StreakBadgeNotificationWrapper() {
+  const { streakBadgeAward, showStreakBadgeNotification, dismissNotification } = useStreakBadgeNotification();
+  
+  if (!streakBadgeAward) {
+    return null;
+  }
+
+  return (
+    <StreakBadgeNotification
+      badgeName={streakBadgeAward.badgeName}
+      badgeSubtext={streakBadgeAward.badgeSubtext}
+      dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
+      visible={showStreakBadgeNotification}
+      onDismiss={dismissNotification}
+    />
+  );
+}
 
 function AppContent() {
   const { isAuthenticated, user, isLoading } = useHybridAuth();
@@ -409,6 +430,7 @@ function AppContent() {
           </Stack>
             <BackgroundTaskNotification />
             <ImportTaskNotification />
+            <StreakBadgeNotificationWrapper />
             <StatusBar style="auto" />
           </>
         )}
@@ -437,7 +459,9 @@ export default function RootLayout() {
                   <ImportBackgroundTaskProvider>
                     <ClearDataBackgroundTaskProvider>
                       <DeleteAccountBackgroundTaskProvider>
-                        <AppContent />
+                        <StreakBadgeNotificationProvider>
+                          <AppContent />
+                        </StreakBadgeNotificationProvider>
                       </DeleteAccountBackgroundTaskProvider>
                     </ClearDataBackgroundTaskProvider>
                   </ImportBackgroundTaskProvider>

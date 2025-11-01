@@ -1604,21 +1604,21 @@ export async function populateDummyData() {
         badgeSubtext: '1-Day Streak',
         dayStreakRequirement: 1,
         badgeImageName: 'firstFlame',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr'])
+        userIDs: JSON.stringify([])
       },
       {
         badgeName: 'Ember',
         badgeSubtext: '3-Day Streak',
         dayStreakRequirement: 3,
         badgeImageName: 'ember',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr'])
+        userIDs: JSON.stringify([])
       },
       {
         badgeName: 'Let him cook',
         badgeSubtext: '5-Day Streak',
         dayStreakRequirement: 5,
         badgeImageName: 'letHimCook',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr'])
+        userIDs: JSON.stringify([])
       },
       {
         badgeName: 'Firefly',
@@ -1734,7 +1734,7 @@ export async function populateDummyData() {
         badgeName: 'Beginnings',
         badgeSubtext: '1st Study Deck',
         badgeImageName: 'beginnings',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        userIDs: JSON.stringify([]),
         badgeOrder: 1
       },
       {
@@ -1748,7 +1748,7 @@ export async function populateDummyData() {
         badgeName: 'AI Connection',
         badgeSubtext: '1st Gen-AI Deck',
         badgeImageName: 'aiConnection',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        userIDs: JSON.stringify([]),
         badgeOrder: 3
       },
       {
@@ -1797,7 +1797,7 @@ export async function populateDummyData() {
         badgeName: 'Ruby',
         badgeSubtext: 'Pro Plan',
         badgeImageName: 'ruby',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        userIDs: JSON.stringify([]),
         badgeOrder: 10
       },
       {

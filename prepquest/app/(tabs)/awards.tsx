@@ -1272,8 +1272,8 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
             style={{
               fontFamily: Fonts.bodyBold,
               fontSize: 36,
-              color: themeColors.text,
-              transform: [{ rotate: '45deg' }],
+              color: themeColors.contrastText,
+              transform: [{ rotate: '-45deg' }],
             }}
           >
             Expired
@@ -1380,6 +1380,16 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
         if (!a.achieved && b.achieved) return 1;  // b (achieved) comes first
         return (a.badgeOrder || 0) - (b.badgeOrder || 0); // Maintain ascending order within group
       });
+    } else if (isCustomBadgeWall) {
+      // For custom badges, sort by: achieved first, then unachieved, then expired (all by date created descending)
+      sorted = [
+        // Achieved badges first (date created descending)
+        ...badges.filter(b => b.achieved && !b.expired).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+        // Unachieved badges second (date created descending)
+        ...badges.filter(b => !b.achieved && !b.expired).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+        // Expired badges third (date created descending)
+        ...badges.filter(b => b.expired).sort((a, b) => b.badgeCreatedDate.localeCompare(a.badgeCreatedDate)),
+      ];
     } else {
       // For other badges, sort by achievement status and creation date
       sorted = [

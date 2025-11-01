@@ -1943,8 +1943,119 @@ export async function populateDummyData() {
 
     console.log('✅ LifetimeBadgesTable populated successfully');
     
+    // Populate customBadgesTable
+    console.log('📊 Step 12/12: Populating customBadgesTable...');
+
+    // Clear existing custom badges data
+    await db.execAsync('DELETE FROM customBadgesTable');
+    
+    // Get current datetime as reference
+    const now = new Date();
+    
+    // Calculate dates for different badge states
+    // 2 achieved badges
+    const achieved1DateCreated = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
+    const achieved1ExpiryDate = new Date(achieved1DateCreated.getTime() + 5 * 24 * 60 * 60 * 1000); // 5 days after creation
+    const achieved1DateToBeRemoved = new Date(achieved1ExpiryDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after expiry
+    
+    const achieved2DateCreated = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000); // 8 days ago
+    const achieved2ExpiryDate = new Date(achieved2DateCreated.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after creation
+    const achieved2DateToBeRemoved = new Date(achieved2ExpiryDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after expiry
+    
+    // 1 unachieved badge (not expired yet)
+    const unachievedDateCreated = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000); // 2 days ago
+    const unachievedExpiryDate = new Date(unachievedDateCreated.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days after creation (5 days from now)
+    const unachievedDateToBeRemoved = new Date(unachievedExpiryDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after expiry
+    
+    // 2 expired badges
+    // Expired badge 1: expired but dateToBeRemoved is in the future so it still shows
+    const expired1DateCreated = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
+    const expired1ExpiryDate = new Date(expired1DateCreated.getTime() + 5 * 24 * 60 * 60 * 1000); // 5 days after creation (5 days ago)
+    const expired1DateToBeRemoved = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000); // 1 day from now (so it's not filtered out yet)
+    
+    // Expired badge 2: expired but dateToBeRemoved is in the future so it still shows
+    const expired2DateCreated = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000); // 15 days ago
+    const expired2ExpiryDate = new Date(expired2DateCreated.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days after creation (8 days ago)
+    const expired2DateToBeRemoved = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days from now (so it's not filtered out yet)
+    
+    const customBadgesData = [
+      // 2 achieved badges
+      {
+        userID: DUMMY_USER_ID,
+        badgeSubtext: '3 decks x 5 days',
+        badgeImageName: 'keepFighting',
+        achieved: 1,
+        numberOfDecksPledged: 3,
+        numberOfConsecutiveDays: 5,
+        dateCreated: achieved1DateCreated.toISOString(),
+        expiryDate: achieved1ExpiryDate.toISOString(),
+        boundForRemoval: 0,
+        dateToBeRemoved: achieved1DateToBeRemoved.toISOString()
+      },
+      {
+        userID: DUMMY_USER_ID,
+        badgeSubtext: '5 decks x 3 days',
+        badgeImageName: 'thereYouGo',
+        achieved: 1,
+        numberOfDecksPledged: 5,
+        numberOfConsecutiveDays: 3,
+        dateCreated: achieved2DateCreated.toISOString(),
+        expiryDate: achieved2ExpiryDate.toISOString(),
+        boundForRemoval: 0,
+        dateToBeRemoved: achieved2DateToBeRemoved.toISOString()
+      },
+      // 1 unachieved badge
+      {
+        userID: DUMMY_USER_ID,
+        badgeSubtext: '2 decks x 7 days',
+        badgeImageName: 'neverGiveUp',
+        achieved: 0,
+        numberOfDecksPledged: 2,
+        numberOfConsecutiveDays: 7,
+        dateCreated: unachievedDateCreated.toISOString(),
+        expiryDate: unachievedExpiryDate.toISOString(),
+        boundForRemoval: 0,
+        dateToBeRemoved: unachievedDateToBeRemoved.toISOString()
+      },
+      // 2 expired badges
+      {
+        userID: DUMMY_USER_ID,
+        badgeSubtext: '4 decks x 5 days',
+        badgeImageName: 'doYourBest',
+        achieved: 0,
+        numberOfDecksPledged: 4,
+        numberOfConsecutiveDays: 5,
+        dateCreated: expired1DateCreated.toISOString(),
+        expiryDate: expired1ExpiryDate.toISOString(),
+        boundForRemoval: 1,
+        dateToBeRemoved: expired1DateToBeRemoved.toISOString()
+      },
+      {
+        userID: DUMMY_USER_ID,
+        badgeSubtext: '6 decks x 7 days',
+        badgeImageName: 'goForIt',
+        achieved: 0,
+        numberOfDecksPledged: 6,
+        numberOfConsecutiveDays: 7,
+        dateCreated: expired2DateCreated.toISOString(),
+        expiryDate: expired2ExpiryDate.toISOString(),
+        boundForRemoval: 1,
+        dateToBeRemoved: expired2DateToBeRemoved.toISOString()
+      }
+    ];
+
+    // Insert custom badges
+    for (const badge of customBadgesData) {
+      await db.execAsync(`
+        INSERT INTO customBadgesTable (userID, badgeSubtext, badgeImageName, achieved, numberOfDecksPledged, numberOfConsecutiveDays, dateCreated, expiryDate, boundForRemoval, dateToBeRemoved)
+        VALUES ('${badge.userID}', ${escapeSqlString(badge.badgeSubtext)}, ${escapeSqlString(badge.badgeImageName)}, ${badge.achieved}, ${badge.numberOfDecksPledged}, ${badge.numberOfConsecutiveDays}, ${escapeSqlString(badge.dateCreated)}, ${escapeSqlString(badge.expiryDate)}, ${badge.boundForRemoval}, ${escapeSqlString(badge.dateToBeRemoved)})
+      `);
+    }
+
+    console.log('✅ CustomBadgesTable populated successfully');
+    
     // TODO: Continue with other tables (userFormEntries, etc.)
-    console.log('✅ Dummy data population completed for LifetimeBadgesTable');
+    console.log('✅ Dummy data population completed for CustomBadgesTable');
     
     // Verify that data was loaded correctly
     console.log('\n=== VERIFYING DATA LOAD ===');
@@ -2000,6 +2111,10 @@ export async function verifyDataLoad() {
     const lifetimeBadgesResult = await db.getAllAsync('SELECT COUNT(*) as count FROM lifetimeBadgesTable');
     console.log(`✅ LifetimeBadgesTable loaded: ${(lifetimeBadgesResult[0] as any).count} lifetime badges`);
     
+    // Check customBadgesTable
+    const customBadgesResult = await db.getAllAsync('SELECT COUNT(*) as count FROM customBadgesTable');
+    console.log(`✅ CustomBadgesTable loaded: ${(customBadgesResult[0] as any).count} custom badges`);
+    
     // Show sample data
     console.log('\n=== SAMPLE DATA ===');
     
@@ -2038,6 +2153,10 @@ export async function verifyDataLoad() {
     // Sample lifetime badges
     const sampleLifetimeBadges = await db.getAllAsync('SELECT badgeName, badgeImageName FROM lifetimeBadgesTable LIMIT 5');
     console.log('🏆 Sample lifetime badges:', sampleLifetimeBadges);
+    
+    // Sample custom badges
+    const sampleCustomBadges = await db.getAllAsync('SELECT badgeSubtext, badgeImageName, achieved, boundForRemoval FROM customBadgesTable LIMIT 5');
+    console.log('🎯 Sample custom badges:', sampleCustomBadges);
     
     // Check deck types distribution
     const deckTypes = await db.getAllAsync('SELECT deckType, COUNT(*) as count FROM decks GROUP BY deckType');

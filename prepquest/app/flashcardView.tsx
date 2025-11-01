@@ -47,7 +47,7 @@ import {
   updateDeckLastModifiedAfterFlashcardDeletion,
   type TransformedFlashcard,
 } from '@/db/decks';
-import { getUserVoiceLanguage } from '@/db/users';
+import { getUserVoiceLanguage, incrementChatWithAIRequests } from '@/db/users';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
@@ -915,6 +915,16 @@ async function transcribeAudio(audioUri: string, language: string = 'English', q
     if (data?.transcript) {
       console.log('✅ Transcription successful!');
       console.log('📝 Transcribed text:', data.transcript);
+      
+      // Increment chatWithAIRequests for successful API response
+      try {
+        await incrementChatWithAIRequests();
+        console.log('✅ Updated chatWithAIRequests counter');
+      } catch (error) {
+        console.error('Error incrementing chatWithAIRequests:', error);
+        // Don't fail the entire operation if this fails
+      }
+      
       if (data?.evaluation) {
         console.log('🤖 AI Evaluation received:');
         if (data.evaluation.concise) {

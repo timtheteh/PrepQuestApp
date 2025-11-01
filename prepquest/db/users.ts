@@ -181,6 +181,22 @@ export async function incrementYoutubeLinkRequests(flashcardCount: number): Prom
     console.error('Error incrementing youtubeLinkRequests:', error);
     return false;
   }
+}
+
+// Increment chatWithAIRequests by 1 for each successful AI chat request
+export async function incrementChatWithAIRequests(): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.runAsync(
+      `UPDATE users SET chatWithAIRequests = chatWithAIRequests + 1 WHERE userID = ?`,
+      [userID]
+    );
+    console.log(`Incremented chatWithAIRequests for user ${userID}`);
+    return true;
+  } catch (error) {
+    console.error('Error incrementing chatWithAIRequests:', error);
+    return false;
+  }
 } 
 
 // Create a new user in the database

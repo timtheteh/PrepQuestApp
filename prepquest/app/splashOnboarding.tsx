@@ -102,6 +102,8 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
   // Track splash screen start time
   const splashStartTime = useRef(Date.now());
   const [isFreshAuth, setIsFreshAuth] = useState(false);
+  const [isSkipped, setIsSkipped] = useState(false);
+  const isSkippedRef = useRef(false);
 
   // State for section navigation
   const [currentSection, setCurrentSection] = useState<'logoAnimation' | 'languageSelection' | 'onboardingPage1' | 'onboardingPage2' | 'onboardingPage3' | 'onboardingPage4' | 'onboardingPage5' | 'onboardingPage6' | 'signupPage'>('logoAnimation');
@@ -630,6 +632,12 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
   }, [currentSection, onboardingPage1ContentFadeAnim]);
 
   const handleSkipPress = () => {
+    // Mark that user skipped onboarding - no free decks will be created
+    setIsSkipped(true);
+    isSkippedRef.current = true;
+    // Reset deck creation progress to ensure it doesn't show in loading screen
+    setDeckCreationProgress({ currentDeck: 0, totalDecks: 3 });
+    
     // Navigate to signup page within splashOnboarding instead of going to regular splash
     console.log(`🔄 Skip button pressed from ${currentSection} - transitioning to signup page`);
     
@@ -1343,8 +1351,10 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
           setIsFreshAuth(true);
           setShowLoadingOverlay(true);
           setAuthProgress({ loggingIn: true, loggedIn: false });
-          // Initialize deck creation progress to show immediately (for new users)
-          setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+          // Initialize deck creation progress to show immediately (only if user didn't skip)
+          if (!isSkippedRef.current) {
+            setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+          }
           showSuccessToast(getTranslatedText(language, 'accountCreatedSuccessfully'));
         } else if (result.status === 'missing_requirements') {
           await result.prepareEmailAddressVerification({ strategy: 'email_code' });
@@ -1376,8 +1386,10 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         setIsFreshAuth(true);
         setShowLoadingOverlay(true);
         setAuthProgress({ loggingIn: true, loggedIn: false });
-        // Initialize deck creation progress to show immediately (for new users)
-        setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+        // Initialize deck creation progress to show immediately (only if user didn't skip)
+        if (!isSkippedRef.current) {
+          setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+        }
       } else {
         let errorMessage = result.error || getTranslatedText(language, 'signInFailed');
         
@@ -1418,8 +1430,10 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       setIsFreshAuth(true);
       setShowLoadingOverlay(true);
       setAuthProgress({ loggingIn: true, loggedIn: false });
-      // Initialize deck creation progress to show immediately (for new users)
-      setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+      // Initialize deck creation progress to show immediately (only if user didn't skip)
+      if (!isSkippedRef.current) {
+        setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+      }
     } catch (error: any) {
       setShowLoadingOverlay(false);
       setIsFreshAuth(false);
@@ -1715,8 +1729,10 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         setIsFreshAuth(true);
         setShowLoadingOverlay(true);
         setAuthProgress({ loggingIn: true, loggedIn: false });
-        // Initialize deck creation progress to show immediately (for new users)
-        setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+        // Initialize deck creation progress to show immediately (only if user didn't skip)
+        if (!isSkippedRef.current) {
+          setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
+        }
         showSuccessToast(getTranslatedText(language, 'accountCreatedSuccessfully'));
       } else {
         setHasVerificationError(true);
@@ -1928,8 +1944,8 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
             console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
             setDatabaseProgress({ initializing: true, initialized: true });
 
-            // Generate 3 free decks for new signups only (not sign-ins)
-            if (isFreshAuth) {
+            // Generate 3 free decks for new signups only (not sign-ins and not if user skipped)
+            if (isFreshAuth && !isSkippedRef.current) {
               // Deck creation progress already initialized when loading overlay was shown
               try {
                 console.log('🎁 Generating 3 free decks for new user...');
@@ -2096,9 +2112,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                 (window as any).createdDeckIds = [];
               }
             } else {
-              // For existing users, hide deck creation progress since they don't get free decks
+              // For existing users or users who skipped, hide deck creation progress since they don't get free decks
               setDeckCreationProgress({ currentDeck: 0, totalDecks: 3 });
-              // For existing users, mark as complete immediately
+              // For existing users or users who skipped, mark as complete immediately
               (window as any).aiDeckCreationComplete = true;
               (window as any).createdDeckIds = [];
             }

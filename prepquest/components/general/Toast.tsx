@@ -108,6 +108,10 @@ export function Toast({ visible, message, onHide, duration = 3000, backgroundCol
 
   if (!visible) return null;
 
+  // Determine text color: use contrastText for error toasts (red background), text for success toasts (green background)
+  const isErrorToast = !backgroundColor;
+  const textColor =  colors.contrastText;
+
   return (
     <Animated.View
       style={[
@@ -122,7 +126,7 @@ export function Toast({ visible, message, onHide, duration = 3000, backgroundCol
         style={[styles.toast, { backgroundColor: backgroundColor || colors.alertColor }]}
         {...panResponder.panHandlers}
       >
-        <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
+        <Text style={[styles.message, { color: textColor }]}>{message}</Text>
       </Animated.View>
     </Animated.View>
   );

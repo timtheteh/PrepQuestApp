@@ -287,6 +287,11 @@ export default function AppSettingsScreen() {
   const clearDataLoadingNetworkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const clearDataLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Delete account loading network error modal state
+  const [isDeleteAccountLoadingNetworkErrorModalOpen, setIsDeleteAccountLoadingNetworkErrorModalOpen] = React.useState(false);
+  const deleteAccountLoadingNetworkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const deleteAccountLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+
   // Delete account modal state
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = React.useState(false);
   const deleteAccountOverlayOpacity = React.useRef(new Animated.Value(0)).current;
@@ -589,6 +594,64 @@ export default function AppSettingsScreen() {
     });
   }, [clearDataLoadingNetworkErrorOverlayOpacity, clearDataLoadingNetworkErrorModalOpacity]);
 
+  const handleShowDeleteAccountLoadingNetworkErrorModal = React.useCallback(() => {
+    setIsDeleteAccountLoadingNetworkErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(deleteAccountLoadingNetworkErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteAccountLoadingNetworkErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [deleteAccountLoadingNetworkErrorOverlayOpacity, deleteAccountLoadingNetworkErrorModalOpacity]);
+
+  const handleDismissDeleteAccountLoadingNetworkErrorModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(deleteAccountLoadingNetworkErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteAccountLoadingNetworkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDeleteAccountLoadingNetworkErrorModalOpen(false);
+      // Re-enable buttons after dismissing network error modal
+      setShouldDisableOtherButtons(false);
+    });
+  }, [deleteAccountLoadingNetworkErrorOverlayOpacity, deleteAccountLoadingNetworkErrorModalOpacity]);
+
+  // Network connectivity check function
+  const checkNetworkConnectivity = React.useCallback(async (): Promise<boolean> => {
+    try {
+      // Create an AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      // Try to fetch a small resource to test network connectivity
+      const response = await fetch('https://www.google.com/favicon.ico', {
+        method: 'HEAD',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      const isConnected = response.ok;
+      console.log('Network connectivity check:', { isConnected, status: response.status });
+      return isConnected;
+    } catch (error) {
+      console.error('Error checking network connectivity:', error);
+      return false;
+    }
+  }, []);
+
   const handleDeleteAccountPress = React.useCallback(() => {
     // Check if deck creation is running
     if (isBackgroundTaskRunning) {
@@ -646,6 +709,23 @@ export default function AppSettingsScreen() {
       
       // Small delay to ensure loading screen renders before any state changes
       await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Check network connectivity before starting delete account
+      const isNetworkConnected = await checkNetworkConnectivity();
+      if (!isNetworkConnected) {
+        // Hide loading screen
+        Animated.timing(deleteAccountLoadingOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsDeleteAccountLoading(false);
+        });
+        
+        // Show network error modal
+        handleShowDeleteAccountLoadingNetworkErrorModal();
+        return;
+      }
       
       // Get user ID for background task
       const userID = await AsyncStorage.getItem('userID');
@@ -705,7 +785,7 @@ export default function AppSettingsScreen() {
       
       console.error('Account deletion failed:', error instanceof Error ? error.message : 'Unknown error');
     }
-  }, [handleDismissDeleteAccount, language, startDeleteAccountBackgroundTaskMonitoring, deleteAccountLoadingOverlayOpacity]);
+  }, [handleDismissDeleteAccount, language, startDeleteAccountBackgroundTaskMonitoring, deleteAccountLoadingOverlayOpacity, checkNetworkConnectivity, handleShowDeleteAccountLoadingNetworkErrorModal]);
 
   const handleShowAutomaticCancellationModal = React.useCallback(() => {
     setIsAutomaticCancellationModalOpen(true);
@@ -772,30 +852,6 @@ export default function AppSettingsScreen() {
       setIsImportAutomaticCancellationModalOpen(false);
     });
   }, [importAutomaticCancellationOverlayOpacity, importAutomaticCancellationModalOpacity]);
-
-
-  // Network connectivity check function
-  const checkNetworkConnectivity = React.useCallback(async (): Promise<boolean> => {
-    try {
-      // Create an AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      // Try to fetch a small resource to test network connectivity
-      const response = await fetch('https://www.google.com/favicon.ico', {
-        method: 'HEAD',
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      const isConnected = response.ok;
-      console.log('Network connectivity check:', { isConnected, status: response.status });
-      return isConnected;
-    } catch (error) {
-      console.error('Error checking network connectivity:', error);
-      return false;
-    }
-  }, []);
 
   // Check camera permission status on component mount
   React.useEffect(() => {
@@ -3339,6 +3395,21 @@ export default function AppSettingsScreen() {
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissBackupServiceBusyModal}
+        />
+
+        {/* Delete Account Loading Network Error Modal */}
+        <GreyOverlayBackground 
+          visible={isDeleteAccountLoadingNetworkErrorModalOpen}
+          opacity={deleteAccountLoadingNetworkErrorOverlayOpacity}
+          onPress={handleDismissDeleteAccountLoadingNetworkErrorModal}
+        />
+        <GenericModal
+          visible={isDeleteAccountLoadingNetworkErrorModalOpen}
+          opacity={deleteAccountLoadingNetworkErrorModalOpacity}
+          text={strings[language].appSettingsPage.deleteAccountFailedToStartNetworkError}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissDeleteAccountLoadingNetworkErrorModal}
         />
 
         {/* Delete Account Modal */}

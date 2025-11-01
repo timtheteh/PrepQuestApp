@@ -1296,6 +1296,7 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 4,
+            marginTop: -24,
           }}
         >
           <Text

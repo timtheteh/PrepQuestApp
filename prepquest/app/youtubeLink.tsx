@@ -29,7 +29,7 @@ import DeckCreationStatusPage from './deckCreationStatusPage';
 import BackgroundService from 'react-native-background-actions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useBackgroundTask } from '@/contexts/BackgroundTaskContext';
-import { getUserQuestionSettings } from '@/db/users';
+import { getUserQuestionSettings, incrementYoutubeLinkRequests } from '@/db/users';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
 import { generateYouTubeLinkPrompt } from '@/utils/youtubeLinkPromptGeneration';
 import NotificationService from '@/utils/notifications';
@@ -681,6 +681,20 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     }
 
     if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
+
+    // Calculate flashcard count
+    const flashcardCount = flashcards?.length || createdFlashcardIds?.length || 0;
+    
+    // Increment youtubeLinkRequests with the number of flashcards created
+    if (flashcardCount > 0) {
+      try {
+        await incrementYoutubeLinkRequests(flashcardCount);
+        console.log(`Updated youtubeLinkRequests: added ${flashcardCount} flashcards to counter`);
+      } catch (error) {
+        console.error('Error incrementing youtubeLinkRequests:', error);
+        // Don't fail the entire operation if this fails
+      }
+    }
 
     // Final progress: deck and flashcards created
     await saveDeckCreationProgress({

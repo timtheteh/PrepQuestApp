@@ -133,6 +133,54 @@ export async function updateUserVoiceLanguage(language: string): Promise<boolean
     console.error('Error updating user voice language:', error);
     return false;
   }
+}
+
+// Increment genAIFormRequests by the number of flashcards created
+export async function incrementGenAIFormRequests(flashcardCount: number): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.runAsync(
+      `UPDATE users SET genAIFormRequests = genAIFormRequests + ? WHERE userID = ?`,
+      [flashcardCount, userID]
+    );
+    console.log(`Incremented genAIFormRequests by ${flashcardCount} for user ${userID}`);
+    return true;
+  } catch (error) {
+    console.error('Error incrementing genAIFormRequests:', error);
+    return false;
+  }
+}
+
+// Increment fileUploadRequests by the number of flashcards created
+export async function incrementFileUploadRequests(flashcardCount: number): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.runAsync(
+      `UPDATE users SET fileUploadRequests = fileUploadRequests + ? WHERE userID = ?`,
+      [flashcardCount, userID]
+    );
+    console.log(`Incremented fileUploadRequests by ${flashcardCount} for user ${userID}`);
+    return true;
+  } catch (error) {
+    console.error('Error incrementing fileUploadRequests:', error);
+    return false;
+  }
+}
+
+// Increment youtubeLinkRequests by the number of flashcards created
+export async function incrementYoutubeLinkRequests(flashcardCount: number): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    await db.runAsync(
+      `UPDATE users SET youtubeLinkRequests = youtubeLinkRequests + ? WHERE userID = ?`,
+      [flashcardCount, userID]
+    );
+    console.log(`Incremented youtubeLinkRequests by ${flashcardCount} for user ${userID}`);
+    return true;
+  } catch (error) {
+    console.error('Error incrementing youtubeLinkRequests:', error);
+    return false;
+  }
 } 
 
 // Create a new user in the database

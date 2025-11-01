@@ -41,7 +41,7 @@ import JSZip from 'jszip';
 import * as XLSX from 'xlsx'; // Use CommonJS import for React Native compatibility
 // @ts-ignore
 import * as ImageManipulator from 'expo-image-manipulator';
-import { getUserQuestionSettings } from '@/db/users';
+import { getUserQuestionSettings, incrementFileUploadRequests } from '@/db/users';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
 import { generateFileUploadPrompt } from '@/utils/fileUploadPromptGeneration';
 import DeckCreationStatusPage from './deckCreationStatusPage';
@@ -538,6 +538,20 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     }
 
     if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
+
+    // Calculate flashcard count
+    const flashcardCount = flashcards?.length || createdFlashcardIds?.length || 0;
+    
+    // Increment fileUploadRequests with the number of flashcards created
+    if (flashcardCount > 0) {
+      try {
+        await incrementFileUploadRequests(flashcardCount);
+        console.log(`Updated fileUploadRequests: added ${flashcardCount} flashcards to counter`);
+      } catch (error) {
+        console.error('Error incrementing fileUploadRequests:', error);
+        // Don't fail the entire operation if this fails
+      }
+    }
 
     // Final progress: deck and flashcards created
     await saveDeckCreationProgress({

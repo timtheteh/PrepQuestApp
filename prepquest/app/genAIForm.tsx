@@ -25,7 +25,7 @@ import { Colors } from '@/constants/Colors';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
 import { generateGenAIPrompt } from '@/utils/genAIPromptGeneration';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUserQuestionSettings } from '../db/users';
+import { getUserQuestionSettings, incrementGenAIFormRequests } from '../db/users';
 import DeckCreationStatusPage from './deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import BackgroundService from 'react-native-background-actions';
@@ -673,6 +673,20 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         // Creating new deck
         actionType = 'deck_created';
         notificationDeckName = formData.deckName;
+      }
+      
+      // Calculate flashcard count
+      const flashcardCount = flashcards?.length || createdFlashcardIds?.length || 0;
+      
+      // Increment genAIFormRequests with the number of flashcards created
+      if (flashcardCount > 0) {
+        try {
+          await incrementGenAIFormRequests(flashcardCount);
+          console.log(`Updated genAIFormRequests: added ${flashcardCount} flashcards to counter`);
+        } catch (error) {
+          console.error('Error incrementing genAIFormRequests:', error);
+          // Don't fail the entire operation if this fails
+        }
       }
       
       await saveGenAIDeckCreationProgress({ 

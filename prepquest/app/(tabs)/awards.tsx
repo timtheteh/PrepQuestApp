@@ -1169,7 +1169,19 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
   );
 });
 
-const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customBadgeSVG, subtext }: { image?: ImageSourcePropType, achieved: boolean, expired?: boolean, themeColors: any, customBadgeSVG?: any, subtext?: string }) => {
+// Helper function to format date range for custom badges
+const formatDateRange = (dateCreated: string, expiryDate: string): string => {
+  try {
+    const startDate = format(parseISO(dateCreated), 'MMM d');
+    const endDate = format(parseISO(expiryDate), 'MMM d');
+    return `${startDate} - ${endDate}`;
+  } catch (error) {
+    console.error('Error formatting date range:', error);
+    return '';
+  }
+};
+
+const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customBadgeSVG, subtext, dateRange }: { image?: ImageSourcePropType, achieved: boolean, expired?: boolean, themeColors: any, customBadgeSVG?: any, subtext?: string, dateRange?: string }) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
@@ -1222,19 +1234,37 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
           </View>
         )}
         
-        {/* Subtext at bottom */}
-        <Text
-          style={{
-            fontFamily: Fonts.bodyMedium,
-            fontSize: 12,
-            color: achieved && !expired ? themeColors.text : themeColors.text,
-            opacity: achieved && !expired ? 1 : 0.3,
-            textAlign: 'center',
-            paddingHorizontal: 12,
-          }}
-        >
-          {subtext || 'Subtext'}
-        </Text>
+        {/* Text container at bottom */}
+        <View style={{ alignItems: 'center', paddingHorizontal: 12 }}>
+          {/* Subtext (first line) */}
+          <Text
+            style={{
+              fontFamily: Fonts.bodyMedium,
+              fontSize: 12,
+              color: achieved && !expired ? themeColors.text : themeColors.text,
+              opacity: achieved && !expired ? 1 : 0.3,
+              textAlign: 'center',
+            }}
+          >
+            {subtext || 'Subtext'}
+          </Text>
+          
+          {/* Date range (second line) */}
+          {dateRange && (
+            <Text
+              style={{
+                fontFamily: Fonts.bodyMedium,
+                fontSize: 12,
+                color: achieved && !expired ? themeColors.text : themeColors.text,
+                opacity: achieved && !expired ? 1 : 0.3,
+                textAlign: 'center',
+                marginTop: 2,
+              }}
+            >
+              {dateRange}
+            </Text>
+          )}
+        </View>
       </View>
       
       {/* Black overlay for unachieved/expired badges */}
@@ -1303,6 +1333,7 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge }: { row: (BadgeD
             themeColors={themeColors}
             customBadgeSVG={row[0].customBadgeSVG}
             subtext={row[0].badgeSubtext}
+            dateRange={row[0].badgeCreatedDate && row[0].badgeExpiryDate ? formatDateRange(row[0].badgeCreatedDate, row[0].badgeExpiryDate) : undefined}
           />
         ) : (
           <Badge
@@ -1327,6 +1358,7 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge }: { row: (BadgeD
             themeColors={themeColors}
             customBadgeSVG={row[1].customBadgeSVG}
             subtext={row[1].badgeSubtext}
+            dateRange={row[1].badgeCreatedDate && row[1].badgeExpiryDate ? formatDateRange(row[1].badgeCreatedDate, row[1].badgeExpiryDate) : undefined}
           />
         ) : (
           <Badge

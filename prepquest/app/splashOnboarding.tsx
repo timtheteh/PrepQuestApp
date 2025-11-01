@@ -12,6 +12,10 @@ import { Fonts } from '@/constants/Fonts';
 import { Toast } from '@/components/general/Toast';
 import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { createUser } from '@/db/users';
+import { GenericModal } from '@/components/modals/GenericModal';
+import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
+import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
+import { strings } from '@/constants/strings';
 import BackgroundService from 'react-native-background-actions';
 import LanguageSelector from '@/components/onboarding/LanguageSelector';
 import OnboardingLoadingScreen from '@/components/onboarding/OnboardingLoadingScreen';
@@ -170,6 +174,11 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
   // Loading overlay state
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
   const loadingOverlayRef = useRef<LottieView>(null);
+
+  // Network error modal state
+  const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
+  const networkErrorOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
   
   // Onboarding loading screen progress state
   const [authProgress, setAuthProgress] = useState({
@@ -1280,6 +1289,60 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
     }
   };
 
+  // Network connectivity check function
+  const checkNetworkConnectivity = useCallback(async (): Promise<boolean> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
+      const response = await fetch('https://www.google.com', {
+        method: 'HEAD',
+        cache: 'no-cache',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      console.error('Network connectivity check failed:', error);
+      return false;
+    }
+  }, []);
+
+  // Network error modal handlers
+  const handleShowNetworkErrorModal = useCallback(() => {
+    setIsNetworkErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
+  const handleDismissNetworkErrorModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNetworkErrorModalOpen(false);
+    });
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
   // Authentication handlers
   const handleHideToast = useCallback(() => {
     setToastVisible(false);
@@ -1332,6 +1395,13 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
 
   const handleSignUp = useCallback(async () => {
     if (validateSignUp()) {
+      // Check network connectivity first
+      const isConnected = await checkNetworkConnectivity();
+      if (!isConnected) {
+        handleShowNetworkErrorModal();
+        return;
+      }
+
       try {
         if (!signUp) {
           setToastMessage(getTranslatedText(language, 'signUpFailed'));
@@ -1368,14 +1438,41 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         }
       } catch (error: any) {
         const errorMessage = error.errors?.[0]?.message || error?.message || getTranslatedText(language, 'signUpFailed');
-        showErrorToast(errorMessage);
+        // Check if it's a network error - check multiple patterns
+        const errorString = JSON.stringify(error).toLowerCase();
+        const errorMessageLower = errorMessage?.toLowerCase() || '';
+        const isNetworkError = errorMessageLower.includes('network') || 
+                              errorMessageLower.includes('request failed') ||
+                              error?.message?.toLowerCase().includes('network') ||
+                              error?.message?.toLowerCase().includes('request failed') ||
+                              error?.errors?.[0]?.message?.toLowerCase().includes('network') ||
+                              error?.errors?.[0]?.message?.toLowerCase().includes('request failed') ||
+                              errorString.includes('network request failed') ||
+                              errorString.includes('network error') ||
+                              errorString.includes('request failed') ||
+                              error?.code === 'network_error' ||
+                              error?.status === 'network_error' ||
+                              error?.name === 'TypeError' && errorMessageLower.includes('failed');
+        
+        if (isNetworkError) {
+          handleShowNetworkErrorModal();
+        } else {
+          showErrorToast(errorMessage);
+        }
       }
     }
-  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast, startResendCountdown]);
+  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast, startResendCountdown, checkNetworkConnectivity, handleShowNetworkErrorModal]);
 
   const handleSignIn = useCallback(async () => {
     if (!email.trim() || !password.trim()) {
       showErrorToast(getTranslatedText(language, 'fillUpBothEmailAndPassword'));
+      return;
+    }
+    
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      handleShowNetworkErrorModal();
       return;
     }
     
@@ -1393,6 +1490,19 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       } else {
         let errorMessage = result.error || getTranslatedText(language, 'signInFailed');
         
+        // Check if it's a network error - check multiple patterns
+        const errorString = JSON.stringify(result).toLowerCase();
+        const isNetworkError = errorMessage?.toLowerCase().includes('network') || 
+                              errorMessage?.toLowerCase().includes('request failed') ||
+                              errorString.includes('network request failed') ||
+                              errorString.includes('network error') ||
+                              errorString.includes('request failed');
+        
+        if (isNetworkError) {
+          handleShowNetworkErrorModal();
+          return;
+        }
+        
         if (result.error?.includes('identifier') || result.error?.includes('not found')) {
           errorMessage = result.error;
         } else if (result.error?.includes('password') || result.error?.includes('credentials')) {
@@ -1403,11 +1513,36 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       }
     } catch (error: any) {
       const errorMessage = error?.message || getTranslatedText(language, 'signInFailed');
-      showErrorToast(errorMessage);
+      // Check if it's a network error - check multiple patterns
+      const errorString = JSON.stringify(error).toLowerCase();
+      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const isNetworkError = errorMessageLower.includes('network') || 
+                            errorMessageLower.includes('request failed') ||
+                            error?.message?.toLowerCase().includes('network') ||
+                            error?.message?.toLowerCase().includes('request failed') ||
+                            errorString.includes('network request failed') ||
+                            errorString.includes('network error') ||
+                            errorString.includes('request failed') ||
+                            error?.code === 'network_error' ||
+                            error?.status === 'network_error' ||
+                            error?.name === 'TypeError' && errorMessageLower.includes('failed');
+      
+      if (isNetworkError) {
+        handleShowNetworkErrorModal();
+      } else {
+        showErrorToast(errorMessage);
+      }
     }
-  }, [email, password, signInWithEmail, language, showErrorToast]);
+  }, [email, password, signInWithEmail, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
 
   const handleSocialLogin = useCallback(async (provider: 'google' | 'facebook' | 'apple') => {
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      handleShowNetworkErrorModal();
+      return;
+    }
+
     try {
       let oauthFunction;
       switch (provider) {
@@ -1456,9 +1591,28 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         default:
           errorMessage = error?.message || getTranslatedText(language, 'signInFailed');
       }
-      showErrorToast(errorMessage);
+      
+      // Check if it's a network error - check multiple patterns
+      const errorString = JSON.stringify(error).toLowerCase();
+      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const isNetworkError = errorMessageLower.includes('network') || 
+                            errorMessageLower.includes('request failed') ||
+                            error?.message?.toLowerCase().includes('network') ||
+                            error?.message?.toLowerCase().includes('request failed') ||
+                            errorString.includes('network request failed') ||
+                            errorString.includes('network error') ||
+                            errorString.includes('request failed') ||
+                            error?.code === 'network_error' ||
+                            error?.status === 'network_error' ||
+                            error?.name === 'TypeError' && errorMessageLower.includes('failed');
+      
+      if (isNetworkError) {
+        handleShowNetworkErrorModal();
+      } else {
+        showErrorToast(errorMessage);
+      }
     }
-  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast]);
+  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
 
   const handleTogglePassword = useCallback(() => {
     setShowPassword(!showPassword);
@@ -4104,6 +4258,21 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
           </View>
         </View>
       </Modal>
+
+      {/* Network Error Modal */}
+      <GreyOverlayBackground 
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorOverlayOpacity}
+        onPress={handleDismissNetworkErrorModal}
+      />
+      <GenericModal
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorModalOpacity}
+        text={strings[language].youtubeLinkPage.networkError}
+        Icon={DeleteModalIcon}
+        buttons="single"
+        onConfirm={handleDismissNetworkErrorModal}
+      />
 
       {/* Onboarding Loading Screen */}
       {showLoadingOverlay && (

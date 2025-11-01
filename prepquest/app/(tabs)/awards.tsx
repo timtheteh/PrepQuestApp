@@ -102,17 +102,29 @@ import SupersonicUnachieved from '@/components/awards/lifetime/supersonicUnachie
 
 // Custom badge SVG imports
 import DontWishJustWorkForIt from '@/components/awards/custom/dontWishJustWorkForIt.svg';
+import DontWishJustWorkForItUnachieved from '@/components/awards/custom/dontWishJustWorkForItUnachieved.svg';
 import DoYourBest from '@/components/awards/custom/doYourBest.svg';
+import DoYourBestUnachieved from '@/components/awards/custom/doYourBestUnachieved.svg';
 import GoForIt from '@/components/awards/custom/goForIt.svg';
+import GoForItUnachieved from '@/components/awards/custom/goForItUnachieved.svg';
 import HungryForSuccess from '@/components/awards/custom/hungryForSuccess.svg';
+import HungryForSuccessUnachieved from '@/components/awards/custom/hungryForSuccessUnachieved.svg';
 import KeepFighting from '@/components/awards/custom/keepFighting.svg';
+import KeepFightingUnachieved from '@/components/awards/custom/keepFightingUnachieved.svg';
 import KeepUpGoodWork from '@/components/awards/custom/keepUpGoodWork.svg';
+import KeepUpGoodWorkUnachieved from '@/components/awards/custom/keepUpGoodWorkUnachieved.svg';
 import MakeAComeback from '@/components/awards/custom/makeAComeback.svg';
+import MakeAComebackUnachieved from '@/components/awards/custom/makeAComeBackUnachieved.svg';
 import NeverGiveUp from '@/components/awards/custom/neverGiveUp.svg';
+import NeverGiveUpUnachieved from '@/components/awards/custom/neverGiveUpUnachieved.svg';
 import SkysTheLimit from '@/components/awards/custom/skysTheLimit.svg';
+import SkysTheLimitUnachieved from '@/components/awards/custom/skysTheLimitUnachieved.svg';
 import StayStrong from '@/components/awards/custom/stayStrong.svg';
+import StayStrongUnachieved from '@/components/awards/custom/stayStrongUnachieved.svg';
 import ThereYouGo from '@/components/awards/custom/thereYouGo.svg';
+import ThereYouGoUnachieved from '@/components/awards/custom/thereYouGoUnachieved.svg';
 import YouveGotThis from '@/components/awards/custom/youveGotThis.svg';
+import YouveGotThisUnachieved from '@/components/awards/custom/youveGotThisUnachieved.svg';
 import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
@@ -916,29 +928,29 @@ const getLifetimeBadgeSVG = (badgeImageName: string, achieved: boolean) => {
 };
 
 // Function to get custom badge SVG component
-const getCustomBadgeSVG = (badgeImageName: string) => {
-  const svgMap: { [key: string]: any } = {
-    'dontWishJustWorkForIt': DontWishJustWorkForIt,
-    'doYourBest': DoYourBest,
-    'goForIt': GoForIt,
-    'hungryForSuccess': HungryForSuccess,
-    'keepFighting': KeepFighting,
-    'keepUpGoodWork': KeepUpGoodWork,
-    'makeAComeback': MakeAComeback,
-    'neverGiveUp': NeverGiveUp,
-    'skysTheLimit': SkysTheLimit,
-    'stayStrong': StayStrong,
-    'thereYouGo': ThereYouGo,
-    'youveGotThis': YouveGotThis,
+const getCustomBadgeSVG = (badgeImageName: string, achieved: boolean) => {
+  const svgMap: { [key: string]: { achieved: any, unachieved: any } } = {
+    'dontWishJustWorkForIt': { achieved: DontWishJustWorkForIt, unachieved: DontWishJustWorkForItUnachieved },
+    'doYourBest': { achieved: DoYourBest, unachieved: DoYourBestUnachieved },
+    'goForIt': { achieved: GoForIt, unachieved: GoForItUnachieved },
+    'hungryForSuccess': { achieved: HungryForSuccess, unachieved: HungryForSuccessUnachieved },
+    'keepFighting': { achieved: KeepFighting, unachieved: KeepFightingUnachieved },
+    'keepUpGoodWork': { achieved: KeepUpGoodWork, unachieved: KeepUpGoodWorkUnachieved },
+    'makeAComeback': { achieved: MakeAComeback, unachieved: MakeAComebackUnachieved },
+    'neverGiveUp': { achieved: NeverGiveUp, unachieved: NeverGiveUpUnachieved },
+    'skysTheLimit': { achieved: SkysTheLimit, unachieved: SkysTheLimitUnachieved },
+    'stayStrong': { achieved: StayStrong, unachieved: StayStrongUnachieved },
+    'thereYouGo': { achieved: ThereYouGo, unachieved: ThereYouGoUnachieved },
+    'youveGotThis': { achieved: YouveGotThis, unachieved: YouveGotThisUnachieved },
   };
   
-  const svgComponent = svgMap[badgeImageName];
-  if (!svgComponent) {
+  const svgComponents = svgMap[badgeImageName];
+  if (!svgComponents) {
     console.warn(`Unknown custom badge image name: ${badgeImageName}`);
     return null;
   }
   
-  return svgComponent;
+  return achieved ? svgComponents.achieved : svgComponents.unachieved;
 };
 
 // Function to fetch streak badges from database
@@ -1162,9 +1174,13 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
   const badgeHeight = 179;
   const borderWidth = 8;
   const cornerRadius = 20;
+  const imageMargin = 12; // Margin for image horizontally and vertically
   
   // Use expired state styling if expired, otherwise use achieved/unachieved
   const isUnachieved = expired || !achieved;
+  
+  // Calculate image area dimensions (full width minus border and margins)
+  const imageAreaWidth = badgeWidth - (borderWidth * 2) - (imageMargin * 2);
   
   return (
     <View style={{ alignItems: 'center', width: badgeWidth, height: badgeHeight, position: 'relative' }}>
@@ -1177,29 +1193,31 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
           borderWidth: borderWidth,
           borderColor: achieved && !expired ? '#FFFFFF' : '#D5D4DD',
           backgroundColor: 'rgba(255, 255, 255, 0.4)',
-          justifyContent: 'flex-end',
+          flexDirection: 'column',
           alignItems: 'center',
           position: 'relative',
           paddingBottom: 12,
+          overflow: 'hidden',
         }}
       >
-        {/* Image container with margins */}
+        {/* Image container - fills available space with margins */}
         {(customBadgeSVG || image) && (
           <View style={{
-            marginHorizontal: 12,
-            marginTop: 12,
-            marginBottom: 12,
             flex: 1,
+            width: '100%',
+            marginHorizontal: imageMargin,
+            marginTop: imageMargin,
+            marginBottom: imageMargin,
             justifyContent: 'center',
             alignItems: 'center',
           }}>
             {customBadgeSVG && (
-              <View>
-                {React.createElement(customBadgeSVG, { width: 43, height: 43 })}
+              <View style={{ width: imageAreaWidth, height: '100%', justifyContent: 'center', alignItems: 'center'}}>
+                {React.createElement(customBadgeSVG, { width: imageAreaWidth, height: imageAreaWidth })}
               </View>
             )}
             {image && (
-              <RNImage source={image} style={{ width: 43, height: 43, resizeMode: 'contain' }} />
+              <RNImage source={image} style={{ width: imageAreaWidth, height: imageAreaWidth, resizeMode: 'contain' }} />
             )}
           </View>
         )}
@@ -1380,7 +1398,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
     }
     
     const rowHeight = 179 + 16; // badge height + marginBottom
-    const collapsed = rowHeight * 2; // 2 rows, no extra margin
+    const collapsed = rowHeight * Math.min(2, rows.length); // Show up to 2 rows, or 1 row if that's all there is
     const expanded = rowHeight * rows.length; // Just the rows, no extra padding
     
     return { sortedBadges: sorted, badgeRows: rows, collapsedHeight: collapsed, expandedHeight: expanded, isCustomBadgeWall };
@@ -1663,10 +1681,11 @@ const CustomBadges = React.memo(({ themeColors }: { themeColors: any }) => {
         const badges = await fetchCustomBadges();
         
         const badgeData: BadgeData[] = badges.map((badge) => {
-          const customBadgeSVG = getCustomBadgeSVG(badge.badgeImageName);
+          const isAchieved = badge.achieved === 1;
+          const customBadgeSVG = getCustomBadgeSVG(badge.badgeImageName, isAchieved);
           return {
             badgeTitle: '', // Custom badges don't have a title
-            achieved: badge.achieved === 1,
+            achieved: isAchieved,
             badgeImage: undefined,
             badgeCreatedDate: badge.dateCreated,
             badgeExpiryDate: badge.expiryDate,

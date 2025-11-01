@@ -17,6 +17,9 @@ import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
+import { GenericModal } from '@/components/modals/GenericModal';
+import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
+import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 
 const { height } = Dimensions.get('window');
 
@@ -171,6 +174,11 @@ export default function SplashScreen({
   
   // Track if this is a fresh authentication (not session restoration)
   const [isFreshAuth, setIsFreshAuth] = useState(false);
+
+  // Network error modal state
+  const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
+  const networkErrorOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
 
   // Memoized animation configurations for better performance
   const fadeInAnimationConfig = useMemo(() => ({
@@ -510,6 +518,60 @@ export default function SplashScreen({
     setToastVisible(true);
   }, []);
 
+  // Network connectivity check function
+  const checkNetworkConnectivity = useCallback(async (): Promise<boolean> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
+      const response = await fetch('https://www.google.com', {
+        method: 'HEAD',
+        cache: 'no-cache',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      console.error('Network connectivity check failed:', error);
+      return false;
+    }
+  }, []);
+
+  // Network error modal handlers
+  const handleShowNetworkErrorModal = useCallback(() => {
+    setIsNetworkErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
+  const handleDismissNetworkErrorModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(networkErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(networkErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsNetworkErrorModalOpen(false);
+    });
+  }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
   // Helper function to start resend countdown
   const startResendCountdown = useCallback(() => {
     setCanResendCode(false);
@@ -554,6 +616,13 @@ export default function SplashScreen({
 
   const handleSignUp = useCallback(async () => {
     if (validateSignUp()) {
+      // Check network connectivity first
+      const isConnected = await checkNetworkConnectivity();
+      if (!isConnected) {
+        handleShowNetworkErrorModal();
+        return;
+      }
+
       try {
         // Use direct Clerk signup to handle verification flow
         if (!signUp) {
@@ -588,15 +657,42 @@ export default function SplashScreen({
         }
       } catch (error: any) {
         const errorMessage = error.errors?.[0]?.message || error?.message || strings[language].splash.signUpFailed;
-        showErrorToast(errorMessage);
+        // Check if it's a network error - check multiple patterns
+        const errorString = JSON.stringify(error).toLowerCase();
+        const errorMessageLower = errorMessage?.toLowerCase() || '';
+        const isNetworkError = errorMessageLower.includes('network') || 
+                              errorMessageLower.includes('request failed') ||
+                              error?.message?.toLowerCase().includes('network') ||
+                              error?.message?.toLowerCase().includes('request failed') ||
+                              error?.errors?.[0]?.message?.toLowerCase().includes('network') ||
+                              error?.errors?.[0]?.message?.toLowerCase().includes('request failed') ||
+                              errorString.includes('network request failed') ||
+                              errorString.includes('network error') ||
+                              errorString.includes('request failed') ||
+                              error?.code === 'network_error' ||
+                              error?.status === 'network_error' ||
+                              error?.name === 'TypeError' && errorMessageLower.includes('failed');
+        
+        if (isNetworkError) {
+          handleShowNetworkErrorModal();
+        } else {
+          showErrorToast(errorMessage);
+        }
       }
     }
-  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast, startResendCountdown]);
+  }, [validateSignUp, email, password, signUp, setActive, language, showSuccessToast, showErrorToast, startResendCountdown, checkNetworkConnectivity, handleShowNetworkErrorModal]);
 
   const handleSignIn = useCallback(async () => {
     // Check if fields are empty
     if (!email.trim() || !password.trim()) {
       showErrorToast(strings[language].splash.fillUpBothEmailAndPassword);
+      return;
+    }
+    
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      handleShowNetworkErrorModal();
       return;
     }
     
@@ -612,6 +708,19 @@ export default function SplashScreen({
         // Handle Clerk-specific error messages
         let errorMessage = result.error || strings[language].splash.signInFailed;
         
+        // Check if it's a network error - check multiple patterns
+        const errorString = JSON.stringify(result).toLowerCase();
+        const isNetworkError = errorMessage?.toLowerCase().includes('network') || 
+                              errorMessage?.toLowerCase().includes('request failed') ||
+                              errorString.includes('network request failed') ||
+                              errorString.includes('network error') ||
+                              errorString.includes('request failed');
+        
+        if (isNetworkError) {
+          handleShowNetworkErrorModal();
+          return;
+        }
+        
         // Provide user-friendly messages for common Clerk errors
         if (result.error?.includes('identifier') || result.error?.includes('not found')) {
           errorMessage = result.error; // Use Clerk's specific error message
@@ -623,11 +732,36 @@ export default function SplashScreen({
       }
     } catch (error: any) {
       const errorMessage = error?.message || strings[language].splash.signInFailed;
-      showErrorToast(errorMessage);
+      // Check if it's a network error - check multiple patterns
+      const errorString = JSON.stringify(error).toLowerCase();
+      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const isNetworkError = errorMessageLower.includes('network') || 
+                            errorMessageLower.includes('request failed') ||
+                            error?.message?.toLowerCase().includes('network') ||
+                            error?.message?.toLowerCase().includes('request failed') ||
+                            errorString.includes('network request failed') ||
+                            errorString.includes('network error') ||
+                            errorString.includes('request failed') ||
+                            error?.code === 'network_error' ||
+                            error?.status === 'network_error' ||
+                            error?.name === 'TypeError' && errorMessageLower.includes('failed');
+      
+      if (isNetworkError) {
+        handleShowNetworkErrorModal();
+      } else {
+        showErrorToast(errorMessage);
+      }
     }
-  }, [email, password, signInWithEmail, language, showErrorToast]);
+  }, [email, password, signInWithEmail, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
 
   const handleSocialLogin = useCallback(async (provider: 'google' | 'facebook' | 'apple') => {
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    if (!isConnected) {
+      handleShowNetworkErrorModal();
+      return;
+    }
+
     try {
       let oauthFunction;
       switch (provider) {
@@ -678,9 +812,28 @@ export default function SplashScreen({
         default:
           errorMessage = error?.message || strings[language].splash.signInFailed;
       }
-      showErrorToast(errorMessage);
+      
+      // Check if it's a network error - check multiple patterns
+      const errorString = JSON.stringify(error).toLowerCase();
+      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const isNetworkError = errorMessageLower.includes('network') || 
+                            errorMessageLower.includes('request failed') ||
+                            error?.message?.toLowerCase().includes('network') ||
+                            error?.message?.toLowerCase().includes('request failed') ||
+                            errorString.includes('network request failed') ||
+                            errorString.includes('network error') ||
+                            errorString.includes('request failed') ||
+                            error?.code === 'network_error' ||
+                            error?.status === 'network_error' ||
+                            error?.name === 'TypeError' && errorMessageLower.includes('failed');
+      
+      if (isNetworkError) {
+        handleShowNetworkErrorModal();
+      } else {
+        showErrorToast(errorMessage);
+      }
     }
-  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast]);
+  }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
 
   useEffect(() => {
     // Ensure animations start playing
@@ -1618,6 +1771,21 @@ export default function SplashScreen({
           </View>
         </View>
       </Modal>
+
+      {/* Network Error Modal */}
+      <GreyOverlayBackground 
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorOverlayOpacity}
+        onPress={handleDismissNetworkErrorModal}
+      />
+      <GenericModal
+        visible={isNetworkErrorModalOpen}
+        opacity={networkErrorModalOpacity}
+        text={strings[language].youtubeLinkPage.networkError}
+        Icon={DeleteModalIcon}
+        buttons="single"
+        onConfirm={handleDismissNetworkErrorModal}
+      />
 
       {/* Loading Overlay */}
       {showLoadingOverlay && (

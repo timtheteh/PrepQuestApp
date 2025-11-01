@@ -491,6 +491,16 @@ export const strings: Record<string, any> = {
       // GenAI form flow statuses
       requestReceived: 'Request received',
     },
+    // OnboardingLoadingScreen strings
+    onboardingLoadingScreen: {
+      settingUpYourAccount: 'Setting up your account',
+      loggingYouIn: 'Logging you in',
+      loggedInSuccessfully: 'Logged in successfully',
+      initializingDatabase: 'Initializing database',
+      databaseInitialized: 'Database initialized',
+      creatingFreeDecks: 'Creating free decks ({n}/{total})',
+      successfullyCreatedFreeDecks: 'Successfully created\nfree decks',
+    },
     // FileUploadPage strings
     fileUploadPage: {
       // Toggle labels
@@ -1657,6 +1667,16 @@ export const strings: Record<string, any> = {
       fetchingYoutubeTranscript: '正在获取YouTube文字稿',
       // GenAI form flow statuses
       requestReceived: '请求已收到',
+    },
+    // OnboardingLoadingScreen strings
+    onboardingLoadingScreen: {
+      settingUpYourAccount: '正在设置您的账户',
+      loggingYouIn: '正在登录',
+      loggedInSuccessfully: '登录成功',
+      initializingDatabase: '正在初始化数据库',
+      databaseInitialized: '数据库已初始化',
+      creatingFreeDecks: '正在为您创建免费卡组\n({n}/{total})',
+      successfullyCreatedFreeDecks: '成功创建免费卡组',
     },
     // FileUploadPage strings
     fileUploadPage: {

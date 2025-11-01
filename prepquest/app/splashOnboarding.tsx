@@ -14,6 +14,7 @@ import { useHybridAuth } from '@/contexts/HybridAuthContext';
 import { createUser } from '@/db/users';
 import BackgroundService from 'react-native-background-actions';
 import LanguageSelector from '@/components/onboarding/LanguageSelector';
+import OnboardingLoadingScreen from '@/components/onboarding/OnboardingLoadingScreen';
 import PrepQuestLogo from '@/assets/icons/loginIcons/PrepQuestLogo.svg';
 import GoogleLoginIcon from '@/assets/icons/loginIcons/GoogleLoginIcon.svg';
 import AppleLoginIcon from '@/assets/icons/loginIcons/AppleLoginIcon.svg';
@@ -167,6 +168,20 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
   // Loading overlay state
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
   const loadingOverlayRef = useRef<LottieView>(null);
+  
+  // Onboarding loading screen progress state
+  const [authProgress, setAuthProgress] = useState({
+    loggingIn: false,
+    loggedIn: false,
+  });
+  const [databaseProgress, setDatabaseProgress] = useState({
+    initializing: false,
+    initialized: false,
+  });
+  const [deckCreationProgress, setDeckCreationProgress] = useState({
+    currentDeck: 0, // 0 = not started, 1-3 = current deck, 4 = all complete
+    totalDecks: 3,
+  });
   
   // Function to hide loading overlay (exposed to parent)
   const hideLoadingOverlay = useCallback(() => {
@@ -1327,6 +1342,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
           }
           setIsFreshAuth(true);
           setShowLoadingOverlay(true);
+          setAuthProgress({ loggingIn: true, loggedIn: false });
+          // Initialize deck creation progress to show immediately (for new users)
+          setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
           showSuccessToast(getTranslatedText(language, 'accountCreatedSuccessfully'));
         } else if (result.status === 'missing_requirements') {
           await result.prepareEmailAddressVerification({ strategy: 'email_code' });
@@ -1357,6 +1375,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       if (result.success) {
         setIsFreshAuth(true);
         setShowLoadingOverlay(true);
+        setAuthProgress({ loggingIn: true, loggedIn: false });
+        // Initialize deck creation progress to show immediately (for new users)
+        setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
       } else {
         let errorMessage = result.error || getTranslatedText(language, 'signInFailed');
         
@@ -1396,6 +1417,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       
       setIsFreshAuth(true);
       setShowLoadingOverlay(true);
+      setAuthProgress({ loggingIn: true, loggedIn: false });
+      // Initialize deck creation progress to show immediately (for new users)
+      setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
     } catch (error: any) {
       setShowLoadingOverlay(false);
       setIsFreshAuth(false);
@@ -1690,6 +1714,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         setHasVerificationError(false);
         setIsFreshAuth(true);
         setShowLoadingOverlay(true);
+        setAuthProgress({ loggingIn: true, loggedIn: false });
+        // Initialize deck creation progress to show immediately (for new users)
+        setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
         showSuccessToast(getTranslatedText(language, 'accountCreatedSuccessfully'));
       } else {
         setHasVerificationError(true);
@@ -1839,22 +1866,36 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         await NotificationService.getInstance().initialize();
         console.log('✅ Notifications initialized successfully');
         
-        // Hide loading overlay and transition to main app
-        setShowLoadingOverlay(false);
-        setIsFreshAuth(false);
-        
         // Signal that database is ready before calling onAuthComplete
         // This ensures the main app will show instead of splash screen
         console.log('✅ Database ready - transitioning to main app');
+        
+        // Call onAuthComplete first to trigger navigation
         onAuthComplete?.();
+        
+        // Hide loading overlay AFTER navigation is triggered (small delay to ensure state updates propagate)
+        // This prevents showing the signup screen briefly before navigation completes
+        setTimeout(() => {
+          setShowLoadingOverlay(false);
+          setIsFreshAuth(false);
+          
+          // Reset progress states
+          setAuthProgress({ loggingIn: false, loggedIn: false });
+          setDatabaseProgress({ initializing: false, initialized: false });
+          setDeckCreationProgress({ currentDeck: 0, totalDecks: 3 });
+        }, 100);
         
       } catch (error) {
         console.error('❌ Error during database initialization:', error);
         
-        // Hide loading overlay even on error and transition to main app
-        setShowLoadingOverlay(false);
-        setIsFreshAuth(false);
+        // Call onAuthComplete first to trigger navigation
         onAuthComplete?.();
+        
+        // Hide loading overlay AFTER navigation is triggered (small delay to ensure state updates propagate)
+        setTimeout(() => {
+          setShowLoadingOverlay(false);
+          setIsFreshAuth(false);
+        }, 100);
       }
     };
 
@@ -1864,6 +1905,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       const handleAuthComplete = async () => {
         try {
           if (user?.id) {
+            // Set auth progress - logged in successfully
+            setAuthProgress({ loggingIn: true, loggedIn: true });
+            
             // Store userID in AsyncStorage for compatibility with existing database operations
             await AsyncStorage.setItem('userID', user.id);
             
@@ -1876,14 +1920,17 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
 
             // Initialize database BEFORE creating AI decks to avoid wiping them out
             console.log('🚀 Initializing database before AI deck creation...');
+            setDatabaseProgress({ initializing: true, initialized: false });
             const { setupDatabase } = await import('@/db/index');
             const startTime = Date.now();
             await setupDatabase();
             const endTime = Date.now();
             console.log(`✅ Database initialization completed in ${endTime - startTime}ms`);
+            setDatabaseProgress({ initializing: true, initialized: true });
 
             // Generate 3 free decks for new signups only (not sign-ins)
             if (isFreshAuth) {
+              // Deck creation progress already initialized when loading overlay was shown
               try {
                 console.log('🎁 Generating 3 free decks for new user...');
                 
@@ -1913,7 +1960,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                   isMcqEnabled: true,
                   isClozeEnabled: true,
                   isVoiceRecordedEnabled: true,
-                  numberOfQuestions: 10,
+                  numberOfQuestions: 5,
                   questionType: []
                 });
 
@@ -1921,7 +1968,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                 console.log('✅ Generated 3 form fields for free decks:', formFields.length);
                 
                 // Call backend function for each prompt and create AI decks
-                const { createAIDeckWithFlashcards, updateAIDeckUserID } = await import('@/db/decks');
+                const { createAIDeckWithFlashcards } = await import('@/db/decks');
                 const createdDeckIds: number[] = [];
                 
                 console.log('📝 Prompts ready for Supabase edge function:');
@@ -1995,24 +2042,31 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                     // Use the distributed form fields for this specific prompt
                     const distributedFormFields = {
                       ...formFields[i],
-                      numberOfQuestions: 10,
+                      numberOfQuestions: 5,
                       kindsOfQuestions: ''
                     };
                     
                     console.log(`🎯 Creating AI deck ${i + 1} with interviewType: "${distributedFormFields.interviewType}"`);
 
-                    // Create deck with temporary user ID first
+                    // Create deck directly with the authenticated user ID
                     const result = await createAIDeckWithFlashcards({
                       deckName,
                       mode,
                       formFields: distributedFormFields,
                       flashcards,
-                      tempUserID: 'temp_onboarding_user' // Use temporary user ID
+                      // Omit tempUserID - will use getCurrentUserID() which returns the authenticated user's ID
                     });
 
                     if (result.success && result.deckId) {
                       createdDeckIds.push(result.deckId);
-                      console.log(`✅ Created AI deck ${i + 1} with ID: ${result.deckId} (temporary user ID)`);
+                      console.log(`✅ Created AI deck ${i + 1} with ID: ${result.deckId}`);
+                      
+                      // Update progress to show next deck (i+2 since i is 0-indexed)
+                      // After deck 1 (i=0): show (2/3)
+                      // After deck 2 (i=1): show (3/3)
+                      if (i < prompts.length - 1) {
+                        setDeckCreationProgress({ currentDeck: i + 2, totalDecks: 3 });
+                      }
                     } else {
                       console.error(`❌ Failed to create AI deck ${i + 1}`);
                     }
@@ -2022,19 +2076,14 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                   }
                 }
 
-                // Update all created decks to use the correct user ID
-                console.log('🔄 Updating AI decks to correct user ID...');
-                for (const deckId of createdDeckIds) {
-                  try {
-                    await updateAIDeckUserID(deckId, user.id);
-                    console.log(`✅ Updated AI deck ${deckId} to user ID: ${user.id}`);
-                  } catch (error) {
-                    console.error(`❌ Failed to update AI deck ${deckId} user ID:`, error);
-                  }
-                }
-
                 console.log(`🎉 Successfully created ${createdDeckIds.length}/3 free AI decks for new user!`);
                 console.log('📊 Created deck IDs:', createdDeckIds);
+                
+                // Mark all decks as complete (show tick)
+                setDeckCreationProgress({ currentDeck: 4, totalDecks: 3 });
+                
+                // Wait 2 seconds before proceeding
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
                 // Store the completion status for the auth flow
                 (window as any).aiDeckCreationComplete = true;
@@ -2047,6 +2096,8 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
                 (window as any).createdDeckIds = [];
               }
             } else {
+              // For existing users, hide deck creation progress since they don't get free decks
+              setDeckCreationProgress({ currentDeck: 0, totalDecks: 3 });
               // For existing users, mark as complete immediately
               (window as any).aiDeckCreationComplete = true;
               (window as any).createdDeckIds = [];
@@ -4038,25 +4089,13 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         </View>
       </Modal>
 
-      {/* Loading Overlay */}
+      {/* Onboarding Loading Screen */}
       {showLoadingOverlay && (
-        <View style={[styles.loadingOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}>
-          <View style={styles.loadingAnimationContainer}>
-            <LottieView
-              ref={loadingOverlayRef}
-              source={require('../assets/animations/addDeckLoadingAnimation.json')}
-              autoPlay
-              loop={true}
-              style={styles.loadingAnimationAfterSignIn}
-              speed={1}
-              cacheComposition={true}
-              renderMode="HARDWARE"
-              onAnimationFailure={(error) => {
-                console.error('Loading overlay animation failed to load:', error);
-              }}
-            />
-          </View>
-        </View>
+        <OnboardingLoadingScreen
+          authProgress={authProgress}
+          databaseProgress={databaseProgress}
+          deckCreationProgress={deckCreationProgress}
+        />
       )}
 
       {/* Top button row with conditional buttons */}

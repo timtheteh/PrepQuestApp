@@ -23,6 +23,8 @@ import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 import DeckCreationStatusPage from '../deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
+import { getCurrentPlan, getRequestCounts, RequestCounts } from '@/db/users';
+import { subscriptionPlanDetails, SubscriptionPlan } from '@/constants/subscriptionPlanDetails';
 
 export default function AccountScreen() {
   const [upgradePressed, setUpgradePressed] = useState(false);
@@ -35,6 +37,13 @@ export default function AccountScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [preservedUser, setPreservedUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState<'profile' | 'stats'>('profile');
+  const [currentPlan, setCurrentPlan] = useState<string>('Free Plan');
+  const [requestCounts, setRequestCounts] = useState<RequestCounts>({
+    fileUploadRequests: 0,
+    genAIFormRequests: 0,
+    youtubeLinkRequests: 0,
+    chatWithAIRequests: 0,
+  });
   const screenHeight = Dimensions.get('window').height;
   const screenWidth = Dimensions.get('window').width;
   
@@ -77,6 +86,14 @@ export default function AccountScreen() {
   useFocusEffect(
     useCallback(() => {
       reloadLanguage();
+      // Fetch current plan and request counts when screen is focused
+      const fetchData = async () => {
+        const plan = await getCurrentPlan();
+        setCurrentPlan(plan);
+        const counts = await getRequestCounts();
+        setRequestCounts(counts);
+      };
+      fetchData();
     }, [reloadLanguage])
   );
 
@@ -283,6 +300,25 @@ export default function AccountScreen() {
     return isSigningOut && preservedUser ? preservedUser : user;
   }, [isSigningOut, preservedUser, user]);
 
+  // Helper function to format request count display (handles unlimited)
+  const formatRequestDisplay = useCallback((current: number, limit: number): string => {
+    if (limit === -1) {
+      // For Premium Plan, just show the number
+      return `${current}`;
+    }
+    return `${current}/${limit}`;
+  }, []);
+
+  // Get plan limits based on current plan
+  const planLimits = useMemo(() => {
+    const plan = currentPlan as SubscriptionPlan;
+    if (plan && subscriptionPlanDetails[plan]) {
+      return subscriptionPlanDetails[plan];
+    }
+    // Default to Free Plan if plan not found
+    return subscriptionPlanDetails['Free Plan'];
+  }, [currentPlan]);
+
   // Theme-dependent styles - memoized to prevent recreation
   const themeStyles = useMemo(() => ({
     profileCircle: {
@@ -401,7 +437,7 @@ export default function AccountScreen() {
         </View>
         <View style={styles.infoRow}>
           <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].currentPlan}</Text>
-          <Text style={[styles.infoValue, { color: themeColors.text }]}>{strings[language].basicPlan}</Text>
+          <Text style={[styles.infoValue, { color: themeColors.text }]}>{currentPlan}</Text>
         </View>
       </View>
       
@@ -587,9 +623,14 @@ export default function AccountScreen() {
                         resizeMode="contain"
                       />
                     )}
+                    {planLimits.genAIFormRequests === -1 && (
+                      <Text style={[styles.infinitySymbol, { color: themeColors.text }]}>∞</Text>
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>5/10</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>
+                          {formatRequestDisplay(requestCounts.genAIFormRequests, planLimits.genAIFormRequests)}
+                        </Text>
                         <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].genAIFormRequests}</Text>
                       </View>
                     </View>
@@ -606,9 +647,14 @@ export default function AccountScreen() {
                         resizeMode="contain"
                       />
                     )}
+                    {planLimits.fileUploadRequests === -1 && (
+                      <Text style={[styles.infinitySymbol, { color: themeColors.text }]}>∞</Text>
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>4/10</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>
+                          {formatRequestDisplay(requestCounts.fileUploadRequests, planLimits.fileUploadRequests)}
+                        </Text>
                         <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].fileUploadFormRequests}</Text>
                       </View>
                     </View>
@@ -628,9 +674,14 @@ export default function AccountScreen() {
                         resizeMode="contain"
                       />
                     )}
+                    {planLimits.youtubeLinkRequests === -1 && (
+                      <Text style={[styles.infinitySymbol, { color: themeColors.text }]}>∞</Text>
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>3/10</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>
+                          {formatRequestDisplay(requestCounts.youtubeLinkRequests, planLimits.youtubeLinkRequests)}
+                        </Text>
                         <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].youtubeLinkFormRequests}</Text>
                       </View>
                     </View>
@@ -647,9 +698,14 @@ export default function AccountScreen() {
                         resizeMode="contain"
                       />
                     )}
+                    {planLimits.chatWithAIRequests === -1 && (
+                      <Text style={[styles.infinitySymbol, { color: themeColors.text }]}>∞</Text>
+                    )}
                     <View style={scaledStyles.statCardOverlay}>
                       <View style={styles.statCardContent}>
-                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>2/10</Text>
+                        <Text style={[scaledStyles.statNumber, { color: themeColors.text }]}>
+                          {formatRequestDisplay(requestCounts.chatWithAIRequests, planLimits.chatWithAIRequests)}
+                        </Text>
                         <Text style={[scaledStyles.statLabel, { color: themeColors.text }]}>{strings[language].aiChatFeedbackRequests}</Text>
                       </View>
                     </View>
@@ -704,7 +760,11 @@ export default function AccountScreen() {
     swipeAnim,
     screenWidth,
     scaleFactor,
-    grapeColors
+    grapeColors,
+    currentPlan,
+    requestCounts,
+    planLimits,
+    formatRequestDisplay
   ]);
 
 
@@ -767,6 +827,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+  },
+  infinitySymbol: {
+    position: 'absolute',
+    top: 0,
+    right: 16,
+    fontSize: 24,
+    fontFamily: Fonts.title,
+    zIndex: 10,
   },
   statCardBackground: {
     width: 152,

@@ -71,6 +71,53 @@ export async function getUserVoiceLanguage(): Promise<string> {
   }
 }
 
+// Get current subscription plan for the user
+export async function getCurrentPlan(): Promise<string> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(
+      `SELECT currentPlan FROM users WHERE userID = ?`,
+      [userID]
+    ) as { currentPlan?: string } | null;
+    return result?.currentPlan || 'Free Plan';
+  } catch (error) {
+    console.error('Error fetching current plan:', error);
+    return 'Free Plan';
+  }
+}
+
+// Get request counts for the user
+export interface RequestCounts {
+  fileUploadRequests: number;
+  genAIFormRequests: number;
+  youtubeLinkRequests: number;
+  chatWithAIRequests: number;
+}
+
+export async function getRequestCounts(): Promise<RequestCounts> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(
+      `SELECT fileUploadRequests, genAIFormRequests, youtubeLinkRequests, chatWithAIRequests FROM users WHERE userID = ?`,
+      [userID]
+    ) as RequestCounts | null;
+    return result || {
+      fileUploadRequests: 0,
+      genAIFormRequests: 0,
+      youtubeLinkRequests: 0,
+      chatWithAIRequests: 0,
+    };
+  } catch (error) {
+    console.error('Error fetching request counts:', error);
+    return {
+      fileUploadRequests: 0,
+      genAIFormRequests: 0,
+      youtubeLinkRequests: 0,
+      chatWithAIRequests: 0,
+    };
+  }
+}
+
 // Update user's voice recording language for speech-to-text
 // NOTE: This is ONLY for speech-to-text language detection, NOT for app UI language
 // The app UI language is managed separately by LanguageContext

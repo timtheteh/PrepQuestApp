@@ -3188,7 +3188,7 @@ export default function FlashcardViewPage() {
       
       // Check and award welcome badges based on first deck studied/quizzed
       try {
-        const badgeSubtext = isStudyMode ? '1st Deck Studied' : '1st DeckQuizzed';
+        const badgeSubtext = isStudyMode ? '1st Deck Studied' : '1st Deck Quizzed';
         const welcomeBadgeAward = await checkAndAwardWelcomeBadges(badgeSubtext);
         console.log('🎉 Welcome badge award result:', welcomeBadgeAward);
         if (welcomeBadgeAward && welcomeBadgeAward.isNewAchievement) {

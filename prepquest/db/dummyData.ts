@@ -1781,7 +1781,7 @@ export async function populateDummyData() {
       },
       {
         badgeName: "'A' for Effort",
-        badgeSubtext: '1st DeckQuizzed',
+        badgeSubtext: '1st Deck Quizzed',
         badgeImageName: 'aForEffort',
         userIDs: JSON.stringify([]),
         badgeOrder: 8

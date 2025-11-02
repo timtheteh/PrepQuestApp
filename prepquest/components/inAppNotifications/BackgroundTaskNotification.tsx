@@ -112,7 +112,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             type: 'success'
           };
           
-          // Check and award welcome badge for first Gen-AI, File Upload, or YouTube Link deck creation
+          // Check and award welcome badge for first Gen-AI, File Upload, YouTube Link, or Manual Add deck creation
           // Only check if this is a new deck creation and not adding flashcards to existing deck
           if (!backgroundTaskProgress.isInViewFlashcardsPage && backgroundTaskProgress.createdDeckId) {
             (async () => {
@@ -124,6 +124,8 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
                   badgeType = '1st File-Upload Deck';
                 } else if (taskType === 'youtubeLink') {
                   badgeType = '1st Youtube Deck';
+                } else if (taskType === 'manualAdd') {
+                  badgeType = '1st Manual Deck';
                 } else {
                   badgeType = '1st Gen-AI Deck';
                 }

@@ -974,6 +974,7 @@ export const strings: Record<string, any> = {
       '1st Gen-AI Deck': 'Congratulations on creating your first AI deck! You have been awarded the \'{badgeName}\' badge in Awards page!',
       '1st File-Upload Deck': 'Congratulations on creating your first file-upload deck! You have been awarded the \'{badgeName}\' badge in Awards page!',
       '1st Youtube Deck': 'Congratulations on creating your first YouTube deck! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '1st Manual Deck': 'Congratulations on creating your first manual deck! You have been awarded the \'{badgeName}\' badge in Awards page!',
     },
   },
   // Background task notifications
@@ -1275,6 +1276,7 @@ export const strings: Record<string, any> = {
       '1st Gen-AI Deck': '恭喜您创建第一个 AI 卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
       '1st File-Upload Deck': '恭喜您创建第一个文件上传卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
       '1st Youtube Deck': '恭喜您创建第一个 YouTube 卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '1st Manual Deck': '恭喜您创建第一个手动卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
     },
   },
   // Background task notifications

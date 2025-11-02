@@ -14,6 +14,8 @@ interface BackgroundTaskContextType {
   backgroundTaskProgress: any | null;
   wasAutomaticallyCancelled: boolean;
   isNotificationDismissed: boolean;
+  showBackgroundTaskNotification: boolean;
+  setShowBackgroundTaskNotification: (show: boolean) => void;
   startBackgroundTaskMonitoring: () => void;
   stopBackgroundTaskMonitoring: () => void;
   clearBackgroundTaskProgress: () => Promise<void>;
@@ -45,6 +47,7 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   const [backgroundTaskProgress, setBackgroundTaskProgress] = useState<any | null>(null);
   const [wasAutomaticallyCancelled, setWasAutomaticallyCancelled] = useState(false);
   const [isNotificationDismissed, setIsNotificationDismissed] = useState(false);
+  const [showBackgroundTaskNotification, setShowBackgroundTaskNotification] = useState(false);
   const monitoringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const { language } = useLanguage();
@@ -841,6 +844,8 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
     backgroundTaskProgress,
     wasAutomaticallyCancelled,
     isNotificationDismissed,
+    showBackgroundTaskNotification,
+    setShowBackgroundTaskNotification,
     startBackgroundTaskMonitoring,
     stopBackgroundTaskMonitoring,
     clearBackgroundTaskProgress,

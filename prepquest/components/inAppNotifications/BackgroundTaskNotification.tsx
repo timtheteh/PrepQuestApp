@@ -5,17 +5,23 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 import DeleteModalIconWhite from '@/assets/icons/generalIcons/deleteModalIconWhite.svg';
+import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
+import { checkAndAwardWelcomeBadges } from '@/db/grades';
 
 interface BackgroundTaskNotificationProps {
   onViewResults?: () => void;
+  topOffset?: number;
+  onLayout?: (height: number) => void;
 }
 
 export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProps> = ({ 
-  onViewResults 
+  onViewResults,
+  topOffset = 0,
+  onLayout
 }) => {
-  const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress, wasAutomaticallyCancelled, isNotificationDismissed, dismissNotification } = useBackgroundTask();
+  const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress, wasAutomaticallyCancelled, isNotificationDismissed, dismissNotification, showBackgroundTaskNotification, setShowBackgroundTaskNotification } = useBackgroundTask();
   const { language } = useLanguage();
-  const [showNotification, setShowNotification] = useState(false);
+  const { showNotification: showWelcomeBadgeNotification } = useWelcomeBadgeNotification();
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const slideAnim = useState(new Animated.Value(-100))[0];
   const opacityAnim = useState(new Animated.Value(0))[0];
@@ -93,7 +99,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
       console.log('BackgroundTaskNotification - Task ID:', taskId);
       
       // Only show notification if we haven't shown one for this specific task completion and it hasn't been globally dismissed
-      if (lastCompletedTaskRef.current !== taskId && !showNotification && !isNotificationDismissed) {
+      if (lastCompletedTaskRef.current !== taskId && !showBackgroundTaskNotification && !isNotificationDismissed) {
         if (isCompleted && !hasError) {
           // Task completed successfully
           console.log('Showing success notification for task:', taskId);
@@ -105,10 +111,30 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             isInViewFlashcardsPage: backgroundTaskProgress.isInViewFlashcardsPage,
             type: 'success'
           };
+          
+          // Check and award welcome badge for first Gen-AI deck creation
+          // Only check if this is a genAI deck creation and not adding flashcards to existing deck
+          if (!backgroundTaskProgress.isInViewFlashcardsPage && backgroundTaskProgress.createdDeckId) {
+            (async () => {
+              try {
+                const welcomeBadgeAward = await checkAndAwardWelcomeBadges('1st Gen-AI Deck');
+                console.log('🎉 Welcome badge award result for Gen-AI:', welcomeBadgeAward);
+                if (welcomeBadgeAward && welcomeBadgeAward.isNewAchievement) {
+                  console.log('🎉 Showing welcome badge notification for Gen-AI deck');
+                  showWelcomeBadgeNotification(welcomeBadgeAward);
+                } else {
+                  console.log('🎉 No Gen-AI welcome badge award or already achieved');
+                }
+              } catch (error) {
+                console.error('Error checking Gen-AI welcome badges:', error);
+              }
+            })();
+          }
+          
           // Defer state updates and animations to avoid insertion effect conflicts
           setTimeout(() => {
             setNotificationType('success');
-            setShowNotification(true);
+            setShowBackgroundTaskNotification(true);
             Animated.parallel([
               Animated.timing(slideAnim, {
                 toValue: 0,
@@ -146,7 +172,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
           // Defer state updates and animations to avoid insertion effect conflicts
           setTimeout(() => {
             setNotificationType('error');
-            setShowNotification(true);
+            setShowBackgroundTaskNotification(true);
             Animated.parallel([
               Animated.timing(slideAnim, {
                 toValue: 0,
@@ -172,16 +198,16 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
 
   // Effect to hide notification when globally dismissed
   useEffect(() => {
-    if (isNotificationDismissed && showNotification) {
+    if (isNotificationDismissed && showBackgroundTaskNotification) {
       console.log('Hiding notification due to global dismissal');
       // Directly set the notification to hidden without calling hideNotification
-      setShowNotification(false);
+      setShowBackgroundTaskNotification(false);
       // Reset the refs to allow future notifications for different tasks
       lastCompletedTaskRef.current = null;
       processedProgressRef.current = null;
       preservedNotificationDataRef.current = null;
     }
-  }, [isNotificationDismissed, showNotification]);
+  }, [isNotificationDismissed, showBackgroundTaskNotification]);
 
   const hideNotification = () => {
     Animated.parallel([
@@ -197,7 +223,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
       }),
     ]).start(() => {
       setTimeout(() => {
-        setShowNotification(false);
+        setShowBackgroundTaskNotification(false);
         // Don't clear progress immediately to prevent duplicate notifications
         // The progress will be cleared by the BackgroundTaskContext when appropriate
         // Reset the refs to allow future notifications for different tasks
@@ -216,7 +242,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
     }
   };
 
-  if (!showNotification) {
+  if (!showBackgroundTaskNotification) {
     return null;
   }
 
@@ -307,8 +333,14 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
         {
           transform: [{ translateY: slideAnim }],
           opacity: opacityAnim,
+          top: 60 + topOffset,
         }
       ]}
+      onLayout={(event) => {
+        if (onLayout) {
+          onLayout(event.nativeEvent.layout.height);
+        }
+      }}
     >
       <View style={[styles.notification, { backgroundColor: isSuccess ? '#44B88A' : '#D7191C' }]}>
         <View style={styles.content}>
@@ -353,11 +385,13 @@ const styles = StyleSheet.create({
     top: 60,
     left: 16,
     right: 16,
-    zIndex: 1000,
+    zIndex: 10000,
+    elevation: 10000,
   },
   notification: {
     borderRadius: 12,
     padding: 16,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',

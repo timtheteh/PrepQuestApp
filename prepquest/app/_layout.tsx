@@ -16,7 +16,7 @@ import SplashOnboarding from './splashOnboarding';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import { BackgroundTaskProvider } from '@/contexts/BackgroundTaskContext';
+import { BackgroundTaskProvider, useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskContext';
 import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskContext';
 import { ClearDataBackgroundTaskProvider } from '@/contexts/ClearDataBackgroundTaskContext';
@@ -88,19 +88,36 @@ const stopAllBackgroundTasks = async () => {
 function BadgeNotificationsWrapper() {
   const { streakBadgeAward, showStreakBadgeNotification, dismissNotification: dismissStreakNotification } = useStreakBadgeNotification();
   const { welcomeBadgeAward, showWelcomeBadgeNotification, dismissNotification: dismissWelcomeNotification } = useWelcomeBadgeNotification();
+  const { backgroundTaskProgress, isBackgroundTaskRunning, isNotificationDismissed, showBackgroundTaskNotification } = useBackgroundTask();
   const [streakNotificationHeight, setStreakNotificationHeight] = React.useState(0);
+  const [backgroundTaskNotificationHeight, setBackgroundTaskNotificationHeight] = React.useState(0);
   
   // Calculate vertical offsets to stack notifications
   // Use measured height or fallback to estimated height
   const NOTIFICATION_HEIGHT = streakNotificationHeight || 92;
   const NOTIFICATION_SPACING = 12;
   
-  // Streak badge is first (top), welcome badge below if streak exists
-  const welcomeBadgeOffset = streakBadgeAward && showStreakBadgeNotification 
+  // Order: Streak badge first (top), then background task, then welcome badge
+  const streakBadgeOffset = 0;
+  
+  // Background task appears below streak badge (if visible)
+  const backgroundTaskOffset = streakBadgeAward && showStreakBadgeNotification 
     ? NOTIFICATION_HEIGHT + NOTIFICATION_SPACING 
     : 0;
   
-  // Stack notifications vertically - streak badge first (top), then welcome badge below
+  // Welcome badge appears below whichever is showing (streak or background task)
+  // If streak is showing, welcome is below streak
+  // If only background is showing, welcome is below background
+  // If both are showing, welcome is below both
+  const welcomeBadgeOffset = (streakBadgeAward && showStreakBadgeNotification && showBackgroundTaskNotification) 
+    ? (streakNotificationHeight || 92) + NOTIFICATION_SPACING + (backgroundTaskNotificationHeight || 92) + NOTIFICATION_SPACING
+    : (streakBadgeAward && showStreakBadgeNotification) 
+    ? (streakNotificationHeight || 92) + NOTIFICATION_SPACING
+    : showBackgroundTaskNotification
+      ? (backgroundTaskNotificationHeight || 92) + NOTIFICATION_SPACING
+      : 0;
+  
+  // Stack notifications vertically - streak badge first (top), then background task, then welcome badge
   return (
     <>
       {streakBadgeAward && (
@@ -110,10 +127,14 @@ function BadgeNotificationsWrapper() {
           dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
           visible={showStreakBadgeNotification}
           onDismiss={dismissStreakNotification}
-          topOffset={0}
+          topOffset={streakBadgeOffset}
           onLayout={setStreakNotificationHeight}
         />
       )}
+      <BackgroundTaskNotification 
+        topOffset={backgroundTaskOffset} 
+        onLayout={setBackgroundTaskNotificationHeight} 
+      />
       {welcomeBadgeAward && (
         <WelcomeBadgeNotification
           badgeName={welcomeBadgeAward.badgeName}
@@ -454,7 +475,6 @@ function AppContent() {
               }} 
             />
           </Stack>
-            <BackgroundTaskNotification />
             <ImportTaskNotification />
             <BadgeNotificationsWrapper />
             <StatusBar style="auto" />

@@ -971,7 +971,7 @@ export interface WelcomeBadgeAward {
   isNewAchievement: boolean;
 }
 
-export async function checkAndAwardWelcomeBadges(badgeSubtext: '1st Deck Studied' | '1st Deck Quizzed'): Promise<WelcomeBadgeAward | null> {
+export async function checkAndAwardWelcomeBadges(badgeSubtext: '1st Deck Studied' | '1st Deck Quizzed' | '1st Feedback by AI'): Promise<WelcomeBadgeAward | null> {
   try {
     const userID = await getCurrentUserID();
     

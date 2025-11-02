@@ -1093,6 +1093,7 @@ interface FlippableFlashcardProps {
   checkNetworkConnectivity: () => Promise<boolean>;
   handleShowNetworkErrorModal: () => void;
   handleShowAudioTimeLimitModal: () => void;
+  showWelcomeBadgeNotification: (award: any) => void;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -1145,7 +1146,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     setIsLoadingEvaluation,
     checkNetworkConnectivity,
     handleShowNetworkErrorModal,
-    handleShowAudioTimeLimitModal
+    handleShowAudioTimeLimitModal,
+    showWelcomeBadgeNotification
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -2500,6 +2502,21 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                           const questionContext = flashcardQnType === 'text' && typeof flashcardQn === 'string' ? flashcardQn : undefined;
                           const response = await transcribeAudio(recordedAudioUri, voiceLanguage, questionContext);
                           console.log('🎯 Final transcribed text:', response.transcript);
+                          
+                          // Check and award welcome badge for first AI feedback (check on any successful response)
+                          try {
+                            const welcomeBadgeAward = await checkAndAwardWelcomeBadges('1st Feedback by AI');
+                            console.log('🎉 AI feedback welcome badge award result:', welcomeBadgeAward);
+                            if (welcomeBadgeAward && welcomeBadgeAward.isNewAchievement) {
+                              console.log('🎉 Showing app-wide welcome badge notification for AI feedback');
+                              showWelcomeBadgeNotification(welcomeBadgeAward);
+                            } else {
+                              console.log('🎉 No AI feedback welcome badge award or already achieved');
+                            }
+                          } catch (error) {
+                            console.error('Error checking AI feedback welcome badge:', error);
+                            // Don't fail the entire operation if badge check fails
+                          }
                           
                           // Set the AI evaluation to display on the flashcard
                           if (response.evaluation && (response.evaluation.concise || response.evaluation.detailed)) {
@@ -4259,6 +4276,7 @@ export default function FlashcardViewPage() {
               checkNetworkConnectivity={checkNetworkConnectivity}
               handleShowNetworkErrorModal={handleShowNetworkErrorModal}
               handleShowAudioTimeLimitModal={handleShowAudioTimeLimitModal}
+              showWelcomeBadgeNotification={showWelcomeBadgeNotification}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>
@@ -4448,6 +4466,32 @@ export default function FlashcardViewPage() {
 
       {/* In-app notifications */}
       <BackgroundTaskNotification />
+      
+      {/* Streak badge notification on main flashcard view */}
+      {streakBadgeAward && (
+        <StreakBadgeNotification
+          badgeName={streakBadgeAward.badgeName}
+          badgeSubtext={streakBadgeAward.badgeSubtext}
+          dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
+          visible={showStreakBadgeNotificationState}
+          onDismiss={dismissStreakBadgeNotification}
+          topOffset={0}
+          onLayout={setStreakNotificationHeight}
+        />
+      )}
+      
+      {/* Welcome badge notification on main flashcard view */}
+      {welcomeBadgeAward && (
+        <WelcomeBadgeNotification
+          badgeName={welcomeBadgeAward.badgeName}
+          badgeSubtext={welcomeBadgeAward.badgeSubtext}
+          visible={showWelcomeBadgeNotificationState}
+          onDismiss={dismissWelcomeBadgeNotification}
+          topOffset={streakBadgeAward && showStreakBadgeNotificationState && streakNotificationHeight > 0 
+            ? streakNotificationHeight + 12 
+            : 0}
+        />
+      )}
       
       {/* Toast for unsupported language errors */}
       <Toast 

@@ -4,33 +4,40 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 
-interface StreakBadgeNotificationProps {
+interface WelcomeBadgeNotificationProps {
   badgeName: string;
   badgeSubtext: string;
-  dayStreakRequirement: number;
   visible: boolean;
   onDismiss: () => void;
   topOffset?: number;
-  onLayout?: (height: number) => void;
 }
 
-export const StreakBadgeNotification: React.FC<StreakBadgeNotificationProps> = ({ 
+export const WelcomeBadgeNotification: React.FC<WelcomeBadgeNotificationProps> = ({ 
   badgeName,
   badgeSubtext,
-  dayStreakRequirement,
   visible,
   onDismiss,
-  topOffset = 0,
-  onLayout
+  topOffset = 0
 }) => {
   const { language } = useLanguage();
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
+  // Get the specific message for this badge subtext
+  const getMessage = () => {
+    const messages = strings[language].welcomeBadgeNotification.messages;
+    const specificMessage = messages[badgeSubtext];
+    if (specificMessage) {
+      return specificMessage.replace('{badgeName}', badgeName);
+    }
+    // Fallback if no specific message found
+    return `Congratulations! You have been awarded the '${badgeName}' badge in Awards page!`;
+  };
+
   useEffect(() => {
-    console.log(`🎖️ StreakBadgeNotification: visible = ${visible}, badgeName = ${badgeName}`);
+    console.log(`🎖️ WelcomeBadgeNotification: visible = ${visible}, badgeName = ${badgeName}`);
     if (visible) {
-      console.log('🎖️ Showing streak badge notification');
+      console.log('🎖️ Showing welcome badge notification');
       // Show notification
       Animated.parallel([
         Animated.timing(slideAnim, {
@@ -71,7 +78,7 @@ export const StreakBadgeNotification: React.FC<StreakBadgeNotificationProps> = (
     });
   };
 
-  console.log(`🎖️ StreakBadgeNotification render: visible = ${visible}, badgeName = ${badgeName}`);
+  console.log(`🎖️ WelcomeBadgeNotification render: visible = ${visible}, badgeName = ${badgeName}`);
   
   if (!visible) {
     return null;
@@ -87,23 +94,16 @@ export const StreakBadgeNotification: React.FC<StreakBadgeNotificationProps> = (
           top: 60 + topOffset,
         }
       ]}
-      onLayout={(event) => {
-        if (onLayout) {
-          onLayout(event.nativeEvent.layout.height);
-        }
-      }}
     >
       <View style={styles.notification}>
         <View style={styles.content}>
           <GreenTickIcon width={24} height={24} style={styles.icon} />
           <View style={styles.textContainer}>
             <Text style={styles.title}>
-              {strings[language].streakBadgeNotification.congratulations}
+              {strings[language].welcomeBadgeNotification.congratulations}
             </Text>
             <Text style={styles.message}>
-              {strings[language].streakBadgeNotification.message
-                .replace('{dayStreak}', dayStreakRequirement.toString())
-                .replace('{badgeName}', badgeName)}
+              {getMessage()}
             </Text>
           </View>
         </View>

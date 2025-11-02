@@ -963,6 +963,95 @@ export interface StreakBadgeAward {
   isNewAchievement: boolean;
 }
 
+// Check and award welcome badges based on first deck studied or quizzed
+export interface WelcomeBadgeAward {
+  badgeName: string;
+  badgeSubtext: string;
+  badgeImageName: string;
+  isNewAchievement: boolean;
+}
+
+export async function checkAndAwardWelcomeBadges(badgeSubtext: '1st Deck Studied' | '1st DeckQuizzed'): Promise<WelcomeBadgeAward | null> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Add a small delay to ensure database writes are committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    console.log(`🎉 Welcome badge check: ${badgeSubtext}, UserID = ${userID}`);
+
+    // Get welcome badge for this badgeSubtext
+    const badges = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, badgeImageName, userIDs
+      FROM welcomeBadgesTable
+      WHERE badgeSubtext = ?
+    `, [badgeSubtext]);
+
+    if (!badges || badges.length === 0) {
+      console.log(`🎉 No badge found for ${badgeSubtext}`);
+      return null;
+    }
+
+    const badge = badges[0] as any;
+    console.log(`🎉 Found badge: ${badge.badgeName} (${badge.badgeSubtext})`);
+    console.log(`🎉 Current userIDs string: ${badge.userIDs}`);
+    
+    // Parse userIDs - handle both JSON array and comma-separated string formats
+    let userIDs: string[] = [];
+    try {
+      if (badge.userIDs) {
+        if (badge.userIDs.startsWith('[')) {
+          // JSON array format
+          userIDs = JSON.parse(badge.userIDs);
+        } else {
+          // Try parsing as JSON anyway
+          userIDs = JSON.parse(badge.userIDs);
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing userIDs:', parseError);
+      // If parsing fails, treat as empty array
+      userIDs = [];
+    }
+    
+    console.log(`🎉 Parsed userIDs:`, userIDs);
+    console.log(`🎉 User already has badge: ${userIDs.includes(userID)}`);
+    
+    // Check if user already has this badge
+    const alreadyAchieved = userIDs.includes(userID);
+    
+    if (!alreadyAchieved) {
+      console.log(`🎉 Awarding badge ${badge.badgeName} to user ${userID}`);
+      
+      // Award the badge - add userID to the userIDs array
+      userIDs.push(userID);
+      const updatedUserIDs = JSON.stringify(userIDs);
+      
+      await db.runAsync(`
+        UPDATE welcomeBadgesTable
+        SET userIDs = ?
+        WHERE badgeSubtext = ?
+      `, [updatedUserIDs, badgeSubtext]);
+      
+      console.log(`🎉 Badge awarded successfully!`);
+      
+      return {
+        badgeName: badge.badgeName,
+        badgeSubtext: badge.badgeSubtext,
+        badgeImageName: badge.badgeImageName,
+        isNewAchievement: true
+      };
+    } else {
+      console.log(`🎉 User already has this badge, skipping`);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking and awarding welcome badges:', error);
+    return null;
+  }
+}
+
 export async function checkAndAwardStreakBadges(): Promise<StreakBadgeAward | null> {
   try {
     const userID = await getCurrentUserID();

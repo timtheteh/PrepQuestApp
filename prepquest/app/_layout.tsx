@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,8 +22,10 @@ import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskCon
 import { ClearDataBackgroundTaskProvider } from '@/contexts/ClearDataBackgroundTaskContext';
 import { DeleteAccountBackgroundTaskProvider } from '@/contexts/DeleteAccountBackgroundTaskContext';
 import { StreakBadgeNotificationProvider, useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
+import { WelcomeBadgeNotificationProvider, useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
+import { WelcomeBadgeNotification } from '@/components/inAppNotifications/WelcomeBadgeNotification';
 
 import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
 import NotificationService from '@/utils/notifications';
@@ -82,22 +84,46 @@ const stopAllBackgroundTasks = async () => {
   }
 };
 
-// Component to render streak badge notification at app root level
-function StreakBadgeNotificationWrapper() {
-  const { streakBadgeAward, showStreakBadgeNotification, dismissNotification } = useStreakBadgeNotification();
+// Component to render badge notifications at app root level with stacking
+function BadgeNotificationsWrapper() {
+  const { streakBadgeAward, showStreakBadgeNotification, dismissNotification: dismissStreakNotification } = useStreakBadgeNotification();
+  const { welcomeBadgeAward, showWelcomeBadgeNotification, dismissNotification: dismissWelcomeNotification } = useWelcomeBadgeNotification();
+  const [streakNotificationHeight, setStreakNotificationHeight] = React.useState(0);
   
-  if (!streakBadgeAward) {
-    return null;
-  }
-
+  // Calculate vertical offsets to stack notifications
+  // Use measured height or fallback to estimated height
+  const NOTIFICATION_HEIGHT = streakNotificationHeight || 92;
+  const NOTIFICATION_SPACING = 12;
+  
+  // Streak badge is first (top), welcome badge below if streak exists
+  const welcomeBadgeOffset = streakBadgeAward && showStreakBadgeNotification 
+    ? NOTIFICATION_HEIGHT + NOTIFICATION_SPACING 
+    : 0;
+  
+  // Stack notifications vertically - streak badge first (top), then welcome badge below
   return (
-    <StreakBadgeNotification
-      badgeName={streakBadgeAward.badgeName}
-      badgeSubtext={streakBadgeAward.badgeSubtext}
-      dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
-      visible={showStreakBadgeNotification}
-      onDismiss={dismissNotification}
-    />
+    <>
+      {streakBadgeAward && (
+        <StreakBadgeNotification
+          badgeName={streakBadgeAward.badgeName}
+          badgeSubtext={streakBadgeAward.badgeSubtext}
+          dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
+          visible={showStreakBadgeNotification}
+          onDismiss={dismissStreakNotification}
+          topOffset={0}
+          onLayout={setStreakNotificationHeight}
+        />
+      )}
+      {welcomeBadgeAward && (
+        <WelcomeBadgeNotification
+          badgeName={welcomeBadgeAward.badgeName}
+          badgeSubtext={welcomeBadgeAward.badgeSubtext}
+          visible={showWelcomeBadgeNotification}
+          onDismiss={dismissWelcomeNotification}
+          topOffset={welcomeBadgeOffset}
+        />
+      )}
+    </>
   );
 }
 
@@ -430,7 +456,7 @@ function AppContent() {
           </Stack>
             <BackgroundTaskNotification />
             <ImportTaskNotification />
-            <StreakBadgeNotificationWrapper />
+            <BadgeNotificationsWrapper />
             <StatusBar style="auto" />
           </>
         )}
@@ -460,7 +486,9 @@ export default function RootLayout() {
                     <ClearDataBackgroundTaskProvider>
                       <DeleteAccountBackgroundTaskProvider>
                         <StreakBadgeNotificationProvider>
-                          <AppContent />
+                          <WelcomeBadgeNotificationProvider>
+                            <AppContent />
+                          </WelcomeBadgeNotificationProvider>
                         </StreakBadgeNotificationProvider>
                       </DeleteAccountBackgroundTaskProvider>
                     </ClearDataBackgroundTaskProvider>

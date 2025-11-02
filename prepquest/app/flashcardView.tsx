@@ -48,9 +48,11 @@ import {
   type TransformedFlashcard,
 } from '@/db/decks';
 import { getUserVoiceLanguage, incrementChatWithAIRequests } from '@/db/users';
-import { checkAndAwardStreakBadges } from '@/db/grades';
+import { checkAndAwardStreakBadges, checkAndAwardWelcomeBadges } from '@/db/grades';
 import { useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
+import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
 import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
+import { WelcomeBadgeNotification } from '@/components/inAppNotifications/WelcomeBadgeNotification';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
@@ -2962,6 +2964,17 @@ export default function FlashcardViewPage() {
     dismissNotification: dismissStreakBadgeNotification 
   } = useStreakBadgeNotification();
 
+  // Welcome badge notification - use global context
+  const {
+    showNotification: showWelcomeBadgeNotification,
+    welcomeBadgeAward,
+    showWelcomeBadgeNotification: showWelcomeBadgeNotificationState,
+    dismissNotification: dismissWelcomeBadgeNotification
+  } = useWelcomeBadgeNotification();
+
+  // Track notification heights for proper stacking on success screen
+  const [streakNotificationHeight, setStreakNotificationHeight] = useState(0);
+
   // Load user's voice language from database (for speech-to-text detection)
   useEffect(() => {
     const loadVoiceLanguage = async () => {
@@ -3172,6 +3185,22 @@ export default function FlashcardViewPage() {
   const updateDeckCompletionDateLocal = async (isStudyMode: boolean) => {
     try {
       await updateDeckCompletionDate(isStudyMode, deckID as string, isAIDeckParam as string);
+      
+      // Check and award welcome badges based on first deck studied/quizzed
+      try {
+        const badgeSubtext = isStudyMode ? '1st Deck Studied' : '1st DeckQuizzed';
+        const welcomeBadgeAward = await checkAndAwardWelcomeBadges(badgeSubtext);
+        console.log('🎉 Welcome badge award result:', welcomeBadgeAward);
+        if (welcomeBadgeAward && welcomeBadgeAward.isNewAchievement) {
+          console.log('🎉 Showing app-wide welcome badge notification');
+          showWelcomeBadgeNotification(welcomeBadgeAward);
+        } else {
+          console.log('🎉 No welcome badge award or already achieved');
+        }
+      } catch (error) {
+        console.error('Error checking welcome badges:', error);
+        // Don't fail the entire operation if badge check fails
+      }
       
       // Check and award streak badges after deck completion
       try {
@@ -3940,6 +3969,21 @@ export default function FlashcardViewPage() {
             dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
             visible={showStreakBadgeNotificationState}
             onDismiss={dismissStreakBadgeNotification}
+            topOffset={0}
+            onLayout={setStreakNotificationHeight}
+          />
+        )}
+        
+        {/* Welcome badge notification on success screen */}
+        {welcomeBadgeAward && (
+          <WelcomeBadgeNotification
+            badgeName={welcomeBadgeAward.badgeName}
+            badgeSubtext={welcomeBadgeAward.badgeSubtext}
+            visible={showWelcomeBadgeNotificationState}
+            onDismiss={dismissWelcomeBadgeNotification}
+            topOffset={streakBadgeAward && showStreakBadgeNotificationState && streakNotificationHeight > 0 
+              ? streakNotificationHeight + 12 
+              : 0}
           />
         )}
         

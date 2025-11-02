@@ -964,6 +964,14 @@ export const strings: Record<string, any> = {
     message: 'Congratulations for your {dayStreak}-day streak! You have been awarded the \'{badgeName}\' badge in Awards page.',
     viewAwards: 'View Awards',
   },
+  // Welcome badge notifications
+  welcomeBadgeNotification: {
+    congratulations: 'Congratulations! 🍾',
+    messages: {
+      '1st Deck Studied': 'Congratulations on studying your first deck! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '1st DeckQuizzed': 'Congratulations on quizzing your first deck! You have been awarded the \'{badgeName}\' badge in Awards page!',
+    },
+  },
   // Background task notifications
   backgroundTaskNotification: {
     // Success messages
@@ -1252,6 +1260,14 @@ export const strings: Record<string, any> = {
     congratulations: '恭喜！🎉',
     message: '恭喜您连续学习 {dayStreak} 天！您已在成就页面获得 \'{badgeName}\' 徽章。',
     viewAwards: '查看成就',
+  },
+  // Welcome badge notifications
+  welcomeBadgeNotification: {
+    congratulations: '恭喜！🍾',
+    messages: {
+      '1st Deck Studied': '恭喜您完成第一个学习卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '1st DeckQuizzed': '恭喜您完成第一个测验卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+    },
   },
   // Background task notifications
   backgroundTaskNotification: {

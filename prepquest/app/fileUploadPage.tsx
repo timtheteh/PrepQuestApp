@@ -491,6 +491,7 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       stopKeepAlive();
       // Mark as completed without results to allow UI to close gracefully
       await saveDeckCreationProgress({
+        taskType: 'fileUpload',
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
         createdDeckId, createdFlashcardIds,

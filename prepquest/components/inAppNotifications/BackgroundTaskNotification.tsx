@@ -112,21 +112,25 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             type: 'success'
           };
           
-          // Check and award welcome badge for first Gen-AI deck creation
-          // Only check if this is a genAI deck creation and not adding flashcards to existing deck
+          // Check and award welcome badge for first Gen-AI or File Upload deck creation
+          // Only check if this is a new deck creation and not adding flashcards to existing deck
           if (!backgroundTaskProgress.isInViewFlashcardsPage && backgroundTaskProgress.createdDeckId) {
             (async () => {
               try {
-                const welcomeBadgeAward = await checkAndAwardWelcomeBadges('1st Gen-AI Deck');
-                console.log('🎉 Welcome badge award result for Gen-AI:', welcomeBadgeAward);
+                // Check task type to determine which badge to award
+                const taskType = backgroundTaskProgress.taskType;
+                const badgeType = taskType === 'fileUpload' ? '1st File-Upload Deck' : '1st Gen-AI Deck';
+                
+                const welcomeBadgeAward = await checkAndAwardWelcomeBadges(badgeType as any);
+                console.log(`🎉 Welcome badge award result for ${taskType}:`, welcomeBadgeAward);
                 if (welcomeBadgeAward && welcomeBadgeAward.isNewAchievement) {
-                  console.log('🎉 Showing welcome badge notification for Gen-AI deck');
+                  console.log(`🎉 Showing welcome badge notification for ${taskType} deck`);
                   showWelcomeBadgeNotification(welcomeBadgeAward);
                 } else {
-                  console.log('🎉 No Gen-AI welcome badge award or already achieved');
+                  console.log(`🎉 No ${taskType} welcome badge award or already achieved`);
                 }
               } catch (error) {
-                console.error('Error checking Gen-AI welcome badges:', error);
+                console.error('Error checking welcome badges:', error);
               }
             })();
           }

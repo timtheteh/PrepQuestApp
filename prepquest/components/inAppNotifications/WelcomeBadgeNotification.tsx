@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
+import { Fonts } from '@/constants/Fonts';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 
 interface WelcomeBadgeNotificationProps {
@@ -32,6 +33,25 @@ export const WelcomeBadgeNotification: React.FC<WelcomeBadgeNotificationProps> =
     }
     // Fallback if no specific message found
     return `Congratulations! You have been awarded the '${badgeName}' badge in Awards page!`;
+  };
+
+  // Render message with bold badge name
+  const renderMessage = () => {
+    const message = getMessage();
+    
+    // Split by badgeName to format it
+    const parts = message.split(`'${badgeName}'`);
+    if (parts.length === 2) {
+      return (
+        <>
+          {parts[0]}
+          <Text style={{ fontFamily: Fonts.bodyBold }}>{badgeName}</Text>
+          {parts[1]}
+        </>
+      );
+    }
+    // Fallback if pattern not found
+    return message;
   };
 
   useEffect(() => {
@@ -103,7 +123,7 @@ export const WelcomeBadgeNotification: React.FC<WelcomeBadgeNotificationProps> =
               {strings[language].welcomeBadgeNotification.congratulations}
             </Text>
             <Text style={styles.message}>
-              {getMessage()}
+              {renderMessage()}
             </Text>
           </View>
         </View>
@@ -152,7 +172,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: Fonts.bodyBold,
     fontSize: 16,
     color: '#FFFFFF',
     marginBottom: 2,

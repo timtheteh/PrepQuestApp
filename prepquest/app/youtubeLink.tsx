@@ -394,6 +394,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     if (!transcript || transcript.trim() === '') {
       stopKeepAlive();
       await saveDeckCreationProgress({
+        taskType: 'youtubeLink',
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
         createdDeckId, createdFlashcardIds,
@@ -634,6 +635,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     if (!flashcards || flashcards.length === 0) {
       stopKeepAlive();
       await saveDeckCreationProgress({
+        taskType: 'youtubeLink',
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
         createdDeckId, createdFlashcardIds,

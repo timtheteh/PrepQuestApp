@@ -112,14 +112,21 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
             type: 'success'
           };
           
-          // Check and award welcome badge for first Gen-AI or File Upload deck creation
+          // Check and award welcome badge for first Gen-AI, File Upload, or YouTube Link deck creation
           // Only check if this is a new deck creation and not adding flashcards to existing deck
           if (!backgroundTaskProgress.isInViewFlashcardsPage && backgroundTaskProgress.createdDeckId) {
             (async () => {
               try {
                 // Check task type to determine which badge to award
                 const taskType = backgroundTaskProgress.taskType;
-                const badgeType = taskType === 'fileUpload' ? '1st File-Upload Deck' : '1st Gen-AI Deck';
+                let badgeType: string;
+                if (taskType === 'fileUpload') {
+                  badgeType = '1st File-Upload Deck';
+                } else if (taskType === 'youtubeLink') {
+                  badgeType = '1st Youtube Deck';
+                } else {
+                  badgeType = '1st Gen-AI Deck';
+                }
                 
                 const welcomeBadgeAward = await checkAndAwardWelcomeBadges(badgeType as any);
                 console.log(`🎉 Welcome badge award result for ${taskType}:`, welcomeBadgeAward);

@@ -3245,21 +3245,19 @@ export default function FlashcardViewPage() {
         // Don't fail the entire operation if badge check fails
       }
       
-      // Check and award quiz score lifetime badges after quiz completion
-      if (!isStudyMode) { // Only check for quiz mode
-        try {
-          const quizScoreBadgeAward = await checkAndAwardQuizScoreLifetimeBadges(parseInt(deckID as string));
-          console.log('🏆 Quiz score lifetime badge award result:', quizScoreBadgeAward);
-          if (quizScoreBadgeAward && quizScoreBadgeAward.isNewAchievement) {
-            console.log('🏆 Showing quiz score lifetime badge notification');
-            showNumberOfDecksCreatedBadgeNotificationFn(quizScoreBadgeAward);
-          } else {
-            console.log('🏆 No quiz score lifetime badge award or already achieved');
-          }
-        } catch (error) {
-          console.error('Error checking quiz score lifetime badges:', error);
-          // Don't fail the entire operation if badge check fails
+      // Check and award quiz score lifetime badges after quiz or study completion
+      try {
+        const quizScoreBadgeAward = await checkAndAwardQuizScoreLifetimeBadges(parseInt(deckID as string));
+        console.log('🏆 Quiz score lifetime badge award result:', quizScoreBadgeAward);
+        if (quizScoreBadgeAward && quizScoreBadgeAward.isNewAchievement) {
+          console.log('🏆 Showing quiz score lifetime badge notification');
+          showNumberOfDecksCreatedBadgeNotificationFn(quizScoreBadgeAward);
+        } else {
+          console.log('🏆 No quiz score lifetime badge award or already achieved');
         }
+      } catch (error) {
+        console.error('Error checking quiz score lifetime badges:', error);
+        // Don't fail the entire operation if badge check fails
       }
     } catch (error) {
       console.error(`Error updating deck completion date:`, error);

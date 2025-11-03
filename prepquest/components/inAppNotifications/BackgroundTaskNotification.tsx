@@ -6,6 +6,7 @@ import { strings } from '@/constants/strings';
 import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 import DeleteModalIconWhite from '@/assets/icons/generalIcons/deleteModalIconWhite.svg';
 import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
+import { useFirstStudyFirstInterviewBadgeNotification } from '@/contexts/FirstStudyFirstInterviewNotificationContext';
 import { checkAndAwardWelcomeBadges } from '@/db/grades';
 
 interface BackgroundTaskNotificationProps {
@@ -22,6 +23,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
   const { isBackgroundTaskRunning, backgroundTaskProgress, clearBackgroundTaskProgress, wasAutomaticallyCancelled, isNotificationDismissed, dismissNotification, showBackgroundTaskNotification, setShowBackgroundTaskNotification } = useBackgroundTask();
   const { language } = useLanguage();
   const { showNotification: showWelcomeBadgeNotification } = useWelcomeBadgeNotification();
+  const { showNotification: showFirstStudyFirstInterviewBadgeNotification } = useFirstStudyFirstInterviewBadgeNotification();
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const slideAnim = useState(new Animated.Value(-100))[0];
   const opacityAnim = useState(new Animated.Value(0))[0];
@@ -137,6 +139,28 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
                   showWelcomeBadgeNotification(welcomeBadgeAward);
                 } else {
                   console.log(`🎉 No ${taskType} welcome badge award or already achieved`);
+                }
+                
+                // Also check for first study/interview deck badges
+                const mode = backgroundTaskProgress.mode;
+                if (mode === 'study') {
+                  const firstStudyBadgeAward = await checkAndAwardWelcomeBadges('1st Study Deck' as any);
+                  console.log('🎉 Welcome badge award result for 1st Study Deck:', firstStudyBadgeAward);
+                  if (firstStudyBadgeAward && firstStudyBadgeAward.isNewAchievement) {
+                    console.log('🎉 Showing first study deck badge notification');
+                    showFirstStudyFirstInterviewBadgeNotification(firstStudyBadgeAward);
+                  } else {
+                    console.log('🎉 No 1st Study Deck welcome badge award or already achieved');
+                  }
+                } else if (mode === 'interview') {
+                  const firstInterviewBadgeAward = await checkAndAwardWelcomeBadges('1st Interview Deck' as any);
+                  console.log('🎉 Welcome badge award result for 1st Interview Deck:', firstInterviewBadgeAward);
+                  if (firstInterviewBadgeAward && firstInterviewBadgeAward.isNewAchievement) {
+                    console.log('🎉 Showing first interview deck badge notification');
+                    showFirstStudyFirstInterviewBadgeNotification(firstInterviewBadgeAward);
+                  } else {
+                    console.log('🎉 No 1st Interview Deck welcome badge award or already achieved');
+                  }
                 }
               } catch (error) {
                 console.error('Error checking welcome badges:', error);

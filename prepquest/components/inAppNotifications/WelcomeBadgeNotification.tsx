@@ -11,6 +11,7 @@ interface WelcomeBadgeNotificationProps {
   visible: boolean;
   onDismiss: () => void;
   topOffset?: number;
+  onLayout?: (height: number) => void;
 }
 
 export const WelcomeBadgeNotification: React.FC<WelcomeBadgeNotificationProps> = ({ 
@@ -18,7 +19,8 @@ export const WelcomeBadgeNotification: React.FC<WelcomeBadgeNotificationProps> =
   badgeSubtext,
   visible,
   onDismiss,
-  topOffset = 0
+  topOffset = 0,
+  onLayout
 }) => {
   const { language } = useLanguage();
   const slideAnim = useRef(new Animated.Value(-100)).current;
@@ -114,6 +116,11 @@ export const WelcomeBadgeNotification: React.FC<WelcomeBadgeNotificationProps> =
           top: 60 + topOffset,
         }
       ]}
+      onLayout={(event) => {
+        if (onLayout) {
+          onLayout(event.nativeEvent.layout.height);
+        }
+      }}
     >
       <View style={styles.notification}>
         <View style={styles.content}>

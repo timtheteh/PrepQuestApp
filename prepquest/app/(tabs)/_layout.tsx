@@ -413,10 +413,38 @@ export default function TabLayout() {
           }}
           tabBar={() => <NavBar ref={navbarRef} />}
         >
-          <Tabs.Screen name="index" />
-          <Tabs.Screen name="account" />
-          <Tabs.Screen name="statistics" />
-          <Tabs.Screen name="awards" />
+          <Tabs.Screen 
+            name="index"
+            listeners={{
+              focus: () => {
+                navbarRef?.current?.setDecksTab();
+              }
+            }}
+          />
+          <Tabs.Screen 
+            name="account"
+            listeners={{
+              focus: () => {
+                navbarRef?.current?.setTab(0);
+              }
+            }}
+          />
+          <Tabs.Screen 
+            name="statistics"
+            listeners={{
+              focus: () => {
+                navbarRef?.current?.setTab(2);
+              }
+            }}
+          />
+          <Tabs.Screen 
+            name="awards"
+            listeners={{
+              focus: () => {
+                navbarRef?.current?.setTab(3);
+              }
+            }}
+          />
           <Tabs.Screen 
             name="folders"
             listeners={{
@@ -450,7 +478,14 @@ export default function TabLayout() {
               }
             }}
           />
-          <Tabs.Screen name="deckDetails" />
+          <Tabs.Screen 
+            name="deckDetails"
+            listeners={{
+              focus: () => {
+                navbarRef?.current?.resetAnimation();
+              }
+            }}
+          />
           <Tabs.Screen 
             name="viewFlashcards" 
             listeners={{

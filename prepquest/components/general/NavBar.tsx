@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Text, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Link, usePathname } from 'expo-router';
@@ -92,12 +92,14 @@ const NAV_ITEMS: NavItem[] = [
 export interface NavBarRef {
   resetAnimation: () => void;
   setDecksTab: () => void;
+  setTab: (index: number) => void;
 }
 
 export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const pathname = usePathname();
   const slideAnimation = useSharedValue(1);
   const isFirstRender = useSharedValue(true);
+  const isFirstRenderRef = useRef(true);
   const { language } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -364,6 +366,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       });
     }
     isFirstRender.value = true;
+    isFirstRenderRef.current = true;
   };
 
   const setDecksTab = () => {
@@ -377,9 +380,21 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
     }
   };
 
+  const setTab = (index: number) => {
+    if (Platform.OS === 'ios') {
+      slideAnimation.value = withSpring(index, SPRING_CONFIG);
+    } else {
+      slideAnimation.value = withTiming(index, {
+        duration: 200,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     resetAnimation,
-    setDecksTab
+    setDecksTab,
+    setTab
   }));
 
   useEffect(() => {
@@ -394,6 +409,32 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
       });
     }
   }, []);
+
+  // Update animation based on pathname changes (handles Android back button)
+  useEffect(() => {
+    const activeIndex = NAV_ITEMS.findIndex(item => {
+      // Handle both exact match and /(tabs)/index -> /(tabs) mapping
+      return item.route === pathname || 
+             (item.route === '/(tabs)' && pathname === '/(tabs)/index');
+    });
+    
+    // Only update if we found a valid tab and it's not the first render
+    if (activeIndex !== -1) {
+      // Mark that we've gone through at least one navigation cycle
+      if (isFirstRenderRef.current) {
+        isFirstRenderRef.current = false;
+      }
+      
+      if (Platform.OS === 'ios') {
+        slideAnimation.value = withSpring(activeIndex, SPRING_CONFIG);
+      } else {
+        slideAnimation.value = withTiming(activeIndex, {
+          duration: 200,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        });
+      }
+    }
+  }, [pathname]);
 
   const getIconComponent = (item: NavItem) => {
     return item.iconType === 'material' ? MaterialIcons : Ionicons;
@@ -456,6 +497,7 @@ export const NavBar = forwardRef<NavBarRef>((_, ref) => {
   const handleTabPress = (index: number) => {
     if (isFirstRender.value) {
       isFirstRender.value = false;
+      isFirstRenderRef.current = false;
     }
     
     if (Platform.OS === 'ios') {

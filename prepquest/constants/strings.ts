@@ -999,6 +999,11 @@ export const strings: Record<string, any> = {
       '46s-60s per flashcard': 'Congratulations on completing cards in 46s-60s per flashcard! You have been awarded the \'{badgeName}\' badge in Awards page!',
     },
   },
+  // Custom badge notifications
+  customBadgeNotification: {
+    congratulations: 'Congratulations! 🎉',
+    message: 'You have completed your custom goal! Check out your badge in Awards page!',
+  },
   // Background task notifications
   backgroundTaskNotification: {
     // Success messages
@@ -1322,6 +1327,11 @@ export const strings: Record<string, any> = {
       '31s-45s per flashcard': '恭喜您以每张卡 31s-45s 的速度完成！您已在成就页面获得 \'{badgeName}\' 徽章！',
       '46s-60s per flashcard': '恭喜您以每张卡 46s-60s 的速度完成！您已在成就页面获得 \'{badgeName}\' 徽章！',
     },
+  },
+  // Custom badge notifications
+  customBadgeNotification: {
+    congratulations: '恭喜！🎉',
+    message: '您已完成自定义目标！请在成就页面查看您的徽章！',
   },
   // Background task notifications
   backgroundTaskNotification: {

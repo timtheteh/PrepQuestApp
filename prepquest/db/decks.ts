@@ -4533,6 +4533,15 @@ export interface CustomBadgeData {
   dateToBeRemoved: string;
 }
 
+// Interface for custom badge award
+export interface CustomBadgeAward {
+  badgeSubtext: string;
+  badgeImageName: string;
+  dateCreated: string;
+  expiryDate: string;
+  isNewAchievement: boolean;
+}
+
 // Helper function to check if user completed required decks on consecutive days
 async function checkConsecutiveDaysCompletion(
   userID: string,
@@ -4544,16 +4553,28 @@ async function checkConsecutiveDaysCompletion(
     const startDate = new Date(dateCreated);
     startDate.setHours(0, 0, 0, 0); // Start of day
     
+    console.log(`🎯 checkConsecutiveDaysCompletion: userID=${userID}, dateCreated=${dateCreated}, numberOfConsecutiveDays=${numberOfConsecutiveDays}, numberOfDecksPledged=${numberOfDecksPledged}, startDate=${startDate.toISOString()}`);
+    
     // Build an efficient query that counts distinct decks per day
     // For each day in the range, check if user completed enough decks
     for (let dayOffset = 0; dayOffset < numberOfConsecutiveDays; dayOffset++) {
       const currentDay = new Date(startDate);
       currentDay.setDate(currentDay.getDate() + dayOffset);
       
-      const dayStart = currentDay.toISOString().split('T')[0]; // YYYY-MM-DD
+      // Use local date formatting to avoid timezone issues
+      const year = currentDay.getFullYear();
+      const month = String(currentDay.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDay.getDate()).padStart(2, '0');
+      const dayStart = `${year}-${month}-${day}`; // YYYY-MM-DD in local time
+      
       const nextDay = new Date(currentDay);
       nextDay.setDate(nextDay.getDate() + 1);
-      const dayEnd = nextDay.toISOString().split('T')[0];
+      const nextYear = nextDay.getFullYear();
+      const nextMonth = String(nextDay.getMonth() + 1).padStart(2, '0');
+      const nextDayNum = String(nextDay.getDate()).padStart(2, '0');
+      const dayEnd = `${nextYear}-${nextMonth}-${nextDayNum}`; // YYYY-MM-DD in local time
+      
+      console.log(`🎯 Checking day ${dayOffset}: dayStart=${dayStart}, dayEnd=${dayEnd}, required=${numberOfDecksPledged} decks`);
       
       // Count distinct decks that were studied or quizzed on this day
       const result = await db.getFirstAsync(`
@@ -4579,13 +4600,17 @@ async function checkConsecutiveDaysCompletion(
       
       const deckCount = (result as any)?.count || 0;
       
+      console.log(`🎯 Day ${dayOffset} deck count: ${deckCount}`);
+      
       // If any day doesn't meet the requirement, return false
       if (deckCount < numberOfDecksPledged) {
+        console.log(`🎯 Day ${dayOffset} requirement not met: ${deckCount} < ${numberOfDecksPledged}`);
         return false;
       }
     }
     
     // All days met the requirement
+    console.log(`🎯 All days met requirement`);
     return true;
   } catch (error) {
     console.error('Error checking consecutive days completion:', error);
@@ -4687,5 +4712,95 @@ export async function fetchCustomBadges(): Promise<CustomBadgeData[]> {
   } catch (error) {
     console.error('Error fetching custom badges:', error);
     return [];
+  }
+}
+
+// Check and award custom badges after deck completion
+export async function checkAndAwardCustomBadges(): Promise<CustomBadgeAward | null> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Add a small delay to ensure database writes are committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Fetch all custom badges for this user
+    const result = await db.getAllAsync(`
+      SELECT 
+        badgeSubtext,
+        badgeImageName,
+        achieved,
+        numberOfDecksPledged,
+        numberOfConsecutiveDays,
+        dateCreated,
+        expiryDate,
+        boundForRemoval,
+        dateToBeRemoved
+      FROM customBadgesTable
+      WHERE userID = ? AND achieved = 0
+      ORDER BY dateCreated DESC
+    `, [userID]);
+    
+    if (!result || result.length === 0) {
+      console.log('🎯 No unachieved custom badges found for custom badge check');
+      return null;
+    }
+    
+    console.log(`🎯 Found ${result.length} unachieved custom badges to check`);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Check each unachieved badge to see if it was just completed
+    for (const badge of result as any[]) {
+      console.log(`🎯 Checking badge: ${badge.badgeSubtext}, dateCreated: ${badge.dateCreated}, numberOfDecksPledged: ${badge.numberOfDecksPledged}, numberOfConsecutiveDays: ${badge.numberOfConsecutiveDays}`);
+      const expiryDate = new Date(badge.expiryDate);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const dateToBeRemoved = new Date(badge.dateToBeRemoved);
+      dateToBeRemoved.setHours(0, 0, 0, 0);
+      
+      // Skip badges that should be removed or expired
+      if (badge.boundForRemoval === 1 || today > expiryDate) {
+        continue;
+      }
+      
+      // Check if user completed the goal
+      const isCompleted = await checkConsecutiveDaysCompletion(
+        userID,
+        badge.dateCreated,
+        badge.numberOfConsecutiveDays,
+        badge.numberOfDecksPledged
+      );
+      
+      console.log(`🎯 Badge ${badge.badgeSubtext} completion check result: ${isCompleted}`);
+      
+      if (isCompleted) {
+        console.log(`🎯 Custom badge completed: ${badge.badgeSubtext}`);
+        
+        // Update achieved status in database
+        await db.runAsync(`
+          UPDATE customBadgesTable
+          SET achieved = 1
+          WHERE userID = ? 
+            AND badgeSubtext = ?
+            AND dateCreated = ?
+        `, [userID, badge.badgeSubtext, badge.dateCreated]);
+        
+        console.log(`🎯 Custom badge awarded successfully!`);
+        
+        return {
+          badgeSubtext: badge.badgeSubtext,
+          badgeImageName: badge.badgeImageName,
+          dateCreated: badge.dateCreated,
+          expiryDate: badge.expiryDate,
+          isNewAchievement: true
+        };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error checking and awarding custom badges:', error);
+    return null;
   }
 }

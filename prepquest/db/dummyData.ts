@@ -1963,8 +1963,8 @@ export async function populateDummyData() {
     const achieved2DateToBeRemoved = new Date(achieved2ExpiryDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after expiry
     
     // 1 unachieved badge (not expired yet)
-    const unachievedDateCreated = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000); // 2 days ago
-    const unachievedExpiryDate = new Date(unachievedDateCreated.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days after creation (5 days from now)
+    const unachievedDateCreated = new Date(now.getTime()); // today
+    const unachievedExpiryDate = new Date(unachievedDateCreated.getTime() + 1 * 24 * 60 * 60 * 1000); // 1 day after creation
     const unachievedDateToBeRemoved = new Date(unachievedExpiryDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days after expiry
     
     // 2 expired badges
@@ -2007,11 +2007,11 @@ export async function populateDummyData() {
       // 1 unachieved badge
       {
         userID: DUMMY_USER_ID,
-        badgeSubtext: '2 decks x 7 days',
+        badgeSubtext: '1 decks x 1 days',
         badgeImageName: 'neverGiveUp',
         achieved: 0,
-        numberOfDecksPledged: 2,
-        numberOfConsecutiveDays: 7,
+        numberOfDecksPledged: 1,
+        numberOfConsecutiveDays: 1,
         dateCreated: unachievedDateCreated.toISOString(),
         expiryDate: unachievedExpiryDate.toISOString(),
         boundForRemoval: 0,

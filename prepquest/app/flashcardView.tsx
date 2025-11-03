@@ -49,12 +49,15 @@ import {
 } from '@/db/decks';
 import { getUserVoiceLanguage, incrementChatWithAIRequests } from '@/db/users';
 import { checkAndAwardStreakBadges, checkAndAwardWelcomeBadges, checkAndAwardQuizScoreLifetimeBadges, checkAndAwardAverageTimeLifetimeBadges } from '@/db/grades';
+import { checkAndAwardCustomBadges } from '@/db/decks';
 import { useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
 import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
 import { useNumberOfDecksCreatedBadgeNotification } from '@/contexts/NumberOfDecksCreatedNotificationContext';
+import { useCustomBadgeNotification } from '@/contexts/CustomBadgeNotificationContext';
 import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
 import { WelcomeBadgeNotification } from '@/components/inAppNotifications/WelcomeBadgeNotification';
 import { LifetimeBadgeNotification } from '@/components/inAppNotifications/LifetimeBadgeNotification';
+import { CustomBadgeNotification } from '@/components/inAppNotifications/CustomBadgeNotification';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import CountdownCircle from '@/components/general/CountdownCircle';
@@ -2998,10 +3001,19 @@ export default function FlashcardViewPage() {
     dismissNotification: dismissNumberOfDecksCreatedBadgeNotification
   } = useNumberOfDecksCreatedBadgeNotification();
 
+  // Custom badge notification - use global context
+  const {
+    customBadgeAward,
+    showCustomBadgeNotification,
+    showNotification: showCustomBadgeNotificationFn,
+    dismissNotification: dismissCustomBadgeNotification
+  } = useCustomBadgeNotification();
+
   // Track notification heights for proper stacking on success screen
   const [streakNotificationHeight, setStreakNotificationHeight] = useState(0);
   const [welcomeNotificationHeight, setWelcomeNotificationHeight] = useState(0);
   const [numberOfDecksCreatedNotificationHeight, setNumberOfDecksCreatedNotificationHeight] = useState(0);
+  const [customNotificationHeight, setCustomNotificationHeight] = useState(0);
 
   // Load user's voice language from database (for speech-to-text detection)
   useEffect(() => {
@@ -3272,6 +3284,21 @@ export default function FlashcardViewPage() {
         }
       } catch (error) {
         console.error('Error checking average time lifetime badges:', error);
+        // Don't fail the entire operation if badge check fails
+      }
+      
+      // Check and award custom badges after quiz or study completion
+      try {
+        const customBadgeAward = await checkAndAwardCustomBadges();
+        console.log('🎯 Custom badge award result:', customBadgeAward);
+        if (customBadgeAward && customBadgeAward.isNewAchievement) {
+          console.log('🎯 Showing custom badge notification');
+          showCustomBadgeNotificationFn(customBadgeAward);
+        } else {
+          console.log('🎯 No custom badge award or already achieved');
+        }
+      } catch (error) {
+        console.error('Error checking custom badges:', error);
         // Don't fail the entire operation if badge check fails
       }
     } catch (error) {
@@ -4058,6 +4085,21 @@ export default function FlashcardViewPage() {
               ((welcomeBadgeAward && showWelcomeBadgeNotificationState) ? (welcomeNotificationHeight || 92) + 12 : 0)
             }
             onLayout={setNumberOfDecksCreatedNotificationHeight}
+          />
+        )}
+        
+        {/* Custom badge notification on success screen */}
+        {customBadgeAward && (
+          <CustomBadgeNotification
+            badgeSubtext={customBadgeAward.badgeSubtext}
+            visible={showCustomBadgeNotification}
+            onDismiss={dismissCustomBadgeNotification}
+            topOffset={
+              (streakBadgeAward && showStreakBadgeNotificationState ? (streakNotificationHeight || 92) + 12 : 0) +
+              ((welcomeBadgeAward && showWelcomeBadgeNotificationState) ? (welcomeNotificationHeight || 92) + 12 : 0) +
+              ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + 12 : 0)
+            }
+            onLayout={setCustomNotificationHeight}
           />
         )}
         

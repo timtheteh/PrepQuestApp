@@ -971,6 +971,13 @@ export interface WelcomeBadgeAward {
   isNewAchievement: boolean;
 }
 
+export interface LifetimeBadgeAward {
+  badgeName: string;
+  badgeSubtext: string;
+  badgeImageName: string;
+  isNewAchievement: boolean;
+}
+
 export async function checkAndAwardWelcomeBadges(badgeSubtext: '1st Deck Studied' | '1st Deck Quizzed' | '1st Feedback by AI' | '1st Gen-AI Deck' | '1st File-Upload Deck' | '1st Youtube Deck' | '1st Manual Deck' | '1st Study Deck' | '1st Interview Deck'): Promise<WelcomeBadgeAward | null> {
   try {
     const userID = await getCurrentUserID();
@@ -1136,6 +1143,122 @@ export async function checkAndAwardStreakBadges(): Promise<StreakBadgeAward | nu
     return null;
   } catch (error) {
     console.error('Error checking and awarding streak badges:', error);
+    return null;
+  }
+}
+
+// Check and award lifetime badges based on number of decks created
+export async function checkAndAwardNumDecksLifetimeBadges(): Promise<LifetimeBadgeAward | null> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Add a small delay to ensure database writes are committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Get the current number of decks created by the user
+    const userResult = await db.getFirstAsync(`
+      SELECT accumulatedDecksCreated
+      FROM users
+      WHERE userID = ?
+    `, [userID]);
+
+    if (!userResult) {
+      console.log('📊 No user found for number of decks lifetime badge check');
+      return null;
+    }
+
+    const numDecksCreated = (userResult as any).accumulatedDecksCreated || 0;
+    console.log(`📊 Number of decks created lifetime badge check: ${numDecksCreated} decks, UserID = ${userID}`);
+    
+    // Badge thresholds: 3, 10, 20, 30, 40, 50
+    const badgeThresholds = [3, 10, 20, 30, 40, 50];
+    
+    // Find all thresholds that have been reached but not yet awarded
+    const qualifiedThresholds = badgeThresholds.filter(threshold => numDecksCreated >= threshold);
+    
+    if (qualifiedThresholds.length === 0) {
+      console.log('📊 No badge threshold reached yet');
+      return null;
+    }
+    
+    // Get all badges that the user qualifies for
+    const badgesResult = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, badgeImageName, userIDs
+      FROM lifetimeBadgesTable
+      WHERE badgeSubtext IN (${qualifiedThresholds.map(t => `'${t} Decks Created'`).join(',')})
+    `);
+
+    if (!badgesResult || badgesResult.length === 0) {
+      console.log('📊 No badges found for any threshold');
+      return null;
+    }
+
+    // Find the highest threshold badge that the user hasn't been awarded yet
+    let badgeToAward = null;
+    for (let i = badgesResult.length - 1; i >= 0; i--) {
+      const badge = badgesResult[i] as any;
+      console.log(`📊 Checking badge: ${badge.badgeName} (${badge.badgeSubtext})`);
+      console.log(`📊 Current userIDs string: ${badge.userIDs}`);
+      
+      // Parse userIDs - handle both JSON array and comma-separated string formats
+      let userIDs: string[] = [];
+      try {
+        if (badge.userIDs) {
+          if (badge.userIDs.startsWith('[')) {
+            // JSON array format
+            userIDs = JSON.parse(badge.userIDs);
+          } else {
+            // Try parsing as JSON anyway
+            userIDs = JSON.parse(badge.userIDs);
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing userIDs:', parseError);
+        // If parsing fails, treat as empty array
+        userIDs = [];
+      }
+      
+      console.log(`📊 Parsed userIDs:`, userIDs);
+      console.log(`📊 User already has badge: ${userIDs.includes(userID)}`);
+      
+      // Check if user already has this badge
+      const alreadyAchieved = userIDs.includes(userID);
+      
+      if (!alreadyAchieved) {
+        console.log(`📊 Found badge to award: ${badge.badgeName}`);
+        badgeToAward = badge;
+        badgeToAward.userIDs = userIDs; // Store parsed userIDs
+        break;
+      }
+    }
+    
+    if (badgeToAward) {
+      console.log(`📊 Awarding badge ${badgeToAward.badgeName} to user ${userID}`);
+      
+      // Award the badge - add userID to the userIDs array
+      const updatedUserIDs = JSON.stringify([...badgeToAward.userIDs, userID]);
+      
+      await db.runAsync(`
+        UPDATE lifetimeBadgesTable
+        SET userIDs = ?
+        WHERE badgeSubtext = ?
+      `, [updatedUserIDs, badgeToAward.badgeSubtext]);
+      
+      console.log(`📊 Badge awarded successfully!`);
+      
+      return {
+        badgeName: badgeToAward.badgeName,
+        badgeSubtext: badgeToAward.badgeSubtext,
+        badgeImageName: badgeToAward.badgeImageName,
+        isNewAchievement: true
+      };
+    } else {
+      console.log(`📊 User already has all qualified badges, skipping`);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking and awarding number of decks lifetime badges:', error);
     return null;
   }
 }

@@ -22,10 +22,10 @@ export async function populateDummyData() {
     const userData = [
       {
         userID: DUMMY_USER_ID,
-        accumulatedDecksCreated: 200,
-        accumulatedFlashcardsCreated: 1020,
-        accumulatedStudyDecksCreated: 120,
-        accumulatedInterviewDecksCreated: 80,
+        accumulatedDecksCreated: 0,
+        accumulatedFlashcardsCreated: 0,
+        accumulatedStudyDecksCreated: 0,
+        accumulatedInterviewDecksCreated: 0,
         lastUpdated: '2025-01-27T10:30:00.000Z'
       }
     ];
@@ -1837,7 +1837,7 @@ export async function populateDummyData() {
         badgeName: 'First Sprout',
         badgeSubtext: '3 Decks Created',
         badgeImageName: 'firstSprout',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        userIDs: JSON.stringify([]),
         badgeOrder: 1
       },
       {
@@ -1851,7 +1851,7 @@ export async function populateDummyData() {
         badgeName: 'Fruits of Labour',
         badgeSubtext: '20 Decks Created',
         badgeImageName: 'fruitsOfLabour',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        userIDs: JSON.stringify([]),
         badgeOrder: 3
       },
       {
@@ -1872,7 +1872,7 @@ export async function populateDummyData() {
         badgeName: 'Above & Beyond',
         badgeSubtext: '50 Decks Created',
         badgeImageName: 'above&Beyond',
-        userIDs: JSON.stringify(['user_32J2i9FkUobYafCo12HYYa5tRjr']),
+        userIDs: JSON.stringify([]),
         badgeOrder: 6
       },
       {

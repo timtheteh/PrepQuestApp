@@ -979,6 +979,18 @@ export const strings: Record<string, any> = {
       '1st Interview Deck': 'Congratulations on creating your first interview deck! You have been awarded the \'{badgeName}\' badge in Awards page!',
     },
   },
+  // Lifetime badge notifications for number of decks created
+  lifetimeBadgeNotification: {
+    congratulations: 'Congratulations! 🌟',
+    messages: {
+      '3 Decks Created': 'Congratulations on creating 3 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '10 Decks Created': 'Congratulations on creating 10 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '20 Decks Created': 'Congratulations on creating 20 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '30 Decks Created': 'Congratulations on creating 30 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '40 Decks Created': 'Congratulations on creating 40 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '50 Decks Created': 'Congratulations on creating 50 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
+    },
+  },
   // Background task notifications
   backgroundTaskNotification: {
     // Success messages
@@ -1281,6 +1293,18 @@ export const strings: Record<string, any> = {
       '1st Manual Deck': '恭喜您创建第一个手动卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
       '1st Study Deck': '恭喜您创建第一个学习卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
       '1st Interview Deck': '恭喜您创建第一个面试卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+    },
+  },
+  // Lifetime badge notifications for number of decks created
+  lifetimeBadgeNotification: {
+    congratulations: '恭喜！🌟',
+    messages: {
+      '3 Decks Created': '恭喜您创建了 3 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '10 Decks Created': '恭喜您创建了 10 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '20 Decks Created': '恭喜您创建了 20 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '30 Decks Created': '恭喜您创建了 30 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '40 Decks Created': '恭喜您创建了 40 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '50 Decks Created': '恭喜您创建了 50 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
     },
   },
   // Background task notifications

@@ -7,7 +7,8 @@ import GreenTickIcon from '@/assets/icons/generalIcons/GreenTickIcon.svg';
 import DeleteModalIconWhite from '@/assets/icons/generalIcons/deleteModalIconWhite.svg';
 import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
 import { useFirstStudyFirstInterviewBadgeNotification } from '@/contexts/FirstStudyFirstInterviewNotificationContext';
-import { checkAndAwardWelcomeBadges } from '@/db/grades';
+import { useNumberOfDecksCreatedBadgeNotification } from '@/contexts/NumberOfDecksCreatedNotificationContext';
+import { checkAndAwardWelcomeBadges, checkAndAwardNumDecksLifetimeBadges } from '@/db/grades';
 
 interface BackgroundTaskNotificationProps {
   onViewResults?: () => void;
@@ -24,6 +25,7 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
   const { language } = useLanguage();
   const { showNotification: showWelcomeBadgeNotification } = useWelcomeBadgeNotification();
   const { showNotification: showFirstStudyFirstInterviewBadgeNotification } = useFirstStudyFirstInterviewBadgeNotification();
+  const { showNotification: showNumberOfDecksCreatedBadgeNotification } = useNumberOfDecksCreatedBadgeNotification();
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const slideAnim = useState(new Animated.Value(-100))[0];
   const opacityAnim = useState(new Animated.Value(0))[0];
@@ -164,6 +166,24 @@ export const BackgroundTaskNotification: React.FC<BackgroundTaskNotificationProp
                 }
               } catch (error) {
                 console.error('Error checking welcome badges:', error);
+              }
+            })();
+          }
+          
+          // Also check for number of decks created lifetime badges
+          if (!backgroundTaskProgress.isInViewFlashcardsPage && backgroundTaskProgress.createdDeckId) {
+            (async () => {
+              try {
+                const numDecksLifetimeBadgeAward = await checkAndAwardNumDecksLifetimeBadges();
+                console.log('📊 Number of decks created lifetime badge award result:', numDecksLifetimeBadgeAward);
+                if (numDecksLifetimeBadgeAward && numDecksLifetimeBadgeAward.isNewAchievement) {
+                  console.log('📊 Showing number of decks created lifetime badge notification');
+                  showNumberOfDecksCreatedBadgeNotification(numDecksLifetimeBadgeAward);
+                } else {
+                  console.log('📊 No number of decks created lifetime badge award or already achieved');
+                }
+              } catch (error) {
+                console.error('Error checking number of decks created lifetime badges:', error);
               }
             })();
           }

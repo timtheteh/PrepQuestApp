@@ -48,14 +48,15 @@ import {
   type TransformedFlashcard,
 } from '@/db/decks';
 import { getUserVoiceLanguage, incrementChatWithAIRequests } from '@/db/users';
-import { checkAndAwardStreakBadges, checkAndAwardWelcomeBadges } from '@/db/grades';
+import { checkAndAwardStreakBadges, checkAndAwardWelcomeBadges, checkAndAwardQuizScoreLifetimeBadges } from '@/db/grades';
 import { useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
 import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
+import { useNumberOfDecksCreatedBadgeNotification } from '@/contexts/NumberOfDecksCreatedNotificationContext';
 import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
 import { WelcomeBadgeNotification } from '@/components/inAppNotifications/WelcomeBadgeNotification';
+import { LifetimeBadgeNotification } from '@/components/inAppNotifications/LifetimeBadgeNotification';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
-import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import CountdownCircle from '@/components/general/CountdownCircle';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { Toast } from '@/components/general/Toast';
@@ -2989,8 +2990,18 @@ export default function FlashcardViewPage() {
     dismissNotification: dismissWelcomeBadgeNotification
   } = useWelcomeBadgeNotification();
 
+  // Number of decks created / quiz score badge notification - use global context
+  const {
+    numberOfDecksCreatedBadgeAward,
+    showNumberOfDecksCreatedBadgeNotification,
+    showNotification: showNumberOfDecksCreatedBadgeNotificationFn,
+    dismissNotification: dismissNumberOfDecksCreatedBadgeNotification
+  } = useNumberOfDecksCreatedBadgeNotification();
+
   // Track notification heights for proper stacking on success screen
   const [streakNotificationHeight, setStreakNotificationHeight] = useState(0);
+  const [welcomeNotificationHeight, setWelcomeNotificationHeight] = useState(0);
+  const [numberOfDecksCreatedNotificationHeight, setNumberOfDecksCreatedNotificationHeight] = useState(0);
 
   // Load user's voice language from database (for speech-to-text detection)
   useEffect(() => {
@@ -3232,6 +3243,23 @@ export default function FlashcardViewPage() {
       } catch (error) {
         console.error('Error checking streak badges:', error);
         // Don't fail the entire operation if badge check fails
+      }
+      
+      // Check and award quiz score lifetime badges after quiz completion
+      if (!isStudyMode) { // Only check for quiz mode
+        try {
+          const quizScoreBadgeAward = await checkAndAwardQuizScoreLifetimeBadges(parseInt(deckID as string));
+          console.log('🏆 Quiz score lifetime badge award result:', quizScoreBadgeAward);
+          if (quizScoreBadgeAward && quizScoreBadgeAward.isNewAchievement) {
+            console.log('🏆 Showing quiz score lifetime badge notification');
+            showNumberOfDecksCreatedBadgeNotificationFn(quizScoreBadgeAward);
+          } else {
+            console.log('🏆 No quiz score lifetime badge award or already achieved');
+          }
+        } catch (error) {
+          console.error('Error checking quiz score lifetime badges:', error);
+          // Don't fail the entire operation if badge check fails
+        }
       }
     } catch (error) {
       console.error(`Error updating deck completion date:`, error);
@@ -4001,6 +4029,22 @@ export default function FlashcardViewPage() {
             topOffset={streakBadgeAward && showStreakBadgeNotificationState && streakNotificationHeight > 0 
               ? streakNotificationHeight + 12 
               : 0}
+            onLayout={setWelcomeNotificationHeight}
+          />
+        )}
+        
+        {/* Number of decks created / quiz score badge notification on success screen */}
+        {numberOfDecksCreatedBadgeAward && (
+          <LifetimeBadgeNotification
+            badgeName={numberOfDecksCreatedBadgeAward.badgeName}
+            badgeSubtext={numberOfDecksCreatedBadgeAward.badgeSubtext}
+            visible={showNumberOfDecksCreatedBadgeNotification}
+            onDismiss={dismissNumberOfDecksCreatedBadgeNotification}
+            topOffset={
+              (streakBadgeAward && showStreakBadgeNotificationState ? (streakNotificationHeight || 92) + 12 : 0) +
+              ((welcomeBadgeAward && showWelcomeBadgeNotificationState) ? (welcomeNotificationHeight || 92) + 12 : 0)
+            }
+            onLayout={setNumberOfDecksCreatedNotificationHeight}
           />
         )}
         
@@ -4464,35 +4508,6 @@ export default function FlashcardViewPage() {
         }}
       />
 
-      {/* In-app notifications */}
-      <BackgroundTaskNotification />
-      
-      {/* Streak badge notification on main flashcard view */}
-      {streakBadgeAward && (
-        <StreakBadgeNotification
-          badgeName={streakBadgeAward.badgeName}
-          badgeSubtext={streakBadgeAward.badgeSubtext}
-          dayStreakRequirement={streakBadgeAward.dayStreakRequirement}
-          visible={showStreakBadgeNotificationState}
-          onDismiss={dismissStreakBadgeNotification}
-          topOffset={0}
-          onLayout={setStreakNotificationHeight}
-        />
-      )}
-      
-      {/* Welcome badge notification on main flashcard view */}
-      {welcomeBadgeAward && (
-        <WelcomeBadgeNotification
-          badgeName={welcomeBadgeAward.badgeName}
-          badgeSubtext={welcomeBadgeAward.badgeSubtext}
-          visible={showWelcomeBadgeNotificationState}
-          onDismiss={dismissWelcomeBadgeNotification}
-          topOffset={streakBadgeAward && showStreakBadgeNotificationState && streakNotificationHeight > 0 
-            ? streakNotificationHeight + 12 
-            : 0}
-        />
-      )}
-      
       {/* Toast for unsupported language errors */}
       <Toast 
         visible={showToast}

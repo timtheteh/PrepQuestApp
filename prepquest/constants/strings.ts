@@ -989,6 +989,10 @@ export const strings: Record<string, any> = {
       '30 Decks Created': 'Congratulations on creating 30 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
       '40 Decks Created': 'Congratulations on creating 40 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
       '50 Decks Created': 'Congratulations on creating 50 decks! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      'Scored 50%-59%': 'Congratulations on scoring 50%-59% on a quiz! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      'Scored 60%-79%': 'Congratulations on scoring 60%-79% on a quiz! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      'Scored 80%-99%': 'Congratulations on scoring 80%-99% on a quiz! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      'Scored 100%': 'Congratulations on scoring 100% on a quiz! You have been awarded the \'{badgeName}\' badge in Awards page!',
     },
   },
   // Background task notifications
@@ -1305,6 +1309,10 @@ export const strings: Record<string, any> = {
       '30 Decks Created': '恭喜您创建了 30 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
       '40 Decks Created': '恭喜您创建了 40 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
       '50 Decks Created': '恭喜您创建了 50 个卡组！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      'Scored 50%-59%': '恭喜您在测试中获得 50%-59% 的分数！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      'Scored 60%-79%': '恭喜您在测试中获得 60%-79% 的分数！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      'Scored 80%-99%': '恭喜您在测试中获得 80%-99% 的分数！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      'Scored 100%': '恭喜您在测试中获得 100% 的分数！您已在成就页面获得 \'{badgeName}\' 徽章！',
     },
   },
   // Background task notifications

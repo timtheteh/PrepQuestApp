@@ -1,7 +1,7 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/clerk-expo';
-import { getCurrentUserID } from './decks';
+import { getCurrentUserID, getDeckGrade } from './decks';
 
 export interface DayGrade {
   day: string;
@@ -1259,6 +1259,113 @@ export async function checkAndAwardNumDecksLifetimeBadges(): Promise<LifetimeBad
     return null;
   } catch (error) {
     console.error('Error checking and awarding number of decks lifetime badges:', error);
+    return null;
+  }
+}
+
+// Check and award lifetime badges based on quiz score
+export async function checkAndAwardQuizScoreLifetimeBadges(deckId: number): Promise<LifetimeBadgeAward | null> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Add a small delay to ensure database writes are committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Get the deck grade to calculate the quiz score
+    const deckGrade = await getDeckGrade(deckId);
+    
+    if (!deckGrade) {
+      console.log('🏆 No deck grade found for quiz score lifetime badge check');
+      return null;
+    }
+    
+    const quizScore = deckGrade.score;
+    console.log(`🏆 Quiz score lifetime badge check: Score = ${quizScore}%, DeckID = ${deckId}, UserID = ${userID}`);
+    
+    // Determine which badge range the score falls into
+    let badgeSubtext: string | null = null;
+    if (quizScore === 100) {
+      badgeSubtext = 'Scored 100%';
+    } else if (quizScore >= 80 && quizScore <= 99) {
+      badgeSubtext = 'Scored 80%-99%';
+    } else if (quizScore >= 60 && quizScore <= 79) {
+      badgeSubtext = 'Scored 60%-79%';
+    } else if (quizScore >= 50 && quizScore <= 59) {
+      badgeSubtext = 'Scored 50%-59%';
+    }
+    
+    if (!badgeSubtext) {
+      console.log(`🏆 Score ${quizScore}% does not qualify for any quiz score badge`);
+      return null;
+    }
+    
+    // Get the badge for this score range
+    const badgesResult = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, badgeImageName, userIDs
+      FROM lifetimeBadgesTable
+      WHERE badgeSubtext = ?
+    `, [badgeSubtext]);
+    
+    if (!badgesResult || badgesResult.length === 0) {
+      console.log(`🏆 No badge found for ${badgeSubtext}`);
+      return null;
+    }
+    
+    const badge = badgesResult[0] as any;
+    console.log(`🏆 Found badge: ${badge.badgeName} (${badge.badgeSubtext})`);
+    console.log(`🏆 Current userIDs string: ${badge.userIDs}`);
+    
+    // Parse userIDs - handle both JSON array and comma-separated string formats
+    let userIDs: string[] = [];
+    try {
+      if (badge.userIDs) {
+        if (badge.userIDs.startsWith('[')) {
+          // JSON array format
+          userIDs = JSON.parse(badge.userIDs);
+        } else {
+          // Try parsing as JSON anyway
+          userIDs = JSON.parse(badge.userIDs);
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing userIDs:', parseError);
+      // If parsing fails, treat as empty array
+      userIDs = [];
+    }
+    
+    console.log(`🏆 Parsed userIDs:`, userIDs);
+    console.log(`🏆 User already has badge: ${userIDs.includes(userID)}`);
+    
+    // Check if user already has this badge
+    const alreadyAchieved = userIDs.includes(userID);
+    
+    if (!alreadyAchieved) {
+      console.log(`🏆 Awarding badge ${badge.badgeName} to user ${userID}`);
+      
+      // Award the badge - add userID to the userIDs array
+      const updatedUserIDs = JSON.stringify([...userIDs, userID]);
+      
+      await db.runAsync(`
+        UPDATE lifetimeBadgesTable
+        SET userIDs = ?
+        WHERE badgeSubtext = ?
+      `, [updatedUserIDs, badgeSubtext]);
+      
+      console.log(`🏆 Badge awarded successfully!`);
+      
+      return {
+        badgeName: badge.badgeName,
+        badgeSubtext: badge.badgeSubtext,
+        badgeImageName: badge.badgeImageName,
+        isNewAchievement: true
+      };
+    } else {
+      console.log(`🏆 User already has this badge, skipping`);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error checking and awarding quiz score lifetime badges:', error);
     return null;
   }
 }

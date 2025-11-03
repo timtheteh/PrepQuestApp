@@ -48,7 +48,7 @@ import {
   type TransformedFlashcard,
 } from '@/db/decks';
 import { getUserVoiceLanguage, incrementChatWithAIRequests } from '@/db/users';
-import { checkAndAwardStreakBadges, checkAndAwardWelcomeBadges, checkAndAwardQuizScoreLifetimeBadges } from '@/db/grades';
+import { checkAndAwardStreakBadges, checkAndAwardWelcomeBadges, checkAndAwardQuizScoreLifetimeBadges, checkAndAwardAverageTimeLifetimeBadges } from '@/db/grades';
 import { useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
 import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
 import { useNumberOfDecksCreatedBadgeNotification } from '@/contexts/NumberOfDecksCreatedNotificationContext';
@@ -3257,6 +3257,21 @@ export default function FlashcardViewPage() {
         }
       } catch (error) {
         console.error('Error checking quiz score lifetime badges:', error);
+        // Don't fail the entire operation if badge check fails
+      }
+      
+      // Check and award average time lifetime badges after quiz or study completion
+      try {
+        const averageTimeBadgeAward = await checkAndAwardAverageTimeLifetimeBadges(parseInt(deckID as string));
+        console.log('🏃 Average time lifetime badge award result:', averageTimeBadgeAward);
+        if (averageTimeBadgeAward && averageTimeBadgeAward.isNewAchievement) {
+          console.log('🏃 Showing average time lifetime badge notification');
+          showNumberOfDecksCreatedBadgeNotificationFn(averageTimeBadgeAward);
+        } else {
+          console.log('🏃 No average time lifetime badge award or already achieved');
+        }
+      } catch (error) {
+        console.error('Error checking average time lifetime badges:', error);
         // Don't fail the entire operation if badge check fails
       }
     } catch (error) {

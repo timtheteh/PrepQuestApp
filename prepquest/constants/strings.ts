@@ -993,6 +993,10 @@ export const strings: Record<string, any> = {
       'Scored 60%-79%': 'Congratulations on scoring 60%-79% on a quiz! You have been awarded the \'{badgeName}\' badge in Awards page!',
       'Scored 80%-99%': 'Congratulations on scoring 80%-99% on a quiz! You have been awarded the \'{badgeName}\' badge in Awards page!',
       'Scored 100%': 'Congratulations on scoring 100% on a quiz! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '0s-15s per flashcard': 'Congratulations on completing cards in 0s-15s per flashcard! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '16s-30s per flashcard': 'Congratulations on completing cards in 16s-30s per flashcard! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '31s-45s per flashcard': 'Congratulations on completing cards in 31s-45s per flashcard! You have been awarded the \'{badgeName}\' badge in Awards page!',
+      '46s-60s per flashcard': 'Congratulations on completing cards in 46s-60s per flashcard! You have been awarded the \'{badgeName}\' badge in Awards page!',
     },
   },
   // Background task notifications
@@ -1313,6 +1317,10 @@ export const strings: Record<string, any> = {
       'Scored 60%-79%': '恭喜您在测试中获得 60%-79% 的分数！您已在成就页面获得 \'{badgeName}\' 徽章！',
       'Scored 80%-99%': '恭喜您在测试中获得 80%-99% 的分数！您已在成就页面获得 \'{badgeName}\' 徽章！',
       'Scored 100%': '恭喜您在测试中获得 100% 的分数！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '0s-15s per flashcard': '恭喜您以每张卡 0s-15s 的速度完成！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '16s-30s per flashcard': '恭喜您以每张卡 16s-30s 的速度完成！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '31s-45s per flashcard': '恭喜您以每张卡 31s-45s 的速度完成！您已在成就页面获得 \'{badgeName}\' 徽章！',
+      '46s-60s per flashcard': '恭喜您以每张卡 46s-60s 的速度完成！您已在成就页面获得 \'{badgeName}\' 徽章！',
     },
   },
   // Background task notifications

@@ -1905,28 +1905,28 @@ export async function populateDummyData() {
       },
       {
         badgeName: 'Slow & Steady',
-        badgeSubtext: '60s / flashcard',
+        badgeSubtext: '46s-60s / flashcard',
         badgeImageName: 'slow&Steady',
         userIDs: JSON.stringify([]),
         badgeOrder: 11
       },
       {
         badgeName: 'Fast & Furious',
-        badgeSubtext: '45s / flashcard',
+        badgeSubtext: '31s-45s / flashcard',
         badgeImageName: 'fast&Furious',
         userIDs: JSON.stringify([]),
         badgeOrder: 12
       },
       {
         badgeName: 'Formula 1',
-        badgeSubtext: '30s / flashcard',
+        badgeSubtext: '16s-30s / flashcard',
         badgeImageName: 'formula1',
         userIDs: JSON.stringify([]),
         badgeOrder: 13
       },
       {
         badgeName: 'Supersonic',
-        badgeSubtext: '15s / flashcard',
+        badgeSubtext: '0s-15s / flashcard',
         badgeImageName: 'supersonic',
         userIDs: JSON.stringify([]),
         badgeOrder: 14

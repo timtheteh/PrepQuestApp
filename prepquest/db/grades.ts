@@ -1,7 +1,7 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/clerk-expo';
-import { getCurrentUserID, getDeckGrade } from './decks';
+import { getCurrentUserID, getDeckGrade, getDeckAverageTime } from './decks';
 
 export interface DayGrade {
   day: string;
@@ -1366,6 +1366,112 @@ export async function checkAndAwardQuizScoreLifetimeBadges(deckId: number): Prom
     return null;
   } catch (error) {
     console.error('Error checking and awarding quiz score lifetime badges:', error);
+    return null;
+  }
+}
+
+// Check and award lifetime badges based on average time per flashcard
+export async function checkAndAwardAverageTimeLifetimeBadges(deckId: number): Promise<LifetimeBadgeAward | null> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Add a small delay to ensure database writes are committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Get the average time for this deck
+    const averageTime = await getDeckAverageTime(deckId);
+    
+    if (!averageTime) {
+      console.log('🏃 No average time found for average time lifetime badge check');
+      return null;
+    }
+    
+    console.log(`🏃 Average time lifetime badge check: Average = ${averageTime}s, DeckID = ${deckId}, UserID = ${userID}`);
+    
+    // Determine which badge range the average time falls into
+    let badgeSubtext: string | null = null;
+    if (averageTime >= 0 && averageTime <= 15) {
+      badgeSubtext = '0s-15s / flashcard';
+    } else if (averageTime >= 16 && averageTime <= 30) {
+      badgeSubtext = '16s-30s / flashcard';
+    } else if (averageTime >= 31 && averageTime <= 45) {
+      badgeSubtext = '31s-45s / flashcard';
+    } else if (averageTime >= 46 && averageTime <= 60) {
+      badgeSubtext = '46s-60s / flashcard';
+    }
+    
+    if (!badgeSubtext) {
+      console.log(`🏃 Average time ${averageTime}s does not qualify for any average time badge`);
+      return null;
+    }
+    
+    // Get the badge for this time range
+    const badgesResult = await db.getAllAsync(`
+      SELECT badgeName, badgeSubtext, badgeImageName, userIDs
+      FROM lifetimeBadgesTable
+      WHERE badgeSubtext = ?
+    `, [badgeSubtext]);
+    
+    if (!badgesResult || badgesResult.length === 0) {
+      console.log(`🏃 No badge found for ${badgeSubtext}`);
+      return null;
+    }
+    
+    const badge = badgesResult[0] as any;
+    console.log(`🏃 Found badge: ${badge.badgeName} (${badge.badgeSubtext})`);
+    console.log(`🏃 Current userIDs string: ${badge.userIDs}`);
+    
+    // Parse userIDs - handle both JSON array and comma-separated string formats
+    let userIDs: string[] = [];
+    try {
+      if (badge.userIDs) {
+        if (badge.userIDs.startsWith('[')) {
+          // JSON array format
+          userIDs = JSON.parse(badge.userIDs);
+        } else {
+          // Try parsing as JSON anyway
+          userIDs = JSON.parse(badge.userIDs);
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing userIDs:', parseError);
+      // If parsing fails, treat as empty array
+      userIDs = [];
+    }
+    
+    console.log(`🏃 Parsed userIDs:`, userIDs);
+    console.log(`🏃 User already has badge: ${userIDs.includes(userID)}`);
+    
+    // Check if user already has this badge
+    const alreadyAchieved = userIDs.includes(userID);
+    
+    if (!alreadyAchieved) {
+      console.log(`🏃 Awarding badge ${badge.badgeName} to user ${userID}`);
+      
+      // Award the badge - add userID to the userIDs array
+      const updatedUserIDs = JSON.stringify([...userIDs, userID]);
+      
+      await db.runAsync(`
+        UPDATE lifetimeBadgesTable
+        SET userIDs = ?
+        WHERE badgeSubtext = ?
+      `, [updatedUserIDs, badgeSubtext]);
+      
+      console.log(`🏃 Badge awarded successfully!`);
+      
+      return {
+        badgeName: badge.badgeName,
+        badgeSubtext: badge.badgeSubtext,
+        badgeImageName: badge.badgeImageName,
+        isNewAchievement: true
+      };
+    } else {
+      console.log(`🏃 User already has this badge, skipping`);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error checking and awarding average time lifetime badges:', error);
     return null;
   }
 }

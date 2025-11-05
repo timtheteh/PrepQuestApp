@@ -3087,6 +3087,7 @@ export default function AppSettingsScreen() {
           visible={isDeleteLocalStorageModalOpen}
           opacity={deleteLocalStorageModalOpacity}
           text={strings[language].appSettingsPage.proceedWithClearingLocalStorage}
+          Icon={DeleteModalIcon}
           buttons="double"
           onCancel={handleDismissDeleteLocalStorage}
           onConfirm={handleConfirmDeleteLocalStorage}

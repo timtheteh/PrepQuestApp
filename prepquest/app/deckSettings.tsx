@@ -531,7 +531,7 @@ export default function DeckSettingsPage() {
       </View>
       <View style={mainContainerStyle}>
         <ScrollView 
-          style={[styles.scrollView, { marginBottom: bottomSpacing + 90 }]}
+          style={[styles.scrollView, { marginBottom: bottomSpacing + 78 }]}
           contentContainerStyle={[styles.scrollContent]}
           showsVerticalScrollIndicator={false}
           bounces={true}
@@ -636,7 +636,7 @@ export default function DeckSettingsPage() {
           left: 16,
           right: 16,
           bottom: bottomSpacing,
-          height: 72,
+          height: 60,
           backgroundColor: alertColor,
           borderRadius: 30,
           alignItems: 'center',

@@ -319,7 +319,7 @@ export default function DeckSettingsPage() {
   );
 
   // Load settings from database
-  const loadSettings = async () => {
+  const loadSettings = React.useCallback(async () => {
     try {
       const settings = await loadDeckSettings();
       
@@ -343,27 +343,8 @@ export default function DeckSettingsPage() {
       setHalfwayCheckpointEnabled(true);
       setDifficultyTimes(defaultDifficultyTimes);
     }
-  };
+  }, []);
 
-  // Save settings to database
-  const saveSettings = async () => {
-    try {
-      const settings: DeckSettings = {
-        autoDecksEnabled,
-        clozeQuestionsEnabled,
-        mcqQuestionsEnabled,
-        voiceRecordedAnswersEnabled,
-        voiceRecordedTimerEnabled,
-        voiceRecordedTimer,
-        halfwayCheckpointEnabled,
-        difficultyTimes,
-      };
-      
-      await saveDeckSettings(settings);
-    } catch (error) {
-      console.error('Error saving deck settings:', error);
-    }
-  };
 
   // Reset settings to defaults
   const resetToDefaults = async () => {
@@ -406,19 +387,51 @@ export default function DeckSettingsPage() {
   const [difficultyTimes, setDifficultyTimes] = React.useState(defaultDifficultyTimes);
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
   const modalOpacity = React.useRef(new Animated.Value(0)).current;
+  const successOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const successModalOpacity = React.useRef(new Animated.Value(0)).current;
   const [pickerOpacity] = React.useState(new Animated.Value(1));
   const [resetCounter, setResetCounter] = React.useState(0);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
+  const hasSavedRef = React.useRef(false);
   const insets = useSafeAreaInsets();
 
 
   // Load settings when component mounts
   React.useEffect(() => {
     loadSettings();
+    hasSavedRef.current = false;
   }, []);
 
-  // Save settings whenever any setting changes
-  React.useEffect(() => {
-    saveSettings();
+  // Reload settings when page comes into focus if user didn't save
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!hasSavedRef.current) {
+        loadSettings();
+      }
+      hasSavedRef.current = false;
+    }, [loadSettings])
+  );
+
+  // Save settings to database
+  const saveSettings = React.useCallback(async (): Promise<boolean> => {
+    try {
+      const settings: DeckSettings = {
+        autoDecksEnabled,
+        clozeQuestionsEnabled,
+        mcqQuestionsEnabled,
+        voiceRecordedAnswersEnabled,
+        voiceRecordedTimerEnabled,
+        voiceRecordedTimer,
+        halfwayCheckpointEnabled,
+        difficultyTimes,
+      };
+      
+      await saveDeckSettings(settings);
+      return true;
+    } catch (error) {
+      console.error('Error saving deck settings:', error);
+      return false;
+    }
   }, [
     autoDecksEnabled,
     clozeQuestionsEnabled,
@@ -429,6 +442,46 @@ export default function DeckSettingsPage() {
     halfwayCheckpointEnabled,
     difficultyTimes,
   ]);
+
+  // Handle save button press
+  const handleSave = React.useCallback(async () => {
+    const success = await saveSettings();
+    if (success) {
+      hasSavedRef.current = true;
+      // Show success modal
+      setIsSuccessModalOpen(true);
+      Animated.parallel([
+        Animated.timing(successOverlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [saveSettings, successOverlayOpacity, successModalOpacity]);
+
+  // Handle dismiss success modal
+  const handleDismissSuccessModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(successOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSuccessModalOpen(false);
+    });
+  }, [successOverlayOpacity, successModalOpacity]);
 
   // When difficulty changes, update picker values - memoized to prevent recalculation
   const pickerMinutes = React.useMemo(() => difficultyTimes[selectedDifficultyIndex].min, [difficultyTimes, selectedDifficultyIndex]);
@@ -452,8 +505,12 @@ export default function DeckSettingsPage() {
   }, []);
 
   const handleBackPress = React.useCallback(() => {
+    // If user didn't save, reload settings to revert changes
+    if (!hasSavedRef.current) {
+      loadSettings();
+    }
     router.back();
-  }, [router]);
+  }, [router, loadSettings]);
 
   const handleHelpPress = React.useCallback(() => {
     setIsHelpModalOpen(true);
@@ -519,7 +576,7 @@ export default function DeckSettingsPage() {
   }, [insets.bottom]);
 
   return (
-    <View style={containerStyle}>
+      <View style={containerStyle}>
         <View style={topBarStyle}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -528,6 +585,14 @@ export default function DeckSettingsPage() {
           <AntDesign name="arrowleft" size={32} color={text} />
         </TouchableOpacity>
         <Text style={titleStyle}>{strings[language].deckSettingsPage.title}</Text>
+        <TouchableOpacity 
+          style={styles.saveButton}
+          onPress={handleSave}
+        >
+          <Text style={[styles.saveButtonText, { color: brandColor2 }]}>
+            {strings[language].deckSettingsPage.save}
+          </Text>
+        </TouchableOpacity>
       </View>
       <View style={mainContainerStyle}>
         <ScrollView 
@@ -672,6 +737,21 @@ export default function DeckSettingsPage() {
         }}
         Icon={theme === 'dark' ? HelpIconFilledDarkMode : HelpIconFilled}
       />
+      <GreyOverlayBackground 
+        visible={isSuccessModalOpen}
+        opacity={successOverlayOpacity}
+        onPress={handleDismissSuccessModal}
+      />
+      <GenericModal
+        visible={isSuccessModalOpen}
+        opacity={successModalOpacity}
+        text={strings[language].deckSettingsPage.deckSettingsSaved}
+        hasAnimation={true}
+        animationSource={require('@/assets/animations/SuccessAnimation1_Tick.json')}
+        animationLoop={true}
+        contentMarginTop={20}
+        lottieMarginTop={40}
+      />
 
       {/* In-app notifications */}
       <BackgroundTaskNotification />
@@ -693,6 +773,14 @@ const createStyles = (theme: 'light' | 'dark') => StyleSheet.create({
   backButton: {
     padding: 8,
   },
+  saveButton: {
+    padding: 8,
+    marginLeft: 'auto',
+  },
+  saveButtonText: {
+    fontFamily: Fonts.bodyMedium,
+    fontSize: 18,
+  },
   title: {
     fontFamily: Fonts.title,
     fontSize: 32,
@@ -702,6 +790,7 @@ const createStyles = (theme: 'light' | 'dark') => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     lineHeight: 36,
+    flex: 1,
   },
   mainContainer: {
     flex: 1,

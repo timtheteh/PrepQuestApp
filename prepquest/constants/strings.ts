@@ -792,6 +792,8 @@ export const strings: Record<string, any> = {
       halfwayCheckpointDescription: 'Turning this on will let you see current statistics of your quiz performance halfway through the quiz.',
       timerSettingsForDifficulty: 'Timer Settings for Respective Difficulty',
       backToDefaultSettings: 'Back to default settings?',
+      save: 'Save',
+      deckSettingsSaved: 'Deck settings saved!',
       helpModalText: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.",
       helpModalWebsite: 'our website',
       timePicker: {
@@ -1647,6 +1649,8 @@ export const strings: Record<string, any> = {
       halfwayCheckpointDescription: '开启此功能后，您将在答题中途看到当前测验表现的统计数据。',
       timerSettingsForDifficulty: '各难度级别的计时设置',
       backToDefaultSettings: '恢复默认设置？',
+      save: '保存',
+      deckSettingsSaved: '卡片组设置已保存!',
       helpModalText: '我们的团队基于布鲁姆分类法，确定了7种主要认知题型，助力高效学习。了解更多内容，请访问我们的官网。',
       helpModalWebsite: '官网',
       timePicker: {

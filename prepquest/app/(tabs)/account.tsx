@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Image, Share, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated, ScrollView, Image, Share, Modal } from 'react-native';
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 import type { ViewStyle } from 'react-native';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
@@ -19,6 +19,9 @@ import { MenuContext } from '@/contexts/MenuContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { strings } from '@/constants/strings';
+import { GenericModal } from '@/components/modals/GenericModal';
+import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
+import DeleteModalIcon from '@/assets/icons/generalIcons/deleteModalIcon.svg';
 import DeckCreationLoadingPage from '../DeckCreationLoadingPage';
 import DeckCreationStatusPage from '../deckCreationStatusPage';
 import { useTopBarAccountHeight } from '@/hooks/heights';
@@ -37,6 +40,9 @@ export default function AccountScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [preservedUser, setPreservedUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState<'profile' | 'stats'>('profile');
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const signOutOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const signOutModalOpacity = useRef(new Animated.Value(0)).current;
   const [currentPlan, setCurrentPlan] = useState<string>('Free Plan');
   const [requestCounts, setRequestCounts] = useState<RequestCounts>({
     fileUploadRequests: 0,
@@ -166,45 +172,63 @@ export default function AccountScreen() {
     router.push('/appSettings');
   }, [router]);
 
-  const handleSignOut = async () => {
-    Alert.alert(
-      strings[language].signOutConfirmation,
-      strings[language].signOutMessage,
-      [
-        {
-          text: strings[language].cancel,
-          style: 'cancel',
-        },
-        {
-          text: strings[language].signOut,
-          style: 'destructive',
-          onPress: async () => {
-            // Preserve current user information before sign out
-            setPreservedUser(user);
-            // Show global loading overlay instead of changing profile info
-            setShowGlobalLoadingOverlay(true);
-            setIsSigningOut(true);
-            try {
-              // Sign out from both Supabase and Clerk
-              await signOut();
-              // Force a small delay to ensure session is cleared and user sees the loading animation
-              setTimeout(() => {
-                setIsSigningOut(false);
-                setShowGlobalLoadingOverlay(false);
-                // Clear preserved user after sign out is complete
-                setPreservedUser(null);
-              }, 1500); // Slightly longer delay to show the loading animation
-            } catch (error) {
-              setIsSigningOut(false);
-              setShowGlobalLoadingOverlay(false);
-              // Clear preserved user on error
-              setPreservedUser(null);
-            }
-          },
-        },
-      ]
-    );
-  };
+  const handleSignOut = useCallback(() => {
+    setIsSignOutModalOpen(true);
+    Animated.parallel([
+      Animated.timing(signOutOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(signOutModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [signOutOverlayOpacity, signOutModalOpacity]);
+
+  const handleDismissSignOutModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(signOutOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(signOutModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsSignOutModalOpen(false);
+    });
+  }, [signOutOverlayOpacity, signOutModalOpacity]);
+
+  const handleConfirmSignOut = useCallback(async () => {
+    handleDismissSignOutModal();
+    // Preserve current user information before sign out
+    setPreservedUser(user);
+    // Show global loading overlay instead of changing profile info
+    setShowGlobalLoadingOverlay(true);
+    setIsSigningOut(true);
+    try {
+      // Sign out from both Supabase and Clerk
+      await signOut();
+      // Force a small delay to ensure session is cleared and user sees the loading animation
+      setTimeout(() => {
+        setIsSigningOut(false);
+        setShowGlobalLoadingOverlay(false);
+        // Clear preserved user after sign out is complete
+        setPreservedUser(null);
+      }, 1500); // Slightly longer delay to show the loading animation
+    } catch (error) {
+      setIsSigningOut(false);
+      setShowGlobalLoadingOverlay(false);
+      // Clear preserved user on error
+      setPreservedUser(null);
+    }
+  }, [handleDismissSignOutModal, user, signOut, setShowGlobalLoadingOverlay]);
 
   // Button position: 0 (left) for dark, 1 (right) for light
   const translateX = buttonAnim.interpolate({
@@ -774,6 +798,29 @@ export default function AccountScreen() {
       <View style={{ flex: 1, backgroundColor: themeColors.background }}>
         {MainContent}
       </View>
+      <Modal
+        visible={isSignOutModalOpen}
+        transparent={true}
+        animationType="none"
+        onRequestClose={handleDismissSignOutModal}
+      >
+        <View style={{ flex: 1 }}>
+          <GreyOverlayBackground 
+            visible={isSignOutModalOpen}
+            opacity={signOutOverlayOpacity}
+            onPress={handleDismissSignOutModal}
+          />
+          <GenericModal
+            visible={isSignOutModalOpen}
+            opacity={signOutModalOpacity}
+            text={strings[language].signOutMessage}
+            Icon={DeleteModalIcon}
+            buttons="double"
+            onCancel={handleDismissSignOutModal}
+            onConfirm={handleConfirmSignOut}
+          />
+        </View>
+      </Modal>
     </GestureHandlerRootView>
   );
 }

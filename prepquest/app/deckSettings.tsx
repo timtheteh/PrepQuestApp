@@ -103,16 +103,50 @@ const TimePicker = ({
   const minScrollY = React.useRef(new Animated.Value((minutesRange.indexOf(initialMinutes)) * ITEM_HEIGHT)).current;
   const secScrollY = React.useRef(new Animated.Value((secondsRange.indexOf(initialSeconds)) * ITEM_HEIGHT)).current;
 
+  // Initialize on mount
   React.useEffect(() => {
-    setTimeout(() => {
-      const minY = (minutesRange.indexOf(initialMinutes)) * ITEM_HEIGHT;
-      const secY = (secondsRange.indexOf(initialSeconds)) * ITEM_HEIGHT;
+    const minY = (minutesRange.indexOf(initialMinutes)) * ITEM_HEIGHT;
+    const secY = (secondsRange.indexOf(initialSeconds)) * ITEM_HEIGHT;
+    // Use requestAnimationFrame for smoother initialization
+    requestAnimationFrame(() => {
       (minRef.current as any)?.scrollTo({ y: minY, animated: false });
       (secRef.current as any)?.scrollTo({ y: secY, animated: false });
       minScrollY.setValue(minY);
       secScrollY.setValue(secY);
-    }, 10);
+      setSelectedMin(initialMinutes);
+      setSelectedSec(initialSeconds);
+    });
   }, []);
+
+  // Track previous values to detect changes
+  const prevInitialMinutes = React.useRef(initialMinutes);
+  const prevInitialSeconds = React.useRef(initialSeconds);
+
+  // Update when initialMinutes or initialSeconds change (for difficulty switching)
+  React.useEffect(() => {
+    // Only update if values actually changed
+    if (prevInitialMinutes.current !== initialMinutes || prevInitialSeconds.current !== initialSeconds) {
+      const minIndex = minutesRange.indexOf(initialMinutes);
+      const secIndex = secondsRange.indexOf(initialSeconds);
+      
+      if (minIndex !== -1 && secIndex !== -1) {
+        const minY = minIndex * ITEM_HEIGHT;
+        const secY = secIndex * ITEM_HEIGHT;
+        
+        // Smooth scroll to new values when props change
+        (minRef.current as any)?.scrollTo({ y: minY, animated: true });
+        (secRef.current as any)?.scrollTo({ y: secY, animated: true });
+        
+        // Update selected values immediately for responsive feel
+        setSelectedMin(initialMinutes);
+        setSelectedSec(initialSeconds);
+        
+        // Update refs
+        prevInitialMinutes.current = initialMinutes;
+        prevInitialSeconds.current = initialSeconds;
+      }
+    }
+  }, [initialMinutes, initialSeconds, minutesRange, secondsRange]);
 
   React.useEffect(() => {
     onChange && onChange(selectedMin, selectedSec);
@@ -413,19 +447,9 @@ export default function DeckSettingsPage() {
   }, []);
 
   const handleDifficultyChange = React.useCallback((idx: number) => {
-    Animated.timing(pickerOpacity, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setSelectedDifficultyIndex(idx);
-      Animated.timing(pickerOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    });
-  }, [pickerOpacity]);
+    // Update immediately without animation for responsive feel
+    setSelectedDifficultyIndex(idx);
+  }, []);
 
   const handleBackPress = React.useCallback(() => {
     router.back();
@@ -596,16 +620,14 @@ export default function DeckSettingsPage() {
               language={language}
             />
           </View>
-          <Animated.View style={{ opacity: pickerOpacity }}>
-            <TimePicker
-              key={`${selectedDifficultyIndex}-${resetCounter}`}
-              initialMinutes={pickerMinutes}
-              initialSeconds={pickerSeconds}
-              onChange={handleTimeChange}
-              language={language}
-              theme={theme}
-            />
-          </Animated.View>
+          <TimePicker
+            key={resetCounter}
+            initialMinutes={pickerMinutes}
+            initialSeconds={pickerSeconds}
+            onChange={handleTimeChange}
+            language={language}
+            theme={theme}
+          />
         </ScrollView>
       </View>
       <TouchableOpacity

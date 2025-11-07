@@ -1,7 +1,7 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/clerk-expo';
-import { getCurrentUserID, getDeckGrade, getDeckAverageTime, getAIDeckGrade } from './decks';
+import { getCurrentUserID, getDeckGrade, getDeckAverageTime, getAIDeckGrade, getAIDeckAverageTime } from './decks';
 
 export interface DayGrade {
   day: string;
@@ -477,56 +477,111 @@ export interface MonthSpeed {
 }
 
 // Get all study/quiz dates and calculate average speed for each day
+// For each day, gets all decks that were studied/quizzed that day and calculates the average of their deck average times
+// Uses only the most recent attempt date per flashcard (study or quiz, whichever is more recent) to determine which decks were studied/quizzed on each day
 export async function getDailySpeeds(): Promise<DaySpeed[]> {
   try {
     const userID = await getCurrentUserID();
-    // Get all flashcards with study or quiz dates and timeTaken from both tables
+    
+    // Get all flashcards with study or quiz dates from both regular and AI flashcards tables
+    // Include deckID to identify which decks were studied/quizzed
     const result = await db.getAllAsync(`
-      SELECT timeTaken, lastStudiedDate, lastQuizzedDate
-      FROM flashcards
-      WHERE userID = ? 
-        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-        AND timeTaken IS NOT NULL
-    `, [userID]);
+      SELECT 
+        deckID,
+        lastStudiedDate, 
+        lastQuizzedDate
+      FROM (
+        SELECT deckID, lastStudiedDate, lastQuizzedDate
+        FROM flashcards
+        WHERE userID = ? 
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        UNION ALL
+        SELECT deckID, lastStudiedDate, lastQuizzedDate
+        FROM AIFlashcards
+        WHERE userID = ? 
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+      )
+    `, [userID, userID]);
     const flashcards = result as Array<{
-      timeTaken: number;
+      deckID: number;
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
     }>;
-
 
     if (!flashcards || flashcards.length === 0) {
       return [];
     }
 
-    // Group flashcards by date (both study and quiz dates)
-    const dateGroups = new Map<string, number[]>();
+    // Group flashcards by date using only the most recent attempt date per flashcard
+    // Each flashcard's most recent date determines which day its deck was studied/quizzed
+    const dateDeckGroups = new Map<string, Set<number>>();
 
     flashcards.forEach((flashcard) => {
-      // Add to study date group
-      if (flashcard.lastStudiedDate) {
-        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        if (!dateGroups.has(studyDate)) {
-          dateGroups.set(studyDate, []);
-        }
-        dateGroups.get(studyDate)!.push(flashcard.timeTaken);
+      // Determine the most recent attempt date
+      let mostRecentDate: string | null = null;
+      
+      if (flashcard.lastStudiedDate && flashcard.lastQuizzedDate) {
+        // Both dates exist, use the more recent one
+        const studyDate = new Date(flashcard.lastStudiedDate);
+        const quizDate = new Date(flashcard.lastQuizzedDate);
+        mostRecentDate = studyDate > quizDate 
+          ? flashcard.lastStudiedDate 
+          : flashcard.lastQuizzedDate;
+      } else if (flashcard.lastStudiedDate) {
+        // Only study date exists
+        mostRecentDate = flashcard.lastStudiedDate;
+      } else if (flashcard.lastQuizzedDate) {
+        // Only quiz date exists
+        mostRecentDate = flashcard.lastQuizzedDate;
       }
-
-      // Add to quiz date group
-      if (flashcard.lastQuizzedDate) {
-        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-        if (!dateGroups.has(quizDate)) {
-          dateGroups.set(quizDate, []);
+      
+      // Add the deck to the date group for the most recent attempt date
+      if (mostRecentDate) {
+        const dateString = new Date(mostRecentDate).toISOString().split('T')[0];
+        if (!dateDeckGroups.has(dateString)) {
+          dateDeckGroups.set(dateString, new Set<number>());
         }
-        dateGroups.get(quizDate)!.push(flashcard.timeTaken);
+        dateDeckGroups.get(dateString)!.add(flashcard.deckID);
       }
     });
 
-    // Calculate average speed for each date
+    // For each date, get the deck average times and calculate the average
     const dailySpeeds: DaySpeed[] = [];
     
-    dateGroups.forEach((timesForDate, dateString) => {
-      const averageTime = Math.round(timesForDate.reduce((sum, time) => sum + time, 0) / timesForDate.length);
+    // Determine which decks are AI decks by checking the AIDecks table
+    const aiDeckIdsResult = await db.getAllAsync(`
+      SELECT DISTINCT deckID
+      FROM AIDecks
+      WHERE userID = ?
+    `, [userID]);
+    const aiDeckIds = new Set((aiDeckIdsResult as Array<{ deckID: number }>).map(r => r.deckID));
+
+    // Process each date
+    for (const [dateString, deckIds] of dateDeckGroups.entries()) {
+      const deckIdArray = Array.from(deckIds);
+      const deckAverageTimePromises = deckIdArray.map(async (deckId) => {
+        // Determine if this is an AI deck
+        if (aiDeckIds.has(deckId)) {
+          return await getAIDeckAverageTime(deckId);
+        } else {
+          return await getDeckAverageTime(deckId);
+        }
+      });
+
+      const deckAverageTimes = await Promise.all(deckAverageTimePromises);
+      
+      // Filter out null times (decks with no attempted flashcards or no time data)
+      const validTimes = deckAverageTimes.filter((time): time is NonNullable<typeof time> => time !== null);
+      
+      if (validTimes.length === 0) {
+        // No valid deck average times for this date, skip it
+        continue;
+      }
+
+      // Calculate average of deck average times
+      const totalTime = validTimes.reduce((sum, time) => sum + time, 0);
+      const averageTime = Math.round(totalTime / validTimes.length);
+
       const date = new Date(dateString);
       
       // Format day (Mon, Tue, etc.)
@@ -540,13 +595,12 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       const year = date.getFullYear();
       const dateFormatted = `${dayOfMonth} ${month} ${year}`;
       
-      
       dailySpeeds.push({
         day,
         date: dateFormatted,
         time: averageTime
       });
-    });
+    }
 
     // Sort by date (oldest first)
     dailySpeeds.sort((a, b) => {

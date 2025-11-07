@@ -293,12 +293,12 @@ export const strings: Record<string, any> = {
     deleteFolderConfirmation: 'Are you sure you want to delete this folder?',
     decksAlreadyInFolders: ['One or more decks you', 'have selected are already', 'in the selected folder(s)!'],
     // AverageGradeThermometer strings
-    averageGrade: 'Average Grade',
+    averageGrade: 'Average Grade (all time)',
     // AverageSpeedTotal strings
-    averageTimePerFlashcard: 'Average time per flashcard',
+    averageTimePerFlashcard: 'Average time per flashcard (all time)',
     seconds: 's',
     // BreakdownByDifficultyPie strings
-    breakdownByDifficulty: 'Breakdown of Flashcards by Difficulty',
+    breakdownByDifficulty: 'Breakdown of Flashcards\nby Difficulty',
     noDifficultyData: 'No difficulty data available',
     completeSomeFlashcards: 'Complete some flashcards to see your breakdown',
     difficultyLabels: {
@@ -323,7 +323,7 @@ export const strings: Record<string, any> = {
       others: 'Others',
     },
     // GradeChart strings
-    gradeChart: 'Grade Chart (%)',
+    gradeChart: 'Grade for Decks\nStudied/Quizzed (%) over time',
     day: 'Day',
     month: 'Month',
     loadingGradeData: 'Loading grade data...',
@@ -357,7 +357,7 @@ export const strings: Record<string, any> = {
     reviewDecks: 'Decks',
     reviewFlashcards: 'Flashcards',
     // SpeedChart strings
-    speedChart: 'Speed Chart (average speed per flashcard)',
+    speedChart: 'Speed (average time per flashcard for\nDecks Studied/Quizzed) over time',
     loadingSpeedData: 'Loading speed data...',
     noSpeedDataAvailable: 'No speed data available',
     studyOrQuizToSeeSpeedTrends: 'Study or quiz flashcards to see your speed trends',
@@ -840,6 +840,8 @@ export const strings: Record<string, any> = {
       company: 'Company',
       topics: 'Topics',
       experienceLevel: 'Experience Level',
+      averageGrade: 'Grade (latest study/quiz attempt)',
+      averageTimePerFlashcard: 'Average time per flashcard\n(latest study/quiz attempt)',
       masteryLevels: {
         expert: 'Expert',
         proficient: 'Proficient',
@@ -1528,9 +1530,9 @@ export const strings: Record<string, any> = {
     deleteFolderConfirmation: '你确定要删除这个文件夹吗？',
     decksAlreadyInFolders: ['你选择的一个或多个卡片组', '已在所选文件夹中！'],
     // AverageGradeThermometer strings
-    averageGrade: '平均分数',
+    averageGrade: '平均分数 (所有时间)',
     // AverageSpeedTotal strings
-    averageTimePerFlashcard: '平均每张卡片用时',
+    averageTimePerFlashcard: '平均每张卡片用时 (所有时间)',
     seconds: '秒',
     // BreakdownByDifficultyPie strings
     breakdownByDifficulty: '按难度分布的卡片',
@@ -1558,7 +1560,7 @@ export const strings: Record<string, any> = {
       others: '其他',
     },
     // GradeChart strings
-    gradeChart: '分数图表 (%)',
+    gradeChart: '卡组学习/测验分数 (%)\n随时间变化',
     day: '日',
     month: '月',
     loadingGradeData: '正在加载分数数据...',
@@ -1592,7 +1594,7 @@ export const strings: Record<string, any> = {
     reviewDecks: '卡组',
     reviewFlashcards: '卡片',
     // SpeedChart strings
-    speedChart: '速度图表（每张卡片的平均速度）',
+    speedChart: '速度 (卡组学习/测验的平均每张卡片用时)\n随时间变化',
     loadingSpeedData: '正在加载速度数据...',
     noSpeedDataAvailable: '暂无速度数据',
     studyOrQuizToSeeSpeedTrends: '学习或测验卡片以查看速度趋势',
@@ -2075,6 +2077,8 @@ export const strings: Record<string, any> = {
       company: '公司',
       topics: '主题',
       experienceLevel: '经验水平',
+      averageGrade: '成绩（最近一次学习/测验）',
+      averageTimePerFlashcard: '每张卡片平均时间\n（最近一次学习/测验）',
       masteryLevels: {
         expert: '专家',
         proficient: '熟练',

@@ -1608,9 +1608,15 @@ export default function DeckDetailsScreen() {
                     ) : (
                       // Stats for all deck types when flashcards have been attempted
                       <View style={styles.cardDetailsContainer}>
-                        <AverageGradeThermometer score={deckGrade?.score}/>
+                        <AverageGradeThermometer 
+                          score={deckGrade?.score}
+                          title={strings[language].deckDetails.averageGrade}
+                        />
                         <BreakdownByDifficultyPie breakdown={breakdown || undefined}/>
-                        <AverageSpeedTotal averageTime={averageTime}/>
+                        <AverageSpeedTotal 
+                          averageTime={averageTime}
+                          title={strings[language].deckDetails.averageTimePerFlashcard}
+                        />
                       </View>
                     )}
 
@@ -1797,9 +1803,15 @@ export default function DeckDetailsScreen() {
                     ) : (
                       // Stats for all deck types when flashcards have been attempted
                       <View style={styles.cardDetailsContainer}>
-                        <AverageGradeThermometer score={deckGrade?.score}/>
+                        <AverageGradeThermometer 
+                          score={deckGrade?.score}
+                          title={strings[language].deckDetails.averageGrade}
+                        />
                         <BreakdownByDifficultyPie breakdown={breakdown || undefined}/>
-                        <AverageSpeedTotal averageTime={averageTime}/>
+                        <AverageSpeedTotal 
+                          averageTime={averageTime}
+                          title={strings[language].deckDetails.averageTimePerFlashcard}
+                        />
                       </View>
                     )}
 

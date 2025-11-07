@@ -9,6 +9,7 @@ import { Fonts } from '@/constants/Fonts';
 
 interface AverageGradeThermometerProps {
   score?: number; // 0-100
+  title?: string; // Optional custom title
 }
 
 const SEGMENTS = [0, 20, 45, 65, 80, 90, 100];
@@ -18,7 +19,7 @@ const RECT_HEIGHT = 24;
 const RADIUS = 12;
 const HORIZONTAL_PADDING = 10;
 
-export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerProps) {
+export function AverageGradeThermometer({ score = 0, title }: AverageGradeThermometerProps) {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -38,13 +39,16 @@ export function AverageGradeThermometer({ score = 0 }: AverageGradeThermometerPr
   // Calculate arrow position, clamped to padding
   const arrowX = HORIZONTAL_PADDING + Math.max(0, Math.min(100, score)) / 100 * RECT_WIDTH;
 
+  // Use custom title if provided, otherwise use default
+  const displayTitle = title ?? strings[language].averageGrade;
+
   return (
     <View style={styles.container}>
       <Text style={[styles.title, {
         fontFamily: Fonts.title,
         color: colors.text
       }]}>
-        {strings[language].averageGrade}
+        {displayTitle}
       </Text>
       <Text style={[styles.scoreText, {
         fontFamily: Fonts.title,

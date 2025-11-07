@@ -19,6 +19,7 @@ const LABELS = [0, 10, 35, 60];
 
 interface AverageSpeedTotalProps {
   averageTime?: number | null;
+  title?: string; // Optional custom title
 }
 
 // Helper to get angle for a value (0-60s maps to 180deg, -90deg to +90deg)
@@ -52,7 +53,7 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
   };
 }
 
-export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProps) {
+export default function AverageSpeedTotal({ averageTime, title }: AverageSpeedTotalProps) {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -83,8 +84,8 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
   const gaugeAngle = valueToAngle(cappedValue);
   // Label positions (slightly outside arc)
   const labelPositions = LABELS.map(v => polarToCartesian(CX-7, CY -8, R+8, valueToAngle(v)));
-  // Localized title and label
-  const title = strings[language].averageTimePerFlashcard;
+  // Localized title and label - use custom title if provided, otherwise use default
+  const displayTitle = title ?? strings[language].averageTimePerFlashcard;
   const secondsLabel = strings[language].seconds;
 
   // For gaugeIcon.svg: its tip (0,0) should be at the arc center (CX,CY), so translate and rotate accordingly
@@ -95,7 +96,7 @@ export default function AverageSpeedTotal({ averageTime }: AverageSpeedTotalProp
       <Text style={[styles.title, {
         fontFamily: Fonts.title,
         color: colors.text
-      }]}>{title}</Text>
+      }]}>{displayTitle}</Text>
       <View style={styles.svgWrap}>
         <Svg width={WIDTH} height={HEIGHT}>
           <G>

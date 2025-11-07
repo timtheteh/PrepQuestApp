@@ -331,62 +331,70 @@ function getMonthNumber(monthName: string): string {
 }
 
 // Calculate average grade for all time
+// Gets all decks that have been attempted at least once, calculates the grade for each deck, and returns the average
 export async function getAverageGradeAllTime(): Promise<number> {
   try {
-    
     const userID = await getCurrentUserID();
     
-    // Get all flashcards with study or quiz dates from both tables
-    const result = await db.getAllAsync(`
-      SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
+    // Get all deck IDs that have at least one attempted flashcard (from regular flashcards table)
+    // These are regular decks (deckID references decks table)
+    const regularDecksResult = await db.getAllAsync(`
+      SELECT DISTINCT deckID
       FROM flashcards
       WHERE userID = ? 
         AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
         AND difficultyRating != 'None'
     `, [userID]);
-    const flashcards = result as Array<{
-      difficultyRating: string;
-      lastStudiedDate: string | null;
-      lastQuizzedDate: string | null;
-      answerType: string;
-      isMcqAnswerRight: number | null;
-    }>;
-
-
-    if (!flashcards || flashcards.length === 0) {
+    const regularDeckIds = (regularDecksResult as Array<{ deckID: number }>).map(d => d.deckID);
+    
+    // Get all AI deck IDs that have at least one attempted flashcard (from AIFlashcards table)
+    // These are AI decks (deckID references AIDecks table)
+    const aiDecksResult = await db.getAllAsync(`
+      SELECT DISTINCT deckID
+      FROM AIFlashcards
+      WHERE userID = ? 
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND difficultyRating != 'None'
+    `, [userID]);
+    const aiDeckIds = (aiDecksResult as Array<{ deckID: number }>).map(d => d.deckID);
+    
+    if (regularDeckIds.length === 0 && aiDeckIds.length === 0) {
       return 0;
     }
-
-    // Calculate weighted score using the same formula as daily grades
-    const weights = {
-      'Again': 0,     // 0% - needs to learn
-      'Hard': 0.4,    // 40% - partially learned
-      'Good': 0.8,    // 80% - well learned
-      'Easy': 1.0     // 100% - mastered
-    };
-
-    let totalWeight = 0;
-
-    flashcards.forEach((flashcard) => {
-      const difficulty = flashcard.difficultyRating;
-      const answerType = flashcard.answerType;
-      const isMcqAnswerRight = flashcard.isMcqAnswerRight;
-
-      let weight = 0;
-
-      if (answerType === 'mcq') {
-        // For MCQ flashcards, use isMcqAnswerRight: 0 if wrong, 1 if correct
-        weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
-      } else {
-        // For non-MCQ flashcards, use difficulty-based weights
-        weight = weights[difficulty as keyof typeof weights] || 0;
-      }
-
-      totalWeight += weight;
-    });
-
-    const averageScore = Math.round((totalWeight / flashcards.length) * 100);
     
+    // Calculate grade for each deck in parallel for better performance
+    const regularDeckGradePromises = regularDeckIds.map(deckId => getDeckGrade(deckId));
+    const aiDeckGradePromises = aiDeckIds.map(deckId => getAIDeckGrade(deckId));
+    
+    const [regularDeckGrades, aiDeckGrades] = await Promise.all([
+      Promise.all(regularDeckGradePromises),
+      Promise.all(aiDeckGradePromises)
+    ]);
+    
+    // Collect all valid deck grades
+    const deckGrades: number[] = [];
+    
+    // Process regular deck grades
+    regularDeckGrades.forEach(deckGrade => {
+      if (deckGrade && deckGrade.score !== null && deckGrade.score !== undefined) {
+        deckGrades.push(deckGrade.score);
+      }
+    });
+    
+    // Process AI deck grades
+    aiDeckGrades.forEach(deckGrade => {
+      if (deckGrade && deckGrade.score !== null && deckGrade.score !== undefined) {
+        deckGrades.push(deckGrade.score);
+      }
+    });
+    
+    if (deckGrades.length === 0) {
+      return 0;
+    }
+    
+    // Calculate average of all deck grades
+    const sum = deckGrades.reduce((acc, score) => acc + score, 0);
+    const averageScore = Math.round(sum / deckGrades.length);
     
     return averageScore;
   } catch (error) {

@@ -53,10 +53,12 @@ import { checkAndAwardCustomBadges } from '@/db/decks';
 import { useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
 import { useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
 import { useNumberOfDecksCreatedBadgeNotification } from '@/contexts/NumberOfDecksCreatedNotificationContext';
+import { useLifetimeGradeBadgeNotification } from '@/contexts/LifetimeGradeBadgeNotificationContext';
 import { useCustomBadgeNotification } from '@/contexts/CustomBadgeNotificationContext';
 import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
 import { WelcomeBadgeNotification } from '@/components/inAppNotifications/WelcomeBadgeNotification';
 import { LifetimeBadgeNotification } from '@/components/inAppNotifications/LifetimeBadgeNotification';
+import { LifetimeGradeBadgeNotification } from '@/components/inAppNotifications/LifetimeGradeBadgeNotification';
 import { CustomBadgeNotification } from '@/components/inAppNotifications/CustomBadgeNotification';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
@@ -2993,13 +2995,21 @@ export default function FlashcardViewPage() {
     dismissNotification: dismissWelcomeBadgeNotification
   } = useWelcomeBadgeNotification();
 
-  // Number of decks created / quiz score badge notification - use global context
+  // Number of decks created / speed badge notification - use global context
   const {
     numberOfDecksCreatedBadgeAward,
     showNumberOfDecksCreatedBadgeNotification,
     showNotification: showNumberOfDecksCreatedBadgeNotificationFn,
     dismissNotification: dismissNumberOfDecksCreatedBadgeNotification
   } = useNumberOfDecksCreatedBadgeNotification();
+
+  // Lifetime grade badge notification - use global context
+  const {
+    lifetimeGradeBadgeAward,
+    showLifetimeGradeBadgeNotification,
+    showNotification: showLifetimeGradeBadgeNotificationFn,
+    dismissNotification: dismissLifetimeGradeBadgeNotification
+  } = useLifetimeGradeBadgeNotification();
 
   // Custom badge notification - use global context
   const {
@@ -3013,6 +3023,7 @@ export default function FlashcardViewPage() {
   const [streakNotificationHeight, setStreakNotificationHeight] = useState(0);
   const [welcomeNotificationHeight, setWelcomeNotificationHeight] = useState(0);
   const [numberOfDecksCreatedNotificationHeight, setNumberOfDecksCreatedNotificationHeight] = useState(0);
+  const [lifetimeGradeBadgeNotificationHeight, setLifetimeGradeBadgeNotificationHeight] = useState(0);
   const [customNotificationHeight, setCustomNotificationHeight] = useState(0);
 
   // Load user's voice language from database (for speech-to-text detection)
@@ -3263,7 +3274,7 @@ export default function FlashcardViewPage() {
         console.log('🏆 Quiz score lifetime badge award result:', quizScoreBadgeAward);
         if (quizScoreBadgeAward && quizScoreBadgeAward.isNewAchievement) {
           console.log('🏆 Showing quiz score lifetime badge notification');
-          showNumberOfDecksCreatedBadgeNotificationFn(quizScoreBadgeAward);
+          showLifetimeGradeBadgeNotificationFn(quizScoreBadgeAward);
         } else {
           console.log('🏆 No quiz score lifetime badge award or already achieved');
         }
@@ -4073,7 +4084,7 @@ export default function FlashcardViewPage() {
           />
         )}
         
-        {/* Number of decks created / quiz score badge notification on success screen */}
+        {/* Number of decks created / speed badge notification on success screen */}
         {numberOfDecksCreatedBadgeAward && (
           <LifetimeBadgeNotification
             badgeName={numberOfDecksCreatedBadgeAward.badgeName}
@@ -4088,6 +4099,22 @@ export default function FlashcardViewPage() {
           />
         )}
         
+        {/* Lifetime grade badge notification on success screen */}
+        {lifetimeGradeBadgeAward && (
+          <LifetimeGradeBadgeNotification
+            badgeName={lifetimeGradeBadgeAward.badgeName}
+            badgeSubtext={lifetimeGradeBadgeAward.badgeSubtext}
+            visible={showLifetimeGradeBadgeNotification}
+            onDismiss={dismissLifetimeGradeBadgeNotification}
+            topOffset={
+              (streakBadgeAward && showStreakBadgeNotificationState ? (streakNotificationHeight || 92) + 12 : 0) +
+              ((welcomeBadgeAward && showWelcomeBadgeNotificationState) ? (welcomeNotificationHeight || 92) + 12 : 0) +
+              ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + 12 : 0)
+            }
+            onLayout={setLifetimeGradeBadgeNotificationHeight}
+          />
+        )}
+        
         {/* Custom badge notification on success screen */}
         {customBadgeAward && (
           <CustomBadgeNotification
@@ -4097,7 +4124,8 @@ export default function FlashcardViewPage() {
             topOffset={
               (streakBadgeAward && showStreakBadgeNotificationState ? (streakNotificationHeight || 92) + 12 : 0) +
               ((welcomeBadgeAward && showWelcomeBadgeNotificationState) ? (welcomeNotificationHeight || 92) + 12 : 0) +
-              ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + 12 : 0)
+              ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + 12 : 0) +
+              ((lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification) ? (lifetimeGradeBadgeNotificationHeight || 92) + 12 : 0)
             }
             onLayout={setCustomNotificationHeight}
           />

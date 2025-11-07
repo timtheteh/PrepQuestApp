@@ -25,11 +25,13 @@ import { StreakBadgeNotificationProvider, useStreakBadgeNotification } from '@/c
 import { WelcomeBadgeNotificationProvider, useWelcomeBadgeNotification } from '@/contexts/WelcomeBadgeNotificationContext';
 import { FirstStudyFirstInterviewBadgeNotificationProvider, useFirstStudyFirstInterviewBadgeNotification } from '@/contexts/FirstStudyFirstInterviewNotificationContext';
 import { NumberOfDecksCreatedBadgeNotificationProvider, useNumberOfDecksCreatedBadgeNotification } from '@/contexts/NumberOfDecksCreatedNotificationContext';
+import { LifetimeGradeBadgeNotificationProvider, useLifetimeGradeBadgeNotification } from '@/contexts/LifetimeGradeBadgeNotificationContext';
 import { CustomBadgeNotificationProvider, useCustomBadgeNotification } from '@/contexts/CustomBadgeNotificationContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
 import { StreakBadgeNotification } from '@/components/inAppNotifications/StreakBadgeNotification';
 import { WelcomeBadgeNotification } from '@/components/inAppNotifications/WelcomeBadgeNotification';
 import { LifetimeBadgeNotification } from '@/components/inAppNotifications/LifetimeBadgeNotification';
+import { LifetimeGradeBadgeNotification } from '@/components/inAppNotifications/LifetimeGradeBadgeNotification';
 import { CustomBadgeNotification } from '@/components/inAppNotifications/CustomBadgeNotification';
 
 import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
@@ -95,6 +97,7 @@ function BadgeNotificationsWrapper() {
   const { welcomeBadgeAward, showWelcomeBadgeNotification, dismissNotification: dismissWelcomeNotification } = useWelcomeBadgeNotification();
   const { firstStudyFirstInterviewBadgeAward, showFirstStudyFirstInterviewBadgeNotification, dismissNotification: dismissFirstStudyFirstInterviewNotification } = useFirstStudyFirstInterviewBadgeNotification();
   const { numberOfDecksCreatedBadgeAward, showNumberOfDecksCreatedBadgeNotification, dismissNotification: dismissNumberOfDecksCreatedNotification } = useNumberOfDecksCreatedBadgeNotification();
+  const { lifetimeGradeBadgeAward, showLifetimeGradeBadgeNotification, dismissNotification: dismissLifetimeGradeBadgeNotification } = useLifetimeGradeBadgeNotification();
   const { customBadgeAward, showCustomBadgeNotification, dismissNotification: dismissCustomBadgeNotification } = useCustomBadgeNotification();
   const { backgroundTaskProgress, isBackgroundTaskRunning, isNotificationDismissed, showBackgroundTaskNotification } = useBackgroundTask();
   const [streakNotificationHeight, setStreakNotificationHeight] = React.useState(0);
@@ -102,6 +105,7 @@ function BadgeNotificationsWrapper() {
   const [welcomeNotificationHeight, setWelcomeNotificationHeight] = React.useState(0);
   const [firstStudyFirstInterviewNotificationHeight, setFirstStudyFirstInterviewNotificationHeight] = React.useState(0);
   const [numberOfDecksCreatedNotificationHeight, setNumberOfDecksCreatedNotificationHeight] = React.useState(0);
+  const [lifetimeGradeBadgeNotificationHeight, setLifetimeGradeBadgeNotificationHeight] = React.useState(0);
   const [customNotificationHeight, setCustomNotificationHeight] = React.useState(0);
   
   // Calculate vertical offsets to stack notifications
@@ -160,8 +164,8 @@ function BadgeNotificationsWrapper() {
           ? (firstStudyFirstInterviewNotificationHeight || 92) + NOTIFICATION_SPACING
           : 0;
   
-  // Custom badge appears below whichever is showing above it
-  const customBadgeOffset = (streakBadgeAward && showStreakBadgeNotification && showBackgroundTaskNotification) 
+  // Lifetime grade badge appears below whichever is showing above it
+  const lifetimeGradeBadgeOffset = (streakBadgeAward && showStreakBadgeNotification && showBackgroundTaskNotification) 
     ? (streakNotificationHeight || 92) + NOTIFICATION_SPACING + (backgroundTaskNotificationHeight || 92) + NOTIFICATION_SPACING + 
       ((welcomeBadgeAward && showWelcomeBadgeNotification) ? (welcomeNotificationHeight || 92) + NOTIFICATION_SPACING : 0) + 
       ((firstStudyFirstInterviewBadgeAward && showFirstStudyFirstInterviewBadgeNotification) ? (firstStudyFirstInterviewNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
@@ -187,7 +191,42 @@ function BadgeNotificationsWrapper() {
             ? (numberOfDecksCreatedNotificationHeight || 92) + NOTIFICATION_SPACING
             : 0;
   
-  // Stack notifications vertically - streak badge first (top), then background task, then welcome badge, then first study/first interview badge, then number of decks created badge, then custom badge
+  // Custom badge appears below whichever is showing above it
+  const customBadgeOffset = (streakBadgeAward && showStreakBadgeNotification && showBackgroundTaskNotification) 
+    ? (streakNotificationHeight || 92) + NOTIFICATION_SPACING + (backgroundTaskNotificationHeight || 92) + NOTIFICATION_SPACING + 
+      ((welcomeBadgeAward && showWelcomeBadgeNotification) ? (welcomeNotificationHeight || 92) + NOTIFICATION_SPACING : 0) + 
+      ((firstStudyFirstInterviewBadgeAward && showFirstStudyFirstInterviewBadgeNotification) ? (firstStudyFirstInterviewNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+      ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+      ((lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification) ? (lifetimeGradeBadgeNotificationHeight || 92) + NOTIFICATION_SPACING : 0)
+    : (streakBadgeAward && showStreakBadgeNotification) 
+    ? (streakNotificationHeight || 92) + NOTIFICATION_SPACING + 
+      ((welcomeBadgeAward && showWelcomeBadgeNotification) ? (welcomeNotificationHeight || 92) + NOTIFICATION_SPACING : 0) + 
+      ((firstStudyFirstInterviewBadgeAward && showFirstStudyFirstInterviewBadgeNotification) ? (firstStudyFirstInterviewNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+      ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+      ((lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification) ? (lifetimeGradeBadgeNotificationHeight || 92) + NOTIFICATION_SPACING : 0)
+    : showBackgroundTaskNotification
+      ? (backgroundTaskNotificationHeight || 92) + NOTIFICATION_SPACING + 
+        ((welcomeBadgeAward && showWelcomeBadgeNotification) ? (welcomeNotificationHeight || 92) + NOTIFICATION_SPACING : 0) + 
+        ((firstStudyFirstInterviewBadgeAward && showFirstStudyFirstInterviewBadgeNotification) ? (firstStudyFirstInterviewNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+        ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+        ((lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification) ? (lifetimeGradeBadgeNotificationHeight || 92) + NOTIFICATION_SPACING : 0)
+      : (welcomeBadgeAward && showWelcomeBadgeNotification)
+        ? (welcomeNotificationHeight || 92) + NOTIFICATION_SPACING + 
+          ((firstStudyFirstInterviewBadgeAward && showFirstStudyFirstInterviewBadgeNotification) ? (firstStudyFirstInterviewNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+          ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+          ((lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification) ? (lifetimeGradeBadgeNotificationHeight || 92) + NOTIFICATION_SPACING : 0)
+        : (firstStudyFirstInterviewBadgeAward && showFirstStudyFirstInterviewBadgeNotification)
+          ? (firstStudyFirstInterviewNotificationHeight || 92) + NOTIFICATION_SPACING +
+            ((numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification) ? (numberOfDecksCreatedNotificationHeight || 92) + NOTIFICATION_SPACING : 0) +
+            ((lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification) ? (lifetimeGradeBadgeNotificationHeight || 92) + NOTIFICATION_SPACING : 0)
+          : (numberOfDecksCreatedBadgeAward && showNumberOfDecksCreatedBadgeNotification)
+            ? (numberOfDecksCreatedNotificationHeight || 92) + NOTIFICATION_SPACING +
+              ((lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification) ? (lifetimeGradeBadgeNotificationHeight || 92) + NOTIFICATION_SPACING : 0)
+            : (lifetimeGradeBadgeAward && showLifetimeGradeBadgeNotification)
+              ? (lifetimeGradeBadgeNotificationHeight || 92) + NOTIFICATION_SPACING
+              : 0;
+  
+  // Stack notifications vertically - streak badge first (top), then background task, then welcome badge, then first study/first interview badge, then number of decks created badge, then lifetime grade badge, then custom badge
   return (
     <>
       {streakBadgeAward && (
@@ -233,6 +272,16 @@ function BadgeNotificationsWrapper() {
           onDismiss={dismissNumberOfDecksCreatedNotification}
           topOffset={numberOfDecksCreatedBadgeOffset}
           onLayout={setNumberOfDecksCreatedNotificationHeight}
+        />
+      )}
+      {lifetimeGradeBadgeAward && (
+        <LifetimeGradeBadgeNotification
+          badgeName={lifetimeGradeBadgeAward.badgeName}
+          badgeSubtext={lifetimeGradeBadgeAward.badgeSubtext}
+          visible={showLifetimeGradeBadgeNotification}
+          onDismiss={dismissLifetimeGradeBadgeNotification}
+          topOffset={lifetimeGradeBadgeOffset}
+          onLayout={setLifetimeGradeBadgeNotificationHeight}
         />
       )}
       {customBadgeAward && (
@@ -609,9 +658,11 @@ export default function RootLayout() {
                           <WelcomeBadgeNotificationProvider>
                             <FirstStudyFirstInterviewBadgeNotificationProvider>
                               <NumberOfDecksCreatedBadgeNotificationProvider>
-                                <CustomBadgeNotificationProvider>
-                                  <AppContent />
-                                </CustomBadgeNotificationProvider>
+                                <LifetimeGradeBadgeNotificationProvider>
+                                  <CustomBadgeNotificationProvider>
+                                    <AppContent />
+                                  </CustomBadgeNotificationProvider>
+                                </LifetimeGradeBadgeNotificationProvider>
                               </NumberOfDecksCreatedBadgeNotificationProvider>
                             </FirstStudyFirstInterviewBadgeNotificationProvider>
                           </WelcomeBadgeNotificationProvider>

@@ -32,7 +32,8 @@ import {
   getAIDeckAverageTime,
   checkFlashcardAttemptStatus,
   checkAIDeckSavedStatus,
-  getAIDeckProgress
+  getAIDeckProgress,
+  getDeckBreakdown
 } from '@/db/decks';
 import { Toast } from '@/components/general/Toast';
 
@@ -116,6 +117,15 @@ export default function DeckDetailsScreen() {
   const [deckGrade, setDeckGrade] = useState<DeckGrade | null>(null);
   const [isLoadingGrade, setIsLoadingGrade] = useState(true);
 
+  // State for difficulty breakdown (separate from grade to always reflect current flashcard difficulties)
+  const [breakdown, setBreakdown] = useState<{
+    Again: number;
+    Hard: number;
+    Good: number;
+    Easy: number;
+  } | null>(null);
+  const [isLoadingBreakdown, setIsLoadingBreakdown] = useState(true);
+
   // State for average time
   const [averageTime, setAverageTime] = useState<number | null>(null);
   const [isLoadingAverageTime, setIsLoadingAverageTime] = useState(true);
@@ -195,6 +205,7 @@ export default function DeckDetailsScreen() {
     // Clear all previous deck data to prevent showing stale data
     setDeckInfo(null);
     setDeckGrade(null);
+    setBreakdown(null);
     setAverageTime(null);
     setHasAttemptedFlashcards(null);
     setIsAIDeckSaved(null);
@@ -204,6 +215,7 @@ export default function DeckDetailsScreen() {
     // Reset loading states
     setIsLoadingDeckInfo(true);
     setIsLoadingGrade(true);
+    setIsLoadingBreakdown(true);
     setIsLoadingAverageTime(true);
     setIsLoadingAttemptStatus(true);
     setIsLoadingSavedStatus(true);
@@ -670,9 +682,10 @@ export default function DeckDetailsScreen() {
     
     try {
       // Load all deck data directly from database
-      const [deckInfoData, deckGradeData, averageTimeData, attemptStatusData, savedStatusData] = await Promise.all([
+      const [deckInfoData, deckGradeData, breakdownData, averageTimeData, attemptStatusData, savedStatusData] = await Promise.all([
         isAIDeckFromParams ? getAIDeckInfo(deckIdNum) : getDeckInfoWithProgress(deckIdNum),
         isAIDeckFromParams ? getAIDeckGrade(deckIdNum) : getDeckGrade(deckIdNum),
+        getDeckBreakdown(deckIdNum, isAIDeckFromParams),
         isAIDeckFromParams ? getAIDeckAverageTime(deckIdNum) : getDeckAverageTime(deckIdNum),
         checkFlashcardAttemptStatus(deckIdNum, isAIDeckFromParams),
         isAIDeckFromParams ? checkAIDeckSavedStatus(deckIdNum) : Promise.resolve(false),
@@ -681,6 +694,7 @@ export default function DeckDetailsScreen() {
       // Update all state at once
       setDeckInfo(deckInfoData);
       setDeckGrade(deckGradeData);
+      setBreakdown(breakdownData);
       setAverageTime(averageTimeData);
       setHasAttemptedFlashcards(attemptStatusData);
       setIsAIDeckSaved(savedStatusData);
@@ -698,6 +712,7 @@ export default function DeckDetailsScreen() {
       // Set default values on error
       setDeckInfo(null);
       setDeckGrade(null);
+      setBreakdown(null);
       setAverageTime(null);
       setHasAttemptedFlashcards(false);
       setIsAIDeckSaved(false);
@@ -706,6 +721,7 @@ export default function DeckDetailsScreen() {
       // Update loading states
       setIsLoadingDeckInfo(false);
       setIsLoadingGrade(false);
+      setIsLoadingBreakdown(false);
       setIsLoadingAverageTime(false);
       setIsLoadingAttemptStatus(false);
       setIsLoadingSavedStatus(false);
@@ -1593,7 +1609,7 @@ export default function DeckDetailsScreen() {
                       // Stats for all deck types when flashcards have been attempted
                       <View style={styles.cardDetailsContainer}>
                         <AverageGradeThermometer score={deckGrade?.score}/>
-                        <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
+                        <BreakdownByDifficultyPie breakdown={breakdown || undefined}/>
                         <AverageSpeedTotal averageTime={averageTime}/>
                       </View>
                     )}
@@ -1782,7 +1798,7 @@ export default function DeckDetailsScreen() {
                       // Stats for all deck types when flashcards have been attempted
                       <View style={styles.cardDetailsContainer}>
                         <AverageGradeThermometer score={deckGrade?.score}/>
-                        <BreakdownByDifficultyPie breakdown={deckGrade?.breakdown}/>
+                        <BreakdownByDifficultyPie breakdown={breakdown || undefined}/>
                         <AverageSpeedTotal averageTime={averageTime}/>
                       </View>
                     )}

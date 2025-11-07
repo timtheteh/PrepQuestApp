@@ -2665,6 +2665,92 @@ export async function getAIDeckGrade(deckId: number): Promise<DeckGrade | null> 
   }
 }
 
+// Function to get current difficulty breakdown directly from flashcards (always reflects current state)
+export async function getDeckBreakdown(deckId: number, isAIDeck: boolean): Promise<{
+  Again: number;
+  Hard: number;
+  Good: number;
+  Easy: number;
+} | null> {
+  try {
+    const userID = await getCurrentUserID();
+    let ratings: string[] = [];
+    
+    if (isAIDeck) {
+      // Get current difficulty ratings from AI flashcards
+      const result = await db.getAllAsync(`
+        SELECT difficultyRating
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND difficultyRating != 'None'
+          AND userID = ?
+      `, [deckId, userID]);
+
+      if (!result || result.length === 0) {
+        return null;
+      }
+
+      const flashcards = result as Array<{ difficultyRating: string }>;
+      ratings = flashcards.map(flashcard => flashcard.difficultyRating);
+    } else {
+      // Get current difficulty ratings from regular flashcards (including AI flashcards if deck contains them)
+      const result = await db.getAllAsync(`
+        SELECT 
+          difficultyRating,
+          answerType,
+          isMcqAnswerRight
+        FROM (
+          SELECT difficultyRating, answerType, isMcqAnswerRight
+          FROM flashcards
+          WHERE deckID = ?
+            AND difficultyRating != 'None'
+            AND userID = ?
+          UNION ALL
+          SELECT difficultyRating, answerType, isMcqAnswerRight
+          FROM AIFlashcards
+          WHERE deckID = ?
+            AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+            AND difficultyRating != 'None'
+            AND userID = ?
+        )
+      `, [deckId, userID, deckId, userID]);
+
+      if (!result || result.length === 0) {
+        return null;
+      }
+
+      const flashcards = result as Array<{
+        difficultyRating: string;
+        answerType: string;
+        isMcqAnswerRight: number | null;
+      }>;
+
+      // For MCQ flashcards, use their current difficultyRating (not recalculating based on isMcqAnswerRight)
+      // This ensures we always reflect the current updated difficulty state
+      ratings = flashcards.map(flashcard => flashcard.difficultyRating);
+    }
+
+    // Calculate breakdown from current difficulty ratings
+    const breakdown = {
+      Again: 0,
+      Hard: 0,
+      Good: 0,
+      Easy: 0
+    };
+
+    ratings.forEach(rating => {
+      if (rating in breakdown) {
+        breakdown[rating as keyof typeof breakdown]++;
+      }
+    });
+
+    return breakdown;
+  } catch (error) {
+    console.error('Error getting deck breakdown:', error);
+    return null;
+  }
+}
+
 export async function getAIDeckAverageTime(deckId: number): Promise<number | null> {
   try {
     const userID = await getCurrentUserID();

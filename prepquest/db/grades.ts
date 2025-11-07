@@ -358,6 +358,7 @@ export async function getAverageGradeAllTime(): Promise<number> {
 }
 
 // Calculate breakdown of flashcards by difficulty rating
+// Always reflects the latest/current difficulty ratings regardless of lastStudiedDate or lastQuizzedDate
 export async function getDifficultyBreakdown(): Promise<{
   Again: number;
   Hard: number;
@@ -366,13 +367,21 @@ export async function getDifficultyBreakdown(): Promise<{
 }> {
   try {
     const userID = await getCurrentUserID();
-    // Get all flashcards with difficulty ratings from both tables
+    // Get all flashcards with difficulty ratings from both tables (no date filtering - shows all current difficulties)
+    // This always reflects the latest/current difficulty ratings regardless of when flashcards were studied/quizzed
     const result = await db.getAllAsync(`
       SELECT difficultyRating, COUNT(*) as count
-      FROM flashcards
-      WHERE userID = ? AND difficultyRating != 'None'
+      FROM (
+        SELECT difficultyRating
+        FROM flashcards
+        WHERE userID = ? AND difficultyRating != 'None'
+        UNION ALL
+        SELECT difficultyRating
+        FROM AIFlashcards
+        WHERE userID = ? AND difficultyRating != 'None'
+      )
       GROUP BY difficultyRating
-    `, [userID]);
+    `, [userID, userID]);
     const breakdown = result as Array<{ difficultyRating: string; count: number }>;
 
 

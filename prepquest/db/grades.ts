@@ -737,26 +737,70 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
 }
 
 // Calculate average time taken for all time
+// Gets all decks that have been attempted at least once, calculates the average time per flashcard for each deck, and returns the average
 export async function getAverageTimeAllTime(): Promise<number> {
   try {
     const userID = await getCurrentUserID();
-    // Get all flashcards with study or quiz dates and timeTaken from both tables
-    const result = await db.getFirstAsync(`
-      SELECT AVG(timeTaken) as averageTime, COUNT(*) as attemptedCount
+    
+    // Get all deck IDs that have at least one attempted flashcard (from regular flashcards table)
+    // These are regular decks (deckID references decks table)
+    const regularDecksResult = await db.getAllAsync(`
+      SELECT DISTINCT deckID
       FROM flashcards
       WHERE userID = ? 
         AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-        AND timeTaken IS NOT NULL
+        AND difficultyRating != 'None'
     `, [userID]);
-    const data = result as { averageTime: number | null; attemptedCount: number };
+    const regularDeckIds = (regularDecksResult as Array<{ deckID: number }>).map(d => d.deckID);
     
-
-    if (!data || data.attemptedCount === 0 || data.averageTime === null) {
+    // Get all AI deck IDs that have at least one attempted flashcard (from AIFlashcards table)
+    // These are AI decks (deckID references AIDecks table)
+    const aiDecksResult = await db.getAllAsync(`
+      SELECT DISTINCT deckID
+      FROM AIFlashcards
+      WHERE userID = ? 
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+        AND difficultyRating != 'None'
+    `, [userID]);
+    const aiDeckIds = (aiDecksResult as Array<{ deckID: number }>).map(d => d.deckID);
+    
+    if (regularDeckIds.length === 0 && aiDeckIds.length === 0) {
       return 0;
     }
-
-    const averageTime = Math.round(data.averageTime);
     
+    // Calculate average time per flashcard for each deck in parallel for better performance
+    const regularDeckAverageTimePromises = regularDeckIds.map(deckId => getDeckAverageTime(deckId));
+    const aiDeckAverageTimePromises = aiDeckIds.map(deckId => getAIDeckAverageTime(deckId));
+    
+    const [regularDeckAverageTimes, aiDeckAverageTimes] = await Promise.all([
+      Promise.all(regularDeckAverageTimePromises),
+      Promise.all(aiDeckAverageTimePromises)
+    ]);
+    
+    // Collect all valid deck average times
+    const deckAverageTimes: number[] = [];
+    
+    // Process regular deck average times
+    regularDeckAverageTimes.forEach(deckAverageTime => {
+      if (deckAverageTime !== null && deckAverageTime !== undefined) {
+        deckAverageTimes.push(deckAverageTime);
+      }
+    });
+    
+    // Process AI deck average times
+    aiDeckAverageTimes.forEach(deckAverageTime => {
+      if (deckAverageTime !== null && deckAverageTime !== undefined) {
+        deckAverageTimes.push(deckAverageTime);
+      }
+    });
+    
+    if (deckAverageTimes.length === 0) {
+      return 0;
+    }
+    
+    // Calculate average of all deck average times
+    const sum = deckAverageTimes.reduce((acc, time) => acc + time, 0);
+    const averageTime = Math.round(sum / deckAverageTimes.length);
     
     return averageTime;
   } catch (error) {

@@ -193,6 +193,7 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
 }
 
 // Get monthly grades by consolidating daily grades
+// Always shows data up to the current month (similar to ReviewLineGraph)
 export async function getMonthlyGrades(): Promise<MonthGrade[]> {
   try {
     const dailyGrades = await getDailyGrades();
@@ -218,24 +219,57 @@ export async function getMonthlyGrades(): Promise<MonthGrade[]> {
     });
 
     // Calculate average score for each month
-    const monthlyGrades: MonthGrade[] = [];
+    const monthlyGradesMap = new Map<string, number>();
     
     monthGroups.forEach((scores, month) => {
       const averageScore = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
-      monthlyGrades.push({
-        month,
-        score: averageScore
-      });
+      monthlyGradesMap.set(month, averageScore);
     });
 
-    // Sort by date (oldest first)
-    monthlyGrades.sort((a, b) => {
-      const dateA = new Date(a.month.split(' ').reverse().join('-'));
-      const dateB = new Date(b.month.split(' ').reverse().join('-'));
-      return dateA.getTime() - dateB.getTime();
+    // Find the date range - always extend to current month
+    const monthKeys = Array.from(monthlyGradesMap.keys());
+    if (monthKeys.length === 0) {
+      return [];
+    }
+
+    // Parse dates to find start and end months
+    const monthDates = monthKeys.map(monthKey => {
+      const parts = monthKey.split(' ');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIndex = monthNames.indexOf(parts[0]);
+      return new Date(parseInt(parts[1]), monthIndex, 1);
     });
 
-    return monthlyGrades;
+    const startMonth = new Date(Math.min(...monthDates.map(d => d.getTime())));
+    const today = new Date();
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // Generate all months from start to current month
+    const allMonthlyGrades: MonthGrade[] = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const currentDate = new Date(startMonth);
+    while (currentDate <= currentMonth) {
+      const monthKey = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      
+      if (monthlyGradesMap.has(monthKey)) {
+        allMonthlyGrades.push({
+          month: monthKey,
+          score: monthlyGradesMap.get(monthKey)!
+        });
+      } else {
+        // Fill missing month with zero score
+        allMonthlyGrades.push({
+          month: monthKey,
+          score: 0
+        });
+      }
+      
+      // Move to next month
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+
+    return allMonthlyGrades;
   } catch (error) {
     console.error('Error getting monthly grades:', error);
     return [];
@@ -243,31 +277,31 @@ export async function getMonthlyGrades(): Promise<MonthGrade[]> {
 }
 
 // Get complete timeline with zero scores for missing dates
+// Always shows data up to the current day (similar to ReviewLineGraph)
 export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
   try {
-    
-    // Log current date for debugging
-    const now = new Date();
-    
     const dailyGrades = await getDailyGrades();
     
-    dailyGrades.forEach(grade => {
-      console.log(`  - ${grade.date} (${grade.day}): ${grade.score}%`);
-    });
+    // Get today's date and set to start of day for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     if (dailyGrades.length === 0) {
+      // If no data, return empty array (don't show 30 days of zeros)
       return [];
     }
 
-    // Find the date range
+    // Find the date range - always extend to today
     const dates = dailyGrades.map(grade => {
       const dateParts = grade.date.split(' ');
       return new Date(`${dateParts[2]}-${getMonthNumber(dateParts[1])}-${dateParts[0]}`);
     });
     
     const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
-    const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    startDate.setHours(0, 0, 0, 0);
     
+    // Always use today as the end date
+    const endDate = new Date(today);
     
     // Create a map of existing grades
     const gradeMap = new Map<string, DayGrade>();
@@ -278,14 +312,12 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
       gradeMap.set(dateKey, grade);
     });
 
-
-    // Fill in missing dates with zero scores
+    // Fill in missing dates with zero scores, always up to today
     const completeGrades: DayGrade[] = [];
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
       const dateKey = currentDate.toISOString().split('T')[0];
-      
       
       if (gradeMap.has(dateKey)) {
         const grade = gradeMap.get(dateKey)!;
@@ -617,6 +649,7 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
 }
 
 // Get monthly speeds by consolidating daily speeds
+// Always shows data up to the current month (similar to ReviewLineGraph)
 export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
   try {
     const dailySpeeds = await getDailySpeeds();
@@ -642,24 +675,57 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
     });
 
     // Calculate average speed for each month
-    const monthlySpeeds: MonthSpeed[] = [];
+    const monthlySpeedsMap = new Map<string, number>();
     
     monthGroups.forEach((times, month) => {
       const averageTime = Math.round(times.reduce((sum, time) => sum + time, 0) / times.length);
-      monthlySpeeds.push({
-        month,
-        time: averageTime
-      });
+      monthlySpeedsMap.set(month, averageTime);
     });
 
-    // Sort by date (oldest first)
-    monthlySpeeds.sort((a, b) => {
-      const dateA = new Date(a.month.split(' ').reverse().join('-'));
-      const dateB = new Date(b.month.split(' ').reverse().join('-'));
-      return dateA.getTime() - dateB.getTime();
+    // Find the date range - always extend to current month
+    const monthKeys = Array.from(monthlySpeedsMap.keys());
+    if (monthKeys.length === 0) {
+      return [];
+    }
+
+    // Parse dates to find start and end months
+    const monthDates = monthKeys.map(monthKey => {
+      const parts = monthKey.split(' ');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIndex = monthNames.indexOf(parts[0]);
+      return new Date(parseInt(parts[1]), monthIndex, 1);
     });
 
-    return monthlySpeeds;
+    const startMonth = new Date(Math.min(...monthDates.map(d => d.getTime())));
+    const today = new Date();
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // Generate all months from start to current month
+    const allMonthlySpeeds: MonthSpeed[] = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const currentDate = new Date(startMonth);
+    while (currentDate <= currentMonth) {
+      const monthKey = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      
+      if (monthlySpeedsMap.has(monthKey)) {
+        allMonthlySpeeds.push({
+          month: monthKey,
+          time: monthlySpeedsMap.get(monthKey)!
+        });
+      } else {
+        // Fill missing month with zero speed
+        allMonthlySpeeds.push({
+          month: monthKey,
+          time: 0
+        });
+      }
+      
+      // Move to next month
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+
+    return allMonthlySpeeds;
   } catch (error) {
     console.error('Error getting monthly speeds:', error);
     return [];
@@ -667,23 +733,31 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
 }
 
 // Get complete timeline with zero speeds for missing dates
+// Always shows data up to the current day (similar to ReviewLineGraph)
 export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
   try {
     const dailySpeeds = await getDailySpeeds();
     
+    // Get today's date and set to start of day for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     if (dailySpeeds.length === 0) {
+      // If no data, return empty array (don't show 30 days of zeros)
       return [];
     }
 
-    // Find the date range
+    // Find the date range - always extend to today
     const dates = dailySpeeds.map(speed => {
       const dateParts = speed.date.split(' ');
       return new Date(`${dateParts[2]}-${getMonthNumber(dateParts[1])}-${dateParts[0]}`);
     });
     
     const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
-    const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    startDate.setHours(0, 0, 0, 0);
     
+    // Always use today as the end date
+    const endDate = new Date(today);
     
     // Create a map of existing speeds
     const speedMap = new Map<string, DaySpeed>();
@@ -694,14 +768,12 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
       speedMap.set(dateKey, speed);
     });
 
-
-    // Fill in missing dates with zero speeds
+    // Fill in missing dates with zero speeds, always up to today
     const completeSpeeds: DaySpeed[] = [];
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
       const dateKey = currentDate.toISOString().split('T')[0];
-      
       
       if (speedMap.has(dateKey)) {
         const speed = speedMap.get(dateKey)!;

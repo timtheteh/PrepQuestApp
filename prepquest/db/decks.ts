@@ -2418,20 +2418,24 @@ export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[],
         SELECT 
           cc.categoryType,
           cc.deck_count,
-          COALESCE(SUM(flashcard_count), 0) as total_flashcards
+          COALESCE(SUM(COALESCE(fc.flashcard_count, 0)), 0) as total_flashcards
         FROM category_counts cc
         LEFT JOIN (
+          -- Count flashcards from regular decks (only from flashcards table)
           SELECT 
             dc.categoryType,
-            COUNT(*) as flashcard_count
+            COUNT(f.flashcardID) as flashcard_count
           FROM deck_categories dc
+          INNER JOIN decks d ON dc.deckID = d.deckID AND d.userID = ?
           LEFT JOIN flashcards f ON dc.deckID = f.deckID AND f.userID = ?
           GROUP BY dc.categoryType
           UNION ALL
+          -- Count flashcards from AI decks (only from AIFlashcards table)
           SELECT 
             dc.categoryType,
-            COUNT(*) as flashcard_count
+            COUNT(af.flashcardID) as flashcard_count
           FROM deck_categories dc
+          INNER JOIN AIDecks ad ON dc.deckID = ad.deckID AND ad.userID = ?
           LEFT JOIN AIFlashcards af ON dc.deckID = af.deckID AND af.userID = ?
           GROUP BY dc.categoryType
         ) fc ON cc.categoryType = fc.categoryType
@@ -2444,7 +2448,12 @@ export async function getBreakdownData(): Promise<{ decksData: BreakdownDatum[],
       FROM flashcard_counts
       ORDER BY deck_count DESC
     `;
-    const params = hasAIDecks ? [userID, userID, userID, userID] : [userID, userID];
+    // Parameters: [userID for decks in deck_categories, userID for AIDecks in deck_categories (if hasAIDecks),
+    //              userID for decks in flashcard_counts, userID for flashcards, 
+    //              userID for AIDecks in flashcard_counts, userID for AIFlashcards]
+    const params = hasAIDecks 
+      ? [userID, userID, userID, userID, userID, userID] 
+      : [userID, userID, userID];
     const result = await db.getAllAsync(sql, params);
 
     // Define colors for each type

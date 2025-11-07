@@ -1646,6 +1646,25 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     }
   }
 
+  // Track previous currentIdx to detect actual card changes
+  const prevCurrentIdxRef = useRef(currentIdx);
+  
+  // Reset flip animation values IMMEDIATELY when card changes (before render)
+  // This ensures that after deletion, the new card always shows question side first
+  React.useLayoutEffect(() => {
+    // Check if currentIdx actually changed (not just a re-render)
+    const cardChanged = prevCurrentIdxRef.current !== currentIdx;
+    prevCurrentIdxRef.current = currentIdx;
+    
+    if (cardChanged) {
+      // ALWAYS reset flip animation values to show front side when card changes
+      // This must happen synchronously before render to prevent showing the wrong side
+      flipAnim.setValue(0);
+      frontOpacity.setValue(1);
+      backOpacity.setValue(0);
+    }
+  }, [currentIdx]);
+  
   // Clean up audio on unmount or card change
   React.useEffect(() => {
     // Reset AI evaluation when card changes
@@ -1665,6 +1684,18 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
       }
     };
   }, [currentIdx]);
+
+  // Sync flip animation values with isFlipped prop when it's explicitly set to false
+  // This handles the case when isFlipped is reset externally (e.g., after deletion)
+  React.useLayoutEffect(() => {
+    if (!isFlipped && !isFlipping) {
+      // Reset animation values to show front side when isFlipped becomes false
+      // Only do this if we're not in the middle of a flip animation
+      flipAnim.setValue(0);
+      frontOpacity.setValue(1);
+      backOpacity.setValue(0);
+    }
+  }, [isFlipped, isFlipping]);
 
   // Voice recording functions
   const startRecording = async () => {

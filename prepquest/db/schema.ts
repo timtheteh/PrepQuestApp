@@ -182,7 +182,7 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         goodTimer INTEGER DEFAULT 30,
         easyTimer INTEGER DEFAULT 15,
         language TEXT DEFAULT 'English',
-        currentPlan TEXT DEFAULT 'Free Plan',
+        currentPlan TEXT DEFAULT 'Free Plan' CHECK (currentPlan IN ('Free Plan', 'Pro Plan', 'Premium Plan')),
         fileUploadRequests INTEGER DEFAULT 0,
         genAIFormRequests INTEGER DEFAULT 0,
         youtubeLinkRequests INTEGER DEFAULT 0,

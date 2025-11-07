@@ -1303,29 +1303,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   const isLeftChevronDisabled = () => currentIdx <= 0;
   const isRightChevronDisabled = () => {
     if (isSuccessMode) return true; // Hide/disable chevron in success mode
-    const isAtLastCard = currentIdx >= totalCards - 1;
-    if ((isQuizMode || isStudyMode) && isAtLastCard) {
-      // Validation for last card
-      const currentFlashcard = flashcards[currentIdx];
-      const answerType = currentFlashcard?.flashcardAnswerType;
-      const currentDifficulty = currentFlashcard?.flashcardDifficulty;
-      if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
-        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-        return !(hasFlippedCard && hasDifficultySelected);
-      }
-      if (answerType === 'mcq') {
-        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-        return !(hasFlippedCard && hasSubmittedMCQ && hasDifficultySelected);
-      }
-      if (answerType === 'voice') {
-        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-        return !(hasFlippedCard && recordedAudioUri !== null && hasDifficultySelected);
-      }
-      // fallback: disable if not validated
-      return true;
-    }
-    // Default: disable if not last card
-    return currentIdx >= totalCards - 1;
+    // Always enable the right chevron - validation will be handled in navigateToNextCard
+    return false;
   };
 
   const navigateToPreviousCard = () => {

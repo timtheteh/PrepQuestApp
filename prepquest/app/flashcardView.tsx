@@ -1167,6 +1167,9 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   // Animation for horizontal slide
   const cardSlideAnim = useRef(new Animated.Value(0)).current; // 0 = center, -1 = left, 1 = right
 
+  // Track if navigation is in progress to prevent rapid clicks
+  const [isNavigating, setIsNavigating] = useState(false);
+
   // Get current flashcard data
   const currentFlashcard = flashcards[currentIdx];
   const flashcardQnType = currentFlashcard?.flashcardQnType;
@@ -1326,30 +1329,38 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   };
 
   const navigateToPreviousCard = () => {
-    if (!isLeftChevronDisabled()) {
-      stopSpeech();
-      // Slide out to right
+    if (isNavigating || isLeftChevronDisabled()) {
+      return;
+    }
+    
+    setIsNavigating(true);
+    stopSpeech();
+    // Slide out to right
+    Animated.timing(cardSlideAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentIdx((idx: number) => {
+        // Bounds check: ensure we don't go below 0
+        const newIdx = Math.max(0, idx - 1);
+        // Always reset to front side
+        setIsFlipped(false);
+        flipAnim.setValue(0);
+        frontOpacity.setValue(1);
+        backOpacity.setValue(0);
+        return newIdx;
+      });
+      cardSlideAnim.setValue(-1); // Start new card from left
       Animated.timing(cardSlideAnim, {
-        toValue: 1,
+        toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }).start(() => {
-        setCurrentIdx((idx: number) => {
-          // Always reset to front side
-          setIsFlipped(false);
-          flipAnim.setValue(0);
-          frontOpacity.setValue(1);
-          backOpacity.setValue(0);
-          return idx - 1;
-        });
-        cardSlideAnim.setValue(-1); // Start new card from left
-        Animated.timing(cardSlideAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
+        // Reset navigation lock after animation completes
+        setIsNavigating(false);
       });
-    }
+    });
   };
 
   const navigateToNextCard = async () => {
@@ -1447,119 +1458,128 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
       return;
     }
 
-    if (!isRightChevronDisabled()) {
-      // Study mode validation (for non-last cards)
-      if (isQuizMode || isStudyMode) {
-        const currentFlashcard = flashcards[currentIdx];
-        const answerType = currentFlashcard?.flashcardAnswerType;
-        const currentDifficulty = currentFlashcard?.flashcardDifficulty;
-        if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
-          const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-          if (!hasFlippedCard) {
-            if (!hasDifficultySelected) {
-              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutAnswer);
+    if (isNavigating || isRightChevronDisabled()) {
+      return;
+    }
+    
+    // Study mode validation (for non-last cards)
+    if (isQuizMode || isStudyMode) {
+      const currentFlashcard = flashcards[currentIdx];
+      const answerType = currentFlashcard?.flashcardAnswerType;
+      const currentDifficulty = currentFlashcard?.flashcardDifficulty;
+      if (answerType === 'text' || answerType === 'audio' || answerType === 'image') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        if (!hasFlippedCard) {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutAnswer);
+            return;
+          } else {
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToViewAnswer);
+            return;
+          }
+        } else {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
+            return;
+          }
+        }
+      }
+      if (answerType === 'mcq') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        if (!hasFlippedCard) {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQ);
+            return;
+          } else {
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToAnswerMCQ);
+            return;
+          }
+        } else {
+          if (!hasDifficultySelected) {
+            if (!hasSubmittedMCQ) {
+              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQAnswer);
               return;
             } else {
-              showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToViewAnswer);
-              return;
-            }
-          } else {
-            if (!hasDifficultySelected) {
               showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
               return;
             }
-          }
-        }
-        if (answerType === 'mcq') {
-          const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-          if (!hasFlippedCard) {
-            if (!hasDifficultySelected) {
-              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQ);
-              return;
-            } else {
-              showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToAnswerMCQ);
-              return;
-            }
           } else {
-            if (!hasDifficultySelected) {
-              if (!hasSubmittedMCQ) {
-                showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutMCQAnswer);
-                return;
-              } else {
-                showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
-                return;
-              }
-            } else {
-              if (!hasSubmittedMCQ) {
-                showStudyValidationModal(strings[language].flashcardViewPage.pleaseAnswerMCQ);
-                return;
-              }
-            }
-          }
-        }
-        if (answerType === 'voice') {
-          const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
-          if (!hasFlippedCard) {
-            if (!hasDifficultySelected) {
-              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceAnswer);
-              return;
-            } else {
-              showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToRecordVoice);
+            if (!hasSubmittedMCQ) {
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseAnswerMCQ);
               return;
             }
-          } else {
-            if (!hasDifficultySelected) {
-              if (!recordedAudioUri) {
-                showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceRecording);
-                return;
-              } else {
-                showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
-                return;
-              }
-            } else {
-              if (!recordedAudioUri) {
-                showStudyValidationModal(strings[language].flashcardViewPage.pleaseRecordVoiceAnswer);
-                return;
-              }
-            }
           }
-        }
-        
-        // Update the date for the current card before moving to the next
-        if (currentFlashcard) {
-          props.updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, props.deckID, props.isAIDeckParam);
         }
       }
-      stopSpeech();
-      // Slide out to left
+      if (answerType === 'voice') {
+        const hasDifficultySelected = currentDifficulty && currentDifficulty !== 'None';
+        if (!hasFlippedCard) {
+          if (!hasDifficultySelected) {
+            showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceAnswer);
+            return;
+          } else {
+            showStudyValidationModal(strings[language].flashcardViewPage.pleaseFlipCardToRecordVoice);
+            return;
+          }
+        } else {
+          if (!hasDifficultySelected) {
+            if (!recordedAudioUri) {
+              showStudyValidationModal(strings[language].flashcardViewPage.cannotMoveOnWithoutVoiceRecording);
+              return;
+            } else {
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseSelectDifficulty);
+              return;
+            }
+          } else {
+            if (!recordedAudioUri) {
+              showStudyValidationModal(strings[language].flashcardViewPage.pleaseRecordVoiceAnswer);
+              return;
+            }
+          }
+        }
+      }
+      
+      // Update the date for the current card before moving to the next
+      if (currentFlashcard) {
+        props.updateFlashcardDate(currentFlashcard.flashcardID, isStudyMode, props.deckID, props.isAIDeckParam);
+      }
+    }
+    
+    setIsNavigating(true);
+    stopSpeech();
+    // Slide out to left
+    Animated.timing(cardSlideAnim, {
+      toValue: -1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentIdx((idx: number) => {
+        // Bounds check: ensure we don't go beyond totalCards - 1
+        const newIdx = Math.min(totalCards - 1, idx + 1);
+        // Always reset to front side
+        setIsFlipped(false);
+        setHasFlippedCard(false); // Reset flipped state for new card
+        setHasSubmittedMCQ(false); // Reset MCQ submission state for new card
+        setRecordedAudioUri(null); // Reset voice recording for new card
+        setAiEvaluationConcise(null); // Reset AI evaluation for new card
+        setAiEvaluationDetailed(null); // Reset AI evaluation for new card
+        setShowDetailedEvaluation(false); // Reset toggle to concise view
+        setIsLoadingEvaluation(false); // Reset loading state for new card
+        flipAnim.setValue(0);
+        frontOpacity.setValue(1);
+        backOpacity.setValue(0);
+        return newIdx;
+      });
+      cardSlideAnim.setValue(1); // Start new card from right
       Animated.timing(cardSlideAnim, {
-        toValue: -1,
+        toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }).start(() => {
-        setCurrentIdx((idx: number) => {
-          // Always reset to front side
-          setIsFlipped(false);
-          setHasFlippedCard(false); // Reset flipped state for new card
-          setHasSubmittedMCQ(false); // Reset MCQ submission state for new card
-          setRecordedAudioUri(null); // Reset voice recording for new card
-          setAiEvaluationConcise(null); // Reset AI evaluation for new card
-          setAiEvaluationDetailed(null); // Reset AI evaluation for new card
-          setShowDetailedEvaluation(false); // Reset toggle to concise view
-          setIsLoadingEvaluation(false); // Reset loading state for new card
-          flipAnim.setValue(0);
-          frontOpacity.setValue(1);
-          backOpacity.setValue(0);
-          return idx + 1;
-        });
-        cardSlideAnim.setValue(1); // Start new card from right
-        Animated.timing(cardSlideAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
+        // Reset navigation lock after animation completes
+        setIsNavigating(false);
       });
-    }
+    });
   };
 
   // Slide animation style
@@ -2011,12 +2031,12 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
         <TouchableOpacity
           style={styles.leftChevronButton}
           onPress={navigateToPreviousCard}
-          disabled={isLeftChevronDisabled()}
+          disabled={isLeftChevronDisabled() || isNavigating}
         >
           <AntDesign
             name="left"
             size={30}
-                            color={isLeftChevronDisabled() ? Colors[theme].disabledIconBackgroundColor : Colors[theme].text}
+                            color={(isLeftChevronDisabled() || isNavigating) ? Colors[theme].disabledIconBackgroundColor : Colors[theme].text}
           />
         </TouchableOpacity>
       ) : null}
@@ -2024,12 +2044,12 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
       <TouchableOpacity
         style={styles.rightChevronButton}
         onPress={navigateToNextCard}
-        disabled={isRightChevronDisabled()}
+        disabled={isRightChevronDisabled() || isNavigating}
       >
         <AntDesign
           name="right"
           size={30}
-                          color={isRightChevronDisabled() ? Colors[theme].disabledIconBackgroundColor : Colors[theme].text}
+                          color={(isRightChevronDisabled() || isNavigating) ? Colors[theme].disabledIconBackgroundColor : Colors[theme].text}
         />
       </TouchableOpacity>
       <Animated.View style={[{ flex: 1 }, slideStyle]}>

@@ -100,9 +100,14 @@ export default function TabLayout() {
     alignItems: 'center' as const,
   }), []);
 
-  // Memoized string values to prevent recreation on every render
-  const deleteModalText = useMemo(() => strings[language].deleteDecksConfirmation, [language]);
+  // State for modal text that can be set dynamically
+  const [deleteModalText, setDeleteModalText] = useState(strings[language].deleteDecksConfirmation);
   const noSelectionModalSubtitle = useMemo(() => strings[language].noSelectionSubtitle, [language]);
+
+  // Update deleteModalText when language changes
+  useEffect(() => {
+    setDeleteModalText(strings[language].deleteDecksConfirmation);
+  }, [language]);
 
   // Handle global loading overlay animation
   useEffect(() => {
@@ -377,7 +382,7 @@ export default function TabLayout() {
     onDeckDetailsSaveModalDismiss,
     setOnDeckDetailsSaveModalDismiss,
     deleteModalText,
-    setDeleteModalText: () => {},
+    setDeleteModalText,
     noSelectionModalSubtitle,
     setNoSelectionModalSubtitle: () => {},
     unfavoriteModalText,
@@ -535,7 +540,7 @@ export default function TabLayout() {
           visible={isTrashModalOpenInDecksPage}
           opacity={trashModalOpacity}
           Icon={DeleteModalIcon}
-          text={strings[language].deleteDecksConfirmation}
+          text={deleteModalText}
           textStyle={{
             highlightWord: strings[language].highlightWords.delete,
             highlightColor: '#D7191C'

@@ -79,6 +79,7 @@ export const strings: Record<string, any> = {
                   folderNameExists: 'Folder name already exists!',
                   errorUpdatingFolderName: 'Error updating folder name!',
                   deleteFromFolderConfirmation: 'Are you sure you want to delete from this folder?',
+                  removeFromFolderConfirmation: 'Remove deck(s) from\nthis folder?',
                 },
                 // ViewFlashcards page strings
                 viewFlashcardsPage: {
@@ -1122,6 +1123,7 @@ export const strings: Record<string, any> = {
                   folderNameExists: '文件夹名称已存在！',
                   errorUpdatingFolderName: '更新文件夹名称时出错！',
                   deleteFromFolderConfirmation: '确定要从此文件夹中删除吗？',
+                  removeFromFolderConfirmation: '从此文件夹中移除此卡组吗？',
                 },
                 // ViewFlashcards page strings
                 viewFlashcardsPage: {

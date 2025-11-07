@@ -3384,11 +3384,21 @@ export async function removeDecksFromFolder(deckIds: number[], folderId: number)
         const updatedFolderIds = folderIds.filter(id => id !== folderId);
         
         // Update the deck with the new folderIDs
-        await db.runAsync(`
-          UPDATE decks 
-          SET folderIDs = ?, lastModifiedDate = '${new Date().toISOString()}'
-          WHERE deckID = ? AND userID = ?
-        `, [JSON.stringify(updatedFolderIds), deckId, userID]);
+        if (updatedFolderIds.length === 0) {
+          // If no folders left, set to NULL
+          await db.runAsync(`
+            UPDATE decks 
+            SET folderIDs = NULL, lastModifiedDate = '${new Date().toISOString()}'
+            WHERE deckID = ? AND userID = ?
+          `, [deckId, userID]);
+        } else {
+          // Update with the remaining folder IDs
+          await db.runAsync(`
+            UPDATE decks 
+            SET folderIDs = ?, lastModifiedDate = '${new Date().toISOString()}'
+            WHERE deckID = ? AND userID = ?
+          `, [JSON.stringify(updatedFolderIds), deckId, userID]);
+        }
       }
     }
     

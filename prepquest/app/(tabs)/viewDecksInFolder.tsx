@@ -671,6 +671,39 @@ export default function ViewDecksInFolderScreen() {
     }
   }, []);
 
+  const handleRemoveDecksFromFolder = useCallback(async () => {
+    try {
+      // Get the selected deck IDs
+      const selectedDeckIds = Array.from(selectedDecks).map(index => decks[index].deckID);
+
+      if (selectedDeckIds.length === 0) {
+        return;
+      }
+
+      // Remove the folderID from each selected deck's folderIDs field
+      const currentFolderId = parseInt(folderId as string);
+      
+      const success = await removeDecksFromFolder(selectedDeckIds, currentFolderId);
+      
+      if (success) {
+        // Clear selections first to prevent render issues
+        setSelectedDecks(new Set());
+        
+        // Update local state by removing the decks from the current folder view
+        const remainingDecks = decks.filter(deck => !selectedDeckIds.includes(deck.deckID));
+        setDecks(remainingDecks);
+        setDecksCount(remainingDecks.length);
+
+        // Exit selection mode after state updates
+        setTimeout(() => {
+          handleCancel();
+        }, 0);
+      }
+    } catch (error) {
+      console.error('Error removing decks from folder:', error);
+    }
+  }, [selectedDecks, decks, folderId, handleCancel]);
+
   const handleDeleteSelectedDecks = async () => {
     try {
       // Get the selected deck IDs
@@ -726,7 +759,7 @@ export default function ViewDecksInFolderScreen() {
     }
 
     switch (index) {
-      case 0: // Folder
+      case 0: // Folder (Move to folders)
         // Reset header icons state
         headerIconsRef.current?.reset();
         
@@ -769,7 +802,25 @@ export default function ViewDecksInFolderScreen() {
           }, 50);
         }
         break;
-      case 1: // Trash
+      case 1: // Remove from folder
+        setIsMenuOpen(true);
+        setIsTrashModalOpenInDecksPage(true);
+        setDeleteModalText(strings[language].viewDecksInFolder.removeFromFolderConfirmation);
+        setHandleDeletion(() => handleRemoveDecksFromFolder);
+        Animated.parallel([
+          Animated.timing(menuOverlayOpacity, {
+            toValue: 0.4,
+            duration: slidingMenuDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(trashModalOpacity, {
+            toValue: 1,
+            duration: slidingMenuDuration,
+            useNativeDriver: true,
+          })
+        ]).start();
+        break;
+      case 2: // Trash (Delete permanently)
         setIsMenuOpen(true);
         setIsTrashModalOpenInDecksPage(true);
         setDeleteModalText(strings[language].viewDecksInFolder.deleteFromFolderConfirmation);
@@ -788,7 +839,7 @@ export default function ViewDecksInFolderScreen() {
         ]).start();
         break;
     }
-  }, [selectedDecks, decks, sourcePage, folderTitle, folderTitleFromDb, folderId, language, router, navbarRef, menuOverlayOpacity, noSelectionModalOpacity, trashModalOpacity, slidingMenuDuration]);
+  }, [selectedDecks, decks, sourcePage, folderTitle, folderTitleFromDb, folderId, language, router, navbarRef, menuOverlayOpacity, noSelectionModalOpacity, trashModalOpacity, slidingMenuDuration, handleRemoveDecksFromFolder]);
 
   const selectOpacity = selectTextAnim.interpolate({
     inputRange: [0, 1],
@@ -1069,11 +1120,11 @@ export default function ViewDecksInFolderScreen() {
                  }
                ]}>
                  <ActionButtonsRow
-                   iconNames={['drive-file-move-rtl', 'trash']}
-                   iconLibraries={['materialicons', 'ionicons']}
+                   iconNames={['drive-file-move-rtl', 'remove-circle', 'trash']}
+                   iconLibraries={['materialicons', 'materialicons', 'ionicons']}
                    onCancel={handleCancel}
                    onIconPress={handleActionIconPress}
-                   iconColors={[Colors[theme].normalIconColor, '#FF3B30']}
+                   iconColors={[Colors[theme].normalIconColor, '#FF3B30', '#FF3B30']}
                  />
                </Animated.View>
 

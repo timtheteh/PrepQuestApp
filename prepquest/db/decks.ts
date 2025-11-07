@@ -894,20 +894,37 @@ export function testGradeCalculation() {
 export async function getDeckAverageTime(deckId: number): Promise<number | null> {
   try {
     const userID = await getCurrentUserID();
-    // Get attempted flashcards from both regular and AI flashcards tables
+    // Get all attempted flashcards from both regular and AI flashcards tables
+    // Includes all flashcards that have been studied OR quizzed at least once (based on latest attempt date)
+    // Uses each flashcard's current timeTaken which reflects the time from the most recent attempt
+    // (whether that was a study or quiz session, whichever date is more recent)
     const result = await db.getFirstAsync(`
       SELECT 
         AVG(timeTaken) as averageTime,
         COUNT(*) as attemptedCount
       FROM (
-        SELECT timeTaken
+        SELECT 
+          timeTaken,
+          CASE 
+            WHEN lastStudiedDate IS NULL THEN lastQuizzedDate
+            WHEN lastQuizzedDate IS NULL THEN lastStudiedDate
+            WHEN lastStudiedDate > lastQuizzedDate THEN lastStudiedDate
+            ELSE lastQuizzedDate
+          END as latestAttemptDate
         FROM flashcards
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
           AND timeTaken IS NOT NULL
           AND userID = ?
         UNION ALL
-        SELECT timeTaken
+        SELECT 
+          timeTaken,
+          CASE 
+            WHEN lastStudiedDate IS NULL THEN lastQuizzedDate
+            WHEN lastQuizzedDate IS NULL THEN lastStudiedDate
+            WHEN lastStudiedDate > lastQuizzedDate THEN lastStudiedDate
+            ELSE lastQuizzedDate
+          END as latestAttemptDate
         FROM AIFlashcards
         WHERE deckID = ?
           AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
@@ -2784,17 +2801,29 @@ export async function getDeckBreakdown(deckId: number, isAIDeck: boolean): Promi
 export async function getAIDeckAverageTime(deckId: number): Promise<number | null> {
   try {
     const userID = await getCurrentUserID();
-    // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
-    // and their timeTaken values
+    // Get all attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+    // Includes all flashcards that have been studied OR quizzed at least once (based on latest attempt date)
+    // Uses each flashcard's current timeTaken which reflects the time from the most recent attempt
+    // (whether that was a study or quiz session, whichever date is more recent)
     const result = await db.getFirstAsync(`
       SELECT 
         AVG(timeTaken) as averageTime,
         COUNT(*) as attemptedCount
-      FROM AIFlashcards
-      WHERE deckID = ?
-        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-        AND timeTaken IS NOT NULL
-        AND userID = ?
+      FROM (
+        SELECT 
+          timeTaken,
+          CASE 
+            WHEN lastStudiedDate IS NULL THEN lastQuizzedDate
+            WHEN lastQuizzedDate IS NULL THEN lastStudiedDate
+            WHEN lastStudiedDate > lastQuizzedDate THEN lastStudiedDate
+            ELSE lastQuizzedDate
+          END as latestAttemptDate
+        FROM AIFlashcards
+        WHERE deckID = ?
+          AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+          AND timeTaken IS NOT NULL
+          AND userID = ?
+      )
     `, [deckId, userID]);
 
     if (!result) {

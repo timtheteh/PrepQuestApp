@@ -24,6 +24,23 @@ export const CustomBadgeNotification: React.FC<CustomBadgeNotificationProps> = (
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
+  const hideNotification = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onDismiss();
+    });
+  };
+
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -38,6 +55,15 @@ export const CustomBadgeNotification: React.FC<CustomBadgeNotificationProps> = (
           useNativeDriver: true,
         }),
       ]).start();
+      
+      // Auto-dismiss after 5 seconds
+      const autoDismissTimer = setTimeout(() => {
+        hideNotification();
+      }, 10000);
+      
+      return () => {
+        clearTimeout(autoDismissTimer);
+      };
     } else {
       Animated.parallel([
         Animated.timing(slideAnim, {
@@ -84,7 +110,7 @@ export const CustomBadgeNotification: React.FC<CustomBadgeNotificationProps> = (
             </Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
+        <TouchableOpacity style={styles.dismissButton} onPress={hideNotification}>
           <Text style={styles.dismissButtonText}>×</Text>
         </TouchableOpacity>
       </View>

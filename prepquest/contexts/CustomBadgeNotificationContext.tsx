@@ -32,9 +32,6 @@ export const CustomBadgeNotificationProvider: React.FC<CustomBadgeNotificationPr
     console.log('🎯 Showing custom badge notification:', award);
     setCustomBadgeAward(award);
     setShowCustomBadgeNotification(true);
-    setTimeout(() => {
-      dismissNotification();
-    }, 5000); // Notification visible for 5 seconds
   };
 
   const dismissNotification = () => {

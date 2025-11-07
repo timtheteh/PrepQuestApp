@@ -56,6 +56,23 @@ export const LifetimeGradeBadgeNotification: React.FC<LifetimeGradeBadgeNotifica
     return message;
   };
 
+  const hideNotification = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onDismiss();
+    });
+  };
+
   useEffect(() => {
     console.log(`🎖️ LifetimeGradeBadgeNotification: visible = ${visible}, badgeName = ${badgeName}`);
     if (visible) {
@@ -74,31 +91,20 @@ export const LifetimeGradeBadgeNotification: React.FC<LifetimeGradeBadgeNotifica
         }),
       ]).start();
       
-      // Don't auto-hide - notification stays until user dismisses it
-      // Removed auto-hide timer to keep notification persistent
+      // Auto-dismiss after 10 seconds
+      const autoDismissTimer = setTimeout(() => {
+        hideNotification();
+      }, 10000);
+      
+      return () => {
+        clearTimeout(autoDismissTimer);
+      };
     } else {
       // Reset animations when hidden
       slideAnim.setValue(-100);
       opacityAnim.setValue(0);
     }
   }, [visible]);
-
-  const hideNotification = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onDismiss();
-    });
-  };
 
   console.log(`🎖️ LifetimeGradeBadgeNotification render: visible = ${visible}, badgeName = ${badgeName}`);
   

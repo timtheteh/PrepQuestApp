@@ -715,10 +715,19 @@ const calculateWeightedScoreWithMCQ = (flashcards: Array<{
     let weight = 0;
 
     if (answerType === 'mcq') {
-      // For MCQ flashcards, use isMcqAnswerRight: 0 if wrong, 1 if correct
-      weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
-      // For breakdown, treat correct MCQs as 'Easy' and incorrect as 'Again'
-      ratings.push(isMcqAnswerRight === 1 ? 'Easy' : 'Again');
+      // For MCQ flashcards, prioritize isMcqAnswerRight if available
+      // If isMcqAnswerRight is null (e.g., studied but not quizzed), fall back to difficulty rating
+      if (isMcqAnswerRight !== null) {
+        // Use isMcqAnswerRight: 0 if wrong, 1 if correct
+        weight = isMcqAnswerRight === 1 ? 1.0 : 0.0;
+        // For breakdown, treat correct MCQs as 'Easy' and incorrect as 'Again'
+        ratings.push(isMcqAnswerRight === 1 ? 'Easy' : 'Again');
+      } else {
+        // Fall back to difficulty rating if isMcqAnswerRight is null
+        // This handles cases where MCQ was studied but not quizzed, or difficulty was manually set
+        weight = weights[difficulty as keyof typeof weights] || 0;
+        ratings.push(difficulty);
+      }
     } else {
       // For non-MCQ flashcards, use difficulty-based weights
       weight = weights[difficulty as keyof typeof weights] || 0;
@@ -764,14 +773,22 @@ const getBreakdown = (ratings: string[]) => {
 export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
   try {
     const userID = await getCurrentUserID();
-    // Get attempted flashcards from both regular and AI flashcards tables
+    // Get all attempted flashcards from both regular and AI flashcards tables
+    // Includes all flashcards that have been studied OR quizzed at least once (based on latest attempt date)
+    // Uses each flashcard's current difficultyRating which reflects the latest attempt's difficulty
     const result = await db.getAllAsync(`
       SELECT 
         difficultyRating,
         lastStudiedDate,
         lastQuizzedDate,
         answerType,
-        isMcqAnswerRight
+        isMcqAnswerRight,
+        CASE 
+          WHEN lastStudiedDate IS NULL THEN lastQuizzedDate
+          WHEN lastQuizzedDate IS NULL THEN lastStudiedDate
+          WHEN lastStudiedDate > lastQuizzedDate THEN lastStudiedDate
+          ELSE lastQuizzedDate
+        END as latestAttemptDate
       FROM (
         SELECT difficultyRating, lastStudiedDate, lastQuizzedDate, answerType, isMcqAnswerRight
         FROM flashcards
@@ -800,9 +817,12 @@ export async function getDeckGrade(deckId: number): Promise<DeckGrade | null> {
       lastQuizzedDate: string | null;
       answerType: string;
       isMcqAnswerRight: number | null;
+      latestAttemptDate: string | null;
     }>;
 
     // Calculate weighted score with MCQ handling
+    // Each flashcard's current difficultyRating is used, which reflects the state after the most recent attempt
+    // (whether that was a study or quiz session, whichever date is more recent)
     const grade = calculateWeightedScoreWithMCQ(flashcards);
 
     // Get total number of flashcards for this deck from both tables
@@ -2577,13 +2597,20 @@ export async function getAIDeckProgress(deckId: number): Promise<number> {
 export async function getAIDeckGrade(deckId: number): Promise<DeckGrade | null> {
   try {
     const userID = await getCurrentUserID();
-    // Get attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
-    // and their difficulty ratings
+    // Get all attempted AI flashcards (those with lastStudiedDate or lastQuizzedDate not null)
+    // Includes all flashcards that have been studied OR quizzed at least once (based on latest attempt date)
+    // Uses each flashcard's current difficultyRating which reflects the latest attempt's difficulty
     const result = await db.getAllAsync(`
       SELECT 
         difficultyRating,
         lastStudiedDate,
-        lastQuizzedDate
+        lastQuizzedDate,
+        CASE 
+          WHEN lastStudiedDate IS NULL THEN lastQuizzedDate
+          WHEN lastQuizzedDate IS NULL THEN lastStudiedDate
+          WHEN lastStudiedDate > lastQuizzedDate THEN lastStudiedDate
+          ELSE lastQuizzedDate
+        END as latestAttemptDate
       FROM AIFlashcards
       WHERE deckID = ?
         AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
@@ -2600,9 +2627,12 @@ export async function getAIDeckGrade(deckId: number): Promise<DeckGrade | null> 
       difficultyRating: string;
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
+      latestAttemptDate: string | null;
     }>;
 
-    // Extract difficulty ratings from attempted flashcards
+    // Extract difficulty ratings from all attempted flashcards
+    // Each flashcard's current difficultyRating is used, which reflects the state after the most recent attempt
+    // (whether that was a study or quiz session, whichever date is more recent)
     const ratings = flashcards.map(flashcard => flashcard.difficultyRating);
 
     // Get total number of AI flashcards for this deck

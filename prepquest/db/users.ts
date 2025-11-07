@@ -7,6 +7,10 @@ export interface UserStats {
   accumulatedFlashcardsCreated: number;
   accumulatedStudyDecksCreated: number;
   accumulatedInterviewDecksCreated: number;
+  accumulatedDecksQuizzed: number;
+  accumulatedFlashcardsQuizzed: number;
+  accumulatedStudyDecksQuizzed: number;
+  accumulatedInterviewDecksQuizzed: number;
   lastUpdated: string;
 }
 
@@ -197,6 +201,62 @@ export async function incrementChatWithAIRequests(): Promise<boolean> {
     console.error('Error incrementing chatWithAIRequests:', error);
     return false;
   }
+}
+
+// Increment quiz counters after a quiz session completes
+// This should be called when a deck is quizzed (not studied)
+export async function incrementQuizCounters(
+  deckId: number,
+  isAIDeck: boolean,
+  deckType: 'study' | 'interview',
+  flashcardCount: number,
+  isFirstTimeQuizzingDeck: boolean
+): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    
+    // Start a transaction to ensure atomic updates
+    await db.execAsync('BEGIN TRANSACTION');
+    
+    try {
+      // Always increment total flashcards quizzed
+      await db.runAsync(
+        `UPDATE users SET accumulatedFlashcardsQuizzed = accumulatedFlashcardsQuizzed + ? WHERE userID = ?`,
+        [flashcardCount, userID]
+      );
+      
+      // Increment total decks quizzed only if this is the first time quizzing this deck
+      if (isFirstTimeQuizzingDeck) {
+        await db.runAsync(
+          `UPDATE users SET accumulatedDecksQuizzed = accumulatedDecksQuizzed + 1 WHERE userID = ?`,
+          [userID]
+        );
+        
+        // Increment study or interview deck counter based on deck type
+        if (deckType === 'study') {
+          await db.runAsync(
+            `UPDATE users SET accumulatedStudyDecksQuizzed = accumulatedStudyDecksQuizzed + 1 WHERE userID = ?`,
+            [userID]
+          );
+        } else if (deckType === 'interview') {
+          await db.runAsync(
+            `UPDATE users SET accumulatedInterviewDecksQuizzed = accumulatedInterviewDecksQuizzed + 1 WHERE userID = ?`,
+            [userID]
+          );
+        }
+      }
+      
+      await db.execAsync('COMMIT');
+      console.log(`✅ Incremented quiz counters: deck=${isFirstTimeQuizzingDeck ? 1 : 0}, flashcards=${flashcardCount}, type=${deckType}`);
+      return true;
+    } catch (error) {
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error incrementing quiz counters:', error);
+    return false;
+  }
 } 
 
 // Create a new user in the database
@@ -223,6 +283,10 @@ export async function createUser(userID: string): Promise<boolean> {
         accumulatedFlashcardsCreated, 
         accumulatedStudyDecksCreated, 
         accumulatedInterviewDecksCreated, 
+        accumulatedDecksQuizzed, 
+        accumulatedFlashcardsQuizzed, 
+        accumulatedStudyDecksQuizzed, 
+        accumulatedInterviewDecksQuizzed, 
         lastUpdated, 
         notificationsEnabled, 
         autoDecksEnabled, 
@@ -243,7 +307,7 @@ export async function createUser(userID: string): Promise<boolean> {
         youtubeLinkRequests, 
         chatWithAIRequests
       ) VALUES (
-        ?, ?, 0, 0, 0, 0, ?, 1, 1, 1, 1, 1, 120, 1, 20, 60, 45, 30, 15, 'English', 'Free', 0, 0, 0, 0
+        ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, ?, 1, 1, 1, 1, 1, 120, 1, 20, 60, 45, 30, 15, 'English', 'Free', 0, 0, 0, 0
       )
     `, [userID, currentDate, currentDate]);
     
@@ -286,15 +350,6 @@ export async function fetchStatsData(): Promise<StatsData> {
       )
     `, [userID, userID]);
     
-    // Get total decks quizzed (have lastQuizzedDate)
-    const quizzedDecksResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM (
-        SELECT deckID FROM decks WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT deckID FROM AIDecks WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-      )
-    `, [userID, userID]);
-    
     // Get current flashcards in local storage
     const localStorageFlashcardsResult = await db.getFirstAsync(`
       SELECT COUNT(*) as count FROM (
@@ -304,52 +359,39 @@ export async function fetchStatsData(): Promise<StatsData> {
       )
     `, [userID, userID]);
     
-    // Get total flashcards quizzed
-    const quizzedFlashcardsResult = await db.getFirstAsync(`
-      SELECT COUNT(*) as count FROM (
-        SELECT flashcardID FROM flashcards WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT flashcardID FROM AIFlashcards WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-      )
-    `, [userID, userID]);
-    
-    // Get study deck statistics
+    // Get study deck statistics (local storage count)
     const studyStatsResult = await db.getFirstAsync(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN lastQuizzedDate IS NOT NULL THEN 1 ELSE 0 END) as quizzed
+      SELECT COUNT(*) as total
       FROM (
-        SELECT deckID, lastQuizzedDate FROM decks WHERE deckType = 'study' AND userID = ?
+        SELECT deckID FROM decks WHERE deckType = 'study' AND userID = ?
         UNION ALL
-        SELECT deckID, lastQuizzedDate FROM AIDecks WHERE deckType = 'study' AND userID = ?
+        SELECT deckID FROM AIDecks WHERE deckType = 'study' AND userID = ?
       )
     `, [userID, userID]);
     
-    // Get interview deck statistics
+    // Get interview deck statistics (local storage count)
     const interviewStatsResult = await db.getFirstAsync(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN lastQuizzedDate IS NOT NULL THEN 1 ELSE 0 END) as quizzed
+      SELECT COUNT(*) as total
       FROM (
-        SELECT deckID, lastQuizzedDate FROM decks WHERE deckType = 'interview' AND userID = ?
+        SELECT deckID FROM decks WHERE deckType = 'interview' AND userID = ?
         UNION ALL
-        SELECT deckID, lastQuizzedDate FROM AIDecks WHERE deckType = 'interview' AND userID = ?
+        SELECT deckID FROM AIDecks WHERE deckType = 'interview' AND userID = ?
       )
     `, [userID, userID]);
 
     return {
       accumulatedDecks: userStats?.accumulatedDecksCreated || 0,
       localStorageDecks: (localStorageDecksResult as any)?.count || 0,
-      totalQuizzedDecks: (quizzedDecksResult as any)?.count || 0,
+      totalQuizzedDecks: userStats?.accumulatedDecksQuizzed || 0,
       accumulatedFlashcards: userStats?.accumulatedFlashcardsCreated || 0,
       localStorageFlashcards: (localStorageFlashcardsResult as any)?.count || 0,
-      totalQuizzedFlashcards: (quizzedFlashcardsResult as any)?.count || 0,
+      totalQuizzedFlashcards: userStats?.accumulatedFlashcardsQuizzed || 0,
       studyDecks: userStats?.accumulatedStudyDecksCreated || 0,
       studyLocalStorage: (studyStatsResult as any)?.total || 0,
-      studyQuizzed: (studyStatsResult as any)?.quizzed || 0,
+      studyQuizzed: userStats?.accumulatedStudyDecksQuizzed || 0,
       interviewDecks: userStats?.accumulatedInterviewDecksCreated || 0,
       interviewLocalStorage: (interviewStatsResult as any)?.total || 0,
-      interviewQuizzed: (interviewStatsResult as any)?.quizzed || 0,
+      interviewQuizzed: userStats?.accumulatedInterviewDecksQuizzed || 0,
     };
   } catch (error) {
     console.error('Error fetching stats data:', error);

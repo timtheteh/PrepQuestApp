@@ -168,6 +168,10 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
         accumulatedFlashcardsCreated INTEGER DEFAULT 0,
         accumulatedStudyDecksCreated INTEGER DEFAULT 0,
         accumulatedInterviewDecksCreated INTEGER DEFAULT 0,
+        accumulatedDecksQuizzed INTEGER DEFAULT 0,
+        accumulatedFlashcardsQuizzed INTEGER DEFAULT 0,
+        accumulatedStudyDecksQuizzed INTEGER DEFAULT 0,
+        accumulatedInterviewDecksQuizzed INTEGER DEFAULT 0,
         lastUpdated TEXT DEFAULT CURRENT_TIMESTAMP,
         notificationsEnabled INTEGER DEFAULT 1,
         autoDecksEnabled INTEGER DEFAULT 1,
@@ -251,6 +255,26 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase) {
     } catch (error) {
       // Column already exists, ignore error
       console.log('ℹ️ badgeOrder column already exists in welcomeBadgesTable');
+    }
+
+    // Migration: Add quiz counter columns to existing users table if they don't exist
+    const quizCounterColumns = [
+      'accumulatedDecksQuizzed',
+      'accumulatedFlashcardsQuizzed',
+      'accumulatedStudyDecksQuizzed',
+      'accumulatedInterviewDecksQuizzed'
+    ];
+    
+    for (const columnName of quizCounterColumns) {
+      try {
+        await db.execAsync(`
+          ALTER TABLE users ADD COLUMN ${columnName} INTEGER DEFAULT 0
+        `);
+        console.log(`✅ Added ${columnName} column to users table`);
+      } catch (error) {
+        // Column already exists, ignore error
+        console.log(`ℹ️ ${columnName} column already exists in users table`);
+      }
     }
 
     // Create optimized indexes for performance (minimal set for maximum impact)

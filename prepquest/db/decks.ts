@@ -4272,9 +4272,29 @@ export const updateDeckCompletionDate = async (
     const userID = await getCurrentUserID();
     const isAIDeckFromParams = isAIDeck === 'true';
     const deckTableName = isAIDeckFromParams ? 'AIDecks' : 'decks';
+    const flashcardTableName = isAIDeckFromParams ? 'AIFlashcards' : 'flashcards';
     const currentDate = new Date().toISOString(); // Full ISO format: '2025-01-27T09:15:00.000Z'
     
     const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
+    
+    // For quiz sessions, check if this is the first time quizzing and get deck info before updating
+    let isFirstTimeQuizzingDeck = false;
+    let deckType: 'study' | 'interview' | null = null;
+    let previousQuizDate: string | null = null;
+    
+    if (!isStudyMode) {
+      // Get deck info before updating to check if this is the first quiz and get previous quiz date
+      const deckResult = await db.getFirstAsync(`
+        SELECT deckType, lastQuizzedDate FROM ${deckTableName}
+        WHERE deckID = ? AND userID = ?
+      `, [parseInt(deckId), userID]);
+      
+      if (deckResult) {
+        deckType = (deckResult as any).deckType;
+        previousQuizDate = (deckResult as any).lastQuizzedDate;
+        isFirstTimeQuizzingDeck = previousQuizDate === null;
+      }
+    }
     
     // Update the deck's completion date
     await db.runAsync(`
@@ -4282,6 +4302,63 @@ export const updateDeckCompletionDate = async (
       SET ${fieldToUpdate} = ?
       WHERE deckID = ? AND userID = ?
     `, [currentDate, parseInt(deckId), userID]);
+
+    // For quiz sessions, increment quiz counters
+    if (!isStudyMode && deckType) {
+      // Count flashcards that were quizzed in this session
+      // If first time quizzing, count all flashcards with lastQuizzedDate set
+      // If not first time, count flashcards with lastQuizzedDate > previousQuizDate (quizzed since last deck quiz)
+      let flashcardCountResult;
+      
+      if (isFirstTimeQuizzingDeck) {
+        // First time quizzing: count all flashcards with lastQuizzedDate set
+        flashcardCountResult = await db.getFirstAsync(`
+          SELECT COUNT(*) as count
+          FROM ${flashcardTableName}
+          WHERE deckID = ? 
+            AND userID = ?
+            AND lastQuizzedDate IS NOT NULL
+        `, [parseInt(deckId), userID]);
+      } else {
+        // Not first time: count flashcards quizzed since the previous deck quiz
+        // Use a small buffer (1 second before previousQuizDate) to ensure we catch all flashcards from this session
+        const previousQuizDateMinusBuffer = previousQuizDate 
+          ? new Date(new Date(previousQuizDate).getTime() - 1000).toISOString()
+          : null;
+        
+        if (previousQuizDateMinusBuffer) {
+          flashcardCountResult = await db.getFirstAsync(`
+            SELECT COUNT(*) as count
+            FROM ${flashcardTableName}
+            WHERE deckID = ? 
+              AND userID = ?
+              AND lastQuizzedDate IS NOT NULL
+              AND lastQuizzedDate > ?
+          `, [parseInt(deckId), userID, previousQuizDateMinusBuffer]);
+        } else {
+          // Fallback: count all flashcards with lastQuizzedDate set
+          flashcardCountResult = await db.getFirstAsync(`
+            SELECT COUNT(*) as count
+            FROM ${flashcardTableName}
+            WHERE deckID = ? 
+              AND userID = ?
+              AND lastQuizzedDate IS NOT NULL
+          `, [parseInt(deckId), userID]);
+        }
+      }
+      
+      const flashcardCount = flashcardCountResult ? ((flashcardCountResult as any).count || 0) : 0;
+      
+      // Import and call incrementQuizCounters
+      const { incrementQuizCounters } = await import('./users');
+      await incrementQuizCounters(
+        parseInt(deckId),
+        isAIDeckFromParams,
+        deckType,
+        flashcardCount,
+        isFirstTimeQuizzingDeck
+      );
+    }
 
   } catch (error) {
     console.error(`Error updating deck completion date:`, error);

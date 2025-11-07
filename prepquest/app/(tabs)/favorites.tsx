@@ -1374,7 +1374,7 @@ export default function FavoritesScreen() {
   const renderFavDeckCards = useCallback(() => {
     // Show shimmer skeleton while loading
     if (isLoadingFavorites) {
-      return Array.from({ length: 3 }).map((_, index) => (
+      return Array.from({ length: 6 }).map((_, index) => (
         <DeckSkeletonCard
           key={`fav-deck-skeleton-${index}`}
           style={index === 0 ? styles.firstCard : styles.card}
@@ -1456,7 +1456,7 @@ export default function FavoritesScreen() {
   const renderFavFolderCards = useCallback(() => {
     // Show shimmer skeleton while loading
     if (isLoadingFavorites) {
-      return Array.from({ length: 3 }).map((_, index) => (
+      return Array.from({ length: 6 }).map((_, index) => (
         <DeckSkeletonCard
           key={`fav-folder-skeleton-${index}`}
           style={index === 0 ? styles.firstCard : styles.favFolderCard}

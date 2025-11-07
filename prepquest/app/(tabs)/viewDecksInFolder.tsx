@@ -1010,7 +1010,7 @@ export default function ViewDecksInFolderScreen() {
   const renderDecks = () => {
     // Show shimmer skeleton while loading
     if (isLoadingDecks) {
-      return Array.from({ length: 3 }).map((_, index) => (
+      return Array.from({ length: 6 }).map((_, index) => (
         <DeckSkeletonCard
           key={`deck-skeleton-${index}`}
           style={index === 0 ? styles.firstCard : styles.card}

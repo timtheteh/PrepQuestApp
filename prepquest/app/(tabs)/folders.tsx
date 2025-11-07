@@ -1370,7 +1370,7 @@ export default function FoldersScreen() {
   const renderFolderCards = useCallback(() => {
     // Show shimmer skeleton while loading
     if (isLoadingFolders) {
-      return Array.from({ length: 3 }).map((_, index) => (
+      return Array.from({ length: 6 }).map((_, index) => (
         <DeckSkeletonCard
           key={`folder-skeleton-${index}`}
           style={index === 0 ? styles.firstCard : styles.card}

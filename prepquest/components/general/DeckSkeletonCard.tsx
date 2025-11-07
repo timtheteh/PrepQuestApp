@@ -58,8 +58,11 @@ export const DeckSkeletonCard = React.memo(({ style }: DeckSkeletonCardProps) =>
           {/* Content placeholder */}
           <View style={styles.content}>
             <View style={[styles.titlePlaceholder, { backgroundColor: Colors[theme].unselectedText }]} />
-            <View style={[styles.datePlaceholder, { backgroundColor: Colors[theme].unselectedText }]} />
-            <View style={[styles.countPlaceholder, { backgroundColor: Colors[theme].unselectedText }]} />
+            <View style={[styles.titlePlaceholder2, { backgroundColor: Colors[theme].unselectedText }]} />
+            <View style={styles.middleRow}>
+              <View style={[styles.datePlaceholder, { backgroundColor: Colors[theme].unselectedText }]} />
+              <View style={[styles.countPlaceholder, { backgroundColor: Colors[theme].unselectedText }]} />
+            </View>
           </View>
         </View>
       </View>
@@ -104,23 +107,36 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     margin: 10,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
+    paddingTop: 8,
   },
   titlePlaceholder: {
-    height: 16,
-    width: '60%',
+    height: 18,
+    width: '70%',
     borderRadius: 4,
+    marginBottom: 6,
+  },
+  titlePlaceholder2: {
+    height: 18,
+    width: '50%',
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  middleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 'auto',
     marginBottom: 8,
   },
   datePlaceholder: {
     height: 12,
-    width: '40%',
+    width: '35%',
     borderRadius: 4,
-    marginBottom: 4,
   },
   countPlaceholder: {
     height: 12,
-    width: '30%',
+    width: '25%',
     borderRadius: 4,
   },
 });

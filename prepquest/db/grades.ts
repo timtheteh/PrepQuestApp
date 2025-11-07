@@ -894,13 +894,18 @@ export interface LongestStreakData {
 export async function getLongestStreakData(): Promise<LongestStreakData> {
   try {
     const userID = await getCurrentUserID();
-    // Get all study and quiz dates from both tables
+    // Get all study and quiz dates from both flashcards and AIFlashcards tables
     const result = await db.getAllAsync(`
       SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
       FROM flashcards
       WHERE userID = ? 
         AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
-    `, [userID]);
+      UNION ALL
+      SELECT lastStudiedDate, lastQuizzedDate, flashcardID, deckID
+      FROM AIFlashcards
+      WHERE userID = ? 
+        AND (lastStudiedDate IS NOT NULL OR lastQuizzedDate IS NOT NULL)
+    `, [userID, userID]);
     const flashcards = result as Array<{
       lastStudiedDate: string | null;
       lastQuizzedDate: string | null;
@@ -983,6 +988,8 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
     if (longestStreak > 0 && streakStartDate && streakEndDate) {
       const streakStart = new Date(streakStartDate);
       const streakEnd = new Date(streakEndDate);
+      // Add one day to streakEnd to include the end date in the range
+      streakEnd.setDate(streakEnd.getDate() + 1);
       
       // Get all flashcards studied/quizzed during the streak period
       const streakFlashcards = flashcards.filter((flashcard) => {
@@ -991,12 +998,12 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
         
         if (studyDate) {
           const studyDateObj = new Date(studyDate);
-          if (studyDateObj >= streakStart && studyDateObj <= streakEnd) return true;
+          if (studyDateObj >= streakStart && studyDateObj < streakEnd) return true;
         }
         
         if (quizDate) {
           const quizDateObj = new Date(quizDate);
-          if (quizDateObj >= streakStart && quizDateObj <= streakEnd) return true;
+          if (quizDateObj >= streakStart && quizDateObj < streakEnd) return true;
         }
         
         return false;

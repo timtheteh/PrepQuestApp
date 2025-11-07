@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, RefreshControl } from 'react-native';
 import { HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
 import { Title } from '@/components/general/Title';
 import { useState, useRef, useContext, useEffect, useCallback } from 'react';
@@ -27,6 +27,7 @@ import {
 import { getDeckCardDesign } from '@/constants/cardDesigns';
 import { Toast } from '@/components/general/Toast';
 import LottieView from 'lottie-react-native';
+import { DeckSkeletonCard } from '@/components/general/DeckSkeletonCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle2, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
@@ -85,6 +86,8 @@ export default function ViewDecksInFolderScreen() {
   const [decks, setDecks] = useState<(Deck & { progress: number })[]>([]);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
+  const [isLoadingDecks, setIsLoadingDecks] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [folderTitleFromDb, setFolderTitleFromDb] = useState<string>('');
   const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
   const selectTextAnim = useRef(new Animated.Value(0)).current;
@@ -142,30 +145,42 @@ export default function ViewDecksInFolderScreen() {
     fetchFolderTitle();
   }, [isDatabaseReady, folderId, folderTitle]);
 
+  // Load decks data function (reusable for both initial load and refresh)
+  const loadDecksData = useCallback(async (showLoadingState = true) => {
+    if (!isDatabaseReady || !folderId) {
+      return;
+    }
+    
+    if (showLoadingState) {
+      setIsLoadingDecks(true);
+    }
+    
+    try {
+      const decksData = await getDecksInFolder(parseInt(folderId as string));
+      setDecks(decksData);
+      setDecksCount(decksData.length);
+      
+      // Load image sources for each deck
+      const sources = new Map<number, { uri: string } | undefined>();
+      for (const deck of decksData) {
+        const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+        sources.set(deck.deckID, imageSource);
+      }
+      setImageSources(sources);
+      
+      if (showLoadingState) {
+        setIsLoadingDecks(false);
+      }
+    } catch (error) {
+      console.error('Error loading decks data for folder:', error);
+      if (showLoadingState) {
+        setIsLoadingDecks(false);
+      }
+    }
+  }, [isDatabaseReady, folderId]);
+
   // Load decks data from database
   useEffect(() => {
-    const loadDecksData = async () => {
-      if (!isDatabaseReady || !folderId) {
-        return;
-      }
-      
-      try {
-        const decksData = await getDecksInFolder(parseInt(folderId as string));
-        setDecks(decksData);
-        setDecksCount(decksData.length);
-        
-        // Load image sources for each deck
-        const sources = new Map<number, { uri: string } | undefined>();
-        for (const deck of decksData) {
-          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-          sources.set(deck.deckID, imageSource);
-        }
-        setImageSources(sources);
-      } catch (error) {
-        console.error('Error loading decks data for folder:', error);
-      }
-    };
-
     if (isFocused) {
       // Use optimized screen transition
       optimizedScreenTransition.transitionWithDataPreload(
@@ -177,10 +192,22 @@ export default function ViewDecksInFolderScreen() {
             useNativeDriver: true,
           }).start();
         },
-        loadDecksData
+        () => loadDecksData(true)
       );
     }
-  }, [isFocused, isDatabaseReady, folderId]);
+  }, [isFocused, isDatabaseReady, folderId, loadDecksData]);
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadDecksData(false);
+    } catch (error) {
+      console.error('Error refreshing folder decks data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadDecksData]);
 
   // Background task refresh hook
   const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
@@ -188,24 +215,7 @@ export default function ViewDecksInFolderScreen() {
       console.log('Background task completed - refreshing folder decks data');
       // Refresh folder decks data when background task completes
       if (isDatabaseReady && folderId) {
-        const loadDecksData = async () => {
-          try {
-            const decksData = await getDecksInFolder(parseInt(folderId as string));
-            setDecks(decksData);
-            setDecksCount(decksData.length);
-            
-            // Load image sources for each deck
-            const sources = new Map<number, { uri: string } | undefined>();
-            for (const deck of decksData) {
-              const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-              sources.set(deck.deckID, imageSource);
-            }
-            setImageSources(sources);
-          } catch (error) {
-            console.error('Error refreshing folder decks data:', error);
-          }
-        };
-        loadDecksData();
+        loadDecksData(true);
       }
     }
   });
@@ -214,26 +224,9 @@ export default function ViewDecksInFolderScreen() {
   useEffect(() => {
     if (backgroundTaskProgress?.completed === true && isDatabaseReady && folderId) {
       console.log('Fallback: Background task completed - refreshing folder decks data');
-      const loadDecksData = async () => {
-        try {
-          const decksData = await getDecksInFolder(parseInt(folderId as string));
-          setDecks(decksData);
-          setDecksCount(decksData.length);
-          
-          // Load image sources for each deck
-          const sources = new Map<number, { uri: string } | undefined>();
-          for (const deck of decksData) {
-            const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-            sources.set(deck.deckID, imageSource);
-          }
-          setImageSources(sources);
-        } catch (error) {
-          console.error('Error refreshing folder decks data (fallback):', error);
-        }
-      };
-      loadDecksData();
+      loadDecksData(true);
     }
-  }, [backgroundTaskProgress?.completed, isDatabaseReady, folderId]);
+  }, [backgroundTaskProgress?.completed, isDatabaseReady, folderId, loadDecksData]);
 
   // Reset header icons state when screen comes into focus
   useEffect(() => {
@@ -1015,6 +1008,16 @@ export default function ViewDecksInFolderScreen() {
   });
 
   const renderDecks = () => {
+    // Show shimmer skeleton while loading
+    if (isLoadingDecks) {
+      return Array.from({ length: 3 }).map((_, index) => (
+        <DeckSkeletonCard
+          key={`deck-skeleton-${index}`}
+          style={index === 0 ? styles.firstCard : styles.card}
+        />
+      ));
+    }
+    
     // Show empty state if no decks
     if (!decks || decks.length === 0) {
       return (
@@ -1177,6 +1180,14 @@ export default function ViewDecksInFolderScreen() {
                             style={styles.scrollContainer}
                             contentContainerStyle={styles.scrollContent}
                             showsVerticalScrollIndicator={false}
+                            refreshControl={
+                              <RefreshControl
+                                refreshing={isRefreshing}
+                                onRefresh={handleRefresh}
+                                tintColor={Colors[theme].brandColor2}
+                                colors={[Colors[theme].brandColor2]}
+                              />
+                            }
                             >
                             {renderDecks()}
                           </ScrollView>

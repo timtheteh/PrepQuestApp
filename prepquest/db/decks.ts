@@ -79,7 +79,7 @@ export async function getStudyDecks(): Promise<Deck[]> {
         d.*,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
-      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      LEFT JOIN flashcards f ON d.deckID = f.deckID AND f.userID = d.userID
       WHERE d.deckType = 'study' AND d.userID = ?
       GROUP BY d.deckID
       ORDER BY d.lastModifiedDate DESC
@@ -121,7 +121,7 @@ export async function getInterviewDecks(): Promise<Deck[]> {
         d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
-      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      LEFT JOIN flashcards f ON d.deckID = f.deckID AND f.userID = d.userID
       WHERE d.deckType = 'interview' AND d.userID = ?
       GROUP BY d.deckID
       ORDER BY d.lastModifiedDate DESC
@@ -629,7 +629,7 @@ export async function getDecksInFolder(folderId: number): Promise<(Deck & { prog
         d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
-      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      LEFT JOIN flashcards f ON d.deckID = f.deckID AND f.userID = d.userID
       WHERE d.folderIDs IS NOT NULL 
         AND d.folderIDs != '' 
         AND ${folderId} IN (
@@ -1001,7 +1001,7 @@ export async function getDeckInfoWithProgress(deckId: number): Promise<(any & { 
         d.interviewCompanyIcon,
         COUNT(f.flashcardID) as flashcardCount
       FROM decks d
-      LEFT JOIN flashcards f ON d.deckID = f.deckID
+      LEFT JOIN flashcards f ON d.deckID = f.deckID AND f.userID = d.userID
       WHERE d.deckID = ? AND d.userID = ?
       GROUP BY d.deckID
     `, [deckId, userID]);

@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, Dimensions, RefreshControl } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
@@ -9,12 +9,13 @@ import { Card } from '@/components/general/Card';
 import { ActionButtonsRow } from '@/components/general/ActionButtonsRow';
 import { MenuButton } from '@/components/general/MenuButton';
 import { CalendarModal } from '@/components/modals/CalendarModal';
+import { DeckSkeletonCard } from '@/components/general/DeckSkeletonCard';
 import { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { MenuContext } from '@/contexts/MenuContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getDeckCardDesign } from '@/constants/cardDesigns';
-import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks, getCompanyIconImageSource, updateDeckFavoriteStatus, saveSortPreferences, loadSortPreferences, checkDatabaseReady } from '@/db/decks';
+import { getStudyDecksWithProgress, getInterviewDecksWithProgress, Deck, deleteMultipleDecks, getCompanyIconImageSource, updateDeckFavoriteStatus, saveSortPreferences, loadSortPreferences, checkDatabaseReady, getFlashcardCount } from '@/db/decks';
 import LottieView from 'lottie-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBottomContentSpacing } from '@/hooks/heights';
@@ -61,6 +62,8 @@ export default function DecksScreen() {
   const [shouldShowStudyAnimation, setShouldShowStudyAnimation] = useState(true);
   const [shouldShowInterviewAnimation, setShouldShowInterviewAnimation] = useState(true);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
+  const [isLoadingDecks, setIsLoadingDecks] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -312,40 +315,64 @@ export default function DecksScreen() {
     checkDBReady();
   }, []);
 
+  // Load deck data function (reusable for both initial load and refresh)
+  const loadDeckData = useCallback(async (showLoadingState = true) => {
+    if (!isDatabaseReady) {
+      return;
+    }
+    
+    if (showLoadingState) {
+      setIsLoadingDecks(true);
+    }
+    
+    try {
+      // Load deck data directly from database
+      const [studyData, interviewData] = await Promise.all([
+        getStudyDecksWithProgress(),
+        getInterviewDecksWithProgress()
+      ]);
+
+      // Preload flashcard counts for all decks to ensure flashcards are accessible
+      const allDecks = [...studyData, ...interviewData];
+      await Promise.all(
+        allDecks.map(async (deck) => {
+          try {
+            // Verify flashcard count is accessible (this ensures the deck's flashcards are ready)
+            await getFlashcardCount(deck.deckID.toString(), deck.isAIDeck === 1 ? 'true' : 'false');
+          } catch (error) {
+            console.error(`Error loading flashcard count for deck ${deck.deckID}:`, error);
+          }
+        })
+      );
+
+      setStudyDecks(studyData);
+      setInterviewDecks(interviewData);
+      setFilteredStudyDecks(studyData);
+      setFilteredInterviewDecks(interviewData);
+      setStudyCardsCount(studyData.length);
+      setInterviewCardsCount(interviewData.length);
+      
+      // Load image sources for all decks
+      const sources = new Map<number, { uri: string } | undefined>();
+      for (const deck of allDecks) {
+        const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+        sources.set(deck.deckID, imageSource);
+      }
+      setImageSources(sources);
+      
+      if (showLoadingState) {
+        setIsLoadingDecks(false);
+      }
+    } catch (error) {
+      console.error('Error loading deck data:', error);
+      if (showLoadingState) {
+        setIsLoadingDecks(false);
+      }
+    }
+  }, [isDatabaseReady]);
+
   // Load deck data from database
   useEffect(() => {
-    const loadDeckData = async () => {
-      if (!isDatabaseReady) {
-        return;
-      }
-      
-      try {
-        // Load deck data directly from database
-        const [studyData, interviewData] = await Promise.all([
-          getStudyDecksWithProgress(),
-          getInterviewDecksWithProgress()
-        ]);
-
-        setStudyDecks(studyData);
-        setInterviewDecks(interviewData);
-        setFilteredStudyDecks(studyData);
-        setFilteredInterviewDecks(interviewData);
-        setStudyCardsCount(studyData.length);
-        setInterviewCardsCount(interviewData.length);
-        
-        // Load image sources for all decks
-        const allDecks = [...studyData, ...interviewData];
-        const sources = new Map<number, { uri: string } | undefined>();
-        for (const deck of allDecks) {
-          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-          sources.set(deck.deckID, imageSource);
-        }
-        setImageSources(sources);
-      } catch (error) {
-        console.error('Error loading deck data:', error);
-      }
-    };
-
     if (isFocused) {
       // Use optimized screen transition
       optimizedScreenTransition.transitionWithDataPreload(
@@ -357,10 +384,10 @@ export default function DecksScreen() {
             useNativeDriver: true,
           }).start();
         },
-        loadDeckData
+        () => loadDeckData(true)
       );
     }
-  }, [isFocused, isDatabaseReady]);
+  }, [isFocused, isDatabaseReady, loadDeckData]);
 
   // Update card counts
   useEffect(() => {
@@ -408,38 +435,25 @@ export default function DecksScreen() {
     }
   }, [isFocused]);
 
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadDeckData(false);
+    } catch (error) {
+      console.error('Error refreshing deck data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadDeckData]);
+
   // Background task refresh hook
   const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
     onTaskComplete: () => {
       console.log('Background task completed - refreshing deck data');
       // Refresh deck data when background task completes
       if (isDatabaseReady) {
-        const loadDeckData = async () => {
-          try {
-            const [studyData, interviewData] = await Promise.all([
-              getStudyDecksWithProgress(),
-              getInterviewDecksWithProgress()
-            ]);
-            setStudyDecks(studyData);
-            setInterviewDecks(interviewData);
-            setFilteredStudyDecks(studyData);
-            setFilteredInterviewDecks(interviewData);
-            setStudyCardsCount(studyData.length);
-            setInterviewCardsCount(interviewData.length);
-            
-            // Load image sources for all decks (both study and interview)
-            const sources = new Map<number, { uri: string } | undefined>();
-            const allDecks = [...studyData, ...interviewData];
-            for (const deck of allDecks) {
-              const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-              sources.set(deck.deckID, imageSource);
-            }
-            setImageSources(sources);
-          } catch (error) {
-            console.error('Error refreshing deck data:', error);
-          }
-        };
-        loadDeckData();
+        loadDeckData(true);
       }
     }
   });
@@ -452,34 +466,9 @@ export default function DecksScreen() {
     
     if (shouldRefresh) {
       console.log('Fallback: Background task completed or deck created - refreshing deck data');
-      const loadDeckData = async () => {
-        try {
-          const [studyData, interviewData] = await Promise.all([
-            getStudyDecksWithProgress(),
-            getInterviewDecksWithProgress()
-          ]);
-          setStudyDecks(studyData);
-          setInterviewDecks(interviewData);
-          setFilteredStudyDecks(studyData);
-          setFilteredInterviewDecks(interviewData);
-          setStudyCardsCount(studyData.length);
-          setInterviewCardsCount(interviewData.length);
-          
-          // Load image sources for all decks (both study and interview)
-          const sources = new Map<number, { uri: string } | undefined>();
-          const allDecks = [...studyData, ...interviewData];
-          for (const deck of allDecks) {
-            const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-            sources.set(deck.deckID, imageSource);
-          }
-          setImageSources(sources);
-        } catch (error) {
-          console.error('Error refreshing deck data (fallback):', error);
-        }
-      };
-      loadDeckData();
+      loadDeckData(true);
     }
-  }, [backgroundTaskProgress?.completed, backgroundTaskProgress?.status, isDatabaseReady]);
+  }, [backgroundTaskProgress?.completed, backgroundTaskProgress?.status, isDatabaseReady, loadDeckData]);
 
   // Reset selection mode when leaving the tab
   useEffect(() => {
@@ -1068,6 +1057,16 @@ export default function DecksScreen() {
   }, [sortField, sortDirection]);
 
   const renderStudyCards = useMemo(() => {
+    // Show shimmer skeleton while loading
+    if (isLoadingDecks) {
+      return Array.from({ length: 3 }).map((_, index) => (
+        <DeckSkeletonCard
+          key={`study-skeleton-${index}`}
+          style={index === 0 ? styles.firstCard : styles.card}
+        />
+      ));
+    }
+    
     let decksToRender;
     if (isSearching) {
       decksToRender = searchedStudyDecks;
@@ -1127,9 +1126,19 @@ export default function DecksScreen() {
       );
     });
     return cards;
-  }, [isSearching, searchedStudyDecks, filteredStudyDecksByDate, shouldShowStudyAnimation, sortDecks, selectedStudyCards, isSelectMode, cardWidthPercentage, circleButtonOpacity, formatDate, handleFavoriteToggle, handleStudyCardSelection, language]);
+  }, [isLoadingDecks, isSearching, searchedStudyDecks, filteredStudyDecksByDate, shouldShowStudyAnimation, sortDecks, selectedStudyCards, isSelectMode, cardWidthPercentage, circleButtonOpacity, formatDate, handleFavoriteToggle, handleStudyCardSelection, language]);
 
   const renderInterviewCards = useMemo(() => {
+    // Show shimmer skeleton while loading
+    if (isLoadingDecks) {
+      return Array.from({ length: 3 }).map((_, index) => (
+        <DeckSkeletonCard
+          key={`interview-skeleton-${index}`}
+          style={index === 0 ? styles.firstCard : styles.card}
+        />
+      ));
+    }
+    
     let decksToRender;
     if (isSearching) {
       decksToRender = searchedInterviewDecks;
@@ -1191,7 +1200,7 @@ export default function DecksScreen() {
       );
     });
     return cards;
-  }, [isSearching, searchedInterviewDecks, filteredInterviewDecksByDate, shouldShowInterviewAnimation, sortDecks, selectedInterviewCards, isSelectMode, cardWidthPercentage, circleButtonOpacity, imageSources, formatDate, handleFavoriteToggle, handleInterviewCardSelection, language]);
+  }, [isLoadingDecks, isSearching, searchedInterviewDecks, filteredInterviewDecksByDate, shouldShowInterviewAnimation, sortDecks, selectedInterviewCards, isSelectMode, cardWidthPercentage, circleButtonOpacity, imageSources, formatDate, handleFavoriteToggle, handleInterviewCardSelection, language]);
 
   // For counts in UI:
   const studyDeckCount = useMemo(() => 
@@ -1425,6 +1434,14 @@ export default function DecksScreen() {
                       style={styles.scrollContainer}
                       contentContainerStyle={styles.scrollContent}
                       showsVerticalScrollIndicator={false}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={isRefreshing}
+                          onRefresh={handleRefresh}
+                          tintColor={Colors[theme].brandColor2}
+                          colors={[Colors[theme].brandColor2]}
+                        />
+                      }
                     >
                       {renderStudyCards}
                     </ScrollView>
@@ -1439,6 +1456,14 @@ export default function DecksScreen() {
                       style={styles.scrollContainer}
                       contentContainerStyle={styles.scrollContent}
                       showsVerticalScrollIndicator={false}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={isRefreshing}
+                          onRefresh={handleRefresh}
+                          tintColor={Colors[theme].brandColor2}
+                          colors={[Colors[theme].brandColor2]}
+                        />
+                      }
                     >
                       {renderInterviewCards}
                     </ScrollView>

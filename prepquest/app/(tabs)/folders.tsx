@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, RefreshControl } from 'react-native';
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
 import { Title } from '@/components/general/Title';
 import { FolderCard } from '@/components/folderComponents/FolderCard';
@@ -18,6 +18,7 @@ import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
+import { DeckSkeletonCard } from '@/components/general/DeckSkeletonCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle, useBottomContentSpacing } from '@/hooks/heights';
@@ -63,6 +64,8 @@ export default function FoldersScreen() {
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [foldersCount, setFoldersCount] = useState(0);
   const [shouldShowAnimation, setShouldShowAnimation] = useState(true);
+  const [isLoadingFolders, setIsLoadingFolders] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isFocused = useIsFocused();
   const { 
     setIsMenuOpen, 
@@ -385,25 +388,37 @@ export default function FoldersScreen() {
     checkDatabaseReady();
   }, []);
 
+  // Load folders data function (reusable for both initial load and refresh)
+  const loadFoldersData = useCallback(async (showLoadingState = true) => {
+    if (!isDatabaseReady) {
+      return;
+    }
+    
+    if (showLoadingState) {
+      setIsLoadingFolders(true);
+    }
+    
+    try {
+      // Load folders data directly from database
+      const foldersData = await getAllFolders();
+
+      setFolders(foldersData);
+      setFilteredFolders(foldersData);
+      setFoldersCount(foldersData.length);
+      
+      if (showLoadingState) {
+        setIsLoadingFolders(false);
+      }
+    } catch (error) {
+      console.error('Error loading folders data:', error);
+      if (showLoadingState) {
+        setIsLoadingFolders(false);
+      }
+    }
+  }, [isDatabaseReady]);
+
   // Load folders data from database
   useEffect(() => {
-    const loadFoldersData = async () => {
-      if (!isDatabaseReady) {
-        return;
-      }
-      
-      try {
-        // Load folders data directly from database
-        const foldersData = await getAllFolders();
-
-        setFolders(foldersData);
-        setFilteredFolders(foldersData);
-        setFoldersCount(foldersData.length);
-      } catch (error) {
-        console.error('Error loading folders data:', error);
-      }
-    };
-
     if (isFocused) {
       // Use optimized screen transition
       optimizedScreenTransition.transitionWithDataPreload(
@@ -415,10 +430,22 @@ export default function FoldersScreen() {
             useNativeDriver: true,
           }).start();
         },
-        loadFoldersData
+        () => loadFoldersData(true)
       );
     }
-  }, [isFocused, isDatabaseReady]);
+  }, [isFocused, isDatabaseReady, loadFoldersData]);
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadFoldersData(false);
+    } catch (error) {
+      console.error('Error refreshing folders data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadFoldersData]);
 
   // Load sort preferences when component mounts
   useEffect(() => {
@@ -1341,6 +1368,16 @@ export default function FoldersScreen() {
   }, [filteredFoldersByDate.length, searchedFolders.length, isSearching, isSelectMode]);
 
   const renderFolderCards = useCallback(() => {
+    // Show shimmer skeleton while loading
+    if (isLoadingFolders) {
+      return Array.from({ length: 3 }).map((_, index) => (
+        <DeckSkeletonCard
+          key={`folder-skeleton-${index}`}
+          style={index === 0 ? styles.firstCard : styles.card}
+        />
+      ));
+    }
+    
     const foldersToRender = isSearching ? searchedFolders : filteredFoldersByDate;
     
     // If no folders to render, show empty state
@@ -1412,7 +1449,7 @@ export default function FoldersScreen() {
       );
     });
     return cards;
-  }, [isSearching, searchedFolders, filteredFoldersByDate, shouldShowAnimation, strings, language, sortFolders, isSelectMode, selectedFolders, cardWidthPercentage, circleButtonOpacity, formatDate, handleFolderFavoriteToggle, router]);
+  }, [isLoadingFolders, isSearching, searchedFolders, filteredFoldersByDate, shouldShowAnimation, strings, language, sortFolders, isSelectMode, selectedFolders, cardWidthPercentage, circleButtonOpacity, formatDate, handleFolderFavoriteToggle, router]);
 
   return (
     <Animated.View style={[styles.animatedContainer, { opacity: screenOpacity }]}>
@@ -1520,6 +1557,14 @@ export default function FoldersScreen() {
                     style={styles.scrollContainer}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={Colors[theme].brandColor2}
+                        colors={[Colors[theme].brandColor2]}
+                      />
+                    }
                   >
                     {renderFolderCards()}
                   </ScrollView>

@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, RefreshControl } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
@@ -23,6 +23,7 @@ import { getDeckCardDesign } from '@/constants/cardDesigns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalendarModal } from '@/components/modals/CalendarModal';
 import LottieView from 'lottie-react-native';
+import { DeckSkeletonCard } from '@/components/general/DeckSkeletonCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBottomContentSpacing } from '@/hooks/heights';
@@ -72,6 +73,8 @@ export default function FavoritesScreen() {
   const [calendarCustomDate, setCalendarCustomDate] = useState<string | null>(null);
   const [shouldShowDeckAnimation, setShouldShowDeckAnimation] = useState(true);
   const [shouldShowFolderAnimation, setShouldShowFolderAnimation] = useState(true);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { 
     setIsMenuOpen, 
     menuOverlayOpacity, 
@@ -994,43 +997,55 @@ export default function FavoritesScreen() {
     checkDatabaseReadyStatus();
   }, []);
 
+  // Load favorited data function (reusable for both initial load and refresh)
+  const loadFavoritedData = useCallback(async (showLoadingState = true) => {
+    if (!isDatabaseReady) {
+      console.log('Database not ready, skipping data load');
+      return;
+    }
+    
+    if (showLoadingState) {
+      setIsLoadingFavorites(true);
+    }
+    
+    console.log('Loading favorited data from database...');
+    try {
+      // Load favorited data directly from database
+      const [decksData, foldersData] = await Promise.all([
+        getFavoritedDecks(),
+        getFavoritedFolders()
+      ]);
+
+      console.log('Favorited decks loaded:', decksData.length);
+      console.log('Favorited folders loaded:', foldersData.length);
+      setFavoritedDecks(decksData);
+      setFavoritedFolders(foldersData);
+      setFilteredFavoritedDecks(decksData);
+      setFilteredFavoritedFolders(foldersData);
+      setFavDeckCardsCount(decksData.length);
+      setFavFolderCardsCount(foldersData.length);
+
+      // Load image sources for all decks
+      const sources = new Map<number, { uri: string } | undefined>();
+      for (const deck of decksData) {
+        const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
+        sources.set(deck.deckID, imageSource);
+      }
+      setImageSources(sources);
+      
+      if (showLoadingState) {
+        setIsLoadingFavorites(false);
+      }
+    } catch (error) {
+      console.error('Error loading favorited data:', error);
+      if (showLoadingState) {
+        setIsLoadingFavorites(false);
+      }
+    }
+  }, [isDatabaseReady]);
+
   // Load favorited data from database
   useEffect(() => {
-    const loadFavoritedData = async () => {
-      if (!isDatabaseReady) {
-        console.log('Database not ready, skipping data load');
-        return;
-      }
-      
-      console.log('Loading favorited data from database...');
-      try {
-        // Load favorited data directly from database
-        const [decksData, foldersData] = await Promise.all([
-          getFavoritedDecks(),
-          getFavoritedFolders()
-        ]);
-
-        console.log('Favorited decks loaded:', decksData.length);
-        console.log('Favorited folders loaded:', foldersData.length);
-        setFavoritedDecks(decksData);
-        setFavoritedFolders(foldersData);
-        setFilteredFavoritedDecks(decksData);
-        setFilteredFavoritedFolders(foldersData);
-        setFavDeckCardsCount(decksData.length);
-        setFavFolderCardsCount(foldersData.length);
-
-        // Load image sources for all decks
-        const sources = new Map<number, { uri: string } | undefined>();
-        for (const deck of decksData) {
-          const imageSource = await getCompanyIconImageSource(deck.interviewCompanyIcon);
-          sources.set(deck.deckID, imageSource);
-        }
-        setImageSources(sources);
-      } catch (error) {
-        console.error('Error loading favorited data:', error);
-      }
-    };
-
     if (isFocused) {
       // Use optimized screen transition
       optimizedScreenTransition.transitionWithDataPreload(
@@ -1042,10 +1057,22 @@ export default function FavoritesScreen() {
             useNativeDriver: true,
           }).start();
         },
-        loadFavoritedData
+        () => loadFavoritedData(true)
       );
     }
-  }, [isFocused, isDatabaseReady]);
+  }, [isFocused, isDatabaseReady, loadFavoritedData]);
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadFavoritedData(false);
+    } catch (error) {
+      console.error('Error refreshing favorited data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadFavoritedData]);
 
   // Background task refresh hook
   const { shouldRefresh, backgroundTaskProgress } = useBackgroundTaskRefresh({
@@ -1053,21 +1080,7 @@ export default function FavoritesScreen() {
       console.log('Background task completed - refreshing favorited data');
       // Refresh favorited data when background task completes
       if (isDatabaseReady) {
-        const loadFavoritedData = async () => {
-          try {
-            const [decksData, foldersData] = await Promise.all([
-              getFavoritedDecks(),
-              getFavoritedFolders()
-            ]);
-            setFavoritedDecks(decksData);
-            setFavoritedFolders(foldersData);
-            setFavDeckCardsCount(decksData.length);
-            setFavFolderCardsCount(foldersData.length);
-          } catch (error) {
-            console.error('Error refreshing favorited data:', error);
-          }
-        };
-        loadFavoritedData();
+        loadFavoritedData(true);
       }
     }
   });
@@ -1076,23 +1089,9 @@ export default function FavoritesScreen() {
   useEffect(() => {
     if (backgroundTaskProgress?.completed === true && isDatabaseReady) {
       console.log('Fallback: Background task completed - refreshing favorited data');
-      const loadFavoritedData = async () => {
-        try {
-          const [decksData, foldersData] = await Promise.all([
-            getFavoritedDecks(),
-            getFavoritedFolders()
-          ]);
-          setFavoritedDecks(decksData);
-          setFavoritedFolders(foldersData);
-          setFavDeckCardsCount(decksData.length);
-          setFavFolderCardsCount(foldersData.length);
-        } catch (error) {
-          console.error('Error refreshing favorited data (fallback):', error);
-        }
-      };
-      loadFavoritedData();
+      loadFavoritedData(true);
     }
-  }, [backgroundTaskProgress?.completed, isDatabaseReady]);
+  }, [backgroundTaskProgress?.completed, isDatabaseReady, loadFavoritedData]);
 
   // Load sort preferences when component mounts
   useEffect(() => {
@@ -1373,6 +1372,16 @@ export default function FavoritesScreen() {
 
   // Update render functions to use filtered arrays
   const renderFavDeckCards = useCallback(() => {
+    // Show shimmer skeleton while loading
+    if (isLoadingFavorites) {
+      return Array.from({ length: 3 }).map((_, index) => (
+        <DeckSkeletonCard
+          key={`fav-deck-skeleton-${index}`}
+          style={index === 0 ? styles.firstCard : styles.card}
+        />
+      ));
+    }
+    
     let decksToRender;
     if (isSearching) {
       decksToRender = searchedFavoritedDecks;
@@ -1442,9 +1451,19 @@ export default function FavoritesScreen() {
         />
       );
     });
-  }, [isSearching, searchedFavoritedDecks, filteredFavoritedDecksByDate, shouldShowDeckAnimation, sortDecks, isSelectMode, selectedFavDeckCards, cardWidthPercentage, circleButtonOpacity, imageSources, formatDate, handleFavoriteToggle, language]);
+  }, [isLoadingFavorites, isSearching, searchedFavoritedDecks, filteredFavoritedDecksByDate, shouldShowDeckAnimation, sortDecks, isSelectMode, selectedFavDeckCards, cardWidthPercentage, circleButtonOpacity, imageSources, formatDate, handleFavoriteToggle, language]);
 
   const renderFavFolderCards = useCallback(() => {
+    // Show shimmer skeleton while loading
+    if (isLoadingFavorites) {
+      return Array.from({ length: 3 }).map((_, index) => (
+        <DeckSkeletonCard
+          key={`fav-folder-skeleton-${index}`}
+          style={index === 0 ? styles.firstCard : styles.favFolderCard}
+        />
+      ));
+    }
+    
     let foldersToRender;
     if (isSearching) {
       foldersToRender = searchedFavoritedFolders;
@@ -1504,7 +1523,7 @@ export default function FavoritesScreen() {
         />
       );
     });
-  }, [isSearching, searchedFavoritedFolders, filteredFavoritedFoldersByDate, shouldShowFolderAnimation, sortFolders, isSelectMode, selectedFavFolderCards, cardWidthPercentage, circleButtonOpacity, formatDate, handleFolderFavoriteToggle, language]);
+  }, [isLoadingFavorites, isSearching, searchedFavoritedFolders, filteredFavoritedFoldersByDate, shouldShowFolderAnimation, sortFolders, isSelectMode, selectedFavFolderCards, cardWidthPercentage, circleButtonOpacity, formatDate, handleFolderFavoriteToggle, language]);
 
   const handleCalendarPress = useCallback(() => {
     setIsCalendarOpen(true);
@@ -1767,6 +1786,14 @@ export default function FavoritesScreen() {
                       style={styles.scrollContainer}
                       contentContainerStyle={styles.scrollContent}
                       showsVerticalScrollIndicator={false}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={isRefreshing}
+                          onRefresh={handleRefresh}
+                          tintColor={Colors[theme].brandColor2}
+                          colors={[Colors[theme].brandColor2]}
+                        />
+                      }
                     >
                       {renderFavDeckCards()}
                     </ScrollView>
@@ -1781,6 +1808,14 @@ export default function FavoritesScreen() {
                       style={styles.scrollContainer}
                       contentContainerStyle={styles.scrollContent}
                       showsVerticalScrollIndicator={false}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={isRefreshing}
+                          onRefresh={handleRefresh}
+                          tintColor={Colors[theme].brandColor2}
+                          colors={[Colors[theme].brandColor2]}
+                        />
+                      }
                     >
                       {renderFavFolderCards()}
                     </ScrollView>

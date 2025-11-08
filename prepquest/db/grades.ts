@@ -1134,16 +1134,20 @@ export async function getCurrentStreak(): Promise<number> {
     const allDates = new Set<string>();
     flashcards.forEach((flashcard) => {
       if (flashcard.lastStudiedDate) {
-        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        allDates.add(studyDate);
+        const studyKey = getLocalDateKey(flashcard.lastStudiedDate);
+        if (studyKey) {
+          allDates.add(studyKey);
+        }
       }
       if (flashcard.lastQuizzedDate) {
-        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-        allDates.add(quizDate);
+        const quizKey = getLocalDateKey(flashcard.lastQuizzedDate);
+        if (quizKey) {
+          allDates.add(quizKey);
+        }
       }
     });
 
-    const sortedDates = Array.from(allDates).sort().reverse(); // Most recent first
+    const sortedDates = Array.from(allDates).sort((a, b) => b.localeCompare(a)); // Most recent first
 
     if (sortedDates.length === 0) {
       console.log('🔥 No study dates found, streak = 0');
@@ -1153,10 +1157,10 @@ export async function getCurrentStreak(): Promise<number> {
     console.log(`🔥 Found ${sortedDates.length} unique study dates. Most recent: ${sortedDates[0]}`);
 
     // Calculate current streak starting from today or most recent date
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const today = getLocalDateKey(new Date());
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = getLocalDateKey(yesterdayDate);
     
     console.log(`🔥 Today: ${today}, Yesterday: ${yesterdayStr}`);
     
@@ -1180,10 +1184,10 @@ export async function getCurrentStreak(): Promise<number> {
         }
       } else {
         // Check if consecutive
-        const expectedDateObj = new Date(expectedDate);
+        const expectedDateObj = parseLocalDateKey(expectedDate);
         const dayBeforeExpected = new Date(expectedDateObj);
         dayBeforeExpected.setDate(dayBeforeExpected.getDate() - 1);
-        const dayBeforeStr = dayBeforeExpected.toISOString().split('T')[0];
+        const dayBeforeStr = getLocalDateKey(dayBeforeExpected);
         
         if (date === dayBeforeStr) {
           currentStreak++;

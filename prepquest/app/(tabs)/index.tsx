@@ -63,6 +63,7 @@ export default function DecksScreen() {
   const [shouldShowInterviewAnimation, setShouldShowInterviewAnimation] = useState(true);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const [isLoadingDecks, setIsLoadingDecks] = useState(true);
+  const [hasLoadedDecks, setHasLoadedDecks] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { 
     setIsMenuOpen, 
@@ -321,7 +322,9 @@ export default function DecksScreen() {
       return;
     }
     
-    if (showLoadingState) {
+    const shouldShowSkeleton = showLoadingState && !hasLoadedDecks;
+    
+    if (shouldShowSkeleton) {
       setIsLoadingDecks(true);
     }
     
@@ -360,16 +363,17 @@ export default function DecksScreen() {
       }
       setImageSources(sources);
       
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingDecks(false);
       }
+      setHasLoadedDecks(true);
     } catch (error) {
       console.error('Error loading deck data:', error);
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingDecks(false);
       }
     }
-  }, [isDatabaseReady]);
+  }, [isDatabaseReady, hasLoadedDecks]);
 
   // Load deck data from database
   useEffect(() => {
@@ -384,10 +388,10 @@ export default function DecksScreen() {
             useNativeDriver: true,
           }).start();
         },
-        () => loadDeckData(true)
+        () => loadDeckData(!hasLoadedDecks)
       );
     }
-  }, [isFocused, isDatabaseReady, loadDeckData]);
+  }, [isFocused, isDatabaseReady, hasLoadedDecks, loadDeckData]);
 
   // Update card counts
   useEffect(() => {
@@ -453,7 +457,7 @@ export default function DecksScreen() {
       console.log('Background task completed - refreshing deck data');
       // Refresh deck data when background task completes
       if (isDatabaseReady) {
-        loadDeckData(true);
+        loadDeckData(false);
       }
     }
   });
@@ -466,7 +470,7 @@ export default function DecksScreen() {
     
     if (shouldRefresh) {
       console.log('Fallback: Background task completed or deck created - refreshing deck data');
-      loadDeckData(true);
+      loadDeckData(false);
     }
   }, [backgroundTaskProgress?.completed, backgroundTaskProgress?.status, isDatabaseReady, loadDeckData]);
 

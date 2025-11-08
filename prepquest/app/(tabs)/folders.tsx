@@ -65,6 +65,7 @@ export default function FoldersScreen() {
   const [foldersCount, setFoldersCount] = useState(0);
   const [shouldShowAnimation, setShouldShowAnimation] = useState(true);
   const [isLoadingFolders, setIsLoadingFolders] = useState(true);
+  const [hasLoadedFolders, setHasLoadedFolders] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isFocused = useIsFocused();
   const { 
@@ -394,7 +395,9 @@ export default function FoldersScreen() {
       return;
     }
     
-    if (showLoadingState) {
+    const shouldShowSkeleton = showLoadingState && !hasLoadedFolders;
+    
+    if (shouldShowSkeleton) {
       setIsLoadingFolders(true);
     }
     
@@ -406,16 +409,17 @@ export default function FoldersScreen() {
       setFilteredFolders(foldersData);
       setFoldersCount(foldersData.length);
       
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingFolders(false);
       }
+      setHasLoadedFolders(true);
     } catch (error) {
       console.error('Error loading folders data:', error);
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingFolders(false);
       }
     }
-  }, [isDatabaseReady]);
+  }, [isDatabaseReady, hasLoadedFolders]);
 
   // Load folders data from database
   useEffect(() => {
@@ -430,10 +434,10 @@ export default function FoldersScreen() {
             useNativeDriver: true,
           }).start();
         },
-        () => loadFoldersData(true)
+        () => loadFoldersData(!hasLoadedFolders)
       );
     }
-  }, [isFocused, isDatabaseReady, loadFoldersData]);
+  }, [isFocused, isDatabaseReady, hasLoadedFolders, loadFoldersData]);
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {

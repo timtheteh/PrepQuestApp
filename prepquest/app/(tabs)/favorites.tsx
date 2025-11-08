@@ -74,6 +74,7 @@ export default function FavoritesScreen() {
   const [shouldShowDeckAnimation, setShouldShowDeckAnimation] = useState(true);
   const [shouldShowFolderAnimation, setShouldShowFolderAnimation] = useState(true);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
+  const [hasLoadedFavorites, setHasLoadedFavorites] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { 
     setIsMenuOpen, 
@@ -1004,7 +1005,9 @@ export default function FavoritesScreen() {
       return;
     }
     
-    if (showLoadingState) {
+    const shouldShowSkeleton = showLoadingState && !hasLoadedFavorites;
+    
+    if (shouldShowSkeleton) {
       setIsLoadingFavorites(true);
     }
     
@@ -1033,16 +1036,17 @@ export default function FavoritesScreen() {
       }
       setImageSources(sources);
       
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingFavorites(false);
       }
+      setHasLoadedFavorites(true);
     } catch (error) {
       console.error('Error loading favorited data:', error);
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingFavorites(false);
       }
     }
-  }, [isDatabaseReady]);
+  }, [isDatabaseReady, hasLoadedFavorites]);
 
   // Load favorited data from database
   useEffect(() => {
@@ -1057,10 +1061,10 @@ export default function FavoritesScreen() {
             useNativeDriver: true,
           }).start();
         },
-        () => loadFavoritedData(true)
+        () => loadFavoritedData(!hasLoadedFavorites)
       );
     }
-  }, [isFocused, isDatabaseReady, loadFavoritedData]);
+  }, [isFocused, isDatabaseReady, hasLoadedFavorites, loadFavoritedData]);
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
@@ -1080,7 +1084,7 @@ export default function FavoritesScreen() {
       console.log('Background task completed - refreshing favorited data');
       // Refresh favorited data when background task completes
       if (isDatabaseReady) {
-        loadFavoritedData(true);
+        loadFavoritedData(false);
       }
     }
   });
@@ -1089,7 +1093,7 @@ export default function FavoritesScreen() {
   useEffect(() => {
     if (backgroundTaskProgress?.completed === true && isDatabaseReady) {
       console.log('Fallback: Background task completed - refreshing favorited data');
-      loadFavoritedData(true);
+      loadFavoritedData(false);
     }
   }, [backgroundTaskProgress?.completed, isDatabaseReady, loadFavoritedData]);
 

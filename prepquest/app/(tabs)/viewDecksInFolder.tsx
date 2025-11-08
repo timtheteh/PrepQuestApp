@@ -87,6 +87,7 @@ export default function ViewDecksInFolderScreen() {
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [imageSources, setImageSources] = useState<Map<number, { uri: string } | undefined>>(new Map());
   const [isLoadingDecks, setIsLoadingDecks] = useState(true);
+  const [hasLoadedFolderDecks, setHasLoadedFolderDecks] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [folderTitleFromDb, setFolderTitleFromDb] = useState<string>('');
   const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
@@ -151,7 +152,9 @@ export default function ViewDecksInFolderScreen() {
       return;
     }
     
-    if (showLoadingState) {
+    const shouldShowSkeleton = showLoadingState && !hasLoadedFolderDecks;
+    
+    if (shouldShowSkeleton) {
       setIsLoadingDecks(true);
     }
     
@@ -168,16 +171,17 @@ export default function ViewDecksInFolderScreen() {
       }
       setImageSources(sources);
       
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingDecks(false);
       }
+      setHasLoadedFolderDecks(true);
     } catch (error) {
       console.error('Error loading decks data for folder:', error);
-      if (showLoadingState) {
+      if (shouldShowSkeleton) {
         setIsLoadingDecks(false);
       }
     }
-  }, [isDatabaseReady, folderId]);
+  }, [isDatabaseReady, folderId, hasLoadedFolderDecks]);
 
   // Load decks data from database
   useEffect(() => {
@@ -192,10 +196,10 @@ export default function ViewDecksInFolderScreen() {
             useNativeDriver: true,
           }).start();
         },
-        () => loadDecksData(true)
+        () => loadDecksData(!hasLoadedFolderDecks)
       );
     }
-  }, [isFocused, isDatabaseReady, folderId, loadDecksData]);
+  }, [isFocused, isDatabaseReady, hasLoadedFolderDecks, folderId, loadDecksData]);
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
@@ -215,7 +219,7 @@ export default function ViewDecksInFolderScreen() {
       console.log('Background task completed - refreshing folder decks data');
       // Refresh folder decks data when background task completes
       if (isDatabaseReady && folderId) {
-        loadDecksData(true);
+        loadDecksData(false);
       }
     }
   });
@@ -224,7 +228,7 @@ export default function ViewDecksInFolderScreen() {
   useEffect(() => {
     if (backgroundTaskProgress?.completed === true && isDatabaseReady && folderId) {
       console.log('Fallback: Background task completed - refreshing folder decks data');
-      loadDecksData(true);
+      loadDecksData(false);
     }
   }, [backgroundTaskProgress?.completed, isDatabaseReady, folderId, loadDecksData]);
 

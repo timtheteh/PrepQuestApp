@@ -4254,12 +4254,23 @@ export const updateFlashcardDate = async (
     
     const fieldToUpdate = isStudyMode ? 'lastStudiedDate' : 'lastQuizzedDate';
     
-    // Update the flashcard's study/quiz date, time taken, and MCQ answer correctness
-    await db.runAsync(`
-      UPDATE ${tableName}
-      SET ${fieldToUpdate} = ?, timeTaken = ?, isMcqAnswerRight = ?
-      WHERE flashcardID = ? AND userID = ?
-    `, [currentDate, timeTaken || null, isMcqCorrect !== undefined ? (isMcqCorrect ? 1 : 0) : null, flashcardId, userID]);
+    const timeTakenValue = timeTaken !== undefined ? timeTaken : null;
+
+    if (isMcqCorrect !== undefined) {
+      // Update MCQ correctness when explicitly provided
+      await db.runAsync(`
+        UPDATE ${tableName}
+        SET ${fieldToUpdate} = ?, timeTaken = ?, isMcqAnswerRight = ?
+        WHERE flashcardID = ? AND userID = ?
+      `, [currentDate, timeTakenValue, isMcqCorrect ? 1 : 0, flashcardId, userID]);
+    } else {
+      // Preserve existing MCQ correctness when not provided
+      await db.runAsync(`
+        UPDATE ${tableName}
+        SET ${fieldToUpdate} = ?, timeTaken = ?
+        WHERE flashcardID = ? AND userID = ?
+      `, [currentDate, timeTakenValue, flashcardId, userID]);
+    }
 
     // Update the deck's lastModifiedDate since it was actively used
     await db.runAsync(`

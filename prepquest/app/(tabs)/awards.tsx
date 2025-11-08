@@ -129,7 +129,7 @@ import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
-import { getLocalDateKey } from '@/utils/dateFormat';
+import { formatDate, getLocalDateKey } from '@/utils/dateFormat';
 import { db } from '@/db/index';
 import { getCurrentUserID, createCustomBadge, fetchCustomBadges, CustomBadgeData } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -1185,13 +1185,8 @@ const formatDateRange = (dateCreated: string, expiryDate: string, language: stri
     }
     const startDate = parseLocalDateKey(startKey);
     const endDate = parseLocalDateKey(endKey);
-    const locale = language === 'Chinese' ? 'zh-CN' : 'en-US';
-    const formatter = new Intl.DateTimeFormat(locale, {
-      month: 'short',
-      day: 'numeric',
-    });
-    const startLabel = formatter.format(startDate);
-    const endLabel = formatter.format(endDate);
+    const startLabel = formatDate(startDate.toISOString(), language);
+    const endLabel = formatDate(endDate.toISOString(), language);
     return `${startLabel} - ${endLabel}`;
   } catch (error) {
     console.error('Error formatting date range:', error);

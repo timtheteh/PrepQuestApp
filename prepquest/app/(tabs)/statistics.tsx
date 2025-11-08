@@ -12,6 +12,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { refreshAllStatistics, statisticsCache, CACHE_KEYS } from '@/utils/statisticsCache';
+import { StatisticsSkeleton } from '@/components/skeletons/StatisticsSkeleton';
 
 // Lazy load heavy components for better performance
 const ReviewLineGraph = lazy(() => import('@/components/statsComponents/ReviewLineGraph').then(module => ({ default: module.ReviewLineGraph })));
@@ -61,6 +62,8 @@ const StatisticsScreen = React.memo(() => {
   const [shouldLoadPerformanceComponents, setShouldLoadPerformanceComponents] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isDecksContentReady, setIsDecksContentReady] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentFadeAnim = useRef(new Animated.Value(1)).current;
   const isFocused = useIsFocused();
@@ -103,6 +106,7 @@ const StatisticsScreen = React.memo(() => {
       // Reset component loading states
       setShouldLoadDecksComponents(false);
       setShouldLoadPerformanceComponents(false);
+      setIsDecksContentReady(false);
       
       // Optimize loading experience - show screen immediately
       setDisableToggleAnimation(false);
@@ -181,6 +185,7 @@ const StatisticsScreen = React.memo(() => {
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
+    setIsDecksContentReady(false);
     try {
       // Clear all cached statistics data
       await refreshAllStatistics();
@@ -208,10 +213,20 @@ const StatisticsScreen = React.memo(() => {
         toValue: 1,
         duration: animationConfig.duration, // Use performance-based duration
         useNativeDriver: true,
-      }).start();
-      setPendingDecksFadeIn(false);
+      }).start(() => {
+        setPendingDecksFadeIn(false);
+        setIsDecksContentReady(true);
+      });
+    } else {
+      setIsDecksContentReady(true);
     }
   }, [pendingDecksFadeIn, contentFadeAnim, animationConfig]);
+
+  useEffect(() => {
+    if (!hasLoadedOnce && isDecksContentReady && !isLoadingAverageGrade && !isLoadingDifficultyBreakdown && !isLoadingAverageTime) {
+      setHasLoadedOnce(true);
+    }
+  }, [hasLoadedOnce, isDecksContentReady, isLoadingAverageGrade, isLoadingDifficultyBreakdown, isLoadingAverageTime]);
 
   // Memoize styles to prevent recreation on every render
   const containerStyle = useMemo(() => ({ 
@@ -251,8 +266,13 @@ const StatisticsScreen = React.memo(() => {
     fontFamily: Fonts.bodyMedium 
   }), []);
 
+  const showSkeleton = !hasLoadedOnce && (!isDecksContentReady || isLoadingAverageGrade || isLoadingDifficultyBreakdown || isLoadingAverageTime);
+
   return (
     <View style={containerStyle}>
+      {showSkeleton && (
+        <StatisticsSkeleton topOffset={getTopBarStatisticsHeight()} />
+      )}
       <Animated.View style={animatedContainerStyle}>
         <View style={headerContainerStyle}>
           <RoundedContainer

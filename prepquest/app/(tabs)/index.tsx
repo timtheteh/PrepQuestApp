@@ -110,6 +110,7 @@ export default function DecksScreen() {
   const cardWidthPercentage = useRef(new Animated.Value(100)).current;
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const { theme } = useTheme();
+const coachmarkOverlayOpacity = useRef(new Animated.Value(0)).current;
 
   const styles = StyleSheet.create({
     animatedContainer: {
@@ -421,11 +422,11 @@ export default function DecksScreen() {
   }, [coachmarkPointerPosition, theme]);
 
   const coachmarkOverlay = useMemo(() => {
-    if (!showCoachmark || !coachmarkMetrics) {
+  if (!coachmarkMetrics) {
       return null;
     }
-    return (
-      <View style={styles.coachmarkContainer} pointerEvents="box-none">
+  return (
+    <Animated.View style={[styles.coachmarkContainer, { opacity: coachmarkOverlayOpacity }]} pointerEvents="box-none">
         <TouchableWithoutFeedback onPress={() => {}}>
           <View style={styles.coachmarkOverlayTouchable}>
             <Svg width={windowDimensions.width} height={windowDimensions.height + bottomSpacing}>
@@ -472,10 +473,9 @@ export default function DecksScreen() {
         {coachmarkPointerStyle && (
           <View style={coachmarkPointerStyle} pointerEvents="none" />
         )}
-      </View>
+    </Animated.View>
     );
   }, [
-    showCoachmark,
     coachmarkMetrics,
     windowDimensions.width,
     windowDimensions.height,
@@ -484,14 +484,35 @@ export default function DecksScreen() {
     language,
     handleDismissCoachmark,
     coachmarkPointerStyle,
+  coachmarkOverlayOpacity,
   ]);
 
   useEffect(() => {
+  if (showCoachmark && coachmarkMetrics && coachmarkOverlay) {
     setGlobalOverlayContent(coachmarkOverlay);
-    return () => {
-      setGlobalOverlayContent(null);
-    };
-  }, [coachmarkOverlay, setGlobalOverlayContent]);
+    Animated.timing(coachmarkOverlayOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  } else if (!showCoachmark) {
+    Animated.timing(coachmarkOverlayOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setGlobalOverlayContent(null);
+      }
+    });
+  }
+}, [showCoachmark, coachmarkMetrics, coachmarkOverlay, coachmarkOverlayOpacity, setGlobalOverlayContent]);
+
+useEffect(() => {
+  return () => {
+    setGlobalOverlayContent(null);
+  };
+}, [setGlobalOverlayContent]);
 
   // Create dynamic styles based on theme
 

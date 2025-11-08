@@ -23,10 +23,12 @@ interface HeaderIconButtonsProps {
   initialSortDirection?: SortDirection;
   pageType: PageType;
   disabled?: boolean;
+  onAIDecksButtonMeasured?: (layout: { x: number; y: number; width: number; height: number }) => void;
 }
 
 export interface HeaderIconButtonsRef {
   reset: () => void;
+  measureAIDecksButton?: () => void;
 }
 
 type SortDirection = 'asc' | 'desc';
@@ -56,7 +58,8 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   initialSortField,
   initialSortDirection,
   pageType,
-  disabled
+  disabled,
+  onAIDecksButtonMeasured
 }, ref) => {
   const { 
     setIsMenuOpen, 
@@ -77,6 +80,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const expandAnim = useRef(new Animated.Value(0)).current;
   const searchFadeAnim = useRef(new Animated.Value(0)).current;
+  const aiButtonWrapperRef = useRef<View>(null);
 
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -103,6 +107,32 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       }));
     }
   }, [initialSortField, initialSortDirection]);
+
+  const measureAIDecksButton = useCallback(() => {
+    if (!onAIDecksButtonMeasured || !aiButtonWrapperRef.current) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      aiButtonWrapperRef.current?.measureInWindow((x, y, width, height) => {
+        onAIDecksButtonMeasured({ x, y, width, height });
+      });
+    });
+  }, [onAIDecksButtonMeasured]);
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', measureAIDecksButton);
+    return () => {
+      const sub: any = subscription;
+      if (sub && typeof sub.remove === 'function') {
+        sub.remove();
+      } else {
+        const dimensionsWithRemove = Dimensions as unknown as {
+          removeEventListener?: (type: string, handler: () => void) => void;
+        };
+        dimensionsWithRemove.removeEventListener?.('change', measureAIDecksButton);
+      }
+    };
+  }, [measureAIDecksButton]);
 
   useImperativeHandle(ref, () => ({
     reset: () => {
@@ -141,7 +171,8 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
           useNativeDriver: true,
         })
       ]).start();
-    }
+    },
+    measureAIDecksButton
   }));
 
   const collapseFilter = useCallback(() => {
@@ -348,12 +379,18 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
         }
       ]}
     >
-      <CircleIconButton 
-        iconName="sparkles" 
-        size={20} 
-        onPress={handleAIPress}
-        disabled={disabled}
-      />
+      <View
+        ref={aiButtonWrapperRef}
+        onLayout={measureAIDecksButton}
+        style={styles.aiButtonWrapper}
+      >
+        <CircleIconButton 
+          iconName="sparkles" 
+          size={20} 
+          onPress={handleAIPress}
+          disabled={disabled}
+        />
+      </View>
       <CircleIconButton 
         iconName="calendar" 
         onPress={handleCalendarPress}
@@ -478,6 +515,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     gap: 9,
+  },
+  aiButtonWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterButton: {
     justifyContent: 'center',

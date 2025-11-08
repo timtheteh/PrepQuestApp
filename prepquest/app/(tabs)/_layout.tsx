@@ -11,7 +11,7 @@ import { SlidingMenuContext } from '@/contexts/SlidingMenuContext';
 import { ModalContext } from '@/contexts/ModalContext';
 import { AppStateContext } from '@/contexts/AppStateContext';
 import { ActionHandlersContext } from '@/contexts/ActionHandlersContext';
-import { useState, useRef, useCallback, RefObject, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, RefObject, useEffect, useMemo, ReactNode } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { strings } from '@/constants/strings';
@@ -75,6 +75,7 @@ export default function TabLayout() {
   const globalLoadingOverlayRef = useRef<LottieView>(null);
   const { language } = useLanguage();
   const { theme } = useTheme();
+  const [globalOverlayContent, setGlobalOverlayContent] = useState<ReactNode | null>(null);
 
   // Memoized loading animation source
   const globalLoadingAnimationSource = useMemo(() => 
@@ -317,6 +318,7 @@ export default function TabLayout() {
     decksAlreadyInFoldersModalOpacity,
     showGlobalLoadingOverlay,
     setShowGlobalLoadingOverlay,
+    setGlobalOverlayContent,
   }), [
     isAIPromptOpen, aiPromptOpacity,
     isAddDeckOpen, addDeckOpacity,
@@ -330,7 +332,7 @@ export default function TabLayout() {
     isDeckDetailsSaveModalOpen, deckDetailsSaveModalOpacity,
     isDeleteFolderModalOpen, deleteFolderModalOpacity,
     isDecksAlreadyInFoldersModalOpen, decksAlreadyInFoldersModalOpacity,
-    showGlobalLoadingOverlay
+    showGlobalLoadingOverlay, setGlobalOverlayContent
   ]);
 
   const appStateContextValue = useMemo(() => ({
@@ -769,6 +771,11 @@ export default function TabLayout() {
             </View>
           </View>
         )}
+        {globalOverlayContent && (
+          <View style={styles.globalOverlayContainer} pointerEvents="box-none">
+            {globalOverlayContent}
+          </View>
+        )}
               </View>
             </MenuContext.Provider>
           </ActionHandlersContext.Provider>
@@ -782,5 +789,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-  }
+  },
+  globalOverlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2500,
+  },
 });

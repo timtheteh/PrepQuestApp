@@ -1,4 +1,4 @@
-import { createContext, RefObject, useContext } from 'react';
+import { createContext, RefObject, ReactNode, useContext } from 'react';
 import { Animated } from 'react-native';
 import { NavBarRef } from '@/components/general/NavBar';
 
@@ -100,6 +100,7 @@ interface MenuContextType {
   setCurrentDeckType: (deckType: string | undefined) => void;
   showGlobalLoadingOverlay: boolean;
   setShowGlobalLoadingOverlay: (value: boolean) => void;
+  setGlobalOverlayContent: (content: ReactNode | null) => void;
 }
 
 // Hook to combine all contexts for backward compatibility
@@ -114,6 +115,7 @@ export const useMenuContext = (): MenuContextType => {
     ...modal,
     ...appState,
     ...actionHandlers,
+    setGlobalOverlayContent: modal.setGlobalOverlayContent,
   };
 }
 
@@ -210,6 +212,7 @@ const createLegacyMenuContext = () => {
     setCurrentDeckType: () => {},
     showGlobalLoadingOverlay: false,
     setShowGlobalLoadingOverlay: () => {},
+    setGlobalOverlayContent: () => {},
   };
   
   return defaultContext;

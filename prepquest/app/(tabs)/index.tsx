@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, Dimensions, RefreshControl } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ScrollView, Dimensions, RefreshControl, useWindowDimensions, TouchableWithoutFeedback } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 
 import { HeaderIconButtons, HeaderIconButtonsRef } from '@/components/general/HeaderIconButtons';
@@ -27,6 +27,7 @@ import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 import { formatDate as formatDateUtil, matchesCalendarFilter } from '@/utils/dateFormat';
+import Svg, { Defs, Rect as SvgRect, Circle, Mask } from 'react-native-svg';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -37,6 +38,10 @@ type SortDirection = 'asc' | 'desc';
 const NAVBAR_HEIGHT = 80; // Height of the bottom navbar
 const SHIFT_DISTANCE = 40; // Distance to shift content down
 const SCREEN_TRANSITION_DURATION = 200; // Match navbar animation duration
+const COACHMARK_POINTER_BASE = 18;
+const COACHMARK_POINTER_HEIGHT = 12;
+
+type ButtonLayout = { x: number; y: number; width: number; height: number };
 
 
 
@@ -76,7 +81,8 @@ export default function DecksScreen() {
     setIsNoSelectionModalOpen,
     noSelectionModalOpacity,
     setHandleDeletion,
-    setSourcePageForFolders
+    setSourcePageForFolders,
+    setGlobalOverlayContent
   } = useContext(MenuContext);
   const isFocused = useIsFocused();
   const headerIconsRef = useRef<HeaderIconButtonsRef>(null);
@@ -89,6 +95,10 @@ export default function DecksScreen() {
   const getContentTopHeight = useContentTopHeight();
   const getBottomContentSpacing = useBottomContentSpacing();
   const bottomSpacing = getBottomContentSpacing();
+  const windowDimensions = useWindowDimensions();
+  const [showCoachmark, setShowCoachmark] = useState(false);
+  const [aiButtonLayout, setAIDecksButtonLayout] = useState<ButtonLayout | null>(null);
+  const [coachmarkBubbleHeight, setCoachmarkBubbleHeight] = useState(0);
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -101,9 +111,6 @@ export default function DecksScreen() {
   const circleButtonOpacity = useRef(new Animated.Value(0)).current;
   const { theme } = useTheme();
 
-  const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
-
-  // Create dynamic styles based on theme
   const styles = StyleSheet.create({
     animatedContainer: {
       flex: 1,
@@ -122,6 +129,11 @@ export default function DecksScreen() {
       left: 16,
       zIndex: 1,
     },
+    topBarButtonRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
     headerIconsContainer: {
       position: 'absolute',
       right: 16,
@@ -129,6 +141,17 @@ export default function DecksScreen() {
     },
     menuButton: {
       paddingTop: 8,
+    },
+    testButton: {
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      borderRadius: 16,
+      backgroundColor: Colors[theme].brandColor2,
+    },
+    testButtonText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 14,
+      color: Colors[theme].background,
     },
     mainContentWrapper: {
       flex: 1,
@@ -207,7 +230,7 @@ export default function DecksScreen() {
       bottom: 0,
       left: 0,
       right: 0,
-      height: 100, // Make sure this is tall enough to contain the FAB
+      height: 100,
       zIndex: 1,
     },
     actionButtonsRow: {
@@ -221,7 +244,7 @@ export default function DecksScreen() {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingTop: 40, // Add some top padding to center it better in the scrollview
+      paddingTop: 40,
     },
     emptyStateAnimation: {
       width: 200,
@@ -235,7 +258,242 @@ export default function DecksScreen() {
       marginTop: 0,
       lineHeight: 20,
     },
+    coachmarkContainer: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 999,
+    },
+    coachmarkOverlayTouchable: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    coachmarkBubble: {
+      position: 'absolute',
+      backgroundColor: Colors[theme].background,
+      borderRadius: 16,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    coachmarkText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 16,
+      color: Colors[theme].text,
+    },
+    coachmarkButton: {
+      marginTop: 16,
+      alignSelf: 'flex-end',
+      backgroundColor: Colors[theme].brandColor2,
+      borderRadius: 12,
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+    },
+    coachmarkButtonText: {
+      fontFamily: Fonts.bodyMedium,
+      fontSize: 16,
+      color: Colors[theme].background,
+    },
   });
+
+  const selectUnselectedDuration = 150; // Reduced from 300ms for better performance on low-end devices
+
+  const handleAIDecksButtonMeasured = useCallback((layout: ButtonLayout) => {
+    setAIDecksButtonLayout(prev => {
+      if (!prev) {
+        return layout;
+      }
+      if (
+        Math.abs(prev.x - layout.x) < 0.5 &&
+        Math.abs(prev.y - layout.y) < 0.5 &&
+        Math.abs(prev.width - layout.width) < 0.5 &&
+        Math.abs(prev.height - layout.height) < 0.5
+      ) {
+        return prev;
+      }
+      return layout;
+    });
+  }, []);
+
+  const handleShowCoachmark = useCallback(() => {
+    headerIconsRef.current?.measureAIDecksButton?.();
+    setCoachmarkBubbleHeight(0);
+    setShowCoachmark(true);
+  }, []);
+
+  const handleDismissCoachmark = useCallback(() => {
+    setShowCoachmark(false);
+    setCoachmarkBubbleHeight(0);
+  }, []);
+
+  useEffect(() => {
+    if (showCoachmark) {
+      headerIconsRef.current?.measureAIDecksButton?.();
+    }
+  }, [showCoachmark]);
+
+  const coachmarkMetrics = useMemo(() => {
+    if (!aiButtonLayout) {
+      return null;
+    }
+    const radius = Math.max(aiButtonLayout.width, aiButtonLayout.height) / 2 + 5;
+    const centerX = aiButtonLayout.x + aiButtonLayout.width / 2;
+    const centerY = aiButtonLayout.y + aiButtonLayout.height / 2;
+    const bubbleWidth = Math.min(windowDimensions.width - 32, 280);
+    const bubbleLeft = Math.min(
+      Math.max(16, centerX - bubbleWidth / 2),
+      windowDimensions.width - bubbleWidth - 16
+    );
+    const defaultBubbleTop = centerY + radius + 12;
+    const estimatedBubbleHeight = 140;
+    let bubbleTop = defaultBubbleTop;
+    if (defaultBubbleTop + estimatedBubbleHeight > windowDimensions.height) {
+      bubbleTop = Math.max(
+        16,
+        centerY - radius - estimatedBubbleHeight
+      );
+    }
+    return {
+      radius,
+      centerX,
+      centerY,
+      bubbleLeft,
+      bubbleTop,
+      bubbleWidth,
+    };
+  }, [aiButtonLayout, windowDimensions.height, windowDimensions.width]);
+
+  const coachmarkPointerPosition = useMemo(() => {
+    if (!coachmarkMetrics || coachmarkBubbleHeight === 0) {
+      return null;
+    }
+    const { centerX, bubbleLeft, bubbleTop, bubbleWidth, centerY, radius } = coachmarkMetrics;
+    const bubbleBelowSpotlight = bubbleTop > centerY;
+    const rawLeft = centerX - bubbleLeft - COACHMARK_POINTER_BASE / 2;
+    const clampedLeft = Math.min(
+      Math.max(rawLeft, 12),
+      bubbleWidth - COACHMARK_POINTER_BASE - 12
+    );
+    const pointerTop = bubbleBelowSpotlight
+      ? bubbleTop - COACHMARK_POINTER_HEIGHT + 1
+      : bubbleTop + coachmarkBubbleHeight - 1;
+    const pointerCenterY = bubbleBelowSpotlight
+      ? bubbleTop - COACHMARK_POINTER_HEIGHT / 2
+      : bubbleTop + coachmarkBubbleHeight + COACHMARK_POINTER_HEIGHT / 2;
+    return {
+      left: bubbleLeft + clampedLeft,
+      top: pointerTop,
+      pointingDown: !bubbleBelowSpotlight,
+      bubbleBelowSpotlight,
+      spotlightEdgeY: bubbleBelowSpotlight ? centerY + radius : centerY - radius,
+    };
+  }, [coachmarkMetrics, coachmarkBubbleHeight]);
+
+  const coachmarkPointerStyle = useMemo(() => {
+    if (!coachmarkPointerPosition) {
+      return null;
+    }
+    const baseStyle = {
+      position: 'absolute' as const,
+      width: 0,
+      height: 0,
+      left: coachmarkPointerPosition.left,
+      borderLeftWidth: COACHMARK_POINTER_BASE / 2,
+      borderRightWidth: COACHMARK_POINTER_BASE / 2,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+    };
+    if (coachmarkPointerPosition.pointingDown) {
+      return {
+        ...baseStyle,
+        top: coachmarkPointerPosition.top,
+        borderTopWidth: COACHMARK_POINTER_HEIGHT,
+        borderTopColor: Colors[theme].background,
+      };
+    }
+    return {
+      ...baseStyle,
+      top: coachmarkPointerPosition.top,
+      borderBottomWidth: COACHMARK_POINTER_HEIGHT,
+      borderBottomColor: Colors[theme].background,
+    };
+  }, [coachmarkPointerPosition, theme]);
+
+  const coachmarkOverlay = useMemo(() => {
+    if (!showCoachmark || !coachmarkMetrics) {
+      return null;
+    }
+    return (
+      <View style={styles.coachmarkContainer} pointerEvents="box-none">
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View style={styles.coachmarkOverlayTouchable}>
+            <Svg width={windowDimensions.width} height={windowDimensions.height + bottomSpacing}>
+              <Defs>
+                <Mask id="coachmarkMask">
+                  <SvgRect width={windowDimensions.width} height={windowDimensions.height + bottomSpacing} fill="white" />
+                  <Circle
+                    cx={coachmarkMetrics.centerX}
+                    cy={coachmarkMetrics.centerY}
+                    r={coachmarkMetrics.radius}
+                    fill="black"
+                  />
+                </Mask>
+              </Defs>
+              <SvgRect
+                width={windowDimensions.width}
+                height={windowDimensions.height + bottomSpacing}
+                fill="rgba(0, 0, 0, 0.65)"
+                mask="url(#coachmarkMask)"
+              />
+            </Svg>
+          </View>
+        </TouchableWithoutFeedback>
+        <View
+          style={[
+            styles.coachmarkBubble,
+            {
+              top: coachmarkMetrics.bubbleTop,
+              left: coachmarkMetrics.bubbleLeft,
+              width: coachmarkMetrics.bubbleWidth,
+            },
+          ]}
+          onLayout={(event) => setCoachmarkBubbleHeight(event.nativeEvent.layout.height)}
+        >
+          <Text style={styles.coachmarkText}>
+            {strings[language].index.aIDecksCoachmarkText}
+          </Text>
+          <TouchableOpacity style={styles.coachmarkButton} onPress={handleDismissCoachmark}>
+            <Text style={styles.coachmarkButtonText}>
+              {strings[language].index.coachmarkOk}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {coachmarkPointerStyle && (
+          <View style={coachmarkPointerStyle} pointerEvents="none" />
+        )}
+      </View>
+    );
+  }, [
+    showCoachmark,
+    coachmarkMetrics,
+    windowDimensions.width,
+    windowDimensions.height,
+    bottomSpacing,
+    strings,
+    language,
+    handleDismissCoachmark,
+    coachmarkPointerStyle,
+  ]);
+
+  useEffect(() => {
+    setGlobalOverlayContent(coachmarkOverlay);
+    return () => {
+      setGlobalOverlayContent(null);
+    };
+  }, [coachmarkOverlay, setGlobalOverlayContent]);
+
+  // Create dynamic styles based on theme
 
   useFocusEffect(
     useCallback(() => {
@@ -1301,10 +1559,21 @@ export default function DecksScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
           <View style={[styles.topBar, { paddingTop: getTopBarTopHeight()}]}>
-            <MenuButton 
-              style={styles.menuButton}
-              onPress={handleMenuPress}
-            />
+            <View style={styles.topBarButtonRow}>
+              <MenuButton 
+                style={styles.menuButton}
+                onPress={handleMenuPress}
+              />
+              <TouchableOpacity 
+                style={styles.testButton}
+                activeOpacity={0.7}
+                onPress={handleShowCoachmark}
+              >
+                <Text style={styles.testButtonText}>
+                  {strings[language].index.testButton}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
           
           <View style={[styles.headerIconsContainer, { paddingTop: getHeaderIconsTopHeight()}]}>
@@ -1318,6 +1587,7 @@ export default function DecksScreen() {
               initialSortField={sortField}
               initialSortDirection={sortDirection}
               pageType="decks"
+              onAIDecksButtonMeasured={handleAIDecksButtonMeasured}
             />
           </View>
           

@@ -1,4 +1,4 @@
-import { createContext } from 'react';
+import { createContext, ReactNode } from 'react';
 import { Animated } from 'react-native';
 
 interface ModalContextType {
@@ -40,6 +40,7 @@ interface ModalContextType {
   decksAlreadyInFoldersModalOpacity: Animated.Value;
   showGlobalLoadingOverlay: boolean;
   setShowGlobalLoadingOverlay: (value: boolean) => void;
+  setGlobalOverlayContent: (content: ReactNode | null) => void;
 }
 
 export const ModalContext = createContext<ModalContextType>({
@@ -81,4 +82,5 @@ export const ModalContext = createContext<ModalContextType>({
   decksAlreadyInFoldersModalOpacity: new Animated.Value(0),
   showGlobalLoadingOverlay: false,
   setShowGlobalLoadingOverlay: () => {},
+  setGlobalOverlayContent: () => {},
 });

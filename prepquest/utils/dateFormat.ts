@@ -104,3 +104,18 @@ export const matchesCalendarFilter = (
   }
 };
 
+/**
+ * Returns the YYYY-MM-DD key for a given ISO timestamp or Date object in the user's local timezone.
+ */
+export const getLocalDateKey = (value: string | Date): string => {
+  const date = typeof value === 'string' ? new Date(value) : new Date(value.getTime());
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+};
+

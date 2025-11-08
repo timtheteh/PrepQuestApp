@@ -2,17 +2,25 @@ import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/clerk-expo';
 import { getCurrentUserID, getDeckGrade, getDeckAverageTime, getAIDeckGrade, getAIDeckAverageTime } from './decks';
+import { getLocalDateKey } from '@/utils/dateFormat';
 
 export interface DayGrade {
   day: string;
   date: string;
   score: number;
+  dateKey: string;
 }
 
 export interface MonthGrade {
   month: string;
   score: number;
+  monthKey: string;
 }
+
+const parseLocalDateKey = (key: string): Date => {
+  const [yearStr, monthStr, dayStr] = key.split('-');
+  return new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
+};
 
 // Calculate weighted score using the same formula as in decks.ts
 const calculateWeightedScoreWithMCQ = (flashcards: Array<{
@@ -113,16 +121,19 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       
       // Add the deck to the date group for the most recent attempt date
       if (mostRecentDate) {
-        const dateString = new Date(mostRecentDate).toISOString().split('T')[0];
-        if (!dateDeckGroups.has(dateString)) {
-          dateDeckGroups.set(dateString, new Set<number>());
+        const dateKey = getLocalDateKey(mostRecentDate);
+        if (!dateKey) {
+          return;
         }
-        dateDeckGroups.get(dateString)!.add(flashcard.deckID);
+        if (!dateDeckGroups.has(dateKey)) {
+          dateDeckGroups.set(dateKey, new Set<number>());
+        }
+        dateDeckGroups.get(dateKey)!.add(flashcard.deckID);
       }
     });
 
     // For each date, get the deck grades and calculate the average
-    const dailyGrades: DayGrade[] = [];
+    const dailyGradeEntries: Array<{ key: string; grade: DayGrade }> = [];
     
     // Determine which decks are AI decks by checking the AIDecks table
     const aiDeckIdsResult = await db.getAllAsync(`
@@ -133,7 +144,7 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
     const aiDeckIds = new Set((aiDeckIdsResult as Array<{ deckID: number }>).map(r => r.deckID));
 
     // Process each date
-    for (const [dateString, deckIds] of dateDeckGroups.entries()) {
+    for (const [dateKey, deckIds] of dateDeckGroups.entries()) {
       const deckIdArray = Array.from(deckIds);
       const deckGradePromises = deckIdArray.map(async (deckId) => {
         // Determine if this is an AI deck
@@ -158,7 +169,7 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       const totalScore = validGrades.reduce((sum, grade) => sum + grade.score, 0);
       const averageScore = Math.round(totalScore / validGrades.length);
 
-      const date = new Date(dateString);
+      const date = parseLocalDateKey(dateKey);
       
       // Format day (Mon, Tue, etc.)
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -171,21 +182,21 @@ export async function getDailyGrades(): Promise<DayGrade[]> {
       const year = date.getFullYear();
       const dateFormatted = `${dayOfMonth} ${month} ${year}`;
       
-      dailyGrades.push({
-        day,
-        date: dateFormatted,
-        score: averageScore
+      dailyGradeEntries.push({
+        key: dateKey,
+        grade: {
+          day,
+          date: dateFormatted,
+          score: averageScore,
+          dateKey
+        }
       });
     }
 
     // Sort by date (oldest first)
-    dailyGrades.sort((a, b) => {
-      const dateA = new Date(a.date.split(' ').reverse().join('-'));
-      const dateB = new Date(b.date.split(' ').reverse().join('-'));
-      return dateA.getTime() - dateB.getTime();
-    });
+    dailyGradeEntries.sort((a, b) => a.key.localeCompare(b.key));
 
-    return dailyGrades;
+    return dailyGradeEntries.map(entry => entry.grade);
   } catch (error) {
     console.error('❌ Error getting daily grades:', error);
     return [];
@@ -206,11 +217,10 @@ export async function getMonthlyGrades(): Promise<MonthGrade[]> {
     const monthGroups = new Map<string, number[]>();
     
     dailyGrades.forEach((dayGrade) => {
-      // Extract month and year from date string (e.g., "15 Mar 2024" -> "Mar 2024")
-      const dateParts = dayGrade.date.split(' ');
-      const month = dateParts[1];
-      const year = dateParts[2];
-      const monthKey = `${month} ${year}`;
+      const dateKey = dayGrade.dateKey || getLocalDateKey(dayGrade.date);
+      if (!dateKey) return;
+      const [yearStr, monthStr] = dateKey.split('-');
+      const monthKey = `${yearStr}-${monthStr}`;
       
       if (!monthGroups.has(monthKey)) {
         monthGroups.set(monthKey, []);
@@ -221,9 +231,9 @@ export async function getMonthlyGrades(): Promise<MonthGrade[]> {
     // Calculate average score for each month
     const monthlyGradesMap = new Map<string, number>();
     
-    monthGroups.forEach((scores, month) => {
+    monthGroups.forEach((scores, monthKey) => {
       const averageScore = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
-      monthlyGradesMap.set(month, averageScore);
+      monthlyGradesMap.set(monthKey, averageScore);
     });
 
     // Find the date range - always extend to current month
@@ -234,10 +244,8 @@ export async function getMonthlyGrades(): Promise<MonthGrade[]> {
 
     // Parse dates to find start and end months
     const monthDates = monthKeys.map(monthKey => {
-      const parts = monthKey.split(' ');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthIndex = monthNames.indexOf(parts[0]);
-      return new Date(parseInt(parts[1]), monthIndex, 1);
+      const [yearStr, monthStr] = monthKey.split('-');
+      return new Date(Number(yearStr), Number(monthStr) - 1, 1);
     });
 
     const startMonth = new Date(Math.min(...monthDates.map(d => d.getTime())));
@@ -250,18 +258,21 @@ export async function getMonthlyGrades(): Promise<MonthGrade[]> {
     
     const currentDate = new Date(startMonth);
     while (currentDate <= currentMonth) {
-      const monthKey = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      const label = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
       
       if (monthlyGradesMap.has(monthKey)) {
         allMonthlyGrades.push({
-          month: monthKey,
-          score: monthlyGradesMap.get(monthKey)!
+          month: label,
+          score: monthlyGradesMap.get(monthKey)!,
+          monthKey
         });
       } else {
         // Fill missing month with zero score
         allMonthlyGrades.push({
-          month: monthKey,
-          score: 0
+          month: label,
+          score: 0,
+          monthKey
         });
       }
       
@@ -293,8 +304,8 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
 
     // Find the date range - always extend to today
     const dates = dailyGrades.map(grade => {
-      const dateParts = grade.date.split(' ');
-      return new Date(`${dateParts[2]}-${getMonthNumber(dateParts[1])}-${dateParts[0]}`);
+      const key = grade.dateKey || getLocalDateKey(grade.date);
+      return parseLocalDateKey(key);
     });
     
     const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
@@ -306,9 +317,7 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
     // Create a map of existing grades
     const gradeMap = new Map<string, DayGrade>();
     dailyGrades.forEach(grade => {
-      const dateParts = grade.date.split(' ');
-      const day = dateParts[0].padStart(2, '0'); // Pad single-digit days with leading zero
-      const dateKey = `${dateParts[2]}-${getMonthNumber(dateParts[1])}-${day}`;
+      const dateKey = grade.dateKey || getLocalDateKey(grade.date);
       gradeMap.set(dateKey, grade);
     });
 
@@ -317,7 +326,7 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
-      const dateKey = currentDate.toISOString().split('T')[0];
+      const dateKey = getLocalDateKey(currentDate);
       
       if (gradeMap.has(dateKey)) {
         const grade = gradeMap.get(dateKey)!;
@@ -333,10 +342,11 @@ export async function getCompleteDailyGrades(): Promise<DayGrade[]> {
         const year = currentDate.getFullYear();
         const dateFormatted = `${dayOfMonth} ${month} ${year}`;
         
-        const zeroGrade = {
+        const zeroGrade: DayGrade = {
           day,
           date: dateFormatted,
-          score: 0
+          score: 0,
+          dateKey
         };
         completeGrades.push(zeroGrade);
       }
@@ -501,11 +511,13 @@ export interface DaySpeed {
   day: string;
   date: string;
   time: number;
+  dateKey: string;
 }
 
 export interface MonthSpeed {
   month: string;
   time: number;
+  monthKey: string;
 }
 
 // Get all study/quiz dates and calculate average speed for each day
@@ -569,16 +581,19 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       
       // Add the deck to the date group for the most recent attempt date
       if (mostRecentDate) {
-        const dateString = new Date(mostRecentDate).toISOString().split('T')[0];
-        if (!dateDeckGroups.has(dateString)) {
-          dateDeckGroups.set(dateString, new Set<number>());
+        const dateKey = getLocalDateKey(mostRecentDate);
+        if (!dateKey) {
+          return;
         }
-        dateDeckGroups.get(dateString)!.add(flashcard.deckID);
+        if (!dateDeckGroups.has(dateKey)) {
+          dateDeckGroups.set(dateKey, new Set<number>());
+        }
+        dateDeckGroups.get(dateKey)!.add(flashcard.deckID);
       }
     });
 
     // For each date, get the deck average times and calculate the average
-    const dailySpeeds: DaySpeed[] = [];
+    const dailySpeedEntries: Array<{ key: string; speed: DaySpeed }> = [];
     
     // Determine which decks are AI decks by checking the AIDecks table
     const aiDeckIdsResult = await db.getAllAsync(`
@@ -589,7 +604,7 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
     const aiDeckIds = new Set((aiDeckIdsResult as Array<{ deckID: number }>).map(r => r.deckID));
 
     // Process each date
-    for (const [dateString, deckIds] of dateDeckGroups.entries()) {
+    for (const [dateKey, deckIds] of dateDeckGroups.entries()) {
       const deckIdArray = Array.from(deckIds);
       const deckAverageTimePromises = deckIdArray.map(async (deckId) => {
         // Determine if this is an AI deck
@@ -614,7 +629,7 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       const totalTime = validTimes.reduce((sum, time) => sum + time, 0);
       const averageTime = Math.round(totalTime / validTimes.length);
 
-      const date = new Date(dateString);
+      const date = parseLocalDateKey(dateKey);
       
       // Format day (Mon, Tue, etc.)
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -627,21 +642,21 @@ export async function getDailySpeeds(): Promise<DaySpeed[]> {
       const year = date.getFullYear();
       const dateFormatted = `${dayOfMonth} ${month} ${year}`;
       
-      dailySpeeds.push({
+      dailySpeedEntries.push({
+        key: dateKey,
+        speed: {
         day,
         date: dateFormatted,
-        time: averageTime
+        time: averageTime,
+        dateKey
+        }
       });
     }
 
     // Sort by date (oldest first)
-    dailySpeeds.sort((a, b) => {
-      const dateA = new Date(a.date.split(' ').reverse().join('-'));
-      const dateB = new Date(b.date.split(' ').reverse().join('-'));
-      return dateA.getTime() - dateB.getTime();
-    });
+    dailySpeedEntries.sort((a, b) => a.key.localeCompare(b.key));
 
-    return dailySpeeds;
+    return dailySpeedEntries.map((entry) => entry.speed);
   } catch (error) {
     console.error('❌ Error getting daily speeds:', error);
     return [];
@@ -661,12 +676,12 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
     // Group daily speeds by month
     const monthGroups = new Map<string, number[]>();
     
+    const getMonthKey = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
     dailySpeeds.forEach((daySpeed) => {
-      // Extract month and year from date string (e.g., "15 Mar 2024" -> "Mar 2024")
-      const dateParts = daySpeed.date.split(' ');
-      const month = dateParts[1];
-      const year = dateParts[2];
-      const monthKey = `${month} ${year}`;
+      const date = parseLocalDateKey(daySpeed.dateKey);
+      const monthKey = getMonthKey(date);
       
       if (!monthGroups.has(monthKey)) {
         monthGroups.set(monthKey, []);
@@ -677,9 +692,9 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
     // Calculate average speed for each month
     const monthlySpeedsMap = new Map<string, number>();
     
-    monthGroups.forEach((times, month) => {
+    monthGroups.forEach((times, monthKey) => {
       const averageTime = Math.round(times.reduce((sum, time) => sum + time, 0) / times.length);
-      monthlySpeedsMap.set(month, averageTime);
+      monthlySpeedsMap.set(monthKey, averageTime);
     });
 
     // Find the date range - always extend to current month
@@ -690,10 +705,8 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
 
     // Parse dates to find start and end months
     const monthDates = monthKeys.map(monthKey => {
-      const parts = monthKey.split(' ');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthIndex = monthNames.indexOf(parts[0]);
-      return new Date(parseInt(parts[1]), monthIndex, 1);
+      const [yearStr, monthStr] = monthKey.split('-');
+      return new Date(Number(yearStr), Number(monthStr) - 1, 1);
     });
 
     const startMonth = new Date(Math.min(...monthDates.map(d => d.getTime())));
@@ -706,18 +719,21 @@ export async function getMonthlySpeeds(): Promise<MonthSpeed[]> {
     
     const currentDate = new Date(startMonth);
     while (currentDate <= currentMonth) {
-      const monthKey = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      const monthKey = getMonthKey(currentDate);
+      const monthLabel = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
       
       if (monthlySpeedsMap.has(monthKey)) {
         allMonthlySpeeds.push({
-          month: monthKey,
-          time: monthlySpeedsMap.get(monthKey)!
+          month: monthLabel,
+          time: monthlySpeedsMap.get(monthKey)!,
+          monthKey
         });
       } else {
         // Fill missing month with zero speed
         allMonthlySpeeds.push({
-          month: monthKey,
-          time: 0
+          month: monthLabel,
+          time: 0,
+          monthKey
         });
       }
       
@@ -748,10 +764,7 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
     }
 
     // Find the date range - always extend to today
-    const dates = dailySpeeds.map(speed => {
-      const dateParts = speed.date.split(' ');
-      return new Date(`${dateParts[2]}-${getMonthNumber(dateParts[1])}-${dateParts[0]}`);
-    });
+    const dates = dailySpeeds.map(speed => parseLocalDateKey(speed.dateKey));
     
     const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
     startDate.setHours(0, 0, 0, 0);
@@ -762,10 +775,7 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
     // Create a map of existing speeds
     const speedMap = new Map<string, DaySpeed>();
     dailySpeeds.forEach(speed => {
-      const dateParts = speed.date.split(' ');
-      const day = dateParts[0].padStart(2, '0'); // Pad single-digit days with leading zero
-      const dateKey = `${dateParts[2]}-${getMonthNumber(dateParts[1])}-${day}`;
-      speedMap.set(dateKey, speed);
+      speedMap.set(speed.dateKey, speed);
     });
 
     // Fill in missing dates with zero speeds, always up to today
@@ -773,7 +783,7 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
-      const dateKey = currentDate.toISOString().split('T')[0];
+      const dateKey = getLocalDateKey(currentDate);
       
       if (speedMap.has(dateKey)) {
         const speed = speedMap.get(dateKey)!;
@@ -789,10 +799,11 @@ export async function getCompleteDailySpeeds(): Promise<DaySpeed[]> {
         const year = currentDate.getFullYear();
         const dateFormatted = `${dayOfMonth} ${month} ${year}`;
         
-        const zeroSpeed = {
+        const zeroSpeed: DaySpeed = {
           day,
           date: dateFormatted,
-          time: 0
+          time: 0,
+          dateKey
         };
         completeSpeeds.push(zeroSpeed);
       }

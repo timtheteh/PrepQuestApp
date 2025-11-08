@@ -1,6 +1,7 @@
 import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCurrentUserID } from './decks';
+import { getLocalDateKey } from '@/utils/dateFormat';
 
 export interface UserStats {
   accumulatedDecksCreated: number;
@@ -450,91 +451,88 @@ const formatMonth = (date: Date): string => {
 };
 
 // Function to fetch real review data from database
+const parseLocalDateKey = (key: string): Date => {
+  const [yearStr, monthStr, dayStr] = key.split('-');
+  return new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
+};
+
 export async function fetchReviewData(): Promise<{ dayData: DayData[], monthData: MonthData[] }> {
   try {
     const userID = await getCurrentUserID();
-    
-    // Single optimized query with SQL aggregation - fixed to handle ISO date format
-    const result = await db.getAllAsync(`
-      WITH all_dates AS (
-        SELECT 
-          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
-          'deck' as type
-        FROM decks 
-        WHERE lastStudiedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT 
-          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
-          'deck' as type
-        FROM decks 
-        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT 
-          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
-          'deck' as type
-        FROM AIDecks 
-        WHERE lastStudiedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT 
-          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
-          'deck' as type
-        FROM AIDecks 
-        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT 
-          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
-          'flashcard' as type
-        FROM flashcards 
-        WHERE lastStudiedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT 
-          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
-          'flashcard' as type
-        FROM flashcards 
-        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT 
-          strftime('%Y-%m-%d', lastStudiedDate) as activity_date,
-          'flashcard' as type
-        FROM AIFlashcards 
-        WHERE lastStudiedDate IS NOT NULL AND userID = ?
-        UNION ALL
-        SELECT 
-          strftime('%Y-%m-%d', lastQuizzedDate) as activity_date,
-          'flashcard' as type
-        FROM AIFlashcards 
-        WHERE lastQuizzedDate IS NOT NULL AND userID = ?
-      )
-      SELECT 
-        activity_date,
-        SUM(CASE WHEN type = 'deck' THEN 1 ELSE 0 END) as deck_count,
-        SUM(CASE WHEN type = 'flashcard' THEN 1 ELSE 0 END) as flashcard_count
-      FROM all_dates
-      WHERE activity_date IS NOT NULL
-      GROUP BY activity_date
-      ORDER BY activity_date
-    `, [userID, userID, userID, userID, userID, userID, userID, userID]);
 
-    // Create maps for quick lookup
+    const addEvent = (
+      isoString: string | null | undefined,
+      type: 'deck' | 'flashcard',
+      map: Map<string, { decks: number; flashcards: number }>
+    ) => {
+      if (!isoString) return;
+      const key = getLocalDateKey(isoString);
+      if (!key) return;
+      const current = map.get(key) || { decks: 0, flashcards: 0 };
+      if (type === 'deck') {
+        current.decks += 1;
+      } else {
+        current.flashcards += 1;
+      }
+      map.set(key, current);
+    };
+
     const dateCountMap = new Map<string, { decks: number; flashcards: number }>();
-    
-    result.forEach((row: any) => {
-      dateCountMap.set(row.activity_date, {
-        decks: isNaN(row.deck_count) ? 0 : (row.deck_count || 0),
-        flashcards: isNaN(row.flashcard_count) ? 0 : (row.flashcard_count || 0)
-      });
+
+    const deckRows = await db.getAllAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM decks
+      WHERE userID = ?
+    `, [userID]);
+
+    deckRows.forEach((row: any) => {
+      addEvent(row.lastStudiedDate, 'deck', dateCountMap);
+      addEvent(row.lastQuizzedDate, 'deck', dateCountMap);
+    });
+
+    const aiDeckRows = await db.getAllAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM AIDecks
+      WHERE userID = ?
+    `, [userID]);
+
+    aiDeckRows.forEach((row: any) => {
+      addEvent(row.lastStudiedDate, 'deck', dateCountMap);
+      addEvent(row.lastQuizzedDate, 'deck', dateCountMap);
+    });
+
+    const flashcardRows = await db.getAllAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM flashcards
+      WHERE userID = ?
+    `, [userID]);
+
+    flashcardRows.forEach((row: any) => {
+      addEvent(row.lastStudiedDate, 'flashcard', dateCountMap);
+      addEvent(row.lastQuizzedDate, 'flashcard', dateCountMap);
+    });
+
+    const aiFlashcardRows = await db.getAllAsync(`
+      SELECT lastStudiedDate, lastQuizzedDate
+      FROM AIFlashcards
+      WHERE userID = ?
+    `, [userID]);
+
+    aiFlashcardRows.forEach((row: any) => {
+      addEvent(row.lastStudiedDate, 'flashcard', dateCountMap);
+      addEvent(row.lastQuizzedDate, 'flashcard', dateCountMap);
     });
 
     // Pre-calculate today and date ranges
     const today = new Date();
-    const todayKey = today.toISOString().split('T')[0];
+    today.setHours(0, 0, 0, 0);
     
     // Generate day data for the last 30 days
     const dayData: DayData[] = [];
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = getLocalDateKey(date);
       const counts = dateCountMap.get(dateKey) || { decks: 0, flashcards: 0 };
       
       dayData.push({
@@ -549,10 +547,12 @@ export async function fetchReviewData(): Promise<{ dayData: DayData[], monthData
     const monthData: MonthData[] = [];
     const monthCountMap = new Map<string, { flashcards: number; decks: number }>();
 
-    // Aggregate data by month using the existing dateCountMap
+    const getMonthKey = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
     for (const [dateKey, counts] of dateCountMap) {
-      const date = new Date(dateKey);
-      const monthKey = formatMonth(date);
+      const date = parseLocalDateKey(dateKey);
+      const monthKey = getMonthKey(date);
       const current = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
       current.decks += counts.decks;
       current.flashcards += counts.flashcards;
@@ -562,12 +562,14 @@ export async function fetchReviewData(): Promise<{ dayData: DayData[], monthData
     // Generate month data for the last 12 months
     for (let i = 11; i >= 0; i--) {
       const date = new Date(today);
+      date.setDate(1);
       date.setMonth(today.getMonth() - i);
-      const monthKey = formatMonth(date);
+      const monthKey = getMonthKey(date);
+      const monthLabel = formatMonth(date);
       const monthCount = monthCountMap.get(monthKey) || { flashcards: 0, decks: 0 };
       
       monthData.push({
-        month: monthKey,
+        month: monthLabel,
         flashcards: isNaN(monthCount.flashcards) ? 0 : monthCount.flashcards,
         decks: isNaN(monthCount.decks) ? 0 : monthCount.decks,
       });

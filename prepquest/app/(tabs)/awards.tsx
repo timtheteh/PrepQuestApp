@@ -129,6 +129,7 @@ import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
+import { getLocalDateKey } from '@/utils/dateFormat';
 import { db } from '@/db/index';
 import { getCurrentUserID, createCustomBadge, fetchCustomBadges, CustomBadgeData } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -753,8 +754,8 @@ const StreakCalendar = React.memo(() => {
   // Use memoized streak info calculation
   const streakInfo = memoizedGetStreakInfo(studiedDates);
   
-  // Memoize today's date to prevent recalculation for every calendar day
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  // Memoize today's date (localized) to prevent recalculation for every calendar day
+  const today = useMemo(() => getLocalDateKey(new Date()), []);
 
   // Memoized calendar theme to prevent recreating object
   const calendarTheme = useMemo(() => {

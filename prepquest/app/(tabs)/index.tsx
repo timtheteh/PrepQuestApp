@@ -135,7 +135,6 @@ const coachmarkOverlayOpacity = useRef(new Animated.Value(0)).current;
     topBarButtonRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
     },
     headerIconsContainer: {
       position: 'absolute',
@@ -144,17 +143,6 @@ const coachmarkOverlayOpacity = useRef(new Animated.Value(0)).current;
     },
     menuButton: {
       paddingTop: 8,
-    },
-    testButton: {
-      paddingVertical: 6,
-      paddingHorizontal: 14,
-      borderRadius: 16,
-      backgroundColor: Colors[theme].brandColor2,
-    },
-    testButtonText: {
-      fontFamily: Fonts.bodyMedium,
-      fontSize: 14,
-      color: Colors[theme].background,
     },
     mainContentWrapper: {
       flex: 1,
@@ -1626,15 +1614,6 @@ useEffect(() => {
                 style={styles.menuButton}
                 onPress={handleMenuPress}
               />
-              <TouchableOpacity 
-                style={styles.testButton}
-                activeOpacity={0.7}
-                onPress={handleShowCoachmark}
-              >
-                <Text style={styles.testButtonText}>
-                  {strings[language].index.testButton}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
           

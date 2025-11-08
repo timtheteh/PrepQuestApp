@@ -7,6 +7,35 @@ interface AwardsSkeletonProps {
   topOffset?: number;
 }
 
+const PlaceholderCard = ({
+  shimmerOpacity,
+  children,
+  style,
+}: {
+  shimmerOpacity: Animated.AnimatedInterpolation<string | number>;
+  children?: React.ReactNode;
+  style?: any;
+}) => {
+  const { theme } = useTheme();
+  const colors = Colors[theme];
+
+  return (
+    <View style={[styles.card, style, { backgroundColor: colors.secondaryShade }]}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.shimmerOverlay,
+          {
+            opacity: shimmerOpacity,
+            backgroundColor: colors.background,
+          },
+        ]}
+      />
+      {children}
+    </View>
+  );
+};
+
 export const AwardsSkeleton = React.memo(({ topOffset = 0 }: AwardsSkeletonProps) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -42,48 +71,64 @@ export const AwardsSkeleton = React.memo(({ topOffset = 0 }: AwardsSkeletonProps
 
   return (
     <View style={[styles.overlay, { backgroundColor: colors.background }]}>
-      <Animated.ScrollView
+      <ScrollView
         contentContainerStyle={[
           styles.contentContainer,
-          { paddingTop: topOffset + 20, paddingBottom: 32 },
+          { paddingTop: topOffset + 20, paddingBottom: 80 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.card, styles.toggleCard, { backgroundColor: colors.secondaryShade }]}>
-          <Animated.View pointerEvents="none" style={[styles.shimmerOverlay, { opacity: shimmerOpacity, backgroundColor: colors.background }]} />
+        <PlaceholderCard shimmerOpacity={shimmerOpacity} style={styles.togglePlaceholder}>
           <View style={styles.toggleInner}>
             <View style={[styles.togglePill, { backgroundColor: colors.unselectedText }]} />
-            <View style={[styles.togglePill, { backgroundColor: colors.unselectedText, opacity: 0.35 }]} />
+            <View style={[styles.togglePill, { backgroundColor: colors.unselectedText, opacity: 0.4 }]} />
           </View>
-        </View>
+        </PlaceholderCard>
 
-        <View style={[styles.card, styles.sectionCard, { backgroundColor: colors.secondaryShade }]}>
-          <Animated.View pointerEvents="none" style={[styles.shimmerOverlay, { opacity: shimmerOpacity, backgroundColor: colors.background }]} />
-          <View style={styles.sectionContent}>
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '68%' }]} />
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '80%', opacity: 0.6 }]} />
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '60%', opacity: 0.4 }]} />
+        <PlaceholderCard shimmerOpacity={shimmerOpacity} style={styles.largeSection}>
+          <View style={styles.cardContent}>
+            <View style={[styles.line, { width: '45%', backgroundColor: colors.unselectedText }]} />
+            <View style={[styles.line, { width: '70%', marginTop: 12, backgroundColor: colors.unselectedText, opacity: 0.8 }]} />
+            <View style={[styles.line, { width: '60%', marginTop: 12, backgroundColor: colors.unselectedText, opacity: 0.6 }]} />
           </View>
-        </View>
+        </PlaceholderCard>
 
-        <View style={[styles.card, styles.sectionCard, { backgroundColor: colors.secondaryShade }]}>
-          <Animated.View pointerEvents="none" style={[styles.shimmerOverlay, { opacity: shimmerOpacity, backgroundColor: colors.background }]} />
-          <View style={styles.sectionContent}>
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '55%' }]} />
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '70%', opacity: 0.6 }]} />
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '52%', opacity: 0.4 }]} />
+        <PlaceholderCard shimmerOpacity={shimmerOpacity} style={styles.mediumSection}>
+          <View style={styles.cardContent}>
+            <View style={[styles.line, { width: '40%', backgroundColor: colors.unselectedText }]} />
+            <View style={styles.multiLineRow}>
+              <View style={[styles.block, { backgroundColor: colors.unselectedText }]} />
+              <View style={[styles.block, { backgroundColor: colors.unselectedText, opacity: 0.65 }]} />
+            </View>
+            <View style={styles.multiLineRow}>
+              <View style={[styles.block, { backgroundColor: colors.unselectedText, opacity: 0.4 }]} />
+              <View style={[styles.block, { backgroundColor: colors.unselectedText, opacity: 0.25 }]} />
+            </View>
           </View>
-        </View>
+        </PlaceholderCard>
 
-        <View style={[styles.card, styles.sectionCard, { backgroundColor: colors.secondaryShade }]}>
-          <Animated.View pointerEvents="none" style={[styles.shimmerOverlay, { opacity: shimmerOpacity, backgroundColor: colors.background }]} />
-          <View style={styles.sectionContent}>
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '48%' }]} />
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '62%', opacity: 0.6 }]} />
-            <View style={[styles.line, { backgroundColor: colors.unselectedText, width: '58%', opacity: 0.4 }]} />
+        <PlaceholderCard shimmerOpacity={shimmerOpacity} style={styles.detailsSection}>
+          <View style={styles.cardContent}>
+            <View style={[styles.line, { width: '50%', backgroundColor: colors.unselectedText }]} />
+            <View style={styles.metricRow}>
+              {Array.from({ length: 3 }).map((_, index) => (
+                <View key={`metric-${index}`} style={styles.metricCard}>
+                  <View style={[styles.metricLine, { backgroundColor: colors.unselectedText }]} />
+                  <View style={[styles.metricLine, { width: '60%', backgroundColor: colors.unselectedText, opacity: 0.6, marginTop: 10 }]} />
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
-      </Animated.ScrollView>
+        </PlaceholderCard>
+
+        <PlaceholderCard shimmerOpacity={shimmerOpacity} style={styles.performanceSection}>
+          <View style={styles.cardContent}>
+            <View style={[styles.line, { width: '52%', backgroundColor: colors.unselectedText }]} />
+            <View style={[styles.line, { width: '34%', marginTop: 12, backgroundColor: colors.unselectedText, opacity: 0.7 }]} />
+            <View style={[styles.line, { width: '42%', marginTop: 12, backgroundColor: colors.unselectedText, opacity: 0.45 }]} />
+          </View>
+        </PlaceholderCard>
+      </ScrollView>
     </View>
   );
 });
@@ -91,13 +136,12 @@ export const AwardsSkeleton = React.memo(({ topOffset = 0 }: AwardsSkeletonProps
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 20,
+    zIndex: 10,
     pointerEvents: 'auto',
   },
   contentContainer: {
     paddingHorizontal: 16,
-    gap: 24,
-    paddingBottom: 48,
+    gap: 18,
   },
   card: {
     borderRadius: 24,
@@ -108,32 +152,72 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     opacity: 0.3,
   },
-  toggleCard: {
+  togglePlaceholder: {
+    height: 64,
     borderRadius: 28,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   toggleInner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   togglePill: {
-    flex: 1,
-    height: 36,
+    height: 32,
     borderRadius: 20,
-    marginHorizontal: 8,
+    flex: 1,
+    marginHorizontal: 6,
+    opacity: 0.5,
   },
-  sectionCard: {
+  largeSection: {
+    height: 280,
+  },
+  mediumSection: {
+    height: 220,
+    paddingVertical: 20,
+  },
+  detailsSection: {
+    paddingVertical: 24,
+  },
+  performanceSection: {
+    paddingVertical: 28,
+  },
+  cardContent: {
     paddingHorizontal: 24,
     paddingVertical: 20,
-    gap: 10,
-    minHeight: 110,
-  },
-  sectionContent: {
-    gap: 8,
   },
   line: {
-    height: 14,
+    height: 16,
+    borderRadius: 8,
+  },
+  multiLineRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  block: {
+    flex: 1,
+    height: 18,
+    borderRadius: 10,
+    marginHorizontal: 6,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 28,
+  },
+  metricCard: {
+    flex: 1,
+    height: 110,
+    borderRadius: 18,
+    marginHorizontal: 6,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metricLine: {
+    height: 16,
+    width: '80%',
     borderRadius: 8,
   },
 });

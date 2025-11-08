@@ -1303,7 +1303,13 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   const isLeftChevronDisabled = () => currentIdx <= 0;
   const isRightChevronDisabled = () => {
     if (isSuccessMode) return true; // Hide/disable chevron in success mode
-    // Always enable the right chevron - validation will be handled in navigateToNextCard
+
+    // In "view only" mode (neither study nor quiz), prevent moving past the final card
+    if (!isStudyMode && !isQuizMode && currentIdx >= totalCards - 1) {
+      return true;
+    }
+
+    // In study/quiz modes the button remains enabled; validation handles progression
     return false;
   };
 

@@ -45,6 +45,7 @@ import { strings } from '@/constants/strings';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatDate as formatDateDisplay } from '@/utils/dateFormat';
 
 
 
@@ -78,27 +79,6 @@ export default function DeckDetailsScreen() {
   const getHeaderIconsTopHeight = useHeaderIconsTopHeight();
   const getContentTopHeight = useContentTopHeight();
   const animationConfig = useMemo(() => getAnimationConfig(), []);
-
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return '--';
-    try {
-      const date = new Date(dateString);
-      if (language === 'Chinese') {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        return `${year}年${month}月${day}日`;
-      } else {
-        return date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        });
-      }
-    } catch (error) {
-      return '--';
-    }
-  };
 
   // Card type color and label logic
   const cardTypeMap: Record<string, { color: string; label: string }> = useMemo(() => ({
@@ -153,7 +133,10 @@ export default function DeckDetailsScreen() {
   const deckType = useMemo(() => deckInfo?.deckType || '', [deckInfo?.deckType]);
   const cardType = useMemo(() => deckInfo?.deckType === 'interview' ? deckInfo?.interviewType : deckInfo?.deckType, [deckInfo?.deckType, deckInfo?.interviewType]);
   const backgroundIndex = useMemo(() => deckInfo?.AICardDesignIndex || deckInfo?.cardDesignIndex || 0, [deckInfo?.AICardDesignIndex, deckInfo?.cardDesignIndex]);
-  const cardDate = useMemo(() => deckInfo?.dateAdded ? formatDate(deckInfo.dateAdded) : '', [deckInfo?.dateAdded]);
+  const cardDate = useMemo(
+    () => (deckInfo?.dateAdded ? formatDateDisplay(deckInfo.dateAdded, language) : ''),
+    [deckInfo?.dateAdded, language]
+  );
   const cardFlashcardCount = useMemo(() => deckInfo?.flashcardCount || 0, [deckInfo?.flashcardCount]);
   const cardPercent = useMemo(() => deckInfo?.progress || 0, [deckInfo?.progress]);
   const AIDeck = useMemo(() => isAIDeck as string === 'true', [isAIDeck]);
@@ -862,12 +845,15 @@ export default function DeckDetailsScreen() {
     
     const studyDate = deckInfo.lastStudiedDate ? new Date(deckInfo.lastStudiedDate) : null;
     const quizDate = deckInfo.lastQuizzedDate ? new Date(deckInfo.lastQuizzedDate) : null;
+
+    const formatOrDash = (value: string | null | undefined) =>
+      value ? formatDateDisplay(value, language) : '--';
     
     if (!studyDate && !quizDate) return '--';
-    if (!studyDate) return formatDate(deckInfo.lastQuizzedDate);
-    if (!quizDate) return formatDate(deckInfo.lastStudiedDate);
+    if (!studyDate) return formatOrDash(deckInfo.lastQuizzedDate);
+    if (!quizDate) return formatOrDash(deckInfo.lastStudiedDate);
     
-    return formatDate(studyDate > quizDate ? deckInfo.lastStudiedDate : deckInfo.lastQuizzedDate);
+    return formatOrDash(studyDate > quizDate ? deckInfo.lastStudiedDate : deckInfo.lastQuizzedDate);
   };
 
   // Helper function to format list items

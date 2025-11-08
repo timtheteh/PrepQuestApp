@@ -29,3 +29,78 @@ export const formatDate = (dateString: string, language: string): string => {
   }
 };
 
+export type CalendarFilter =
+  | 'all'
+  | 'today'
+  | 'week'
+  | 'month'
+  | 'custom'
+  | null
+  | undefined;
+
+const isSameCalendarDay = (date: Date, year: number, month: number, day: number) =>
+  date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+
+/**
+ * Checks whether a UTC ISO timestamp belongs to the selected calendar filter
+ * when interpreted in the user's current timezone.
+ */
+export const matchesCalendarFilter = (
+  isoString: string,
+  filter: CalendarFilter,
+  customDate?: string | null
+): boolean => {
+  if (!filter || filter === 'all') {
+    return true;
+  }
+
+  const targetDate = new Date(isoString);
+  if (Number.isNaN(targetDate.getTime())) {
+    return false;
+  }
+
+  const now = new Date();
+
+  switch (filter) {
+    case 'today': {
+      return (
+        targetDate.getFullYear() === now.getFullYear() &&
+        targetDate.getMonth() === now.getMonth() &&
+        targetDate.getDate() === now.getDate()
+      );
+    }
+    case 'week': {
+      const startOfWeek = new Date(now);
+      startOfWeek.setHours(0, 0, 0, 0);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      return targetDate >= startOfWeek && targetDate <= endOfWeek;
+    }
+    case 'month': {
+      return (
+        targetDate.getFullYear() === now.getFullYear() &&
+        targetDate.getMonth() === now.getMonth()
+      );
+    }
+    case 'custom': {
+      if (!customDate) {
+        return true;
+      }
+      const [yearStr, monthStr, dayStr] = customDate.split('-');
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      const day = Number(dayStr);
+      if (!year || !month || !day) {
+        return false;
+      }
+      return isSameCalendarDay(targetDate, year, month, day);
+    }
+    default:
+      return true;
+  }
+};
+

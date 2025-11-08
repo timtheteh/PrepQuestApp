@@ -30,7 +30,7 @@ import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeight, useBo
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
-import { formatDate as formatDateUtil } from '@/utils/dateFormat';
+import { formatDate as formatDateUtil, matchesCalendarFilter } from '@/utils/dateFormat';
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
 type SortDirection = 'asc' | 'desc';
@@ -1118,42 +1118,10 @@ export default function FavoritesScreen() {
 
   // Filter by dateAdded according to calendarFilter
   const filterByDate = useCallback(<T extends { dateAdded: string }>(items: T[]): T[] => {
-    if (calendarFilter === 'all' || !calendarFilter) return items;
-    const now = new Date();
-    return items.filter(item => {
-      const itemDate = new Date(item.dateAdded);
-      if (calendarFilter === 'today') {
-        return (
-          itemDate.getFullYear() === now.getFullYear() &&
-          itemDate.getMonth() === now.getMonth() &&
-          itemDate.getDate() === now.getDate()
-        );
-      }
-      if (calendarFilter === 'week') {
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-        return itemDate >= startOfWeek && itemDate <= endOfWeek;
-      }
-      if (calendarFilter === 'month') {
-        return (
-          itemDate.getFullYear() === now.getFullYear() &&
-          itemDate.getMonth() === now.getMonth()
-        );
-      }
-      if (calendarFilter === 'custom' && calendarCustomDate) {
-        const [year, month, day] = calendarCustomDate.split('-').map(Number);
-        return (
-          itemDate.getFullYear() === year &&
-          itemDate.getMonth() + 1 === month &&
-          itemDate.getDate() === day
-        );
-      }
-      return true;
-    });
+    if (!calendarFilter || calendarFilter === 'all') return items;
+    return items.filter(item =>
+      matchesCalendarFilter(item.dateAdded, calendarFilter, calendarCustomDate)
+    );
   }, [calendarFilter, calendarCustomDate]);
 
   // Filtered arrays for calendar filter

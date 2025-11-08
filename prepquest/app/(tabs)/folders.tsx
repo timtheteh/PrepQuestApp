@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTopBarTopHeight, useHeaderIconsTopHeight, useContentTopHeightNoRoundedToggle, useBottomContentSpacing } from '@/hooks/heights';
 import { getAnimationConfig } from '@/utils/animationConfig';
 import { optimizedScreenTransition } from '@/utils/performanceOptimizations';
-import { formatDate as formatDateUtil } from '@/utils/dateFormat';
+import { formatDate as formatDateUtil, matchesCalendarFilter } from '@/utils/dateFormat';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -1295,45 +1295,10 @@ export default function FoldersScreen() {
 
   // Filter folders by dateAdded according to calendarFilter
   const filterFoldersByDate = useCallback((folders: Folder[]): Folder[] => {
-    if (calendarFilter === 'all' || !calendarFilter) return folders;
-    const now = new Date();
-    return folders.filter((folder: Folder) => {
-      const folderDate = new Date(folder.dateAdded);
-      if (calendarFilter === 'today') {
-        return (
-          folderDate.getFullYear() === now.getFullYear() &&
-          folderDate.getMonth() === now.getMonth() &&
-          folderDate.getDate() === now.getDate()
-        );
-      }
-      if (calendarFilter === 'week') {
-        // Start of week (Sunday)
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-        // End of week (Saturday)
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-        return folderDate >= startOfWeek && folderDate <= endOfWeek;
-      }
-      if (calendarFilter === 'month') {
-        return (
-          folderDate.getFullYear() === now.getFullYear() &&
-          folderDate.getMonth() === now.getMonth()
-        );
-      }
-      if (calendarFilter === 'custom' && calendarCustomDate) {
-        // calendarCustomDate is in 'YYYY-MM-DD' format
-        const [year, month, day] = calendarCustomDate.split('-').map(Number);
-        return (
-          folderDate.getFullYear() === year &&
-          folderDate.getMonth() + 1 === month && // JS months are 0-based
-          folderDate.getDate() === day
-        );
-      }
-      return true;
-    });
+    if (!calendarFilter || calendarFilter === 'all') return folders;
+    return folders.filter(folder =>
+      matchesCalendarFilter(folder.dateAdded, calendarFilter, calendarCustomDate)
+    );
   }, [calendarFilter, calendarCustomDate]);
 
   // Calculate filtered folders for counts and rendering

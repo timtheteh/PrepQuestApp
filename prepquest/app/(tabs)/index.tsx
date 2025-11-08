@@ -26,7 +26,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
-import { formatDate as formatDateUtil } from '@/utils/dateFormat';
+import { formatDate as formatDateUtil, matchesCalendarFilter } from '@/utils/dateFormat';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -528,45 +528,10 @@ export default function DecksScreen() {
 
   // Filter decks by dateAdded according to calendarFilter
   const filterDecksByDate = useCallback((decks: (Deck & { progress: number })[]): (Deck & { progress: number })[] => {
-    if (calendarFilter === 'all' || !calendarFilter) return decks;
-    const now = new Date();
-    return decks.filter((deck: Deck & { progress: number }) => {
-      const deckDate = new Date(deck.dateAdded);
-      if (calendarFilter === 'today') {
-        return (
-          deckDate.getFullYear() === now.getFullYear() &&
-          deckDate.getMonth() === now.getMonth() &&
-          deckDate.getDate() === now.getDate()
-        );
-      }
-      if (calendarFilter === 'week') {
-        // Start of week (Sunday)
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-        // End of week (Saturday)
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-        return deckDate >= startOfWeek && deckDate <= endOfWeek;
-      }
-      if (calendarFilter === 'month') {
-        return (
-          deckDate.getFullYear() === now.getFullYear() &&
-          deckDate.getMonth() === now.getMonth()
-        );
-      }
-      if (calendarFilter === 'custom' && calendarCustomDate) {
-        // calendarCustomDate is in 'YYYY-MM-DD' format
-        const [year, month, day] = calendarCustomDate.split('-').map(Number);
-        return (
-          deckDate.getFullYear() === year &&
-          deckDate.getMonth() + 1 === month && // JS months are 0-based
-          deckDate.getDate() === day
-        );
-      }
-      return true;
-    });
+    if (!calendarFilter || calendarFilter === 'all') return decks;
+    return decks.filter(deck =>
+      matchesCalendarFilter(deck.dateAdded, calendarFilter, calendarCustomDate)
+    );
   }, [calendarFilter, calendarCustomDate]);
 
   // Calculate filtered decks for counts and rendering

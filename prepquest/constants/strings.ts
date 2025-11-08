@@ -795,6 +795,7 @@ export const strings: Record<string, any> = {
       backToDefaultSettings: 'Back to default settings?',
       save: 'Save',
       deckSettingsSaved: 'Deck settings saved!',
+      goBackWithoutSaving: 'Go back without saving?',
       helpModalText: "Our team has identified 7 main types of cognitive questions based on Bloom's taxonomy to help with your learning. Visit our website to learn more.",
       helpModalWebsite: 'our website',
       timePicker: {
@@ -1655,6 +1656,7 @@ export const strings: Record<string, any> = {
       backToDefaultSettings: '恢复默认设置？',
       save: '保存',
       deckSettingsSaved: '卡片组设置已保存!',
+      goBackWithoutSaving: '不保存就返回？',
       helpModalText: '我们的团队基于布鲁姆分类法，确定了7种主要认知题型，助力高效学习。了解更多内容，请访问我们的官网。',
       helpModalWebsite: '官网',
       timePicker: {

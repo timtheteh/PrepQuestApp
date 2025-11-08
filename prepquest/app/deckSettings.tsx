@@ -17,6 +17,7 @@ import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
+import ModalExclamationMarkIcon from '@/assets/icons/generalIcons/modalExclamationMarkIcon.svg';
 
 // Local component for title and toggle row
 const TitleToggleRow = React.memo(({ text, value, onValueChange, styles }: { text: string; value: boolean; onValueChange: (value: boolean) => void; styles: any }) => {
@@ -311,6 +312,7 @@ export default function DeckSettingsPage() {
   const background = Colors[theme].background;
   const brandColor2 = Colors[theme].brandColor2;
   const alertColor = Colors[theme].alertColor;
+  const savedSettingsKeyRef = React.useRef<string>('');
   
   useFocusEffect(
     React.useCallback(() => {
@@ -332,16 +334,31 @@ export default function DeckSettingsPage() {
       setHalfwayCheckpointEnabled(settings.halfwayCheckpointEnabled);
       setDifficultyTimes(settings.difficultyTimes);
       setVoiceRecordedTimer(settings.voiceRecordedTimer);
+      savedSettingsKeyRef.current = JSON.stringify(settings);
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error loading deck settings:', error);
       // Use defaults if loading fails
-      setAutoDecksEnabled(true);
-      setClozeQuestionsEnabled(true);
-      setMcqQuestionsEnabled(true);
-      setVoiceRecordedAnswersEnabled(true);
-      setVoiceRecordedTimerEnabled(true);
-      setHalfwayCheckpointEnabled(true);
-      setDifficultyTimes(defaultDifficultyTimes);
+      const fallbackSettings: DeckSettings = {
+        autoDecksEnabled: true,
+        clozeQuestionsEnabled: true,
+        mcqQuestionsEnabled: true,
+        voiceRecordedAnswersEnabled: true,
+        voiceRecordedTimerEnabled: true,
+        voiceRecordedTimer: { min: 2, sec: 0 },
+        halfwayCheckpointEnabled: true,
+        difficultyTimes: defaultDifficultyTimes,
+      };
+      setAutoDecksEnabled(fallbackSettings.autoDecksEnabled);
+      setClozeQuestionsEnabled(fallbackSettings.clozeQuestionsEnabled);
+      setMcqQuestionsEnabled(fallbackSettings.mcqQuestionsEnabled);
+      setVoiceRecordedAnswersEnabled(fallbackSettings.voiceRecordedAnswersEnabled);
+      setVoiceRecordedTimerEnabled(fallbackSettings.voiceRecordedTimerEnabled);
+      setHalfwayCheckpointEnabled(fallbackSettings.halfwayCheckpointEnabled);
+      setDifficultyTimes(fallbackSettings.difficultyTimes);
+      setVoiceRecordedTimer(fallbackSettings.voiceRecordedTimer);
+      savedSettingsKeyRef.current = JSON.stringify(fallbackSettings);
+      setHasUnsavedChanges(false);
     }
   }, []);
 
@@ -362,6 +379,19 @@ export default function DeckSettingsPage() {
         setHalfwayCheckpointEnabled(true);
         setDifficultyTimes(defaultDifficultyTimes);
         setResetCounter(c => c + 1);
+        const defaultSettings: DeckSettings = {
+          autoDecksEnabled: true,
+          clozeQuestionsEnabled: true,
+          mcqQuestionsEnabled: true,
+          voiceRecordedAnswersEnabled: true,
+          voiceRecordedTimerEnabled: true,
+          voiceRecordedTimer: { min: 2, sec: 0 },
+          halfwayCheckpointEnabled: true,
+          difficultyTimes: defaultDifficultyTimes,
+        };
+        savedSettingsKeyRef.current = JSON.stringify(defaultSettings);
+        setHasUnsavedChanges(false);
+        hasSavedRef.current = true;
       }
     } catch (error) {
       console.error('Error resetting deck settings:', error);
@@ -389,9 +419,13 @@ export default function DeckSettingsPage() {
   const modalOpacity = React.useRef(new Animated.Value(0)).current;
   const successOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const successModalOpacity = React.useRef(new Animated.Value(0)).current;
+  const backOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const backModalOpacity = React.useRef(new Animated.Value(0)).current;
   const [pickerOpacity] = React.useState(new Animated.Value(1));
   const [resetCounter, setResetCounter] = React.useState(0);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
+  const [isBackModalOpen, setIsBackModalOpen] = React.useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
   const hasSavedRef = React.useRef(false);
   const insets = useSafeAreaInsets();
 
@@ -427,6 +461,8 @@ export default function DeckSettingsPage() {
       };
       
       await saveDeckSettings(settings);
+      savedSettingsKeyRef.current = JSON.stringify(settings);
+      setHasUnsavedChanges(false);
       return true;
     } catch (error) {
       console.error('Error saving deck settings:', error);
@@ -505,12 +541,51 @@ export default function DeckSettingsPage() {
   }, []);
 
   const handleBackPress = React.useCallback(() => {
-    // If user didn't save, reload settings to revert changes
-    if (!hasSavedRef.current) {
-      loadSettings();
+    if (hasUnsavedChanges) {
+      setIsBackModalOpen(true);
+    } else {
+      if (!hasSavedRef.current) {
+        loadSettings();
+      }
+      router.back();
     }
-    router.back();
-  }, [router, loadSettings]);
+  }, [hasUnsavedChanges, loadSettings, router]);
+
+  const handleDismissBackModal = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(backOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackModalOpen(false);
+    });
+  }, [backOverlayOpacity, backModalOpacity]);
+
+  const handleConfirmBackWithoutSaving = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(backOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsBackModalOpen(false);
+      loadSettings();
+      router.back();
+    });
+  }, [backOverlayOpacity, backModalOpacity, loadSettings, router]);
 
   const handleHelpPress = React.useCallback(() => {
     setIsHelpModalOpen(true);
@@ -549,6 +624,51 @@ export default function DeckSettingsPage() {
       ]).start();
     }
   }, [isHelpModalOpen]);
+
+  React.useEffect(() => {
+    if (isBackModalOpen) {
+      Animated.parallel([
+        Animated.timing(backOverlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isBackModalOpen, backOverlayOpacity, backModalOpacity]);
+
+  const currentSettings = React.useMemo<DeckSettings>(() => ({
+    autoDecksEnabled,
+    clozeQuestionsEnabled,
+    mcqQuestionsEnabled,
+    voiceRecordedAnswersEnabled,
+    voiceRecordedTimerEnabled,
+    voiceRecordedTimer,
+    halfwayCheckpointEnabled,
+    difficultyTimes,
+  }), [
+    autoDecksEnabled,
+    clozeQuestionsEnabled,
+    mcqQuestionsEnabled,
+    voiceRecordedAnswersEnabled,
+    voiceRecordedTimerEnabled,
+    voiceRecordedTimer,
+    halfwayCheckpointEnabled,
+    difficultyTimes,
+  ]);
+
+  const currentSettingsKey = React.useMemo(() => JSON.stringify(currentSettings), [currentSettings]);
+
+  React.useEffect(() => {
+    if (savedSettingsKeyRef.current) {
+      setHasUnsavedChanges(currentSettingsKey !== savedSettingsKeyRef.current);
+    }
+  }, [currentSettingsKey]);
 
   // Create dynamic styles based on theme
   const styles = React.useMemo(() => createStyles(theme), [theme]);
@@ -721,6 +841,20 @@ export default function DeckSettingsPage() {
           {strings[language].deckSettingsPage.backToDefaultSettings}
         </Text>
       </TouchableOpacity>
+      <GreyOverlayBackground 
+        visible={isBackModalOpen}
+        opacity={backOverlayOpacity}
+        onPress={handleDismissBackModal}
+      />
+      <GenericModal
+        visible={isBackModalOpen}
+        opacity={backModalOpacity}
+        text={strings[language].deckSettingsPage.goBackWithoutSaving}
+        buttons="double"
+        Icon={ModalExclamationMarkIcon}
+        onCancel={handleDismissBackModal}
+        onConfirm={handleConfirmBackWithoutSaving}
+      />
       <GreyOverlayBackground 
         visible={isHelpModalOpen}
         opacity={overlayOpacity}

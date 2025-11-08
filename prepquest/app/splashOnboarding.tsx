@@ -194,6 +194,14 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
     totalDecks: 3,
   });
   
+  const queueAIDecksCoachmark = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem('shouldShowAIDecksCoachmark', 'true');
+    } catch (error) {
+      console.error('Error scheduling AI decks coachmark:', error);
+    }
+  }, []);
+
   // Function to hide loading overlay (exposed to parent)
   const hideLoadingOverlay = useCallback(() => {
     setShowLoadingOverlay(false);
@@ -2248,6 +2256,10 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
 
                 console.log(`🎉 Successfully created ${createdDeckIds.length}/3 free AI decks for new user!`);
                 console.log('📊 Created deck IDs:', createdDeckIds);
+
+                if (createdDeckIds.length > 0) {
+                  await queueAIDecksCoachmark();
+                }
                 
                 // Mark all decks as complete (show tick)
                 setDeckCreationProgress({ currentDeck: 4, totalDecks: 3 });

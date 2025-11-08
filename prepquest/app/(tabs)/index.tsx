@@ -28,6 +28,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useBackgroundTaskRefresh } from '@/hooks/useBackgroundTaskRefresh';
 import { formatDate as formatDateUtil, matchesCalendarFilter } from '@/utils/dateFormat';
 import Svg, { Defs, Rect as SvgRect, Circle, Mask } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 type SortField = 'name' | 'dateAdded' | 'lastModified';
@@ -99,6 +100,7 @@ export default function DecksScreen() {
   const [showCoachmark, setShowCoachmark] = useState(false);
   const [aiButtonLayout, setAIDecksButtonLayout] = useState<ButtonLayout | null>(null);
   const [coachmarkBubbleHeight, setCoachmarkBubbleHeight] = useState(0);
+  const [pendingCoachmarkTrigger, setPendingCoachmarkTrigger] = useState(false);
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const shiftAnim = useRef(new Animated.Value(0)).current;
@@ -513,6 +515,45 @@ useEffect(() => {
     setGlobalOverlayContent(null);
   };
 }, [setGlobalOverlayContent]);
+
+useEffect(() => {
+  if (!isFocused) {
+    return;
+  }
+
+  let isCancelled = false;
+
+  const checkCoachmarkFlag = async () => {
+    try {
+      const flag = await AsyncStorage.getItem('shouldShowAIDecksCoachmark');
+      if (!isCancelled && flag === 'true') {
+        await AsyncStorage.removeItem('shouldShowAIDecksCoachmark');
+        setPendingCoachmarkTrigger(true);
+      }
+    } catch (error) {
+      console.error('Error checking AI decks coachmark flag:', error);
+    }
+  };
+
+  checkCoachmarkFlag();
+
+  return () => {
+    isCancelled = true;
+  };
+}, [isFocused]);
+
+useEffect(() => {
+  if (!pendingCoachmarkTrigger) {
+    return;
+  }
+
+  if (!aiButtonLayout) {
+    return;
+  }
+
+  handleShowCoachmark();
+  setPendingCoachmarkTrigger(false);
+}, [pendingCoachmarkTrigger, aiButtonLayout, handleShowCoachmark]);
 
   // Create dynamic styles based on theme
 

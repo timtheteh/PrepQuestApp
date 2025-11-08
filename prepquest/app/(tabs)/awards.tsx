@@ -130,6 +130,7 @@ import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
 import { formatDate, getLocalDateKey } from '@/utils/dateFormat';
+import { AwardsSkeleton } from '@/components/skeletons/AwardsSkeleton';
 import { db } from '@/db/index';
 import { getCurrentUserID, createCustomBadge, fetchCustomBadges, CustomBadgeData } from '@/db/decks';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -472,7 +473,7 @@ const CustomGoalForm = React.memo(({ setScrollEnabled, themeColors }: { setScrol
   );
 });
 
-const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) => {
+const StreakCalendarStats = React.memo(({ themeColors, onReady }: { themeColors: any; onReady?: () => void }) => {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const [streakData, setStreakData] = useState<LongestStreakData>({
@@ -485,6 +486,13 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const isFocused = useIsFocused();
+  const readyRef = useRef(false);
+  const markReady = useCallback(() => {
+    if (!readyRef.current) {
+      readyRef.current = true;
+      onReady?.();
+    }
+  }, [onReady]);
   
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
@@ -508,8 +516,9 @@ const StreakCalendarStats = React.memo(({ themeColors }: { themeColors: any }) =
       });
     } finally {
       setIsLoading(false);
+      markReady();
     }
-  }, []);
+  }, [markReady]);
 
   // Optimized data loading on screen focus
   useEffect(() => {
@@ -718,12 +727,19 @@ const CalendarDay = React.memo(({ date, state, streakInfo, today }: {
   );
 });
 
-const StreakCalendar = React.memo(() => {
+const StreakCalendar = React.memo(({ onReady }: { onReady?: () => void }) => {
   const [studiedDates, setStudiedDates] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const isFocused = useIsFocused();
   const { theme } = useTheme();
+  const readyRef = useRef(false);
+  const markReady = useCallback(() => {
+    if (!readyRef.current) {
+      readyRef.current = true;
+      onReady?.();
+    }
+  }, [onReady]);
   
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
@@ -741,8 +757,9 @@ const StreakCalendar = React.memo(() => {
       setStudiedDates([]);
     } finally {
       setIsLoading(false);
+      markReady();
     }
-  }, []);
+  }, [markReady]);
 
   // Optimized data loading on screen focus
   useEffect(() => {
@@ -1558,9 +1575,16 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
 });
 
 // Streak Badges Component
-const StreakBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+const StreakBadges = React.memo(({ themeColors, onReady }: { themeColors: any; onReady?: () => void }) => {
   const [streakBadges, setStreakBadges] = useState<BadgeData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const readyRef = useRef(false);
+  const markReady = useCallback(() => {
+    if (!readyRef.current) {
+      readyRef.current = true;
+      onReady?.();
+    }
+  }, [onReady]);
 
   useEffect(() => {
     const loadStreakBadges = async () => {
@@ -1588,18 +1612,15 @@ const StreakBadges = React.memo(({ themeColors }: { themeColors: any }) => {
         setStreakBadges([]);
       } finally {
         setIsLoading(false);
+        markReady();
       }
     };
 
     loadStreakBadges();
-  }, []);
+  }, [markReady]);
 
   if (isLoading) {
-    return (
-      <View style={{ alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: themeColors.text }}>Loading streak badges...</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
@@ -1613,10 +1634,17 @@ const StreakBadges = React.memo(({ themeColors }: { themeColors: any }) => {
 });
 
 // Welcome Badges Component
-const WelcomeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+const WelcomeBadges = React.memo(({ themeColors, onReady }: { themeColors: any; onReady?: () => void }) => {
   const { language } = useLanguage();
   const [welcomeBadges, setWelcomeBadges] = useState<BadgeData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const readyRef = useRef(false);
+  const markReady = useCallback(() => {
+    if (!readyRef.current) {
+      readyRef.current = true;
+      onReady?.();
+    }
+  }, [onReady]);
 
   useEffect(() => {
     const loadWelcomeBadges = async () => {
@@ -1644,18 +1672,15 @@ const WelcomeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
         setWelcomeBadges([]);
       } finally {
         setIsLoading(false);
+        markReady();
       }
     };
 
     loadWelcomeBadges();
-  }, []);
+  }, [markReady]);
 
   if (isLoading) {
-    return (
-      <View style={{ alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: themeColors.text }}>Loading welcome badges...</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
@@ -1669,10 +1694,17 @@ const WelcomeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
 });
 
 // Lifetime Badges Component
-const LifetimeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+const LifetimeBadges = React.memo(({ themeColors, onReady }: { themeColors: any; onReady?: () => void }) => {
   const { language } = useLanguage();
   const [lifetimeBadges, setLifetimeBadges] = useState<BadgeData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const readyRef = useRef(false);
+  const markReady = useCallback(() => {
+    if (!readyRef.current) {
+      readyRef.current = true;
+      onReady?.();
+    }
+  }, [onReady]);
 
   useEffect(() => {
     const loadLifetimeBadges = async () => {
@@ -1700,18 +1732,15 @@ const LifetimeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
         setLifetimeBadges([]);
       } finally {
         setIsLoading(false);
+        markReady();
       }
     };
 
     loadLifetimeBadges();
-  }, []);
+  }, [markReady]);
 
   if (isLoading) {
-    return (
-      <View style={{ alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: themeColors.text }}>Loading lifetime badges...</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
@@ -1725,10 +1754,17 @@ const LifetimeBadges = React.memo(({ themeColors }: { themeColors: any }) => {
 });
 
 // Custom Badges Component
-const CustomBadges = React.memo(({ themeColors }: { themeColors: any }) => {
+const CustomBadges = React.memo(({ themeColors, onReady }: { themeColors: any; onReady?: () => void }) => {
   const { language } = useLanguage();
   const [customBadges, setCustomBadges] = useState<BadgeData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const readyRef = useRef(false);
+  const markReady = useCallback(() => {
+    if (!readyRef.current) {
+      readyRef.current = true;
+      onReady?.();
+    }
+  }, [onReady]);
 
   useEffect(() => {
     const loadCustomBadges = async () => {
@@ -1757,11 +1793,12 @@ const CustomBadges = React.memo(({ themeColors }: { themeColors: any }) => {
         setCustomBadges([]);
       } finally {
         setIsLoading(false);
+        markReady();
       }
     };
 
     loadCustomBadges();
-  }, []);
+  }, [markReady]);
 
   if (isLoading) {
     return null;
@@ -2084,10 +2121,19 @@ export default function AwardsScreen() {
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const GOALS_SECTIONS = 2;
+  const ACHIEVEMENT_SECTIONS = 4;
+  const [goalsReadyCount, setGoalsReadyCount] = useState(0);
+  const [achievementsReadyCount, setAchievementsReadyCount] = useState(0);
+  const [goalsReady, setGoalsReady] = useState(false);
+  const [achievementsReady, setAchievementsReady] = useState(false);
+  const [hasSkeletonFinished, setHasSkeletonFinished] = useState(false);
   const { language } = useLanguage();
   const { theme } = useTheme();
   const getTopBarStatisticsHeight = useTopBarStatisticsHeight();
   const animationConfig = useMemo(() => getAnimationConfig(), []);
+  const handleGoalSectionReady = useCallback(() => setGoalsReadyCount(prev => prev + 1), []);
+  const handleAchievementSectionReady = useCallback(() => setAchievementsReadyCount(prev => prev + 1), []);
   
   const themeColors = Colors[theme];
 
@@ -2198,8 +2244,31 @@ export default function AwardsScreen() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!goalsReady && goalsReadyCount >= GOALS_SECTIONS) {
+      setGoalsReady(true);
+    }
+  }, [goalsReadyCount, goalsReady, GOALS_SECTIONS]);
+
+  useEffect(() => {
+    if (!achievementsReady && achievementsReadyCount >= ACHIEVEMENT_SECTIONS) {
+      setAchievementsReady(true);
+    }
+  }, [achievementsReadyCount, achievementsReady, ACHIEVEMENT_SECTIONS]);
+
+  useEffect(() => {
+    if (!hasSkeletonFinished && goalsReady && achievementsReady) {
+      setHasSkeletonFinished(true);
+    }
+  }, [goalsReady, achievementsReady, hasSkeletonFinished]);
+
+  const showSkeleton = !hasSkeletonFinished;
+
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>
+      {showSkeleton && (
+        <AwardsSkeleton topOffset={getTopBarStatisticsHeight()} />
+      )}
               <View style={{ marginTop: getTopBarStatisticsHeight(), paddingHorizontal: 16 }}>
         <RoundedContainer
           leftLabel={strings[language].goals}
@@ -2209,72 +2278,69 @@ export default function AwardsScreen() {
           disableAnimation={disableToggleAnimation}
         />
       </View>
-      {!isAchievements && (
-        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-          <ScrollView 
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={scrollEnabled}
-            style={{ marginBottom: 40, marginTop: 20 }}
-            removeClippedSubviews={animationConfig.isLowEndDevice}
-            scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
-            decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={handleRefresh}
-                tintColor={themeColors.brandColor2}
-                colors={[themeColors.brandColor2]}
-              />
-            }
-          >
-        <View style={styles.wrapper}>
-                      <Text style={[styles.title, language === 'Chinese' && {marginTop: 20}, { color: themeColors.text }]}>{strings[language].fillInCustomGoal}</Text>
-                            <CustomGoalForm setScrollEnabled={setScrollEnabled} themeColors={themeColors} />
-                <StreakCalendarStats key={`streak-stats-${refreshKey}`} themeColors={themeColors} />
-              <StreakCalendar key={`streak-calendar-${refreshKey}`} />
-        </View>
-            <View style={{ height: 20 }}></View>
-          </ScrollView>
-        </Animated.View>
-      )}
-      {isAchievements && (
-        <Animated.View style={{ 
-          flex: 1,
-          opacity: achievementsContentAnim,
-          transform: [{ 
-            translateY: achievementsContentAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [20, 0],
-            })
-          }]
-        }}>
-          <ScrollView 
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={scrollEnabled}
-            style={{ marginBottom: 40, marginTop: 20, marginHorizontal: 16 }}
-            removeClippedSubviews={animationConfig.isLowEndDevice}
-            scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
-            decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={handleRefresh}
-                tintColor={themeColors.brandColor2}
-                colors={[themeColors.brandColor2]}
-              />
-            }
-          >
-            <View style={{ flexDirection: 'column', gap: 30 }}>
-              <CustomBadges themeColors={themeColors} />
-              <StreakBadges themeColors={themeColors} />
-              <WelcomeBadges themeColors={themeColors} />
-              <LifetimeBadges themeColors={themeColors} />
-            </View>
-          </ScrollView>
-    </Animated.View>
-      )}
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, display: isAchievements ? 'none' : 'flex' }}>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
+          style={{ marginBottom: 40, marginTop: 20 }}
+          removeClippedSubviews={animationConfig.isLowEndDevice}
+          scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+          decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={themeColors.brandColor2}
+              colors={[themeColors.brandColor2]}
+            />
+          }
+        >
+          <View style={styles.wrapper}>
+            <Text style={[styles.title, language === 'Chinese' && {marginTop: 20}, { color: themeColors.text }]}>{strings[language].fillInCustomGoal}</Text>
+            <CustomGoalForm setScrollEnabled={setScrollEnabled} themeColors={themeColors} />
+            <StreakCalendarStats key={`streak-stats-${refreshKey}`} themeColors={themeColors} onReady={handleGoalSectionReady} />
+            <StreakCalendar key={`streak-calendar-${refreshKey}`} onReady={handleGoalSectionReady} />
+          </View>
+          <View style={{ height: 20 }} />
+        </ScrollView>
+      </Animated.View>
+      <Animated.View style={{ 
+        flex: 1,
+        opacity: achievementsContentAnim,
+        display: isAchievements ? 'flex' : 'none',
+        transform: [{ 
+          translateY: achievementsContentAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [20, 0],
+          })
+        }]
+      }}>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
+          style={{ marginBottom: 40, marginTop: 20, marginHorizontal: 16 }}
+          removeClippedSubviews={animationConfig.isLowEndDevice}
+          scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
+          decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={themeColors.brandColor2}
+              colors={[themeColors.brandColor2]}
+            />
+          }
+        >
+          <View style={{ flexDirection: 'column', gap: 30 }}>
+            <CustomBadges themeColors={themeColors} onReady={handleAchievementSectionReady} />
+            <StreakBadges themeColors={themeColors} onReady={handleAchievementSectionReady} />
+            <WelcomeBadges themeColors={themeColors} onReady={handleAchievementSectionReady} />
+            <LifetimeBadges themeColors={themeColors} onReady={handleAchievementSectionReady} />
+          </View>
+        </ScrollView>
+      </Animated.View>
     </View>
   );
 } 

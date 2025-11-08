@@ -939,16 +939,20 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
     const allDates = new Set<string>();
     flashcards.forEach((flashcard) => {
       if (flashcard.lastStudiedDate) {
-        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        allDates.add(studyDate);
+        const studyKey = getLocalDateKey(flashcard.lastStudiedDate);
+        if (studyKey) {
+          allDates.add(studyKey);
+        }
       }
       if (flashcard.lastQuizzedDate) {
-        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-        allDates.add(quizDate);
+        const quizKey = getLocalDateKey(flashcard.lastQuizzedDate);
+        if (quizKey) {
+          allDates.add(quizKey);
+        }
       }
     });
 
-    const sortedDates = Array.from(allDates).sort();
+    const sortedDates = Array.from(allDates).sort((a, b) => a.localeCompare(b));
 
     // Find the longest consecutive streak
     let longestStreak = 0;
@@ -958,15 +962,15 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
     let tempStreakStart: string | null = null;
 
     for (let i = 0; i < sortedDates.length; i++) {
-      const currentDate = new Date(sortedDates[i]);
+      const currentDate = parseLocalDateKey(sortedDates[i]);
       
       if (i === 0) {
         // First date starts a streak
         currentStreak = 1;
         tempStreakStart = sortedDates[i];
       } else {
-        const prevDate = new Date(sortedDates[i - 1]);
-        const dayDiff = (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+        const prevDate = parseLocalDateKey(sortedDates[i - 1]);
+        const dayDiff = Math.round((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
         
         if (dayDiff === 1) {
           // Consecutive day
@@ -997,23 +1001,23 @@ export async function getLongestStreakData(): Promise<LongestStreakData> {
     let uniqueDecks = 0;
     
     if (longestStreak > 0 && streakStartDate && streakEndDate) {
-      const streakStart = new Date(streakStartDate);
-      const streakEnd = new Date(streakEndDate);
+      const streakStart = parseLocalDateKey(streakStartDate);
+      const streakEnd = parseLocalDateKey(streakEndDate);
       // Add one day to streakEnd to include the end date in the range
       streakEnd.setDate(streakEnd.getDate() + 1);
       
       // Get all flashcards studied/quizzed during the streak period
       const streakFlashcards = flashcards.filter((flashcard) => {
-        const studyDate = flashcard.lastStudiedDate ? new Date(flashcard.lastStudiedDate).toISOString().split('T')[0] : null;
-        const quizDate = flashcard.lastQuizzedDate ? new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0] : null;
+        const studyKey = flashcard.lastStudiedDate ? getLocalDateKey(flashcard.lastStudiedDate) : null;
+        const quizKey = flashcard.lastQuizzedDate ? getLocalDateKey(flashcard.lastQuizzedDate) : null;
         
-        if (studyDate) {
-          const studyDateObj = new Date(studyDate);
+        if (studyKey) {
+          const studyDateObj = parseLocalDateKey(studyKey);
           if (studyDateObj >= streakStart && studyDateObj < streakEnd) return true;
         }
         
-        if (quizDate) {
-          const quizDateObj = new Date(quizDate);
+        if (quizKey) {
+          const quizDateObj = parseLocalDateKey(quizKey);
           if (quizDateObj >= streakStart && quizDateObj < streakEnd) return true;
         }
         
@@ -1080,16 +1084,20 @@ export async function getAllStudiedDates(): Promise<string[]> {
     const allDates = new Set<string>();
     flashcards.forEach((flashcard) => {
       if (flashcard.lastStudiedDate) {
-        const studyDate = new Date(flashcard.lastStudiedDate).toISOString().split('T')[0];
-        allDates.add(studyDate);
+        const studyKey = getLocalDateKey(flashcard.lastStudiedDate);
+        if (studyKey) {
+          allDates.add(studyKey);
+        }
       }
       if (flashcard.lastQuizzedDate) {
-        const quizDate = new Date(flashcard.lastQuizzedDate).toISOString().split('T')[0];
-        allDates.add(quizDate);
+        const quizKey = getLocalDateKey(flashcard.lastQuizzedDate);
+        if (quizKey) {
+          allDates.add(quizKey);
+        }
       }
     });
 
-    const sortedDates = Array.from(allDates).sort();
+    const sortedDates = Array.from(allDates).sort((a, b) => a.localeCompare(b));
     
     return sortedDates;
   } catch (error) {

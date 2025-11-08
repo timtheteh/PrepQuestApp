@@ -2,6 +2,7 @@ import { db } from './index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { promptAndData } from '../constants/promptEngineering';
+import { getLocalDateKey } from '@/utils/dateFormat';
 
 // Helper function to safely parse JSON
 function safeParseJSON(val: any, fallback: any[] = []): any[] {
@@ -4783,6 +4784,11 @@ export interface CustomBadgeAward {
   isNewAchievement: boolean;
 }
 
+const parseLocalDateKey = (key: string): Date => {
+  const [yearStr, monthStr, dayStr] = key.split('-');
+  return new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
+};
+
 // Helper function to check if user completed required decks on consecutive days
 async function checkConsecutiveDaysCompletion(
   userID: string,
@@ -4791,31 +4797,32 @@ async function checkConsecutiveDaysCompletion(
   numberOfDecksPledged: number
 ): Promise<boolean> {
   try {
-    const startDate = new Date(dateCreated);
+    const startKey = getLocalDateKey(dateCreated);
+    if (!startKey) {
+      console.log('🎯 Unable to derive start key for custom badge');
+      return false;
+    }
+    const startDate = parseLocalDateKey(startKey);
     startDate.setHours(0, 0, 0, 0); // Start of day
     
-    console.log(`🎯 checkConsecutiveDaysCompletion: userID=${userID}, dateCreated=${dateCreated}, numberOfConsecutiveDays=${numberOfConsecutiveDays}, numberOfDecksPledged=${numberOfDecksPledged}, startDate=${startDate.toISOString()}`);
+    console.log(`🎯 checkConsecutiveDaysCompletion: userID=${userID}, dateCreated=${dateCreated}, numberOfConsecutiveDays=${numberOfConsecutiveDays}, numberOfDecksPledged=${numberOfDecksPledged}, startDateKey=${startKey}`);
     
     // Build an efficient query that counts distinct decks per day
     // For each day in the range, check if user completed enough decks
     for (let dayOffset = 0; dayOffset < numberOfConsecutiveDays; dayOffset++) {
       const currentDay = new Date(startDate);
       currentDay.setDate(currentDay.getDate() + dayOffset);
-      
-      // Use local date formatting to avoid timezone issues
-      const year = currentDay.getFullYear();
-      const month = String(currentDay.getMonth() + 1).padStart(2, '0');
-      const day = String(currentDay.getDate()).padStart(2, '0');
-      const dayStart = `${year}-${month}-${day}`; // YYYY-MM-DD in local time
+      currentDay.setHours(0, 0, 0, 0);
+      const currentDayKey = getLocalDateKey(currentDay);
       
       const nextDay = new Date(currentDay);
       nextDay.setDate(nextDay.getDate() + 1);
-      const nextYear = nextDay.getFullYear();
-      const nextMonth = String(nextDay.getMonth() + 1).padStart(2, '0');
-      const nextDayNum = String(nextDay.getDate()).padStart(2, '0');
-      const dayEnd = `${nextYear}-${nextMonth}-${nextDayNum}`; // YYYY-MM-DD in local time
+      nextDay.setHours(0, 0, 0, 0);
       
-      console.log(`🎯 Checking day ${dayOffset}: dayStart=${dayStart}, dayEnd=${dayEnd}, required=${numberOfDecksPledged} decks`);
+      const dayStartIso = currentDay.toISOString();
+      const dayEndIso = nextDay.toISOString();
+      
+      console.log(`🎯 Checking day ${dayOffset}: dayKey=${currentDayKey}, dayStartIso=${dayStartIso}, dayEndIso=${dayEndIso}, required=${numberOfDecksPledged} decks`);
       
       // Count distinct decks that were studied or quizzed on this day
       const result = await db.getFirstAsync(`
@@ -4825,19 +4832,19 @@ async function checkConsecutiveDaysCompletion(
           FROM decks
           WHERE userID = ?
             AND (
-              (lastStudiedDate >= ? AND lastStudiedDate < ?)
-              OR (lastQuizzedDate >= ? AND lastQuizzedDate < ?)
+            (lastStudiedDate >= ? AND lastStudiedDate < ?)
+            OR (lastQuizzedDate >= ? AND lastQuizzedDate < ?)
             )
           UNION
           SELECT deckID
           FROM AIDecks
           WHERE userID = ?
             AND (
-              (lastStudiedDate >= ? AND lastStudiedDate < ?)
-              OR (lastQuizzedDate >= ? AND lastQuizzedDate < ?)
+            (lastStudiedDate >= ? AND lastStudiedDate < ?)
+            OR (lastQuizzedDate >= ? AND lastQuizzedDate < ?)
             )
         )
-      `, [userID, dayStart, dayEnd, dayStart, dayEnd, userID, dayStart, dayEnd, dayStart, dayEnd]);
+      `, [userID, dayStartIso, dayEndIso, dayStartIso, dayEndIso, userID, dayStartIso, dayEndIso, dayStartIso, dayEndIso]);
       
       const deckCount = (result as any)?.count || 0;
       
@@ -4863,8 +4870,11 @@ async function checkConsecutiveDaysCompletion(
 export async function fetchCustomBadges(): Promise<CustomBadgeData[]> {
   try {
     const userID = await getCurrentUserID();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayKey = getLocalDateKey(new Date());
+    const today = todayKey ? parseLocalDateKey(todayKey) : null;
+    if (today) {
+      today.setHours(0, 0, 0, 0);
+    }
     
     // Fetch all custom badges for this user
     const result = await db.getAllAsync(`
@@ -4886,14 +4896,20 @@ export async function fetchCustomBadges(): Promise<CustomBadgeData[]> {
     const badges: CustomBadgeData[] = [];
     
     for (const badge of result as any[]) {
-      const expiryDate = new Date(badge.expiryDate);
-      expiryDate.setHours(0, 0, 0, 0);
+      const expiryKey = getLocalDateKey(badge.expiryDate);
+      const expiryDate = expiryKey ? parseLocalDateKey(expiryKey) : null;
+      if (expiryDate) {
+        expiryDate.setHours(0, 0, 0, 0);
+      }
       
-      const dateToBeRemoved = new Date(badge.dateToBeRemoved);
-      dateToBeRemoved.setHours(0, 0, 0, 0);
+      const removalKey = getLocalDateKey(badge.dateToBeRemoved);
+      const dateToBeRemoved = removalKey ? parseLocalDateKey(removalKey) : null;
+      if (dateToBeRemoved) {
+        dateToBeRemoved.setHours(0, 0, 0, 0);
+      }
       
       // Check if badge should be removed entirely
-      if (badge.boundForRemoval === 1 && today > dateToBeRemoved) {
+      if (badge.boundForRemoval === 1 && today && dateToBeRemoved && today > dateToBeRemoved) {
         continue; // Skip this badge entirely
       }
       
@@ -4921,7 +4937,7 @@ export async function fetchCustomBadges(): Promise<CustomBadgeData[]> {
               AND badgeSubtext = ?
               AND dateCreated = ?
           `, [userID, badge.badgeSubtext, badge.dateCreated]);
-        } else if (today > expiryDate) {
+        } else if (today && expiryDate && today > expiryDate) {
           // Badge has expired without being achieved
           expired = true;
           boundForRemoval = 1;
@@ -4988,20 +5004,29 @@ export async function checkAndAwardCustomBadges(): Promise<CustomBadgeAward | nu
     
     console.log(`🎯 Found ${result.length} unachieved custom badges to check`);
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayKey = getLocalDateKey(new Date());
+    const today = todayKey ? parseLocalDateKey(todayKey) : null;
+    if (today) {
+      today.setHours(0, 0, 0, 0);
+    }
     
     // Check each unachieved badge to see if it was just completed
     for (const badge of result as any[]) {
       console.log(`🎯 Checking badge: ${badge.badgeSubtext}, dateCreated: ${badge.dateCreated}, numberOfDecksPledged: ${badge.numberOfDecksPledged}, numberOfConsecutiveDays: ${badge.numberOfConsecutiveDays}`);
-      const expiryDate = new Date(badge.expiryDate);
-      expiryDate.setHours(0, 0, 0, 0);
+      const expiryKey = getLocalDateKey(badge.expiryDate);
+      const expiryDate = expiryKey ? parseLocalDateKey(expiryKey) : null;
+      if (expiryDate) {
+        expiryDate.setHours(0, 0, 0, 0);
+      }
       
-      const dateToBeRemoved = new Date(badge.dateToBeRemoved);
-      dateToBeRemoved.setHours(0, 0, 0, 0);
+      const removalKey = getLocalDateKey(badge.dateToBeRemoved);
+      const dateToBeRemoved = removalKey ? parseLocalDateKey(removalKey) : null;
+      if (dateToBeRemoved) {
+        dateToBeRemoved.setHours(0, 0, 0, 0);
+      }
       
       // Skip badges that should be removed or expired
-      if (badge.boundForRemoval === 1 || today > expiryDate) {
+      if (badge.boundForRemoval === 1 || (today && expiryDate && today > expiryDate)) {
         continue;
       }
       

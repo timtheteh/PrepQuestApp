@@ -1171,11 +1171,28 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
 });
 
 // Helper function to format date range for custom badges
-const formatDateRange = (dateCreated: string, expiryDate: string): string => {
+const parseLocalDateKey = (key: string): Date => {
+  const [yearStr, monthStr, dayStr] = key.split('-');
+  return new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
+};
+
+const formatDateRange = (dateCreated: string, expiryDate: string, language: string): string => {
   try {
-    const startDate = format(parseISO(dateCreated), 'MMM d');
-    const endDate = format(parseISO(expiryDate), 'MMM d');
-    return `${startDate} - ${endDate}`;
+    const startKey = getLocalDateKey(dateCreated);
+    const endKey = getLocalDateKey(expiryDate);
+    if (!startKey || !endKey) {
+      return '';
+    }
+    const startDate = parseLocalDateKey(startKey);
+    const endDate = parseLocalDateKey(endKey);
+    const locale = language === 'Chinese' ? 'zh-CN' : 'en-US';
+    const formatter = new Intl.DateTimeFormat(locale, {
+      month: 'short',
+      day: 'numeric',
+    });
+    const startLabel = formatter.format(startDate);
+    const endLabel = formatter.format(endDate);
+    return `${startLabel} - ${endLabel}`;
   } catch (error) {
     console.error('Error formatting date range:', error);
     return '';
@@ -1324,7 +1341,7 @@ type BadgeWallProps = {
 };
 
 // Memoized BadgeRow component for better performance
-const BadgeRow = React.memo(({ row, themeColors, isCustomBadge }: { row: (BadgeData | null)[], themeColors: any, isCustomBadge?: boolean }) => (
+const BadgeRow = React.memo(({ row, themeColors, isCustomBadge, language }: { row: (BadgeData | null)[], themeColors: any, isCustomBadge?: boolean, language: string }) => (
   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
     <View style={{ width: "50%", justifyContent: 'center', alignItems: 'center', paddingRight: 10 }}>
       {row[0] && (
@@ -1335,7 +1352,7 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge }: { row: (BadgeD
             themeColors={themeColors}
             customBadgeSVG={row[0].customBadgeSVG}
             subtext={row[0].badgeSubtext}
-            dateRange={row[0].badgeCreatedDate && row[0].badgeExpiryDate ? formatDateRange(row[0].badgeCreatedDate, row[0].badgeExpiryDate) : undefined}
+            dateRange={row[0].badgeCreatedDate && row[0].badgeExpiryDate ? formatDateRange(row[0].badgeCreatedDate, row[0].badgeExpiryDate, language) : undefined}
           />
         ) : (
           <Badge
@@ -1360,7 +1377,7 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge }: { row: (BadgeD
             themeColors={themeColors}
             customBadgeSVG={row[1].customBadgeSVG}
             subtext={row[1].badgeSubtext}
-            dateRange={row[1].badgeCreatedDate && row[1].badgeExpiryDate ? formatDateRange(row[1].badgeCreatedDate, row[1].badgeExpiryDate) : undefined}
+            dateRange={row[1].badgeCreatedDate && row[1].badgeExpiryDate ? formatDateRange(row[1].badgeCreatedDate, row[1].badgeExpiryDate, language) : undefined}
           />
         ) : (
           <Badge
@@ -1528,7 +1545,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
         {/* Animated badge grid */}
         <Animated.View style={{ width: '100%', height: anim, overflow: 'hidden', marginTop: 16 }}>
           {visibleRows.map((row, idx) => (
-            <BadgeRow key={idx} row={row} themeColors={themeColors} isCustomBadge={isCustomBadgeWall} />
+          <BadgeRow key={idx} row={row} themeColors={themeColors} isCustomBadge={isCustomBadgeWall} language={language} />
           ))}
         </Animated.View>
       </View>

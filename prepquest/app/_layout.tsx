@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { ClerkProvider } from '@clerk/clerk-expo';
+import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
@@ -36,6 +36,7 @@ import { CustomBadgeNotification } from '@/components/inAppNotifications/CustomB
 
 import { ImportTaskNotification } from '@/components/inAppNotifications/ImportTaskNotification';
 import NotificationService from '@/utils/notifications';
+import { syncAIDecksFromSupabaseIfNeeded } from '@/utils/aiDeckSync';
 import * as Notifications from 'expo-notifications';
 
 // Token cache for Clerk
@@ -300,6 +301,7 @@ function BadgeNotificationsWrapper() {
 function AppContent() {
   const { isAuthenticated, user, isLoading } = useHybridAuth();
   const { theme } = useTheme();
+  const { getToken } = useAuth();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showSplash, setShowSplash] = useState(false);
@@ -476,6 +478,12 @@ function AppContent() {
               console.log('🔔 Initializing notifications...');
               await NotificationService.getInstance().initialize();
               console.log('✅ Notifications initialized successfully');
+
+              try {
+                await syncAIDecksFromSupabaseIfNeeded(getToken);
+              } catch (error) {
+                console.error('❌ Error syncing AI decks from Supabase:', error);
+              }
               
               setIsDatabaseReady(true);
               setIsInitializing(false);

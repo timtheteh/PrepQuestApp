@@ -88,7 +88,7 @@ async function updateBackupProgressPeriodically(progressData: any, intervalMs: n
 
 // The background task function for backup data
 const backupDataBackgroundTask = async (taskDataArguments: any) => {
-  const { getToken, language } = taskDataArguments;
+  const { getToken, language, backupOnlyFormEntries } = taskDataArguments;
   
   console.log('Backup background task started');
   
@@ -148,7 +148,9 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         rowsUploaded: progress.rowsUploaded,
         totalRows: progress.totalRows
       });
-    }, isCancelled);
+    }, isCancelled, {
+      backupOnlyFormEntries: !!backupOnlyFormEntries,
+    });
     
     stopKeepAlive();
     
@@ -484,7 +486,11 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
 };
 
 // Function to start the backup background task
-export const startBackupBackgroundTask = async (getToken: () => Promise<string | null>, language: string) => {
+export const startBackupBackgroundTask = async (
+  getToken: () => Promise<string | null>,
+  language: string,
+  options?: { backupOnlyFormEntries?: boolean }
+) => {
   try {
     // Check if background service is already running to prevent duplicates
     if (BackgroundService.isRunning()) {
@@ -519,7 +525,8 @@ export const startBackupBackgroundTask = async (getToken: () => Promise<string |
       color: '#44B88A',
       parameters: {
         getToken,
-        language
+        language,
+        backupOnlyFormEntries: !!options?.backupOnlyFormEntries,
       },
     });
 

@@ -178,6 +178,21 @@ export default function AppSettingsScreen() {
   // State to control when other buttons should be disabled (only when progress bar is actually visible)
   const [shouldDisableOtherButtons, setShouldDisableOtherButtons] = React.useState(false);
 
+  // Backup only user form entries toggle
+  const [backupOnlyFormEntries, setBackupOnlyFormEntries] = React.useState(false);
+
+  const BACKUP_ONLY_FORM_ENTRIES_PREF_KEY = React.useRef<string>('backupOnlyFormEntriesPreference').current;
+
+  const getBackupOnlyFormEntriesPreferenceKey = React.useCallback(async () => {
+    try {
+      const userID = await AsyncStorage.getItem('userID');
+      return userID ? `${BACKUP_ONLY_FORM_ENTRIES_PREF_KEY}_${userID}` : BACKUP_ONLY_FORM_ENTRIES_PREF_KEY;
+    } catch (error) {
+      console.error('Error retrieving backup preference key:', error);
+      return BACKUP_ONLY_FORM_ENTRIES_PREF_KEY;
+    }
+  }, [BACKUP_ONLY_FORM_ENTRIES_PREF_KEY]);
+
   // cooldown state after cancellation (5 second delay)
   const [isCancelCooldownActive, setIsCancelCooldownActive] = React.useState(false);
   const cooldownTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -314,6 +329,27 @@ export default function AppSettingsScreen() {
 
   // Clear data local stopping state
   const [isLocallyStoppingClearData, setIsLocallyStoppingClearData] = React.useState(false);
+
+  const loadBackupOnlyFormEntriesPreference = React.useCallback(async () => {
+    try {
+      const prefKey = await getBackupOnlyFormEntriesPreferenceKey();
+      const storedValue = await AsyncStorage.getItem(prefKey);
+      if (storedValue !== null) {
+        setBackupOnlyFormEntries(storedValue === 'true');
+      }
+    } catch (error) {
+      console.error('Error loading backup-only form entries preference:', error);
+    }
+  }, [getBackupOnlyFormEntriesPreferenceKey]);
+
+  const saveBackupOnlyFormEntriesPreference = React.useCallback(async (value: boolean) => {
+    try {
+      const prefKey = await getBackupOnlyFormEntriesPreferenceKey();
+      await AsyncStorage.setItem(prefKey, value ? 'true' : 'false');
+    } catch (error) {
+      console.error('Error saving backup-only form entries preference:', error);
+    }
+  }, [getBackupOnlyFormEntriesPreferenceKey]);
 
   // Handler functions
   const handleShowDeckCreationBlockingModal = React.useCallback(() => {
@@ -860,7 +896,8 @@ export default function AppSettingsScreen() {
     checkMicPermission();
     checkNotificationPermission();
     loadNotificationsPreference();
-  }, []);
+    loadBackupOnlyFormEntriesPreference();
+  }, [loadBackupOnlyFormEntriesPreference]);
 
 
 
@@ -1203,6 +1240,19 @@ export default function AppSettingsScreen() {
     setLanguage(value as Language);
     setIsLanguageModalOpen(false);
   }, [setLanguage]);
+
+  const handleBackupOnlyFormEntriesToggle = React.useCallback(async () => {
+    if (shouldDisableOtherButtons) {
+      return;
+    }
+    try {
+      const newValue = !backupOnlyFormEntries;
+      setBackupOnlyFormEntries(newValue);
+      await saveBackupOnlyFormEntriesPreference(newValue);
+    } catch (error) {
+      console.error('Error toggling backup-only form entries preference:', error);
+    }
+  }, [backupOnlyFormEntries, shouldDisableOtherButtons, saveBackupOnlyFormEntriesPreference]);
 
   const handleCameraToggle = React.useCallback(async (value: boolean) => {
     if (value) {
@@ -1620,7 +1670,7 @@ export default function AppSettingsScreen() {
       handleDismissBackup();
       
       // Check if there's any data to backup
-      const hasDataToBackup = await checkForBackupData();
+      const hasDataToBackup = await checkForBackupData({ onlyUserFormEntries: backupOnlyFormEntries });
       if (!hasDataToBackup) {
         console.log('No data to backup - showing modal');
         handleShowNoBackupDataModal();
@@ -1754,7 +1804,9 @@ export default function AppSettingsScreen() {
       }
       
       // Start the backup background task
-      const success = await startBackupBackgroundTask(getToken, language);
+      const success = await startBackupBackgroundTask(getToken, language, {
+        backupOnlyFormEntries,
+      });
       
       if (!success) {
         // Hide loading screen
@@ -1799,7 +1851,7 @@ export default function AppSettingsScreen() {
         [{ text: strings[language].ok }]
       );
     }
-  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, checkNetworkConnectivity, handleShowBackupLoadingNetworkErrorModal, isBackupBackgroundTaskRunning, forceStopBackupBackgroundTask, stopBackupBackgroundTask]);
+  }, [handleDismissBackup, language, getToken, startBackupBackgroundTaskMonitoring, backupLoadingOverlayOpacity, resetBackupForceStoppedFlag, clearBackupBackgroundTaskProgress, isBackupCleanupInProgress, isBackupStopping, isLocallyStoppingBackup, isCancelCooldownActive, checkNetworkConnectivity, handleShowBackupLoadingNetworkErrorModal, isBackupBackgroundTaskRunning, forceStopBackupBackgroundTask, stopBackupBackgroundTask, backupOnlyFormEntries]);
 
   const handleLoadDataPress = React.useCallback(() => {
     // Check if deck creation is running
@@ -2687,8 +2739,15 @@ export default function AppSettingsScreen() {
   }, [noBackupDataOverlayOpacity, noBackupDataModalOpacity]);
 
   // Function to check if there's any data to backup
-  const checkForBackupData = React.useCallback(async (): Promise<boolean> => {
+  const checkForBackupData = React.useCallback(async (options?: { onlyUserFormEntries?: boolean }): Promise<boolean> => {
     try {
+      if (options?.onlyUserFormEntries) {
+        const userFormEntries = await extractRecentUserFormEntriesFromSQLite();
+        const hasData = userFormEntries.length > 0;
+        console.log(`Backup data check (form entries only): userFormEntries=${userFormEntries.length}, hasData=${hasData}`);
+        return hasData;
+      }
+
       const folders = await extractFoldersFromSQLite();
       const decks = await extractDecksFromSQLite();
       const flashcards = await extractFlashcardsFromSQLite();
@@ -2907,9 +2966,43 @@ export default function AppSettingsScreen() {
                     </View>
                   </TouchableOpacity>
                 )}
+                {!isBackupBackgroundTaskRunning && (
+                  <TouchableOpacity
+                    style={[
+                      styles.backupOptionRow,
+                      { opacity: shouldDisableOtherButtons ? 0.6 : 1 },
+                    ]}
+                    onPress={handleBackupOnlyFormEntriesToggle}
+                    activeOpacity={0.7}
+                    disabled={shouldDisableOtherButtons}
+                  >
+                    <Text
+                      style={[
+                        styles.checkboxLabel,
+                        {
+                          color: shouldDisableOtherButtons ? colors.disabledIconBackgroundColor : colors.text,
+                        },
+                      ]}
+                    >
+                      {strings[language].appSettingsPage.backupOnlyFormEntries}
+                    </Text>
+                    <MaterialIcons
+                      name={backupOnlyFormEntries ? 'check-box' : 'check-box-outline-blank'}
+                      size={24}
+                      color={
+                        shouldDisableOtherButtons
+                          ? colors.unselectedText
+                          : backupOnlyFormEntries
+                            ? colors.brandColor2
+                            : colors.unselectedText
+                      }
+                    />
+                  </TouchableOpacity>
+                )}
                 <Text style={[styles.descriptionText, { 
                   color: colors.text,
                   fontFamily: Fonts.bodyItalicLight,
+                  marginTop: 12,
                 }]}>
                   {strings[language].appSettingsPage.backupDescription}
                   <Text style={[styles.descriptionText, { color: colors.brandColor1, fontFamily: Fonts.bodyItalicLight }]}>{strings[language].appSettingsPage.website}</Text>
@@ -3499,6 +3592,17 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     height: 60,
     justifyContent: 'center',
+  },
+  backupOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    justifyContent: 'space-between',
+  },
+  checkboxLabel: {
+    marginRight: 12,
+    fontFamily: Fonts.bodyMedium,
+    fontSize: 16,
   },
   cloudButtonText: {
     color: '#fff',

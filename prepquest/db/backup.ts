@@ -688,6 +688,10 @@ export interface BackupProgress {
   percentage?: number;
 }
 
+interface BackupOptions {
+  backupOnlyFormEntries?: boolean;
+}
+
 // Progress reporting function type
 type ProgressReporter = (stage: string, message: string, rowsJustUploaded: number) => void;
 
@@ -1155,73 +1159,145 @@ async function uploadBadgeAssignmentsWithProgress<T extends { userID: string }>(
 export async function backupDataToCloud(
   getToken: TokenGetter,
   onProgress?: (progress: BackupProgress) => void,
-  isCancelled?: () => boolean
+  isCancelled?: () => boolean,
+  options?: BackupOptions
 ): Promise<{ success: boolean; message: string; isNetworkError?: boolean; isBackupServiceBusy?: boolean }> {
   try {
-    console.log('Starting backup process...');
+    const backupOnlyFormEntries = options?.backupOnlyFormEntries ?? false;
+    console.log('Starting backup process...', { backupOnlyFormEntries });
     
-    // Stage 1: Extract data from SQLite
-    onProgress?.({ stage: 'extracting', completed: 0, total: 9, message: 'Extracting folders...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const folders = await extractFoldersFromSQLite();
+    let folders: BackupFolder[] = [];
+    let decks: BackupDeck[] = [];
+    let flashcards: BackupFlashcard[] = [];
+    let userFormEntries: BackupUserFormEntry[] = [];
+    let user: BackupUser | null = null;
+    let streakBadges: BackupStreakBadge[] = [];
+    let welcomeBadges: BackupWelcomeBadge[] = [];
+    let lifetimeBadges: BackupLifetimeBadge[] = [];
+    let customBadges: BackupCustomBadge[] = [];
     
-    onProgress?.({ stage: 'extracting', completed: 1, total: 9, message: 'Extracting decks...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const decks = await extractDecksFromSQLite();
+    type ExtractionTask<T> = {
+      message: string;
+      run: () => Promise<T>;
+      assign: (value: T) => void;
+    };
     
-    onProgress?.({ stage: 'extracting', completed: 2, total: 9, message: 'Extracting flashcards...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const flashcards = await extractFlashcardsFromSQLite();
-    
-    onProgress?.({ stage: 'extracting', completed: 3, total: 9, message: 'Extracting user form entries...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const userFormEntries = await extractRecentUserFormEntriesFromSQLite();
-    
-    onProgress?.({ stage: 'extracting', completed: 4, total: 9, message: 'Extracting user data...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const user = await extractUserFromSQLite();
-    
-    if (!user) {
-      return { success: false, message: 'User data not found in local database' };
+    const extractionTasks: ExtractionTask<any>[] = backupOnlyFormEntries
+      ? [
+          {
+            message: 'Extracting user form entries...',
+            run: () => extractRecentUserFormEntriesFromSQLite(),
+            assign: (result: BackupUserFormEntry[]) => {
+              userFormEntries = result;
+            }
+          }
+        ]
+      : [
+          {
+            message: 'Extracting folders...',
+            run: () => extractFoldersFromSQLite(),
+            assign: (result: BackupFolder[]) => {
+              folders = result;
+            }
+          },
+          {
+            message: 'Extracting decks...',
+            run: () => extractDecksFromSQLite(),
+            assign: (result: BackupDeck[]) => {
+              decks = result;
+            }
+          },
+          {
+            message: 'Extracting flashcards...',
+            run: () => extractFlashcardsFromSQLite(),
+            assign: (result: BackupFlashcard[]) => {
+              flashcards = result;
+            }
+          },
+          {
+            message: 'Extracting user form entries...',
+            run: () => extractRecentUserFormEntriesFromSQLite(),
+            assign: (result: BackupUserFormEntry[]) => {
+              userFormEntries = result;
+            }
+          },
+          {
+            message: 'Extracting user data...',
+            run: () => extractUserFromSQLite(),
+            assign: (result: BackupUser | null) => {
+              user = result;
+            }
+          },
+          {
+            message: 'Extracting streak badge progress...',
+            run: () => extractStreakBadgesFromSQLite(),
+            assign: (result: BackupStreakBadge[]) => {
+              streakBadges = result;
+            }
+          },
+          {
+            message: 'Extracting welcome badge progress...',
+            run: () => extractWelcomeBadgesFromSQLite(),
+            assign: (result: BackupWelcomeBadge[]) => {
+              welcomeBadges = result;
+            }
+          },
+          {
+            message: 'Extracting lifetime badge progress...',
+            run: () => extractLifetimeBadgesFromSQLite(),
+            assign: (result: BackupLifetimeBadge[]) => {
+              lifetimeBadges = result;
+            }
+          },
+          {
+            message: 'Extracting custom badge progress...',
+            run: () => extractCustomBadgesFromSQLite(),
+            assign: (result: BackupCustomBadge[]) => {
+              customBadges = result;
+            }
+          }
+        ];
+
+    const extractionTotal = extractionTasks.length || 1;
+    for (let i = 0; i < extractionTasks.length; i++) {
+      const task = extractionTasks[i];
+      onProgress?.({ stage: 'extracting', completed: i, total: extractionTotal, message: task.message });
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      const result = await task.run();
+      task.assign(result);
     }
 
-    onProgress?.({ stage: 'extracting', completed: 5, total: 9, message: 'Extracting streak badge progress...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const streakBadges = await extractStreakBadgesFromSQLite();
-
-    onProgress?.({ stage: 'extracting', completed: 6, total: 9, message: 'Extracting welcome badge progress...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const welcomeBadges = await extractWelcomeBadgesFromSQLite();
-
-    onProgress?.({ stage: 'extracting', completed: 7, total: 9, message: 'Extracting lifetime badge progress...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const lifetimeBadges = await extractLifetimeBadgesFromSQLite();
-
-    onProgress?.({ stage: 'extracting', completed: 8, total: 9, message: 'Extracting custom badge progress...' });
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    const customBadges = await extractCustomBadgesFromSQLite();
-
-    onProgress?.({ stage: 'extracting', completed: 9, total: 9, message: 'Data extraction complete' });
+    onProgress?.({ stage: 'extracting', completed: extractionTotal, total: extractionTotal, message: 'Data extraction complete' });
     if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
 
-    const currentUserID = user.userID;
-    const streakBadgeAssignments = buildStreakBadgeAssignments(streakBadges, currentUserID);
-    const welcomeBadgeAssignments = buildWelcomeBadgeAssignments(welcomeBadges, currentUserID);
-    const lifetimeBadgeAssignments = buildLifetimeBadgeAssignments(lifetimeBadges, currentUserID);
-    const customBadgesForUser = buildCustomBadgesForUser(customBadges, currentUserID);
+    let streakBadgeAssignments: SupabaseStreakBadgeAssignment[] = [];
+    let welcomeBadgeAssignments: SupabaseWelcomeBadgeAssignment[] = [];
+    let lifetimeBadgeAssignments: SupabaseLifetimeBadgeAssignment[] = [];
+    let customBadgesForUser: BackupCustomBadge[] = [];
+
+    if (!backupOnlyFormEntries) {
+      if (!user) {
+        return { success: false, message: 'User data not found in local database' };
+      }
+      const currentUserID = user!.userID;
+      streakBadgeAssignments = buildStreakBadgeAssignments(streakBadges, currentUserID);
+      welcomeBadgeAssignments = buildWelcomeBadgeAssignments(welcomeBadges, currentUserID);
+      lifetimeBadgeAssignments = buildLifetimeBadgeAssignments(lifetimeBadges, currentUserID);
+      customBadgesForUser = buildCustomBadgesForUser(customBadges, currentUserID);
+    }
 
     // Calculate total rows for progress tracking
-    const totalRows = folders.length 
-      + decks.length 
-      + flashcards.length 
-      + userFormEntries.length 
-      + streakBadgeAssignments.length
-      + welcomeBadgeAssignments.length
-      + lifetimeBadgeAssignments.length
-      + customBadgesForUser.length
-      + 1; // user row
-    let uploadedRows = 0;
-
+    const totalRows = backupOnlyFormEntries
+      ? userFormEntries.length
+      : folders.length
+        + decks.length
+        + flashcards.length
+        + userFormEntries.length
+        + streakBadgeAssignments.length
+        + welcomeBadgeAssignments.length
+        + lifetimeBadgeAssignments.length
+        + customBadgesForUser.length
+        + 1;
     // Progress tracking state
     const progressState = {
       totalRows,
@@ -1232,7 +1308,9 @@ export async function backupDataToCloud(
     // Progress reporting function
     const reportProgress = (stage: string, message: string, rowsJustUploaded: number = 0) => {
       progressState.uploadedRows += rowsJustUploaded;
-      const percentage = Math.round((progressState.uploadedRows / totalRows) * 100);
+      const percentage = progressState.totalRows > 0
+        ? Math.round((progressState.uploadedRows / progressState.totalRows) * 100)
+        : 0;
       
       onProgress?.({
         stage,
@@ -1249,102 +1327,123 @@ export async function backupDataToCloud(
     reportProgress('uploading', 'Starting upload...', 0);
     if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
     
-    const foldersSuccess = await uploadFoldersToSupabaseWithProgress(folders, getToken, reportProgress, isCancelled);
-    if (!foldersSuccess) {
-      return { success: false, message: 'Failed to upload folders to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    
-    const decksSuccess = await uploadDecksToSupabaseWithProgress(decks, getToken, reportProgress, isCancelled);
-    if (!decksSuccess) {
-      return { success: false, message: 'Failed to upload decks to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    
-    const flashcardsSuccess = await uploadFlashcardsToSupabaseWithProgress(flashcards, getToken, reportProgress, isCancelled);
-    if (!flashcardsSuccess) {
-      return { success: false, message: 'Failed to upload flashcards to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    
-    const userFormEntriesSuccess = await uploadUserFormEntriesToSupabaseWithProgress(userFormEntries, getToken, reportProgress, isCancelled);
-    if (!userFormEntriesSuccess) {
-      return { success: false, message: 'Failed to upload user form entries to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
-    
-    const streakBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
-      'streakBadgesTable',
-      streakBadgeAssignments,
-      getToken,
-      reportProgress,
-      currentUserID,
-      'Uploading streak badge progress...',
-      isCancelled
-    );
-    if (!streakBadgesSuccess) {
-      return { success: false, message: 'Failed to upload streak badge progress to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+    if (backupOnlyFormEntries) {
+      const userFormEntriesSuccess = await uploadUserFormEntriesToSupabaseWithProgress(
+        userFormEntries,
+        getToken,
+        reportProgress,
+        isCancelled
+      );
+      if (!userFormEntriesSuccess) {
+        return { success: false, message: 'Failed to upload user form entries to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+    } else {
+      const foldersSuccess = await uploadFoldersToSupabaseWithProgress(folders, getToken, reportProgress, isCancelled);
+      if (!foldersSuccess) {
+        return { success: false, message: 'Failed to upload folders to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      
+      const decksSuccess = await uploadDecksToSupabaseWithProgress(decks, getToken, reportProgress, isCancelled);
+      if (!decksSuccess) {
+        return { success: false, message: 'Failed to upload decks to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      
+      const flashcardsSuccess = await uploadFlashcardsToSupabaseWithProgress(flashcards, getToken, reportProgress, isCancelled);
+      if (!flashcardsSuccess) {
+        return { success: false, message: 'Failed to upload flashcards to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      
+      const userFormEntriesSuccess = await uploadUserFormEntriesToSupabaseWithProgress(
+        userFormEntries,
+        getToken,
+        reportProgress,
+        isCancelled
+      );
+      if (!userFormEntriesSuccess) {
+        return { success: false, message: 'Failed to upload user form entries to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      
+      const currentUserID = user!.userID;
+      const streakBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
+        'streakBadgesTable',
+        streakBadgeAssignments,
+        getToken,
+        reportProgress,
+        currentUserID,
+        'Uploading streak badge progress...',
+        isCancelled
+      );
+      if (!streakBadgesSuccess) {
+        return { success: false, message: 'Failed to upload streak badge progress to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
 
-    const welcomeBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
-      'welcomeBadgesTable',
-      welcomeBadgeAssignments,
-      getToken,
-      reportProgress,
-      currentUserID,
-      'Uploading welcome badge progress...',
-      isCancelled
-    );
-    if (!welcomeBadgesSuccess) {
-      return { success: false, message: 'Failed to upload welcome badge progress to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      const welcomeBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
+        'welcomeBadgesTable',
+        welcomeBadgeAssignments,
+        getToken,
+        reportProgress,
+        currentUserID,
+        'Uploading welcome badge progress...',
+        isCancelled
+      );
+      if (!welcomeBadgesSuccess) {
+        return { success: false, message: 'Failed to upload welcome badge progress to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
 
-    const lifetimeBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
-      'lifetimeBadgesTable',
-      lifetimeBadgeAssignments,
-      getToken,
-      reportProgress,
-      currentUserID,
-      'Uploading lifetime badge progress...',
-      isCancelled
-    );
-    if (!lifetimeBadgesSuccess) {
-      return { success: false, message: 'Failed to upload lifetime badge progress to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      const lifetimeBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
+        'lifetimeBadgesTable',
+        lifetimeBadgeAssignments,
+        getToken,
+        reportProgress,
+        currentUserID,
+        'Uploading lifetime badge progress...',
+        isCancelled
+      );
+      if (!lifetimeBadgesSuccess) {
+        return { success: false, message: 'Failed to upload lifetime badge progress to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
 
-    const customBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
-      'customBadgesTable',
-      customBadgesForUser,
-      getToken,
-      reportProgress,
-      currentUserID,
-      'Uploading custom badges...',
-      isCancelled
-    );
-    if (!customBadgesSuccess) {
-      return { success: false, message: 'Failed to upload custom badges to cloud' };
-    }
-    if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
+      const customBadgesSuccess = await uploadBadgeAssignmentsWithProgress(
+        'customBadgesTable',
+        customBadgesForUser,
+        getToken,
+        reportProgress,
+        currentUserID,
+        'Uploading custom badges...',
+        isCancelled
+      );
+      if (!customBadgesSuccess) {
+        return { success: false, message: 'Failed to upload custom badges to cloud' };
+      }
+      if (isCancelled?.()) return { success: false, message: 'Backup cancelled by user' };
 
-    const userSuccess = await uploadUserToSupabaseWithProgress(user, getToken, reportProgress, isCancelled);
-    if (!userSuccess) {
-      return { success: false, message: 'Failed to upload user data to cloud' };
+      const userSuccess = await uploadUserToSupabaseWithProgress(user!, getToken, reportProgress, isCancelled);
+      if (!userSuccess) {
+        return { success: false, message: 'Failed to upload user data to cloud' };
+      }
     }
     
     reportProgress('uploading', 'Backup complete!', 0);
 
-    const totalItems = folders.length 
-      + decks.length 
-      + flashcards.length 
-      + userFormEntries.length 
-      + streakBadgeAssignments.length
-      + welcomeBadgeAssignments.length
-      + lifetimeBadgeAssignments.length
-      + customBadgesForUser.length
-      + 1;
+    const totalItems = backupOnlyFormEntries
+      ? userFormEntries.length
+      : folders.length
+        + decks.length
+        + flashcards.length
+        + userFormEntries.length
+        + streakBadgeAssignments.length
+        + welcomeBadgeAssignments.length
+        + lifetimeBadgeAssignments.length
+        + customBadgesForUser.length
+        + 1;
     console.log(`Backup completed successfully! Uploaded ${totalItems} total items to cloud.`);
     
     return { 

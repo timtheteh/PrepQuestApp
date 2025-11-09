@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to capture images for creating flashcards",
         "NSPhotoLibraryUsageDescription": "This app accesses your photo library to select images for creating flashcards",
-        "NSMicrophoneUsageDescription": "This app uses the microphone to record audio for flashcards"
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record audio for flashcards",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -62,6 +63,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "af520b40-2d10-47dd-86c0-ba1fe338d076"
+      }
+    },
+    "owner": "timothyteh21"
   }
 }

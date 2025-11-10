@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import { deleteAllUserDataFromDatabase } from '../db/deleteAccount';
+import { strings } from '@/constants/strings';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
 import { AppState } from 'react-native';
@@ -89,6 +90,13 @@ async function updateDeleteAccountProgressPeriodically(progressData: any, interv
 // The background task function for delete account
 const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
   const { language, userID } = taskDataArguments;
+  const localeStrings = strings[language] ?? strings.English;
+  const englishDeleteAccountNotifications = strings.English.notifications.deleteAccount;
+  const deleteAccountNotifications = localeStrings.notifications?.deleteAccount ?? englishDeleteAccountNotifications;
+  const {
+    completedTitle = englishDeleteAccountNotifications.completedTitle,
+    completedBody = englishDeleteAccountNotifications.completedBody,
+  } = deleteAccountNotifications;
   
   console.log('Delete account background task started for user:', userID);
   
@@ -237,12 +245,10 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
         // Check notification permissions first
         const { status: permissionStatus } = await Notifications.getPermissionsAsync();
         
-        if (permissionStatus === 'granted') {
-          console.log('Sending delete account completion notification (app in background)');
-          const title = language === 'Chinese' ? '账户删除完成！' : 'Account Deletion Completed!';
-          const body = language === 'Chinese' 
-            ? '您的账户已成功删除' 
-            : 'Your account has been successfully deleted';
+          if (permissionStatus === 'granted') {
+            console.log('Sending delete account completion notification (app in background)');
+            const title = completedTitle;
+            const body = completedBody;
           
           const notificationId = await Notifications.scheduleNotificationAsync({
             content: {
@@ -278,10 +284,8 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
         // Fallback: try to send notification even if initial check failed
         try {
           console.log('Attempting fallback delete account completion notification...');
-          const title = language === 'Chinese' ? '账户删除完成！' : 'Account Deletion Completed!';
-          const body = language === 'Chinese' 
-            ? '您的账户已成功删除' 
-            : 'Your account has been successfully deleted';
+          const title = completedTitle;
+          const body = completedBody;
           
           const notificationId = await Notifications.scheduleNotificationAsync({
             content: {

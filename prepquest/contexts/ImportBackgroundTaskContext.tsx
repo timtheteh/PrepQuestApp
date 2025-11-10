@@ -5,6 +5,7 @@ import BackgroundService from 'react-native-background-actions';
 import * as Notifications from 'expo-notifications';
 import NotificationService from '../utils/notifications';
 import { useLanguage } from './LanguageContext';
+import { strings } from '@/constants/strings';
 
 // Progress key for import background tasks
 const IMPORT_BG_TASK_PROGRESS_KEY = 'importDataBgTaskProgress';
@@ -47,6 +48,15 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
   const appStateRef = useRef(AppState.currentState);
   const { language } = useLanguage();
   const notificationService = NotificationService.getInstance();
+  const localeStrings = strings[language] ?? strings.English;
+  const englishImportNotifications = strings.English.notifications.import;
+  const importNotifications = localeStrings.notifications?.import ?? englishImportNotifications;
+  const {
+    backgroundWarningTitle = englishImportNotifications.backgroundWarningTitle,
+    backgroundWarningBody = englishImportNotifications.backgroundWarningBody,
+    preTerminationTitle = englishImportNotifications.preTerminationTitle,
+    preTerminationBody = englishImportNotifications.preTerminationBody,
+  } = importNotifications;
   
   // Use a ref to track the current state for immediate access
   const isImportBackgroundTaskRunningRef = useRef(false);
@@ -522,10 +532,8 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
                   console.log('Background warning notification: Permission status:', permissionStatus);
                   
                   if (permissionStatus === 'granted') {
-                    const title = language === 'Chinese' ? '导入任务警告' : 'Come back soon!';
-                    const body = language === 'Chinese' 
-                      ? '导入任务将在大约30秒内提前结束。请尽快回来！' 
-                      : 'Import task automatically ends in approximately 30 seconds!';
+                    const title = backgroundWarningTitle;
+                    const body = backgroundWarningBody;
                     
                     try {
                       const notificationId = await Notifications.scheduleNotificationAsync({
@@ -564,8 +572,8 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
               const progress = await loadImportBackgroundTaskProgress();
               const isImportRunning = progress && (progress.inProgress || progress.stage === 'counting') && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError;
               if (isImportRunning) {
-                const title = 'Import task cancelled!';
-                const body = 'Oops you were away for too long!';
+                const title = preTerminationTitle;
+                const body = preTerminationBody;
                 
                 await Notifications.scheduleNotificationAsync({
                   content: {

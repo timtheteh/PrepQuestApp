@@ -267,6 +267,9 @@ export default function AppSettingsScreen() {
   const [isBackupServerErrorModalOpen, setIsBackupServerErrorModalOpen] = React.useState(false);
   const backupServerErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const backupServerErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+  const [isImportServerErrorModalOpen, setIsImportServerErrorModalOpen] = React.useState(false);
+  const importServerErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const importServerErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Backup service busy modal state
   const [isBackupServiceBusyModalOpen, setIsBackupServiceBusyModalOpen] = React.useState(false);
@@ -287,6 +290,7 @@ export default function AppSettingsScreen() {
   // Track if network error modal has been shown to prevent dismissal by in-app notification
   const [hasNetworkErrorModalBeenShown, setHasNetworkErrorModalBeenShown] = React.useState(false);
   const [hasServerErrorModalBeenShown, setHasServerErrorModalBeenShown] = React.useState(false);
+  const [hasImportServerErrorModalBeenShown, setHasImportServerErrorModalBeenShown] = React.useState(false);
   
   // Track which operation had a network error for modal text
   const [networkErrorOperation, setNetworkErrorOperation] = React.useState<'backup' | 'import' | 'clearData'>('backup');
@@ -310,6 +314,10 @@ export default function AppSettingsScreen() {
   const [isDeleteAccountLoadingNetworkErrorModalOpen, setIsDeleteAccountLoadingNetworkErrorModalOpen] = React.useState(false);
   const deleteAccountLoadingNetworkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const deleteAccountLoadingNetworkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+  const [isDeleteAccountServerErrorModalOpen, setIsDeleteAccountServerErrorModalOpen] = React.useState(false);
+  const deleteAccountServerErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const deleteAccountServerErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+  const [deleteAccountServerErrorMessage, setDeleteAccountServerErrorMessage] = React.useState<string | null>(null);
 
   // Delete account modal state
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = React.useState(false);
@@ -326,6 +334,7 @@ export default function AppSettingsScreen() {
 
   // Delete account completion state
   const [hasDeleteAccountCompleted, setHasDeleteAccountCompleted] = React.useState(false);
+  const [hasDeleteAccountServerErrorModalBeenShown, setHasDeleteAccountServerErrorModalBeenShown] = React.useState(false);
 
   // Clear data cooldown state
   const [isClearDataCancelCooldownActive, setIsClearDataCancelCooldownActive] = React.useState(false);
@@ -423,6 +432,7 @@ export default function AppSettingsScreen() {
       setIsNetworkErrorModalOpen(false);
       setHasNetworkErrorModalBeenShown(false);
       setHasServerErrorModalBeenShown(false);
+      setHasImportServerErrorModalBeenShown(false);
     });
     
     // Handle different operations differently
@@ -519,6 +529,48 @@ export default function AppSettingsScreen() {
       setShouldDisableOtherButtons(false);
     });
   }, [backupServerErrorOverlayOpacity, backupServerErrorModalOpacity, clearBackupBackgroundTaskProgress]);
+
+  const handleShowImportServerErrorModal = React.useCallback(() => {
+    setIsImportServerErrorModalOpen(true);
+    setHasImportServerErrorModalBeenShown(true);
+    Animated.parallel([
+      Animated.timing(importServerErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(importServerErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [importServerErrorOverlayOpacity, importServerErrorModalOpacity]);
+
+  const handleDismissImportServerErrorModal = React.useCallback(async () => {
+    Animated.parallel([
+      Animated.timing(importServerErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(importServerErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(async () => {
+      setIsImportServerErrorModalOpen(false);
+      setHasImportServerErrorModalBeenShown(false);
+      try {
+        await clearImportBackgroundTaskProgress();
+        console.log('Cleared import progress data after user dismissed server error modal');
+      } catch (error) {
+        console.error('Error clearing import progress data after server error modal dismissal:', error);
+      }
+      setShouldDisableOtherButtons(false);
+    });
+  }, [importServerErrorOverlayOpacity, importServerErrorModalOpacity, clearImportBackgroundTaskProgress]);
 
   const handleShowBackupLoadingNetworkErrorModal = React.useCallback(() => {
     setIsBackupLoadingNetworkErrorModalOpen(true);
@@ -711,6 +763,50 @@ export default function AppSettingsScreen() {
       setShouldDisableOtherButtons(false);
     });
   }, [deleteAccountLoadingNetworkErrorOverlayOpacity, deleteAccountLoadingNetworkErrorModalOpacity]);
+
+  const handleShowDeleteAccountServerErrorModal = React.useCallback((message?: string) => {
+    setDeleteAccountServerErrorMessage(message || null);
+    setHasDeleteAccountServerErrorModalBeenShown(true);
+    setIsDeleteAccountServerErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(deleteAccountServerErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteAccountServerErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [deleteAccountServerErrorOverlayOpacity, deleteAccountServerErrorModalOpacity]);
+
+  const handleDismissDeleteAccountServerErrorModal = React.useCallback(async () => {
+    Animated.parallel([
+      Animated.timing(deleteAccountServerErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deleteAccountServerErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(async () => {
+      setIsDeleteAccountServerErrorModalOpen(false);
+      setDeleteAccountServerErrorMessage(null);
+      setHasDeleteAccountServerErrorModalBeenShown(false);
+      setShouldDisableOtherButtons(false);
+      setIsDeleteAccountLoading(false);
+      try {
+        await clearDeleteAccountBackgroundTaskProgress();
+      } catch (error) {
+        console.error('Error clearing delete account progress after server error dismissal:', error);
+      }
+    });
+  }, [deleteAccountServerErrorOverlayOpacity, deleteAccountServerErrorModalOpacity, clearDeleteAccountBackgroundTaskProgress]);
 
   // Network connectivity check function
   const checkNetworkConnectivity = React.useCallback(async (): Promise<boolean> => {
@@ -1029,6 +1125,8 @@ export default function AppSettingsScreen() {
         handleShowNetworkErrorModal('import');
       } else if (data?.type === 'backup_server_error') {
         handleShowBackupServerErrorModal();
+      } else if (data?.type === 'import_server_error') {
+        handleShowImportServerErrorModal();
       } else if (data?.type === 'clear_data_completed') {
         // Set persistent clear data completion state
         setHasClearDataCompleted(true);
@@ -1046,7 +1144,7 @@ export default function AppSettingsScreen() {
     });
 
     return () => subscription.remove();
-  }, [handleShowNetworkErrorModal, handleShowBackupServiceBusyModal, handleShowBackupServerErrorModal]);
+  }, [handleShowNetworkErrorModal, handleShowBackupServiceBusyModal, handleShowBackupServerErrorModal, handleShowImportServerErrorModal]);
 
   // Sync local stopping state with context stopping state
   React.useEffect(() => {
@@ -1596,6 +1694,9 @@ export default function AppSettingsScreen() {
       
       // Show success modal when import completes (will stay open until manually dismissed)
       handleShowSuccessModal(strings[language].appSettingsPage.importCompleted);
+    } else if (importBackgroundTaskProgress?.serverError && !hasImportServerErrorModalBeenShown) {
+      console.log('Showing server error modal for import');
+      handleShowImportServerErrorModal();
     } else if (importBackgroundTaskProgress?.noData) {
       // Show no data modal when there's no data to import
       console.log('Showing no data modal for import');
@@ -1627,34 +1728,43 @@ export default function AppSettingsScreen() {
         }, 5000);
       }
     }
-  }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess]);
+  }, [importBackgroundTaskProgress, isCancelImportModalOpen, cancelImportOverlayOpacity, cancelImportModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess, hasImportServerErrorModalBeenShown, handleShowImportServerErrorModal]);
 
   // Watch for delete account completion to handle Clerk deletion
   React.useEffect(() => {
     if (deleteAccountBackgroundTaskProgress?.completed && deleteAccountBackgroundTaskProgress?.success && !deleteAccountBackgroundTaskProgress?.error && !deleteAccountBackgroundTaskProgress?.cancelled) {
-      // Local data deletion completed successfully, now delete from Clerk
-      console.log('Local data deletion completed, proceeding with Clerk account deletion...');
-      
-      // Call the delete account function from auth context to complete Clerk deletion
-      deleteAccount().then((result) => {
-        if (result.success) {
-          console.log('Account deletion successful');
-          // Set persistent delete account completion state
-          setHasDeleteAccountCompleted(true);
-          // User will be automatically redirected to login screen due to auth state change
-        } else {
-          console.error('Clerk account deletion failed:', result.error);
-          // No error modal for now - just log the error
-        }
-      }).catch((error) => {
-        console.error('Error during Clerk account deletion:', error);
-        // No error modal for now - just log the error
-      });
-    } else if (deleteAccountBackgroundTaskProgress?.error) {
-      // No error modal for now - just log the error
+      if (!hasDeleteAccountServerErrorModalBeenShown) {
+        // Local data deletion completed successfully, now delete from Clerk
+        console.log('Local data deletion completed, proceeding with Clerk account deletion...');
+        
+        deleteAccount().then((result) => {
+          if (result.success) {
+            console.log('Account deletion successful');
+            setHasDeleteAccountCompleted(true);
+            // User will be automatically redirected to login screen due to auth state change
+          } else {
+            console.error('Clerk account deletion failed:', result.error);
+            handleShowDeleteAccountServerErrorModal(result.error || strings[language].appSettingsPage.deleteAccountServerError);
+          }
+        }).catch((error) => {
+          console.error('Error during Clerk account deletion:', error);
+          if (!hasDeleteAccountServerErrorModalBeenShown) {
+            const message = error instanceof Error ? error.message : strings[language].appSettingsPage.deleteAccountServerError;
+            handleShowDeleteAccountServerErrorModal(message);
+          }
+        });
+      }
+    } else if (deleteAccountBackgroundTaskProgress?.error && !hasDeleteAccountServerErrorModalBeenShown) {
       console.error('Delete account background task error:', deleteAccountBackgroundTaskProgress.errorMessage);
+      handleShowDeleteAccountServerErrorModal(deleteAccountBackgroundTaskProgress?.errorMessage || strings[language].appSettingsPage.deleteAccountServerError);
     }
-  }, [deleteAccountBackgroundTaskProgress, deleteAccount, language]);
+  }, [
+    deleteAccountBackgroundTaskProgress,
+    deleteAccount,
+    language,
+    hasDeleteAccountServerErrorModalBeenShown,
+    handleShowDeleteAccountServerErrorModal
+  ]);
 
 
   const handleBackPress = React.useCallback(() => {
@@ -3414,6 +3524,21 @@ export default function AppSettingsScreen() {
           onConfirm={handleDismissBackupServerErrorModal}
         />
 
+        {/* Import Server Error Modal */}
+        <GreyOverlayBackground 
+          visible={isImportServerErrorModalOpen}
+          opacity={importServerErrorOverlayOpacity}
+          onPress={handleDismissImportServerErrorModal}
+        />
+        <GenericModal
+          visible={isImportServerErrorModalOpen}
+          opacity={importServerErrorModalOpacity}
+          text={strings[language].appSettingsPage.importCancelledServerError}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissImportServerErrorModal}
+        />
+
         {/* Backup Loading Network Error Modal */}
         <GreyOverlayBackground 
           visible={isBackupLoadingNetworkErrorModalOpen}
@@ -3570,6 +3695,21 @@ export default function AppSettingsScreen() {
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissDeleteAccountLoadingNetworkErrorModal}
+        />
+
+        {/* Delete Account Server Error Modal */}
+        <GreyOverlayBackground 
+          visible={isDeleteAccountServerErrorModalOpen}
+          opacity={deleteAccountServerErrorOverlayOpacity}
+          onPress={handleDismissDeleteAccountServerErrorModal}
+        />
+        <GenericModal
+          visible={isDeleteAccountServerErrorModalOpen}
+          opacity={deleteAccountServerErrorModalOpacity}
+          text={deleteAccountServerErrorMessage || strings[language].appSettingsPage.deleteAccountServerError}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissDeleteAccountServerErrorModal}
         />
 
         {/* Delete Account Modal */}

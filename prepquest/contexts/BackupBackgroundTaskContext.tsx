@@ -5,6 +5,7 @@ import BackgroundService from 'react-native-background-actions';
 import * as Notifications from 'expo-notifications';
 import NotificationService from '../utils/notifications';
 import { useLanguage } from './LanguageContext';
+import { strings } from '@/constants/strings';
 
 // Progress key for backup background tasks
 const BACKUP_BG_TASK_PROGRESS_KEY = 'backupDataBgTaskProgress';
@@ -47,6 +48,15 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
   const appStateRef = useRef(AppState.currentState);
   const { language } = useLanguage();
   const notificationService = NotificationService.getInstance();
+  const localeStrings = strings[language] ?? strings.English;
+  const englishBackupNotifications = strings.English.notifications.backup;
+  const backupNotifications = localeStrings.notifications?.backup ?? englishBackupNotifications;
+  const {
+    backgroundWarningTitle = englishBackupNotifications.backgroundWarningTitle,
+    backgroundWarningBody = englishBackupNotifications.backgroundWarningBody,
+    preTerminationTitle = englishBackupNotifications.preTerminationTitle,
+    preTerminationBody = englishBackupNotifications.preTerminationBody,
+  } = backupNotifications;
   
   // Use a ref to track the current state for immediate access
   const isBackupBackgroundTaskRunningRef = useRef(false);
@@ -453,10 +463,8 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
               // Double-check backup is still running before sending notification
               const progress = await loadBackupBackgroundTaskProgress();
               if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
-                const title = language === 'Chinese' ? '备份任务警告' : 'Come back soon!';
-                const body = language === 'Chinese' 
-                  ? '备份任务将在大约30秒内提前结束。请尽快回来！' 
-                  : 'Backup task automatically ends in approximately 30 seconds!';
+                const title = backgroundWarningTitle;
+                const body = backgroundWarningBody;
                 
                 await Notifications.scheduleNotificationAsync({
                   content: {
@@ -484,8 +492,8 @@ export const BackupBackgroundTaskProvider: React.FC<BackupBackgroundTaskProvider
               // Double-check backup is still running before sending notification
               const progress = await loadBackupBackgroundTaskProgress();
               if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError) {
-                const title = 'Backup task cancelled!';
-                const body = 'Oops you were away for too long!';
+                const title = preTerminationTitle;
+                const body = preTerminationBody;
                 
                 await Notifications.scheduleNotificationAsync({
                   content: {

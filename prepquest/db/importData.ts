@@ -7,11 +7,6 @@ import { getCurrentUserID } from './decks';
 function isNetworkError(error: any): boolean {
   if (!error) return false;
   
-  // Check for service errors (which should be treated as network errors)
-  if (error.isServiceError) {
-    return true;
-  }
-  
   // Check for common network error patterns
   const errorMessage = error.message?.toLowerCase() || '';
   const errorName = error.name?.toLowerCase() || '';
@@ -49,6 +44,49 @@ function isNetworkError(error: any): boolean {
   const hasNetworkStatusCode = error.status && networkStatusCodes.includes(error.status);
   
   return hasNetworkPattern || isNetworkErrorType || hasNetworkStatusCode || isAbortError;
+}
+
+interface ServerErrorInfo {
+  isServerError: boolean;
+  statusCode?: number;
+  code?: string;
+}
+
+function getServerErrorInfo(error: any): ServerErrorInfo {
+  if (!error || typeof error !== 'object') {
+    return { isServerError: false };
+  }
+
+  const status =
+    typeof error.status === 'number'
+      ? error.status
+      : typeof error.statusCode === 'number'
+        ? error.statusCode
+        : undefined;
+
+  const code = typeof error.code === 'string' ? error.code : undefined;
+  const normalizedCode = code?.toUpperCase();
+
+  if (typeof status === 'number' && status >= 500) {
+    return { isServerError: true, statusCode: status, code };
+  }
+
+  if (normalizedCode && normalizedCode.startsWith('PGRST')) {
+    return { isServerError: true, statusCode: status, code };
+  }
+
+  return { isServerError: false };
+}
+
+function throwIfServerError(error: any, fallbackMessage: string): void {
+  const serverErrorInfo = getServerErrorInfo(error);
+  if (serverErrorInfo.isServerError) {
+    const serverError = new Error(error?.message || fallbackMessage);
+    (serverError as any).isServerError = true;
+    (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+    (serverError as any).serverErrorCode = serverErrorInfo.code;
+    throw serverError;
+  }
 }
 
 // Using cached getCurrentUserID from decks.ts
@@ -408,6 +446,7 @@ export async function getTotalRowCount(token: string): Promise<{
         usersResult.error
       ].filter(Boolean);
       for (const error of errors) {
+        throwIfServerError(error, 'Import service temporarily unavailable. Please try again in a few minutes.');
         if (isNetworkError(error)) {
           throw error; // Re-throw network errors so they can be detected
         }
@@ -426,9 +465,8 @@ export async function getTotalRowCount(token: string): Promise<{
         customBadgesResult.error ||
         usersResult.error;
       if (hasAnyError) {
-        // Create a service error that will be detected as a network error
         const serviceError = new Error('Import service temporarily unavailable. Please try again in a few minutes.');
-        (serviceError as any).isServiceError = true;
+        (serviceError as any).isServerError = true;
         throw serviceError;
       }
       
@@ -510,6 +548,7 @@ export async function importFoldersFromSupabase(
           .order('dateAdded', { ascending: true });
 
         if (error) {
+          throwIfServerError(error, 'Server error while importing folders.');
           throw error;
         }
 
@@ -524,6 +563,7 @@ export async function importFoldersFromSupabase(
         if (retries >= maxRetries) {
           console.error('Error importing folders from Supabase after retries:', error);
           // Re-throw network errors so they can be detected by the main import function
+          throwIfServerError(error, 'Server error while importing folders.');
           if (isNetworkError(error)) {
             throw error;
           }
@@ -540,6 +580,7 @@ export async function importFoldersFromSupabase(
     return null; // Should never reach here
   } catch (error) {
     console.error('Error in importFoldersFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing folders.');
     // Re-throw network errors so they can be detected by the main import function
     if (isNetworkError(error)) {
       throw error;
@@ -587,6 +628,7 @@ export async function importDecksFromSupabase(
           .order('dateAdded', { ascending: true });
 
         if (error) {
+          throwIfServerError(error, 'Server error while importing decks.');
           throw error;
         }
 
@@ -601,6 +643,7 @@ export async function importDecksFromSupabase(
         if (retries >= maxRetries) {
           console.error('Error importing decks from Supabase after retries:', error);
           // Re-throw network errors so they can be detected by the main import function
+          throwIfServerError(error, 'Server error while importing decks.');
           if (isNetworkError(error)) {
             throw error;
           }
@@ -617,6 +660,7 @@ export async function importDecksFromSupabase(
     return null; // Should never reach here
   } catch (error) {
     console.error('Error in importDecksFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing decks.');
     // Re-throw network errors so they can be detected by the main import function
     if (isNetworkError(error)) {
       throw error;
@@ -704,6 +748,7 @@ export async function importFlashcardsFromSupabase(
             .range(offset, offset + batchSize - 1);
 
           if (error) {
+            throwIfServerError(error, 'Server error while importing flashcards.');
             throw error;
           }
 
@@ -716,6 +761,7 @@ export async function importFlashcardsFromSupabase(
           if (retries >= maxRetries) {
             console.error(`Error importing flashcard batch ${offset}-${offset + batchSize} after ${maxRetries} retries:`, error);
             // Re-throw network errors so they can be detected by the main import function
+            throwIfServerError(error, 'Server error while importing flashcards.');
             if (isNetworkError(error)) {
               throw error;
             }
@@ -771,6 +817,7 @@ export async function importFlashcardsFromSupabase(
     return allFlashcards;
   } catch (error) {
     console.error('Error in importFlashcardsFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing flashcards.');
     // Re-throw network errors so they can be detected by the main import function
     if (isNetworkError(error)) {
       throw error;
@@ -893,6 +940,7 @@ export async function importUserFormEntriesFromSupabase(
           .order('formSubmissionDate', { ascending: false });
 
         if (error) {
+          throwIfServerError(error, 'Server error while importing user form entries.');
           throw error;
         }
 
@@ -908,6 +956,7 @@ export async function importUserFormEntriesFromSupabase(
 
         if (retries >= maxRetries) {
           console.error('Error importing user form entries from Supabase after retries:', error);
+          throwIfServerError(error, 'Server error while importing user form entries.');
           if (isNetworkError(error)) {
             throw error;
           }
@@ -922,6 +971,7 @@ export async function importUserFormEntriesFromSupabase(
     return null;
   } catch (error) {
     console.error('Error in importUserFormEntriesFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing user form entries.');
     if (isNetworkError(error)) {
       throw error;
     }
@@ -957,6 +1007,7 @@ export async function importUserFromSupabase(
 
     if (error) {
       console.error('Error importing user from Supabase:', error);
+      throwIfServerError(error, 'Server error while importing user data.');
       if (isNetworkError(error)) {
         throw error;
       }
@@ -975,6 +1026,7 @@ export async function importUserFromSupabase(
     return rest as ImportedUser;
   } catch (error) {
     console.error('Error in importUserFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing user data.');
     if (isNetworkError(error)) {
       throw error;
     }
@@ -1013,6 +1065,7 @@ export async function importStreakBadgeAssignmentsFromSupabase(
           .eq('userID', userID);
 
         if (error) {
+          throwIfServerError(error, 'Server error while importing streak badge progress.');
           throw error;
         }
 
@@ -1026,6 +1079,7 @@ export async function importStreakBadgeAssignmentsFromSupabase(
 
         if (retries >= maxRetries) {
           console.error('Error importing streak badges from Supabase after retries:', error);
+          throwIfServerError(error, 'Server error while importing streak badge progress.');
           if (isNetworkError(error)) {
             throw error;
           }
@@ -1040,6 +1094,7 @@ export async function importStreakBadgeAssignmentsFromSupabase(
     return null;
   } catch (error) {
     console.error('Error in importStreakBadgeAssignmentsFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing streak badge progress.');
     if (isNetworkError(error)) {
       throw error;
     }
@@ -1078,6 +1133,7 @@ export async function importWelcomeBadgeAssignmentsFromSupabase(
           .eq('userID', userID);
 
         if (error) {
+          throwIfServerError(error, 'Server error while importing welcome badge progress.');
           throw error;
         }
 
@@ -1091,6 +1147,7 @@ export async function importWelcomeBadgeAssignmentsFromSupabase(
 
         if (retries >= maxRetries) {
           console.error('Error importing welcome badges from Supabase after retries:', error);
+          throwIfServerError(error, 'Server error while importing welcome badge progress.');
           if (isNetworkError(error)) {
             throw error;
           }
@@ -1105,6 +1162,7 @@ export async function importWelcomeBadgeAssignmentsFromSupabase(
     return null;
   } catch (error) {
     console.error('Error in importWelcomeBadgeAssignmentsFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing welcome badge progress.');
     if (isNetworkError(error)) {
       throw error;
     }
@@ -1143,6 +1201,7 @@ export async function importLifetimeBadgeAssignmentsFromSupabase(
           .eq('userID', userID);
 
         if (error) {
+          throwIfServerError(error, 'Server error while importing lifetime badge progress.');
           throw error;
         }
 
@@ -1156,6 +1215,7 @@ export async function importLifetimeBadgeAssignmentsFromSupabase(
 
         if (retries >= maxRetries) {
           console.error('Error importing lifetime badges from Supabase after retries:', error);
+          throwIfServerError(error, 'Server error while importing lifetime badge progress.');
           if (isNetworkError(error)) {
             throw error;
           }
@@ -1170,6 +1230,7 @@ export async function importLifetimeBadgeAssignmentsFromSupabase(
     return null;
   } catch (error) {
     console.error('Error in importLifetimeBadgeAssignmentsFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing lifetime badge progress.');
     if (isNetworkError(error)) {
       throw error;
     }
@@ -1208,6 +1269,7 @@ export async function importCustomBadgesFromSupabase(
           .eq('userID', userID);
 
         if (error) {
+          throwIfServerError(error, 'Server error while importing custom badges.');
           throw error;
         }
 
@@ -1221,6 +1283,7 @@ export async function importCustomBadgesFromSupabase(
 
         if (retries >= maxRetries) {
           console.error('Error importing custom badges from Supabase after retries:', error);
+          throwIfServerError(error, 'Server error while importing custom badges.');
           if (isNetworkError(error)) {
             throw error;
           }
@@ -1235,6 +1298,7 @@ export async function importCustomBadgesFromSupabase(
     return null;
   } catch (error) {
     console.error('Error in importCustomBadgesFromSupabase:', error);
+    throwIfServerError(error, 'Server error while importing custom badges.');
     if (isNetworkError(error)) {
       throw error;
     }
@@ -1929,7 +1993,7 @@ export async function importDataFromCloud(
   getToken: TokenGetter,
   onProgress?: (progress: ImportProgress) => void,
   isCancelled?: () => boolean
-): Promise<{ success: boolean; message: string; cancelled?: boolean; isNetworkError?: boolean }> {
+): Promise<{ success: boolean; message: string; cancelled?: boolean; isNetworkError?: boolean; isServerError?: boolean; serverStatusCode?: number; serverErrorCode?: string }> {
   try {
     console.log('Starting import process...');
 
@@ -2187,19 +2251,22 @@ export async function importDataFromCloud(
   } catch (error) {
     console.error('Error during import process:', error);
     
-    // Check if this is a network error (including service errors)
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (error && typeof error === 'object' && ((error as any).isServerError || serverErrorInfo.isServerError)) {
+      const serverStatusCode = (error as any).serverStatusCode ?? serverErrorInfo.statusCode;
+      const serverErrorCode = (error as any).serverErrorCode ?? serverErrorInfo.code;
+      return {
+        success: false,
+        message: `Import failed due to a server issue. Please try again soon.${serverStatusCode ? ` (Status ${serverStatusCode})` : ''}`,
+        isServerError: true,
+        serverStatusCode,
+        serverErrorCode
+      };
+    }
+    
+    // Check if this is a network error
     if (isNetworkError(error)) {
       console.log('Network error detected during import');
-      
-      // Check if this is a service error and provide a more specific message
-      if (error && typeof error === 'object' && (error as any).isServiceError) {
-        return { 
-          success: false, 
-          message: 'Import service temporarily unavailable. Please try again in a few minutes.',
-          isNetworkError: true
-        };
-      }
-      
       return { 
         success: false, 
         message: 'Import cancelled due to network error! Check your network.',

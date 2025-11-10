@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import { backupDataToCloud, BackupProgress } from '../db/backup';
+import { strings } from '@/constants/strings';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
 import { AppState } from 'react-native';
@@ -89,6 +90,18 @@ async function updateBackupProgressPeriodically(progressData: any, intervalMs: n
 // The background task function for backup data
 const backupDataBackgroundTask = async (taskDataArguments: any) => {
   const { getToken, language, backupOnlyFormEntries } = taskDataArguments;
+  const localeStrings = strings[language] ?? strings.English;
+  const englishBackupNotifications = strings.English.notifications.backup;
+  const backupNotifications = localeStrings.notifications?.backup ?? englishBackupNotifications;
+  const {
+    cancelledTitle = englishBackupNotifications.cancelledTitle,
+    networkErrorBody = englishBackupNotifications.networkErrorBody,
+    serverErrorTitle = englishBackupNotifications.serverErrorTitle,
+    serverErrorBody = englishBackupNotifications.serverErrorBody,
+    serviceBusyBody = englishBackupNotifications.serviceBusyBody,
+    completedTitle = englishBackupNotifications.completedTitle,
+    completedBody = englishBackupNotifications.completedBody,
+  } = backupNotifications;
   
   console.log('Backup background task started');
   
@@ -203,8 +216,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
           
           if (permissionStatus === 'granted') {
             console.log('Sending backup service busy notification (app in background)');
-            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
-            const body = language === 'Chinese' ? '备份服务暂时繁忙。请几分钟后再试。' : 'Backup service is temporarily busy. Please try again in a few minutes.';
+            const title = cancelledTitle;
+            const body = serviceBusyBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -241,8 +254,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
           // Fallback: try to send notification even if initial check failed
           try {
             console.log('Attempting fallback backup service busy notification...');
-            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
-            const body = language === 'Chinese' ? '备份服务暂时繁忙。请几分钟后再试。' : 'Backup service is temporarily busy. Please try again in a few minutes.';
+            const title = cancelledTitle;
+            const body = serviceBusyBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -290,11 +303,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
           const { status: permissionStatus } = await Notifications.getPermissionsAsync();
           if (permissionStatus === 'granted') {
             console.log('Sending server error notification (app in background)');
-            const title = language === 'Chinese' ? '备份失败！' : 'Backup Failed!';
-            const body =
-              language === 'Chinese'
-                ? '备份遇到服务器问题，请稍后再试。'
-                : 'Backup ran into a server issue. Please try again soon.';
+            const title = serverErrorTitle;
+            const body = serverErrorBody;
 
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -359,8 +369,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
           
           if (permissionStatus === 'granted') {
             console.log('Sending network error notification (app in background)');
-            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
-            const body = language === 'Chinese' ? '糟糕，备份因网络错误而取消！' : 'Oops backup has cancelled due to a network error!';
+            const title = cancelledTitle;
+            const body = networkErrorBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -396,8 +406,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
           // Fallback: try to send notification even if initial check failed
           try {
             console.log('Attempting fallback network error notification...');
-            const title = language === 'Chinese' ? '备份已取消！' : 'Backup cancelled!';
-            const body = language === 'Chinese' ? '糟糕，备份因网络错误而取消！' : 'Oops backup has cancelled due to a network error!';
+            const title = cancelledTitle;
+            const body = networkErrorBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -442,8 +452,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
           
           if (permissionStatus === 'granted') {
             console.log('Sending backup completion notification (app in background)');
-            const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
-            const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
+            const title = completedTitle;
+            const body = completedBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -479,8 +489,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
           // Fallback: try to send notification even if initial check failed
           try {
             console.log('Attempting fallback backup completion notification...');
-            const title = language === 'Chinese' ? '备份完成！' : 'Backup Completed!';
-            const body = language === 'Chinese' ? '您的数据已成功备份到云端' : 'Your data has been successfully backed up to the cloud';
+            const title = completedTitle;
+            const body = completedBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {

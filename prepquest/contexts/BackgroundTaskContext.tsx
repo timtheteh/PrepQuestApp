@@ -5,6 +5,7 @@ import BackgroundService from 'react-native-background-actions';
 import * as Notifications from 'expo-notifications';
 import NotificationService from '../utils/notifications';
 import { useLanguage } from './LanguageContext';
+import { strings } from '@/constants/strings';
 
 // Progress key for background tasks
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
@@ -52,6 +53,15 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
   const appStateRef = useRef(AppState.currentState);
   const { language } = useLanguage();
   const notificationService = NotificationService.getInstance();
+  const localeStrings = strings[language] ?? strings.English;
+  const englishDeckNotifications = strings.English.notifications.deckCreation;
+  const deckCreationNotifications = localeStrings.notifications?.deckCreation ?? englishDeckNotifications;
+  const {
+    backgroundWarningTitle = englishDeckNotifications.backgroundWarningTitle,
+    backgroundWarningBody = englishDeckNotifications.backgroundWarningBody,
+    preTerminationTitle = englishDeckNotifications.preTerminationTitle,
+    preTerminationBody = englishDeckNotifications.preTerminationBody,
+  } = deckCreationNotifications;
   
   // Use a ref to track the current state for immediate access
   const isBackgroundTaskRunningRef = useRef(false);
@@ -705,10 +715,8 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
               // Double-check deck creation task is still running before sending notification
               const progress = await loadBackgroundTaskProgress();
               if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                const title = language === 'Chinese' ? '任务警告' : 'Come back soon!';
-                const body = language === 'Chinese' 
-                  ? '任务将在大约30秒内提前结束。请尽快回来！' 
-                  : 'Task ends in approximately 30 seconds!';
+                const title = backgroundWarningTitle;
+                const body = backgroundWarningBody;
                 
                 await Notifications.scheduleNotificationAsync({
                   content: {
@@ -736,8 +744,8 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
               // Double-check deck creation task is still running before sending notification
               const progress = await loadBackgroundTaskProgress();
               if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                const title = language === 'Chinese' ? '任务已结束！' : 'Oops! Task has ended.';
-                const body = language === 'Chinese' ? '糟糕，你离开太久了！' : 'You were away for too long!';
+                const title = preTerminationTitle;
+                const body = preTerminationBody;
                 
                 await Notifications.scheduleNotificationAsync({
                   content: {

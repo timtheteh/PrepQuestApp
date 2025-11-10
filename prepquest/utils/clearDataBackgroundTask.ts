@@ -5,6 +5,7 @@ import { db } from '../db/index';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
 import { AppState } from 'react-native';
+import { strings } from '@/constants/strings';
 
 // Helper function to get current userID from AsyncStorage
 async function getCurrentUserID(): Promise<string> {
@@ -101,6 +102,13 @@ async function updateClearDataProgressPeriodically(progressData: any, intervalMs
 // The background task function for clear data
 const clearDataBackgroundTask = async (taskDataArguments: any) => {
   const { language } = taskDataArguments;
+  const localeStrings = strings[language] ?? strings.English;
+  const englishClearDataNotifications = strings.English.notifications.clearData;
+  const clearDataNotifications = localeStrings.notifications?.clearData ?? englishClearDataNotifications;
+  const {
+    completedTitle = englishClearDataNotifications.completedTitle,
+    completedBody = englishClearDataNotifications.completedBody,
+  } = clearDataNotifications;
   
   console.log('Clear data background task started');
   
@@ -240,10 +248,8 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
           
           if (permissionStatus === 'granted') {
             console.log('Sending clear data completion notification (app in background)');
-            const title = language === 'Chinese' ? '清除完成！' : 'Clear Data Completed!';
-            const body = language === 'Chinese' 
-              ? '您的本地存储数据已成功清除' 
-              : 'Your local storage data has been successfully cleared';
+            const title = completedTitle;
+            const body = completedBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -279,10 +285,8 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
           // Fallback: try to send notification even if initial check failed
           try {
             console.log('Attempting fallback clear data completion notification...');
-            const title = language === 'Chinese' ? '清除完成！' : 'Clear Data Completed!';
-            const body = language === 'Chinese' 
-              ? '您的本地存储数据已成功清除' 
-              : 'Your local storage data has been successfully cleared';
+            const title = completedTitle;
+            const body = completedBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {

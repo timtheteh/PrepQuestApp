@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import { importDataFromCloud, ImportProgress } from '../db/importData';
+import { strings } from '@/constants/strings';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
 import { AppState } from 'react-native';
@@ -94,10 +95,8 @@ async function updateImportProgressPeriodically(progressData: any, intervalMs: n
 // Network error detection helper
 function isNetworkError(error: any): boolean {
   if (!error) return false;
-  
-  // Check for service errors (which should be treated as network errors)
-  if (error.isServiceError) {
-    return true;
+  if (error.isServerError) {
+    return false;
   }
   
   // Check for common network error patterns
@@ -141,6 +140,17 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
   console.log('=== IMPORT BACKGROUND TASK FUNCTION CALLED ===');
   console.log('Import background task: Function started with arguments:', taskDataArguments);
   const { getToken, language } = taskDataArguments;
+  const localeStrings = strings[language] ?? strings.English;
+  const englishImportNotifications = strings.English.notifications.import;
+  const importNotifications = localeStrings.notifications?.import ?? englishImportNotifications;
+  const {
+    cancelledTitle = englishImportNotifications.cancelledTitle,
+    networkErrorBody = englishImportNotifications.networkErrorBody,
+    serverErrorTitle = englishImportNotifications.serverErrorTitle,
+    serverErrorBody = englishImportNotifications.serverErrorBody,
+    completedTitle = englishImportNotifications.completedTitle,
+    completedBody = englishImportNotifications.completedBody,
+  } = importNotifications;
   
   console.log('Import background task: Extracted getToken and language:', { hasGetToken: !!getToken, language });
   console.log('Import background task started');
@@ -285,6 +295,79 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
     }
     
     // Check if the import result indicates network error
+    if (!result.success && (result as any).isServerError) {
+      console.log('Import cancelled due to server error', {
+        serverStatusCode: (result as any).serverStatusCode,
+        serverErrorCode: (result as any).serverErrorCode
+      });
+
+      const isCloudImportPhase = currentImportStage !== 'inserting';
+
+      await saveImportProgress({
+        status: 'serverError',
+        inProgress: false,
+        completed: false,
+        serverError: true,
+        serverStatusCode: (result as any).serverStatusCode,
+        serverErrorCode: (result as any).serverErrorCode,
+        isCloudImportPhase,
+        timestamp: Date.now(),
+        message: result.message,
+        errorMessage: result.message
+      });
+
+      if (isCloudImportPhase && shouldSendPushNotification()) {
+        try {
+          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
+          if (permissionStatus === 'granted') {
+            console.log('Sending import server error notification (app in background)');
+            const title = serverErrorTitle;
+            const body = serverErrorBody;
+
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: {
+                  type: 'import_server_error',
+                  serverStatusCode: (result as any).serverStatusCode ?? null,
+                },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null,
+            });
+
+            console.log('Import server error notification sent successfully with ID:', notificationId);
+
+            await saveImportProgress({
+              status: 'serverError',
+              inProgress: false,
+              completed: false,
+              serverError: true,
+              serverStatusCode: (result as any).serverStatusCode,
+              serverErrorCode: (result as any).serverErrorCode,
+              isCloudImportPhase,
+              notificationSent: true,
+              timestamp: Date.now(),
+              message: result.message,
+              errorMessage: result.message
+            });
+          } else {
+            console.log('Notification permissions not granted, cannot send import server error notification');
+          }
+        } catch (notificationError) {
+          console.error('Error sending import server error notification:', notificationError);
+        }
+      } else {
+        console.log('Import server error occurred while app is active or during local phase - using in-app notification');
+      }
+
+      return;
+    }
+    
+    // Check if the import result indicates network error
     if (!result.success && (result as any).isNetworkError) {
       console.log('Import cancelled due to network error');
       console.log('Current import stage:', currentImportStage);
@@ -315,12 +398,10 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
             // Check notification permissions first
             const { status: permissionStatus } = await Notifications.getPermissionsAsync();
             
-            if (permissionStatus === 'granted') {
-              console.log('Sending import network error notification (app in background)');
-              const title = language === 'Chinese' ? '导入已取消！' : 'Import cancelled!';
-              const body = language === 'Chinese' 
-                ? '糟糕，导入因网络错误而取消！' 
-                : 'Oops import has cancelled due to a network error!';
+          if (permissionStatus === 'granted') {
+            console.log('Sending import network error notification (app in background)');
+            const title = cancelledTitle;
+            const body = networkErrorBody;
               
               const notificationId = await Notifications.scheduleNotificationAsync({
                 content: {
@@ -356,11 +437,9 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
             
             // Fallback: try to send notification even if initial check failed
             try {
-              console.log('Attempting fallback import network error notification...');
-              const title = language === 'Chinese' ? '导入已取消！' : 'Import cancelled!';
-              const body = language === 'Chinese' 
-                ? '糟糕，导入因网络错误而取消！' 
-                : 'Oops import has cancelled due to a network error!';
+            console.log('Attempting fallback import network error notification...');
+            const title = cancelledTitle;
+            const body = networkErrorBody;
               
               const notificationId = await Notifications.scheduleNotificationAsync({
                 content: {
@@ -408,10 +487,8 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
           
           if (permissionStatus === 'granted') {
             console.log('Sending import completion notification (app in background)');
-            const title = language === 'Chinese' ? '导入完成！' : 'Import Completed!';
-            const body = language === 'Chinese' 
-              ? '您的数据已成功从云端导入' 
-              : 'Your data has been successfully imported from the cloud';
+            const title = completedTitle;
+            const body = completedBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -447,10 +524,8 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
           // Fallback: try to send notification even if initial check failed
           try {
             console.log('Attempting fallback import completion notification...');
-            const title = language === 'Chinese' ? '导入完成！' : 'Import Completed!';
-            const body = language === 'Chinese' 
-              ? '您的数据已成功从云端导入' 
-              : 'Your data has been successfully imported from the cloud';
+            const title = completedTitle;
+            const body = completedBody;
             
             const notificationId = await Notifications.scheduleNotificationAsync({
               content: {
@@ -504,10 +579,8 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
         try {
           const { status: permissionStatus } = await Notifications.getPermissionsAsync();
           if (permissionStatus === 'granted') {
-            const title = language === 'Chinese' ? '导入已取消！' : 'Import cancelled!';
-            const body = language === 'Chinese' 
-              ? '糟糕，导入因网络错误而取消！' 
-              : 'Oops import has cancelled due to a network error!';
+            const title = cancelledTitle;
+            const body = networkErrorBody;
             
             await Notifications.scheduleNotificationAsync({
               content: {

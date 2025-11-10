@@ -962,6 +962,7 @@ export const strings: Record<string, any> = {
           defaultingToEnglishLowConfidence: 'Defaulting to English due to low language detection confidence',
         },
         networkErrorMessage: 'Failed to evaluate answer due to network error!',
+      serverErrorMessage: 'Unable to evaluate your answer right now. Please try again shortly!',
         audioTimeLimitExceeded: 'Audio input cannot be more than 5 minutes',
     },
   // General UI components
@@ -1295,6 +1296,7 @@ export const strings: Record<string, any> = {
           defaultingToEnglishLowConfidence: '由于语言检测置信度较低，默认使用英语',
         },
         networkErrorMessage: '由于网络错误，无法评估答案！',
+      serverErrorMessage: '服务器暂时无法评估您的答案，请稍后再试！',
         audioTimeLimitExceeded: '音频输入不能超过5分钟',
     },
   // General UI components

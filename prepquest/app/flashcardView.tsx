@@ -918,7 +918,7 @@ async function transcribeAudio(audioUri: string, language: string = 'English', q
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Speech-to-text error:', response.status, errorText);
-      throw new Error(`Speech-to-text failed: ${response.status} ${errorText}`);
+      throw new Error(`SERVER_ERROR:${response.status} ${errorText}`);
     }
     
     const data = await response.json();
@@ -1098,6 +1098,7 @@ interface FlippableFlashcardProps {
   setIsLoadingEvaluation: React.Dispatch<React.SetStateAction<boolean>>;
   checkNetworkConnectivity: () => Promise<boolean>;
   handleShowNetworkErrorModal: () => void;
+  handleShowServerErrorModal: () => void;
   handleShowAudioTimeLimitModal: () => void;
   showWelcomeBadgeNotification: (award: any) => void;
 }
@@ -1152,6 +1153,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     setIsLoadingEvaluation,
     checkNetworkConnectivity,
     handleShowNetworkErrorModal,
+    handleShowServerErrorModal,
     handleShowAudioTimeLimitModal,
     showWelcomeBadgeNotification
   } = props;
@@ -2578,10 +2580,13 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                           if (error instanceof Error && error.message === 'NETWORK_ERROR') {
                             console.error('🌐 Network error during API call - showing custom modal');
                             handleShowNetworkErrorModal();
+                          } else if (error instanceof Error && error.message.startsWith('SERVER_ERROR')) {
+                            console.error('🛠️ Server error during API call - showing server error modal');
+                            handleShowServerErrorModal();
                           } else {
                             // For other errors, show the network error modal as well (since most API failures are network-related)
                             console.error('🔧 Other error during API call - showing custom modal');
-                            handleShowNetworkErrorModal();
+                            handleShowServerErrorModal();
                           }
                           
                           setAiEvaluationConcise(null);
@@ -3009,6 +3014,10 @@ export default function FlashcardViewPage() {
   const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
   const networkErrorOverlayOpacity = useRef(new Animated.Value(0)).current;
   const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
+  // Server error modal state
+  const [isServerErrorModalOpen, setIsServerErrorModalOpen] = useState(false);
+  const serverErrorOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const serverErrorModalOpacity = useRef(new Animated.Value(0)).current;
 
   // Audio time limit modal state
   const [isAudioTimeLimitModalOpen, setIsAudioTimeLimitModalOpen] = useState(false);
@@ -3134,6 +3143,40 @@ export default function FlashcardViewPage() {
       setIsNetworkErrorModalOpen(false);
     });
   }, [networkErrorOverlayOpacity, networkErrorModalOpacity]);
+
+  // Server error modal handlers
+  const handleShowServerErrorModal = useCallback(() => {
+    setIsServerErrorModalOpen(true);
+    Animated.parallel([
+      Animated.timing(serverErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(serverErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [serverErrorOverlayOpacity, serverErrorModalOpacity]);
+
+  const handleDismissServerErrorModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(serverErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(serverErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsServerErrorModalOpen(false);
+    });
+  }, [serverErrorOverlayOpacity, serverErrorModalOpacity]);
 
   // Audio time limit modal handlers
   const handleShowAudioTimeLimitModal = useCallback(() => {
@@ -4438,6 +4481,7 @@ export default function FlashcardViewPage() {
               setIsLoadingEvaluation={setIsLoadingEvaluation}
               checkNetworkConnectivity={checkNetworkConnectivity}
               handleShowNetworkErrorModal={handleShowNetworkErrorModal}
+              handleShowServerErrorModal={handleShowServerErrorModal}
               handleShowAudioTimeLimitModal={handleShowAudioTimeLimitModal}
               showWelcomeBadgeNotification={showWelcomeBadgeNotification}
             />
@@ -4649,6 +4693,21 @@ export default function FlashcardViewPage() {
         Icon={DeleteModalIcon}
         buttons="single"
         onConfirm={handleDismissNetworkErrorModal}
+      />
+
+      {/* Server Error Modal */}
+      <GreyOverlayBackground 
+        visible={isServerErrorModalOpen}
+        opacity={serverErrorOverlayOpacity}
+        onPress={handleDismissServerErrorModal}
+      />
+      <GenericModal
+        visible={isServerErrorModalOpen}
+        opacity={serverErrorModalOpacity}
+        text={strings[language].flashcardViewPage.serverErrorMessage}
+        Icon={DeleteModalIcon}
+        buttons="single"
+        onConfirm={handleDismissServerErrorModal}
       />
 
       {/* Audio Time Limit Modal */}

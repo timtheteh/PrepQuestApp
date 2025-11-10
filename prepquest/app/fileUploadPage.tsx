@@ -414,9 +414,15 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         },
         body: JSON.stringify({ prompt }),
       });
-      if (resp.ok) {
-        const data = await resp.json();
-        let f = data.flashcards?.flashcards ?? data.flashcards;
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error(`File upload GenAI flashcard request failed: ${resp.status}`, errorText);
+        throw new Error(`SERVER_ERROR:${resp.status}`);
+      }
+
+      const data = await resp.json();
+      let f = data.flashcards?.flashcards ?? data.flashcards;
         
         // Handle case where API returns flashcards as raw string (when Edge Function parsing fails)
         if (typeof f === 'string') {
@@ -456,9 +462,8 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
           }
         }
         
-        if (f && !Array.isArray(f)) f = [f];
-        flashcards = f;
-      }
+      if (f && !Array.isArray(f)) f = [f];
+      flashcards = f;
     } catch (networkError) {
       console.error('Network error during file upload GenAI flashcard generation:', networkError);
       
@@ -593,6 +598,18 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       (error as any)?.code === 'ECONNREFUSED' ||
       (error as any)?.code === 'ETIMEDOUT';
     
+    const isServerError = !isNetworkError && typeof errorMessage === 'string' && errorMessage.startsWith('SERVER_ERROR:');
+    let serverStatusCode: number | null = null;
+    if (isServerError) {
+      const parts = errorMessage.split(':');
+      if (parts.length > 1) {
+        const parsed = parseInt(parts[1], 10);
+        if (!Number.isNaN(parsed)) {
+          serverStatusCode = parsed;
+        }
+      }
+    }
+
     if (isNetworkError) {
       console.log('🚨 NETWORK ERROR detected in main catch block, saving progress');
       
@@ -636,11 +653,15 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
         createdDeckId, createdFlashcardIds,
-        status: 'error',
+        status: isServerError ? 'serverError' : 'error',
         inProgress: false, 
         error: true, 
         networkError: false,
-        errorMessage: error.message,
+        serverError: isServerError,
+        serverStatusCode,
+        errorMessage: isServerError
+          ? `Server error occurred${serverStatusCode ? ` (status ${serverStatusCode})` : ''}`
+          : error.message,
         timestamp: Date.now() 
       });
     }
@@ -1008,6 +1029,9 @@ export default function FileUploadPage() {
   const backConfirmationModalOpacity = useRef(new Animated.Value(0)).current;
   const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
   const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isServerErrorModalOpen, setIsServerErrorModalOpen] = useState(false);
+  const serverErrorModalOpacity = useRef(new Animated.Value(0)).current;
+  const [serverErrorMessage, setServerErrorMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const { language } = useLanguage();
@@ -1035,6 +1059,7 @@ export default function FileUploadPage() {
     resetAutomaticallyCancelledFlag,
     cancelDeckCreationTaskDueToNetworkError
   } = useBackgroundTask();
+  const serverErrorHandledRef = useRef(false);
 
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
@@ -1261,6 +1286,55 @@ export default function FileUploadPage() {
       ]).start();
     }
   }, [isNetworkErrorModalOpen]);
+
+  useEffect(() => {
+    if (isServerErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(serverErrorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isServerErrorModalOpen]);
+
+  useEffect(() => {
+    if (
+      backgroundTaskProgress &&
+      backgroundTaskProgress.taskType === 'fileUpload' &&
+      backgroundTaskProgress.serverError &&
+      !backgroundTaskProgress.networkError
+    ) {
+      const statusCode = backgroundTaskProgress.serverStatusCode;
+      const statusKey = statusCode ? String(statusCode) : 'default';
+      const errorMessages = strings[language].fileUploadPage.errorMessages as Record<string, string>;
+      const message = errorMessages[statusKey] ?? errorMessages.default;
+
+      if (showStatusPage) {
+        setShowStatusPage(false);
+        setStatusExtractingInformationFromFiles(false);
+        setStatusGeneratingFlashcards(false);
+        setStatusAddingDeckAndFlashcards(false);
+        setCreatedDeckId(null);
+        setCreatedFlashcardIds([]);
+        resetAutomaticallyCancelledFlag();
+      }
+
+      if (!serverErrorHandledRef.current) {
+        setServerErrorMessage(message);
+        setIsServerErrorModalOpen(true);
+        serverErrorHandledRef.current = true;
+      }
+    } else if (!backgroundTaskProgress || backgroundTaskProgress.taskType !== 'fileUpload' || !backgroundTaskProgress.serverError) {
+      serverErrorHandledRef.current = false;
+    }
+  }, [backgroundTaskProgress, language, showStatusPage]);
 
   // Reset state when component mounts or when navigating back
   useEffect(() => {
@@ -1640,6 +1714,24 @@ export default function FileUploadPage() {
     });
   };
 
+  const handleDismissServerErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(serverErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsServerErrorModalOpen(false);
+      setServerErrorMessage('');
+    });
+  };
+
   const handleUseMostRecentFormPress = () => {
     setIsRecentFormModalOpen(true);
     Animated.parallel([
@@ -1955,6 +2047,17 @@ export default function FileUploadPage() {
                 : strings[language].deckCreationStatusPage.addingFlashcardsAndDeck) }        ]}
         isInViewFlashcardsPage={isInViewFlashcardsPage === 'true'}
         onCancel={async () => {
+          if (backgroundTaskProgress?.taskType === 'fileUpload' && backgroundTaskProgress?.serverError) {
+            setShowStatusPage(false);
+            setStatusExtractingInformationFromFiles(false);
+            setStatusGeneratingFlashcards(false);
+            setStatusAddingDeckAndFlashcards(false);
+            setCreatedDeckId(null);
+            setCreatedFlashcardIds([]);
+            cancelCreationRef.current = false;
+            return;
+          }
+
           cancelCreationRef.current = true;
           
           // Update progress to indicate manual cancellation instead of clearing it immediately
@@ -2217,9 +2320,36 @@ export default function FileUploadPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isAIHelpModalOpen || isRecentFormModalOpen || isErrorModalOpen || isSuccessModalOpen || isBackConfirmationModalOpen || isNetworkErrorModalOpen}
-        opacity={isRecentFormModalOpen ? overlayOpacity : (isHelpModalOpen ? overlayOpacity : (isErrorModalOpen ? overlayOpacity : (isSuccessModalOpen ? overlayOpacity : (isBackConfirmationModalOpen ? overlayOpacity : (isNetworkErrorModalOpen ? overlayOpacity : aiHelpOverlayOpacity)))))}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isNetworkErrorModalOpen ? handleDismissNetworkErrorModal : handleDismissAIHelp)))))}
+        visible={
+          isHelpModalOpen ||
+          isAIHelpModalOpen ||
+          isRecentFormModalOpen ||
+          isErrorModalOpen ||
+          isSuccessModalOpen ||
+          isBackConfirmationModalOpen ||
+          isNetworkErrorModalOpen ||
+          isServerErrorModalOpen
+        }
+        opacity={
+          isRecentFormModalOpen ? overlayOpacity :
+          isHelpModalOpen ? overlayOpacity :
+          isErrorModalOpen ? overlayOpacity :
+          isSuccessModalOpen ? overlayOpacity :
+          isBackConfirmationModalOpen ? overlayOpacity :
+          isServerErrorModalOpen ? serverErrorModalOpacity :
+          isNetworkErrorModalOpen ? networkErrorModalOpacity :
+          aiHelpOverlayOpacity
+        }
+        onPress={
+          isRecentFormModalOpen ? handleDismissRecentForm :
+          isHelpModalOpen ? handleDismissHelp :
+          isErrorModalOpen ? handleDismissErrorModal :
+          isSuccessModalOpen ? handleDismissSuccessModal :
+          isBackConfirmationModalOpen ? handleDismissBackConfirmation :
+          isServerErrorModalOpen ? handleDismissServerErrorModal :
+          isNetworkErrorModalOpen ? handleDismissNetworkErrorModal :
+          handleDismissAIHelp
+        }
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -2291,6 +2421,14 @@ export default function FileUploadPage() {
         }}
         textMarginBottom={40}
         contentMarginTop={-10}
+        Icon={DeleteModalIcon}
+      />
+      <GenericModal
+        visible={isServerErrorModalOpen}
+        opacity={serverErrorModalOpacity}
+        text={serverErrorMessage || strings[language].fileUploadPage.errorMessages.default}
+        buttons="single"
+        onConfirm={handleDismissServerErrorModal}
         Icon={DeleteModalIcon}
       />
       <GenericModal

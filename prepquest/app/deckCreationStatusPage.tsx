@@ -117,6 +117,15 @@ export default function DeckCreationStatusPage({
       return;
     }
     
+    // Check if there's a server error - dismiss similarly
+    if (backgroundTaskProgress && backgroundTaskProgress.serverError && !hasNavigatedRef.current && !isNewTaskRef.current) {
+      console.log('🚨 DeckCreationStatusPage - SERVER ERROR DETECTED! DISMISSING STATUS PAGE IMMEDIATELY!');
+      console.log('🚨 Server error status code:', backgroundTaskProgress.serverStatusCode);
+      hasNavigatedRef.current = true;
+      handleCancel();
+      return;
+    }
+    
     // ALSO check for networkError status string
     if (backgroundTaskProgress && backgroundTaskProgress.status === 'networkError' && !hasNavigatedRef.current && !isNewTaskRef.current) {
       console.log('🚨 DeckCreationStatusPage - NETWORK ERROR STATUS DETECTED! DISMISSING STATUS PAGE IMMEDIATELY!');

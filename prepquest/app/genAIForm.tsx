@@ -261,7 +261,9 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     }
     
     if (!response.ok) {
-      throw new Error(`API request failed with status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`API request failed with status: ${response.status}`, errorText);
+      throw new Error(`SERVER_ERROR:${response.status}`);
     }
     
     const data = await response.json();
@@ -728,6 +730,17 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
         (e as any)?.code === 'ENOTFOUND' ||
         (e as any)?.code === 'ECONNREFUSED' ||
         (e as any)?.code === 'ETIMEDOUT';
+    const isServerError = !isNetworkError && typeof errorMessage === 'string' && errorMessage.startsWith('SERVER_ERROR:');
+    let serverStatusCode: number | null = null;
+    if (isServerError) {
+      const statusParts = errorMessage.split(':');
+      if (statusParts.length > 1) {
+        const parsed = parseInt(statusParts[1], 10);
+        if (!Number.isNaN(parsed)) {
+          serverStatusCode = parsed;
+        }
+      }
+    }
     
     // Save progress on error
     await saveGenAIDeckCreationProgress({
@@ -737,7 +750,13 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       inProgress: false, 
       error: true, 
       networkError: isNetworkError,
-      errorMessage: isNetworkError ? 'Network error occurred during task execution' : e.message, 
+      serverError: isServerError,
+      serverStatusCode,
+      errorMessage: isNetworkError
+        ? 'Network error occurred during task execution'
+        : isServerError
+          ? `Server error occurred${serverStatusCode ? ` (status ${serverStatusCode})` : ''}`
+          : errorMessage, 
       timestamp: Date.now()
     });
     console.log('Error progress saved to AsyncStorage');
@@ -809,6 +828,9 @@ export default function GenAIFormPage() {
   const optionalFieldsWarningModalOpacity = useRef(new Animated.Value(0)).current;
   const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = useState(false);
   const networkErrorModalOpacity = useRef(new Animated.Value(0)).current;
+  const [isServerErrorModalOpen, setIsServerErrorModalOpen] = useState(false);
+  const serverErrorModalOpacity = useRef(new Animated.Value(0)).current;
+  const [serverErrorMessage, setServerErrorMessage] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -829,6 +851,7 @@ export default function GenAIFormPage() {
   const cancelCreationRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMinimizingRef = useRef(false); // Track if we're minimizing vs canceling
+  const serverErrorHandledRef = useRef(false);
 
   useEffect(() => {
     // Ensure the layout is ready after the first render
@@ -1084,6 +1107,44 @@ export default function GenAIFormPage() {
       ]).start();
     }
   }, [isNetworkErrorModalOpen]);
+
+  useEffect(() => {
+    if (isServerErrorModalOpen) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(serverErrorModalOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isServerErrorModalOpen]);
+
+  useEffect(() => {
+    if (
+      backgroundTaskProgress &&
+      backgroundTaskProgress.serverError &&
+      !backgroundTaskProgress.networkError &&
+      !showStatusPage
+    ) {
+      if (!serverErrorHandledRef.current) {
+        const errorMessages = strings[language].genAIFormPage.errorMessages as Record<string, string>;
+        const statusCode = backgroundTaskProgress.serverStatusCode;
+        const statusKey = statusCode ? String(statusCode) : 'default';
+        const message = errorMessages[statusKey] ?? errorMessages.default;
+        setServerErrorMessage(message);
+        setIsServerErrorModalOpen(true);
+        serverErrorHandledRef.current = true;
+      }
+    } else if (!backgroundTaskProgress) {
+      serverErrorHandledRef.current = false;
+    }
+  }, [backgroundTaskProgress, showStatusPage, language]);
 
   useEffect(() => {
     // Set initial mode animation when component mounts
@@ -1839,6 +1900,24 @@ export default function GenAIFormPage() {
     });
   };
 
+  const handleDismissServerErrorModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(serverErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsServerErrorModalOpen(false);
+      setServerErrorMessage('');
+    });
+  };
+
   const screenHeight = Dimensions.get('window').height;
   const bottomOffset = Platform.OS === 'ios' ? 
     (screenHeight < 670 ? 10 : insets.bottom) : 
@@ -2170,9 +2249,18 @@ export default function GenAIFormPage() {
       </View>
 
       <GreyOverlayBackground 
-        visible={isHelpModalOpen || isRecentFormModalOpen || isBackConfirmationModalOpen || isErrorModalOpen || isSuccessModalOpen || isOptionalFieldsWarningModalOpen || isNetworkErrorModalOpen}
+        visible={isHelpModalOpen || isRecentFormModalOpen || isBackConfirmationModalOpen || isErrorModalOpen || isSuccessModalOpen || isOptionalFieldsWarningModalOpen || isNetworkErrorModalOpen || isServerErrorModalOpen}
         opacity={overlayOpacity}
-        onPress={isRecentFormModalOpen ? handleDismissRecentForm : (isHelpModalOpen ? handleDismissHelp : (isBackConfirmationModalOpen ? handleDismissBackConfirmation : (isErrorModalOpen ? handleDismissErrorModal : (isSuccessModalOpen ? handleDismissSuccessModal : (isOptionalFieldsWarningModalOpen ? handleOptionalFieldsWarningCancel : handleDismissNetworkErrorModal)))))}
+        onPress={
+          isRecentFormModalOpen ? handleDismissRecentForm :
+          isHelpModalOpen ? handleDismissHelp :
+          isBackConfirmationModalOpen ? handleDismissBackConfirmation :
+          isErrorModalOpen ? handleDismissErrorModal :
+          isSuccessModalOpen ? handleDismissSuccessModal :
+          isOptionalFieldsWarningModalOpen ? handleOptionalFieldsWarningCancel :
+          isServerErrorModalOpen ? handleDismissServerErrorModal :
+          handleDismissNetworkErrorModal
+        }
       />
       <GenericModal
         visible={isHelpModalOpen}
@@ -2266,6 +2354,14 @@ export default function GenAIFormPage() {
         buttons="double"
         onCancel={handleDismissSuccessModal}
         onConfirm={handleSuccessConfirm}
+      />
+      <GenericModal
+        visible={isServerErrorModalOpen}
+        opacity={serverErrorModalOpacity}
+        text={serverErrorMessage || strings[language].genAIFormPage.errorMessages.default}
+        buttons="single"
+        onConfirm={handleDismissServerErrorModal}
+        Icon={DeleteModalIcon}
       />
       <GenericModal
         visible={isNetworkErrorModalOpen}

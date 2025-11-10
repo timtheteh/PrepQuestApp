@@ -267,6 +267,77 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       return;
     }
     
+    // Check if the backup result indicates server error
+    if (!result.success && (result as any).isServerError) {
+      console.log('Backup cancelled due to server error', {
+        serverStatusCode: (result as any).serverStatusCode,
+        serverErrorCode: (result as any).serverErrorCode
+      });
+      await saveBackupProgress({
+        status: 'serverError',
+        inProgress: false,
+        completed: false,
+        serverError: true,
+        serverStatusCode: (result as any).serverStatusCode,
+        serverErrorCode: (result as any).serverErrorCode,
+        timestamp: Date.now(),
+        message: result.message,
+        errorMessage: result.message
+      });
+
+      if (shouldSendPushNotification()) {
+        try {
+          const { status: permissionStatus } = await Notifications.getPermissionsAsync();
+          if (permissionStatus === 'granted') {
+            console.log('Sending server error notification (app in background)');
+            const title = language === 'Chinese' ? '备份失败！' : 'Backup Failed!';
+            const body =
+              language === 'Chinese'
+                ? '备份遇到服务器问题，请稍后再试。'
+                : 'Backup ran into a server issue. Please try again soon.';
+
+            const notificationId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: {
+                  type: 'backup_server_error',
+                  serverStatusCode: (result as any).serverStatusCode ?? null,
+                },
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                autoDismiss: false,
+              },
+              trigger: null,
+            });
+
+            console.log('Server error notification sent successfully with ID:', notificationId);
+
+            await saveBackupProgress({
+              status: 'serverError',
+              inProgress: false,
+              completed: false,
+              serverError: true,
+              serverStatusCode: (result as any).serverStatusCode,
+              serverErrorCode: (result as any).serverErrorCode,
+              notificationSent: true,
+              timestamp: Date.now(),
+              message: result.message,
+              errorMessage: result.message
+            });
+          } else {
+            console.log('Notification permissions not granted, cannot send server error notification');
+          }
+        } catch (notificationError) {
+          console.error('Error sending server error notification:', notificationError);
+        }
+      } else {
+        console.log('App is active, in-app notification will be shown instead for server error');
+      }
+
+      return;
+    }
+    
     // Check if the backup result indicates network error
     if (!result.success && (result as any).isNetworkError) {
       console.log('Backup cancelled due to network error');

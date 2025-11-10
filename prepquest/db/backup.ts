@@ -475,6 +475,43 @@ function isNetworkError(error: any): boolean {
   return hasNetworkPattern || isNetworkErrorType || hasNetworkStatusCode || isAbortError;
 }
 
+interface ServerErrorInfo {
+  isServerError: boolean;
+  statusCode?: number;
+  code?: string;
+}
+
+function getServerErrorInfo(error: any): ServerErrorInfo {
+  if (!error || typeof error !== 'object') {
+    return { isServerError: false };
+  }
+
+  const status =
+    typeof error.status === 'number'
+      ? error.status
+      : typeof error.statusCode === 'number'
+        ? error.statusCode
+        : undefined;
+
+  const code = typeof error.code === 'string' ? error.code : undefined;
+  const normalizedCode = code?.toUpperCase();
+
+  // Exclude known non-server cases (handled elsewhere)
+  if (normalizedCode === 'PGRST002') {
+    return { isServerError: false };
+  }
+
+  if (typeof status === 'number' && status >= 500) {
+    return { isServerError: true, statusCode: status, code };
+  }
+
+  if (normalizedCode && normalizedCode.startsWith('PGRST')) {
+    return { isServerError: true, statusCode: status, code };
+  }
+
+  return { isServerError: false };
+}
+
 // Supabase upload functions
 
 /**
@@ -746,6 +783,14 @@ async function uploadFoldersToSupabaseWithProgress(
 
       if (error) {
         console.error('Error uploading folder chunk to Supabase:', error);
+        const serverErrorInfo = getServerErrorInfo(error);
+        if (serverErrorInfo.isServerError) {
+          const serverError = new Error(error.message || 'Server error while uploading folders.');
+          (serverError as any).isServerError = true;
+          (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+          (serverError as any).serverErrorCode = serverErrorInfo.code;
+          throw serverError;
+        }
         if (isNetworkError(error)) {
           throw error; // Propagate network errors up to main backup function
         }
@@ -770,6 +815,14 @@ async function uploadFoldersToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadFoldersToSupabaseWithProgress:', error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error((error as Error).message || 'Server error while uploading folders.');
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
     if (isNetworkError(error)) {
       throw error; // Propagate network errors up to main backup function
     }
@@ -822,6 +875,14 @@ async function uploadDecksToSupabaseWithProgress(
 
       if (error) {
         console.error('Error uploading deck chunk to Supabase:', error);
+        const serverErrorInfo = getServerErrorInfo(error);
+        if (serverErrorInfo.isServerError) {
+          const serverError = new Error(error.message || 'Server error while uploading decks.');
+          (serverError as any).isServerError = true;
+          (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+          (serverError as any).serverErrorCode = serverErrorInfo.code;
+          throw serverError;
+        }
         if (isNetworkError(error)) {
           throw error; // Propagate network errors up to main backup function
         }
@@ -843,6 +904,14 @@ async function uploadDecksToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadDecksToSupabaseWithProgress:', error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error((error as Error).message || 'Server error while uploading decks.');
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
     if (isNetworkError(error)) {
       throw error; // Propagate network errors up to main backup function
     }
@@ -909,6 +978,15 @@ async function uploadFlashcardsToSupabaseWithProgress(
           break;
         } catch (error) {
           retries++;
+
+          const serverErrorInfo = getServerErrorInfo(error);
+          if (serverErrorInfo.isServerError) {
+            const serverError = new Error((error as Error).message || 'Server error while uploading flashcards.');
+            (serverError as any).isServerError = true;
+            (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+            (serverError as any).serverErrorCode = serverErrorInfo.code;
+            throw serverError;
+          }
           
           // If this is a network error and we've exhausted retries, throw it up
           if (retries >= maxRetries) {
@@ -954,6 +1032,14 @@ async function uploadFlashcardsToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadFlashcardsToSupabaseWithProgress:', error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error((error as Error).message || 'Server error while uploading flashcards.');
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
     if (isNetworkError(error)) {
       throw error; // Propagate network errors up to main backup function
     }
@@ -1000,6 +1086,14 @@ async function uploadUserFormEntriesToSupabaseWithProgress(
 
     if (error) {
       console.error('Error uploading user form entries to Supabase:', error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error(error.message || 'Server error while uploading user form entries.');
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
       if (isNetworkError(error)) {
         throw error; // Propagate network errors up to main backup function
       }
@@ -1011,6 +1105,14 @@ async function uploadUserFormEntriesToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadUserFormEntriesToSupabaseWithProgress:', error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error((error as Error).message || 'Server error while uploading user form entries.');
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
     if (isNetworkError(error)) {
       throw error; // Propagate network errors up to main backup function
     }
@@ -1052,6 +1154,14 @@ async function uploadUserToSupabaseWithProgress(
 
     if (error) {
       console.error('Error uploading user to Supabase:', error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error(error.message || 'Server error while uploading user data.');
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
       if (isNetworkError(error)) {
         throw error; // Propagate network errors up to main backup function
       }
@@ -1063,6 +1173,14 @@ async function uploadUserToSupabaseWithProgress(
     return true;
   } catch (error) {
     console.error('Error in uploadUserToSupabaseWithProgress:', error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error((error as Error).message || 'Server error while uploading user data.');
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
     if (isNetworkError(error)) {
       throw error; // Propagate network errors up to main backup function
     }
@@ -1099,6 +1217,14 @@ async function uploadBadgeAssignmentsWithProgress<T extends { userID: string }>(
 
     if (deleteError) {
       console.error(`Error deleting ${tableName} rows for user ${currentUserID}:`, deleteError);
+      const deleteServerErrorInfo = getServerErrorInfo(deleteError);
+      if (deleteServerErrorInfo.isServerError) {
+        const serverError = new Error(deleteError.message || `Server error while clearing ${tableName} data.`);
+        (serverError as any).isServerError = true;
+        (serverError as any).serverStatusCode = deleteServerErrorInfo.statusCode;
+        (serverError as any).serverErrorCode = deleteServerErrorInfo.code;
+        throw serverError;
+      }
       if (isNetworkError(deleteError)) {
         throw deleteError;
       }
@@ -1132,6 +1258,14 @@ async function uploadBadgeAssignmentsWithProgress<T extends { userID: string }>(
 
       if (error) {
         console.error(`Error uploading ${tableName} chunk to Supabase:`, error);
+        const serverErrorInfo = getServerErrorInfo(error);
+        if (serverErrorInfo.isServerError) {
+          const serverError = new Error(error.message || `Server error while uploading ${tableName} data.`);
+          (serverError as any).isServerError = true;
+          (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+          (serverError as any).serverErrorCode = serverErrorInfo.code;
+          throw serverError;
+        }
         if (isNetworkError(error)) {
           throw error;
         }
@@ -1146,6 +1280,14 @@ async function uploadBadgeAssignmentsWithProgress<T extends { userID: string }>(
     return true;
   } catch (error) {
     console.error(`Error in uploadBadgeAssignmentsWithProgress for ${tableName}:`, error);
+    const serverErrorInfo = getServerErrorInfo(error);
+    if (serverErrorInfo.isServerError) {
+      const serverError = new Error((error as Error).message || `Server error while uploading ${tableName} data.`);
+      (serverError as any).isServerError = true;
+      (serverError as any).serverStatusCode = serverErrorInfo.statusCode;
+      (serverError as any).serverErrorCode = serverErrorInfo.code;
+      throw serverError;
+    }
     if (isNetworkError(error)) {
       throw error;
     }
@@ -1161,7 +1303,7 @@ export async function backupDataToCloud(
   onProgress?: (progress: BackupProgress) => void,
   isCancelled?: () => boolean,
   options?: BackupOptions
-): Promise<{ success: boolean; message: string; isNetworkError?: boolean; isBackupServiceBusy?: boolean }> {
+): Promise<{ success: boolean; message: string; isNetworkError?: boolean; isServerError?: boolean; isBackupServiceBusy?: boolean; serverStatusCode?: number; serverErrorCode?: string }> {
   try {
     const backupOnlyFormEntries = options?.backupOnlyFormEntries ?? false;
     console.log('Starting backup process...', { backupOnlyFormEntries });
@@ -1460,6 +1602,20 @@ export async function backupDataToCloud(
         success: false, 
         message: 'Backup service is temporarily busy. Please try again in a few minutes.',
         isBackupServiceBusy: true
+      };
+    }
+
+    // Check if this is a server error
+    if (error && typeof error === 'object' && 'isServerError' in error) {
+      const serverStatusCode = (error as any).serverStatusCode;
+      const serverErrorCode = (error as any).serverErrorCode;
+      console.log('Server error detected during backup', { serverStatusCode, serverErrorCode });
+      return {
+        success: false,
+        message: `Backup failed due to a server issue. Please try again soon.${serverStatusCode ? ` (Status ${serverStatusCode})` : ''}`,
+        isServerError: true,
+        serverStatusCode,
+        serverErrorCode
       };
     }
     

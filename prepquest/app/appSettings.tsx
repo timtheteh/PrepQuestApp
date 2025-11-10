@@ -264,6 +264,9 @@ export default function AppSettingsScreen() {
   const [isNetworkErrorModalOpen, setIsNetworkErrorModalOpen] = React.useState(false);
   const networkErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
   const networkErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
+  const [isBackupServerErrorModalOpen, setIsBackupServerErrorModalOpen] = React.useState(false);
+  const backupServerErrorOverlayOpacity = React.useRef(new Animated.Value(0)).current;
+  const backupServerErrorModalOpacity = React.useRef(new Animated.Value(0)).current;
 
   // Backup service busy modal state
   const [isBackupServiceBusyModalOpen, setIsBackupServiceBusyModalOpen] = React.useState(false);
@@ -283,6 +286,7 @@ export default function AppSettingsScreen() {
 
   // Track if network error modal has been shown to prevent dismissal by in-app notification
   const [hasNetworkErrorModalBeenShown, setHasNetworkErrorModalBeenShown] = React.useState(false);
+  const [hasServerErrorModalBeenShown, setHasServerErrorModalBeenShown] = React.useState(false);
   
   // Track which operation had a network error for modal text
   const [networkErrorOperation, setNetworkErrorOperation] = React.useState<'backup' | 'import' | 'clearData'>('backup');
@@ -418,6 +422,7 @@ export default function AppSettingsScreen() {
     ]).start(() => {
       setIsNetworkErrorModalOpen(false);
       setHasNetworkErrorModalBeenShown(false);
+      setHasServerErrorModalBeenShown(false);
     });
     
     // Handle different operations differently
@@ -472,6 +477,48 @@ export default function AppSettingsScreen() {
       console.log('Clear data network error modal dismissed - all buttons immediately re-enabled');
     }
   }, [networkErrorOverlayOpacity, networkErrorModalOpacity, clearBackupBackgroundTaskProgress, clearImportBackgroundTaskProgress, clearClearDataBackgroundTaskProgress, networkErrorOperation]);
+
+  const handleShowBackupServerErrorModal = React.useCallback(() => {
+    setIsBackupServerErrorModalOpen(true);
+    setHasServerErrorModalBeenShown(true);
+    Animated.parallel([
+      Animated.timing(backupServerErrorOverlayOpacity, {
+        toValue: 0.5,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backupServerErrorModalOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [backupServerErrorOverlayOpacity, backupServerErrorModalOpacity]);
+
+  const handleDismissBackupServerErrorModal = React.useCallback(async () => {
+    Animated.parallel([
+      Animated.timing(backupServerErrorOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backupServerErrorModalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(async () => {
+      setIsBackupServerErrorModalOpen(false);
+      setHasServerErrorModalBeenShown(false);
+      try {
+        await clearBackupBackgroundTaskProgress();
+        console.log('Cleared backup progress data after user dismissed server error modal');
+      } catch (error) {
+        console.error('Error clearing backup progress data after server error modal dismissal:', error);
+      }
+      setShouldDisableOtherButtons(false);
+    });
+  }, [backupServerErrorOverlayOpacity, backupServerErrorModalOpacity, clearBackupBackgroundTaskProgress]);
 
   const handleShowBackupLoadingNetworkErrorModal = React.useCallback(() => {
     setIsBackupLoadingNetworkErrorModalOpen(true);
@@ -980,6 +1027,8 @@ export default function AppSettingsScreen() {
       } else if (data?.type === 'import_network_error') {
         // Show persistent network error modal when user taps on import network error notification
         handleShowNetworkErrorModal('import');
+      } else if (data?.type === 'backup_server_error') {
+        handleShowBackupServerErrorModal();
       } else if (data?.type === 'clear_data_completed') {
         // Set persistent clear data completion state
         setHasClearDataCompleted(true);
@@ -997,7 +1046,7 @@ export default function AppSettingsScreen() {
     });
 
     return () => subscription.remove();
-  }, [handleShowNetworkErrorModal, handleShowBackupServiceBusyModal]);
+  }, [handleShowNetworkErrorModal, handleShowBackupServiceBusyModal, handleShowBackupServerErrorModal]);
 
   // Sync local stopping state with context stopping state
   React.useEffect(() => {
@@ -1486,6 +1535,8 @@ export default function AppSettingsScreen() {
       
       // Show success modal when backup completes (will stay open until manually dismissed)
       handleShowSuccessModal(backupBackgroundTaskProgress.message || strings[language].appSettingsPage.backupCompletedSuccessfully);
+    } else if (backupBackgroundTaskProgress?.serverError && !hasServerErrorModalBeenShown) {
+      handleShowBackupServerErrorModal();
     } else if (backupBackgroundTaskProgress?.networkError && !hasNetworkErrorModalBeenShown) {
       // Show persistent network error modal only if it hasn't been shown yet
       handleShowNetworkErrorModal('backup');
@@ -1506,7 +1557,7 @@ export default function AppSettingsScreen() {
         handleShowNetworkErrorModal('backup');
       }
     }
-  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess, hasNetworkErrorModalBeenShown, handleShowBackupServiceBusyModal, handleShowNetworkErrorModal]);
+  }, [backupBackgroundTaskProgress, isCancelBackupModalOpen, cancelBackupOverlayOpacity, cancelBackupModalOpacity, isNavigationGuardModalOpen, navigationGuardOverlayOpacity, navigationGuardModalOpacity, navigationBlockingProcess, hasNetworkErrorModalBeenShown, hasServerErrorModalBeenShown, handleShowBackupServiceBusyModal, handleShowNetworkErrorModal, handleShowBackupServerErrorModal]);
 
   // Watch for import completion to show success modal
   React.useEffect(() => {
@@ -3346,6 +3397,21 @@ export default function AppSettingsScreen() {
           Icon={DeleteModalIcon}
           buttons="single"
           onConfirm={handleDismissNetworkErrorModal}
+        />
+
+        {/* Backup Server Error Modal */}
+        <GreyOverlayBackground 
+          visible={isBackupServerErrorModalOpen}
+          opacity={backupServerErrorOverlayOpacity}
+          onPress={handleDismissBackupServerErrorModal}
+        />
+        <GenericModal
+          visible={isBackupServerErrorModalOpen}
+          opacity={backupServerErrorModalOpacity}
+          text={strings[language].appSettingsPage.backupCancelledServerError}
+          Icon={DeleteModalIcon}
+          buttons="single"
+          onConfirm={handleDismissBackupServerErrorModal}
         />
 
         {/* Backup Loading Network Error Modal */}

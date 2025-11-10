@@ -3,6 +3,18 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { strings } from '../constants/strings';
 
+const englishDeckCreationNotifications = strings.English.notifications.deckCreation;
+
+const formatTemplate = (template: string, variables: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (_match, key: string) =>
+    variables[key] !== undefined ? String(variables[key]) : ''
+  );
+
+const getDeckCreationNotifications = (language: string) => {
+  const localeStrings = strings[language] ?? strings.English;
+  return localeStrings.notifications?.deckCreation ?? englishDeckCreationNotifications;
+};
+
 export interface NotificationData extends Record<string, unknown> {
   type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created' | 'backup_completed' | 'clear_data_completed' | 'network_error_cancelled' | 'transcript_error_cancelled';
   deckId?: number;
@@ -124,13 +136,9 @@ class NotificationService {
     deckId: number,
     language: string
   ): Promise<void> {
-    const title = language === 'Chinese' 
-      ? '卡组创建成功！' 
-      : 'Deck Created Successfully!';
-    
-    const body = language === 'Chinese'
-      ? `您的卡组"${deckName}"已准备就绪，可以开始学习了！`
-      : `Your deck "${deckName}" is ready for study!`;
+    const deckStrings = getDeckCreationNotifications(language);
+    const title = formatTemplate(deckStrings.deckCreatedTitle, { deckName });
+    const body = formatTemplate(deckStrings.deckCreatedBody, { deckName });
 
     await this.sendLocalNotification(title, body, {
       type: 'deck_created',
@@ -145,13 +153,9 @@ class NotificationService {
     deckId: number,
     language: string
   ): Promise<void> {
-    const title = language === 'Chinese'
-      ? '闪卡创建成功！'
-      : 'Flashcards Created Successfully!';
-    
-    const body = language === 'Chinese'
-      ? `已为"${deckName}"创建了${flashcardCount}张闪卡`
-      : `${flashcardCount} flashcards have been created for "${deckName}"`;
+    const deckStrings = getDeckCreationNotifications(language);
+    const title = formatTemplate(deckStrings.flashcardsCreatedTitle, { deckName, flashcardCount });
+    const body = formatTemplate(deckStrings.flashcardsCreatedBody, { deckName, flashcardCount });
 
     await this.sendLocalNotification(title, body, {
       type: 'flashcards_created',
@@ -167,13 +171,9 @@ class NotificationService {
     flashcardCount: number,
     language: string
   ): Promise<void> {
-    const title = language === 'Chinese'
-      ? '卡组和闪卡创建成功！'
-      : 'Deck and Flashcards Created Successfully!';
-    
-    const body = language === 'Chinese'
-      ? `您的卡组"${deckName}"和${flashcardCount}张闪卡已准备就绪`
-      : `Your deck "${deckName}" with ${flashcardCount} flashcards is ready!`;
+    const deckStrings = getDeckCreationNotifications(language);
+    const title = formatTemplate(deckStrings.deckAndFlashcardsCreatedTitle, { deckName, flashcardCount });
+    const body = formatTemplate(deckStrings.deckAndFlashcardsCreatedBody, { deckName, flashcardCount });
 
     await this.sendLocalNotification(title, body, {
       type: 'deck_and_flashcards_created',
@@ -189,13 +189,9 @@ class NotificationService {
     folderName: string,
     language: string
   ): Promise<void> {
-    const title = language === 'Chinese'
-      ? '文件夹卡组创建成功！'
-      : 'Folder Deck Created Successfully!';
-    
-    const body = language === 'Chinese'
-      ? `卡组"${deckName}"已添加到文件夹"${folderName}"`
-      : `Deck "${deckName}" has been added to folder "${folderName}"`;
+    const deckStrings = getDeckCreationNotifications(language);
+    const title = formatTemplate(deckStrings.folderDeckCreatedTitle, { deckName, folderName });
+    const body = formatTemplate(deckStrings.folderDeckCreatedBody, { deckName, folderName });
 
     await this.sendLocalNotification(title, body, {
       type: 'deck_created',
@@ -225,13 +221,9 @@ class NotificationService {
     deckName: string,
     language: string
   ): Promise<void> {
-    const title = language === 'Chinese'
-      ? '任务已取消！'
-      : 'Task Cancelled!';
-    
-    const body = language === 'Chinese'
-      ? `由于网络错误，卡组"${deckName}"的创建任务已取消`
-      : `Deck creation task for "${deckName}" was cancelled due to network error`;
+    const deckStrings = getDeckCreationNotifications(language);
+    const title = formatTemplate(deckStrings.networkErrorTitle, { deckName });
+    const body = formatTemplate(deckStrings.networkErrorBody, { deckName });
 
     await this.sendLocalNotification(title, body, {
       type: 'network_error_cancelled',
@@ -244,13 +236,9 @@ class NotificationService {
     errorMessage: string,
     language: string
   ): Promise<void> {
-    const title = language === 'Chinese'
-      ? '任务已取消！'
-      : 'Task Cancelled!';
-    
-    const body = language === 'Chinese'
-      ? `由于YouTube字幕错误，卡组"${deckName}"的创建任务已取消：${errorMessage}`
-      : `Deck creation task for "${deckName}" was cancelled due to YouTube transcript error: ${errorMessage}`;
+    const deckStrings = getDeckCreationNotifications(language);
+    const title = formatTemplate(deckStrings.transcriptErrorTitle, { deckName, errorMessage });
+    const body = formatTemplate(deckStrings.transcriptErrorBody, { deckName, errorMessage });
 
     await this.sendLocalNotification(title, body, {
       type: 'transcript_error_cancelled',

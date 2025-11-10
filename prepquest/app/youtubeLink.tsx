@@ -101,6 +101,7 @@ async function checkNetworkConnectivity(): Promise<boolean> {
 
 // --- Background Task Progress Helpers (reuse same key as GenAI form) ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
+const deckCreationCommonStrings = strings.English.deckCreationCommon;
 
 async function saveDeckCreationProgress(progress: any) {
   try {
@@ -783,7 +784,8 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         await cancelDeckCreationTaskDueToNetworkError();
       }
       
-      await saveDeckCreationProgress({ 
+    const networkErrorMessage = deckCreationCommonStrings.networkErrorProgress;
+    await saveDeckCreationProgress({ 
         taskType: 'youtubeLink', 
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
@@ -792,12 +794,16 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         inProgress: false, 
         error: true, 
         networkError: true,
-        errorMessage: 'Network error occurred during task execution',
+      errorMessage: networkErrorMessage,
         timestamp: Date.now() 
       });
     } else {
       console.log('Non-network error in main catch block, saving as general error');
-      await saveDeckCreationProgress({ 
+    const errorMessageText = isServerError
+      ? `${deckCreationCommonStrings.serverErrorProgress}${serverStatusCode ? ` (Status ${serverStatusCode})` : ''}`
+      : error.message;
+
+    await saveDeckCreationProgress({ 
         taskType: 'youtubeLink', 
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
@@ -808,9 +814,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         networkError: false,
         serverError: isServerError,
         serverStatusCode,
-        errorMessage: isServerError
-          ? `Server error occurred${serverStatusCode ? ` (status ${serverStatusCode})` : ''}`
-          : error.message,
+      errorMessage: errorMessageText,
         timestamp: Date.now() 
       });
     }

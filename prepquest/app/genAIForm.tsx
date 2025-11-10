@@ -66,6 +66,7 @@ async function checkNetworkConnectivity(): Promise<boolean> {
 
 // --- Background Task Logic for GenAI Deck/Flashcard Creation ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
+const deckCreationCommonStrings = strings.English.deckCreationCommon;
 
 // Helper to save progress
 async function saveGenAIDeckCreationProgress(progress: any) {
@@ -743,6 +744,12 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     }
     
     // Save progress on error
+    const errorMessageText = isNetworkError
+      ? deckCreationCommonStrings.networkErrorProgress
+      : isServerError
+        ? `${deckCreationCommonStrings.serverErrorProgress}${serverStatusCode ? ` (Status ${serverStatusCode})` : ''}`
+        : errorMessage;
+
     await saveGenAIDeckCreationProgress({
       mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
       formData, prompt, createdDeckId, createdFlashcardIds, 
@@ -752,11 +759,7 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
       networkError: isNetworkError,
       serverError: isServerError,
       serverStatusCode,
-      errorMessage: isNetworkError
-        ? 'Network error occurred during task execution'
-        : isServerError
-          ? `Server error occurred${serverStatusCode ? ` (status ${serverStatusCode})` : ''}`
-          : errorMessage, 
+      errorMessage: errorMessageText,
       timestamp: Date.now()
     });
     console.log('Error progress saved to AsyncStorage');

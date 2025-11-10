@@ -47,7 +47,7 @@ import {
   updateDeckLastModifiedAfterFlashcardDeletion,
   type TransformedFlashcard,
 } from '@/db/decks';
-import { getUserVoiceLanguage, incrementChatWithAIRequests } from '@/db/users';
+import { getUserVoiceLanguage } from '@/db/users';
 import { checkAndAwardStreakBadges, checkAndAwardWelcomeBadges, checkAndAwardQuizScoreLifetimeBadges, checkAndAwardAverageTimeLifetimeBadges } from '@/db/grades';
 import { checkAndAwardCustomBadges } from '@/db/decks';
 import { useStreakBadgeNotification } from '@/contexts/StreakBadgeNotificationContext';
@@ -60,6 +60,8 @@ import { WelcomeBadgeNotification } from '@/components/inAppNotifications/Welcom
 import { LifetimeBadgeNotification } from '@/components/inAppNotifications/LifetimeBadgeNotification';
 import { LifetimeGradeBadgeNotification } from '@/components/inAppNotifications/LifetimeGradeBadgeNotification';
 import { CustomBadgeNotification } from '@/components/inAppNotifications/CustomBadgeNotification';
+import { startAIChatBackgroundTask } from '@/utils/aiChatBackgroundTask';
+import { useAIChatBackgroundTask } from '@/contexts/AIChatBackgroundTaskContext';
 //
 import { useContentTopHeight, useHeaderIconsTopHeight, useTopBarAccountHeight, useBottomSafeAreaHeight } from '@/hooks/heights';
 import CountdownCircle from '@/components/general/CountdownCircle';
@@ -795,191 +797,6 @@ async function playAudio(uri: any) {
   }
 }
 
-// Helper function to get audio duration
-async function getAudioDuration(uri: string): Promise<number> {
-  try {
-    // For Android AMR files, use file size estimation because Audio API can't read AMR duration correctly
-    if (Platform.OS === 'android' && uri.endsWith('.amr')) {
-      const fileInfo = await FileSystem.getInfoAsync(uri);
-      if (fileInfo.exists && fileInfo.size) {
-        // AMR-WB bitrate is ~23.85 kbps = ~2981 bytes per second
-        // Add a small header overhead (~6 bytes for AMR header)
-        const estimatedSeconds = (fileInfo.size - 6) / 2981;
-        console.log(`📏 Audio duration (Android AMR estimated from ${fileInfo.size} bytes): ${estimatedSeconds.toFixed(2)} seconds`);
-        return estimatedSeconds;
-      }
-    }
-    
-    // For iOS WAV files, use Audio API
-    const { sound } = await Audio.Sound.createAsync({ uri });
-    const status = await sound.getStatusAsync();
-    if (status.isLoaded) {
-      const durationSeconds = status.durationMillis ? status.durationMillis / 1000 : 0;
-      await sound.unloadAsync();
-      console.log(`📏 Audio duration (from Audio API): ${durationSeconds.toFixed(2)} seconds`);
-      return durationSeconds;
-    }
-    await sound.unloadAsync();
-    return 0;
-  } catch (error) {
-    console.error('Error getting audio duration:', error);
-    return 0;
-  }
-}
-
-// Helper function to get audio data for upload (platform-specific handling)
-async function getAudioDataForUpload(uri: string, isLongAudio: boolean, questionContext?: string): Promise<{ data: Blob | FormData; contentType: string }> {
-  try {
-    console.log('🔄 Preparing audio data for upload...');
-    
-    if (Platform.OS === 'ios') {
-      // iOS: Read as base64 and create blob using fetch with data URI
-      const base64String = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      const dataUri = `data:audio/wav;base64,${base64String}`;
-      const response = await fetch(dataUri);
-      const blob = await response.blob();
-      console.log(`✅ Audio blob created (iOS): ${blob.size} bytes`);
-      return { data: blob, contentType: 'audio/wav' };
-    } else {
-      // Android: Use FormData for both short and long audio
-      // FormData with file URI works for all sizes and React Native handles the file reading
-      const formData = new FormData();
-      formData.append('audio', {
-        uri: uri,
-        type: 'audio/amr-wb',
-        name: 'recording.amr',
-      } as any);
-      
-      // Add question context to FormData if provided
-      if (questionContext) {
-        formData.append('questionContext', questionContext);
-        console.log('📝 Question context added to FormData');
-      }
-      
-      console.log(`✅ Audio FormData created (Android ${isLongAudio ? 'long' : 'short'} audio) from URI: ${uri}`);
-      return { data: formData, contentType: 'multipart/form-data' };
-    }
-  } catch (error) {
-    console.error('Error preparing audio data:', error);
-    throw error;
-  }
-}
-
-
-// Helper function to call speech-to-text edge function
-async function transcribeAudio(audioUri: string, language: string = 'English', questionContext?: string): Promise<{ transcript: string; evaluation: { concise: string | null; detailed: string | null } }> {
-  try {
-    console.log('🎤 Starting audio transcription...');
-    console.log(`🌐 Language: ${language}`);
-    if (questionContext) {
-      console.log(`📝 Question context: ${questionContext.substring(0, 50)}...`);
-    }
-    
-    // Get audio duration
-    const duration = await getAudioDuration(audioUri);
-    console.log(`📏 Audio duration: ${duration} seconds`);
-    
-    // Determine if audio is short or long (threshold: 60 seconds)
-    const audioType = duration <= 60 ? 'short' : 'long';
-    const isLongAudio = audioType === 'long';
-    console.log(`🔤 Audio type: ${audioType}`);
-    
-    // Get audio data for upload (platform-specific)
-    const { data: audioData, contentType } = await getAudioDataForUpload(audioUri, isLongAudio, questionContext);
-    console.log(`📦 Audio data prepared for ${Platform.OS}`);
-    
-    // Call Supabase Edge Function using direct fetch
-    const headers: HeadersInit = {
-      'x-audio-type': audioType,
-      'x-platform': Platform.OS, // Pass platform info (ios or android)
-      'x-language': language, // Pass selected language for speech-to-text
-      'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-    };
-    
-    // For iOS, send question context as header (Android sends it via FormData)
-    if (Platform.OS === 'ios' && questionContext) {
-      headers['x-question-context'] = encodeURIComponent(questionContext);
-      console.log('📝 Question context added to headers (iOS)');
-    }
-    
-    // Set Content-Type for blob (iOS). For FormData (Android), let fetch set it automatically with boundary
-    if (contentType !== 'multipart/form-data') {
-      headers['Content-Type'] = contentType;
-    }
-    
-    const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL}/AIChatAPI`, {
-      method: 'POST',
-      headers: headers,
-      body: audioData as any,
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Speech-to-text error:', response.status, errorText);
-      throw new Error(`SERVER_ERROR:${response.status} ${errorText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data?.transcript) {
-      console.log('✅ Transcription successful!');
-      console.log('📝 Transcribed text:', data.transcript);
-      
-      // Increment chatWithAIRequests for successful API response
-      try {
-        await incrementChatWithAIRequests();
-        console.log('✅ Updated chatWithAIRequests counter');
-      } catch (error) {
-        console.error('Error incrementing chatWithAIRequests:', error);
-        // Don't fail the entire operation if this fails
-      }
-      
-      if (data?.evaluation) {
-        console.log('🤖 AI Evaluation received:');
-        if (data.evaluation.concise) {
-          console.log('  - Concise:', data.evaluation.concise);
-        }
-        if (data.evaluation.detailed) {
-          console.log('  - Detailed:', data.evaluation.detailed);
-        }
-      }
-      return {
-        transcript: data.transcript,
-        evaluation: data.evaluation || { concise: null, detailed: null }
-      };
-    } else {
-      console.log('⚠️ No transcript returned from speech-to-text function');
-      return {
-        transcript: 'No speech detected',
-        evaluation: { concise: null, detailed: null }
-      };
-    }
-    
-  } catch (error) {
-    console.error('❌ Error in transcribeAudio:', error);
-    
-    // Check if this is a network error
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      // Network connectivity issue
-      console.error('🌐 Network error detected during API call');
-      throw new Error('NETWORK_ERROR');
-    } else if (error instanceof Error && error.message.includes('AbortError')) {
-      // Request timeout
-      console.error('⏰ Request timeout detected');
-      throw new Error('NETWORK_ERROR');
-    } else if (error instanceof Error && (error.message.includes('Network request failed') || error.message.includes('network'))) {
-      // General network error
-      console.error('🌐 General network error detected');
-      throw new Error('NETWORK_ERROR');
-    }
-    
-    // Re-throw other errors as-is
-    throw error;
-  }
-}
-
 // Evaluation Toggle Component
 interface EvaluationToggleProps {
   showDetailed: boolean;
@@ -1101,6 +918,13 @@ interface FlippableFlashcardProps {
   handleShowServerErrorModal: () => void;
   handleShowAudioTimeLimitModal: () => void;
   showWelcomeBadgeNotification: (award: any) => void;
+  onStartAIChat: (params: {
+    recordedAudioUri: string;
+    flashcardQnType: string | undefined;
+    flashcardQn: any;
+    flashcardId: number;
+    flashcardIndex: number;
+  }) => void;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -1155,7 +979,8 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     handleShowNetworkErrorModal,
     handleShowServerErrorModal,
     handleShowAudioTimeLimitModal,
-    showWelcomeBadgeNotification
+    showWelcomeBadgeNotification,
+    onStartAIChat,
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -2527,74 +2352,18 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                       },
                       pressed && [styles.buttonPressed, { backgroundColor: Colors[theme].unselectedText }]
                     ]}
-                    onPress={async () => {
-                      if (recordedAudioUri) {
-                        try {
-                          console.log('🤖 AI Chat button pressed - checking network connectivity...');
-                          
-                          // Check network connectivity first
-                          const isNetworkConnected = await checkNetworkConnectivity();
-                          if (!isNetworkConnected) {
-                            console.error('❌ Network error - showing modal');
-                            handleShowNetworkErrorModal();
-                            return;
-                          }
-                          
-                          console.log('✅ Network connected - starting transcription and evaluation...');
-                          setIsLoadingEvaluation(true);
-                          // Extract question context (text from flashcard question)
-                          const questionContext = flashcardQnType === 'text' && typeof flashcardQn === 'string' ? flashcardQn : undefined;
-                          const response = await transcribeAudio(recordedAudioUri, voiceLanguage, questionContext);
-                          console.log('🎯 Final transcribed text:', response.transcript);
-                          
-                          // Check and award welcome badge for first AI feedback (check on any successful response)
-                          try {
-                            const welcomeBadgeAward = await checkAndAwardWelcomeBadges('1st Feedback by AI');
-                            console.log('🎉 AI feedback welcome badge award result:', welcomeBadgeAward);
-                            if (welcomeBadgeAward && welcomeBadgeAward.isNewAchievement) {
-                              console.log('🎉 Showing app-wide welcome badge notification for AI feedback');
-                              showWelcomeBadgeNotification(welcomeBadgeAward);
-                            } else {
-                              console.log('🎉 No AI feedback welcome badge award or already achieved');
-                            }
-                          } catch (error) {
-                            console.error('Error checking AI feedback welcome badge:', error);
-                            // Don't fail the entire operation if badge check fails
-                          }
-                          
-                          // Set the AI evaluation to display on the flashcard
-                          if (response.evaluation && (response.evaluation.concise || response.evaluation.detailed)) {
-                            setAiEvaluationConcise(response.evaluation.concise);
-                            setAiEvaluationDetailed(response.evaluation.detailed);
-                            setShowDetailedEvaluation(false); // Default to concise view
-                            console.log('✅ AI Evaluation set successfully');
-                          } else {
-                            setAiEvaluationConcise('No evaluation available');
-                            setAiEvaluationDetailed('No evaluation available');
-                            console.log('⚠️ No evaluation received');
-                          }
-                        } catch (error) {
-                          console.error('❌ Transcription/Evaluation failed:', error);
-                          
-                          // Check if this is a network error
-                          if (error instanceof Error && error.message === 'NETWORK_ERROR') {
-                            console.error('🌐 Network error during API call - showing custom modal');
-                            handleShowNetworkErrorModal();
-                          } else if (error instanceof Error && error.message.startsWith('SERVER_ERROR')) {
-                            console.error('🛠️ Server error during API call - showing server error modal');
-                            handleShowServerErrorModal();
-                          } else {
-                            // For other errors, show the network error modal as well (since most API failures are network-related)
-                            console.error('🔧 Other error during API call - showing custom modal');
-                            handleShowServerErrorModal();
-                          }
-                          
-                          setAiEvaluationConcise(null);
-                          setAiEvaluationDetailed(null);
-                        } finally {
-                          setIsLoadingEvaluation(false);
-                        }
+                    onPress={() => {
+                      if (!recordedAudioUri || isLoadingEvaluation || !currentFlashcard) {
+                        return;
                       }
+
+                      onStartAIChat({
+                        recordedAudioUri,
+                        flashcardQnType,
+                        flashcardQn,
+                        flashcardId: currentFlashcard.flashcardID,
+                        flashcardIndex: currentIdx,
+                      });
                     }}
                     disabled={!recordedAudioUri || isLoadingEvaluation}
                   >
@@ -2952,6 +2721,11 @@ export default function FlashcardViewPage() {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const { deckID, flashcardIdx, totalNumberOfFlashcards, isStudyMode: isStudyModeParam, isQuizMode: isQuizModeParam, isAIDeck: isAIDeckParam, retryDifficult: retryDifficultParam } = useLocalSearchParams();
+  const deckIdParam =
+    Array.isArray(deckID) ? deckID[0] : ((deckID as string | undefined) ?? '');
+  const isAIDeckParamString =
+    Array.isArray(isAIDeckParam) ? isAIDeckParam[0] : ((isAIDeckParam as string | undefined) ?? '');
+  const retryDifficultFlag = retryDifficultParam === 'true';
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteModalOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -3039,6 +2813,12 @@ export default function FlashcardViewPage() {
     showWelcomeBadgeNotification: showWelcomeBadgeNotificationState,
     dismissNotification: dismissWelcomeBadgeNotification
   } = useWelcomeBadgeNotification();
+
+  const {
+    aiChatBackgroundTaskProgress,
+    clearAIChatBackgroundTaskProgress,
+  } = useAIChatBackgroundTask();
+
 
   // Number of decks created / speed badge notification - use global context
   const {
@@ -3211,6 +2991,88 @@ export default function FlashcardViewPage() {
       setIsAudioTimeLimitModalOpen(false);
     });
   }, [audioTimeLimitOverlayOpacity, audioTimeLimitModalOpacity]);
+
+  const handleStartAIChat = useCallback(
+    async ({
+      recordedAudioUri,
+      flashcardQnType,
+      flashcardQn,
+      flashcardId,
+      flashcardIndex,
+    }: {
+      recordedAudioUri: string;
+      flashcardQnType: string | undefined;
+      flashcardQn: any;
+      flashcardId: number;
+      flashcardIndex: number;
+    }) => {
+      if (!recordedAudioUri || isLoadingEvaluation) {
+        return;
+      }
+
+      try {
+        const isNetworkConnected = await checkNetworkConnectivity();
+        if (!isNetworkConnected) {
+          handleShowNetworkErrorModal();
+          return;
+        }
+
+        setIsLoadingEvaluation(true);
+
+        try {
+          await clearAIChatBackgroundTaskProgress();
+        } catch (clearError) {
+          console.warn('Error clearing previous AI chat progress:', clearError);
+        }
+
+        const questionContext =
+          flashcardQnType === 'text' && typeof flashcardQn === 'string'
+            ? flashcardQn
+            : undefined;
+
+        const started = await startAIChatBackgroundTask({
+          audioUri: recordedAudioUri,
+          voiceLanguage,
+          questionContext,
+          deckId: deckIdParam,
+          deckName: '',
+          isAIDeck: isAIDeckParamString,
+          flashcardId,
+          flashcardIndex,
+          totalCardCount: totalCards,
+          isStudyMode,
+          isQuizMode,
+          retryDifficult: retryDifficultFlag,
+          language,
+        });
+
+        if (!started) {
+          setIsLoadingEvaluation(false);
+          handleShowServerErrorModal();
+        }
+      } catch (error) {
+        console.error('Failed to start AI chat background task:', error);
+        setIsLoadingEvaluation(false);
+        handleShowServerErrorModal();
+      }
+    },
+    [
+      isLoadingEvaluation,
+      checkNetworkConnectivity,
+      handleShowNetworkErrorModal,
+      clearAIChatBackgroundTaskProgress,
+      voiceLanguage,
+      deckIdParam,
+      isAIDeckParamString,
+      totalCards,
+      isStudyMode,
+      isQuizMode,
+      retryDifficultFlag,
+      language,
+      startAIChatBackgroundTask,
+      handleShowServerErrorModal,
+    ]
+  );
 
   // Load flashcards from database when component mounts
   useEffect(() => {
@@ -4035,6 +3897,108 @@ export default function FlashcardViewPage() {
     (flashcardAnswerType === 'voice' && recordedAudioUri !== null)
   );
 
+  React.useEffect(() => {
+    if (!aiChatBackgroundTaskProgress) {
+      return;
+    }
+
+    const progressDeckId = aiChatBackgroundTaskProgress.deckId
+      ? String(aiChatBackgroundTaskProgress.deckId)
+      : null;
+    const currentDeckId = deckID ? String(deckID) : null;
+    const deckMatches =
+      !progressDeckId || !currentDeckId || progressDeckId === currentDeckId;
+
+    const flashcardMatches =
+      typeof aiChatBackgroundTaskProgress.flashcardId === 'number' &&
+      currentFlashcard?.flashcardID === aiChatBackgroundTaskProgress.flashcardId;
+
+    if (!deckMatches || !flashcardMatches) {
+      return;
+    }
+
+    if (aiChatBackgroundTaskProgress.inProgress) {
+      setIsLoadingEvaluation(true);
+      return;
+    }
+
+    if (aiChatBackgroundTaskProgress.completed && aiChatBackgroundTaskProgress.success) {
+      const fallbackEvaluation = strings[language].flashcardViewPage.noEvaluationAvailable;
+      const concise =
+        aiChatBackgroundTaskProgress.aiEvaluationConcise ?? fallbackEvaluation;
+      const detailed =
+        aiChatBackgroundTaskProgress.aiEvaluationDetailed ?? fallbackEvaluation;
+
+      setAiEvaluationConcise(concise);
+      setAiEvaluationDetailed(detailed);
+      setShowDetailedEvaluation(false);
+      setIsLoadingEvaluation(false);
+
+      checkAndAwardWelcomeBadges('1st Feedback by AI')
+        .then((welcomeBadgeAward) => {
+          if (welcomeBadgeAward && welcomeBadgeAward.isNewAchievement) {
+            showWelcomeBadgeNotification(welcomeBadgeAward);
+          }
+        })
+        .catch((error) => {
+          console.error('Error checking AI feedback welcome badge:', error);
+        });
+
+      clearAIChatBackgroundTaskProgress().catch((error: any) => {
+        console.error('Error clearing AI chat progress after success:', error);
+      });
+
+      return;
+    }
+
+    if (aiChatBackgroundTaskProgress.networkError) {
+      setIsLoadingEvaluation(false);
+      setAiEvaluationConcise(null);
+      setAiEvaluationDetailed(null);
+      handleShowNetworkErrorModal();
+      clearAIChatBackgroundTaskProgress().catch((error: any) => {
+        console.error('Error clearing AI chat progress after network error:', error);
+      });
+      return;
+    }
+
+    if (aiChatBackgroundTaskProgress.serverError) {
+      setIsLoadingEvaluation(false);
+      setAiEvaluationConcise(null);
+      setAiEvaluationDetailed(null);
+      handleShowServerErrorModal();
+      clearAIChatBackgroundTaskProgress().catch((error: any) => {
+        console.error('Error clearing AI chat progress after server error:', error);
+      });
+      return;
+    }
+
+    if (aiChatBackgroundTaskProgress.cancelled || aiChatBackgroundTaskProgress.automaticallyCancelled) {
+      setIsLoadingEvaluation(false);
+      clearAIChatBackgroundTaskProgress().catch((error: any) => {
+        console.error('Error clearing AI chat progress after cancellation:', error);
+      });
+      return;
+    }
+
+    if (aiChatBackgroundTaskProgress.error) {
+      setIsLoadingEvaluation(false);
+      clearAIChatBackgroundTaskProgress().catch((error: any) => {
+        console.error('Error clearing AI chat progress after error:', error);
+      });
+    }
+  }, [
+    aiChatBackgroundTaskProgress,
+    currentFlashcard?.flashcardID,
+    deckID,
+    handleShowNetworkErrorModal,
+    handleShowServerErrorModal,
+    clearAIChatBackgroundTaskProgress,
+    checkAndAwardWelcomeBadges,
+    showWelcomeBadgeNotification,
+    language,
+  ]);
+
   // At the top of FlashcardViewPage, add state for the end quiz modal
   const [showEndQuizModal, setShowEndQuizModal] = useState(false);
   const endQuizModalOpacity = useRef(new Animated.Value(0)).current;
@@ -4484,6 +4448,7 @@ export default function FlashcardViewPage() {
               handleShowServerErrorModal={handleShowServerErrorModal}
               handleShowAudioTimeLimitModal={handleShowAudioTimeLimitModal}
               showWelcomeBadgeNotification={showWelcomeBadgeNotification}
+              onStartAIChat={handleStartAIChat}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>

@@ -16,7 +16,17 @@ const getDeckCreationNotifications = (language: string) => {
 };
 
 export interface NotificationData extends Record<string, unknown> {
-  type: 'deck_created' | 'flashcards_created' | 'deck_and_flashcards_created' | 'backup_completed' | 'clear_data_completed' | 'network_error_cancelled' | 'transcript_error_cancelled';
+  type:
+    | 'deck_created'
+    | 'flashcards_created'
+    | 'deck_and_flashcards_created'
+    | 'backup_completed'
+    | 'clear_data_completed'
+    | 'network_error_cancelled'
+    | 'transcript_error_cancelled'
+    | 'ai_chat_completed'
+    | 'ai_chat_network_error'
+    | 'ai_chat_server_error';
   deckId?: number;
   deckName?: string;
   flashcardCount?: number;

@@ -513,6 +513,21 @@ export const strings: Record<string, any> = {
         serverErrorTitle: 'Account Deletion Failed!',
         serverErrorBody: 'We encountered a server issue while deleting your account. Please try again shortly.',
       },
+      aiChat: {
+        taskTitle: 'Processing AI Feedback',
+        taskDesc: 'Evaluating your answer in the background.',
+        taskInProgressMessage: 'Preparing AI feedback...',
+        completedTitle: 'AI Feedback Ready!',
+        completedBody: 'AI feedback for card {flashcardIndex} is ready.',
+        networkErrorTitle: 'AI Feedback Failed!',
+        networkErrorBody: 'Network issue while evaluating card {flashcardIndex}. Please try again when reconnected.',
+        serverErrorTitle: 'AI Feedback Failed!',
+        serverErrorBody: 'Server issue while evaluating card {flashcardIndex}. Please try again soon.{statusSuffix}',
+        backgroundWarningTitle: 'Come back soon!',
+        backgroundWarningBody: 'AI feedback task automatically ends in approximately 30 seconds!',
+        preTerminationTitle: 'AI feedback cancelled!',
+        preTerminationBody: 'You were away for too long!',
+      },
       deckCreation: {
         backgroundWarningTitle: 'Come back soon!',
         backgroundWarningBody: 'Task ends in approximately 30 seconds!',
@@ -991,6 +1006,7 @@ export const strings: Record<string, any> = {
       // Success messages
       nicelyDone: 'Nicely done!',
       niceStudying: 'Nice studying!',
+      noEvaluationAvailable: 'No evaluation available',
       // Retry messages
       retryDifficultFlashcards: 'Retry difficult flashcards?',
       noDifficultFlashcardsToRetry: 'No difficult flashcards to retry',
@@ -1325,6 +1341,7 @@ export const strings: Record<string, any> = {
       // Success messages
       nicelyDone: '干得漂亮!',
       niceStudying: '学习得不错!',
+      noEvaluationAvailable: '暂无反馈',
       // Retry messages
       retryDifficultFlashcards: '重做难题',
       noDifficultFlashcardsToRetry: '没有难题可重做',
@@ -1870,6 +1887,21 @@ export const strings: Record<string, any> = {
         completedBody: '您的账户已成功删除',
         serverErrorTitle: '账户删除失败！',
         serverErrorBody: '删除账户时遇到服务器问题，请稍后再试。',
+      },
+      aiChat: {
+        taskTitle: 'AI 反馈处理中',
+        taskDesc: '正在后台评估你的回答。',
+        taskInProgressMessage: '正在准备 AI 反馈...',
+        completedTitle: 'AI 反馈已准备好！',
+        completedBody: '第 {flashcardIndex} 张卡片的 AI 反馈已准备好。',
+        networkErrorTitle: 'AI 反馈失败！',
+        networkErrorBody: '评估第 {flashcardIndex} 张卡片时出现网络问题，请稍后重试。',
+        serverErrorTitle: 'AI 反馈失败！',
+        serverErrorBody: '评估第 {flashcardIndex} 张卡片时出现服务器问题，请稍后再试。{statusSuffix}',
+        backgroundWarningTitle: '快回来！',
+        backgroundWarningBody: 'AI 反馈任务将在约 30 秒后自动结束！',
+        preTerminationTitle: 'AI 反馈已取消！',
+        preTerminationBody: '你离开太久了！',
       },
       deckCreation: {
         backgroundWarningTitle: '任务警告',

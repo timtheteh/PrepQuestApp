@@ -1,7 +1,7 @@
 import 'react-native-reanimated';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
@@ -18,6 +18,7 @@ import { HybridAuthProvider, useHybridAuth } from '@/contexts/HybridAuthContext'
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { BackgroundTaskProvider, useBackgroundTask } from '@/contexts/BackgroundTaskContext';
 import { BackupBackgroundTaskProvider } from '@/contexts/BackupBackgroundTaskContext';
+import { AIChatBackgroundTaskProvider } from '@/contexts/AIChatBackgroundTaskContext';
 import { ImportBackgroundTaskProvider } from '@/contexts/ImportBackgroundTaskContext';
 import { ClearDataBackgroundTaskProvider } from '@/contexts/ClearDataBackgroundTaskContext';
 import { DeleteAccountBackgroundTaskProvider } from '@/contexts/DeleteAccountBackgroundTaskContext';
@@ -71,6 +72,7 @@ const stopAllBackgroundTasks = async () => {
     // Clear all background task progress data
     const progressKeys = [
       'genAIDeckCreationBgTaskProgress',
+      'aiChatBgTaskProgress',
       'backupDataBgTaskProgress',
       'importDataBgTaskProgress',
       'clearDataBgTaskProgress',
@@ -308,6 +310,7 @@ function AppContent() {
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [splashStartTime] = useState(Date.now());
   const [hideLoadingOverlayCallback, setHideLoadingOverlayCallback] = useState<(() => void) | null>(null);
+  const router = useRouter();
 
   // Function to handle authentication completion
   const handleAuthComplete = async () => {
@@ -377,6 +380,27 @@ function AppContent() {
             // Navigate to app settings page for backup completion
             // The success modal will be shown automatically by the context
             // You can add navigation logic here when needed
+          } else if (
+            (data?.type === 'ai_chat_completed' ||
+              data?.type === 'ai_chat_network_error' ||
+              data?.type === 'ai_chat_server_error') &&
+            data?.deckId &&
+            data?.flashcardIndex !== undefined
+          ) {
+            const params = {
+              deckID: String(data.deckId),
+              flashcardIdx: String(data.flashcardIndex ?? 0),
+              totalNumberOfFlashcards: String(data.totalCardCount ?? 0),
+              isStudyMode: data.isStudyMode ? 'true' : 'false',
+              isQuizMode: data.isQuizMode ? 'true' : 'false',
+              isAIDeck: String(data.isAIDeck ?? ''),
+              retryDifficult: data.retryDifficult ? 'true' : 'false',
+            };
+
+            router.push({
+              pathname: '/flashcardView',
+              params,
+            });
           }
         });
         
@@ -658,7 +682,8 @@ export default function RootLayout() {
           <HybridAuthProvider>
             <CustomThemeProvider>
               <BackgroundTaskProvider>
-                <BackupBackgroundTaskProvider>
+                <AIChatBackgroundTaskProvider>
+                  <BackupBackgroundTaskProvider>
                   <ImportBackgroundTaskProvider>
                     <ClearDataBackgroundTaskProvider>
                       <DeleteAccountBackgroundTaskProvider>
@@ -668,7 +693,7 @@ export default function RootLayout() {
                               <NumberOfDecksCreatedBadgeNotificationProvider>
                                 <LifetimeGradeBadgeNotificationProvider>
                                   <CustomBadgeNotificationProvider>
-                                    <AppContent />
+                                  <AppContent />
                                   </CustomBadgeNotificationProvider>
                                 </LifetimeGradeBadgeNotificationProvider>
                               </NumberOfDecksCreatedBadgeNotificationProvider>
@@ -678,7 +703,8 @@ export default function RootLayout() {
                       </DeleteAccountBackgroundTaskProvider>
                     </ClearDataBackgroundTaskProvider>
                   </ImportBackgroundTaskProvider>
-                </BackupBackgroundTaskProvider>
+                  </BackupBackgroundTaskProvider>
+                </AIChatBackgroundTaskProvider>
               </BackgroundTaskProvider>
             </CustomThemeProvider>
           </HybridAuthProvider>

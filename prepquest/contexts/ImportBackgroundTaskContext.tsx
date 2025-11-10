@@ -3,6 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import * as Notifications from 'expo-notifications';
+import { arePushNotificationsEnabled } from '@/db/users';
 import NotificationService from '../utils/notifications';
 import { useLanguage } from './LanguageContext';
 import { strings } from '@/constants/strings';
@@ -532,6 +533,11 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
                   console.log('Background warning notification: Permission status:', permissionStatus);
                   
                   if (permissionStatus === 'granted') {
+                    const notificationsEnabled = await arePushNotificationsEnabled();
+                    if (!notificationsEnabled) {
+                      console.log('Background warning notification skipped - user disabled push notifications');
+                      return;
+                    }
                     const title = backgroundWarningTitle;
                     const body = backgroundWarningBody;
                     
@@ -572,6 +578,11 @@ export const ImportBackgroundTaskProvider: React.FC<ImportBackgroundTaskProvider
               const progress = await loadImportBackgroundTaskProgress();
               const isImportRunning = progress && (progress.inProgress || progress.stage === 'counting') && !progress.completed && !progress.cancelled && !progress.error && !progress.networkError;
               if (isImportRunning) {
+                const notificationsEnabled = await arePushNotificationsEnabled();
+                if (!notificationsEnabled) {
+                  console.log('Pre-termination notification skipped - user disabled push notifications');
+                  return;
+                }
                 const title = preTerminationTitle;
                 const body = preTerminationBody;
                 

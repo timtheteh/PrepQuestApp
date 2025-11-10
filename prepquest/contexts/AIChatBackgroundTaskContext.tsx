@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { arePushNotificationsEnabled } from '@/db/users';
 
 import { strings } from '@/constants/strings';
 import {
@@ -178,16 +179,20 @@ export const AIChatBackgroundTaskProvider: React.FC<ProviderProps> = ({ children
             try {
               const progress = await loadAIChatProgress();
               if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title: backgroundWarningTitle,
-                    body: backgroundWarningBody,
-                    data: { type: 'ai_chat_background_warning' },
-                    sound: true,
-                    priority: Notifications.AndroidNotificationPriority.HIGH,
-                  },
-                  trigger: null,
-                });
+                if (await arePushNotificationsEnabled()) {
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: backgroundWarningTitle,
+                      body: backgroundWarningBody,
+                      data: { type: 'ai_chat_background_warning' },
+                      sound: true,
+                      priority: Notifications.AndroidNotificationPriority.HIGH,
+                    },
+                    trigger: null,
+                  });
+                } else {
+                  console.log('Push notifications disabled; skipping AI chat background warning notification');
+                }
               }
             } catch (error) {
               console.error('Error sending AI chat background warning notification:', error);
@@ -198,16 +203,20 @@ export const AIChatBackgroundTaskProvider: React.FC<ProviderProps> = ({ children
             try {
               const progress = await loadAIChatProgress();
               if (progress && progress.inProgress && !progress.completed && !progress.cancelled && !progress.error) {
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title: preTerminationTitle,
-                    body: preTerminationBody,
-                    data: { type: 'ai_chat_pre_termination' },
-                    sound: true,
-                    priority: Notifications.AndroidNotificationPriority.HIGH,
-                  },
-                  trigger: null,
-                });
+                if (await arePushNotificationsEnabled()) {
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: preTerminationTitle,
+                      body: preTerminationBody,
+                      data: { type: 'ai_chat_pre_termination' },
+                      sound: true,
+                      priority: Notifications.AndroidNotificationPriority.HIGH,
+                    },
+                    trigger: null,
+                  });
+                } else {
+                  console.log('Push notifications disabled; skipping AI chat pre-termination notification');
+                }
               }
             } catch (error) {
               console.error('Error sending AI chat pre-termination notification:', error);

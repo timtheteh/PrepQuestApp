@@ -5,6 +5,7 @@ import { strings } from '@/constants/strings';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
 import { AppState } from 'react-native';
+import { arePushNotificationsEnabled } from '@/db/users';
 
 // Progress key for backup background task
 const BACKUP_BG_TASK_PROGRESS_KEY = 'backupDataBgTaskProgress';
@@ -39,25 +40,27 @@ async function clearBackupProgress() {
 }
 
 // Helper to determine if push notification should be sent
-function shouldSendPushNotification(): boolean {
+async function shouldSendPushNotification(): Promise<boolean> {
   const currentAppState = AppState.currentState;
   const isAppInBackground = currentAppState === 'background' || currentAppState === 'inactive';
-  
-  // Only send push notification if app is in background/inactive state
-  // Don't send if app is active (user is inside the app)
+
   const shouldSend = isAppInBackground || currentAppState === 'unknown';
-  
-  console.log('Push notification check:', {
-    currentAppState,
-    isAppInBackground,
-    shouldSend
-  });
-  
-  // Send notification if:
-  // 1. App is in background/inactive state (user left the app)
-  // 2. App state is unknown (fallback for reliability)
-  // Do NOT send if app is active (user is inside the app)
-  return shouldSend;
+
+  if (!shouldSend) {
+    console.log('Push notification skipped because app is active', { currentAppState });
+    return false;
+  }
+
+  try {
+    const enabled = await arePushNotificationsEnabled();
+    if (!enabled) {
+      console.log('Push notifications disabled by user preference; skipping backup notification');
+    }
+    return enabled;
+  } catch (error) {
+    console.error('Error checking push notification preference for backup task:', error);
+    return false;
+  }
 }
 
 // Helper to update progress periodically during long operations
@@ -209,7 +212,7 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       });
       
       // Check if we should send a push notification
-      if (shouldSendPushNotification()) {
+    if (await shouldSendPushNotification()) {
         try {
           // Check notification permissions first
           const { status: permissionStatus } = await Notifications.getPermissionsAsync();
@@ -298,7 +301,7 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
         errorMessage: result.message
       });
 
-      if (shouldSendPushNotification()) {
+      if (await shouldSendPushNotification()) {
         try {
           const { status: permissionStatus } = await Notifications.getPermissionsAsync();
           if (permissionStatus === 'granted') {
@@ -362,7 +365,7 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       });
       
       // Check if we should send a push notification
-      if (shouldSendPushNotification()) {
+      if (await shouldSendPushNotification()) {
         try {
           // Check notification permissions first
           const { status: permissionStatus } = await Notifications.getPermissionsAsync();
@@ -445,7 +448,7 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       });
       
       // Check if we should send a push notification
-      if (shouldSendPushNotification()) {
+      if (await shouldSendPushNotification()) {
         try {
           // Check notification permissions first
           const { status: permissionStatus } = await Notifications.getPermissionsAsync();

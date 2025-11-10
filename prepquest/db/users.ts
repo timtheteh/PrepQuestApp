@@ -76,6 +76,30 @@ export async function getUserVoiceLanguage(): Promise<string> {
   }
 }
 
+export async function arePushNotificationsEnabled(): Promise<boolean> {
+  try {
+    const userID = await getCurrentUserID();
+    const result = await db.getFirstAsync(
+      `SELECT notificationsEnabled FROM users WHERE userID = ?`,
+      [userID]
+    ) as { notificationsEnabled?: number } | null;
+
+    if (result?.notificationsEnabled === 1) {
+      return true;
+    }
+
+    if (result?.notificationsEnabled === 0) {
+      return false;
+    }
+
+    // Default to false if not explicitly enabled or user not found
+    return false;
+  } catch (error) {
+    console.error('Error checking push notification preference:', error);
+    return false;
+  }
+}
+
 // Get current subscription plan for the user
 export async function getCurrentPlan(): Promise<string> {
   try {

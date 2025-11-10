@@ -5,6 +5,7 @@ import { db } from '../db/index';
 import NotificationService from './notifications';
 import * as Notifications from 'expo-notifications';
 import { AppState } from 'react-native';
+import { arePushNotificationsEnabled } from '@/db/users';
 import { strings } from '@/constants/strings';
 
 // Helper function to get current userID from AsyncStorage
@@ -51,7 +52,7 @@ async function clearClearDataProgress() {
 }
 
 // Helper to determine if push notification should be sent
-function shouldSendPushNotification(): boolean {
+async function shouldSendPushNotification(): Promise<boolean> {
   const currentAppState = AppState.currentState;
   const isAppInBackground = currentAppState === 'background' || currentAppState === 'inactive';
   
@@ -69,7 +70,20 @@ function shouldSendPushNotification(): boolean {
   // 1. App is in background/inactive state (user left the app)
   // 2. App state is unknown (fallback for reliability)
   // Do NOT send if app is active (user is inside the app)
-  return shouldSend;
+  if (!shouldSend) {
+    return false;
+  }
+
+  try {
+    const enabled = await arePushNotificationsEnabled();
+    if (!enabled) {
+      console.log('Push notifications disabled by user preference; skipping clear data notification');
+    }
+    return enabled;
+  } catch (error) {
+    console.error('Error checking push notification preference for clear data task:', error);
+    return false;
+  }
 }
 
 // Helper to update progress periodically during long operations
@@ -241,7 +255,7 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
       });
       
       // Check if we should send a push notification
-      if (shouldSendPushNotification()) {
+      if (await shouldSendPushNotification()) {
         try {
           // Check notification permissions first
           const { status: permissionStatus } = await Notifications.getPermissionsAsync();

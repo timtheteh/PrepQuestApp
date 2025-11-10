@@ -3,6 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import * as Notifications from 'expo-notifications';
+import { arePushNotificationsEnabled } from '@/db/users';
 import NotificationService from '../utils/notifications';
 import { useLanguage } from './LanguageContext';
 import { strings } from '@/constants/strings';
@@ -718,18 +719,22 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
                 const title = backgroundWarningTitle;
                 const body = backgroundWarningBody;
                 
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title,
-                    body,
-                    data: { type: 'deck_creation_background_warning' },
-                    sound: true,
-                    priority: Notifications.AndroidNotificationPriority.HIGH,
-                  },
-                  trigger: null, // Send immediately
-                });
-                
-                console.log('Background warning notification sent successfully');
+                if (await arePushNotificationsEnabled()) {
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title,
+                      body,
+                      data: { type: 'deck_creation_background_warning' },
+                      sound: true,
+                      priority: Notifications.AndroidNotificationPriority.HIGH,
+                    },
+                    trigger: null, // Send immediately
+                  });
+                  
+                  console.log('Background warning notification sent successfully');
+                } else {
+                  console.log('Push notifications disabled; skipping deck creation background warning notification');
+                }
               } else {
                 console.log('Deck creation task no longer running - skipping background warning notification');
               }
@@ -747,18 +752,22 @@ export const BackgroundTaskProvider: React.FC<BackgroundTaskProviderProps> = ({ 
                 const title = preTerminationTitle;
                 const body = preTerminationBody;
                 
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title,
-                    body,
-                    data: { type: 'deck_creation_pre_termination' },
-                    sound: true,
-                    priority: Notifications.AndroidNotificationPriority.HIGH,
-                  },
-                  trigger: null, // Send immediately
-                });
-                
-                console.log('Pre-termination notification sent successfully');
+                if (await arePushNotificationsEnabled()) {
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title,
+                      body,
+                      data: { type: 'deck_creation_pre_termination' },
+                      sound: true,
+                      priority: Notifications.AndroidNotificationPriority.HIGH,
+                    },
+                    trigger: null, // Send immediately
+                  });
+                  
+                  console.log('Pre-termination notification sent successfully');
+                } else {
+                  console.log('Push notifications disabled; skipping deck creation pre-termination notification');
+                }
               } else {
                 console.log('Deck creation task no longer running - skipping pre-termination notification');
               }

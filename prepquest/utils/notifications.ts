@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { strings } from '../constants/strings';
+import { arePushNotificationsEnabled } from '@/db/users';
 
 const englishDeckCreationNotifications = strings.English.notifications.deckCreation;
 
@@ -108,6 +109,15 @@ class NotificationService {
     body: string,
     data?: NotificationData
   ): Promise<void> {
+    const notificationsEnabled = await arePushNotificationsEnabled();
+    if (!notificationsEnabled) {
+      console.log('Push notifications disabled by user preference; skipping notification', {
+        title,
+        data,
+      });
+      return;
+    }
+
     try {
       // Use immediate notification with null trigger
       await Notifications.scheduleNotificationAsync({

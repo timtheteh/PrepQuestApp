@@ -5,6 +5,7 @@ import { AppState } from 'react-native';
 
 import { strings } from '@/constants/strings';
 import { transcribeAudio } from '@/utils/aiChat/transcription';
+import { arePushNotificationsEnabled } from '@/db/users';
 
 const AI_CHAT_BG_TASK_PROGRESS_KEY = 'aiChatBgTaskProgress';
 
@@ -53,10 +54,24 @@ async function clearAIChatProgress() {
   }
 }
 
-function shouldSendPushNotification(): boolean {
+async function shouldSendPushNotification(): Promise<boolean> {
   const currentAppState = AppState.currentState;
   const isAppInBackground = currentAppState === 'background' || currentAppState === 'inactive';
-  return isAppInBackground || currentAppState === 'unknown';
+
+  if (!(isAppInBackground || currentAppState === 'unknown')) {
+    return false;
+  }
+
+  try {
+    const enabled = await arePushNotificationsEnabled();
+    if (!enabled) {
+      console.log('Push notifications disabled by user preference; skipping AI chat notification');
+    }
+    return enabled;
+  } catch (error) {
+    console.error('Error checking push notification preference for AI chat task:', error);
+    return false;
+  }
 }
 
 const aiChatBackgroundTask = async (taskDataArguments: any) => {
@@ -140,7 +155,7 @@ const aiChatBackgroundTask = async (taskDataArguments: any) => {
       aiEvaluationDetailed: result.evaluation?.detailed ?? null,
     });
 
-    if (shouldSendPushNotification()) {
+    if (await shouldSendPushNotification()) {
       try {
         const { status } = await Notifications.getPermissionsAsync();
         if (status === 'granted') {
@@ -202,7 +217,7 @@ const aiChatBackgroundTask = async (taskDataArguments: any) => {
         errorMessage: errorMessage,
       });
 
-      if (shouldSendPushNotification()) {
+      if (await shouldSendPushNotification()) {
         try {
           const { status } = await Notifications.getPermissionsAsync();
           if (status === 'granted') {
@@ -264,7 +279,7 @@ const aiChatBackgroundTask = async (taskDataArguments: any) => {
       errorMessage,
     });
 
-    if (shouldSendPushNotification()) {
+    if (await shouldSendPushNotification()) {
       try {
         const { status } = await Notifications.getPermissionsAsync();
         if (status === 'granted') {

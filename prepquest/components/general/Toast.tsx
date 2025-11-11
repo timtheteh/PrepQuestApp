@@ -110,7 +110,7 @@ export function Toast({ visible, message, onHide, duration = 3000, backgroundCol
 
   // Determine text color: use contrastText for error toasts (red background), text for success toasts (green background)
   const isErrorToast = !backgroundColor;
-  const textColor =  colors.contrastText;
+  const textColor = '#FFFFFF';
 
   return (
     <Animated.View

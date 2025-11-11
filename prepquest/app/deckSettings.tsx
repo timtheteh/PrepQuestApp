@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, ScrollView, Switch, Animated, FlatList, NativeSyntheticEvent, NativeScrollEvent, TextStyle, ScrollView as RNScrollView , StyleSheet as RNStyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import HelpIconFilled from '@/assets/icons/generalIcons/helpIconFilled.svg';
 import HelpIconFilledDarkMode from '@/assets/icons/generalIcons/helpIconFilledDarkMode.svg';
 import { GreyOverlayBackground } from '@/components/general/GreyOverlayBackground';
@@ -334,6 +334,7 @@ export default function DeckSettingsPage() {
       setHalfwayCheckpointEnabled(settings.halfwayCheckpointEnabled);
       setDifficultyTimes(settings.difficultyTimes);
       setVoiceRecordedTimer(settings.voiceRecordedTimer);
+      setVoiceRecordedTimerNoLimit(settings.voiceRecordedTimerNoLimit);
       savedSettingsKeyRef.current = JSON.stringify(settings);
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -346,6 +347,7 @@ export default function DeckSettingsPage() {
         voiceRecordedAnswersEnabled: true,
         voiceRecordedTimerEnabled: true,
         voiceRecordedTimer: { min: 2, sec: 0 },
+        voiceRecordedTimerNoLimit: false,
         halfwayCheckpointEnabled: true,
         difficultyTimes: defaultDifficultyTimes,
       };
@@ -357,6 +359,7 @@ export default function DeckSettingsPage() {
       setHalfwayCheckpointEnabled(fallbackSettings.halfwayCheckpointEnabled);
       setDifficultyTimes(fallbackSettings.difficultyTimes);
       setVoiceRecordedTimer(fallbackSettings.voiceRecordedTimer);
+      setVoiceRecordedTimerNoLimit(fallbackSettings.voiceRecordedTimerNoLimit);
       savedSettingsKeyRef.current = JSON.stringify(fallbackSettings);
       setHasUnsavedChanges(false);
     }
@@ -376,6 +379,7 @@ export default function DeckSettingsPage() {
         setVoiceRecordedAnswersEnabled(true);
         setVoiceRecordedTimerEnabled(true);
         setVoiceRecordedTimer({ min: 2, sec: 0 });
+        setVoiceRecordedTimerNoLimit(false);
         setHalfwayCheckpointEnabled(true);
         setDifficultyTimes(defaultDifficultyTimes);
         setResetCounter(c => c + 1);
@@ -386,6 +390,7 @@ export default function DeckSettingsPage() {
           voiceRecordedAnswersEnabled: true,
           voiceRecordedTimerEnabled: true,
           voiceRecordedTimer: { min: 2, sec: 0 },
+          voiceRecordedTimerNoLimit: false,
           halfwayCheckpointEnabled: true,
           difficultyTimes: defaultDifficultyTimes,
         };
@@ -403,7 +408,8 @@ export default function DeckSettingsPage() {
   const [mcqQuestionsEnabled, setMcqQuestionsEnabled] = React.useState(true);
   const [voiceRecordedAnswersEnabled, setVoiceRecordedAnswersEnabled] = React.useState(true);
   const [voiceRecordedTimerEnabled, setVoiceRecordedTimerEnabled] = React.useState(true);
-  const [voiceRecordedTimer, setVoiceRecordedTimer] = React.useState({ min: 2, sec: 0 });
+const [voiceRecordedTimer, setVoiceRecordedTimer] = React.useState({ min: 2, sec: 0 });
+const [voiceRecordedTimerNoLimit, setVoiceRecordedTimerNoLimit] = React.useState(false);
   const [halfwayCheckpointEnabled, setHalfwayCheckpointEnabled] = React.useState(true);
   const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
   const [selectedDifficultyIndex, setSelectedDifficultyIndex] = React.useState(0);
@@ -456,6 +462,7 @@ export default function DeckSettingsPage() {
         voiceRecordedAnswersEnabled,
         voiceRecordedTimerEnabled,
         voiceRecordedTimer,
+        voiceRecordedTimerNoLimit,
         halfwayCheckpointEnabled,
         difficultyTimes,
       };
@@ -475,6 +482,7 @@ export default function DeckSettingsPage() {
     voiceRecordedAnswersEnabled,
     voiceRecordedTimerEnabled,
     voiceRecordedTimer,
+    voiceRecordedTimerNoLimit,
     halfwayCheckpointEnabled,
     difficultyTimes,
   ]);
@@ -533,6 +541,10 @@ export default function DeckSettingsPage() {
 
   const handleVoiceRecordedTimerChange = React.useCallback((min: number, sec: number) => {
     setVoiceRecordedTimer({ min, sec });
+  }, []);
+
+  const handleVoiceRecordedTimerNoLimitToggle = React.useCallback(() => {
+    setVoiceRecordedTimerNoLimit((prev) => !prev);
   }, []);
 
   const handleDifficultyChange = React.useCallback((idx: number) => {
@@ -649,6 +661,7 @@ export default function DeckSettingsPage() {
     voiceRecordedAnswersEnabled,
     voiceRecordedTimerEnabled,
     voiceRecordedTimer,
+    voiceRecordedTimerNoLimit,
     halfwayCheckpointEnabled,
     difficultyTimes,
   }), [
@@ -658,6 +671,7 @@ export default function DeckSettingsPage() {
     voiceRecordedAnswersEnabled,
     voiceRecordedTimerEnabled,
     voiceRecordedTimer,
+    voiceRecordedTimerNoLimit,
     halfwayCheckpointEnabled,
     difficultyTimes,
   ]);
@@ -775,16 +789,41 @@ export default function DeckSettingsPage() {
           <Text style={[styles.descriptionText, { color: text, marginBottom: 0 }]}> 
             {strings[language].deckSettingsPage.voiceRecordingTimerDescription}
           </Text>
-          <TimePicker
-            key={`voice-recorded-timer-${resetCounter}`}
-            initialMinutes={voiceRecordedTimer.min}
-            initialSeconds={voiceRecordedTimer.sec}
-            onChange={handleVoiceRecordedTimerChange}
-            minutesRange={Array.from({ length: 10 }, (_, i) => i)}
-            secondsRange={Array.from({ length: 60 }, (_, i) => i)}
-            language={language}
-            theme={theme}
-          />
+          <TouchableOpacity
+            style={styles.voiceNoLimitRow}
+            activeOpacity={0.7}
+            onPress={handleVoiceRecordedTimerNoLimitToggle}
+          >
+            <Text
+              style={[
+                styles.voiceNoLimitText,
+                { color: text },
+              ]}
+            >
+              {strings[language].deckSettingsPage.noTimeLimit}
+            </Text>
+            <MaterialIcons
+              name={voiceRecordedTimerNoLimit ? 'check-box' : 'check-box-outline-blank'}
+              size={24}
+              color={
+                voiceRecordedTimerNoLimit
+                  ? Colors[theme].brandColor2
+                  : Colors[theme].unselectedText
+              }
+            />
+          </TouchableOpacity>
+          {!voiceRecordedTimerNoLimit && (
+            <TimePicker
+              key={`voice-recorded-timer-${resetCounter}`}
+              initialMinutes={voiceRecordedTimer.min}
+              initialSeconds={voiceRecordedTimer.sec}
+              onChange={handleVoiceRecordedTimerChange}
+              minutesRange={Array.from({ length: 10 }, (_, i) => i)}
+              secondsRange={Array.from({ length: 60 }, (_, i) => i)}
+              language={language}
+              theme={theme}
+            />
+          )}
           <Text style={[styles.sectionTitle, { color: theme === 'dark' ? text : brandColor2 }]}>{strings[language].deckSettingsPage.quizPreferences}</Text>
           <TitleToggleRow 
             text={strings[language].deckSettingsPage.halfwayCheckpoint}
@@ -1014,5 +1053,15 @@ const createStyles = (theme: 'light' | 'dark') => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
+  },
+  voiceNoLimitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  voiceNoLimitText: {
+    fontFamily: Fonts.bodyMedium,
+    fontSize: 16,
   },
 }); 

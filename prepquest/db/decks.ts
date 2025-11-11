@@ -3634,6 +3634,7 @@ export interface DeckSettings {
   voiceRecordedAnswersEnabled: boolean;
   voiceRecordedTimerEnabled: boolean;
   voiceRecordedTimer: { min: number; sec: number };
+  voiceRecordedTimerNoLimit: boolean;
   halfwayCheckpointEnabled: boolean;
   difficultyTimes: Array<{ min: number; sec: number }>;
 }
@@ -3697,7 +3698,10 @@ export async function loadDeckSettings(): Promise<DeckSettings> {
       const loadedHardTimer = convertSecondsToTime(userData.hardTimer);
       const loadedGoodTimer = convertSecondsToTime(userData.goodTimer);
       const loadedEasyTimer = convertSecondsToTime(userData.easyTimer);
-      const loadedVoiceRecordedTimer = convertSecondsToTime(userData.voiceRecordedTimer);
+      const isVoiceRecordedTimerNoLimit = userData.voiceRecordedTimer === -1;
+      const loadedVoiceRecordedTimer = isVoiceRecordedTimerNoLimit
+        ? { min: 2, sec: 0 }
+        : convertSecondsToTime(userData.voiceRecordedTimer);
 
       return {
         autoDecksEnabled: userData.autoDecksEnabled === 1,
@@ -3706,6 +3710,7 @@ export async function loadDeckSettings(): Promise<DeckSettings> {
         voiceRecordedAnswersEnabled: userData.voiceRecordedQuestionsEnabled === 1,
         voiceRecordedTimerEnabled: userData.voiceRecordedQuestionsEnabled === 1,
         voiceRecordedTimer: loadedVoiceRecordedTimer,
+        voiceRecordedTimerNoLimit: isVoiceRecordedTimerNoLimit,
         halfwayCheckpointEnabled: userData.halfwayCheckpoint === 1,
         difficultyTimes: [
           loadedDefaultTimer,
@@ -3725,6 +3730,7 @@ export async function loadDeckSettings(): Promise<DeckSettings> {
       voiceRecordedAnswersEnabled: true,
       voiceRecordedTimerEnabled: true,
       voiceRecordedTimer: { min: 2, sec: 0 },
+      voiceRecordedTimerNoLimit: false,
       halfwayCheckpointEnabled: true,
       difficultyTimes: [
         { min: 0, sec: 20 },
@@ -3744,6 +3750,7 @@ export async function loadDeckSettings(): Promise<DeckSettings> {
       voiceRecordedAnswersEnabled: true,
       voiceRecordedTimerEnabled: true,
       voiceRecordedTimer: { min: 2, sec: 0 },
+      voiceRecordedTimerNoLimit: false,
       halfwayCheckpointEnabled: true,
       difficultyTimes: [
         { min: 0, sec: 20 },
@@ -3784,7 +3791,7 @@ export async function saveDeckSettings(settings: DeckSettings): Promise<boolean>
       settings.clozeQuestionsEnabled ? 1 : 0,
       settings.mcqQuestionsEnabled ? 1 : 0,
       settings.voiceRecordedAnswersEnabled ? 1 : 0,
-      convertTimeToSeconds(settings.voiceRecordedTimer),
+      settings.voiceRecordedTimerNoLimit ? -1 : convertTimeToSeconds(settings.voiceRecordedTimer),
       settings.halfwayCheckpointEnabled ? 1 : 0,
       convertTimeToSeconds(settings.difficultyTimes[0]),
       convertTimeToSeconds(settings.difficultyTimes[1]),
@@ -3914,7 +3921,7 @@ export const getTimeLimit = async (difficultyRating: string, answerType?: string
       };
       // For voice answer types, always use the voice recorded timer regardless of difficulty
       if (answerType === 'voice') {
-        return userData.voiceRecordedTimer;
+        return userData.voiceRecordedTimer === -1 ? -1 : userData.voiceRecordedTimer;
       }
 
       // Return appropriate timer based on difficulty rating for non-voice answer types

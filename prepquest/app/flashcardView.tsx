@@ -574,6 +574,7 @@ const DifficultyPillRow = React.memo(({ currentIdx, onDifficultyChange, flashcar
   const { theme } = useTheme();
   // Get the current flashcard's difficulty
   const currentFlashcard = flashcards[currentIdx];
+  const isInfiniteTimeLimit = currentFlashcard?.timeLimit === -1;
   const currentDifficulty = currentFlashcard?.flashcardDifficulty;
 
   const DIFFICULTY_LABELS: { [key: string]: string } = {
@@ -925,6 +926,7 @@ interface FlippableFlashcardProps {
     flashcardId: number;
     flashcardIndex: number;
   }) => void;
+  isInfiniteTimeLimit: boolean;
 }
 
 // FlippableFlashcard now receives currentIdx, setCurrentIdx, and totalCards as props
@@ -981,6 +983,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     handleShowAudioTimeLimitModal,
     showWelcomeBadgeNotification,
     onStartAIChat,
+    isInfiniteTimeLimit,
   } = props;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const frontOpacity = useRef(new Animated.Value(1)).current;
@@ -1617,30 +1620,36 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   // Get device performance configuration
   const animationConfig = getAnimationConfig();
 
-  useEffect(() => {
-    if (isQuizMode && !showQuizCountdown) {
-      if (pauseNextTimer) return; // PAUSE BORDER ANIMATION IF TIMER IS PAUSED
-      
-      // For low-end devices, add a small delay to prevent animation conflicts
-      const startAnimation = () => {
-        borderAnim.setValue(0);
-        Animated.timing(borderAnim, {
-          toValue: 1,
-          duration: ((currentFlashcard?.timeLimit)  || 30) * 1000,
-          useNativeDriver: false,
-          easing: Easing.linear,
-        }).start();
-      };
-      
-      if (animationConfig.isLowEndDevice) {
-        // Add small delay for low-end devices to prevent conflicts
-        setTimeout(startAnimation, 50);
-      } else {
-        startAnimation();
-      }
-    }
-    // eslint-disable-next-line
-  }, [currentIdx, isQuizMode, pauseNextTimer, showQuizCountdown, animationConfig.isLowEndDevice]);
+useEffect(() => {
+  if (!isQuizMode || showQuizCountdown || isInfiniteTimeLimit) {
+    borderAnim.stopAnimation?.(() => {});
+    borderAnim.setValue(0);
+    return;
+  }
+
+  if (pauseNextTimer) {
+    return; // PAUSE BORDER ANIMATION IF TIMER IS PAUSED
+  }
+
+  const startAnimation = () => {
+    borderAnim.setValue(0);
+    const timeLimit = currentFlashcard?.timeLimit ?? 30;
+    Animated.timing(borderAnim, {
+      toValue: 1,
+      duration: Math.max(timeLimit, 0) * 1000,
+      useNativeDriver: false,
+      easing: Easing.linear,
+    }).start();
+  };
+
+  if (animationConfig.isLowEndDevice) {
+    // Add small delay for low-end devices to prevent conflicts
+    setTimeout(startAnimation, 50);
+  } else {
+    startAnimation();
+  }
+  // eslint-disable-next-line
+}, [currentIdx, isQuizMode, pauseNextTimer, showQuizCountdown, animationConfig.isLowEndDevice, isInfiniteTimeLimit]);
 
   // At the top of FlippableFlashcard, after other hooks:
   const [circlePos, setCirclePos] = React.useState({ x: 0, y: 0 });
@@ -1730,7 +1739,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
 
   // Update circlePos when borderAnim, cardSize, or isQuizMode changes (only for high-end devices)
   React.useEffect(() => {
-    if (!isQuizMode || showQuizCountdown || cardSize.width === 0 || cardSize.height === 0 || !shouldShowBall) return;
+    if (!isQuizMode || showQuizCountdown || isInfiniteTimeLimit || cardSize.width === 0 || cardSize.height === 0 || !shouldShowBall) return;
     const w = cardSize.width;
     const h = cardSize.height;
     const r = 30;
@@ -1745,7 +1754,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
     // Set initial
     update((borderAnim as any)._value ?? 0);
     return () => borderAnim.removeListener(id);
-  }, [isQuizMode, showQuizCountdown, cardSize.width, cardSize.height, borderAnim, shouldShowBall]);
+  }, [isQuizMode, showQuizCountdown, isInfiniteTimeLimit, cardSize.width, cardSize.height, borderAnim, shouldShowBall]);
 
   // Track card's absolute position for correct circle placement
   const [cardLayout, setCardLayout] = React.useState({ left: 0, top: 0 });
@@ -1756,29 +1765,29 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
   const [countdownStarted, setCountdownStarted] = React.useState(false);
 
   // Start/reset countdown in quiz mode when card changes
-  useEffect(() => {
-    if (isQuizMode && currentFlashcard?.timeLimit && !showQuizCountdown) {
-      if (pauseNextTimer) return; // DO NOT START TIMER IF PAUSED
-      setCountdown(currentFlashcard.timeLimit);
-      setCountdownStarted(true); // Mark that countdown has started
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev > 0) return prev - 1;
-          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-          return 0;
-        });
-      }, 1000);
-      return () => {
+useEffect(() => {
+  if (isQuizMode && currentFlashcard?.timeLimit && !showQuizCountdown && !isInfiniteTimeLimit) {
+    if (pauseNextTimer) return; // DO NOT START TIMER IF PAUSED
+    setCountdown(currentFlashcard.timeLimit);
+    setCountdownStarted(true); // Mark that countdown has started
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev > 0) return prev - 1;
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-      };
-    } else {
-      setCountdown(0);
-      setCountdownStarted(false); // Reset started flag
+        return 0;
+      });
+    }, 1000);
+    return () => {
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    }
-     
-  }, [isQuizMode, currentIdx, pauseNextTimer, currentFlashcard?.timeLimit, showQuizCountdown]);
+    };
+  } else {
+    setCountdown(0);
+    setCountdownStarted(false); // Reset started flag
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+  }
+   
+}, [isQuizMode, currentIdx, pauseNextTimer, currentFlashcard?.timeLimit, showQuizCountdown, isInfiniteTimeLimit]);
 
   // Add shiver animation state at the top of FlippableFlashcard
   const shiverAnim = useRef(new Animated.Value(0)).current;
@@ -1920,7 +1929,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             ]}
           >
             {/* Animated border overlay for quiz mode */}
-            {isQuizMode && !showQuizCountdown && cardSize.width > 0 && cardSize.height > 0 && (() => {
+            {isQuizMode && !showQuizCountdown && !isInfiniteTimeLimit && cardSize.width > 0 && cardSize.height > 0 && (() => {
               const w = cardSize.width;
               const h = cardSize.height;
               const stroke = 5;
@@ -1989,7 +1998,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
-              {isQuizMode && !showQuizCountdown && (
+              {isQuizMode && !showQuizCountdown && !isInfiniteTimeLimit && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {(countdown === 0 && countdownStarted) ? (
                     <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center', ...(Platform.OS === 'android' && { lineHeight: 30 }) }}>{strings[language].flashcardViewPage.timesUp}</Text>
@@ -2131,7 +2140,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
             ]}
           >
             {/* Animated border overlay for quiz mode (BACK SIDE) */}
-            {isQuizMode && !showQuizCountdown && cardSize.width > 0 && cardSize.height > 0 && (() => {
+            {isQuizMode && !showQuizCountdown && !isInfiniteTimeLimit && cardSize.width > 0 && cardSize.height > 0 && (() => {
               const w = cardSize.width;
               const h = cardSize.height;
               const stroke = 5;
@@ -2185,7 +2194,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
                 </Text>
                 <FavoriteButton size={30} favorited={favorited} onPress={onToggleFavorite} />
               </View>
-              {isQuizMode && !showQuizCountdown && (
+              {isQuizMode && !showQuizCountdown && !isInfiniteTimeLimit && (
                 <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                   {(countdown === 0 && countdownStarted) ? (
                     <Text style={{ fontFamily: Fonts.bodyMedium, fontSize: 24, color: Colors[theme].alertColor, textAlign: 'center', ...(Platform.OS === 'android' && { lineHeight: 30 }) }}>{strings[language].flashcardViewPage.timesUp}</Text>
@@ -2494,7 +2503,7 @@ const FlippableFlashcard = (props: FlippableFlashcardProps) => {
           style={styles.flipArrowPressable}
         />
       </Animated.View>
-      {isQuizMode && cardSize.width > 0 && cardSize.height > 0 && shouldShowBall && (
+      {isQuizMode && !isInfiniteTimeLimit && cardSize.width > 0 && cardSize.height > 0 && shouldShowBall && (
         <Animated.View
           pointerEvents="none"
           style={{
@@ -3890,6 +3899,7 @@ export default function FlashcardViewPage() {
   // Move isCompleted logic to the top of FlashcardViewPage
   const isAtLastCard = currentIdx === totalCards - 1;
   const currentFlashcard = flashcards[currentIdx];
+  const isInfiniteTimeLimit = currentFlashcard?.timeLimit === -1;
   const flashcardAnswerType = currentFlashcard?.flashcardAnswerType;
   const isCompleted = (isQuizMode || isStudyMode) && isAtLastCard && (
     (['text', 'audio', 'image'].includes(flashcardAnswerType) && hasFlippedCard) ||
@@ -4449,6 +4459,7 @@ export default function FlashcardViewPage() {
               handleShowAudioTimeLimitModal={handleShowAudioTimeLimitModal}
               showWelcomeBadgeNotification={showWelcomeBadgeNotification}
               onStartAIChat={handleStartAIChat}
+              isInfiniteTimeLimit={isInfiniteTimeLimit}
             />
           </View>
           <View style={[styles.difficultyPillRowContainer, { bottom: 48 + getBottomSafeAreaHeight() }]}>

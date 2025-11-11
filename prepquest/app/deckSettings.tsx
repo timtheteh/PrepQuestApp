@@ -1057,11 +1057,11 @@ const createStyles = (theme: 'light' | 'dark') => StyleSheet.create({
   voiceNoLimitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 12,
   },
   voiceNoLimitText: {
     fontFamily: Fonts.bodyMedium,
     fontSize: 16,
+    marginRight: 8,
   },
 }); 

@@ -3803,10 +3803,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 12,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   checkboxLabel: {
-    marginRight: 12,
+    marginRight: 8,
     fontFamily: Fonts.bodyMedium,
     fontSize: 16,
   },

@@ -656,10 +656,9 @@ export default function SplashScreen({
           showErrorToast(strings[language].splash.signUpFailed);
         }
       } catch (error: any) {
-        const errorMessage = error.errors?.[0]?.message || error?.message || strings[language].splash.signUpFailed;
         // Check if it's a network error - check multiple patterns
         const errorString = JSON.stringify(error).toLowerCase();
-        const errorMessageLower = errorMessage?.toLowerCase() || '';
+        const errorMessageLower = error?.message?.toLowerCase() || '';
         const isNetworkError = errorMessageLower.includes('network') || 
                               errorMessageLower.includes('request failed') ||
                               error?.message?.toLowerCase().includes('network') ||
@@ -676,7 +675,7 @@ export default function SplashScreen({
         if (isNetworkError) {
           handleShowNetworkErrorModal();
         } else {
-          showErrorToast(errorMessage);
+          showErrorToast(strings[language].splash.signUpFailed);
         }
       }
     }
@@ -706,12 +705,10 @@ export default function SplashScreen({
         // Clerk authentication successful - auth state will be updated and trigger the useEffect
       } else {
         // Handle Clerk-specific error messages
-        let errorMessage = result.error || strings[language].splash.signInFailed;
-        
         // Check if it's a network error - check multiple patterns
         const errorString = JSON.stringify(result).toLowerCase();
-        const isNetworkError = errorMessage?.toLowerCase().includes('network') || 
-                              errorMessage?.toLowerCase().includes('request failed') ||
+        const isNetworkError = result.error?.toLowerCase().includes('network') || 
+                              result.error?.toLowerCase().includes('request failed') ||
                               errorString.includes('network request failed') ||
                               errorString.includes('network error') ||
                               errorString.includes('request failed');
@@ -721,20 +718,12 @@ export default function SplashScreen({
           return;
         }
         
-        // Provide user-friendly messages for common Clerk errors
-        if (result.error?.includes('identifier') || result.error?.includes('not found')) {
-          errorMessage = result.error; // Use Clerk's specific error message
-        } else if (result.error?.includes('password') || result.error?.includes('credentials')) {
-          errorMessage = result.error; // Use Clerk's specific error message
-        }
-        
-        showErrorToast(errorMessage);
+        showErrorToast(strings[language].splash.signInFailed);
       }
     } catch (error: any) {
-      const errorMessage = error?.message || strings[language].splash.signInFailed;
       // Check if it's a network error - check multiple patterns
       const errorString = JSON.stringify(error).toLowerCase();
-      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const errorMessageLower = error?.message?.toLowerCase() || '';
       const isNetworkError = errorMessageLower.includes('network') || 
                             errorMessageLower.includes('request failed') ||
                             error?.message?.toLowerCase().includes('network') ||
@@ -749,7 +738,7 @@ export default function SplashScreen({
       if (isNetworkError) {
         handleShowNetworkErrorModal();
       } else {
-        showErrorToast(errorMessage);
+        showErrorToast(strings[language].splash.signInFailed);
       }
     }
   }, [email, password, signInWithEmail, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
@@ -798,24 +787,24 @@ export default function SplashScreen({
         return;
       }
       
-      let errorMessage;
+      let fallbackMessage;
       switch (provider) {
         case 'google':
-          errorMessage = error?.message || strings[language].splash.googleSignInFailed;
+          fallbackMessage = strings[language].splash.googleSignInFailed;
           break;
         case 'facebook':
-          errorMessage = error?.message || strings[language].splash.facebookSignInFailed;
+          fallbackMessage = strings[language].splash.facebookSignInFailed;
           break;
         case 'apple':
-          errorMessage = error?.message || strings[language].splash.appleSignInFailed;
+          fallbackMessage = strings[language].splash.appleSignInFailed;
           break;
         default:
-          errorMessage = error?.message || strings[language].splash.signInFailed;
+          fallbackMessage = strings[language].splash.signInFailed;
       }
       
       // Check if it's a network error - check multiple patterns
       const errorString = JSON.stringify(error).toLowerCase();
-      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const errorMessageLower = error?.message?.toLowerCase() || '';
       const isNetworkError = errorMessageLower.includes('network') || 
                             errorMessageLower.includes('request failed') ||
                             error?.message?.toLowerCase().includes('network') ||
@@ -830,7 +819,7 @@ export default function SplashScreen({
       if (isNetworkError) {
         handleShowNetworkErrorModal();
       } else {
-        showErrorToast(errorMessage);
+        showErrorToast(fallbackMessage);
       }
     }
   }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
@@ -940,8 +929,7 @@ export default function SplashScreen({
       transitionPasswordResetStep('code');
       showSuccessToast(strings[language].splash.passwordResetEmailSent);
     } catch (error: any) {
-      const errorMessage = error?.message || strings[language].splash.failedToSendResetEmail;
-      showErrorToast(errorMessage);
+      showErrorToast(strings[language].splash.failedToSendResetEmail);
     }
 
     setIsResettingPassword(false);
@@ -1052,8 +1040,7 @@ export default function SplashScreen({
       setConfirmPassword('');
       
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || strings[language].splash.failedToResetPassword;
-      showErrorToast(errorMessage);
+      showErrorToast(strings[language].splash.failedToResetPassword);
     }
   }, [newPassword, confirmNewPassword, pendingPasswordReset, showErrorToast, showSuccessToast, language, signOut, passwordResetFadeAnim]);
 
@@ -1226,8 +1213,7 @@ export default function SplashScreen({
       showSuccessToast(strings[language].splash.verificationCodeSent);
       startResendCountdown(); // Start countdown again after successful resend
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || strings[language].splash.verificationFailed;
-      showErrorToast(errorMessage);
+      showErrorToast(strings[language].splash.verificationFailed);
     }
 
     setIsResendingCode(false);

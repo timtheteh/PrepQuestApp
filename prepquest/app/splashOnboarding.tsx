@@ -1445,10 +1445,9 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
           showErrorToast(getTranslatedText(language, 'signUpFailed'));
         }
       } catch (error: any) {
-        const errorMessage = error.errors?.[0]?.message || error?.message || getTranslatedText(language, 'signUpFailed');
         // Check if it's a network error - check multiple patterns
         const errorString = JSON.stringify(error).toLowerCase();
-        const errorMessageLower = errorMessage?.toLowerCase() || '';
+        const errorMessageLower = error?.message?.toLowerCase() || '';
         const isNetworkError = errorMessageLower.includes('network') || 
                               errorMessageLower.includes('request failed') ||
                               error?.message?.toLowerCase().includes('network') ||
@@ -1465,7 +1464,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         if (isNetworkError) {
           handleShowNetworkErrorModal();
         } else {
-          showErrorToast(errorMessage);
+          showErrorToast(getTranslatedText(language, 'signUpFailed'));
         }
       }
     }
@@ -1496,12 +1495,10 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
           setDeckCreationProgress({ currentDeck: 1, totalDecks: 3 });
         }
       } else {
-        let errorMessage = result.error || getTranslatedText(language, 'signInFailed');
-        
         // Check if it's a network error - check multiple patterns
         const errorString = JSON.stringify(result).toLowerCase();
-        const isNetworkError = errorMessage?.toLowerCase().includes('network') || 
-                              errorMessage?.toLowerCase().includes('request failed') ||
+        const isNetworkError = result.error?.toLowerCase().includes('network') || 
+                              result.error?.toLowerCase().includes('request failed') ||
                               errorString.includes('network request failed') ||
                               errorString.includes('network error') ||
                               errorString.includes('request failed');
@@ -1511,19 +1508,12 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
           return;
         }
         
-        if (result.error?.includes('identifier') || result.error?.includes('not found')) {
-          errorMessage = result.error;
-        } else if (result.error?.includes('password') || result.error?.includes('credentials')) {
-          errorMessage = result.error;
-        }
-        
-        showErrorToast(errorMessage);
+        showErrorToast(getTranslatedText(language, 'signInFailed'));
       }
     } catch (error: any) {
-      const errorMessage = error?.message || getTranslatedText(language, 'signInFailed');
       // Check if it's a network error - check multiple patterns
       const errorString = JSON.stringify(error).toLowerCase();
-      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const errorMessageLower = error?.message?.toLowerCase() || '';
       const isNetworkError = errorMessageLower.includes('network') || 
                             errorMessageLower.includes('request failed') ||
                             error?.message?.toLowerCase().includes('network') ||
@@ -1538,7 +1528,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       if (isNetworkError) {
         handleShowNetworkErrorModal();
       } else {
-        showErrorToast(errorMessage);
+        showErrorToast(getTranslatedText(language, 'signInFailed'));
       }
     }
   }, [email, password, signInWithEmail, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
@@ -1585,24 +1575,24 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         return;
       }
       
-      let errorMessage;
+      let fallbackMessage;
       switch (provider) {
         case 'google':
-          errorMessage = error?.message || getTranslatedText(language, 'googleSignInFailed');
+          fallbackMessage = getTranslatedText(language, 'googleSignInFailed');
           break;
         case 'facebook':
-          errorMessage = error?.message || getTranslatedText(language, 'facebookSignInFailed');
+          fallbackMessage = getTranslatedText(language, 'facebookSignInFailed');
           break;
         case 'apple':
-          errorMessage = error?.message || getTranslatedText(language, 'appleSignInFailed');
+          fallbackMessage = getTranslatedText(language, 'appleSignInFailed');
           break;
         default:
-          errorMessage = error?.message || getTranslatedText(language, 'signInFailed');
+          fallbackMessage = getTranslatedText(language, 'signInFailed');
       }
       
       // Check if it's a network error - check multiple patterns
       const errorString = JSON.stringify(error).toLowerCase();
-      const errorMessageLower = errorMessage?.toLowerCase() || '';
+      const errorMessageLower = error?.message?.toLowerCase() || '';
       const isNetworkError = errorMessageLower.includes('network') || 
                             errorMessageLower.includes('request failed') ||
                             error?.message?.toLowerCase().includes('network') ||
@@ -1617,7 +1607,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       if (isNetworkError) {
         handleShowNetworkErrorModal();
       } else {
-        showErrorToast(errorMessage);
+        showErrorToast(fallbackMessage);
       }
     }
   }, [signInWithGoogle, signInWithFacebook, signInWithApple, language, showErrorToast, checkNetworkConnectivity, handleShowNetworkErrorModal]);
@@ -1682,8 +1672,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       transitionPasswordResetStep('code');
       showSuccessToast(getTranslatedText(language, 'passwordResetEmailSent'));
     } catch (error: any) {
-      const errorMessage = error?.message || getTranslatedText(language, 'failedToSendResetEmail');
-      showErrorToast(errorMessage);
+      showErrorToast(getTranslatedText(language, 'failedToSendResetEmail'));
     }
 
     setIsResettingPassword(false);
@@ -1780,8 +1769,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       setConfirmPassword('');
       
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || getTranslatedText(language, 'failedToResetPassword');
-      showErrorToast(errorMessage);
+      showErrorToast(getTranslatedText(language, 'failedToResetPassword'));
     }
   }, [newPassword, confirmNewPassword, pendingPasswordReset, showErrorToast, showSuccessToast, language, signOut, passwordResetFadeAnim]);
 
@@ -1918,8 +1906,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       showSuccessToast(getTranslatedText(language, 'verificationCodeSent'));
       startResendCountdown();
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || getTranslatedText(language, 'verificationFailed');
-      showErrorToast(errorMessage);
+      showErrorToast(getTranslatedText(language, 'verificationFailed'));
     }
 
     setIsResendingCode(false);

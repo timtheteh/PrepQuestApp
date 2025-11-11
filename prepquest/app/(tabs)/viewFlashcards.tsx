@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useContext, useState, useCallback, useMemo } from 'react';
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Animated, Text, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Animated, Text, ScrollView, RefreshControl } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 import { useIsFocused } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -136,6 +136,8 @@ export default function ViewFlashcardsScreen() {
   // State for question types
   const [questionTypes, setQuestionTypes] = useState<{ title: string; count: number }[]>([]);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
 
 
   // Consolidated data loading function
@@ -170,6 +172,17 @@ export default function ViewFlashcardsScreen() {
   // Individual functions for backward compatibility
   const loadFlashcards = loadAllFlashcardData;
   const loadTopics = loadAllFlashcardData;
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadAllFlashcardData();
+    } catch (error) {
+      console.error('Error refreshing flashcards data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadAllFlashcardData]);
 
   // Function to toggle favorite status
   const toggleFavorite = async (flashcardIdx: number) => {
@@ -941,6 +954,14 @@ export default function ViewFlashcardsScreen() {
             removeClippedSubviews={animationConfig.isLowEndDevice}
             scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
             decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={Colors[theme].brandColor2}
+                colors={[Colors[theme].brandColor2]}
+              />
+            }
           >
             <View style={styles.headerRow}>
             {/* First Column - Title */}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
-import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ImageBackground, ScrollView, Image, Dimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, SafeAreaView, Platform, Text, Animated, ImageBackground, ScrollView, Image, Dimensions, RefreshControl } from 'react-native';
 import { ThemedView } from '@/components/general/ThemedView';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -124,6 +124,8 @@ export default function DeckDetailsScreen() {
 
   // State for company logo image source
   const [companyLogoImageSource, setCompanyLogoImageSource] = useState<any>(null);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // State to track if initial data is loaded to prevent showing default values
   const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
@@ -710,6 +712,17 @@ export default function DeckDetailsScreen() {
       setIsLoadingSavedStatus(false);
     }
   }, [deckId, isAIDeck]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadAllDeckData();
+    } catch (error) {
+      console.error('Error refreshing deck data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadAllDeckData]);
 
   const handleDeletePress = () => {
     setShowEditModal(false);
@@ -1427,6 +1440,14 @@ export default function DeckDetailsScreen() {
                   removeClippedSubviews={animationConfig.isLowEndDevice}
                   scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
                   decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={isRefreshing}
+                      onRefresh={handleRefresh}
+                      tintColor={Colors[theme].brandColor2}
+                      colors={[Colors[theme].brandColor2]}
+                    />
+                  }
                 >
                   <View style={styles.cardContentContainer}>
                     {/* Only render content when we have valid deck data */}
@@ -1622,6 +1643,14 @@ export default function DeckDetailsScreen() {
                   removeClippedSubviews={animationConfig.isLowEndDevice}
                   scrollEventThrottle={animationConfig.isLowEndDevice ? 100 : 16}
                   decelerationRate={animationConfig.isLowEndDevice ? "fast" : "normal"}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={isRefreshing}
+                      onRefresh={handleRefresh}
+                      tintColor={Colors[theme].brandColor2}
+                      colors={[Colors[theme].brandColor2]}
+                    />
+                  }
                 >
                   <View style={styles.cardContentContainer}>
                     {/* Only render content when we have valid deck data */}

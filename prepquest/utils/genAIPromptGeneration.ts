@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface GenAIPromptParams {
@@ -142,7 +142,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     if (effectiveLanguage === 'Afrikaans') {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`
-        prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
+        prompt += `${promptAndDataAfrikaans[flashcardType as keyof typeof promptAndDataAfrikaans].prompt}\n`
       }
     }
   }

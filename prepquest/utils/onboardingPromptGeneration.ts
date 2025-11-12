@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans } from '@/constants/promptEngineering';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
@@ -195,7 +195,7 @@ export const generateOnboardingPrompt = async (params: {
     if (language === 'Afrikaans') {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`
-        prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
+        prompt += `${promptAndDataAfrikaans[flashcardType as keyof typeof promptAndDataAfrikaans].prompt}\n`
       }
     }
   }

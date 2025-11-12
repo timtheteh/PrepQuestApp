@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -80,7 +80,7 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
       for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
         prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`;
         // @ts-ignore
-        prompt += `${promptAndData[flashcardType].prompt}\n`;
+        prompt += `${promptAndDataAfrikaans[flashcardType].prompt}\n`;
       }
     }
   }

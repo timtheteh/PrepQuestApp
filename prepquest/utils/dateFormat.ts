@@ -5,7 +5,7 @@
 /**
  * Formats a date string based on the current language
  * @param dateString - The date string to format
- * @param language - The current language ('Chinese' or 'English')
+ * @param language - The current language ('Chinese', 'English', or 'Afrikaans')
  * @returns Formatted date string
  */
 export const formatDate = (dateString: string, language: string): string => {
@@ -16,6 +16,12 @@ export const formatDate = (dateString: string, language: string): string => {
       const month = date.getMonth() + 1;
       const day = date.getDate();
       return `${year}年${month}月${day}日`;
+    } else if (language === 'Afrikaans') {
+      const months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
     } else {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const month = months[date.getMonth()];
@@ -31,6 +37,9 @@ export const formatDate = (dateString: string, language: string): string => {
 
 /**
  * Formats a date string without including the year component.
+ * @param dateString - The date string to format
+ * @param language - The current language ('Chinese', 'English', or 'Afrikaans')
+ * @returns Formatted date string without year
  */
 export const formatDateWithoutYear = (dateString: string, language: string): string => {
   try {
@@ -39,6 +48,11 @@ export const formatDateWithoutYear = (dateString: string, language: string): str
       const month = date.getMonth() + 1;
       const day = date.getDate();
       return `${month}月${day}日`;
+    } else if (language === 'Afrikaans') {
+      const months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      return `${day} ${month}`;
     } else {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const month = months[date.getMonth()];

@@ -1,5 +1,6 @@
 import { promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
+import { Language } from '@/contexts/LanguageContext';
 
 /**
  * Smart distribution function that distributes items across 3 prompts
@@ -70,7 +71,7 @@ export interface OnboardingPromptParams {
  */
 export const generateOnboardingPrompt = async (params: {
   mode: string;
-  language: 'English' | 'Chinese';
+  language: Language;
   // Study mode fields
   studyMandatoryQuestion1?: string; // subjects
   studyMandatoryQuestion2?: string; // education level
@@ -154,6 +155,29 @@ export const generateOnboardingPrompt = async (params: {
     }
   }
 
+  if (modeStr === 'interview' && language === 'Afrikaans') {
+    prompt += `Ek berei voor vir 'n ${interviewType} onderhoud vir die rol van ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `Die ervaringsvlak vir hierdie posisie is ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `Die maatskappy waarvoor ek my onderhoud voorberei is ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Die onderwerpe waarop ek wil fokus is ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && language === 'Afrikaans') {
+    prompt += `Ek studeer vir ${studyMandatoryQuestion1} en my opvoedingsvlak is ${studyMandatoryQuestion2}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Die eksamen waarvoor ek voorberei is ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Die onderwerpe waarop ek wil fokus is ${studyOptionalQuestion2}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (language === 'English') {
@@ -166,6 +190,12 @@ export const generateOnboardingPrompt = async (params: {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
         prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
+      }
+    }
+    if (language === 'Afrikaans') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`
+        prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
       }
     }
   }
@@ -191,6 +221,18 @@ export const generateOnboardingPrompt = async (params: {
     prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
   }
 
+  if (language === 'Afrikaans' && modeStr === 'interview') {
+    prompt += "Maak seker om betekenisvolle, deurdagte en waarskynlike vrae en antwoorde te genereer wat spesifiek is vir my onderhoud en my werkrol.\n"
+    prompt += "Genereer 'n JSON-array in hierdie formaat: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], waar elke {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 'n flitskaart verteenwoordig."
+  }
+
+  if (language === 'Afrikaans' && modeStr === 'study') {
+    prompt += "Maak seker om betekenisvolle, deurdagte en waarskynlike vrae en antwoorde te genereer wat spesifiek is vir die vakke wat ek studeer en my opvoedingsvlak.\n"
+    prompt += "Die voorbeelde wat ek gegee het vir die vrae en antwoorde is NET VOORBEELDE om die vraagstyle vir die vraagtipes te demonstreer, JY MOET NET vrae en antwoorde genereer wat DIREK VERWANT is aan die vakke wat ek studeer en my opvoedingsvlak.\n"
+    prompt += "Dit is uiters belangrik dat jy nie wegbeweeg van die vakke wat ek studeer nie.\n"
+    prompt += "Genereer 'n JSON-array in hierdie formaat: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], waar elke {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 'n flitskaart verteenwoordig."
+  }
+
   return prompt;
 };
 
@@ -203,7 +245,7 @@ export const generateOnboardingPrompts = async (params: OnboardingPromptParams):
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = responses.language === 'Chinese' ? 'Chinese' : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];
@@ -282,7 +324,7 @@ export const generateOnboardingPromptsWithFormFields = async (params: Onboarding
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = responses.language === 'Chinese' ? 'Chinese' : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];

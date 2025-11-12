@@ -1,8 +1,9 @@
 import { promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
   mode: string | string[];
-  language: 'English' | 'Chinese';
+  language: Language;
   // Study mode fields
   studyMandatoryQuestion1?: string; // education level
   studyMandatoryQuestion2?: string; // subjects
@@ -45,12 +46,20 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'Chinese') {
     prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`;
   }
+  if (modeStr === 'interview' && language === 'Afrikaans') {
+    prompt += `Ek berei voor vir 'n ${interviewType} onderhoud vir die rol van ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Afrikaans') {
+    prompt += `Ek studeer vir ${studyMandatoryQuestion2} en my opvoedingsvlak is ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
     prompt += `Here is additional information and context from a YouTube video transcript for my preparation: ${transcript}\n`;
-  } else {
+  } else if (language === 'Chinese') {
     prompt += `这里有一些额外的信息和上下文，来自一个YouTube视频的文字稿，用于我的准备：${transcript}\n`;
+  } else if (language === 'Afrikaans') {
+    prompt += `Hier is addisionele inligting en konteks van 'n YouTube-video transkripsie vir my voorbereiding: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -61,11 +70,17 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         // @ts-ignore
         prompt += `${promptAndData[flashcardType].prompt}\n`;
       }
-    } else {
+    } else if (language === 'Chinese') {
       for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
         prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`;
         // @ts-ignore
         prompt += `${promptAndDataChinese[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Afrikaans') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndData[flashcardType].prompt}\n`;
       }
     }
   }
@@ -90,6 +105,21 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (language === 'Chinese' && modeStr === 'study' && isAIGenerate) {
     prompt += '确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n';
     prompt += '生成一个JSON数组，格式为：[{"flashcardType": <>, "question": <>, "answer": <>}], 其中每个 {"flashcardType": <>, "question": <>, "answer": <>} 代表一个闪卡。';
+  }
+  if (language === 'Afrikaans' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Maak seker om betekenisvolle, deurdagte en waarskynlike vrae en antwoorde te genereer wat spesifiek is vir my onderhoud en my werkrol.\n';
+    prompt += 'Genereer \'n JSON-array in hierdie formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waar elke {"flashcardType": <>, "question": <>, "answer": <>} \'n flitskaart verteenwoordig.';
+  }
+  if (language === 'Afrikaans' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Maak seker om betekenisvolle, deurdagte en waarskynlike vrae en antwoorde te genereer wat spesifiek is vir my onderhoud en my werkrol.\n';
+    prompt += 'Dit is EKSTREEM BELANGRIK DAT JY NIE AFWYK van die inligting en konteks wat ek verskaf het van die YouTube-video transkripsie nie. BLY NET BY INHOUD VAN DIE TRANSKRIPSIE. ';
+    prompt += 'Genereer \'n JSON-array in hierdie formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waar elke {"flashcardType": <>, "question": <>, "answer": <>} \'n flitskaart verteenwoordig.';
+  }
+  if (language === 'Afrikaans' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Maak seker om betekenisvolle, deurdagte en waarskynlike vrae en antwoorde te genereer wat spesifiek is vir die vakke wat ek studeer en my opvoedingsvlak.\n';
+    prompt += 'Die voorbeelde wat ek gegee het vir die vrae en antwoorde is NET VOORBEELDE om die vraagstyle vir die vraagtipes te demonstreer, JY MOET NET vrae en antwoorde genereer wat DIREK VERWANT is aan die vakke wat ek studeer en my opvoedingsvlak.\n';
+    prompt += 'Dit is uiters belangrik dat jy nie wegbeweeg van die vakke wat ek studeer nie.\n';
+    prompt += 'Genereer \'n JSON-array in hierdie formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waar elke {"flashcardType": <>, "question": <>, "answer": <>} \'n flitskaart verteenwoordig.';
   }
 
   return prompt;

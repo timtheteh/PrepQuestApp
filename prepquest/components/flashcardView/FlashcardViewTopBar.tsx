@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Modal } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { StyleSheet, View, TouchableOpacity, Text, Modal, Dimensions, ScrollView } from 'react-native';
 import { CircleIconButton } from '../general/CircleIconButton';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -41,6 +41,43 @@ export const FlashcardViewTopBar = ({
   const colors = Colors[theme];
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
+  const availableLanguages = useMemo(() => [
+    { key: 'Afrikaans', label: 'Afrikaans' },
+    { key: 'Arabic', label: 'العربية' },
+    { key: 'Bengali', label: 'বাংলা' },
+    { key: 'Chinese', label: '中文' },
+    { key: 'Czech', label: 'Čeština' },
+    { key: 'Dutch', label: 'Nederlands' },
+    { key: 'English', label: 'English' },
+    { key: 'Farsi', label: 'فارسی' },
+    { key: 'Finnish', label: 'Suomi' },
+    { key: 'French', label: 'Français' },
+    { key: 'German', label: 'Deutsch' },
+    { key: 'Greek', label: 'Ελληνικά' },
+    { key: 'Hebrew', label: 'עברית' },
+    { key: 'Hindi', label: 'हिन्दी' },
+    { key: 'Hungarian', label: 'Magyar' },
+    { key: 'Indonesian', label: 'Bahasa Indonesia' },
+    { key: 'Italian', label: 'Italiano' },
+    { key: 'Japanese', label: '日本語' },
+    { key: 'Korean', label: '한국어' },
+    { key: 'Malay', label: 'Bahasa Melayu' },
+    { key: 'Norwegian', label: 'Norsk' },
+    { key: 'Polish', label: 'Polski' },
+    { key: 'Portuguese', label: 'Português' },
+    { key: 'Romanian', label: 'Română' },
+    { key: 'Russian', label: 'Русский' },
+    { key: 'Spanish', label: 'Español' },
+    { key: 'Swahili', label: 'Kiswahili' },
+    { key: 'Swedish', label: 'Svenska' },
+    { key: 'Tagalog', label: 'Tagalog' },
+    { key: 'Tamil', label: 'தமிழ்' },
+    { key: 'Thai', label: 'ภาษาไทย' },
+    { key: 'Turkish', label: 'Türkçe' },
+    { key: 'Ukrainian', label: 'Українська' },
+    { key: 'Vietnamese', label: 'Tiếng Việt' },
+  ].sort((a, b) => a.label.localeCompare(b.label)), []);
+
   const renderAudioIcon = (color: string) => {
     if (isSpeechPlaying && !isSpeechPaused) {
       return <FontAwesome6 name="volume-xmark" size={20} color="#FF3B30" />;
@@ -58,6 +95,9 @@ export const FlashcardViewTopBar = ({
     }
     setIsLanguageModalOpen(false);
   };
+
+  // Get current language display label
+  const currentLanguageLabel = availableLanguages.find(l => l.key === voiceLanguage)?.label || voiceLanguage;
 
   const isVoiceAnswerType = answerType === 'voice';
 
@@ -77,7 +117,7 @@ export const FlashcardViewTopBar = ({
           >
             <MaterialIcons name="language" size={18} color={colors.normalIconColor} />
             <Text style={{ color: colors.text, fontSize: 14, fontFamily: Fonts.bodyBold }} numberOfLines={1}>
-              {strings[language].appSettingsPage.languages[voiceLanguage.toLowerCase()]}
+              {currentLanguageLabel}
             </Text>
             <AntDesign name="down" size={14} color={colors.unselectedText} />
           </TouchableOpacity>
@@ -108,37 +148,71 @@ export const FlashcardViewTopBar = ({
         onRequestClose={() => setIsLanguageModalOpen(false)}
       >
         <TouchableOpacity 
-          style={styles.modalOverlay} 
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} 
           activeOpacity={1} 
           onPressOut={() => setIsLanguageModalOpen(false)}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-            <Text style={[styles.modalTitle, { color: colors.text, fontFamily: Fonts.bodyBold }]}>
-              {strings[language].appSettingsPage.selectVoiceLanguage}
+          <View style={{ 
+            position: 'absolute', 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            backgroundColor: colors.background, 
+            borderTopLeftRadius: 24, 
+            borderTopRightRadius: 24, 
+            paddingTop: 12,
+            paddingBottom: 24,
+            maxHeight: Dimensions.get('window').height * 0.6,
+            minHeight: 440, // Height to show 5 languages comfortably (5 * 60px + title + cancel button + padding)
+          }}>
+            <Text style={{ 
+              fontSize: 32, 
+              fontFamily: Fonts.title, 
+              color: colors.text, 
+              textAlign: 'left', 
+              marginBottom: 16,
+              paddingHorizontal: 24,
+            }}>
+              {strings[language]?.appSettingsPage?.selectVoiceLanguage || strings.English.appSettingsPage.selectVoiceLanguage}
             </Text>
-            {Object.entries(strings[language].appSettingsPage.languages).map(([langKey, langName]) => (
-              <TouchableOpacity 
-                key={langKey}
-                style={styles.languageOption} 
-                onPress={() => handleLanguageSelect(langKey.charAt(0).toUpperCase() + langKey.slice(1))}
-              >
-                <Text style={{ 
-                  fontFamily: Fonts.bodyBold, 
-                  fontSize: 20, 
-                  color: voiceLanguage.toLowerCase() === langKey ? colors.brandColor1 : colors.text, 
-                  textAlign: 'center' 
-                }}>
-                  {langName as string}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView 
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 24 }}
+              showsVerticalScrollIndicator={true}
+            >
+              {availableLanguages.map((lang) => (
+                <TouchableOpacity 
+                  key={lang.key}
+                  style={{ 
+                    paddingVertical: 18,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.unselectedText + '20',
+                  }} 
+                  onPress={() => handleLanguageSelect(lang.key)}
+                >
+                  <Text style={{ 
+                    fontFamily: Fonts.bodyBold, 
+                    fontSize: 20, 
+                    color: voiceLanguage === lang.key ? colors.brandColor1 : colors.text, 
+                    textAlign: 'center' 
+                  }}>
+                    {lang.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             <TouchableOpacity 
-              style={styles.cancelButton} 
+              style={{ 
+                marginTop: 16, 
+                alignSelf: 'center',
+                paddingVertical: 12,
+                paddingHorizontal: 32,
+              }} 
               onPress={() => setIsLanguageModalOpen(false)}
             >
               <Text style={{ 
                 color: colors.brandColor2, 
-                fontSize: 18, 
+                fontSize: 20, 
                 fontFamily: Fonts.bodyMedium 
               }}>
                 {strings[language].cancel}
@@ -168,28 +242,5 @@ const styles = StyleSheet.create({
     minWidth: 125,
     maxWidth: 125,
     height: 46,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  modalTitle: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  languageOption: {
-    paddingVertical: 16,
-  },
-  cancelButton: {
-    marginTop: 16,
-    alignSelf: 'center',
   },
 }); 

@@ -20,7 +20,7 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = React.m
   value,
   onChangeText,
   onDone,
-  placeholder = 'Type your text here...',
+  placeholder,
   autoFocus = true,
 }) => {
   const { language } = useLanguage();
@@ -35,6 +35,11 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = React.m
   };
 
   const currentStrings = strings[language as keyof typeof strings];
+  const resolvedPlaceholder =
+    placeholder ??
+    currentStrings?.typeHere ??
+    strings.English.typeHere ??
+    '';
 
   if (!visible) return null;
 
@@ -57,7 +62,7 @@ export const BottomTextInputModal: React.FC<BottomTextInputModalProps> = React.m
           </View>
           <TextInput
             style={[styles.input, themeStyles.input]}
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             placeholderTextColor={themeStyles.placeholderTextColor}
             autoFocus={autoFocus}
             multiline

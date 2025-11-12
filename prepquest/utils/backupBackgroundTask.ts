@@ -97,6 +97,8 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
   const englishBackupNotifications = strings.English.notifications.backup;
   const backupNotifications = localeStrings.notifications?.backup ?? englishBackupNotifications;
   const {
+    startingBackup = englishBackupNotifications.startingBackup,
+    unableToGetToken = englishBackupNotifications.unableToGetToken,
     cancelledTitle = englishBackupNotifications.cancelledTitle,
     networkErrorBody = englishBackupNotifications.networkErrorBody,
     serverErrorTitle = englishBackupNotifications.serverErrorTitle,
@@ -122,7 +124,7 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       completed: false,
       timestamp: Date.now(),
       percentage: 0,
-      message: 'Starting backup...'
+      message: startingBackup
     });
     
     const stopKeepAlive = await updateBackupProgressPeriodically({ inProgress: true });
@@ -132,7 +134,7 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
       try {
         const token = await getToken();
         if (!token) {
-          throw new Error('Unable to get authentication token');
+          throw new Error(unableToGetToken);
         }
         return token;
       } catch (error) {
@@ -542,7 +544,7 @@ const backupDataBackgroundTask = async (taskDataArguments: any) => {
     
   } catch (error) {
     console.error('Error in backup background task:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : (localeStrings.unknownError ?? strings.English.unknownError);
     
     await saveBackupProgress({
       status: 'error',
@@ -601,10 +603,14 @@ export const startBackupBackgroundTask = async (
     // Add a small delay to ensure AsyncStorage operations complete
     await new Promise(resolve => setTimeout(resolve, 100));
     
+    const localeStrings = strings[language] ?? strings.English;
+    const englishBackupNotifications = strings.English.notifications.backup;
+    const backupNotifications = localeStrings.notifications?.backup ?? englishBackupNotifications;
+    
     await BackgroundService.start(backupDataBackgroundTask, {
       taskName: 'BackupData',
-      taskTitle: language === 'Chinese' ? '备份数据' : 'Backing Up Data',
-      taskDesc: language === 'Chinese' ? '正在后台备份您的数据' : 'Your data is being backed up in the background.',
+      taskTitle: backupNotifications.taskTitle ?? englishBackupNotifications.taskTitle,
+      taskDesc: backupNotifications.taskDesc ?? englishBackupNotifications.taskDesc,
       taskIcon: { name: 'ic_launcher', type: 'mipmap' },
       color: '#44B88A',
       parameters: {

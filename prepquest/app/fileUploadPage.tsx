@@ -86,8 +86,6 @@ const ABSOLUTE_MAX_FILE_SIZE_LIMITS = {
 
 // --- Background Task Progress Helpers (reuse same key as GenAI form) ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
-const deckCreationCommonStrings = strings.English.deckCreationCommon;
-
 async function saveDeckCreationProgress(progress: any) {
   try {
     await AsyncStorage.setItem(BG_TASK_PROGRESS_KEY, JSON.stringify(progress));
@@ -162,6 +160,9 @@ const fileUploadDeckCreationBackgroundTask = async (taskDataArguments: any) => {
 
   let createdDeckId: number | null = null;
   let createdFlashcardIds: number[] = [];
+
+  const deckCreationCommonStrings =
+    strings[language as keyof typeof strings]?.deckCreationCommon ?? strings.English.deckCreationCommon;
 
   try {
     if (BackgroundService.isRunning() === false) return;
@@ -932,10 +933,13 @@ function getFileSizeLimit(fileName: string): number {
   }
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
+function formatFileSize(
+  bytes: number,
+  unitStrings: { bytes: string; kb: string; mb: string; gb: string }
+): string {
+  if (bytes === 0) return `0 ${unitStrings.bytes}`;
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = [unitStrings.bytes, unitStrings.kb, unitStrings.mb, unitStrings.gb];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
@@ -1790,7 +1794,7 @@ export default function FileUploadPage() {
         // Check file size limit for images
         const maxSize = FILE_SIZE_LIMITS.IMAGE;
         if (selectedImage.fileSize && selectedImage.fileSize > maxSize) {
-          const sizeLimitText = formatFileSize(maxSize);
+          const sizeLimitText = formatFileSize(maxSize, strings[language].fileUploadPage.fileSizeUnits);
           const errorMessage = `${strings[language].fileUploadPage.fileSizeExceeded}!\n${strings[language].fileUploadPage.fileSizeLimit} ${sizeLimitText}.\n${strings[language].fileUploadPage.pleaseChooseSmallerFile}`;
           setShowToast(true);
           setToastMessage(errorMessage);
@@ -1849,7 +1853,7 @@ export default function FileUploadPage() {
         // Check file size limit for images
         const maxSize = FILE_SIZE_LIMITS.IMAGE;
         if (capturedImage.fileSize && capturedImage.fileSize > maxSize) {
-          const sizeLimitText = formatFileSize(maxSize);
+          const sizeLimitText = formatFileSize(maxSize, strings[language].fileUploadPage.fileSizeUnits);
           const errorMessage = `${strings[language].fileUploadPage.fileSizeExceeded}!\n${strings[language].fileUploadPage.fileSizeLimit} ${sizeLimitText}.\n${strings[language].fileUploadPage.pleaseChooseSmallerFile}`;
           setShowToast(true);
           setToastMessage(errorMessage);
@@ -1909,7 +1913,7 @@ export default function FileUploadPage() {
         // Check file size limit
         const maxSize = getFileSizeLimit(selected.name);
         if (selected.size && selected.size > maxSize) {
-          const sizeLimitText = formatFileSize(maxSize);
+          const sizeLimitText = formatFileSize(maxSize, strings[language].fileUploadPage.fileSizeUnits);
           const errorMessage = `${strings[language].fileUploadPage.fileSizeExceeded}!\n${strings[language].fileUploadPage.fileSizeLimit} ${sizeLimitText}.\n${strings[language].fileUploadPage.pleaseChooseSmallerFile}`;
           setShowToast(true);
           setToastMessage(errorMessage);
@@ -2361,8 +2365,8 @@ export default function FileUploadPage() {
         text={strings[language].fileUploadPage.helpModal}
         buttons='none'
         textStyle={{
-          highlightWord: "our website",
-          highlightColor: "#44B88A"
+          highlightWord: strings[language].fileUploadPage.helpModalWebsite,
+          highlightColor: Colors[theme].brandColor2
         }}
         Icon={HelpIconFilled}
       />

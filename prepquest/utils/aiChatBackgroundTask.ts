@@ -102,6 +102,7 @@ const aiChatBackgroundTask = async (taskDataArguments: any) => {
     networkErrorBody = englishAIChatNotifications.networkErrorBody,
     serverErrorTitle = englishAIChatNotifications.serverErrorTitle,
     serverErrorBody = englishAIChatNotifications.serverErrorBody,
+    statusLabel = englishAIChatNotifications.statusLabel,
   } = aiChatNotifications;
 
   const baseProgress = {
@@ -201,7 +202,7 @@ const aiChatBackgroundTask = async (taskDataArguments: any) => {
       }
     }
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : (localeStrings.unknownError ?? strings.English.unknownError);
     const isNetworkError = error instanceof Error && error.message === 'NETWORK_ERROR';
     const isServerError =
       error instanceof Error && error.message.startsWith('SERVER_ERROR');
@@ -286,7 +287,7 @@ const aiChatBackgroundTask = async (taskDataArguments: any) => {
           const formattedIndex = (flashcardIndex ?? 0) + 1;
           const statusSuffix =
             typeof serverStatusCode === 'number' && Number.isFinite(serverStatusCode)
-              ? ` (Status ${serverStatusCode})`
+              ? ` (${statusLabel} ${serverStatusCode})`
               : '';
           const title = formatTemplate(serverErrorTitle, {
             flashcardIndex: formattedIndex,

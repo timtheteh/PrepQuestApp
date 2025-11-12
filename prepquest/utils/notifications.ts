@@ -224,13 +224,12 @@ class NotificationService {
   async sendBackupCompletedNotification(
     language: string
   ): Promise<void> {
-    const title = language === 'Chinese'
-      ? '备份完成！'
-      : 'Backup Completed!';
+    const localeStrings = strings[language] ?? strings.English;
+    const englishBackupNotifications = strings.English.notifications.backup;
+    const backupNotifications = localeStrings.notifications?.backup ?? englishBackupNotifications;
     
-    const body = language === 'Chinese'
-      ? '您的数据已成功备份到云端'
-      : 'Your data has been successfully backed up to the cloud';
+    const title = backupNotifications.completedTitle ?? englishBackupNotifications.completedTitle;
+    const body = backupNotifications.completedBody ?? englishBackupNotifications.completedBody;
 
     await this.sendLocalNotification(title, body, {
       type: 'backup_completed',
@@ -297,8 +296,9 @@ class NotificationService {
 
   // Test function to verify notifications work
   async sendTestNotification(language: string): Promise<void> {
-    const title = language === 'Chinese' ? '测试通知' : 'Test Notification';
-    const body = language === 'Chinese' ? '通知系统工作正常！' : 'Notification system is working!';
+    const localeStrings = strings[language] ?? strings.English;
+    const title = localeStrings.appSettingsPage?.testNotificationTitle ?? strings.English.appSettingsPage.testNotificationTitle;
+    const body = localeStrings.appSettingsPage?.testNotificationBody ?? strings.English.appSettingsPage.testNotificationBody;
     
     await this.sendLocalNotification(title, body, {
       type: 'deck_created',

@@ -343,6 +343,32 @@ export default function AccountScreen() {
     return subscriptionPlanDetails['Free Plan'];
   }, [currentPlan]);
 
+  const planDisplayName = useMemo(() => {
+    const planNames = strings[language].planNames;
+    if (!planNames) {
+      return currentPlan || strings[language].basicPlan;
+    }
+
+    if (!currentPlan) {
+      return planNames.freePlan ?? strings[language].basicPlan;
+    }
+
+    const normalizedPlan = currentPlan.trim().toLowerCase();
+
+    switch (normalizedPlan) {
+      case 'free plan':
+        return planNames.freePlan;
+      case 'pro plan':
+        return planNames.proPlan;
+      case 'premium plan':
+        return planNames.premiumPlan;
+      case 'basic plan':
+        return strings[language].basicPlan ?? planNames.freePlan ?? currentPlan;
+      default:
+        return currentPlan;
+    }
+  }, [currentPlan, language]);
+
   // Theme-dependent styles - memoized to prevent recreation
   const themeStyles = useMemo(() => ({
     profileCircle: {
@@ -461,7 +487,7 @@ export default function AccountScreen() {
         </View>
         <View style={styles.infoRow}>
           <Text style={[styles.infoHeading, { color: themeColors.text }]}>{strings[language].currentPlan}</Text>
-          <Text style={[styles.infoValue, { color: themeColors.text }]}>{currentPlan}</Text>
+          <Text style={[styles.infoValue, { color: themeColors.text }]}>{planDisplayName}</Text>
         </View>
       </View>
       
@@ -785,7 +811,7 @@ export default function AccountScreen() {
     screenWidth,
     scaleFactor,
     grapeColors,
-    currentPlan,
+    planDisplayName,
     requestCounts,
     planLimits,
     formatRequestDisplay

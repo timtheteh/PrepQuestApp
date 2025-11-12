@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth as useClerkAuth, useSignIn as useClerkSignIn, useSignUp as useClerkSignUp, useOAuth, useUser } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearUserStatisticsCache } from '@/utils/statisticsCache';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { strings } from '@/constants/strings';
 
 // Authentication types
 export interface AuthUser {
@@ -57,6 +59,7 @@ interface ClerkAuthProviderProps {
 
 // Keep the same export name for backward compatibility, but now it's purely Clerk-based
 export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children }) => {
+  const { language } = useLanguage();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,7 +131,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (!clerkSignIn) {
         return {
           success: false,
-          error: 'Sign in not available',
+          error: strings[language]?.splash?.signInNotAvailable ?? strings.English.splash.signInNotAvailable,
         };
       }
 
@@ -146,13 +149,13 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       } else {
         return {
           success: false,
-          error: 'Sign in incomplete',
+          error: strings[language]?.splash?.signInIncomplete ?? strings.English.splash.signInIncomplete,
         };
       }
     } catch (error: any) {
       return {
         success: false,
-        error: error.errors?.[0]?.message || error.message || 'Sign in failed',
+        error: error.errors?.[0]?.message || error.message || (strings[language]?.splash?.signInFailed ?? strings.English.splash.signInFailed),
       };
     }
   };
@@ -162,7 +165,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (!clerkSignUp) {
         return {
           success: false,
-          error: 'Sign up not available',
+          error: strings[language]?.splash?.signUpNotAvailable ?? strings.English.splash.signUpNotAvailable,
         };
       }
 
@@ -182,18 +185,18 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
         await result.prepareEmailAddressVerification({ strategy: 'email_code' });
         return {
           success: false,
-          error: 'Email verification required. Please check your email.',
+          error: strings[language]?.splash?.emailVerificationRequired ?? strings.English.splash.emailVerificationRequired,
         };
       } else {
         return {
           success: false,
-          error: 'Sign up incomplete',
+          error: strings[language]?.splash?.signUpIncomplete ?? strings.English.splash.signUpIncomplete,
         };
       }
     } catch (error: any) {
       return {
         success: false,
-        error: error.errors?.[0]?.message || error.message || 'Sign up failed',
+        error: error.errors?.[0]?.message || error.message || (strings[language]?.splash?.signUpFailed ?? strings.English.splash.signUpFailed),
       };
     }
   };
@@ -203,7 +206,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (!clerkSignIn) {
         return {
           success: false,
-          error: 'Password reset not available',
+          error: strings[language]?.splash?.passwordResetNotAvailable ?? strings.English.splash.passwordResetNotAvailable,
         };
       }
 
@@ -220,7 +223,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (!resetPasswordFactor) {
         return {
           success: false,
-          error: 'Password reset not available for this email',
+          error: strings[language]?.splash?.passwordResetNotAvailableForEmail ?? strings.English.splash.passwordResetNotAvailableForEmail,
         };
       }
 
@@ -236,7 +239,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
     } catch (error: any) {
       return {
         success: false,
-        error: error.errors?.[0]?.message || error.message || 'Password reset failed',
+        error: error.errors?.[0]?.message || error.message || (strings[language]?.splash?.passwordResetFailed ?? strings.English.splash.passwordResetFailed),
       };
     }
   };
@@ -250,7 +253,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
         // The auth state will be updated by the useEffect
       } else {
         // User canceled OAuth - throw a specific cancellation error
-        const cancelError = new Error('User canceled OAuth');
+        const cancelError = new Error(strings[language]?.splash?.userCanceledOAuth ?? strings.English.splash.userCanceledOAuth);
         (cancelError as any).code = 'oauth_canceled';
         throw cancelError;
       }
@@ -268,7 +271,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
         // The auth state will be updated by the useEffect
       } else {
         // User canceled OAuth - throw a specific cancellation error
-        const cancelError = new Error('User canceled OAuth');
+        const cancelError = new Error(strings[language]?.splash?.userCanceledOAuth ?? strings.English.splash.userCanceledOAuth);
         (cancelError as any).code = 'oauth_canceled';
         throw cancelError;
       }
@@ -286,7 +289,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
         // The auth state will be updated by the useEffect
       } else {
         // User canceled OAuth - throw a specific cancellation error
-        const cancelError = new Error('User canceled OAuth');
+        const cancelError = new Error(strings[language]?.splash?.userCanceledOAuth ?? strings.English.splash.userCanceledOAuth);
         (cancelError as any).code = 'oauth_canceled';
         throw cancelError;
       }
@@ -343,7 +346,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       if (!clerkUser || !clerkUserId) {
         return {
           success: false,
-          error: 'No user to delete',
+          error: strings[language]?.splash?.noUserToDelete ?? strings.English.splash.noUserToDelete,
         };
       }
 
@@ -370,7 +373,7 @@ export const HybridAuthProvider: React.FC<ClerkAuthProviderProps> = ({ children 
       console.error('Error deleting Clerk account:', error);
       return {
         success: false,
-        error: error.errors?.[0]?.message || error.message || 'Account deletion failed',
+        error: error.errors?.[0]?.message || error.message || (strings[language]?.splash?.accountDeletionFailed ?? strings.English.splash.accountDeletionFailed),
       };
     }
   };

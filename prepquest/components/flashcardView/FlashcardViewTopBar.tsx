@@ -114,7 +114,7 @@ export const FlashcardViewTopBar = ({
         >
           <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
             <Text style={[styles.modalTitle, { color: colors.text, fontFamily: Fonts.bodyBold }]}>
-              {strings[language].appSettingsPage.selectVoiceLanguage || 'Select Voice Input Language'}
+              {strings[language].appSettingsPage.selectVoiceLanguage}
             </Text>
             {Object.entries(strings[language].appSettingsPage.languages).map(([langKey, langName]) => (
               <TouchableOpacity 

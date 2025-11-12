@@ -30,14 +30,22 @@ const BOUNCE_SPEED = 2.0; // Same speed for both iOS and Android
 const ANDROID_OPTIMIZED_FPS = 60; // Keep 60 FPS for smooth Android animations
 const ANDROID_UPDATE_INTERVAL = Platform.OS === 'android' ? 16.67 : 16; // Optimized for Android
 
-// Mapping for category labels to Chinese/English
-const CATEGORY_LABELS: Record<string, { en: string; zh: string }> = {
-  'Study': { en: strings.English.breakdownCategoryLabels.study, zh: strings.Chinese.breakdownCategoryLabels.study },
-  'Technical': { en: strings.English.breakdownCategoryLabels.technical, zh: strings.Chinese.breakdownCategoryLabels.technical },
-  'Case study': { en: strings.English.breakdownCategoryLabels.caseStudy, zh: strings.Chinese.breakdownCategoryLabels.caseStudy },
-  'Behavioral': { en: strings.English.breakdownCategoryLabels.behavioral, zh: strings.Chinese.breakdownCategoryLabels.behavioral },
-  'Brainteasers': { en: strings.English.breakdownCategoryLabels.brainteasers, zh: strings.Chinese.breakdownCategoryLabels.brainteasers },
-  'Others': { en: strings.English.breakdownCategoryLabels.others, zh: strings.Chinese.breakdownCategoryLabels.others },
+// Helper function to get localized category label
+const getCategoryLabel = (label: string, language: string): string => {
+  const categoryLabels = strings[language]?.breakdownCategoryLabels;
+  if (!categoryLabels) return label;
+  
+  const labelMap: Record<string, keyof typeof categoryLabels> = {
+    'Study': 'study',
+    'Technical': 'technical',
+    'Case study': 'caseStudy',
+    'Behavioral': 'behavioral',
+    'Brainteasers': 'brainteasers',
+    'Others': 'others',
+  };
+  
+  const key = labelMap[label];
+  return key ? categoryLabels[key] || label : label;
 };
 
 export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksFlashcardsProps) {
@@ -535,11 +543,7 @@ export function BreakdownOfDecksFlashcards({ onContentReady }: BreakdownOfDecksF
                       : (d.label == 'Technical' || d.label == 'Others' || d.label == 'Brainteasers' ? '#FFFFFF' : colors.text),
                     fontSize: (d.label == 'Case study' || d.label == 'Brainteasers') ? 12 : 16
                   }
-                ]}>{
-                  language === 'Chinese'
-                    ? CATEGORY_LABELS[d.label]?.zh || d.label
-                    : CATEGORY_LABELS[d.label]?.en || d.label
-                }</Text>
+                ]}>{getCategoryLabel(d.label, language)}</Text>
                 <Text style={[styles.bubbleText, {
                   fontFamily: Fonts.bodyMedium,
                   color: theme === 'dark' 

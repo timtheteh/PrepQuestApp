@@ -108,6 +108,13 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
   const englishDeleteAccountNotifications = strings.English.notifications.deleteAccount;
   const deleteAccountNotifications = localeStrings.notifications?.deleteAccount ?? englishDeleteAccountNotifications;
   const {
+    startingAccountDeletion = englishDeleteAccountNotifications.startingAccountDeletion,
+    deletingLocalData = englishDeleteAccountNotifications.deletingLocalData,
+    deletingAccountFromServer = englishDeleteAccountNotifications.deletingAccountFromServer,
+    localDataDeletedSuccessfully = englishDeleteAccountNotifications.localDataDeletedSuccessfully,
+    invalidUserId = englishDeleteAccountNotifications.invalidUserId,
+    failedToDeleteLocalUserData = englishDeleteAccountNotifications.failedToDeleteLocalUserData,
+    accountDeletionCancelled = englishDeleteAccountNotifications.accountDeletionCancelled,
     completedTitle = englishDeleteAccountNotifications.completedTitle,
     completedBody = englishDeleteAccountNotifications.completedBody,
   } = deleteAccountNotifications;
@@ -122,7 +129,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
       inProgress: false,
       completed: false,
       error: true,
-      errorMessage: 'Invalid user ID provided',
+      errorMessage: invalidUserId,
       timestamp: Date.now()
     });
     return;
@@ -145,7 +152,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
       completed: false,
       timestamp: Date.now(),
       percentage: 0,
-      message: 'Starting account deletion...'
+      message: startingAccountDeletion
     });
     
     // Start more frequent progress updates to keep the task alive and update progress in background
@@ -167,7 +174,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
       completed: false,
       timestamp: Date.now(),
       percentage: 25,
-      message: 'Deleting local data...'
+      message: deletingLocalData
     });
 
     // First, delete all user data from local database
@@ -181,7 +188,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
         inProgress: false,
         completed: false,
         error: true,
-        errorMessage: 'Failed to delete local user data',
+        errorMessage: failedToDeleteLocalUserData,
         timestamp: Date.now()
       });
       return;
@@ -198,7 +205,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
         completed: false,
         cancelled: true,
         timestamp: Date.now(),
-        message: 'Account deletion cancelled'
+        message: accountDeletionCancelled
       });
       return;
     }
@@ -210,7 +217,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
       completed: false,
       timestamp: Date.now(),
       percentage: 75,
-      message: 'Deleting account from server...'
+      message: deletingAccountFromServer
     });
 
     // Note: Clerk account deletion will be handled by the auth context
@@ -249,7 +256,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
       completed: true,
       timestamp: Date.now(),
       percentage: 100,
-      message: 'Local data deleted successfully. Account deletion will complete shortly.',
+      message: localDataDeletedSuccessfully,
       success: true
     });
     
@@ -286,7 +293,7 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
             notificationSent: true,
             timestamp: Date.now(),
             percentage: 100,
-            message: 'Local data deleted successfully. Account deletion will complete shortly.',
+            message: localDataDeletedSuccessfully,
             success: true
           });
         } else {
@@ -324,12 +331,13 @@ const deleteAccountBackgroundTask = async (taskDataArguments: any) => {
     
   } catch (error) {
     console.error('Error in delete account background task:', error);
+    const errorMessage = error instanceof Error ? error.message : (localeStrings.unknownError ?? strings.English.unknownError);
     await saveDeleteAccountProgress({
       status: 'error',
       inProgress: false,
       completed: false,
       error: true,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorMessage: errorMessage,
       timestamp: Date.now()
     });
   }
@@ -363,10 +371,14 @@ export const startDeleteAccountBackgroundTask = async (language: string, userID:
     // Add a small delay to ensure AsyncStorage operations complete
     await new Promise(resolve => setTimeout(resolve, 100));
     
+    const localeStrings = strings[language] ?? strings.English;
+    const englishDeleteAccountNotifications = strings.English.notifications.deleteAccount;
+    const deleteAccountNotifications = localeStrings.notifications?.deleteAccount ?? englishDeleteAccountNotifications;
+    
     await BackgroundService.start(deleteAccountBackgroundTask, {
       taskName: 'DeleteAccount',
-      taskTitle: language === 'Chinese' ? '删除账户' : 'Deleting Account',
-      taskDesc: language === 'Chinese' ? '正在后台删除您的账户' : 'Your account is being deleted in the background.',
+      taskTitle: deleteAccountNotifications.taskTitle ?? englishDeleteAccountNotifications.taskTitle,
+      taskDesc: deleteAccountNotifications.taskDesc ?? englishDeleteAccountNotifications.taskDesc,
       taskIcon: { name: 'ic_launcher', type: 'mipmap' },
       color: '#CC0000',
       parameters: {
@@ -384,7 +396,7 @@ export const startDeleteAccountBackgroundTask = async (language: string, userID:
       error: false,
       timestamp: Date.now(),
       percentage: 0,
-      message: 'Starting account deletion...'
+      message: deleteAccountNotifications.startingAccountDeletion ?? englishDeleteAccountNotifications.startingAccountDeletion
     });
 
     console.log('Fresh delete account task started successfully');

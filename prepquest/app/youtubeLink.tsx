@@ -101,7 +101,12 @@ async function checkNetworkConnectivity(): Promise<boolean> {
 
 // --- Background Task Progress Helpers (reuse same key as GenAI form) ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
-const deckCreationCommonStrings = strings.English.deckCreationCommon;
+const getDeckCreationCommonStrings = (language?: string) => {
+  if (language && strings[language] && strings[language].deckCreationCommon) {
+    return strings[language].deckCreationCommon;
+  }
+  return strings.English.deckCreationCommon;
+};
 
 async function saveDeckCreationProgress(progress: any) {
   try {
@@ -172,6 +177,9 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     cancelDeckCreationTaskDueToTranscriptError,
   } = taskDataArguments;
 
+  const deckCreationCommonStrings = getDeckCreationCommonStrings(language);
+  const withLanguage = (data: any) => ({ ...data, language });
+
   let createdDeckId: number | null = null;
   let createdFlashcardIds: number[] = [];
 
@@ -179,7 +187,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     if (BackgroundService.isRunning() === false) return;
 
     // Initial progress: request received
-    await saveDeckCreationProgress({
+    await saveDeckCreationProgress(withLanguage({
       taskType: 'youtubeLink',
       mode,
       deckId,
@@ -194,9 +202,9 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       status: 'requestReceived',
       inProgress: true,
       timestamp: Date.now(),
-    });
+    }));
 
-    const stopKeepAlive = await keepProgressFresh({ inProgress: true });
+    const stopKeepAlive = await keepProgressFresh(withLanguage({ inProgress: true }));
 
     // Step A: Fetch transcript
     if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
@@ -394,24 +402,24 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
 
     if (!transcript || transcript.trim() === '') {
       stopKeepAlive();
-      await saveDeckCreationProgress({
+      await saveDeckCreationProgress(withLanguage({
         taskType: 'youtubeLink',
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
         createdDeckId, createdFlashcardIds,
         status: 'cancelled', inProgress: false, cancelled: true, timestamp: Date.now(),
-      });
+      }));
       return;
     }
 
     // Mark transcript fetched
-    await saveDeckCreationProgress({
+    await saveDeckCreationProgress(withLanguage({
       taskType: 'youtubeLink',
       mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
       formData: { deckName },
       createdDeckId, createdFlashcardIds,
       status: 'transcriptFetched', inProgress: true, timestamp: Date.now(),
-    });
+    }));
 
     // Step B: Construct prompt
     if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
@@ -650,13 +658,13 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     }
 
     // Update: flashcards generated
-    await saveDeckCreationProgress({
+    await saveDeckCreationProgress(withLanguage({
       taskType: 'youtubeLink',
       mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
       formData: { deckName },
       createdDeckId, createdFlashcardIds,
       status: 'flashcardsGenerated', inProgress: true, timestamp: Date.now(),
-    });
+    }));
 
     if (BackgroundService.isRunning() === false) { stopKeepAlive(); return; }
 
@@ -704,14 +712,14 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
     }
 
     // Final progress: deck and flashcards created
-    await saveDeckCreationProgress({
+    await saveDeckCreationProgress(withLanguage({
       taskType: 'youtubeLink',
       mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
       formData: { deckName },
       createdDeckId, createdFlashcardIds,
       flashcards, // Add flashcards data for notification service
       status: 'deckAndFlashcardsCreated', inProgress: false, completed: true, timestamp: Date.now(),
-    });
+    }));
 
     stopKeepAlive();
   } catch (error: any) {
@@ -785,7 +793,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
       }
       
     const networkErrorMessage = deckCreationCommonStrings.networkErrorProgress;
-    await saveDeckCreationProgress({ 
+    await saveDeckCreationProgress(withLanguage({ 
         taskType: 'youtubeLink', 
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
@@ -796,14 +804,14 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         networkError: true,
       errorMessage: networkErrorMessage,
         timestamp: Date.now() 
-      });
+      }));
     } else {
       console.log('Non-network error in main catch block, saving as general error');
     const errorMessageText = isServerError
       ? `${deckCreationCommonStrings.serverErrorProgress}${serverStatusCode ? ` (Status ${serverStatusCode})` : ''}`
       : error.message;
 
-    await saveDeckCreationProgress({ 
+    await saveDeckCreationProgress(withLanguage({ 
         taskType: 'youtubeLink', 
         mode, deckId, folderId, isInFavoritesPage, isInIndexPage, isInViewDecksInFolderPage, isInViewFlashcardsPage,
         formData: { deckName },
@@ -816,7 +824,7 @@ const youtubeLinkDeckCreationBackgroundTask = async (taskDataArguments: any) => 
         serverStatusCode,
       errorMessage: errorMessageText,
         timestamp: Date.now() 
-      });
+      }));
     }
   }
 };
@@ -1954,7 +1962,7 @@ export default function YouTubeLinkPage() {
         text={strings[language].youtubeLinkPage.helpModalText}
         buttons='none'
         textStyle={{
-          highlightWord: "our website",
+          highlightWord: strings[language].youtubeLinkPage.helpModalHighlight,
           highlightColor: "#44B88A"
         }}
         Icon={HelpIconFilled}

@@ -910,7 +910,7 @@ export default function SplashScreen({
       );
 
       if (!resetPasswordFactor) {
-        showErrorToast(strings[language].splash.passwordResetNotAvailable);
+        showErrorToast(strings[language].splash.passwordResetNotAvailableForEmail);
         setIsResettingPassword(false);
         return;
       }
@@ -1730,7 +1730,7 @@ export default function SplashScreen({
                   ? strings[language].splash.resendingCode 
                   : canResendCode 
                     ? strings[language].splash.resendCode
-                    : `${strings[language].splash.resendCode} (${resendCountdown}s)`
+                    : `${strings[language].splash.resendCode} (${resendCountdown}${strings[language].splash.resendCountdownSuffix})`
                 }
               </MemoizedText>
             </MemoizedTouchableOpacity>

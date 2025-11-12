@@ -120,6 +120,7 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
   const englishClearDataNotifications = strings.English.notifications.clearData;
   const clearDataNotifications = localeStrings.notifications?.clearData ?? englishClearDataNotifications;
   const {
+    startingClearData = englishClearDataNotifications.startingClearData,
     completedTitle = englishClearDataNotifications.completedTitle,
     completedBody = englishClearDataNotifications.completedBody,
   } = clearDataNotifications;
@@ -143,7 +144,7 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
       completed: false,
       timestamp: Date.now(),
       percentage: 0,
-      message: 'Starting clear data...'
+      message: startingClearData
     });
     
     // Start more frequent progress updates to keep the task alive and update progress in background
@@ -335,12 +336,13 @@ const clearDataBackgroundTask = async (taskDataArguments: any) => {
     
   } catch (error) {
     console.error('Error in clear data background task:', error);
+    const errorMessage = error instanceof Error ? error.message : (localeStrings.unknownError ?? strings.English.unknownError);
     await saveClearDataProgress({
       status: 'error',
       inProgress: false,
       completed: false,
       error: true,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorMessage: errorMessage,
       timestamp: Date.now()
     });
   }
@@ -374,10 +376,14 @@ export const startClearDataBackgroundTask = async (language: string) => {
     // Add a small delay to ensure AsyncStorage operations complete
     await new Promise(resolve => setTimeout(resolve, 100));
     
+    const localeStrings = strings[language] ?? strings.English;
+    const englishClearDataNotifications = strings.English.notifications.clearData;
+    const clearDataNotifications = localeStrings.notifications?.clearData ?? englishClearDataNotifications;
+    
     await BackgroundService.start(clearDataBackgroundTask, {
       taskName: 'ClearData',
-      taskTitle: language === 'Chinese' ? '清除数据' : 'Clearing Data',
-      taskDesc: language === 'Chinese' ? '正在后台清除您的本地数据' : 'Your local data is being cleared in the background.',
+      taskTitle: clearDataNotifications.taskTitle ?? englishClearDataNotifications.taskTitle,
+      taskDesc: clearDataNotifications.taskDesc ?? englishClearDataNotifications.taskDesc,
       taskIcon: { name: 'ic_launcher', type: 'mipmap' },
       color: '#D7191C',
       parameters: {
@@ -396,7 +402,7 @@ export const startClearDataBackgroundTask = async (language: string) => {
       percentage: 0,
       rowsProcessed: 0,
       totalRows: 0,
-      message: 'Starting clear data...'
+      message: clearDataNotifications.startingClearData ?? englishClearDataNotifications.startingClearData
     });
 
     console.log('Fresh clear data task started successfully');

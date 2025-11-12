@@ -894,23 +894,23 @@ export default function DeckDetailsScreen() {
     if (deckType === 'study') {
       return (
         <>
-          <MetadataRow label="Created via" value={getSafeValue(deckInfo.creationMethod)} />
-          <MetadataRow label="Subject(s)" value={formatList(deckInfo.studySubjects)} />
-          <MetadataRow label="Topics/Subtopics" value={formatList(deckInfo.studyTopicsSubtopics)} />
-          <MetadataRow label="Education Level" value={getSafeValue(deckInfo.studyEducationLevel)} />
-          <MetadataRow label="Exam/Quiz" value={getSafeValue(deckInfo.studyExamQuiz)} />
-          <MetadataRow label="Last Reviewed date" value={getLastReviewedDate()} />
+          <MetadataRow label={strings[language].deckDetails.createdVia} value={getSafeValue(deckInfo.creationMethod)} />
+          <MetadataRow label={strings[language].deckDetails.subjects} value={formatList(deckInfo.studySubjects)} />
+          <MetadataRow label={strings[language].deckDetails.topicsSubtopics} value={formatList(deckInfo.studyTopicsSubtopics)} />
+          <MetadataRow label={strings[language].deckDetails.educationLevel} value={getSafeValue(deckInfo.studyEducationLevel)} />
+          <MetadataRow label={strings[language].deckDetails.examQuiz} value={getSafeValue(deckInfo.studyExamQuiz)} />
+          <MetadataRow label={strings[language].deckDetails.lastReviewedDate} value={getLastReviewedDate()} />
         </>
       );
     } else if (deckType === 'interview') {
       return (
         <>
-          <MetadataRow label="Created via" value={getSafeValue(deckInfo.creationMethod)} />
-          <MetadataRow label="Job/Role" value={getSafeValue(deckInfo.interviewJobRole)} />
-          <MetadataRow label="Company" value={getSafeValue(deckInfo.interviewCompany)} />
-          <MetadataRow label="Topics" value={formatList(deckInfo.interviewTopics)} />
-          <MetadataRow label="Experience Level" value={getSafeValue(deckInfo.interviewExperienceLevel)} />
-          <MetadataRow label="Last Reviewed date" value={getLastReviewedDate()} />
+          <MetadataRow label={strings[language].deckDetails.createdVia} value={getSafeValue(deckInfo.creationMethod)} />
+          <MetadataRow label={strings[language].deckDetails.jobRole} value={getSafeValue(deckInfo.interviewJobRole)} />
+          <MetadataRow label={strings[language].deckDetails.company} value={getSafeValue(deckInfo.interviewCompany)} />
+          <MetadataRow label={strings[language].deckDetails.topics} value={formatList(deckInfo.interviewTopics)} />
+          <MetadataRow label={strings[language].deckDetails.experienceLevel} value={getSafeValue(deckInfo.interviewExperienceLevel)} />
+          <MetadataRow label={strings[language].deckDetails.lastReviewedDate} value={getLastReviewedDate()} />
         </>
       );
     }
@@ -969,25 +969,11 @@ export default function DeckDetailsScreen() {
     value: string;
   }
   function MetadataRow({ label, value }: MetadataRowProps) {
-    // Map English label to Chinese if needed
-    const labelMap: Record<string, string> = {
-      'Created via': strings[language].deckDetails.createdVia,
-      'Subject(s)': strings[language].deckDetails.subjects,
-      'Topics/Subtopics': strings[language].deckDetails.topicsSubtopics,
-      'Education Level': strings[language].deckDetails.educationLevel,
-      'Exam/Quiz': strings[language].deckDetails.examQuiz,
-      'Last Reviewed date': strings[language].deckDetails.lastReviewedDate,
-      'Job/Role': strings[language].deckDetails.jobRole,
-      'Company': strings[language].deckDetails.company,
-      'Topics': strings[language].deckDetails.topics,
-      'Experience Level': strings[language].deckDetails.experienceLevel,
-    };
-    const localizedLabel = language === 'Chinese' && labelMap[label] ? labelMap[label] : label;
     return (
       <View style={metadataRowStyles.container}>
         <Text style={[metadataRowStyles.label, {
           // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
-          }]}>{localizedLabel}</Text>
+          }]}>{label}</Text>
         <Text style={[metadataRowStyles.value, {
           // fontFamily: language === 'Chinese' ? 'NotoSansSC-Medium' : 'Satoshi-Medium'
           }]} numberOfLines={2}>

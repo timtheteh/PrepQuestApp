@@ -534,7 +534,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                 fontFamily={Fonts.bodyBold}
                 textAnchor="middle"
               >
-                {d.time + 's'}
+                {d.time + strings[language].seconds}
               </SvgText>
             ))}
             {/* Decks value labels */}
@@ -548,7 +548,7 @@ export function SpeedChart({ onContentReady }: SpeedChartProps) {
                 fontFamily={Fonts.bodyBold}
                 textAnchor="middle"
               >
-                {d.time + 's'}
+                {d.time + strings[language].seconds}
               </SvgText>
             ))}
             {/* Flashcards line and area */}

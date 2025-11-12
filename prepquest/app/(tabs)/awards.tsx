@@ -129,7 +129,7 @@ import { Calendar } from 'react-native-calendars';
 import { addDays, format, parseISO, subDays } from 'date-fns';
 import { getLongestStreakData, LongestStreakData, getAllStudiedDates } from '@/db/grades';
 import { statisticsCache, CACHE_KEYS, refreshAllStatistics } from '@/utils/statisticsCache';
-import { formatDate, getLocalDateKey } from '@/utils/dateFormat';
+import { formatDate, formatDateWithoutYear, getLocalDateKey } from '@/utils/dateFormat';
 import { AwardsSkeleton } from '@/components/skeletons/AwardsSkeleton';
 import { db } from '@/db/index';
 import { getCurrentUserID, createCustomBadge, fetchCustomBadges, CustomBadgeData } from '@/db/decks';
@@ -820,6 +820,7 @@ const StreakCalendar = React.memo(({ onReady }: { onReady?: () => void }) => {
 
 interface BadgeData {
   badgeTitle: string;
+  badgeIdentifier?: string;
   achieved: boolean;
   badgeImage?: any;
   badgeCreatedDate: string; // ISO string
@@ -971,6 +972,56 @@ const getCustomBadgeSVG = (badgeImageName: string, achieved: boolean) => {
   return achieved ? svgComponents.achieved : svgComponents.unachieved;
 };
 
+const getLocalizedBadgeTitle = (
+  language: string,
+  category: 'streak' | 'welcome' | 'lifetime',
+  identifier: string,
+  fallback: string
+) => {
+  const titles = strings[language]?.badgeTitles?.[category];
+  return titles?.[identifier] ?? fallback;
+};
+
+const getLocalizedBadgeSubtext = (
+  language: string,
+  category: 'streak' | 'welcome' | 'lifetime',
+  key?: string,
+  fallback?: string
+) => {
+  if (!key) {
+    return fallback ?? strings[language]?.badgeDefaults?.defaultSubtext ?? 'Subtext';
+  }
+  const subtexts = strings[language]?.badgeSubtexts?.[category];
+  return subtexts?.[key] ?? fallback ?? strings[language]?.badgeDefaults?.defaultSubtext ?? 'Subtext';
+};
+
+const formatCustomBadgeSubtext = (
+  language: string,
+  decks: number,
+  days: number,
+  fallback?: string
+) => {
+  if (!Number.isFinite(decks) || !Number.isFinite(days)) {
+    return fallback ?? strings[language]?.badgeDefaults?.defaultSubtext ?? 'Subtext';
+  }
+
+  const copy = strings[language]?.customBadgeCopy;
+  if (!copy) {
+    return fallback ?? strings[language]?.badgeDefaults?.defaultSubtext ?? 'Subtext';
+  }
+
+  const deckWord = decks === 1 ? copy.deckSingular : copy.deckPlural;
+  const dayWord = days === 1 ? copy.daySingular : copy.dayPlural;
+
+  let template = copy.template ?? '{{decks}} {{deckWord}} x {{days}} {{dayWord}}';
+  template = template.replace('{{decks}}', decks.toString());
+  template = template.replace('{{deckWord}}', deckWord ?? '');
+  template = template.replace('{{days}}', days.toString());
+  template = template.replace('{{dayWord}}', dayWord ?? '');
+
+  return template;
+};
+
 // Function to fetch streak badges from database
 const fetchStreakBadges = async (): Promise<StreakBadgeData[]> => {
   try {
@@ -1077,11 +1128,36 @@ const getHexagonPoints = (size: number, borderWidth: number, svgSize: number) =>
 // Cache hexagon calculations
 const hexagonCache = new Map<string, { outerPointsStr: string, innerPointsStr: string }>();
 
-const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG, welcomeBadgeSVG, lifetimeBadgeSVG, subtext }: { title: string, image?: ImageSourcePropType, achieved: boolean, themeColors: any, streakBadgeSVG?: any, welcomeBadgeSVG?: any, lifetimeBadgeSVG?: any, subtext?: string }) => {
+const Badge = React.memo(({
+  title,
+  identifier,
+  image,
+  achieved,
+  themeColors,
+  streakBadgeSVG,
+  welcomeBadgeSVG,
+  lifetimeBadgeSVG,
+  subtext,
+  language,
+}: {
+  title: string;
+  identifier?: string;
+  image?: ImageSourcePropType;
+  achieved: boolean;
+  themeColors: any;
+  streakBadgeSVG?: any;
+  welcomeBadgeSVG?: any;
+  lifetimeBadgeSVG?: any;
+  subtext?: string;
+  language: string;
+}) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
   const cornerRadius = 20;
+  const comparisonKey = identifier ?? title;
+  const fallbackSubtext = strings[language]?.badgeDefaults?.defaultSubtext ?? 'Subtext';
+  const displaySubtext = subtext ?? fallbackSubtext;
   
   // Use lifetimeBadgeSVG if provided, then welcomeBadgeSVG, then streakBadgeSVG
   const badgeSVG = lifetimeBadgeSVG || welcomeBadgeSVG || streakBadgeSVG;
@@ -1127,8 +1203,8 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
               }}>
                 <View style={{
                   transform: [
-                    { translateX: title === 'Double Power' ? 2 : 0 },
-                    { rotate: title === 'Supersonic' ? '45deg' : '0deg' }
+                    { translateX: comparisonKey === 'Double Power' ? 2 : 0 },
+                    { rotate: comparisonKey === 'Supersonic' ? '45deg' : '0deg' }
                   ]
                 }}>
                   {React.createElement(badgeSVG, { width: 43, height: 43 })}
@@ -1162,7 +1238,7 @@ const Badge = React.memo(({ title, image, achieved, themeColors, streakBadgeSVG,
               textAlign: 'center',
             }}
           >
-            {subtext || 'Subtext'}
+            {displaySubtext}
           </Text>
         </View>
       </View>
@@ -1202,8 +1278,8 @@ const formatDateRange = (dateCreated: string, expiryDate: string, language: stri
     }
     const startDate = parseLocalDateKey(startKey);
     const endDate = parseLocalDateKey(endKey);
-    const startLabel = formatDate(startDate.toISOString(), language);
-    const endLabel = formatDate(endDate.toISOString(), language);
+    const startLabel = formatDateWithoutYear(startDate.toISOString(), language);
+    const endLabel = formatDateWithoutYear(endDate.toISOString(), language);
     return `${startLabel} - ${endLabel}`;
   } catch (error) {
     console.error('Error formatting date range:', error);
@@ -1211,7 +1287,25 @@ const formatDateRange = (dateCreated: string, expiryDate: string, language: stri
   }
 };
 
-const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customBadgeSVG, subtext, dateRange }: { image?: ImageSourcePropType, achieved: boolean, expired?: boolean, themeColors: any, customBadgeSVG?: any, subtext?: string, dateRange?: string }) => {
+const CustomBadge = React.memo(({
+  image,
+  achieved,
+  expired,
+  themeColors,
+  customBadgeSVG,
+  subtext,
+  dateRange,
+  language,
+}: {
+  image?: ImageSourcePropType;
+  achieved: boolean;
+  expired?: boolean;
+  themeColors: any;
+  customBadgeSVG?: any;
+  subtext?: string;
+  dateRange?: string;
+  language: string;
+}) => {
   const badgeWidth = 146;
   const badgeHeight = 179;
   const borderWidth = 8;
@@ -1223,6 +1317,9 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
   
   // Calculate image area dimensions (full width minus border and margins)
   const imageAreaWidth = badgeWidth - (borderWidth * 2) - (imageMargin * 2);
+  const fallbackSubtext = strings[language]?.badgeDefaults?.defaultSubtext ?? 'Subtext';
+  const displaySubtext = subtext ?? fallbackSubtext;
+  const expiredLabel = strings[language]?.badgeDefaults?.expiredLabel ?? 'Expired';
   
   return (
     <View style={{ alignItems: 'center', width: badgeWidth, height: badgeHeight, position: 'relative' }}>
@@ -1276,7 +1373,7 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
               textAlign: 'center',
             }}
           >
-            {subtext || 'Subtext'}
+            {displaySubtext}
           </Text>
           
           {/* Date range (second line) */}
@@ -1337,7 +1434,7 @@ const CustomBadge = React.memo(({ image, achieved, expired, themeColors, customB
               transform: [{ rotate: '-45deg' }],
             }}
           >
-            Expired
+            {expiredLabel}
           </Text>
         </View>
       )}
@@ -1365,10 +1462,12 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge, language }: { ro
             customBadgeSVG={row[0].customBadgeSVG}
             subtext={row[0].badgeSubtext}
             dateRange={row[0].badgeCreatedDate && row[0].badgeExpiryDate ? formatDateRange(row[0].badgeCreatedDate, row[0].badgeExpiryDate, language) : undefined}
+            language={language}
           />
         ) : (
           <Badge
             title={row[0].badgeTitle}
+            identifier={row[0].badgeIdentifier}
             achieved={row[0].achieved}
             image={row[0].badgeImage}
             themeColors={themeColors}
@@ -1376,6 +1475,7 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge, language }: { ro
             welcomeBadgeSVG={row[0].welcomeBadgeSVG}
             lifetimeBadgeSVG={row[0].lifetimeBadgeSVG}
             subtext={row[0].badgeSubtext}
+            language={language}
           />
         )
       )}
@@ -1390,10 +1490,12 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge, language }: { ro
             customBadgeSVG={row[1].customBadgeSVG}
             subtext={row[1].badgeSubtext}
             dateRange={row[1].badgeCreatedDate && row[1].badgeExpiryDate ? formatDateRange(row[1].badgeCreatedDate, row[1].badgeExpiryDate, language) : undefined}
+            language={language}
           />
         ) : (
           <Badge
             title={row[1].badgeTitle}
+            identifier={row[1].badgeIdentifier}
             achieved={row[1].achieved}
             image={row[1].badgeImage}
             themeColors={themeColors}
@@ -1401,6 +1503,7 @@ const BadgeRow = React.memo(({ row, themeColors, isCustomBadge, language }: { ro
             welcomeBadgeSVG={row[1].welcomeBadgeSVG}
             lifetimeBadgeSVG={row[1].lifetimeBadgeSVG}
             subtext={row[1].badgeSubtext}
+            language={language}
           />
         )
       )}
@@ -1576,6 +1679,7 @@ const BadgeWall = React.memo(({ badges, backgroundImage, title, themeColors }: B
 
 // Streak Badges Component
 const StreakBadges = React.memo(({ themeColors, onReady }: { themeColors: any; onReady?: () => void }) => {
+  const { language } = useLanguage();
   const [streakBadges, setStreakBadges] = useState<BadgeData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const readyRef = useRef(false);
@@ -1594,15 +1698,18 @@ const StreakBadges = React.memo(({ themeColors, onReady }: { themeColors: any; o
         
         const badgeData: BadgeData[] = badges.map((badge) => {
           const streakBadgeSVG = getStreakBadgeSVG(badge.badgeImageName, badge.achieved);
+          const localizedTitle = getLocalizedBadgeTitle(language, 'streak', badge.badgeImageName, badge.badgeName);
+          const localizedSubtext = getLocalizedBadgeSubtext(language, 'streak', badge.badgeSubtext, badge.badgeSubtext);
           return {
-            badgeTitle: badge.badgeName,
+            badgeTitle: localizedTitle,
+            badgeIdentifier: badge.badgeName,
             achieved: badge.achieved,
             badgeImage: undefined,
             badgeCreatedDate: new Date().toISOString(), // Use current date as placeholder
             badgeExpiryDate: undefined,
             streakBadgeSVG: streakBadgeSVG,
             dayStreakRequirement: badge.dayStreakRequirement,
-            badgeSubtext: badge.badgeSubtext
+            badgeSubtext: localizedSubtext
           };
         });
         
@@ -1627,7 +1734,7 @@ const StreakBadges = React.memo(({ themeColors, onReady }: { themeColors: any; o
     <BadgeWall 
       badges={streakBadges} 
       backgroundImage={LargeMeshBackground2} 
-      title="Streak Badges" 
+      title={strings[language].streakBadges} 
       themeColors={themeColors} 
     />
   );
@@ -1654,14 +1761,17 @@ const WelcomeBadges = React.memo(({ themeColors, onReady }: { themeColors: any; 
         
         const badgeData: BadgeData[] = badges.map((badge) => {
           const welcomeBadgeSVG = getWelcomeBadgeSVG(badge.badgeImageName, badge.achieved);
+          const localizedTitle = getLocalizedBadgeTitle(language, 'welcome', badge.badgeImageName, badge.badgeName);
+          const localizedSubtext = getLocalizedBadgeSubtext(language, 'welcome', badge.badgeSubtext, badge.badgeSubtext);
           return {
-            badgeTitle: badge.badgeName,
+            badgeTitle: localizedTitle,
+            badgeIdentifier: badge.badgeName,
             achieved: badge.achieved,
             badgeImage: undefined,
             badgeCreatedDate: new Date().toISOString(), // Use current date as placeholder
             badgeExpiryDate: undefined,
             welcomeBadgeSVG: welcomeBadgeSVG,
-            badgeSubtext: badge.badgeSubtext,
+            badgeSubtext: localizedSubtext,
             badgeOrder: badge.badgeOrder
           };
         });
@@ -1714,14 +1824,17 @@ const LifetimeBadges = React.memo(({ themeColors, onReady }: { themeColors: any;
         
         const badgeData: BadgeData[] = badges.map((badge) => {
           const lifetimeBadgeSVG = getLifetimeBadgeSVG(badge.badgeImageName, badge.achieved);
+          const localizedTitle = getLocalizedBadgeTitle(language, 'lifetime', badge.badgeImageName, badge.badgeName);
+          const localizedSubtext = getLocalizedBadgeSubtext(language, 'lifetime', badge.badgeSubtext, badge.badgeSubtext);
           return {
-            badgeTitle: badge.badgeName,
+            badgeTitle: localizedTitle,
+            badgeIdentifier: badge.badgeName,
             achieved: badge.achieved,
             badgeImage: undefined,
             badgeCreatedDate: new Date().toISOString(), // Use current date as placeholder
             badgeExpiryDate: undefined,
             lifetimeBadgeSVG: lifetimeBadgeSVG,
-            badgeSubtext: badge.badgeSubtext,
+            badgeSubtext: localizedSubtext,
             badgeOrder: badge.badgeOrder
           };
         });
@@ -1775,6 +1888,12 @@ const CustomBadges = React.memo(({ themeColors, onReady }: { themeColors: any; o
         const badgeData: BadgeData[] = badges.map((badge) => {
           const isAchieved = badge.achieved === 1;
           const customBadgeSVG = getCustomBadgeSVG(badge.badgeImageName, isAchieved);
+          const localizedSubtext = formatCustomBadgeSubtext(
+            language,
+            badge.numberOfDecksPledged,
+            badge.numberOfConsecutiveDays,
+            badge.badgeSubtext
+          );
           return {
             badgeTitle: '', // Custom badges don't have a title
             achieved: isAchieved,
@@ -1782,7 +1901,7 @@ const CustomBadges = React.memo(({ themeColors, onReady }: { themeColors: any; o
             badgeCreatedDate: badge.dateCreated,
             badgeExpiryDate: badge.expiryDate,
             customBadgeSVG: customBadgeSVG,
-            badgeSubtext: badge.badgeSubtext,
+            badgeSubtext: localizedSubtext,
             expired: badge.expired
           };
         });

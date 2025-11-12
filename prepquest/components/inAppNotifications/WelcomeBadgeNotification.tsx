@@ -34,7 +34,8 @@ export const WelcomeBadgeNotification: React.FC<WelcomeBadgeNotificationProps> =
       return specificMessage.replace('{badgeName}', badgeName);
     }
     // Fallback if no specific message found
-    return `Congratulations! You have been awarded the '${badgeName}' badge in Awards page!`;
+    const fallbackMessage = strings[language].welcomeBadgeNotification.fallbackMessage;
+    return fallbackMessage.replace('{badgeName}', badgeName);
   };
 
   // Render message with bold badge name

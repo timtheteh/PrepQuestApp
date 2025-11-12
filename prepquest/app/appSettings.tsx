@@ -962,7 +962,7 @@ export default function AppSettingsScreen() {
         setIsDeleteAccountLoading(false);
       });
       
-      console.error('Account deletion failed:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Account deletion failed:', error instanceof Error ? error.message : strings[language].unknownError);
     }
   }, [handleDismissDeleteAccount, language, startDeleteAccountBackgroundTaskMonitoring, deleteAccountLoadingOverlayOpacity, checkNetworkConnectivity, handleShowDeleteAccountLoadingNetworkErrorModal]);
 
@@ -2008,7 +2008,7 @@ export default function AppSettingsScreen() {
       
       Alert.alert(
         strings[language].error,
-        `${strings[language].appSettingsPage.backupFailed}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `${strings[language].appSettingsPage.backupFailed}: ${error instanceof Error ? error.message : strings[language].unknownError}`,
         [{ text: strings[language].ok }]
       );
     }
@@ -2179,7 +2179,7 @@ export default function AppSettingsScreen() {
       
       Alert.alert(
         strings[language].error,
-        `${strings[language].appSettingsPage.importFailed}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `${strings[language].appSettingsPage.importFailed}: ${error instanceof Error ? error.message : strings[language].unknownError}`,
         [{ text: strings[language].ok }]
       );
     }
@@ -2343,7 +2343,7 @@ export default function AppSettingsScreen() {
       
       Alert.alert(
         strings[language].error,
-        `${strings[language].appSettingsPage.clearDataFailed}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `${strings[language].appSettingsPage.clearDataFailed}: ${error instanceof Error ? error.message : strings[language].unknownError}`,
         [{ text: strings[language].ok }]
       );
     }

@@ -2090,8 +2090,8 @@ export default function ManualAddDeckPage() {
 
             <FlippableCard 
               ref={flippableCardRef}
-              frontContentTitle={`Qn ${currentQuestionNumber}`} 
-              backContentTitle={`Ans ${currentQuestionNumber}`}
+              frontContentTitle={`${strings[language].flashcardViewPage.questionLabel} ${currentQuestionNumber}`} 
+              backContentTitle={`${strings[language].flashcardViewPage.answerLabel} ${currentQuestionNumber}`}
               fadeOpacity={cardFadeAnim}
               slideOpacity={cardSlideAnim}
               cardType={selectedButtonType}
@@ -2257,7 +2257,7 @@ export default function ManualAddDeckPage() {
         text={strings[language].manualAddDeckPage.helpModalText}
         buttons='none'
         textStyle={{
-          highlightWord: "our website",
+          highlightWord: strings[language].manualAddDeckPage.helpModalHighlight,
           highlightColor: "#44B88A"
         }}
         Icon={HelpIconFilled}
@@ -2273,9 +2273,9 @@ export default function ManualAddDeckPage() {
         visible={isDeleteModalOpen}
         opacity={deleteModalOpacity}
         Icon={DeleteModalIcon}
-        text={`${strings[language].manualAddDeckPage.areYouSureDelete} ${selectedFlashcards.length} ${strings[language].manualAddDeckPage.flashcard}${selectedFlashcards.length === 1 ? '' : strings[language].manualAddDeckPage.flashcards}?`}
+        text={`${strings[language].manualAddDeckPage.areYouSureDelete} ${selectedFlashcards.length} ${selectedFlashcards.length === 1 ? strings[language].manualAddDeckPage.flashcard : strings[language].manualAddDeckPage.flashcards}?`}
         textStyle={{
-          highlightWord: "delete",
+          highlightWord: strings[language].highlightWords.delete,
           highlightColor: "#D7191C"
         }}
         buttons="double"

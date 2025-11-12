@@ -66,7 +66,12 @@ async function checkNetworkConnectivity(): Promise<boolean> {
 
 // --- Background Task Logic for GenAI Deck/Flashcard Creation ---
 const BG_TASK_PROGRESS_KEY = 'genAIDeckCreationBgTaskProgress';
-const deckCreationCommonStrings = strings.English.deckCreationCommon;
+const getDeckCreationCommonStrings = (language?: string) => {
+  if (language && strings[language]) {
+    return strings[language].deckCreationCommon ?? strings.English.deckCreationCommon;
+  }
+  return strings.English.deckCreationCommon;
+};
 
 // Helper to save progress
 async function saveGenAIDeckCreationProgress(progress: any) {
@@ -138,8 +143,11 @@ const genAIDeckCreationBackgroundTask = async (taskDataArguments: any) => {
     formData,
     prompt,
     startIndex,
-    cancelDeckCreationTaskDueToNetworkError
+    cancelDeckCreationTaskDueToNetworkError,
+    language: taskLanguage = 'English',
   } = taskDataArguments;
+
+  const deckCreationCommonStrings = getDeckCreationCommonStrings(taskLanguage);
   
   let createdDeckId: number | null = null;
   let createdFlashcardIds: number[] = [];
@@ -914,7 +922,8 @@ export default function GenAIFormPage() {
                   isInViewFlashcardsPage,
                   formData,
                   prompt,
-                  cancelDeckCreationTaskDueToNetworkError
+                  cancelDeckCreationTaskDueToNetworkError,
+                  language,
                 },
               });
             } catch (error) {
@@ -1624,7 +1633,8 @@ export default function GenAIFormPage() {
             isInViewFlashcardsPage,
             formData,
             prompt,
-            cancelDeckCreationTaskDueToNetworkError
+            cancelDeckCreationTaskDueToNetworkError,
+            language,
           },
         });
 
@@ -1793,7 +1803,8 @@ export default function GenAIFormPage() {
             isInViewFlashcardsPage,
             formData,
             prompt,
-            cancelDeckCreationTaskDueToNetworkError
+            cancelDeckCreationTaskDueToNetworkError,
+            language,
           },
         });
 

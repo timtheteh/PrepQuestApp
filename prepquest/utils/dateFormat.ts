@@ -29,6 +29,28 @@ export const formatDate = (dateString: string, language: string): string => {
   }
 };
 
+/**
+ * Formats a date string without including the year component.
+ */
+export const formatDateWithoutYear = (dateString: string, language: string): string => {
+  try {
+    const date = new Date(dateString);
+    if (language === 'Chinese') {
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      return `${month}月${day}日`;
+    } else {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      return `${month} ${day}`;
+    }
+  } catch (error) {
+    console.error('Error formatting date without year:', error);
+    return dateString;
+  }
+};
+
 export type CalendarFilter =
   | 'all'
   | 'today'

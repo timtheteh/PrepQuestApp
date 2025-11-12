@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Animated, TouchableWithoutFeedback, useWindowDimensions, Easing, StyleProp, TextStyle, ViewProps } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { strings } from '@/constants/strings';
@@ -17,18 +18,22 @@ export const DifficultyToggleRow = React.memo(({
   initialIndex = 0,
   optionLabelStyle,
   style,
-  language,
+  language: languageProp,
   ...props
 }: DifficultyToggleRowProps) => {
   const { theme } = useTheme();
+  const { language: languageFromContext } = useLanguage();
   const colors = Colors[theme];
   
+  // Use prop language if provided, otherwise use context language, fallback to English
+  const language = languageProp || languageFromContext || 'English';
+  
   const options = useMemo(() => [
-    strings[language || 'English'].difficultyOptions.default,
-    strings[language || 'English'].difficultyOptions.again,
-    strings[language || 'English'].difficultyOptions.hard,
-    strings[language || 'English'].difficultyOptions.good,
-    strings[language || 'English'].difficultyOptions.easy,
+    strings[language as keyof typeof strings]?.difficultyOptions?.default ?? strings.English.difficultyOptions.default,
+    strings[language as keyof typeof strings]?.difficultyOptions?.again ?? strings.English.difficultyOptions.again,
+    strings[language as keyof typeof strings]?.difficultyOptions?.hard ?? strings.English.difficultyOptions.hard,
+    strings[language as keyof typeof strings]?.difficultyOptions?.good ?? strings.English.difficultyOptions.good,
+    strings[language as keyof typeof strings]?.difficultyOptions?.easy ?? strings.English.difficultyOptions.easy,
   ], [language]);
   
   const { width: windowWidth } = useWindowDimensions();

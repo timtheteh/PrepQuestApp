@@ -158,6 +158,9 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
   const englishImportNotifications = strings.English.notifications.import;
   const importNotifications = localeStrings.notifications?.import ?? englishImportNotifications;
   const {
+    startingImport = englishImportNotifications.startingImport,
+    unableToGetToken = englishImportNotifications.unableToGetToken,
+    importCancelledNetworkError = englishImportNotifications.importCancelledNetworkError,
     cancelledTitle = englishImportNotifications.cancelledTitle,
     networkErrorBody = englishImportNotifications.networkErrorBody,
     serverErrorTitle = englishImportNotifications.serverErrorTitle,
@@ -187,7 +190,7 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
         completed: false,
         timestamp: Date.now(),
         percentage: 0,
-        message: 'Starting import...',
+        message: startingImport,
         stage: 'counting' // Set initial stage to counting
       };
       console.log('Import background task: About to save initial progress:', initialProgress);
@@ -209,7 +212,7 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
       try {
         const token = await getToken();
         if (!token) {
-          throw new Error('Unable to get authentication token');
+          throw new Error(unableToGetToken);
         }
         return token;
       } catch (error) {
@@ -584,8 +587,8 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
         completed: false,
         networkError: true,
         timestamp: Date.now(),
-        message: 'Import cancelled due to network error! Check your network.',
-        errorMessage: 'Import cancelled due to network error! Check your network.'
+        message: importCancelledNetworkError,
+        errorMessage: importCancelledNetworkError
       });
       
       // Send push notification for network error if app is in background
@@ -613,12 +616,13 @@ const importDataBackgroundTask = async (taskDataArguments: any) => {
         }
       }
     } else {
+      const errorMessage = error instanceof Error ? error.message : (localeStrings.unknownError ?? strings.English.unknownError);
       await saveImportProgress({
         status: 'error',
         inProgress: false,
         completed: false,
         error: true,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorMessage: errorMessage,
         timestamp: Date.now()
       });
     }
@@ -654,10 +658,14 @@ export const startImportBackgroundTask = async (getToken: () => Promise<string |
     await new Promise(resolve => setTimeout(resolve, 100));
     
     console.log('startImportBackgroundTask: Starting BackgroundService...');
+    const localeStrings = strings[language] ?? strings.English;
+    const englishImportNotifications = strings.English.notifications.import;
+    const importNotifications = localeStrings.notifications?.import ?? englishImportNotifications;
+    
     await BackgroundService.start(importDataBackgroundTask, {
       taskName: 'ImportData',
-      taskTitle: language === 'Chinese' ? '导入数据' : 'Importing Data',
-      taskDesc: language === 'Chinese' ? '正在后台导入您的数据' : 'Your data is being imported in the background.',
+      taskTitle: importNotifications.taskTitle ?? englishImportNotifications.taskTitle,
+      taskDesc: importNotifications.taskDesc ?? englishImportNotifications.taskDesc,
       taskIcon: { name: 'ic_launcher', type: 'mipmap' },
       color: '#44B88A',
       parameters: {
@@ -681,7 +689,7 @@ export const startImportBackgroundTask = async (getToken: () => Promise<string |
       percentage: 0,
       rowsImported: 0,
       totalRows: 0,
-      message: 'Starting import...'
+      message: importNotifications.startingImport ?? englishImportNotifications.startingImport
     });
     console.log('startImportBackgroundTask: Initial progress saved from main function');
     

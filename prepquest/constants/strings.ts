@@ -409,6 +409,7 @@ export const strings: Record<string, any> = {
       title: 'App Settings',
       language: 'Language',
       selectVoiceLanguage: 'Select Voice Language',
+      selectLanguage: 'Select your language',
       languages: {
         english: 'English',
         chinese: '中文',
@@ -2089,6 +2090,7 @@ export const strings: Record<string, any> = {
       title: '应用设置',
       language: '语言',
       selectVoiceLanguage: '选择语音语言',
+      selectLanguage: '选择您的语言',
       languages: {
         english: 'English',
         chinese: '中文',

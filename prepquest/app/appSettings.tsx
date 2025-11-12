@@ -3053,20 +3053,20 @@ export default function AppSettingsScreen() {
                       backgroundColor: colors.background, 
                       borderTopLeftRadius: 24, 
                       borderTopRightRadius: 24, 
-                      paddingTop: 24,
+                      paddingTop: 12,
                       paddingBottom: 24,
                       maxHeight: Dimensions.get('window').height * 0.6,
                       minHeight: 440, // Height to show 5 languages comfortably (5 * 60px + title + cancel button + padding)
                     }}>
                       <Text style={{ 
-                        fontSize: 20, 
-                        fontFamily: Fonts.bodyBold, 
+                        fontSize: 32, 
+                        fontFamily: Fonts.title, 
                         color: colors.text, 
-                        textAlign: 'center', 
+                        textAlign: 'left', 
                         marginBottom: 16,
                         paddingHorizontal: 24,
                       }}>
-                        {strings[language].appSettingsPage.selectVoiceLanguage || strings[language].appSettingsPage.language}
+                        {strings[language]?.appSettingsPage?.selectLanguage || strings.English.appSettingsPage.selectLanguage}
                       </Text>
                       <ScrollView 
                         style={{ flex: 1 }}

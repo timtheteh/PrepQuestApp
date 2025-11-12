@@ -4267,7 +4267,7 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
       <GenericModal
         visible={isNetworkErrorModalOpen}
         opacity={networkErrorModalOpacity}
-        text={strings[language].youtubeLinkPage.networkError}
+        text={strings[language]?.youtubeLinkPage?.networkError || strings.English.youtubeLinkPage.networkError}
         Icon={DeleteModalIcon}
         buttons="single"
         onConfirm={handleDismissNetworkErrorModal}

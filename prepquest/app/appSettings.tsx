@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, Platform, Switch, Alert, Linking, ScrollView , Animated, Modal, AppState, AppStateStatus } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, Platform, Switch, Alert, Linking, ScrollView , Animated, Modal, AppState, AppStateStatus, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -1379,12 +1379,52 @@ export default function AppSettingsScreen() {
 
 
 
+  // Available languages - same as LanguageSelector
+  const availableLanguages = React.useMemo(() => [
+    { key: 'Afrikaans', label: 'Afrikaans' },
+    { key: 'Arabic', label: 'العربية' },
+    { key: 'Bengali', label: 'বাংলা' },
+    { key: 'Chinese', label: '中文' },
+    { key: 'Czech', label: 'Čeština' },
+    { key: 'Dutch', label: 'Nederlands' },
+    { key: 'English', label: 'English' },
+    { key: 'Farsi', label: 'فارسی' },
+    { key: 'Finnish', label: 'Suomi' },
+    { key: 'French', label: 'Français' },
+    { key: 'German', label: 'Deutsch' },
+    { key: 'Greek', label: 'Ελληνικά' },
+    { key: 'Hebrew', label: 'עברית' },
+    { key: 'Hindi', label: 'हिन्दी' },
+    { key: 'Hungarian', label: 'Magyar' },
+    { key: 'Indonesian', label: 'Bahasa Indonesia' },
+    { key: 'Italian', label: 'Italiano' },
+    { key: 'Japanese', label: '日本語' },
+    { key: 'Korean', label: '한국어' },
+    { key: 'Malay', label: 'Bahasa Melayu' },
+    { key: 'Norwegian', label: 'Norsk' },
+    { key: 'Polish', label: 'Polski' },
+    { key: 'Portuguese', label: 'Português' },
+    { key: 'Romanian', label: 'Română' },
+    { key: 'Russian', label: 'Русский' },
+    { key: 'Spanish', label: 'Español' },
+    { key: 'Swahili', label: 'Kiswahili' },
+    { key: 'Swedish', label: 'Svenska' },
+    { key: 'Tagalog', label: 'Tagalog' },
+    { key: 'Tamil', label: 'தமிழ்' },
+    { key: 'Thai', label: 'ภาษาไทย' },
+    { key: 'Turkish', label: 'Türkçe' },
+    { key: 'Ukrainian', label: 'Українська' },
+    { key: 'Vietnamese', label: 'Tiếng Việt' },
+  ].sort((a, b) => a.label.localeCompare(b.label)), []);
+
   const handleLanguageRowPress = React.useCallback(() => {
     setIsLanguageModalOpen(true);
   }, []);
 
   const handleLanguageSelect = React.useCallback((value: string) => {
-    setLanguage(value as Language);
+    // Only English and Chinese are fully supported, default to English for other languages
+    const selectedLanguage = (value === 'English' || value === 'Chinese') ? value : 'English';
+    setLanguage(selectedLanguage as Language);
     setIsLanguageModalOpen(false);
   }, [setLanguage]);
 
@@ -2993,7 +3033,7 @@ export default function AppSettingsScreen() {
                     onPress={handleLanguageRowPress}
                   >
                     <Text style={{ color: colors.unselectedText, fontSize: 18, fontFamily: Fonts.bodyBold }}>
-                      {strings[language].appSettingsPage.languages[language.toLowerCase()]}
+                      {availableLanguages.find(l => l.key === language)?.label || language}
                     </Text>
                     <AntDesign name="right" size={20} color={colors.unselectedText} />
                   </TouchableOpacity>
@@ -3005,31 +3045,69 @@ export default function AppSettingsScreen() {
                   onRequestClose={() => setIsLanguageModalOpen(false)}
                 >
                   <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} activeOpacity={1} onPressOut={() => setIsLanguageModalOpen(false)}>
-                    <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
-                      {React.useMemo(() => 
-                        Object.entries(strings[language].appSettingsPage.languages).map(([langKey, langName]) => (
+                    <View style={{ 
+                      position: 'absolute', 
+                      left: 0, 
+                      right: 0, 
+                      bottom: 0, 
+                      backgroundColor: colors.background, 
+                      borderTopLeftRadius: 24, 
+                      borderTopRightRadius: 24, 
+                      paddingTop: 24,
+                      paddingBottom: 24,
+                      maxHeight: Dimensions.get('window').height * 0.6,
+                      minHeight: 440, // Height to show 5 languages comfortably (5 * 60px + title + cancel button + padding)
+                    }}>
+                      <Text style={{ 
+                        fontSize: 20, 
+                        fontFamily: Fonts.bodyBold, 
+                        color: colors.text, 
+                        textAlign: 'center', 
+                        marginBottom: 16,
+                        paddingHorizontal: 24,
+                      }}>
+                        {strings[language].appSettingsPage.selectVoiceLanguage || strings[language].appSettingsPage.language}
+                      </Text>
+                      <ScrollView 
+                        style={{ flex: 1 }}
+                        contentContainerStyle={{ paddingHorizontal: 24 }}
+                        showsVerticalScrollIndicator={true}
+                      >
+                        {availableLanguages.map((lang) => (
                           <TouchableOpacity 
-                            key={langKey}
-                            style={{ paddingVertical: 18 }} 
-                            onPress={() => handleLanguageSelect(langKey.charAt(0).toUpperCase() + langKey.slice(1))}
+                            key={lang.key}
+                            style={{ 
+                              paddingVertical: 18,
+                              borderBottomWidth: 1,
+                              borderBottomColor: colors.unselectedText + '20',
+                            }} 
+                            onPress={() => handleLanguageSelect(lang.key)}
                           >
                             <Text style={{ 
                               fontFamily: Fonts.bodyBold, 
-                              fontSize: 24, 
-                              color: language.toLowerCase() === langKey ? colors.brandColor1 : colors.text, 
+                              fontSize: 20, 
+                              color: language === lang.key ? colors.brandColor1 : colors.text, 
                               textAlign: 'center' 
                             }}>
-                              {langName as string}
+                              {lang.label}
                             </Text>
                           </TouchableOpacity>
-                        )), [language, colors.brandColor1, colors.text, handleLanguageSelect]
-                      )}
-                      <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={{ marginBottom: 16, alignSelf: 'center' }} onPress={() => setIsLanguageModalOpen(false)}>
-                        <Text style={{ color: colors.brandColor2, fontSize: 20, 
+                        ))}
+                      </ScrollView>
+                      <TouchableOpacity 
+                        style={{ 
+                          marginTop: 16, 
+                          alignSelf: 'center',
+                          paddingVertical: 12,
+                          paddingHorizontal: 32,
+                        }} 
+                        onPress={() => setIsLanguageModalOpen(false)}
+                      >
+                        <Text style={{ 
+                          color: colors.brandColor2, 
+                          fontSize: 20, 
                           fontFamily: Fonts.bodyMedium 
-                          }}>
+                        }}>
                           {strings[language].cancel}
                         </Text>
                       </TouchableOpacity>

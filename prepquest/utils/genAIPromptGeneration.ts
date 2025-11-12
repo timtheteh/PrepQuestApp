@@ -1,8 +1,9 @@
 import { promptAndData, promptAndDataChinese } from '@/constants/promptEngineering';
+import { Language } from '@/contexts/LanguageContext';
 
 export interface GenAIPromptParams {
   mode: string | string[];
-  language: 'English' | 'Chinese';
+  language: Language;
   // Study mode fields
   studyMandatoryQuestion1?: string; // education level
   studyMandatoryQuestion2?: string; // subjects
@@ -44,7 +45,9 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
 
   // Build mode-specific prompt sections
   const modeStr = Array.isArray(mode) ? mode[0] : mode;
-  if (modeStr === 'interview' && language === 'English') {
+  // Default to English for languages not yet supported in prompts
+  const effectiveLanguage = language === 'Chinese' ? 'Chinese' : 'English';
+  if (modeStr === 'interview' && effectiveLanguage === 'English') {
     prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
     if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
       prompt += `The company I am preparing my interview for is ${interviewOptionalQuestion1}.\n`
@@ -57,7 +60,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
-  if (modeStr === 'interview' && language === 'Chinese') {
+  if (modeStr === 'interview' && effectiveLanguage === 'Chinese') {
     prompt += `我正在准备一个${interviewType}面试，角色是${interviewMandatoryQuestion1}。\n `
     if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
       prompt += `我准备面试的公司是${interviewOptionalQuestion1}。\n`
@@ -70,7 +73,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
-  if (modeStr === 'study' && language === 'English') {
+  if (modeStr === 'study' && effectiveLanguage === 'English') {
     prompt += `I am studying for ${studyMandatoryQuestion2} and my education level is ${studyMandatoryQuestion1}.\n`
     if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
       prompt += `The topics I would like to study are ${studyOptionalQuestion1}.\n`
@@ -83,7 +86,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
-  if (modeStr === 'study' && language === 'Chinese') { 
+  if (modeStr === 'study' && effectiveLanguage === 'Chinese') { 
     prompt += `我正在准备${studyMandatoryQuestion2}考试，我的教育水平是${studyMandatoryQuestion1}。\n`
     if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
       prompt += `我想要学习的领域是${studyOptionalQuestion1}。\n`
@@ -98,13 +101,13 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
 
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
-    if (language === 'English') {
+    if (effectiveLanguage === 'English') {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Generate ${numQuestions} flashcards of type '${flashcardType}'.\n`
         prompt += `${promptAndData[flashcardType as keyof typeof promptAndData].prompt}\n`
       }
     } 
-    if (language === 'Chinese') {
+    if (effectiveLanguage === 'Chinese') {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `生成${numQuestions}个'${flashcardType}'类型的闪卡。\n`
         prompt += `${promptAndDataChinese[flashcardType as keyof typeof promptAndDataChinese].prompt}\n`
@@ -113,22 +116,22 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
   }
 
   // Add final instructions
-  if (language === 'English' && modeStr === 'interview') { 
+  if (effectiveLanguage === 'English' && modeStr === 'interview') { 
     prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for my interview and for my job role.\n"
     prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
   }
 
-  if (language === 'Chinese' && modeStr === 'interview') { 
+  if (effectiveLanguage === 'Chinese' && modeStr === 'interview') { 
     prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我的面试和我的工作角色。\n"
     prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
   }
 
-  if (language === 'English' && modeStr === 'study') { 
+  if (effectiveLanguage === 'English' && modeStr === 'study') { 
     prompt += "Make sure to generate meaningful, thoughtful and probable questions and answers specific for the subjects I am studying and my education level.\n The examples I have given for the questions and answers are JUST EXAMPLES to demonstrate the question styles for the question types, YOU MUST ONLY GENERATE questions and answers that are DIRECTLY RELATED to the subjects I am studying and my education level.\nIt is extremely crucial that you do not deviate away from the subjects taht I am studying\n"
     prompt += "Generate a JSON array of flashcards in this format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], where each {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} represents a flashcard."
   }
 
-  if (language === 'Chinese' && modeStr === 'study') { 
+  if (effectiveLanguage === 'Chinese' && modeStr === 'study') { 
     prompt += "确保生成有意义、有思考、有概率的问题和答案，针对我正在学习的科目和我的教育水平。\n"
     prompt += "生成一个JSON数组，格式为：[{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], 其中每个 {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 代表一个闪卡。"
   }

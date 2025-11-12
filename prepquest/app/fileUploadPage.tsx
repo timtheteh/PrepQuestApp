@@ -29,7 +29,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import LottieView from 'lottie-react-native';
 import { checkDeckNameExists, saveUserFileUploadFormEntry, getMostRecentFileUploadFormEntry, createDeckWithGenAIFlashcards, createGenAIFlashcardsForDeck, getDeckNameById } from '../db/decks';
 import { Toast } from '../components/general/Toast';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, Language } from '@/contexts/LanguageContext';
 import { strings } from '@/constants/strings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
@@ -697,6 +697,7 @@ const FileUploadMainSection = ({
   isUploadSuccess, 
   uploadType,
   uploadedFileName,
+  language,
   isLoading = false,
   uploadProgress = 0,
 }: { 
@@ -706,13 +707,14 @@ const FileUploadMainSection = ({
   isUploadSuccess: boolean;
   uploadType: 'image' | 'file' | null;
   uploadedFileName: string;
-  language: 'English' | 'Chinese';
+  language: Language;
   isLoading?: boolean;
   uploadProgress?: number;
 }) => {
-  const { language } = useLanguage();
   const { theme } = useTheme();
   const themeColors = Colors[theme as keyof typeof Colors];
+  // Use the language prop passed in, with fallback to English if not in strings
+  const localeStrings = strings[language] ?? strings.English;
   return (
       <View style={[styles.fileUploadMainSection, { borderColor: themeColors.brandColor2 }]}>
       {/* Loading Bar */}
@@ -750,12 +752,12 @@ const FileUploadMainSection = ({
         )}
         <Text style={[styles.supportedFilesText, { fontSize: 20, color: themeColors.unselectedText }]}>
           {isUploadSuccess 
-            ? `${uploadType === 'image' ? strings[language].fileUploadPage.imageUploadedSuccessfully : strings[language].fileUploadPage.fileUploadedSuccessfully}\n${uploadType === 'file' ? `${strings[language].fileUploadPage.fileWithColon}${uploadedFileName}` : ''}`
-            : strings[language].fileUploadPage.supportedFiles
+            ? `${uploadType === 'image' ? localeStrings.fileUploadPage.imageUploadedSuccessfully : localeStrings.fileUploadPage.fileUploadedSuccessfully}\n${uploadType === 'file' ? `${localeStrings.fileUploadPage.fileWithColon}${uploadedFileName}` : ''}`
+            : localeStrings.fileUploadPage.supportedFiles
           }
         </Text>
         <PrimaryButton 
-          text={strings[language].fileUploadPage.browseFiles}
+          text={localeStrings.fileUploadPage.browseFiles}
           onPress={browseFiles}
         />
       </View>

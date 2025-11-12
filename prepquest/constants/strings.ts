@@ -1356,7 +1356,6 @@ export const strings: Record<string, any> = {
       resetPasswordSubtitle: '输入您的邮箱地址，我们将发送重置密码链接给您。',
       enterYourEmail: '输入您的邮箱',
       cancel: '取消',
-      minimize: '最小化',
       sendEmail: '发送邮件',
       sending: '发送中...',
       pleaseEnterYourEmailAddress: '请输入您的邮箱地址',
@@ -1896,7 +1895,6 @@ export const strings: Record<string, any> = {
       areYouSureYouWantToDeleteTheseFolders: '你确定要删除这些文件夹吗？',
       filterFoldersBasedOnDateAdded: '按添加日期筛选文件夹',
     },
-    // SlidingMenu strings
     viewFavorites: '查看收藏',
     // AddViewToggle strings
     addFlashcards: '添加卡片',

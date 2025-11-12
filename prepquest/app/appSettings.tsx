@@ -1422,8 +1422,8 @@ export default function AppSettingsScreen() {
   }, []);
 
   const handleLanguageSelect = React.useCallback((value: string) => {
-    // Only English and Chinese are fully supported, default to English for other languages
-    const selectedLanguage = (value === 'English' || value === 'Chinese') ? value : 'English';
+    // English, Chinese, and Afrikaans are fully supported, default to English for other languages
+    const selectedLanguage = (value === 'English' || value === 'Chinese' || value === 'Afrikaans') ? value : 'English';
     setLanguage(selectedLanguage as Language);
     setIsLanguageModalOpen(false);
   }, [setLanguage]);

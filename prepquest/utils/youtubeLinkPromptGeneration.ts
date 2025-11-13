@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -64,6 +64,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'Malay') {
     prompt += `Saya sedang belajar untuk ${studyMandatoryQuestion2} dan tahap pendidikan saya adalah ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Czech') {
+    prompt += `Připravuji se na ${interviewType} pohovor pro roli ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Czech') {
+    prompt += `Studuji pro ${studyMandatoryQuestion2} a moje úroveň vzdělání je ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
@@ -76,6 +82,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Berikut adalah informasi dan konteks tambahan dari transkrip video YouTube untuk persiapan saya: ${transcript}\n`;
   } else if (language === 'Malay') {
     prompt += `Berikut adalah maklumat dan konteks tambahan dari transkrip video YouTube untuk persiapan saya: ${transcript}\n`;
+  } else if (language === 'Czech') {
+    prompt += `Zde jsou další informace a kontext z přepisu videa YouTube pro mou přípravu: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -109,6 +117,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Jana ${numQuestions} kad imbas jenis '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataMalay[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Czech') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Vygenerujte ${numQuestions} kartiček typu '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataCzech[flashcardType].prompt}\n`;
       }
     }
   }
@@ -178,6 +192,21 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Contoh yang telah saya berikan untuk soalan dan jawapan HANYALAH CONTOH untuk menunjukkan gaya soalan untuk jenis soalan, ANDA HARUS HANYA MENJANA soalan dan jawapan yang LANGSUNG BERKAITAN dengan subjek yang saya pelajari dan tahap pendidikan saya.\n';
     prompt += 'Sangat penting bahawa anda tidak menyimpang dari subjek yang saya pelajari.\n';
     prompt += 'Jana array JSON kad imbas dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kad imbas.';
+  }
+  if (language === 'Czech' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Ujistěte se, že generujete smysluplné, promyšlené a pravděpodobné otázky a odpovědi specifické pro můj pohovor a mou pracovní roli.\n';
+    prompt += 'Vygenerujte pole JSON kartiček v tomto formátu: [{"flashcardType": <>, "question": <>, "answer": <>}], kde každá {"flashcardType": <>, "question": <>, "answer": <>} představuje kartičku.';
+  }
+  if (language === 'Czech' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Ujistěte se, že generujete smysluplné, promyšlené a pravděpodobné otázky a odpovědi specifické pro můj pohovor a mou pracovní roli.\n';
+    prompt += 'Je však NESMÍRNĚ DŮLEŽITÉ, ABYSTE NEODCHÝLILI od informací a kontextu, které jsem poskytl z přepisu videa YouTube. DRŽTE SE POUZE OBSAHU Z PŘEPISU. ';
+    prompt += 'Vygenerujte pole JSON kartiček v tomto formátu: [{"flashcardType": <>, "question": <>, "answer": <>}], kde každá {"flashcardType": <>, "question": <>, "answer": <>} představuje kartičku.';
+  }
+  if (language === 'Czech' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Ujistěte se, že generujete smysluplné, promyšlené a pravděpodobné otázky a odpovědi specifické pro předměty, které studuji, a moji úroveň vzdělání.\n';
+    prompt += 'Příklady, které jsem poskytl pro otázky a odpovědi, JSOU POUZE PŘÍKLADY pro demonstraci stylů otázek pro typy otázek, MUSÍTE GENEROVAT POUZE otázky a odpovědi, které JSOU PŘÍMO SOUVISEJÍCÍ s předměty, které studuji, a moji úrovní vzdělání.\n';
+    prompt += 'Je nesmírně důležité, abyste neodchýlili od předmětů, které studuji.\n';
+    prompt += 'Vygenerujte pole JSON kartiček v tomto formátu: [{"flashcardType": <>, "question": <>, "answer": <>}], kde každá {"flashcardType": <>, "question": <>, "answer": <>} představuje kartičku.';
   }
 
   return prompt;

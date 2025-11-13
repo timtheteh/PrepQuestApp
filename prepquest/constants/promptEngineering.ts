@@ -779,6 +779,162 @@ export const promptAndDataMalay = {
     }
 }
 
+export const promptAndDataCzech = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Otázky na paměť testují paměť tím, že žádají konkrétní fakta, definice nebo informace. Pro 'Recall Text Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Jaký je hlavní účel DNS (Domain Name System) serveru?', 'answer': 'DNS server překládá lidsky čitelné názvy domén (jako www.example.com) na IP adresy, které počítače používají k identifikaci navzájem v síti.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Otázky na paměť testují paměť tím, že žádají konkrétní fakta, definice nebo informace. Pro 'Recall Text Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Který HTTP status kód označuje, že požadavek byl úspěšný?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Otázky na paměť testují paměť tím, že žádají konkrétní fakta, definice nebo informace. Pro 'Recall Cloze Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'V JavaScriptu se klíčové slovo <blank> používá k deklaraci proměnné s blokovým rozsahem a zabránění přepisování.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Otázky na paměť testují paměť tím, že žádají konkrétní fakta, definice nebo informace. Pro 'Recall Cloze Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'V SQL se příkaz <blank> používá k odstranění všech záznamů z tabulky bez zaznamenávání jednotlivých mazání řádků.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Otázky na porozumění testují pochopení tím, že žádají vysvětlení, interpretace, shrnutí nebo srovnání. Pro 'Comprehension Text Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Vysvětlete rozdíl mezi mělkou kopií a hlubokou kopií v programování.', 'answer': 'Mělká kopie kopíruje pouze odkazy na nejvyšší úrovni objektu, což znamená, že vnořené objekty jsou stále sdíleny. Hluboká kopie rekurzivně kopíruje všechny vnořené objekty, čímž vytváří zcela nezávislé duplikáty původní struktury.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Otázky na porozumění testují pochopení tím, že žádají vysvětlení, interpretace, shrnutí nebo srovnání. Pro 'Comprehension Text Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Co nejlépe vysvětluje rozdíl mezi HTTP a HTTPS?', 'answer': [{'option': 'HTTPS používá port 80, zatímco HTTP používá port 443.', 'ans': false}, {'option': 'HTTP šifruje data během přenosu, zatímco HTTPS ne.', 'ans': false}, {'option': 'Mezi HTTP a HTTPS není žádný skutečný rozdíl.', 'ans': false}, {'option': 'HTTPS přidává vrstvu šifrování prostřednictvím SSL/TLS pro zabezpečení přenosu dat, na rozdíl od HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Otázky na porozumění testují pochopení tím, že žádají vysvětlení, interpretace, shrnutí nebo srovnání. Pro 'Comprehension Text Question to Voice Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Jak zlepšuje vyvažovač zátěže spolehlivost a škálovatelnost webové aplikace?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Aplikační otázky testují schopnost aplikovat znalosti na praktické, nové nebo reálné situace. Pro 'Application Text Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Potřebujete dočasně uložit data uživatelské relace v backendovém systému. Kterou datovou strukturu nebo metodu úložiště byste použili a proč?', 'answer': 'Úložiště typu klíč-hodnota v paměti jako Redis je vhodná volba, protože umožňuje rychlý přístup pro čtení/zápis a podporuje automatické vypršení dat relace, což je ideální pro dočasnou správu relací.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Aplikační otázky testují schopnost aplikovat znalosti na praktické, nové nebo reálné situace. Pro 'Application Text Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Navrhujete webový formulář, který shromažďuje citlivé informace o uživatelích. Která z následujících akcí je nejvhodnější pro zvýšení bezpečnosti během přenosu dat?', 'answer': [{'option': 'Odeslat formulář přes HTTPS pomocí POST požadavku.', 'ans': true}, {'option': 'Použít GET požadavek k odeslání formuláře pro lepší rychlost.', 'ans': false}, {'option': 'Minifikovat HTML, aby byl zdrojový kód obtížněji čitelný.', 'ans': false}, {'option': 'Uložit data do cookies pro rychlý přístup.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Aplikační otázky testují schopnost aplikovat znalosti na praktické, nové nebo reálné situace. Pro 'Application Text Question to Voice Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Máte za úkol zlepšit výkon REST API, které zažívá vysokou latenci pod zátěží. Jaké praktické kroky byste podnikli k identifikaci a řešení tohoto problému?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Analytické otázky testují schopnost rozložit složité problémy na menší části a zkoumat vztahy. Pro 'Analysis Text Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'A/B testování ukazuje, že nová stránka pokladny vede k méně dokončeným nákupům, i když se uživatelé dostanou k platebnímu kroku rychleji. Jak byste analyzovali tento výsledek?', 'answer': 'Podrobně bych prozkoumala uživatelskou cestu, zaměřila bych se na to, kde uživatelé opouštějí nový tok. Analyzovala bych nahrávky relací, data z trychtýře a míru opuštění formulářů. Je možné, že rychlejší tok zavádí problémy s použitelností, zmatení nebo obavy z důvěry. Porovnala bych míru chyb, chování ověřování polí a doby načítání. Podívala bych se také na kvalitativní zpětnou vazbu nebo průzkumy, abych pochopila vnímání uživatelů.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Analytické otázky testují schopnost rozložit složité problémy na menší části a zkoumat vztahy. Pro 'Analysis Text Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Váš tým zkoumá, proč nově nasazená funkce způsobila výrazné zvýšení doby načítání stránek. Jaký je nejlogičtější další krok v procesu analýzy?', 'answer': [{'option': 'Okamžitě vrátit nasazení zpět.', 'ans': false}, {'option': 'Profilovat výkon frontendu a backendu, abyste našli konkrétní úzká místa.', 'ans': true}, {'option': 'Zvýšit kapacitu serveru a pozorovat výsledky.', 'ans': false}, {'option': 'Přepnout na jiný frontendový framework.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Analytické otázky testují schopnost rozložit složité problémy na menší části a zkoumat vztahy. Pro 'Analysis Text Question to Voice Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Všimnete si častých timeoutů, když uživatelé přistupují k vaší aplikaci během špičky. Jak byste identifikovali hlavní příčinu tohoto problému?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Syntetické otázky testují schopnost kombinovat nebo integrovat různé informace k vytvoření nového, koherentního celku nebo navrhnout řešení. Pro 'Synthesis Text Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Navrhněte škálovatelný systém oznámení, který může posílat e-maily, SMS a push oznámení milionům uživatelů. Jaké klíčové komponenty byste zahrnuli a jak by spolu interagovaly?', 'answer': 'Navrhl bych systém s frontou zpráv pro zpracování vysoké propustnosti, službu oznámení, která zpracovává zprávy a posílá je přes příslušné kanály (e-mail, SMS, push). Systém by používal mikroslužby pro každý typ oznámení, databázi pro sledování stavu doručení a omezení rychlosti pro prevenci přetížení. Vyvažovače zátěže a skupiny automatického škálování by zajistily dostupnost a škálovatelnost.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Syntetické otázky testují schopnost kombinovat nebo integrovat různé informace k vytvoření nového, koherentního celku nebo navrhnout řešení. Pro 'Synthesis Text Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Potřebujete navrhnout systém, který agreguje data v reálném čase z několika senzorů a poskytuje analytické dashboardy. Která volba návrhu nejlépe vyvažuje škálovatelnost, spolehlivost a latenci?', 'answer': [{'option': 'Použít centralizovanou databázi, kde jsou všechna data ze senzorů zapisována synchronně.', 'ans': false}, {'option': 'Ukládat data lokálně na každém senzoru a nahrávat dávky na konci dne.', 'ans': false}, {'option': 'Použít zpracování na straně klienta pro veškerou analýzu, aby se snížilo zatížení serveru.', 'ans': false}, {'option': 'Implementovat distribuované fronty zpráv s mikroslužbami, které zpracovávají data asynchronně.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Syntetické otázky testují schopnost kombinovat nebo integrovat různé informace k vytvoření nového, koherentního celku nebo navrhnout řešení. Pro 'Synthesis Text Question to Voice Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Navrhněte systém, který může zpracovat chat v reálném čase pro miliony uživatelů, zajistit doručení zpráv, škálovatelnost a konzistenci dat. Popište klíčové komponenty a jak spolu interagují.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Hodnotící otázky testují schopnost posoudit kvalitu, přesnost nebo účinnost něčeho a činit úsudky na základě kritérií a zdůvodňovat rozhodnutí. Pro 'Evaluation Text Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Vyberete si mezi SQL a NoSQL databázemi pro platformu elektronického obchodu s vysokým provozem. Kterou byste zvolili a proč?', 'answer': 'Pro platformu elektronického obchodu je SQL databáze často lepší volbou kvůli potřebě silné konzistence, složitých transakcí a strukturovaných relačních dat, jako jsou objednávky, inventář a uživatelé. Pokud jsou však škálovatelnost a flexibilita důležitější—například pro zpracování recenzí produktů nebo dat relací—mohlo by být NoSQL řešení jako MongoDB nebo DynamoDB integrováno společně se SQL v polyglotní architektuře.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Hodnotící otázky testují schopnost posoudit kvalitu, přesnost nebo účinnost něčeho a činit úsudky na základě kritérií a zdůvodňovat rozhodnutí. Pro 'Evaluation Text Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Posuzujete dvě možné frontendové frameworky pro rozsáhlou podnikovou webovou aplikaci: React a Angular. Který z následujících je nejrozumnějším základem pro výběr Reactu oproti Angularu?', 'answer': [{'option': 'React nevyžaduje žádnou křivku učení, takže je vždy lepší.', 'ans': false}, {'option': 'React vynucuje přísnou strukturu aplikace, což je ideální pro velké týmy.', 'ans': false}, {'option': 'Komponentová architektura Reactu a velký ekosystém poskytují flexibilitu a snadnou integraci s jinými knihovnami.', 'ans': true}, {'option': 'Angular už není udržován, takže React je jedinou životaschopnou možností.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Hodnotící otázky testují schopnost posoudit kvalitu, přesnost nebo účinnost něčeho a činit úsudky na základě kritérií a zdůvodňovat rozhodnutí. Pro 'Evaluation Text Question to Voice Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Váš tým se rozhoduje mezi vytvořením funkce interně nebo použitím řešení SaaS třetí strany. Jaké faktory byste hodnotili pro vytvoření doporučení a co by vedlo vaše konečné rozhodnutí?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Otázky na řešení problémů se zaměřují na identifikaci, diagnostiku a řešení složitých problémů a často vyžadují kreativní nebo strategické myšlení. Pro 'Problem-Solving Text Question to Text Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Vytváříte vyhledávací funkci, která musí rychle vracet relevantní výsledky, i když datová sada roste. Jak byste navrhli tento systém, aby udržel rychlý výkon?', 'answer': 'Začal bych indexováním prohledávatelných polí pomocí fulltextového vyhledávače jako Elasticsearch nebo integrací strategií indexování databáze. Pro zlepšení výkonu bych stránkoval výsledky, používal cache pro časté dotazy a zvažoval denormalizaci dat pro rychlejší čtení. Navíc bych sledoval časy dotazů a upravoval indexování nebo shardování dat podle potřeby, jak datová sada roste.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Otázky na řešení problémů se zaměřují na identifikaci, diagnostiku a řešení složitých problémů a často vyžadují kreativní nebo strategické myšlení. Pro 'Problem-Solving Text Question to MCQ Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Vaše mobilní aplikace se náhodně zhroutí u některých uživatelů, ale nemůžete problém reprodukovat na svých zařízeních. Jaký je nejlepší první krok k diagnostice problému?', 'answer': [{'option': 'Požádat uživatele, aby aplikaci smazali a znovu nainstalovali.', 'ans': false}, {'option': 'Odeslat nouzovou aktualizaci s minimálními změnami.', 'ans': false}, {'option': 'Zkontrolovat protokoly o pádech a analytické nástroje jako Firebase Crashlytics pro identifikaci vzorů.', 'ans': true}, {'option': 'Zakázat funkce, dokud se pády nezastaví.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Otázky na řešení problémů se zaměřují na identifikaci, diagnostiku a řešení složitých problémů a často vyžadují kreativní nebo strategické myšlení. Pro 'Problem-Solving Text Question to Voice Answer' uveďte svůj výstup ve formátu json takto: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'Kritická funkce ve vaší webové aplikaci občas selhává při vysokém provozu, ale v protokolech se neobjevují žádné chyby. Jak byste identifikovali a vyřešili tento problém?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

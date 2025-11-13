@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface FileUploadPromptParams {
@@ -74,6 +74,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   if (modeStr === 'study' && language === 'Czech') {
     prompt += `Studuji pro ${studyMandatoryQuestion2} a moje úroveň vzdělání je ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Dutch') {
+    prompt += `Ik bereid me voor op een ${interviewType} sollicitatiegesprek voor de rol van ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Dutch') {
+    prompt += `Ik studeer voor ${studyMandatoryQuestion2} en mijn opleidingsniveau is ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add file content context
   if (pdfCaptionClaudeCaption && language === 'English') {
@@ -130,6 +136,15 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   if (imageCaptionClaudeCaption && language === 'Czech') {
     prompt += `Zde jsou další informace a kontext z některých obrázků pro mou přípravu: ${imageCaptionClaudeCaption}\n`;
   }
+  if (pdfCaptionClaudeCaption && language === 'Dutch') {
+    prompt += `Hier is aanvullende informatie en context van een PDF-bestand voor mijn voorbereiding: ${pdfCaptionClaudeCaption}\n`;
+  }
+  if (extractedText && extractedText.trim() !== '' && language === 'Dutch') {
+    prompt += `Hier is aanvullende informatie en context van een tekstbestand voor mijn voorbereiding: ${extractedText}\n`;
+  }
+  if (imageCaptionClaudeCaption && language === 'Dutch') {
+    prompt += `Hier is aanvullende informatie en context van enkele afbeeldingen voor mijn voorbereiding: ${imageCaptionClaudeCaption}\n`;
+  }
 
   // Add flashcard distribution and type prompts
   if (distribution) {
@@ -168,6 +183,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
         prompt += `Vygenerujte ${numQuestions} kartiček typu '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataCzech[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Dutch') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Genereer ${numQuestions} flashcards van type '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataDutch[flashcardType].prompt}\n`;
       }
     }
   }
@@ -252,6 +273,21 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
     prompt += 'Příklady, které jsem poskytl pro otázky a odpovědi, JSOU POUZE PŘÍKLADY pro demonstraci stylů otázek pro typy otázek, MUSÍTE GENEROVAT POUZE otázky a odpovědi, které JSOU PŘÍMO SOUVISEJÍCÍ s předměty, které studuji, a moji úrovní vzdělání.\n';
     prompt += 'Je nesmírně důležité, abyste neodchýlili od předmětů, které studuji.\n';
     prompt += 'Vygenerujte pole JSON kartiček v tomto formátu: [{"flashcardType": <>, "question": <>, "answer": <>}], kde každá {"flashcardType": <>, "question": <>, "answer": <>} představuje kartičku.';
+  }
+  if (language === 'Dutch' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Zorg ervoor dat u betekenisvolle, doordachte en waarschijnlijke vragen en antwoorden genereert die specifiek zijn voor mijn sollicitatiegesprek en mijn functie.\n';
+    prompt += 'Genereer een JSON-array van flashcards in dit formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waarbij elke {"flashcardType": <>, "question": <>, "answer": <>} een flashcard vertegenwoordigt.';
+  }
+  if (language === 'Dutch' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Zorg ervoor dat u betekenisvolle, doordachte en waarschijnlijke vragen en antwoorden genereert die specifiek zijn voor mijn sollicitatiegesprek en mijn functie.\n';
+    prompt += 'Het is EKSTREEM BELANGRIJK DAT U NIET AFWIJKT van de informatie en context die ik heb verstrekt van het PDF-bestand, tekstbestand of afbeeldingen. BLIJF ALLEEN BIJ INHOUD VAN HET PDF-BESTAND, TEKSTBESTAND OF AFBEELDINGEN. ';
+    prompt += 'Genereer een JSON-array van flashcards in dit formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waarbij elke {"flashcardType": <>, "question": <>, "answer": <>} een flashcard vertegenwoordigt.';
+  }
+  if (language === 'Dutch' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Zorg ervoor dat u betekenisvolle, doordachte en waarschijnlijke vragen en antwoorden genereert die specifiek zijn voor de vakken die ik studeer en mijn opleidingsniveau.\n';
+    prompt += 'De voorbeelden die ik heb gegeven voor de vragen en antwoorden zijn ALLEEN VOORBEELDEN om de vraagstijlen voor de vraagtypen te demonstreren, U MOET ALLEEN vragen en antwoorden genereren die DIRECT VERBAND HOUDEN met de vakken die ik studeer en mijn opleidingsniveau.\n';
+    prompt += 'Het is uiterst belangrijk dat u niet afwijkt van de vakken die ik studeer.\n';
+    prompt += 'Genereer een JSON-array van flashcards in dit formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waarbij elke {"flashcardType": <>, "question": <>, "answer": <>} een flashcard vertegenwoordigt.';
   }
 
   return prompt;

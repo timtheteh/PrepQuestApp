@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -70,6 +70,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'Czech') {
     prompt += `Studuji pro ${studyMandatoryQuestion2} a moje úroveň vzdělání je ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Dutch') {
+    prompt += `Ik bereid me voor op een ${interviewType} sollicitatiegesprek voor de rol van ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Dutch') {
+    prompt += `Ik studeer voor ${studyMandatoryQuestion2} en mijn opleidingsniveau is ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
@@ -84,6 +90,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Berikut adalah maklumat dan konteks tambahan dari transkrip video YouTube untuk persiapan saya: ${transcript}\n`;
   } else if (language === 'Czech') {
     prompt += `Zde jsou další informace a kontext z přepisu videa YouTube pro mou přípravu: ${transcript}\n`;
+  } else if (language === 'Dutch') {
+    prompt += `Hier is aanvullende informatie en context van een YouTube-videotranscript voor mijn voorbereiding: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -123,6 +131,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Vygenerujte ${numQuestions} kartiček typu '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataCzech[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Dutch') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Genereer ${numQuestions} flashcards van type '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataDutch[flashcardType].prompt}\n`;
       }
     }
   }
@@ -207,6 +221,21 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Příklady, které jsem poskytl pro otázky a odpovědi, JSOU POUZE PŘÍKLADY pro demonstraci stylů otázek pro typy otázek, MUSÍTE GENEROVAT POUZE otázky a odpovědi, které JSOU PŘÍMO SOUVISEJÍCÍ s předměty, které studuji, a moji úrovní vzdělání.\n';
     prompt += 'Je nesmírně důležité, abyste neodchýlili od předmětů, které studuji.\n';
     prompt += 'Vygenerujte pole JSON kartiček v tomto formátu: [{"flashcardType": <>, "question": <>, "answer": <>}], kde každá {"flashcardType": <>, "question": <>, "answer": <>} představuje kartičku.';
+  }
+  if (language === 'Dutch' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Zorg ervoor dat u betekenisvolle, doordachte en waarschijnlijke vragen en antwoorden genereert die specifiek zijn voor mijn sollicitatiegesprek en mijn functie.\n';
+    prompt += 'Genereer een JSON-array van flashcards in dit formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waarbij elke {"flashcardType": <>, "question": <>, "answer": <>} een flashcard vertegenwoordigt.';
+  }
+  if (language === 'Dutch' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Zorg ervoor dat u betekenisvolle, doordachte en waarschijnlijke vragen en antwoorden genereert die specifiek zijn voor mijn sollicitatiegesprek en mijn functie.\n';
+    prompt += 'Het is EKSTREEM BELANGRIJK DAT U NIET AFWIJKT van de informatie en context die ik heb verstrekt van het YouTube-videotranscript. BLIJF ALLEEN BIJ INHOUD VAN HET TRANSCRIPT. ';
+    prompt += 'Genereer een JSON-array van flashcards in dit formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waarbij elke {"flashcardType": <>, "question": <>, "answer": <>} een flashcard vertegenwoordigt.';
+  }
+  if (language === 'Dutch' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Zorg ervoor dat u betekenisvolle, doordachte en waarschijnlijke vragen en antwoorden genereert die specifiek zijn voor de vakken die ik studeer en mijn opleidingsniveau.\n';
+    prompt += 'De voorbeelden die ik heb gegeven voor de vragen en antwoorden zijn ALLEEN VOORBEELDEN om de vraagstijlen voor de vraagtypen te demonstreren, U MOET ALLEEN vragen en antwoorden genereren die DIRECT VERBAND HOUDEN met de vakken die ik studeer en mijn opleidingsniveau.\n';
+    prompt += 'Het is uiterst belangrijk dat u niet afwijkt van de vakken die ik studeer.\n';
+    prompt += 'Genereer een JSON-array van flashcards in dit formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waarbij elke {"flashcardType": <>, "question": <>, "answer": <>} een flashcard vertegenwoordigt.';
   }
 
   return prompt;

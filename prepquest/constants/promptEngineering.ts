@@ -935,6 +935,162 @@ export const promptAndDataCzech = {
     }
 }
 
+export const promptAndDataDutch = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Herinneringsvragen testen het geheugen door te vragen naar specifieke feiten, definities of informatie. Voor 'Recall Text Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Wat is het primaire doel van een DNS (Domain Name System) server?', 'answer': 'Een DNS-server vertaalt door mensen leesbare domeinnamen (zoals www.example.com) naar IP-adressen die computers gebruiken om elkaar te identificeren op het netwerk.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Herinneringsvragen testen het geheugen door te vragen naar specifieke feiten, definities of informatie. Voor 'Recall Text Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Welke HTTP-statuscode geeft aan dat een verzoek is geslaagd?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Herinneringsvragen testen het geheugen door te vragen naar specifieke feiten, definities of informatie. Voor 'Recall Cloze Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'In JavaScript wordt het trefwoord <blank> gebruikt om een variabele met blokbereik te declareren en hertoewijzing te voorkomen.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Herinneringsvragen testen het geheugen door te vragen naar specifieke feiten, definities of informatie. Voor 'Recall Cloze Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'In SQL wordt het commando <blank> gebruikt om alle records uit een tabel te verwijderen zonder individuele rijverwijderingen te loggen.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Begripsvragen testen het begrip door te vragen naar uitleg, interpretaties, samenvattingen of vergelijkingen. Voor 'Comprehension Text Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Leg het verschil uit tussen een oppervlakkige kopie en een diepe kopie in programmeren.', 'answer': 'Een oppervlakkige kopie kopieert alleen de referenties op het hoogste niveau van een object, wat betekent dat geneste objecten nog steeds worden gedeeld. Een diepe kopie kopieert recursief alle geneste objecten, waardoor volledig onafhankelijke duplicaten van de oorspronkelijke structuur worden gemaakt.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Begripsvragen testen het begrip door te vragen naar uitleg, interpretaties, samenvattingen of vergelijkingen. Voor 'Comprehension Text Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Wat verklaart het beste het verschil tussen HTTP en HTTPS?', 'answer': [{'option': 'HTTPS gebruikt poort 80, terwijl HTTP poort 443 gebruikt.', 'ans': false}, {'option': 'HTTP versleutelt gegevens tijdens verzending, terwijl HTTPS dat niet doet.', 'ans': false}, {'option': 'Er is geen echt verschil tussen HTTP en HTTPS.', 'ans': false}, {'option': 'HTTPS voegt een versleutelingslaag toe via SSL/TLS om gegevensoverdracht te beveiligen, in tegenstelling tot HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Begripsvragen testen het begrip door te vragen naar uitleg, interpretaties, samenvattingen of vergelijkingen. Voor 'Comprehension Text Question to Voice Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Hoe verbetert een load balancer de betrouwbaarheid en schaalbaarheid van een webapplicatie?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Toepassingsvragen testen het vermogen om kennis toe te passen op praktische, nieuwe of realistische situaties. Voor 'Application Text Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'U moet gebruikerssessiegegevens tijdelijk opslaan in een backend-systeem. Welke gegevensstructuur of opslagmethode zou u gebruiken en waarom?', 'answer': 'Een in-memory key-value store zoals Redis is een geschikte keuze omdat het snelle lees/schrijftoegang mogelijk maakt en automatische vervaldatums van sessiegegevens ondersteunt, wat ideaal is voor tijdelijk sessiebeheer.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Toepassingsvragen testen het vermogen om kennis toe te passen op praktische, nieuwe of realistische situaties. Voor 'Application Text Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'U ontwerpt een webformulier dat gevoelige gebruikersinformatie verzamelt. Welke van de volgende acties is het meest geschikt om de beveiliging tijdens gegevensoverdracht te verbeteren?', 'answer': [{'option': 'Verzend het formulier via HTTPS met een POST-verzoek.', 'ans': true}, {'option': 'Gebruik een GET-verzoek om het formulier te verzenden voor betere snelheid.', 'ans': false}, {'option': 'Minificeer de HTML om de broncode moeilijker leesbaar te maken.', 'ans': false}, {'option': 'Bewaar de gegevens in cookies voor snelle toegang.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Toepassingsvragen testen het vermogen om kennis toe te passen op praktische, nieuwe of realistische situaties. Voor 'Application Text Question to Voice Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'U krijgt de taak om de prestaties van een REST API te verbeteren die onder belasting hoge latentie ervaart. Welke praktische stappen zou u nemen om het probleem te identificeren en aan te pakken?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Analysevragen testen het vermogen om complexe problemen op te splitsen in kleinere delen en relaties te onderzoeken. Voor 'Analysis Text Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'A/B-testen toont aan dat een nieuwe checkoutpagina leidt tot minder voltooide aankopen, hoewel gebruikers sneller bij de betaalstap komen. Hoe zou u dit resultaat analyseren?', 'answer': 'Ik zou de gebruikersreis in detail onderzoeken, met focus op waar gebruikers afhaken in de nieuwe flow. Ik zou sessieopnames, funnelgegevens en formulierverlatingspercentages analyseren. Het is mogelijk dat de snellere flow gebruiksvriendelijkheidsproblemen, verwarring of vertrouwensproblemen introduceert. Ik zou foutpercentages, veldvalidatiegedrag en laadtijden vergelijken. Ik zou ook kijken naar kwalitatieve feedback of enquêtes om gebruikersperceptie te begrijpen.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Analysevragen testen het vermogen om complexe problemen op te splitsen in kleinere delen en relaties te onderzoeken. Voor 'Analysis Text Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Uw team onderzoekt waarom een nieuw geïmplementeerde functie heeft geleid tot een aanzienlijke toename van paginalaadtijden. Wat is de meest logische volgende stap in het analyseproces?', 'answer': [{'option': 'Rol de implementatie onmiddellijk terug.', 'ans': false}, {'option': 'Profileer de frontend- en backendprestaties om specifieke knelpunten te lokaliseren.', 'ans': true}, {'option': 'Verhoog de servercapaciteit en observeer de resultaten.', 'ans': false}, {'option': 'Schakel over naar een ander frontend-framework.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Analysevragen testen het vermogen om complexe problemen op te splitsen in kleinere delen en relaties te onderzoeken. Voor 'Analysis Text Question to Voice Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'U merkt frequente time-outs op wanneer gebruikers tijdens piekuren toegang krijgen tot uw applicatie. Hoe zou u de hoofdoorzaak van het probleem identificeren?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Synthesevragen testen het vermogen om verschillende stukken informatie te combineren of te integreren om een nieuw, coherent geheel te creëren of oplossingen voor te stellen. Voor 'Synthesis Text Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Ontwerp een schaalbare notificatiesysteem dat e-mails, SMS en pushmeldingen kan verzenden naar miljoenen gebruikers. Welke belangrijke componenten zou u opnemen en hoe zouden ze interacteren?', 'answer': 'Ik zou het systeem ontwerpen met een berichtenwachtrij om hoge doorvoer te verwerken, een notificatieservice die berichten verwerkt en via geschikte kanalen (e-mail, SMS, push) verzendt. Het systeem zou microservices gebruiken voor elk notificatietype, een database om leveringsstatus bij te houden, en snelheidsbeperkingen om overbelasting te voorkomen. Load balancers en automatische schaalingsgroepen zouden beschikbaarheid en schaalbaarheid waarborgen.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Synthesevragen testen het vermogen om verschillende stukken informatie te combineren of te integreren om een nieuw, coherent geheel te creëren of oplossingen voor te stellen. Voor 'Synthesis Text Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'U moet een systeem ontwerpen dat real-time gegevens van meerdere sensoren aggregeert en analytische dashboards biedt. Welke ontwerpkeuze balanceert het beste schaalbaarheid, betrouwbaarheid en latentie?', 'answer': [{'option': 'Gebruik een gecentraliseerde database waar alle sensorgegevens synchroon worden geschreven.', 'ans': false}, {'option': 'Bewaar gegevens lokaal op elke sensor en upload in batches aan het einde van de dag.', 'ans': false}, {'option': 'Gebruik client-side verwerking voor alle analyses om de serverbelasting te verminderen.', 'ans': false}, {'option': 'Implementeer gedistribueerde berichtenwachtrijen met microservices die gegevens asynchroon verwerken.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Synthesevragen testen het vermogen om verschillende stukken informatie te combineren of te integreren om een nieuw, coherent geheel te creëren of oplossingen voor te stellen. Voor 'Synthesis Text Question to Voice Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Ontwerp een systeem dat real-time chat kan verwerken voor miljoenen gebruikers, waarbij berichtlevering, schaalbaarheid en gegevensconsistentie worden gegarandeerd. Beschrijf de belangrijke componenten en hoe ze interacteren.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Evaluatievragen testen het vermogen om de kwaliteit, nauwkeurigheid of effectiviteit van iets te beoordelen en oordelen te vellen op basis van criteria en beslissingen te rechtvaardigen. Voor 'Evaluation Text Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'U kiest tussen SQL- en NoSQL-databases voor een e-commerceplatform met veel verkeer. Welke zou u kiezen en waarom?', 'answer': 'Voor een e-commerceplatform is een SQL-database vaak een betere keuze vanwege de behoefte aan sterke consistentie, complexe transacties en gestructureerde relationele gegevens zoals bestellingen, voorraad en gebruikers. Als schaalbaarheid en flexibiliteit echter belangrijker zijn—zoals voor het verwerken van productrecensies of sessiegegevens—kan een NoSQL-oplossing zoals MongoDB of DynamoDB naast SQL worden geïntegreerd in een polyglot-architectuur.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Evaluatievragen testen het vermogen om de kwaliteit, nauwkeurigheid of effectiviteit van iets te beoordelen en oordelen te vellen op basis van criteria en beslissingen te rechtvaardigen. Voor 'Evaluation Text Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'U beoordeelt twee mogelijke frontend-frameworks voor een grootschalige enterprise webapp: React en Angular. Welke van de volgende is de meest redelijke basis om React te kiezen boven Angular?', 'answer': [{'option': 'React vereist geen leercurve, dus het is altijd beter.', 'ans': false}, {'option': 'React dwingt een strikte applicatiestructuur af, wat ideaal is voor grote teams.', 'ans': false}, {'option': 'De componentgebaseerde architectuur van React en het grote ecosysteem bieden flexibiliteit en gemakkelijke integratie met andere bibliotheken.', 'ans': true}, {'option': 'Angular wordt niet meer onderhouden, dus React is de enige levensvatbare optie.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Evaluatievragen testen het vermogen om de kwaliteit, nauwkeurigheid of effectiviteit van iets te beoordelen en oordelen te vellen op basis van criteria en beslissingen te rechtvaardigen. Voor 'Evaluation Text Question to Voice Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Uw team besluit tussen het intern bouwen van een functie of het gebruik van een SaaS-oplossing van derden. Welke factoren zou u evalueren om een aanbeveling te doen, en wat zou uw uiteindelijke beslissing bepalen?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Probleemoplossingsvragen richten zich op het identificeren, diagnosticeren en oplossen van complexe problemen en vereisen vaak creatief of strategisch denken. Voor 'Problem-Solving Text Question to Text Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'U bouwt een zoekfunctie die snel relevante resultaten moet retourneren, zelfs wanneer de dataset groeit. Hoe zou u dit systeem benaderen om snelle prestaties te behouden?', 'answer': 'Ik zou beginnen met het indexeren van de doorzoekbare velden met behulp van een full-text zoekmachine zoals Elasticsearch of het integreren van database-indexeringsstrategieën. Om de prestaties te verbeteren, zou ik resultaten pagineren, caching gebruiken voor frequente queries en denormalisatie van gegevens overwegen voor snellere leesbewerkingen. Bovendien zou ik querytijden monitoren en indexering of sharding van gegevens aanpassen indien nodig naarmate de dataset groeit.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Probleemoplossingsvragen richten zich op het identificeren, diagnosticeren en oplossen van complexe problemen en vereisen vaak creatief of strategisch denken. Voor 'Problem-Solving Text Question to MCQ Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Uw mobiele app crasht willekeurig voor sommige gebruikers, maar u kunt het probleem niet reproduceren op uw apparaten. Wat is de beste eerste stap om het probleem te diagnosticeren?', 'answer': [{'option': 'Vraag gebruikers om de app te verwijderen en opnieuw te installeren.', 'ans': false}, {'option': 'Push een noodupdate met minimale wijzigingen.', 'ans': false}, {'option': 'Controleer crashlogs en analytische tools zoals Firebase Crashlytics om patronen te identificeren.', 'ans': true}, {'option': 'Schakel functies uit totdat de crashes stoppen.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Probleemoplossingsvragen richten zich op het identificeren, diagnosticeren en oplossen van complexe problemen en vereisen vaak creatief of strategisch denken. Voor 'Problem-Solving Text Question to Voice Answer', geef uw output in json-formaat zoals dit: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'Een kritieke functie in uw webapplicatie faalt af en toe onder hoge verkeersbelasting, maar er verschijnen geen fouten in de logs. Hoe zou u het probleem identificeren en oplossen?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

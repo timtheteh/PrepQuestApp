@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian } from '@/constants/promptEngineering';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
@@ -178,6 +178,29 @@ export const generateOnboardingPrompt = async (params: {
     }
   }
 
+  if (modeStr === 'interview' && language === 'Indonesian') {
+    prompt += `Saya sedang mempersiapkan wawancara ${interviewType} untuk peran ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `Tingkat pengalaman untuk posisi ini adalah ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `Perusahaan yang saya persiapkan untuk wawancara adalah ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Topik yang ingin saya fokuskan adalah ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && language === 'Indonesian') {
+    prompt += `Saya sedang belajar untuk ${studyMandatoryQuestion1} dan tingkat pendidikan saya adalah ${studyMandatoryQuestion2}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Ujian yang sedang saya persiapkan adalah ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Topik yang ingin saya fokuskan adalah ${studyOptionalQuestion2}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (language === 'English') {
@@ -196,6 +219,12 @@ export const generateOnboardingPrompt = async (params: {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`
         prompt += `${promptAndDataAfrikaans[flashcardType as keyof typeof promptAndDataAfrikaans].prompt}\n`
+      }
+    }
+    if (language === 'Indonesian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Buat ${numQuestions} kartu flash bertipe '${flashcardType}'.\n`
+        prompt += `${promptAndDataIndonesian[flashcardType as keyof typeof promptAndDataIndonesian].prompt}\n`
       }
     }
   }
@@ -233,6 +262,18 @@ export const generateOnboardingPrompt = async (params: {
     prompt += "Genereer 'n JSON-array in hierdie formaat: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], waar elke {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 'n flitskaart verteenwoordig."
   }
 
+  if (language === 'Indonesian' && modeStr === 'interview') {
+    prompt += "Pastikan untuk menghasilkan pertanyaan dan jawaban yang bermakna, bijaksana, dan mungkin yang spesifik untuk wawancara saya dan peran pekerjaan saya.\n"
+    prompt += "Hasilkan array JSON kartu flash dalam format ini: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], di mana setiap {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} mewakili sebuah kartu flash."
+  }
+
+  if (language === 'Indonesian' && modeStr === 'study') {
+    prompt += "Pastikan untuk menghasilkan pertanyaan dan jawaban yang bermakna, bijaksana, dan mungkin yang spesifik untuk mata pelajaran yang saya pelajari dan tingkat pendidikan saya.\n"
+    prompt += "Contoh yang telah saya berikan untuk pertanyaan dan jawaban HANYALAH CONTOH untuk mendemonstrasikan gaya pertanyaan untuk jenis pertanyaan, ANDA HARUS HANYA MENGHASILKAN pertanyaan dan jawaban yang LANGSUNG TERKAIT dengan mata pelajaran yang saya pelajari dan tingkat pendidikan saya.\n"
+    prompt += "Sangat penting bahwa Anda tidak menyimpang dari mata pelajaran yang saya pelajari.\n"
+    prompt += "Hasilkan array JSON kartu flash dalam format ini: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], di mana setiap {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} mewakili sebuah kartu flash."
+  }
+
   return prompt;
 };
 
@@ -245,7 +286,7 @@ export const generateOnboardingPrompts = async (params: OnboardingPromptParams):
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans') ? responses.language : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];
@@ -324,7 +365,7 @@ export const generateOnboardingPromptsWithFormFields = async (params: Onboarding
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans') ? responses.language : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];

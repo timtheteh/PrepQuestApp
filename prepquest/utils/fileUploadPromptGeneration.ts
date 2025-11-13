@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface FileUploadPromptParams {
@@ -56,6 +56,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   if (modeStr === 'study' && language === 'Afrikaans') {
     prompt += `Ek studeer vir ${studyMandatoryQuestion2} en my opvoedingsvlak is ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Indonesian') {
+    prompt += `Saya sedang mempersiapkan wawancara ${interviewType} untuk peran ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Indonesian') {
+    prompt += `Saya sedang belajar untuk ${studyMandatoryQuestion2} dan tingkat pendidikan saya adalah ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add file content context
   if (pdfCaptionClaudeCaption && language === 'English') {
@@ -85,6 +91,15 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   if (imageCaptionClaudeCaption && language === 'Afrikaans') {
     prompt += `Hier is addisionele inligting en konteks van sommige beelde vir my voorbereiding: ${imageCaptionClaudeCaption}\n`;
   }
+  if (pdfCaptionClaudeCaption && language === 'Indonesian') {
+    prompt += `Berikut adalah informasi dan konteks tambahan dari file PDF untuk persiapan saya: ${pdfCaptionClaudeCaption}\n`;
+  }
+  if (extractedText && extractedText.trim() !== '' && language === 'Indonesian') {
+    prompt += `Berikut adalah informasi dan konteks tambahan dari file teks untuk persiapan saya: ${extractedText}\n`;
+  }
+  if (imageCaptionClaudeCaption && language === 'Indonesian') {
+    prompt += `Berikut adalah informasi dan konteks tambahan dari beberapa gambar untuk persiapan saya: ${imageCaptionClaudeCaption}\n`;
+  }
 
   // Add flashcard distribution and type prompts
   if (distribution) {
@@ -105,6 +120,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
         prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataAfrikaans[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Indonesian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Buat ${numQuestions} kartu flash bertipe '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataIndonesian[flashcardType].prompt}\n`;
       }
     }
   }
@@ -144,6 +165,21 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
     prompt += 'Die voorbeelde wat ek gegee het vir die vrae en antwoorde is NET VOORBEELDE om die vraagstyle vir die vraagtipes te demonstreer, JY MOET NET vrae en antwoorde genereer wat DIREK VERWANT is aan die vakke wat ek studeer en my opvoedingsvlak.\n';
     prompt += 'Dit is uiters belangrik dat jy nie wegbeweeg van die vakke wat ek studeer nie.\n';
     prompt += 'Genereer \'n JSON-array in hierdie formaat: [{"flashcardType": <>, "question": <>, "answer": <>}], waar elke {"flashcardType": <>, "question": <>, "answer": <>} \'n flitskaart verteenwoordig.';
+  }
+  if (language === 'Indonesian' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Pastikan untuk menghasilkan pertanyaan dan jawaban yang bermakna, bijaksana, dan mungkin yang spesifik untuk wawancara saya dan peran pekerjaan saya.\n';
+    prompt += 'Hasilkan array JSON kartu flash dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kartu flash.';
+  }
+  if (language === 'Indonesian' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Pastikan untuk menghasilkan pertanyaan dan jawaban yang bermakna, bijaksana, dan mungkin yang spesifik untuk wawancara saya dan peran pekerjaan saya.\n';
+    prompt += 'Namun, SANGAT PENTING BAHWA ANDA TIDAK MENYIMPANG dari informasi dan konteks yang telah saya berikan dari file PDF, file teks, atau gambar. TETAP HANYA PADA KONTEN DARI FILE PDF, FILE TEKS, ATAU GAMBAR. ';
+    prompt += 'Hasilkan array JSON kartu flash dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kartu flash.';
+  }
+  if (language === 'Indonesian' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Pastikan untuk menghasilkan pertanyaan dan jawaban yang bermakna, bijaksana, dan mungkin yang spesifik untuk mata pelajaran yang saya pelajari dan tingkat pendidikan saya.\n';
+    prompt += 'Contoh yang telah saya berikan untuk pertanyaan dan jawaban HANYALAH CONTOH untuk mendemonstrasikan gaya pertanyaan untuk jenis pertanyaan, ANDA HARUS HANYA MENGHASILKAN pertanyaan dan jawaban yang LANGSUNG TERKAIT dengan mata pelajaran yang saya pelajari dan tingkat pendidikan saya.\n';
+    prompt += 'Sangat penting bahwa Anda tidak menyimpang dari mata pelajaran yang saya pelajari.\n';
+    prompt += 'Hasilkan array JSON kartu flash dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kartu flash.';
   }
 
   return prompt;

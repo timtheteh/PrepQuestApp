@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface GenAIPromptParams {
@@ -46,7 +46,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
   // Build mode-specific prompt sections
   const modeStr = Array.isArray(mode) ? mode[0] : mode;
   // Default to English for languages not yet supported in prompts
-  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans') ? language : 'English';
+  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian') ? language : 'English';
   if (modeStr === 'interview' && effectiveLanguage === 'English') {
     prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
     if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
@@ -125,6 +125,32 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
+  if (modeStr === 'interview' && effectiveLanguage === 'Indonesian') {
+    prompt += `Saya sedang mempersiapkan wawancara ${interviewType} untuk peran ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `Perusahaan yang saya persiapkan untuk wawancara adalah ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `Tingkat pengalaman untuk posisi ini adalah ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Topik yang ingin saya fokuskan adalah ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && effectiveLanguage === 'Indonesian') {
+    prompt += `Saya sedang belajar untuk ${studyMandatoryQuestion2} dan tingkat pendidikan saya adalah ${studyMandatoryQuestion1}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Topik yang ingin saya pelajari adalah ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Subtopik yang ingin saya fokuskan adalah ${studyOptionalQuestion2}.\n`
+    }
+    if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+      prompt += `Ujian yang sedang saya persiapkan adalah ${studyOptionalQuestion3}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (effectiveLanguage === 'English') {
@@ -143,6 +169,12 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Genereer ${numQuestions} flitskaarte van tipe '${flashcardType}'.\n`
         prompt += `${promptAndDataAfrikaans[flashcardType as keyof typeof promptAndDataAfrikaans].prompt}\n`
+      }
+    }
+    if (effectiveLanguage === 'Indonesian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Buat ${numQuestions} kartu flash bertipe '${flashcardType}'.\n`
+        prompt += `${promptAndDataIndonesian[flashcardType as keyof typeof promptAndDataIndonesian].prompt}\n`
       }
     }
   }
@@ -178,6 +210,18 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     prompt += "Die voorbeelde wat ek gegee het vir die vrae en antwoorde is NET VOORBEELDE om die vraagstyle vir die vraagtipes te demonstreer, JY MOET NET vrae en antwoorde genereer wat DIREK VERWANT is aan die vakke wat ek studeer en my opvoedingsvlak.\n"
     prompt += "Dit is uiters belangrik dat jy nie wegbeweeg van die vakke wat ek studeer nie.\n"
     prompt += "Genereer 'n JSON-array in hierdie formaat: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], waar elke {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} 'n flitskaart verteenwoordig."
+  }
+
+  if (effectiveLanguage === 'Indonesian' && modeStr === 'interview') {
+    prompt += "Pastikan untuk menghasilkan pertanyaan dan jawaban yang bermakna, bijaksana, dan mungkin yang spesifik untuk wawancara saya dan peran pekerjaan saya.\n"
+    prompt += "Hasilkan array JSON kartu flash dalam format ini: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], di mana setiap {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} mewakili sebuah kartu flash."
+  }
+
+  if (effectiveLanguage === 'Indonesian' && modeStr === 'study') {
+    prompt += "Pastikan untuk menghasilkan pertanyaan dan jawaban yang bermakna, bijaksana, dan mungkin yang spesifik untuk mata pelajaran yang saya pelajari dan tingkat pendidikan saya.\n"
+    prompt += "Contoh yang telah saya berikan untuk pertanyaan dan jawaban HANYALAH CONTOH untuk mendemonstrasikan gaya pertanyaan untuk jenis pertanyaan, ANDA HARUS HANYA MENGHASILKAN pertanyaan dan jawaban yang LANGSUNG TERKAIT dengan mata pelajaran yang saya pelajari dan tingkat pendidikan saya.\n"
+    prompt += "Sangat penting bahwa Anda tidak menyimpang dari mata pelajaran yang saya pelajari.\n"
+    prompt += "Hasilkan array JSON kartu flash dalam format ini: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], di mana setiap {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} mewakili sebuah kartu flash."
   }
 
   return prompt;

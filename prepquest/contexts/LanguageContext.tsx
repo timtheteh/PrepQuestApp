@@ -63,9 +63,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (userID) {
         const result = await db.getFirstAsync(`SELECT language FROM users WHERE userID = ?`, [userID]) as any;
         if (result && result.language && typeof result.language === 'string') {
-          // English, Chinese, Afrikaans, and Indonesian are fully supported, default to English for other languages
+          // English, Chinese, Afrikaans, Indonesian, and Malay are fully supported, default to English for other languages
           const loadedLanguage = result.language as Language;
-          const supportedLanguage = (loadedLanguage === 'English' || loadedLanguage === 'Chinese' || loadedLanguage === 'Afrikaans' || loadedLanguage === 'Indonesian') 
+          const supportedLanguage = (loadedLanguage === 'English' || loadedLanguage === 'Chinese' || loadedLanguage === 'Afrikaans' || loadedLanguage === 'Indonesian' || loadedLanguage === 'Malay') 
             ? loadedLanguage 
             : 'English';
           setLanguageState(supportedLanguage);

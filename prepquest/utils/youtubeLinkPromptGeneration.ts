@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -58,6 +58,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'Indonesian') {
     prompt += `Saya sedang belajar untuk ${studyMandatoryQuestion2} dan tingkat pendidikan saya adalah ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Malay') {
+    prompt += `Saya sedang mempersiapkan temuduga ${interviewType} untuk peranan ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Malay') {
+    prompt += `Saya sedang belajar untuk ${studyMandatoryQuestion2} dan tahap pendidikan saya adalah ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
@@ -68,6 +74,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Hier is addisionele inligting en konteks van 'n YouTube-video transkripsie vir my voorbereiding: ${transcript}\n`;
   } else if (language === 'Indonesian') {
     prompt += `Berikut adalah informasi dan konteks tambahan dari transkrip video YouTube untuk persiapan saya: ${transcript}\n`;
+  } else if (language === 'Malay') {
+    prompt += `Berikut adalah maklumat dan konteks tambahan dari transkrip video YouTube untuk persiapan saya: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -95,6 +103,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Buat ${numQuestions} kartu flash bertipe '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataIndonesian[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Malay') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Jana ${numQuestions} kad imbas jenis '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataMalay[flashcardType].prompt}\n`;
       }
     }
   }
@@ -149,6 +163,21 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Contoh yang telah saya berikan untuk pertanyaan dan jawaban HANYALAH CONTOH untuk mendemonstrasikan gaya pertanyaan untuk jenis pertanyaan, ANDA HARUS HANYA MENGHASILKAN pertanyaan dan jawaban yang LANGSUNG TERKAIT dengan mata pelajaran yang saya pelajari dan tingkat pendidikan saya.\n';
     prompt += 'Sangat penting bahwa Anda tidak menyimpang dari mata pelajaran yang saya pelajari.\n';
     prompt += 'Hasilkan array JSON kartu flash dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kartu flash.';
+  }
+  if (language === 'Malay' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Pastikan untuk menjana soalan dan jawapan yang bermakna, bijaksana, dan mungkin yang spesifik untuk temuduga saya dan peranan pekerjaan saya.\n';
+    prompt += 'Jana array JSON kad imbas dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kad imbas.';
+  }
+  if (language === 'Malay' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Pastikan untuk menjana soalan dan jawapan yang bermakna, bijaksana, dan mungkin yang spesifik untuk temuduga saya dan peranan pekerjaan saya.\n';
+    prompt += 'Walau bagaimanapun, SANGAT PENTING BAHWA ANDA TIDAK MENYIMPANG dari maklumat dan konteks yang telah saya berikan dari transkrip video YouTube. TETAP HANYA PADA KANDUNGAN DARI TRANSKRIP. ';
+    prompt += 'Jana array JSON kad imbas dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kad imbas.';
+  }
+  if (language === 'Malay' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Pastikan untuk menjana soalan dan jawapan yang bermakna, bijaksana, dan mungkin yang spesifik untuk subjek yang saya pelajari dan tahap pendidikan saya.\n';
+    prompt += 'Contoh yang telah saya berikan untuk soalan dan jawapan HANYALAH CONTOH untuk menunjukkan gaya soalan untuk jenis soalan, ANDA HARUS HANYA MENJANA soalan dan jawapan yang LANGSUNG BERKAITAN dengan subjek yang saya pelajari dan tahap pendidikan saya.\n';
+    prompt += 'Sangat penting bahawa anda tidak menyimpang dari subjek yang saya pelajari.\n';
+    prompt += 'Jana array JSON kad imbas dalam format ini: [{"flashcardType": <>, "question": <>, "answer": <>}], di mana setiap {"flashcardType": <>, "question": <>, "answer": <>} mewakili sebuah kad imbas.';
   }
 
   return prompt;

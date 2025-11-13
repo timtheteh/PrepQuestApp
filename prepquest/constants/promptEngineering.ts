@@ -623,6 +623,162 @@ export const promptAndDataIndonesian = {
     }
 }
 
+export const promptAndDataMalay = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Soalan ingatan menguji memori dengan meminta fakta, definisi, atau maklumat spesifik. Untuk 'Recall Text Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Apakah tujuan utama pelayan DNS (Domain Name System)?', 'answer': 'Pelayan DNS menterjemahkan nama domain yang boleh dibaca manusia (seperti www.example.com) kepada alamat IP yang digunakan komputer untuk mengenal pasti satu sama lain di rangkaian.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Soalan ingatan menguji memori dengan meminta fakta, definisi, atau maklumat spesifik. Untuk 'Recall Text Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Kod status HTTP manakah yang menunjukkan bahawa permintaan berjaya?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Soalan ingatan menguji memori dengan meminta fakta, definisi, atau maklumat spesifik. Untuk 'Recall Cloze Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'Dalam JavaScript, kata kunci <blank> digunakan untuk mengisytiharkan pemboleh ubah dengan skop blok dan mencegah penugasan semula.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Soalan ingatan menguji memori dengan meminta fakta, definisi, atau maklumat spesifik. Untuk 'Recall Cloze Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'Dalam SQL, arahan <blank> digunakan untuk membuang semua rekod dari jadual tanpa mencatat penghapusan baris individu.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Soalan kefahaman menguji pemahaman dengan meminta penjelasan, tafsiran, ringkasan, atau perbandingan. Untuk 'Comprehension Text Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Terangkan perbezaan antara salinan cetek dan salinan dalam dalam pengaturcaraan.', 'answer': 'Salinan cetek hanya menyalin rujukan peringkat atas objek, yang bermaksud objek bersarang masih dikongsi. Salinan dalam secara rekursif menyalin semua objek bersarang, mencipta duplikat yang sepenuhnya bebas dari struktur asal.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Soalan kefahaman menguji pemahaman dengan meminta penjelasan, tafsiran, ringkasan, atau perbandingan. Untuk 'Comprehension Text Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Apakah yang paling baik menerangkan perbezaan antara HTTP dan HTTPS?', 'answer': [{'option': 'HTTPS menggunakan port 80, manakala HTTP menggunakan port 443.', 'ans': false}, {'option': 'HTTP menyulitkan data semasa penghantaran, manakala HTTPS tidak.', 'ans': false}, {'option': 'Tidak ada perbezaan sebenar antara HTTP dan HTTPS.', 'ans': false}, {'option': 'HTTPS menambah lapisan penyulitan melalui SSL/TLS untuk mengamankan penghantaran data, tidak seperti HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Soalan kefahaman menguji pemahaman dengan meminta penjelasan, tafsiran, ringkasan, atau perbandingan. Untuk 'Comprehension Text Question to Voice Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Bagaimanakah pengimbang beban meningkatkan kebolehpercayaan dan kebolehskalaan aplikasi web?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Soalan aplikasi menguji keupayaan untuk menerapkan pengetahuan pada situasi praktikal, baharu, atau dunia sebenar. Untuk 'Application Text Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Anda perlu menyimpan data sesi pengguna sementara dalam sistem backend. Struktur data atau kaedah penyimpanan manakah yang akan anda gunakan dan mengapa?', 'answer': 'Penyimpanan nilai-kunci dalam memori seperti Redis adalah pilihan yang sesuai kerana membolehkan akses baca/tulis yang pantas dan menyokong luput automatik data sesi, yang sesuai untuk pengurusan sesi sementara.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Soalan aplikasi menguji keupayaan untuk menerapkan pengetahuan pada situasi praktikal, baharu, atau dunia sebenar. Untuk 'Application Text Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Anda sedang mereka bentuk borang web yang mengumpulkan maklumat pengguna yang sensitif. Manakah dari tindakan berikut yang paling sesuai untuk meningkatkan keselamatan semasa penghantaran data?', 'answer': [{'option': 'Hantar borang melalui HTTPS menggunakan permintaan POST.', 'ans': true}, {'option': 'Gunakan permintaan GET untuk menghantar borang untuk kelajuan yang lebih baik.', 'ans': false}, {'option': 'Minifikasi HTML untuk menjadikan kod sumber lebih sukar dibaca.', 'ans': false}, {'option': 'Simpan data dalam kuki untuk akses pantas.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Soalan aplikasi menguji keupayaan untuk menerapkan pengetahuan pada situasi praktikal, baharu, atau dunia sebenar. Untuk 'Application Text Question to Voice Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Anda ditugaskan untuk meningkatkan prestasi REST API yang mengalami latensi tinggi di bawah beban. Langkah praktikal apakah yang akan anda ambil untuk mengenal pasti dan menangani isu tersebut?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Soalan analisis menguji keupayaan untuk memecahkan masalah kompleks menjadi bahagian yang lebih kecil dan memeriksa hubungan. Untuk 'Analysis Text Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'Ujian A/B menunjukkan bahawa halaman checkout baharu membawa kepada kurang pembelian yang diselesaikan, walaupun pengguna mencapai langkah pembayaran lebih cepat. Bagaimanakah anda akan menganalisis hasil ini?', 'answer': 'Saya akan memeriksa perjalanan pengguna secara terperinci, fokus pada di mana pengguna meninggalkan aliran baharu. Saya akan menganalisis rakaman sesi, data corong, dan kadar pengabaian borang. Kemungkinan aliran yang lebih cepat memperkenalkan masalah kebolehgunaan, kekeliruan, atau kebimbangan kepercayaan. Saya akan membandingkan kadar ralat, tingkah laku pengesahan medan, dan masa pemuatan. Saya juga akan melihat maklum balas kualitatif atau tinjauan untuk memahami persepsi pengguna.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Soalan analisis menguji keupayaan untuk memecahkan masalah kompleks menjadi bahagian yang lebih kecil dan memeriksa hubungan. Untuk 'Analysis Text Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Pasukan anda sedang menyiasat mengapa ciri yang baru dikerahkan menyebabkan masa muat halaman meningkat dengan ketara. Apakah langkah paling logik seterusnya dalam proses analisis?', 'answer': [{'option': 'Kembalikan penyebaran dengan segera.', 'ans': false}, {'option': 'Profil prestasi frontend dan backend untuk mencari bottleneck spesifik.', 'ans': true}, {'option': 'Tingkatkan kapasiti pelayan dan perhatikan hasilnya.', 'ans': false}, {'option': 'Tukar ke rangka kerja frontend yang berbeza.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Soalan analisis menguji keupayaan untuk memecahkan masalah kompleks menjadi bahagian yang lebih kecil dan memeriksa hubungan. Untuk 'Analysis Text Question to Voice Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Anda perasan timeout yang kerap berlaku apabila pengguna mengakses aplikasi anda semasa waktu puncak. Bagaimanakah anda akan mengenal pasti punca akar isu tersebut?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Soalan sintesis menguji keupayaan untuk menggabungkan atau mengintegrasikan pelbagai maklumat untuk mencipta keseluruhan baharu yang koheren, atau mencadangkan penyelesaian. Untuk 'Synthesis Text Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Reka sistem notifikasi yang boleh diskalakan yang boleh menghantar e-mel, SMS, dan notifikasi push kepada berjuta-juta pengguna. Komponen utama apakah yang akan anda sertakan dan bagaimana mereka berinteraksi?', 'answer': 'Saya akan mereka bentuk sistem dengan barisan mesej untuk menangani throughput tinggi, perkhidmatan notifikasi yang memproses mesej dan menghantarnya melalui saluran yang sesuai (e-mel, SMS, push). Sistem akan menggunakan mikros perkhidmatan untuk setiap jenis notifikasi, pangkalan data untuk menjejaki status penghantaran, dan had kadar untuk mencegah beban berlebihan. Pengimbang beban dan kumpulan auto-scaling akan memastikan ketersediaan dan kebolehskalaan.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Soalan sintesis menguji keupayaan untuk menggabungkan atau mengintegrasikan pelbagai maklumat untuk mencipta keseluruhan baharu yang koheren, atau mencadangkan penyelesaian. Untuk 'Synthesis Text Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Anda perlu mereka bentuk sistem yang mengagregat data masa nyata dari beberapa sensor dan menyediakan papan pemuka analitik. Pilihan reka bentuk manakah yang paling baik mengimbangkan kebolehskalaan, kebolehpercayaan, dan latensi?', 'answer': [{'option': 'Gunakan pangkalan data berpusat di mana semua data sensor ditulis secara segerak.', 'ans': false}, {'option': 'Simpan data secara tempatan pada setiap sensor dan muat naik kumpulan pada akhir hari.', 'ans': false}, {'option': 'Gunakan pemprosesan sisi klien untuk semua analitik untuk mengurangkan beban pelayan.', 'ans': false}, {'option': 'Laksanakan barisan mesej teragih dengan mikros perkhidmatan yang memproses data secara tidak segerak.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Soalan sintesis menguji keupayaan untuk menggabungkan atau mengintegrasikan pelbagai maklumat untuk mencipta keseluruhan baharu yang koheren, atau mencadangkan penyelesaian. Untuk 'Synthesis Text Question to Voice Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Reka sistem yang boleh menangani sembang masa nyata untuk berjuta-juta pengguna, memastikan penghantaran mesej, kebolehskalaan, dan konsistensi data. Terangkan komponen utama dan bagaimana mereka berinteraksi.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Soalan penilaian menguji keupayaan untuk menilai kualiti, ketepatan, atau keberkesanan sesuatu, dan membuat pertimbangan berdasarkan kriteria dan membenarkan keputusan. Untuk 'Evaluation Text Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Anda memilih antara pangkalan data SQL dan NoSQL untuk platform e-dagang ber-traffic tinggi. Manakah yang akan anda pilih dan mengapa?', 'answer': 'Untuk platform e-dagang, pangkalan data SQL selalunya merupakan pilihan yang lebih baik kerana keperluan untuk konsistensi yang kuat, transaksi kompleks, dan data hubungan berstruktur seperti pesanan, inventori, dan pengguna. Walau bagaimanapun, jika kebolehskalaan dan fleksibiliti lebih penting—seperti untuk menangani ulasan produk atau data sesi—penyelesaian NoSQL seperti MongoDB atau DynamoDB boleh diintegrasikan bersama SQL dalam seni bina poliglot.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Soalan penilaian menguji keupayaan untuk menilai kualiti, ketepatan, atau keberkesanan sesuatu, dan membuat pertimbangan berdasarkan kriteria dan membenarkan keputusan. Untuk 'Evaluation Text Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Anda sedang meninjau dua rangka kerja frontend yang mungkin untuk aplikasi web perusahaan berskala besar: React dan Angular. Manakah dari berikut ini yang merupakan asas paling munasabah untuk memilih React berbanding Angular?', 'answer': [{'option': 'React tidak memerlukan lengkung pembelajaran, jadi ia sentiasa lebih baik.', 'ans': false}, {'option': 'React menguatkuasakan struktur aplikasi yang ketat, yang sesuai untuk pasukan besar.', 'ans': false}, {'option': 'Seni bina berasaskan komponen React dan ekosistem besar memberikan fleksibiliti dan kemudahan integrasi dengan perpustakaan lain.', 'ans': true}, {'option': 'Angular tidak lagi dikekalkan, jadi React adalah satu-satunya pilihan yang boleh dilaksanakan.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Soalan penilaian menguji keupayaan untuk menilai kualiti, ketepatan, atau keberkesanan sesuatu, dan membuat pertimbangan berdasarkan kriteria dan membenarkan keputusan. Untuk 'Evaluation Text Question to Voice Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Pasukan anda memutuskan antara membina ciri dalam rumah atau menggunakan penyelesaian SaaS pihak ketiga. Faktor apakah yang akan anda nilai untuk membuat cadangan, dan apakah yang akan membimbing keputusan akhir anda?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Soalan penyelesaian masalah memberi tumpuan kepada mengenal pasti, mendiagnosis, dan menyelesaikan isu kompleks, dan selalunya memerlukan pemikiran kreatif atau strategik. Untuk 'Problem-Solving Text Question to Text Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Anda sedang membina ciri carian yang perlu mengembalikan hasil yang relevan dengan cepat, walaupun set data berkembang. Bagaimanakah anda akan mereka bentuk sistem ini untuk mengekalkan prestasi yang pantas?', 'answer': 'Saya akan bermula dengan mengindeks medan yang boleh dicari menggunakan enjin carian teks penuh seperti Elasticsearch atau mengintegrasikan strategi pengindeksan pangkalan data. Untuk meningkatkan prestasi, saya akan mem-paginate hasil, menggunakan cache untuk pertanyaan yang kerap, dan mempertimbangkan denormalisasi data untuk bacaan yang lebih pantas. Selain itu, saya akan memantau masa pertanyaan dan menyesuaikan pengindeksan atau shard data jika diperlukan semasa set data berkembang.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Soalan penyelesaian masalah memberi tumpuan kepada mengenal pasti, mendiagnosis, dan menyelesaikan isu kompleks, dan selalunya memerlukan pemikiran kreatif atau strategik. Untuk 'Problem-Solving Text Question to MCQ Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Aplikasi mudah alih anda crash secara rawak untuk beberapa pengguna, tetapi anda tidak dapat menghasilkan semula masalah pada peranti anda. Apakah langkah terbaik pertama untuk mendiagnosis masalah tersebut?', 'answer': [{'option': 'Minta pengguna untuk memadam dan memasang semula aplikasi.', 'ans': false}, {'option': 'Tolak kemas kini kecemasan dengan perubahan minimum.', 'ans': false}, {'option': 'Periksa log crash dan alat analitik seperti Firebase Crashlytics untuk mengenal pasti corak.', 'ans': true}, {'option': 'Lumpuhkan ciri sehingga crash berhenti.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Soalan penyelesaian masalah memberi tumpuan kepada mengenal pasti, mendiagnosis, dan menyelesaikan isu kompleks, dan selalunya memerlukan pemikiran kreatif atau strategik. Untuk 'Problem-Solving Text Question to Voice Answer', berikan output anda dalam format json seperti ini: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'Ciri kritikal dalam aplikasi web anda gagal secara berselang-selang di bawah trafik tinggi, tetapi tiada ralat muncul dalam log. Bagaimanakah anda akan mengenal pasti dan menyelesaikan isu tersebut?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

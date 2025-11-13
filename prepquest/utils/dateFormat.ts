@@ -5,7 +5,7 @@
 /**
  * Formats a date string based on the current language
  * @param dateString - The date string to format
- * @param language - The current language ('Chinese', 'English', 'Afrikaans', or 'Indonesian')
+ * @param language - The current language ('Chinese', 'English', 'Afrikaans', 'Indonesian', or 'Malay')
  * @returns Formatted date string
  */
 export const formatDate = (dateString: string, language: string): string => {
@@ -28,6 +28,12 @@ export const formatDate = (dateString: string, language: string): string => {
       const day = date.getDate();
       const year = date.getFullYear();
       return `${day} ${month} ${year}`;
+    } else if (language === 'Malay') {
+      const months = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogs', 'Sep', 'Okt', 'Nov', 'Dis'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
     } else {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const month = months[date.getMonth()];
@@ -44,7 +50,7 @@ export const formatDate = (dateString: string, language: string): string => {
 /**
  * Formats a date string without including the year component.
  * @param dateString - The date string to format
- * @param language - The current language ('Chinese', 'English', 'Afrikaans', or 'Indonesian')
+ * @param language - The current language ('Chinese', 'English', 'Afrikaans', 'Indonesian', or 'Malay')
  * @returns Formatted date string without year
  */
 export const formatDateWithoutYear = (dateString: string, language: string): string => {
@@ -61,6 +67,11 @@ export const formatDateWithoutYear = (dateString: string, language: string): str
       return `${day} ${month}`;
     } else if (language === 'Indonesian') {
       const months = ['Jan', 'Peb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      return `${day} ${month}`;
+    } else if (language === 'Malay') {
+      const months = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogs', 'Sep', 'Okt', 'Nov', 'Dis'];
       const month = months[date.getMonth()];
       const day = date.getDate();
       return `${day} ${month}`;

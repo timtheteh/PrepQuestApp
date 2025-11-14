@@ -1715,6 +1715,162 @@ export const promptAndDataItalian = {
     }
 }
 
+export const promptAndDataKiswahili = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Maswali ya kukumbuka hujaribu kumbukumbu kwa kuuliza ukweli maalum, ufafanuzi au taarifa. Kwa 'Recall Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Ni kusudi gani kuu la seva ya DNS (Domain Name System)?', 'answer': 'Seva ya DNS hubadilisha majina ya kikoa yanayoweza kusomwa na binadamu (kama www.example.com) kuwa anwani za IP ambazo kompyuta hutumia kutambua kila mmoja kwenye mtandao.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Maswali ya kukumbuka hujaribu kumbukumbu kwa kuuliza ukweli maalum, ufafanuzi au taarifa. Kwa 'Recall Text Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Nambari gani ya hali ya HTTP inaonyesha kuwa ombi limefanikiwa?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Maswali ya kukumbuka hujaribu kumbukumbu kwa kuuliza ukweli maalum, ufafanuzi au taarifa. Kwa 'Recall Cloze Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'Katika JavaScript, neno kuu <blank> linatumika kutangaza kutofautiana na upeo wa kuzuia na kuzuia kurekebishwa tena.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Maswali ya kukumbuka hujaribu kumbukumbu kwa kuuliza ukweli maalum, ufafanuzi au taarifa. Kwa 'Recall Cloze Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'Katika SQL, amri <blank> inatumika kuondoa rekodi zote kutoka kwenye jedwali bila kurekodi ufutaji wa safu za mtu binafsi.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Maswali ya kuelewa hujaribu uelewa kwa kuuliza maelezo, tafsiri, muhtasari au kulinganisha. Kwa 'Comprehension Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Eleza tofauti kati ya nakala ya juu na nakala ya kina katika programu.', 'answer': 'Nakala ya juu inanakili tu marejeo ya kiwango cha juu cha kitu, maana yake vitu vilivyojengwa bado vinashirikiwa. Nakala ya kina inanakili kwa kurudiwa vitu vyote vilivyojengwa, na kuunda nakala za kujitegemea kabisa za muundo wa asili.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Maswali ya kuelewa hujaribu uelewa kwa kuuliza maelezo, tafsiri, muhtasari au kulinganisha. Kwa 'Comprehension Text Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Nini kinaelezea bora tofauti kati ya HTTP na HTTPS?', 'answer': [{'option': 'HTTPS hutumia bandari 80, wakati HTTP hutumia bandari 443.', 'ans': false}, {'option': 'HTTP huficha data wakati wa usafirishaji, wakati HTTPS haifanyi.', 'ans': false}, {'option': 'Hakuna tofauti halisi kati ya HTTP na HTTPS.', 'ans': false}, {'option': 'HTTPS huongeza safu ya usimbaji kupitia SSL/TLS ili kulinda usafirishaji wa data, tofauti na HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Maswali ya kuelewa hujaribu uelewa kwa kuuliza maelezo, tafsiri, muhtasari au kulinganisha. Kwa 'Comprehension Text Question to Voice Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Balanza ya mzigo inaboresha uaminifu na uwezo wa kuongezeka wa programu ya wavuti vipi?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Maswali ya matumizi hujaribu uwezo wa kutumia maarifa kwa hali za vitendo, mpya au za ulimwengu halisi. Kwa 'Application Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Unahitaji kuhifadhi data ya kipindi cha mtumiaji kwa muda katika mfumo wa nyuma. Ungetumia muundo gani wa data au njia gani ya uhifadhi na kwa nini?', 'answer': 'Hifadhi ya thamani ya ufunguo kwenye kumbukumbu kama Redis ni chaguo linalofaa kwa sababu inaruhusu ufikiaji wa haraka wa kusoma/kuandika na inasaidia kumalizika kiotomatiki kwa data ya kipindi, ambayo ni bora kwa usimamizi wa muda wa vipindi.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Maswali ya matumizi hujaribu uwezo wa kutumia maarifa kwa hali za vitendo, mpya au za ulimwengu halisi. Kwa 'Application Text Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Unaunda fomu ya wavuti ambayo inakusanya taarifa nyeti za mtumiaji. Ni hatua ipi kati ya zifuatazo ni sahihi zaidi kuboresha usalama wakati wa usafirishaji wa data?', 'answer': [{'option': 'Tuma fomu kupitia HTTPS kwa kutumia ombi la POST.', 'ans': true}, {'option': 'Tumia ombi la GET kutuma fomu kwa kasi bora.', 'ans': false}, {'option': 'Punguza HTML ili kufanya msimbo wa chanzo uwe mgumu kusoma.', 'ans': false}, {'option': 'Hifadhi data kwenye cookies kwa ufikiaji wa haraka.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Maswali ya matumizi hujaribu uwezo wa kutumia maarifa kwa hali za vitendo, mpya au za ulimwengu halisi. Kwa 'Application Text Question to Voice Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Umepewa jukumu la kuboresha utendaji wa API ya REST ambayo inakabiliwa na ucheleweshaji mkuu chini ya mzigo. Ungefanya hatua zipi za vitendo kutambua na kutatua tatizo?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Maswali ya uchambuzi hujaribu uwezo wa kuvunja matatizo magumu katika sehemu ndogo na kuchunguza uhusiano. Kwa 'Analysis Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'Uchunguzi wa A/B unaonyesha kuwa ukurasa mpya wa checkout husababisha ununuzi chache zaidi uliokamilika, hata ingawa watumiaji wanafikia hatua ya malipo kwa haraka zaidi. Ungechambua matokeo haya vipi?', 'answer': 'Ningechunguza safari ya mtumiaji kwa undani, kuzingatia mahali watumiaji wanapoacha katika mtiririko mpya. Ningechambua rekodi za kipindi, data ya mfumo, na viwango vya kuacha fomu. Inawezekana mtiririko wa haraka zaidi unaanzisha matatizo ya matumizi, kuchanganyikiwa, au wasiwasi wa kuaminiana. Ningelinganisha viwango vya makosa, tabia ya uthibitishaji wa uga, na nyakati za kupakia. Ningeangalia pia maoni ya ubora au utafiti ili kuelewa mtazamo wa mtumiaji.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Maswali ya uchambuzi hujaribu uwezo wa kuvunja matatizo magumu katika sehemu ndogo na kuchunguza uhusiano. Kwa 'Analysis Text Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Timu yako inachunguza kwa nini kipengele kilichotumwa hivi karibuni kimesababisha nyakati za kupakia ukurasa kuongezeka sana. Ni hatua ipi ya mantiki zaidi inayofuata katika mchakato wa uchambuzi?', 'answer': [{'option': 'Rudisha mara moja utumaji.', 'ans': false}, {'option': 'Chambua utendaji wa mbele na nyuma ili kutambua vifungo maalum.', 'ans': true}, {'option': 'Ongeza uwezo wa seva na uangalie matokeo.', 'ans': false}, {'option': 'Badilisha kwa mfumo mwingine wa mbele.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Maswali ya uchambuzi hujaribu uwezo wa kuvunja matatizo magumu katika sehemu ndogo na kuchunguza uhusiano. Kwa 'Analysis Text Question to Voice Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Unaona muda wa kumaliza unaojirudia mara kwa mara wakati watumiaji wanapofikia programu yako wakati wa masaa ya kilele. Ungeendelea vipi kutambua sababu kuu ya tatizo?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Maswali ya muhtasari hujaribu uwezo wa kuunganisha au kuunganisha habari tofauti ili kuunda jumla mpya na yenye maana, au kupendekeza suluhisho. Kwa 'Synthesis Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Buni mfumo wa arifa unaoweza kuongezeka ambao unaweza kutuma barua pepe, SMS na arifa za kusukuma kwa watumiaji milioni. Je, ungejumuisha vipengele gani muhimu na vingeingiliana vipi?', 'answer': 'Ningebuni mfumo na foleni ya ujumbe ili kushughulikia uwezo wa juu, huduma ya arifa ambayo inachakata ujumbe na kuwatuma kupitia njia zinazofaa (barua pepe, SMS, kusukuma). Mfumo ungetumia huduma ndogo za kila aina ya arifa, hifadhidata ya kufuatilia hali ya uwasilishaji, na kikomo cha kasi ili kuzuia mzigo mkuu. Balanza za mzigo na vikundi vya kujiongeza kiotomatiki vingehakikisha upatikanaji na uwezo wa kuongezeka.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Maswali ya muhtasari hujaribu uwezo wa kuunganisha au kuunganisha habari tofauti ili kuunda jumla mpya na yenye maana, au kupendekeza suluhisho. Kwa 'Synthesis Text Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Unahitaji kubuni mfumo ambao unakusanya data ya wakati halisi kutoka kwa sensorer nyingi na hutoa dashibodi za uchambuzi. Ni chaguo lipi la muundo linaloongoza bora uwezo wa kuongezeka, uaminifu na ucheleweshaji?', 'answer': [{'option': 'Tumia hifadhidata ya katikati ambapo data zote za sensorer zinaandikwa kwa wakati mmoja.', 'ans': false}, {'option': 'Hifadhi data ndani ya kila sensor na upakie kwa kundi mwishoni mwa siku.', 'ans': false}, {'option': 'Tumia uchakataji wa upande wa mteja kwa uchambuzi wote ili kupunguza mzigo wa seva.', 'ans': false}, {'option': 'Tekeleza foleni za ujumbe zilizosambazwa na huduma ndogo zinazochakata data kwa wakati tofauti.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Maswali ya muhtasari hujaribu uwezo wa kuunganisha au kuunganisha habari tofauti ili kuunda jumla mpya na yenye maana, au kupendekeza suluhisho. Kwa 'Synthesis Text Question to Voice Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Buni mfumo ambao unaweza kushughulikia mazungumzo ya wakati halisi kwa watumiaji milioni, kuhakikisha uwasilishaji wa ujumbe, uwezo wa kuongezeka na uthabiti wa data. Eleza vipengele muhimu na vingeingiliana vipi.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Maswali ya tathmini hujaribu uwezo wa kutathmini ubora, usahihi au ufanisi wa kitu, na kufanya hukumu kulingana na vigezo na kuhalalisha maamuzi. Kwa 'Evaluation Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Unachagua kati ya hifadhidata za SQL na NoSQL kwa jukwaa la biashara ya elektroniki yenye trafiki mkuu. Ungechagua ipi na kwa nini?', 'answer': 'Kwa jukwaa la biashara ya elektroniki, hifadhidata ya SQL mara nyingi ni chaguo bora kutokana na hitaji la uthabiti mkuu, shughuli ngumu na data ya uhusiano iliyoundwa kama maagizo, hesabu na watumiaji. Hata hivyo, ikiwa uwezo wa kuongezeka na kubadilika ni muhimu zaidi—kama kwa kushughulikia maoni ya bidhaa au data ya kipindi—suluhisho la NoSQL kama MongoDB au DynamoDB linaweza kuunganishwa pamoja na SQL katika muundo wa lugha nyingi.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Maswali ya tathmini hujaribu uwezo wa kutathmini ubora, usahihi au ufanisi wa kitu, na kufanya hukumu kulingana na vigezo na kuhalalisha maamuzi. Kwa 'Evaluation Text Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Unachunguza mifumo miwili inayowezekana ya mbele kwa programu ya wavuti ya biashara ya kiwango kikubwa: React na Angular. Ni ipi kati ya zifuatazo ndiyo msingi wa busara zaidi wa kuchagua React badala ya Angular?', 'answer': [{'option': 'React haihitaji mkunjo wa kujifunza, kwa hivyo ni bora kila wakati.', 'ans': false}, {'option': 'React inalazimisha muundo madhubuti wa programu, ambao ni bora kwa timu kubwa.', 'ans': false}, {'option': 'Muundo wa React unaotegemea sehemu na mfumo wake mkubwa hutoa kubadilika na urahisi wa kuunganisha na maktaba nyingine.', 'ans': true}, {'option': 'Angular haitunzwi tena, kwa hivyo React ndiyo chaguo pekee linalowezekana.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Maswali ya tathmini hujaribu uwezo wa kutathmini ubora, usahihi au ufanisi wa kitu, na kufanya hukumu kulingana na vigezo na kuhalalisha maamuzi. Kwa 'Evaluation Text Question to Voice Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Timu yako inaamua kati ya kuunda kipengele ndani au kutumia suluhisho la SaaS la nje. Je, ungetathmini mambo gani ili kutoa mapendekezo, na nini kingeongoza uamuzi wako wa mwisho?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Maswali ya kutatua matatizo yanazingatia kutambua, kutambua na kutatua matatizo magumu, na mara nyingi yanahitaji mawazo ya ubunifu au ya kimkakati. Kwa 'Problem-Solving Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Unaunda kipengele cha utafutaji ambacho kinahitaji kurudisha matokeo muhimu haraka, hata wakati seti ya data inakua. Ungekaribia kubuni mfumo huu vipi ili kudumisha utendaji wa haraka?', 'answer': 'Ningeanza kwa kuorodhesha uga unaoweza kutafutwa kwa kutumia injini ya utafutaji wa maandishi kamili kama Elasticsearch au kuunganisha mikakati ya kuorodhesha hifadhidata. Ili kuboresha utendaji, ningeweka kurasa matokeo, ningetumia cache kwa maswali yanayojirudia na ningeona kurekebisha data kwa usomaji wa haraka zaidi. Zaidi ya hayo, ningefuatilia nyakati za swali na kurekebisha kuorodhesha au kugawanya data ikiwa ni lazima kadri seti ya data inavyokua.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Maswali ya kutatua matatizo yanazingatia kutambua, kutambua na kutatua matatizo magumu, na mara nyingi yanahitaji mawazo ya ubunifu au ya kimkakati. Kwa 'Problem-Solving Text Question to MCQ Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Programu yako ya simu inaanguka kwa nasibu kwa watumiaji wengine, lakini huwezi kuiga tatizo kwenye vifaa vyako. Ni hatua gani bora ya kwanza kutambua tatizo?', 'answer': [{'option': 'Omba watumiaji kufuta na kusakinisha tena programu.', 'ans': false}, {'option': 'Tuma sasisho la dharura na mabadiliko madogo.', 'ans': false}, {'option': 'Angalia logi za kuvunjika na zana za uchambuzi kama Firebase Crashlytics ili kutambua mifumo.', 'ans': true}, {'option': 'Zima vipengele hadi kuvunjika kukome.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Maswali ya kutatua matatizo yanazingatia kutambua, kutambua na kutatua matatizo magumu, na mara nyingi yanahitaji mawazo ya ubunifu au ya kimkakati. Kwa 'Problem-Solving Text Question to Voice Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'Kipengele muhimu katika programu yako ya wavuti kinashindwa kwa wakati tofauti chini ya trafiki mkuu, lakini hakuna makosa yanayoonekana kwenye logi. Ungekaribia kutambua na kutatua tatizo vipi?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

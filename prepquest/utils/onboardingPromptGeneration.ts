@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataKiswahili } from '@/constants/promptEngineering';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
@@ -362,6 +362,29 @@ export const generateOnboardingPrompt = async (params: {
     }
   }
 
+  if (modeStr === 'interview' && language === 'Kiswahili') {
+    prompt += `Ninajiandaa kwa mahojiano ya ${interviewType} kwa jukumu la ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `Kiwango cha uzoefu kwa nafasi hii ni ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `Kampuni ambayo ninajiandaa kwa mahojiano ni ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Mada ambazo ningependa kuzingatia ni ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && language === 'Kiswahili') {
+    prompt += `Ninasoma kwa ${studyMandatoryQuestion1} na kiwango changu cha elimu ni ${studyMandatoryQuestion2}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Mtihani ambao ninajiandaa ni ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Mada ambazo ningependa kuzingatia ni ${studyOptionalQuestion2}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (language === 'English') {
@@ -428,6 +451,12 @@ export const generateOnboardingPrompt = async (params: {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Genera ${numQuestions} carte di tipo '${flashcardType}'.\n`
         prompt += `${promptAndDataItalian[flashcardType as keyof typeof promptAndDataItalian].prompt}\n`
+      }
+    }
+    if (language === 'Kiswahili') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Zalisha kadi ${numQuestions} za aina '${flashcardType}'.\n`
+        prompt += `${promptAndDataKiswahili[flashcardType as keyof typeof promptAndDataKiswahili].prompt}\n`
       }
     }
   }
@@ -561,6 +590,18 @@ export const generateOnboardingPrompt = async (params: {
     prompt += "Genera un array JSON di carte in questo formato: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], dove ogni {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} rappresenta una carta."
   }
 
+  if (language === 'Kiswahili' && modeStr === 'interview') {
+    prompt += "Hakikisha unazalisha maswali na majibu yenye maana, ya kufikirika na yanayowezekana maalum kwa mahojiano yangu na jukumu langu la kazi.\n"
+    prompt += "Zalisha safu ya JSON ya kadi katika umbizo hili: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ambapo kila {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} inawakilisha kadi."
+  }
+
+  if (language === 'Kiswahili' && modeStr === 'study') {
+    prompt += "Hakikisha unazalisha maswali na majibu yenye maana, ya kufikirika na yanayowezekana maalum kwa masomo ninayosoma na kiwango changu cha elimu.\n"
+    prompt += "Mifano niliyotoa kwa maswali na majibu ni MIFANO TU ili kuonyesha mitindo ya maswali kwa aina za maswali, LAZIMA UZALISHE maswali na majibu ambayo yanahusiana MOJA KWA MOJA na masomo ninayosoma na kiwango changu cha elimu.\n"
+    prompt += "Ni muhimu sana kwamba usitoke kwenye masomo ninayosoma.\n"
+    prompt += "Zalisha safu ya JSON ya kadi katika umbizo hili: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ambapo kila {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} inawakilisha kadi."
+  }
+
   return prompt;
 };
 
@@ -573,7 +614,7 @@ export const generateOnboardingPrompts = async (params: OnboardingPromptParams):
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian') ? responses.language : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian' || responses.language === 'Kiswahili') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];
@@ -652,7 +693,7 @@ export const generateOnboardingPromptsWithFormFields = async (params: Onboarding
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian') ? responses.language : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian' || responses.language === 'Kiswahili') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];

@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataKiswahili } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface GenAIPromptParams {
@@ -46,7 +46,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
   // Build mode-specific prompt sections
   const modeStr = Array.isArray(mode) ? mode[0] : mode;
   // Default to English for languages not yet supported in prompts
-  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German' || language === 'Spanish' || language === 'French' || language === 'Italian') ? language : 'English';
+  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German' || language === 'Spanish' || language === 'French' || language === 'Italian' || language === 'Kiswahili') ? language : 'English';
   if (modeStr === 'interview' && effectiveLanguage === 'English') {
     prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
     if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
@@ -333,6 +333,32 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
+  if (modeStr === 'interview' && effectiveLanguage === 'Kiswahili') {
+    prompt += `Ninajiandaa kwa mahojiano ya ${interviewType} kwa jukumu la ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `Kampuni ambayo ninajiandaa kwa mahojiano ni ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `Kiwango cha uzoefu kwa nafasi hii ni ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Mada ambazo ningependa kuzingatia ni ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && effectiveLanguage === 'Kiswahili') {
+    prompt += `Ninasoma kwa ${studyMandatoryQuestion2} na kiwango changu cha elimu ni ${studyMandatoryQuestion1}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Mada ambazo ningependa kujifunza ni ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Mada ndogo ambazo ningependa kuzingatia ni ${studyOptionalQuestion2}.\n`
+    }
+    if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+      prompt += `Mtihani ambao ninajiandaa ni ${studyOptionalQuestion3}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (effectiveLanguage === 'English') {
@@ -399,6 +425,12 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Genera ${numQuestions} carte di tipo '${flashcardType}'.\n`
         prompt += `${promptAndDataItalian[flashcardType as keyof typeof promptAndDataItalian].prompt}\n`
+      }
+    }
+    if (effectiveLanguage === 'Kiswahili') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Zalisha kadi ${numQuestions} za aina '${flashcardType}'.\n`
+        prompt += `${promptAndDataKiswahili[flashcardType as keyof typeof promptAndDataKiswahili].prompt}\n`
       }
     }
   }
@@ -530,6 +562,18 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     prompt += "Gli esempi che ho fornito per le domande e le risposte sono SOLO ESEMPI per dimostrare gli stili di domande per i tipi di domande, DEVI SOLO GENERARE domande e risposte che sono DIRETTAMENTE CORRELATE alle materie che sto studiando e al mio livello di istruzione.\n"
     prompt += "È estremamente cruciale che non ti discosti dalle materie che sto studiando.\n"
     prompt += "Genera un array JSON di carte in questo formato: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], dove ogni {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} rappresenta una carta."
+  }
+
+  if (effectiveLanguage === 'Kiswahili' && modeStr === 'interview') {
+    prompt += "Hakikisha unazalisha maswali na majibu yenye maana, ya kufikirika na yanayowezekana maalum kwa mahojiano yangu na jukumu langu la kazi.\n"
+    prompt += "Zalisha safu ya JSON ya kadi katika umbizo hili: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ambapo kila {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} inawakilisha kadi."
+  }
+
+  if (effectiveLanguage === 'Kiswahili' && modeStr === 'study') {
+    prompt += "Hakikisha unazalisha maswali na majibu yenye maana, ya kufikirika na yanayowezekana maalum kwa masomo ninayosoma na kiwango changu cha elimu.\n"
+    prompt += "Mifano niliyotoa kwa maswali na majibu ni MIFANO TU ili kuonyesha mitindo ya maswali kwa aina za maswali, LAZIMA UZALISHE maswali na majibu ambayo yanahusiana MOJA KWA MOJA na masomo ninayosoma na kiwango changu cha elimu.\n"
+    prompt += "Ni muhimu sana kwamba usitoke kwenye masomo ninayosoma.\n"
+    prompt += "Zalisha safu ya JSON ya kadi katika umbizo hili: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ambapo kila {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} inawakilisha kadi."
   }
 
   return prompt;

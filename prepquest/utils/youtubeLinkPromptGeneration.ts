@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -82,6 +82,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'German') {
     prompt += `Ich studiere für ${studyMandatoryQuestion2} und mein Bildungsniveau ist ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Spanish') {
+    prompt += `Me estoy preparando para una entrevista ${interviewType} para el rol de ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Spanish') {
+    prompt += `Estoy estudiando para ${studyMandatoryQuestion2} y mi nivel educativo es ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
@@ -100,6 +106,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Hier is aanvullende informatie en context van een YouTube-videotranscript voor mijn voorbereiding: ${transcript}\n`;
   } else if (language === 'German') {
     prompt += `Hier sind zusätzliche Informationen und Kontext aus einem YouTube-Videotranskript für meine Vorbereitung: ${transcript}\n`;
+  } else if (language === 'Spanish') {
+    prompt += `Aquí hay información adicional y contexto de una transcripción de video de YouTube para mi preparación: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -151,6 +159,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Generieren Sie ${numQuestions} Karteikarten vom Typ '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataGerman[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Spanish') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Genera ${numQuestions} tarjetas de tipo '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataSpanish[flashcardType].prompt}\n`;
       }
     }
   }
@@ -265,6 +279,21 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Die Beispiele, die ich für die Fragen und Antworten gegeben habe, sind NUR BEISPIELE, um die Fragestile für die Fragetypen zu demonstrieren, SIE MÜSSEN NUR Fragen und Antworten generieren, die DIREKT MIT den Fächern, die ich studiere, und meinem Bildungsniveau VERBUNDEN sind.\n';
     prompt += 'Es ist äußerst wichtig, dass Sie nicht von den Fächern abweichen, die ich studiere.\n';
     prompt += 'Generieren Sie ein JSON-Array von Karteikarten in diesem Format: [{"flashcardType": <>, "question": <>, "answer": <>}], wobei jede {"flashcardType": <>, "question": <>, "answer": <>} eine Karteikarte darstellt.';
+  }
+  if (language === 'Spanish' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Asegúrate de generar preguntas y respuestas significativas, reflexivas y probables específicas para mi entrevista y para mi rol de trabajo.\n';
+    prompt += 'Genera un array JSON de tarjetas en este formato: [{"flashcardType": <>, "question": <>, "answer": <>}], donde cada {"flashcardType": <>, "question": <>, "answer": <>} representa una tarjeta.';
+  }
+  if (language === 'Spanish' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Asegúrate de generar preguntas y respuestas significativas, reflexivas y probables específicas para mi entrevista y para mi rol de trabajo.\n';
+    prompt += 'Sin embargo, es EXTREMADAMENTE CRUCIAL QUE NO TE DESVÍES de la información y el contexto que he proporcionado de la transcripción del video de YouTube. MANTENTE SOLO EN EL CONTENIDO DE LA TRANSCRIPCIÓN. ';
+    prompt += 'Genera un array JSON de tarjetas en este formato: [{"flashcardType": <>, "question": <>, "answer": <>}], donde cada {"flashcardType": <>, "question": <>, "answer": <>} representa una tarjeta.';
+  }
+  if (language === 'Spanish' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Asegúrate de generar preguntas y respuestas significativas, reflexivas y probables específicas para las materias que estoy estudiando y mi nivel educativo.\n';
+    prompt += 'Los ejemplos que he dado para las preguntas y respuestas son SOLO EJEMPLOS para demostrar los estilos de preguntas para los tipos de preguntas, DEBES SOLO GENERAR preguntas y respuestas que estén DIRECTAMENTE RELACIONADAS con las materias que estoy estudiando y mi nivel educativo.\n';
+    prompt += 'Es extremadamente crucial que no te desvíes de las materias que estoy estudiando.\n';
+    prompt += 'Genera un array JSON de tarjetas en este formato: [{"flashcardType": <>, "question": <>, "answer": <>}], donde cada {"flashcardType": <>, "question": <>, "answer": <>} representa una tarjeta.';
   }
 
   return prompt;

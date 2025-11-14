@@ -1247,6 +1247,162 @@ export const promptAndDataGerman = {
     }
 }
 
+export const promptAndDataSpanish = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Las preguntas de recuerdo prueban la memoria pidiendo hechos específicos, definiciones o información. Para 'Recall Text Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Recall Text Question to Text Answer', 'question': '¿Cuál es el propósito principal de un servidor DNS (Sistema de Nombres de Dominio)?', 'answer': 'Un servidor DNS traduce nombres de dominio legibles por humanos (como www.example.com) en direcciones IP que las computadoras usan para identificarse entre sí en la red.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Las preguntas de recuerdo prueban la memoria pidiendo hechos específicos, definiciones o información. Para 'Recall Text Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': '¿Qué código de estado HTTP indica que una solicitud ha tenido éxito?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Las preguntas de recuerdo prueban la memoria pidiendo hechos específicos, definiciones o información. Para 'Recall Cloze Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'En JavaScript, la palabra clave <blank> se usa para declarar una variable con alcance de bloque y prevenir la reasignación.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Las preguntas de recuerdo prueban la memoria pidiendo hechos específicos, definiciones o información. Para 'Recall Cloze Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'En SQL, el comando <blank> se usa para eliminar todos los registros de una tabla sin registrar eliminaciones de filas individuales.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Las preguntas de comprensión prueban el entendimiento pidiendo explicaciones, interpretaciones, resúmenes o comparaciones. Para 'Comprehension Text Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Explique la diferencia entre una copia superficial y una copia profunda en programación.', 'answer': 'Una copia superficial copia solo las referencias de nivel superior de un objeto, lo que significa que los objetos anidados aún se comparten. Una copia profunda copia recursivamente todos los objetos anidados, creando duplicados completamente independientes de la estructura original.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Las preguntas de comprensión prueban el entendimiento pidiendo explicaciones, interpretaciones, resúmenes o comparaciones. Para 'Comprehension Text Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': '¿Qué explica mejor la diferencia entre HTTP y HTTPS?', 'answer': [{'option': 'HTTPS usa el puerto 80, mientras que HTTP usa el puerto 443.', 'ans': false}, {'option': 'HTTP encripta datos durante la transmisión, mientras que HTTPS no lo hace.', 'ans': false}, {'option': 'No hay diferencia real entre HTTP y HTTPS.', 'ans': false}, {'option': 'HTTPS agrega una capa de encriptación mediante SSL/TLS para asegurar la transmisión de datos, a diferencia de HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Las preguntas de comprensión prueban el entendimiento pidiendo explicaciones, interpretaciones, resúmenes o comparaciones. Para 'Comprehension Text Question to Voice Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': '¿Cómo mejora un balanceador de carga la confiabilidad y escalabilidad de una aplicación web?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Las preguntas de aplicación prueban la capacidad de aplicar conocimiento a situaciones prácticas, nuevas o del mundo real. Para 'Application Text Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Necesita almacenar datos de sesión de usuario temporalmente en un sistema backend. ¿Qué estructura de datos o método de almacenamiento usaría y por qué?', 'answer': 'Un almacén clave-valor en memoria como Redis es una opción adecuada porque permite acceso rápido de lectura/escritura y soporta expiración automática de datos de sesión, lo cual es ideal para la gestión temporal de sesiones.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Las preguntas de aplicación prueban la capacidad de aplicar conocimiento a situaciones prácticas, nuevas o del mundo real. Para 'Application Text Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Está diseñando un formulario web que recopila información sensible del usuario. ¿Cuál de las siguientes acciones es más apropiada para mejorar la seguridad durante la transmisión de datos?', 'answer': [{'option': 'Enviar el formulario sobre HTTPS usando una solicitud POST.', 'ans': true}, {'option': 'Usar una solicitud GET para enviar el formulario para mayor velocidad.', 'ans': false}, {'option': 'Minificar el HTML para hacer el código fuente más difícil de leer.', 'ans': false}, {'option': 'Almacenar los datos en cookies para acceso rápido.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Las preguntas de aplicación prueban la capacidad de aplicar conocimiento a situaciones prácticas, nuevas o del mundo real. Para 'Application Text Question to Voice Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Se le asigna la tarea de mejorar el rendimiento de una API REST que está experimentando alta latencia bajo carga. ¿Qué pasos prácticos tomaría para identificar y abordar el problema?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Las preguntas de análisis prueban la capacidad de descomponer problemas complejos en partes más pequeñas y examinar relaciones. Para 'Analysis Text Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'Las pruebas A/B muestran que una nueva página de pago lleva a menos compras completadas, aunque los usuarios llegan al paso de pago más rápido. ¿Cómo analizaría este resultado?', 'answer': 'Examinaría el recorrido del usuario en detalle, enfocándome en dónde los usuarios abandonan en el nuevo flujo. Analizaría grabaciones de sesiones, datos de embudo y tasas de abandono de formularios. Es posible que el flujo más rápido introduzca problemas de usabilidad, confusión o problemas de confianza. Compararía tasas de error, comportamiento de validación de campos y tiempos de carga. También consideraría comentarios cualitativos o encuestas para entender la percepción del usuario.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Las preguntas de análisis prueban la capacidad de descomponer problemas complejos en partes más pequeñas y examinar relaciones. Para 'Analysis Text Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Su equipo está investigando por qué una función recién implementada ha causado que los tiempos de carga de página aumenten significativamente. ¿Cuál es el paso más lógico siguiente en el proceso de análisis?', 'answer': [{'option': 'Revertir la implementación inmediatamente.', 'ans': false}, {'option': 'Perfilar el rendimiento del frontend y backend para localizar cuellos de botella específicos.', 'ans': true}, {'option': 'Aumentar la capacidad del servidor y observar los resultados.', 'ans': false}, {'option': 'Cambiar a un framework frontend diferente.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Las preguntas de análisis prueban la capacidad de descomponer problemas complejos en partes más pequeñas y examinar relaciones. Para 'Analysis Text Question to Voice Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Está notando timeouts frecuentes cuando los usuarios acceden a su aplicación durante las horas pico. ¿Cómo procedería para identificar la causa raíz del problema?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Las preguntas de síntesis prueban la capacidad de combinar o integrar diferentes piezas de información para crear un todo nuevo y coherente, o proponer soluciones. Para 'Synthesis Text Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Diseñe un sistema de notificaciones escalable que pueda enviar correos electrónicos, SMS y notificaciones push a millones de usuarios. ¿Qué componentes clave incluiría y cómo interactuarían?', 'answer': 'Diseñaría el sistema con una cola de mensajes para manejar alto rendimiento, un servicio de notificaciones que procesa mensajes y los envía a través de canales apropiados (correo electrónico, SMS, push). El sistema usaría microservicios para cada tipo de notificación, una base de datos para rastrear el estado de entrega y limitación de velocidad para prevenir sobrecarga. Los balanceadores de carga y grupos de autoescalado asegurarían disponibilidad y escalabilidad.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Las preguntas de síntesis prueban la capacidad de combinar o integrar diferentes piezas de información para crear un todo nuevo y coherente, o proponer soluciones. Para 'Synthesis Text Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Necesita diseñar un sistema que agregue datos en tiempo real de múltiples sensores y proporcione paneles de análisis. ¿Qué decisión de diseño equilibra mejor escalabilidad, confiabilidad y latencia?', 'answer': [{'option': 'Usar una base de datos centralizada donde todos los datos del sensor se escriban sincrónicamente.', 'ans': false}, {'option': 'Almacenar datos localmente en cada sensor y cargarlos en lotes al final del día.', 'ans': false}, {'option': 'Usar procesamiento del lado del cliente para todos los análisis para reducir la carga del servidor.', 'ans': false}, {'option': 'Implementar colas de mensajes distribuidas con microservicios que procesen datos de forma asíncrona.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Las preguntas de síntesis prueban la capacidad de combinar o integrar diferentes piezas de información para crear un todo nuevo y coherente, o proponer soluciones. Para 'Synthesis Text Question to Voice Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Diseñe un sistema que pueda manejar chat en tiempo real para millones de usuarios, asegurando entrega de mensajes, escalabilidad y consistencia de datos. Describa los componentes clave y cómo interactúan.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Las preguntas de evaluación prueban la capacidad de evaluar la calidad, precisión o efectividad de algo, y hacer juicios basados en criterios y justificar decisiones. Para 'Evaluation Text Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Está eligiendo entre bases de datos SQL y NoSQL para una plataforma de comercio electrónico de alto tráfico. ¿Cuál elegiría y por qué?', 'answer': 'Para una plataforma de comercio electrónico, una base de datos SQL a menudo es la mejor opción debido a la necesidad de consistencia fuerte, transacciones complejas y datos relacionales estructurados como pedidos, inventario y usuarios. Sin embargo, si la escalabilidad y flexibilidad son más importantes—como para manejar reseñas de productos o datos de sesión—una solución NoSQL como MongoDB o DynamoDB podría integrarse junto con SQL en una arquitectura políglota.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Las preguntas de evaluación prueban la capacidad de evaluar la calidad, precisión o efectividad de algo, y hacer juicios basados en criterios y justificar decisiones. Para 'Evaluation Text Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Está evaluando dos posibles frameworks frontend para una aplicación web empresarial a gran escala: React y Angular. ¿Cuál de las siguientes es la base más razonable para elegir React sobre Angular?', 'answer': [{'option': 'React no requiere curva de aprendizaje, por lo que siempre es mejor.', 'ans': false}, {'option': 'React impone una estructura de aplicación estricta, lo cual es ideal para equipos grandes.', 'ans': false}, {'option': 'La arquitectura basada en componentes de React y su gran ecosistema proporcionan flexibilidad y fácil integración con otras bibliotecas.', 'ans': true}, {'option': 'Angular ya no se mantiene, por lo que React es la única opción viable.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Las preguntas de evaluación prueban la capacidad de evaluar la calidad, precisión o efectividad de algo, y hacer juicios basados en criterios y justificar decisiones. Para 'Evaluation Text Question to Voice Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Su equipo está decidiendo entre construir una función internamente o usar una solución SaaS de terceros. ¿Qué factores evaluaría para hacer una recomendación, y qué guiaría su decisión final?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Las preguntas de resolución de problemas se enfocan en identificar, diagnosticar y resolver problemas complejos, y a menudo requieren pensamiento creativo o estratégico. Para 'Problem-Solving Text Question to Text Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Está construyendo una función de búsqueda que necesita devolver resultados relevantes rápidamente, incluso cuando el conjunto de datos crece. ¿Cómo abordaría el diseño de este sistema para mantener un rendimiento rápido?', 'answer': 'Comenzaría indexando los campos buscables usando un motor de búsqueda de texto completo como Elasticsearch o integrando estrategias de indexación de base de datos. Para mejorar el rendimiento, paginaría resultados, usaría caché para consultas frecuentes y consideraría desnormalizar datos para lecturas más rápidas. Además, monitorearía los tiempos de consulta y ajustaría la indexación o fragmentación de datos según sea necesario a medida que el conjunto de datos crece.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Las preguntas de resolución de problemas se enfocan en identificar, diagnosticar y resolver problemas complejos, y a menudo requieren pensamiento creativo o estratégico. Para 'Problem-Solving Text Question to MCQ Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Su aplicación móvil se está cerrando aleatoriamente para algunos usuarios, pero no puede reproducir el problema en sus dispositivos. ¿Cuál es el mejor primer paso para diagnosticar el problema?', 'answer': [{'option': 'Pedir a los usuarios que eliminen y reinstalen la aplicación.', 'ans': false}, {'option': 'Enviar una actualización de emergencia con cambios mínimos.', 'ans': false}, {'option': 'Revisar registros de cierre y herramientas de análisis como Firebase Crashlytics para identificar patrones.', 'ans': true}, {'option': 'Deshabilitar funciones hasta que los cierres se detengan.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Las preguntas de resolución de problemas se enfocan en identificar, diagnosticar y resolver problemas complejos, y a menudo requieren pensamiento creativo o estratégico. Para 'Problem-Solving Text Question to Voice Answer', proporcione su salida en formato JSON así: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'Una función crítica en su aplicación web falla intermitentemente bajo alto tráfico, pero no aparecen errores en los registros. ¿Cómo procedería para identificar y resolver el problema?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

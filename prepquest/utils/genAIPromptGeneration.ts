@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface GenAIPromptParams {
@@ -46,7 +46,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
   // Build mode-specific prompt sections
   const modeStr = Array.isArray(mode) ? mode[0] : mode;
   // Default to English for languages not yet supported in prompts
-  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German') ? language : 'English';
+  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German' || language === 'Spanish') ? language : 'English';
   if (modeStr === 'interview' && effectiveLanguage === 'English') {
     prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
     if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
@@ -255,6 +255,32 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
+  if (modeStr === 'interview' && effectiveLanguage === 'Spanish') {
+    prompt += `Me estoy preparando para una entrevista ${interviewType} para el rol de ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `La empresa para la que me estoy preparando para la entrevista es ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `El nivel de experiencia para esta posición es ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Los temas en los que me gustaría enfocarme son ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && effectiveLanguage === 'Spanish') {
+    prompt += `Estoy estudiando para ${studyMandatoryQuestion2} y mi nivel educativo es ${studyMandatoryQuestion1}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Los temas que me gustaría estudiar son ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Los subtemas en los que me gustaría enfocarme son ${studyOptionalQuestion2}.\n`
+    }
+    if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+      prompt += `El examen para el que me estoy preparando es ${studyOptionalQuestion3}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (effectiveLanguage === 'English') {
@@ -303,6 +329,12 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Generieren Sie ${numQuestions} Karteikarten vom Typ '${flashcardType}'.\n`
         prompt += `${promptAndDataGerman[flashcardType as keyof typeof promptAndDataGerman].prompt}\n`
+      }
+    }
+    if (effectiveLanguage === 'Spanish') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Genera ${numQuestions} tarjetas de tipo '${flashcardType}'.\n`
+        prompt += `${promptAndDataSpanish[flashcardType as keyof typeof promptAndDataSpanish].prompt}\n`
       }
     }
   }
@@ -398,6 +430,18 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     prompt += "Die Beispiele, die ich für die Fragen und Antworten gegeben habe, sind NUR BEISPIELE, um die Fragestile für die Fragetypen zu demonstrieren, SIE MÜSSEN NUR Fragen und Antworten generieren, die DIREKT MIT den Fächern, die ich studiere, und meinem Bildungsniveau VERBUNDEN sind.\n"
     prompt += "Es ist äußerst wichtig, dass Sie nicht von den Fächern abweichen, die ich studiere.\n"
     prompt += "Generieren Sie ein JSON-Array von Karteikarten in diesem Format: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], wobei jede {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} eine Karteikarte darstellt."
+  }
+
+  if (effectiveLanguage === 'Spanish' && modeStr === 'interview') {
+    prompt += "Asegúrate de generar preguntas y respuestas significativas, reflexivas y probables específicas para mi entrevista y para mi rol de trabajo.\n"
+    prompt += "Genera un array JSON de tarjetas en este formato: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], donde cada {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} representa una tarjeta."
+  }
+
+  if (effectiveLanguage === 'Spanish' && modeStr === 'study') {
+    prompt += "Asegúrate de generar preguntas y respuestas significativas, reflexivas y probables específicas para las materias que estoy estudiando y mi nivel educativo.\n"
+    prompt += "Los ejemplos que he dado para las preguntas y respuestas son SOLO EJEMPLOS para demostrar los estilos de preguntas para los tipos de preguntas, DEBES SOLO GENERAR preguntas y respuestas que estén DIRECTAMENTE RELACIONADAS con las materias que estoy estudiando y mi nivel educativo.\n"
+    prompt += "Es extremadamente crucial que no te desvíes de las materias que estoy estudiando.\n"
+    prompt += "Genera un array JSON de tarjetas en este formato: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], donde cada {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} representa una tarjeta."
   }
 
   return prompt;

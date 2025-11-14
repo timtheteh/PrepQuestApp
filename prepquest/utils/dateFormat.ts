@@ -70,7 +70,7 @@ export const formatDate = (dateString: string, language: string): string => {
       const day = date.getDate();
       const year = date.getFullYear();
       return `${day} ${month} ${year}`;
-    } else if (language === 'Kiswahili') {
+    } else if (language === 'Swahili') {
       const months = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ago', 'Sep', 'Okt', 'Nov', 'Des'];
       const month = months[date.getMonth()];
       const day = date.getDate();
@@ -92,7 +92,7 @@ export const formatDate = (dateString: string, language: string): string => {
 /**
  * Formats a date string without including the year component.
  * @param dateString - The date string to format
- * @param language - The current language ('Chinese', 'English', 'Afrikaans', 'Indonesian', 'Malay', 'Czech', 'Dutch', 'German', 'Spanish', 'French', 'Italian', or 'Kiswahili')
+ * @param language - The current language ('Chinese', 'English', 'Afrikaans', 'Indonesian', 'Malay', 'Czech', 'Dutch', 'German', 'Spanish', 'French', 'Italian', or 'Swahili')
  * @returns Formatted date string without year
  */
 export const formatDateWithoutYear = (dateString: string, language: string): string => {
@@ -147,7 +147,7 @@ export const formatDateWithoutYear = (dateString: string, language: string): str
       const month = months[date.getMonth()];
       const day = date.getDate();
       return `${day} ${month}`;
-    } else if (language === 'Kiswahili') {
+    } else if (language === 'Swahili') {
       const months = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ago', 'Sep', 'Okt', 'Nov', 'Des'];
       const month = months[date.getMonth()];
       const day = date.getDate();

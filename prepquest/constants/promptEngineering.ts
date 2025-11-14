@@ -1715,7 +1715,7 @@ export const promptAndDataItalian = {
     }
 }
 
-export const promptAndDataKiswahili = {
+export const promptAndDataSwahili = {
     // Recall, Text to Text
     "Recall Text Question to Text Answer":
     {"prompt": "Maswali ya kukumbuka hujaribu kumbukumbu kwa kuuliza ukweli maalum, ufafanuzi au taarifa. Kwa 'Recall Text Question to Text Answer', toa matokeo yako katika umbizo la JSON kama hii: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Ni kusudi gani kuu la seva ya DNS (Domain Name System)?', 'answer': 'Seva ya DNS hubadilisha majina ya kikoa yanayoweza kusomwa na binadamu (kama www.example.com) kuwa anwani za IP ambazo kompyuta hutumia kutambua kila mmoja kwenye mtandao.'}",

@@ -14210,7 +14210,7 @@ export const strings: Record<string, any> = {
       view: 'Visualizza',
     },
   },
-  Kiswahili: {
+  Swahili: {
     // Splash screen strings
     splash: {
       loading: 'Inapakia...',

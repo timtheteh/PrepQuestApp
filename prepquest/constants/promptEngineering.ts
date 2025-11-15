@@ -2807,6 +2807,162 @@ export const promptAndDataFinnish = {
     }
 }
 
+export const promptAndDataSwedish = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Återkallningsfrågor testar minnet genom att fråga efter specifika fakta, definitioner eller information. För 'Recall Text Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Vad är det primära syftet med en DNS (Domain Name System)-server?', 'answer': 'En DNS-server översätter mänskligt läsbara domännamn (som www.example.com) till IP-adresser som datorer använder för att identifiera varandra på nätverket.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Återkallningsfrågor testar minnet genom att fråga efter specifika fakta, definitioner eller information. För 'Recall Text Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Vilken HTTP-statuskod indikerar att en begäran har lyckats?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Återkallningsfrågor testar minnet genom att fråga efter specifika fakta, definitioner eller information. För 'Recall Cloze Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'I JavaScript används nyckelordet <blank> för att deklarera en variabel med blockscope och förhindra omtilldelning.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Återkallningsfrågor testar minnet genom att fråga efter specifika fakta, definitioner eller information. För 'Recall Cloze Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'I SQL används kommandot <blank> för att ta bort alla poster från en tabell utan att logga individuella radborttagningar.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Förståelsefrågor testar förståelse genom att fråga efter förklaringar, tolkningar, sammanfattningar eller jämförelser. För 'Comprehension Text Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Förklara skillnaden mellan en ytlig kopia och en djup kopia i programmering.', 'answer': 'En ytlig kopia kopierar endast de översta referenserna i ett objekt, vilket betyder att kapslade objekt fortfarande delas. En djup kopia kopierar rekursivt alla kapslade objekt och skapar helt oberoende kopior av den ursprungliga strukturen.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Förståelsefrågor testar förståelse genom att fråga efter förklaringar, tolkningar, sammanfattningar eller jämförelser. För 'Comprehension Text Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Vad förklarar bäst skillnaden mellan HTTP och HTTPS?', 'answer': [{'option': 'HTTPS använder port 80, medan HTTP använder port 443.', 'ans': false}, {'option': 'HTTP krypterar data under överföring, medan HTTPS inte gör det.', 'ans': false}, {'option': 'Det finns ingen verklig skillnad mellan HTTP och HTTPS.', 'ans': false}, {'option': 'HTTPS lägger till ett krypteringslager via SSL/TLS för att säkra dataöverföring, till skillnad från HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Förståelsefrågor testar förståelse genom att fråga efter förklaringar, tolkningar, sammanfattningar eller jämförelser. För 'Comprehension Text Question to Voice Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Hur förbättrar en lastbalanserare tillförlitligheten och skalbarheten hos en webbapplikation?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Tillämpningsfrågor testar förmågan att tillämpa kunskap på praktiska, nya eller verkliga situationer. För 'Application Text Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Du behöver lagra användarsessionsdata tillfälligt i ett backend-system. Vilken datastruktur eller lagringsmetod skulle du använda och varför?', 'answer': 'En minnesbaserad nyckel-värde-lagring som Redis är ett lämpligt val eftersom den möjliggör snabb läs-/skrivåtkomst och stöder automatisk utgång av sessionsdata, vilket är idealiskt för tillfällig sessionshantering.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Tillämpningsfrågor testar förmågan att tillämpa kunskap på praktiska, nya eller verkliga situationer. För 'Application Text Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Du designar ett webbformulär som samlar in känslig användarinformation. Vilken av följande åtgärder är mest lämplig för att förbättra säkerheten under dataöverföring?', 'answer': [{'option': 'Skicka formuläret över HTTPS med en POST-begäran.', 'ans': true}, {'option': 'Använd en GET-begäran för att skicka formuläret för bättre hastighet.', 'ans': false}, {'option': 'Minifiera HTML:en för att göra källkoden svårare att läsa.', 'ans': false}, {'option': 'Lagra data i cookies för snabb åtkomst.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Tillämpningsfrågor testar förmågan att tillämpa kunskap på praktiska, nya eller verkliga situationer. För 'Application Text Question to Voice Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Du har fått i uppdrag att förbättra prestandan hos ett REST API som upplever hög latens under belastning. Vilka praktiska steg skulle du ta för att identifiera och åtgärda problemet?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Analysfrågor testar förmågan att bryta ner komplexa problem i mindre delar och undersöka relationer. För 'Analysis Text Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'A/B-testning visar att en ny kassasida leder till färre slutförda köp, även om användare når betalningssteget snabbare. Hur skulle du analysera detta resultat?', 'answer': 'Jag skulle undersöka användarresan i detalj, med fokus på var användare hoppar av i det nya flödet. Jag skulle analysera sessionsinspelningar, trattdata och formulärövergivningsfrekvenser. Det är möjligt att det snabbare flödet introducerar användbarhetsproblem, förvirring eller förtroendefrågor. Jag skulle jämföra felfrekvenser, fältvalideringsbeteende och laddningstider. Jag skulle också titta på kvalitativ feedback eller enkäter för att förstå användaruppfattningen.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Analysfrågor testar förmågan att bryta ner komplexa problem i mindre delar och undersöka relationer. För 'Analysis Text Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Ditt team undersöker varför en nyligen distribuerad funktion har orsakat att sidladdningstiderna har ökat avsevärt. Vad är det mest logiska nästa steget i analysprocessen?', 'answer': [{'option': 'Rulla tillbaka distributionen omedelbart.', 'ans': false}, {'option': 'Profilera frontend- och backend-prestanda för att lokalisera specifika flaskhalsar.', 'ans': true}, {'option': 'Öka serverkapaciteten och observera resultaten.', 'ans': false}, {'option': 'Byt till ett annat frontend-ramverk.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Analysfrågor testar förmågan att bryta ner komplexa problem i mindre delar och undersöka relationer. För 'Analysis Text Question to Voice Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Du märker frekventa timeout-fel när användare kommer åt din applikation under rusningstider. Hur skulle du gå tillväga för att identifiera rotorsaken till problemet?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Syntesfrågor testar förmågan att kombinera eller integrera olika informationsdelar för att skapa en ny, sammanhängande helhet eller föreslå lösningar. För 'Synthesis Text Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Designa ett skalbart notifikationssystem som kan skicka e-post, SMS och push-notifikationer till miljontals användare. Vilka nyckelkomponenter skulle du inkludera och hur skulle de interagera?', 'answer': 'Jag skulle designa systemet med en meddelandekö för att hantera hög genomströmning, en notifikationstjänst som bearbetar meddelanden och skickar dem via lämpliga kanaler (e-post, SMS, push). Systemet skulle använda mikrotjänster för varje notifikationstyp, en databas för att spåra leveransstatus och hastighetsbegränsning för att förhindra överbelastning. Lastbalanserare och autoskalningsgrupper skulle säkerställa tillgänglighet och skalbarhet.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Syntesfrågor testar förmågan att kombinera eller integrera olika informationsdelar för att skapa en ny, sammanhängande helhet eller föreslå lösningar. För 'Synthesis Text Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Du behöver designa ett system som aggregerar realtidsdata från flera sensorer och tillhandahåller analysinstrumentpaneler. Vilket designval balanserar bäst skalbarhet, tillförlitlighet och latens?', 'answer': [{'option': 'Använd en centraliserad databas där all sensordata skrivs synkront.', 'ans': false}, {'option': 'Lagra data lokalt på varje sensor och batch-uppladda i slutet av dagen.', 'ans': false}, {'option': 'Använd klientsidig bearbetning för all analys för att minska serverbelastningen.', 'ans': false}, {'option': 'Implementera distribuerade meddelandeköer med mikrotjänster som bearbetar data asynkront.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Syntesfrågor testar förmågan att kombinera eller integrera olika informationsdelar för att skapa en ny, sammanhängande helhet eller föreslå lösningar. För 'Synthesis Text Question to Voice Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Designa ett system som kan hantera realtidschatt för miljontals användare, säkerställa meddelandeleverans, skalbarhet och datakonsistens. Beskriv nyckelkomponenterna och hur de interagerar.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Utvärderingsfrågor testar förmågan att bedöma kvalitet, noggrannhet eller effektivitet av något, och fatta bedömningar baserat på kriterier och motivera beslut. För 'Evaluation Text Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Du väljer mellan SQL- och NoSQL-databaser för en högbelastad e-handelsplattform. Vilken skulle du välja och varför?', 'answer': 'För en e-handelsplattform är en SQL-databas ofta ett bättre val på grund av behovet av stark konsistens, komplexa transaktioner och strukturerad relationsdata som beställningar, lager och användare. Men om skalbarhet och flexibilitet är viktigare—som för att hantera produktrecensioner eller sessionsdata—kan en NoSQL-lösning som MongoDB eller DynamoDB integreras tillsammans med SQL i en polyglott arkitektur.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Utvärderingsfrågor testar förmågan att bedöma kvalitet, noggrannhet eller effektivitet av något, och fatta bedömningar baserat på kriterier och motivera beslut. För 'Evaluation Text Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Du granskar två möjliga frontend-ramverk för en storskalig företagswebbapp: React och Angular. Vilket av följande är den mest rimliga grunden för att välja React framför Angular?', 'answer': [{'option': 'React kräver ingen inlärningskurva, så det är alltid bättre.', 'ans': false}, {'option': 'React tvingar fram en strikt applikationsstruktur, vilket är idealiskt för stora team.', 'ans': false}, {'option': 'Reacts komponentbaserade arkitektur och stora ekosystem ger flexibilitet och enkel integration med andra bibliotek.', 'ans': true}, {'option': 'Angular underhålls inte längre, så React är det enda genomförbara alternativet.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Utvärderingsfrågor testar förmågan att bedöma kvalitet, noggrannhet eller effektivitet av något, och fatta bedömningar baserat på kriterier och motivera beslut. För 'Evaluation Text Question to Voice Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Ditt team bestämmer mellan att bygga en funktion internt eller använda en tredjeparts SaaS-lösning. Vilka faktorer skulle du utvärdera för att göra en rekommendation, och vad skulle vägleda ditt slutliga beslut?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Problemlösningsfrågor fokuserar på att identifiera, diagnostisera och lösa komplexa problem, och kräver ofta kreativt eller strategiskt tänkande. För 'Problem-Solving Text Question to Text Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Du bygger en sökfunktion som behöver returnera relevanta resultat snabbt, även när datasetet växer. Hur skulle du närma dig att designa detta system för att bibehålla snabb prestanda?', 'answer': 'Jag skulle börja med att indexera de sökbara fälten med en fulltextsökmotor som Elasticsearch eller integrera databasindexeringsstrategier. För att förbättra prestandan skulle jag paginera resultat, använda cachning för frekventa frågor och överväga att denormalisera data för snabbare läsningar. Dessutom skulle jag övervaka frågetider och justera indexering eller shard-data vid behov när datasetet växer.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Problemlösningsfrågor fokuserar på att identifiera, diagnostisera och lösa komplexa problem, och kräver ofta kreativt eller strategiskt tänkande. För 'Problem-Solving Text Question to MCQ Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Din mobilapp kraschar slumpmässigt för vissa användare, men du kan inte reproducera problemet på dina enheter. Vad är det bästa första steget för att diagnostisera problemet?', 'answer': [{'option': 'Be användare att radera och installera om appen.', 'ans': false}, {'option': 'Pusha en nöduppdatering med minimala ändringar.', 'ans': false}, {'option': 'Kontrollera kraschloggar och analysverktyg som Firebase Crashlytics för att identifiera mönster.', 'ans': true}, {'option': 'Inaktivera funktioner tills krascharna slutar.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Problemlösningsfrågor fokuserar på att identifiera, diagnostisera och lösa komplexa problem, och kräver ofta kreativt eller strategiskt tänkande. För 'Problem-Solving Text Question to Voice Answer', ge ditt resultat i JSON-format så här: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'En kritisk funktion i din webbapplikation misslyckas intermitterande under hög trafik, men inga fel visas i loggarna. Hur skulle du närma dig att identifiera och lösa problemet?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -120,6 +120,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'Norwegian') {
     prompt += `Jeg studerer for ${studyMandatoryQuestion2} og min utdanningsnivå er ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Polish') {
+    prompt += `Przygotowuję się do rozmowy ${interviewType} na stanowisko ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Polish') {
+    prompt += `Uczę się ${studyMandatoryQuestion2} i mój poziom edukacji to ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
@@ -150,6 +156,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Itt vannak további információk és kontextus egy YouTube videó átiratából a felkészülésemhez: ${transcript}\n`;
   } else if (language === 'Norwegian') {
     prompt += `Her er tilleggsinformasjon og kontekst fra en YouTube-videotranskript for min forberedelse: ${transcript}\n`;
+  } else if (language === 'Polish') {
+    prompt += `Oto dodatkowe informacje i kontekst z transkrypcji wideo YouTube dla mojego przygotowania: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -237,6 +245,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Generer ${numQuestions} kort av typen '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataNorwegian[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Polish') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Wygeneruj ${numQuestions} fiszek typu '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataPolish[flashcardType].prompt}\n`;
       }
     }
   }
@@ -444,6 +458,22 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Eksemplene jeg har gitt for spørsmålene og svarene er BARE EKSEMPLER for å demonstrere spørsmålsstilene for spørsmålstypene, DU MÅ BARE GENERERE spørsmål og svar som er DIREKTE RELATERT til fagene jeg studerer og min utdanningsnivå.\n';
     prompt += 'Det er ekstremt viktig at du ikke avviker fra fagene jeg studerer.\n';
     prompt += 'Generer en JSON-array av kort i dette formatet: [{"flashcardType": <>, "question": <>, "answer": <>}], hvor hver {"flashcardType": <>, "question": <>, "answer": <>} representerer et kort.';
+  }
+
+  if (language === 'Polish' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Upewnij się, że generujesz znaczące, przemyślane i prawdopodobne pytania i odpowiedzi specyficzne dla mojej rozmowy i mojej roli zawodowej.\n';
+    prompt += 'Wygeneruj tablicę JSON fiszek w tym formacie: [{"flashcardType": <>, "question": <>, "answer": <>}], gdzie każda {"flashcardType": <>, "question": <>, "answer": <>} reprezentuje fiszkę.';
+  }
+  if (language === 'Polish' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Upewnij się, że generujesz znaczące, przemyślane i prawdopodobne pytania i odpowiedzi specyficzne dla mojej rozmowy i mojej roli zawodowej.\n';
+    prompt += 'Jednak NIEZWYKLE WAŻNE JEST, ABYŚ NIE ODCHODZIŁ od informacji i kontekstu, które podałem z transkrypcji wideo YouTube. TRZYMAJ SIĘ TYLKO TREŚCI Z TRANSKRYPCJI. ';
+    prompt += 'Wygeneruj tablicę JSON fiszek w tym formacie: [{"flashcardType": <>, "question": <>, "answer": <>}], gdzie każda {"flashcardType": <>, "question": <>, "answer": <>} reprezentuje fiszkę.';
+  }
+  if (language === 'Polish' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Upewnij się, że generujesz znaczące, przemyślane i prawdopodobne pytania i odpowiedzi specyficzne dla przedmiotów, których się uczę, i mojego poziomu edukacji.\n';
+    prompt += 'Przykłady, które podałem dla pytań i odpowiedzi, są TYLKO PRZYKŁADAMI, aby zademonstrować style pytań dla typów pytań, MUSISZ TYLKO GENEROWAĆ pytania i odpowiedzi, które są BEZPOŚREDNIO ZWIĄZANE z przedmiotami, których się uczę, i moim poziomem edukacji.\n';
+    prompt += 'Niezwykle ważne jest, aby nie odbiegać od przedmiotów, których się uczę.\n';
+    prompt += 'Wygeneruj tablicę JSON fiszek w tym formacie: [{"flashcardType": <>, "question": <>, "answer": <>}], gdzie każda {"flashcardType": <>, "question": <>, "answer": <>} reprezentuje fiszkę.';
   }
 
   return prompt;

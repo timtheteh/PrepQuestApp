@@ -1871,6 +1871,162 @@ export const promptAndDataSwahili = {
     }
 }
 
+export const promptAndDataHungarian = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Az emlékezési kérdések a memóriát tesztelik konkrét tények, definíciók vagy információk kérdezésével. A 'Recall Text Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Mi a DNS (Domain Name System) szerver fő célja?', 'answer': 'A DNS szerver az ember által olvasható domain neveket (mint például www.example.com) IP címekké alakítja, amelyeket a számítógépek a hálózaton egymás azonosítására használnak.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Az emlékezési kérdések a memóriát tesztelik konkrét tények, definíciók vagy információk kérdezésével. A 'Recall Text Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Melyik HTTP státuszkód jelzi, hogy a kérés sikeres volt?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Az emlékezési kérdések a memóriát tesztelik konkrét tények, definíciók vagy információk kérdezésével. A 'Recall Cloze Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'A JavaScript-ben a <blank> kulcsszó használható egy változó blokk hatókörrel való deklarálására és az újrahozzárendelés megakadályozására.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Az emlékezési kérdések a memóriát tesztelik konkrét tények, definíciók vagy információk kérdezésével. A 'Recall Cloze Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'Az SQL-ben a <blank> parancs használható az összes rekord eltávolítására egy táblából az egyedi sor törlések naplózása nélkül.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "A megértési kérdések a megértést tesztelik magyarázatok, értelmezések, összefoglalások vagy összehasonlítások kérdezésével. A 'Comprehension Text Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Magyarázza el a sekély másolat és a mély másolat közötti különbséget a programozásban.', 'answer': 'A sekély másolat csak egy objektum felső szintű referenciáit másolja, ami azt jelenti, hogy a beágyazott objektumok továbbra is megosztottak. A mély másolat rekurzívan másolja az összes beágyazott objektumot, teljesen független másolatokat hozva létre az eredeti struktúrából.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "A megértési kérdések a megértést tesztelik magyarázatok, értelmezések, összefoglalások vagy összehasonlítások kérdezésével. A 'Comprehension Text Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Mi magyarázza legjobban az HTTP és HTTPS közötti különbséget?', 'answer': [{'option': 'Az HTTPS a 80-as portot használja, míg az HTTP a 443-as portot.', 'ans': false}, {'option': 'Az HTTP titkosítja az adatokat az átvitel során, míg az HTTPS nem.', 'ans': false}, {'option': 'Nincs valódi különbség az HTTP és HTTPS között.', 'ans': false}, {'option': 'Az HTTPS SSL/TLS titkosítási réteget ad hozzá az adatátvitel biztonságossá tételéhez, ellentétben az HTTP-vel.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "A megértési kérdések a megértést tesztelik magyarázatok, értelmezések, összefoglalások vagy összehasonlítások kérdezésével. A 'Comprehension Text Question to Voice Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Hogyan javítja a terheléselosztó egy webalkalmazás megbízhatóságát és skálázhatóságát?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Az alkalmazási kérdések a tudás gyakorlati, új vagy valós világbeli helyzetekre való alkalmazásának képességét tesztelik. A 'Application Text Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Ideiglenesen kell tárolnia felhasználói munkamenet adatokat egy háttérrendszerben. Milyen adatszerkezetet vagy tárolási módszert használna és miért?', 'answer': 'Egy memóriában tárolt kulcs-érték tároló, mint a Redis, megfelelő választás, mert lehetővé teszi a gyors olvasási/írási hozzáférést és támogatja a munkamenet adatok automatikus lejáratát, ami ideális az ideiglenes munkamenet kezeléshez.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Az alkalmazási kérdések a tudás gyakorlati, új vagy valós világbeli helyzetekre való alkalmazásának képességét tesztelik. A 'Application Text Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Egy olyan webes űrlapot tervez, amely érzékeny felhasználói információkat gyűjt. Az alábbiak közül melyik a legmegfelelőbb lépés az adatátvitel során a biztonság növeléséhez?', 'answer': [{'option': 'Küldje el az űrlapot HTTPS-en keresztül POST kéréssel.', 'ans': true}, {'option': 'Használjon GET kérést az űrlap elküldéséhez a jobb sebességért.', 'ans': false}, {'option': 'Minimalizálja a HTML-t, hogy a forráskódot nehezebb legyen olvasni.', 'ans': false}, {'option': 'Tárolja az adatokat sütikben a gyors hozzáférésért.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Az alkalmazási kérdések a tudás gyakorlati, új vagy valós világbeli helyzetekre való alkalmazásának képességét tesztelik. A 'Application Text Question to Voice Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Az Ön feladata egy REST API teljesítményének javítása, amely nagy késleltetést tapasztal terhelés alatt. Milyen gyakorlati lépéseket tenné a probléma azonosításához és megoldásához?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Az elemzési kérdések a komplex problémák kisebb részekre bontásának és a kapcsolatok vizsgálatának képességét tesztelik. A 'Analysis Text Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'Az A/B tesztelés azt mutatja, hogy egy új pénztár oldal kevesebb befejezett vásárláshoz vezet, annak ellenére, hogy a felhasználók gyorsabban elérik a fizetési lépést. Hogyan elemezné ezt az eredményt?', 'answer': 'Részletesen megvizsgálnám a felhasználói utazást, azzal a fókuszzal, hogy hol hagyják el a felhasználók az új folyamatot. Elemezném a munkamenet felvételeket, a tölcsér adatokat és az űrlap elhagyási arányokat. Lehetséges, hogy a gyorsabb folyamat használhatósági problémákat, zavart vagy bizalmi aggályokat vezet be. Összehasonlítanám a hibákat, a mező validációs viselkedést és a betöltési időket. Megnézném a minőségi visszajelzéseket vagy felméréseket is, hogy megértsem a felhasználói észlelést.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Az elemzési kérdések a komplex problémák kisebb részekre bontásának és a kapcsolatok vizsgálatának képességét tesztelik. A 'Analysis Text Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'A csapata azt vizsgálja, hogy miért növelte jelentősen egy újonnan telepített funkció az oldal betöltési idejét. Mi a leglogikusabb következő lépés az elemzési folyamatban?', 'answer': [{'option': 'Azonnal visszavonja a telepítést.', 'ans': false}, {'option': 'Profilozza a frontend és backend teljesítményét, hogy megtalálja a konkrét szűk keresztmetszeteket.', 'ans': true}, {'option': 'Növelje a szerver kapacitását és figyelje az eredményeket.', 'ans': false}, {'option': 'Váltson egy másik frontend keretrendszerre.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Az elemzési kérdések a komplex problémák kisebb részekre bontásának és a kapcsolatok vizsgálatának képességét tesztelik. A 'Analysis Text Question to Voice Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Gyakori időtúllépéseket észlel, amikor a felhasználók a csúcsidőben érik el az alkalmazását. Hogyan járna el a probléma gyökérokának azonosításához?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "A szintézis kérdések a különböző információk kombinálásának vagy integrálásának képességét tesztelik egy új, koherens egész létrehozásához vagy megoldások javaslásához. A 'Synthesis Text Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Tervezzen egy skálázható értesítési rendszert, amely e-maileket, SMS-eket és push értesítéseket küldhet milliók számára. Milyen kulcsfontosságú komponenseket tartalmazna és hogyan lennének kölcsönhatásban?', 'answer': 'Egy üzenetsorral tervezném a rendszert a nagy átviteli sebesség kezeléséhez, egy értesítési szolgáltatással, amely feldolgozza az üzeneteket és megfelelő csatornákon keresztül küldi el (e-mail, SMS, push). A rendszer mikroszolgáltatásokat használna minden értesítési típushoz, egy adatbázist a kézbesítési állapot követéséhez, és sebességkorlátozást a túlterhelés megelőzéséhez. A terheléselosztók és az automatikus skálázási csoportok biztosítanák a rendelkezésre állást és a skálázhatóságot.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "A szintézis kérdések a különböző információk kombinálásának vagy integrálásának képességét tesztelik egy új, koherens egész létrehozásához vagy megoldások javaslásához. A 'Synthesis Text Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Olyan rendszert kell terveznie, amely valós idejű adatokat gyűjt több szenzorból és elemzési irányítópultokat biztosít. Melyik tervezési választás egyensúlyozza legjobban a skálázhatóságot, megbízhatóságot és késleltetést?', 'answer': [{'option': 'Használjon központosított adatbázist, ahol az összes szenzor adat szinkron módon íródik.', 'ans': false}, {'option': 'Tárolja az adatokat helyileg minden szenzoron és kötegelt feltöltéssel a nap végén.', 'ans': false}, {'option': 'Használjon kliensoldali feldolgozást az összes elemzéshez a szerver terhelés csökkentéséhez.', 'ans': false}, {'option': 'Valósítson meg elosztott üzenetsorokat mikroszolgáltatásokkal, amelyek aszinkron módon dolgozzák fel az adatokat.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "A szintézis kérdések a különböző információk kombinálásának vagy integrálásának képességét tesztelik egy új, koherens egész létrehozásához vagy megoldások javaslásához. A 'Synthesis Text Question to Voice Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Tervezzen egy rendszert, amely valós idejű csevegést kezelhet milliók számára, biztosítva az üzenet kézbesítését, skálázhatóságot és adatkonzisztenciát. Írja le a kulcsfontosságú komponenseket és azok kölcsönhatását.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Az értékelési kérdések valaminek a minőségének, pontosságának vagy hatékonyságának értékelésének képességét tesztelik, és kritériumok alapján ítéleteket hoznak és döntéseket indokolnak. A 'Evaluation Text Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'SQL és NoSQL adatbázisok között választ egy nagy forgalmú e-kereskedelmi platformhoz. Melyiket választaná és miért?', 'answer': 'Egy e-kereskedelmi platformhoz az SQL adatbázis gyakran jobb választás, mert szükség van erős konzisztenciára, összetett tranzakciókra és strukturált relációs adatokra, mint a rendelések, készlet és felhasználók. Azonban, ha a skálázhatóság és rugalmasság fontosabb - mint a termék értékelések vagy munkamenet adatok kezelése - egy NoSQL megoldás, mint a MongoDB vagy DynamoDB integrálható az SQL-lel egy többnyelvű architektúrában.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Az értékelési kérdések valaminek a minőségének, pontosságának vagy hatékonyságának értékelésének képességét tesztelik, és kritériumok alapján ítéleteket hoznak és döntéseket indokolnak. A 'Evaluation Text Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Két lehetséges frontend keretrendszert értékel egy nagyvállalati webalkalmazáshoz: React és Angular. Az alábbiak közül melyik a legésszerűbb alapja a React választásának az Angular helyett?', 'answer': [{'option': 'A React nem igényel tanulási görbét, ezért mindig jobb.', 'ans': false}, {'option': 'A React szigorú alkalmazásstruktúrát kényszerít, ami ideális nagy csapatokhoz.', 'ans': false}, {'option': 'A React komponens-alapú architektúrája és nagy ökoszisztémája rugalmasságot és könnyű integrációt biztosít más könyvtárakkal.', 'ans': true}, {'option': 'Az Angular már nem karbantartott, ezért a React az egyetlen életképes opció.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Az értékelési kérdések valaminek a minőségének, pontosságának vagy hatékonyságának értékelésének képességét tesztelik, és kritériumok alapján ítéleteket hoznak és döntéseket indokolnak. A 'Evaluation Text Question to Voice Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'A csapata dönt egy funkció belső fejlesztése vagy egy harmadik fél SaaS megoldásának használata között. Milyen tényezőket értékelne egy ajánlás megadásához, és mi vezetné a végső döntését?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "A problémamegoldási kérdések a komplex problémák azonosítására, diagnosztizálására és megoldására összpontosítanak, és gyakran kreatív vagy stratégiai gondolkodást igényelnek. A 'Problem-Solving Text Question to Text Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Egy keresési funkciót épít, amelynek gyorsan kell releváns eredményeket visszaadnia, még akkor is, ha az adathalmaz növekszik. Hogyan közelítené meg ennek a rendszernek a tervezését a gyors teljesítmény fenntartásához?', 'answer': 'Kezdeném a kereshető mezők indexelésével egy teljes szöveges keresőmotor, mint az Elasticsearch használatával vagy adatbázis indexelési stratégiák integrálásával. A teljesítmény javításához oldalaznám az eredményeket, cache-t használnék a gyakori lekérdezésekhez, és fontolnám az adatok denormalizálását a gyorsabb olvasáshoz. Emellett figyelném a lekérdezési időket és szükség esetén módosítanám az indexelést vagy szegmentálnám az adatokat, ahogy az adathalmaz növekszik.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "A problémamegoldási kérdések a komplex problémák azonosítására, diagnosztizálására és megoldására összpontosítanak, és gyakran kreatív vagy stratégiai gondolkodást igényelnek. A 'Problem-Solving Text Question to MCQ Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'A mobilalkalmazása véletlenszerűen összeomlik néhány felhasználónál, de nem tudja reprodukálni a problémát az eszközein. Mi a legjobb első lépés a probléma diagnosztizálásához?', 'answer': [{'option': 'Kérje meg a felhasználókat, hogy töröljék és telepítsék újra az alkalmazást.', 'ans': false}, {'option': 'Küldjön ki egy sürgős frissítést minimális változtatásokkal.', 'ans': false}, {'option': 'Ellenőrizze az összeomlási naplókat és elemzési eszközöket, mint a Firebase Crashlytics, hogy azonosítsa a mintákat.', 'ans': true}, {'option': 'Kapcsolja ki a funkciókat, amíg az összeomlások meg nem szűnnek.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "A problémamegoldási kérdések a komplex problémák azonosítására, diagnosztizálására és megoldására összpontosítanak, és gyakran kreatív vagy stratégiai gondolkodást igényelnek. A 'Problem-Solving Text Question to Voice Answer' típusnál adja meg a kimenetét JSON formátumban, például így: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'A webalkalmazásában egy kritikus funkció időnként meghibásodik nagy forgalom alatt, de nincsenek hibák a naplókban. Hogyan közelítené meg a probléma azonosítását és megoldását?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

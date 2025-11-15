@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface GenAIPromptParams {
@@ -46,7 +46,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
   // Build mode-specific prompt sections
   const modeStr = Array.isArray(mode) ? mode[0] : mode;
   // Default to English for languages not yet supported in prompts
-  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German' || language === 'Spanish' || language === 'French' || language === 'Italian' || language === 'Swahili') ? language : 'English';
+  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German' || language === 'Spanish' || language === 'French' || language === 'Italian' || language === 'Swahili' || language === 'Hungarian') ? language : 'English';
   if (modeStr === 'interview' && effectiveLanguage === 'English') {
     prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
     if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
@@ -359,6 +359,32 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
+  if (modeStr === 'interview' && effectiveLanguage === 'Hungarian') {
+    prompt += `Felkészülök egy ${interviewType} interjúra a ${interviewMandatoryQuestion1} szerepkörhöz.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `A cég, amelyre az interjúra készülök, ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `A pozíció tapasztalati szintje ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `A témák, amelyekre szeretnék összpontosítani: ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && effectiveLanguage === 'Hungarian') {
+    prompt += `A ${studyMandatoryQuestion2} tanulok, és az oktatási szintem ${studyMandatoryQuestion1}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `A témák, amelyeket szeretnék tanulni: ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Az altémák, amelyekre szeretnék összpontosítani: ${studyOptionalQuestion2}.\n`
+    }
+    if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+      prompt += `A vizsga, amelyre készülök: ${studyOptionalQuestion3}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (effectiveLanguage === 'English') {
@@ -431,6 +457,12 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Zalisha kadi ${numQuestions} za aina '${flashcardType}'.\n`
         prompt += `${promptAndDataSwahili[flashcardType as keyof typeof promptAndDataSwahili].prompt}\n`
+      }
+    }
+    if (effectiveLanguage === 'Hungarian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Generáljon ${numQuestions} kártyát '${flashcardType}' típusból.\n`
+        prompt += `${promptAndDataHungarian[flashcardType as keyof typeof promptAndDataHungarian].prompt}\n`
       }
     }
   }
@@ -574,6 +606,18 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     prompt += "Mifano niliyotoa kwa maswali na majibu ni MIFANO TU ili kuonyesha mitindo ya maswali kwa aina za maswali, LAZIMA UZALISHE maswali na majibu ambayo yanahusiana MOJA KWA MOJA na masomo ninayosoma na kiwango changu cha elimu.\n"
     prompt += "Ni muhimu sana kwamba usitoke kwenye masomo ninayosoma.\n"
     prompt += "Zalisha safu ya JSON ya kadi katika umbizo hili: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ambapo kila {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} inawakilisha kadi."
+  }
+
+  if (effectiveLanguage === 'Hungarian' && modeStr === 'interview') {
+    prompt += "Győződjön meg róla, hogy értelmes, átgondolt és valószínű kérdéseket és válaszokat generál, amelyek specifikusak az interjúmra és a munkakörömre.\n"
+    prompt += "Generáljon egy JSON tömböt kártyákból ebben a formátumban: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ahol minden {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} egy kártyát képvisel."
+  }
+
+  if (effectiveLanguage === 'Hungarian' && modeStr === 'study') {
+    prompt += "Győződjön meg róla, hogy értelmes, átgondolt és valószínű kérdéseket és válaszokat generál, amelyek specifikusak a tanult tárgyaimra és oktatási szintemre.\n"
+    prompt += "A példák, amelyeket a kérdésekre és válaszokra adtam, CSAK PÉLDÁK a kérdéstípusok kérdésstílusának bemutatásához, CSAK olyan kérdéseket és válaszokat generáljon, amelyek KÖZVETLENÜL KAPCSOLÓDNAK a tanult tárgyaimhoz és oktatási szintemhez.\n"
+    prompt += "Rendkívül fontos, hogy ne térjen el a tanult tárgyaktól.\n"
+    prompt += "Generáljon egy JSON tömböt kártyákból ebben a formátumban: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ahol minden {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} egy kártyát képvisel."
   }
 
   return prompt;

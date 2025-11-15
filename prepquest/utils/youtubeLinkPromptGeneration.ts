@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -108,6 +108,13 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Ninasoma kwa ${studyMandatoryQuestion2} na kiwango changu cha elimu ni ${studyMandatoryQuestion1}.\n`;
   }
 
+  if (modeStr === 'interview' && language === 'Hungarian') {
+    prompt += `Felkészülök egy ${interviewType} interjúra a ${interviewMandatoryQuestion1} szerepkörhöz.\n`;
+  }
+  if (modeStr === 'study' && language === 'Hungarian') {
+    prompt += `A ${studyMandatoryQuestion2} tanulok, és az oktatási szintem ${studyMandatoryQuestion1}.\n`;
+  }
+
   // Add YouTube transcript context
   if (language === 'English') {
     prompt += `Here is additional information and context from a YouTube video transcript for my preparation: ${transcript}\n`;
@@ -133,6 +140,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Ecco informazioni e contesto aggiuntivi da una trascrizione video YouTube per la mia preparazione: ${transcript}\n`;
   } else if (language === 'Swahili') {
     prompt += `Hapa kuna taarifa na muktadha wa ziada kutoka kwenye nakala ya video ya YouTube kwa maandalizi yangu: ${transcript}\n`;
+  } else if (language === 'Hungarian') {
+    prompt += `Itt vannak további információk és kontextus egy YouTube videó átiratából a felkészülésemhez: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -208,6 +217,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Zalisha kadi ${numQuestions} za aina '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataSwahili[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Hungarian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Generáljon ${numQuestions} kártyát '${flashcardType}' típusból.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataHungarian[flashcardType].prompt}\n`;
       }
     }
   }
@@ -383,6 +398,22 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Mifano niliyotoa kwa maswali na majibu ni MIFANO TU ili kuonyesha mitindo ya maswali kwa aina za maswali, LAZIMA UZALISHE maswali na majibu ambayo yanahusiana MOJA KWA MOJA na masomo ninayosoma na kiwango changu cha elimu.\n';
     prompt += 'Ni muhimu sana kwamba usitoke kwenye masomo ninayosoma.\n';
     prompt += 'Zalisha safu ya JSON ya kadi katika umbizo hili: [{"flashcardType": <>, "question": <>, "answer": <>}], ambapo kila {"flashcardType": <>, "question": <>, "answer": <>} inawakilisha kadi.';
+  }
+
+  if (language === 'Hungarian' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Győződjön meg róla, hogy értelmes, átgondolt és valószínű kérdéseket és válaszokat generál, amelyek specifikusak az interjúmra és a munkakörömre.\n';
+    prompt += 'Generáljon egy JSON tömböt kártyákból ebben a formátumban: [{"flashcardType": <>, "question": <>, "answer": <>}], ahol minden {"flashcardType": <>, "question": <>, "answer": <>} egy kártyát képvisel.';
+  }
+  if (language === 'Hungarian' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Győződjön meg róla, hogy értelmes, átgondolt és valószínű kérdéseket és válaszokat generál, amelyek specifikusak az interjúmra és a munkakörömre.\n';
+    prompt += 'Azonban RENDKÍVÜL FONTOS, HOGY NE TÉRJEN EL az információktól és kontextustól, amelyet a YouTube videó átiratából biztosítottam. MARADJON CSAK AZ ÁTIRAT TARTALMÁNÁL. ';
+    prompt += 'Generáljon egy JSON tömböt kártyákból ebben a formátumban: [{"flashcardType": <>, "question": <>, "answer": <>}], ahol minden {"flashcardType": <>, "question": <>, "answer": <>} egy kártyát képvisel.';
+  }
+  if (language === 'Hungarian' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Győződjön meg róla, hogy értelmes, átgondolt és valószínű kérdéseket és válaszokat generál, amelyek specifikusak a tanult tárgyaimra és oktatási szintemre.\n';
+    prompt += 'A példák, amelyeket a kérdésekre és válaszokra adtam, CSAK PÉLDÁK a kérdéstípusok kérdésstílusának bemutatásához, CSAK olyan kérdéseket és válaszokat generáljon, amelyek KÖZVETLENÜL KAPCSOLÓDNAK a tanult tárgyaimhoz és oktatási szintemhez.\n';
+    prompt += 'Rendkívül fontos, hogy ne térjen el a tanult tárgyaktól.\n';
+    prompt += 'Generáljon egy JSON tömböt kártyákból ebben a formátumban: [{"flashcardType": <>, "question": <>, "answer": <>}], ahol minden {"flashcardType": <>, "question": <>, "answer": <>} egy kártyát képvisel.';
   }
 
   return prompt;

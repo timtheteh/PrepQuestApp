@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish, promptAndDataPortuguese } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface FileUploadPromptParams {
@@ -129,6 +129,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   }
   if (modeStr === 'study' && language === 'Polish') {
     prompt += `Uczę się ${studyMandatoryQuestion2} i mój poziom edukacji to ${studyMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'interview' && language === 'Portuguese') {
+    prompt += `Estou me preparando para uma entrevista ${interviewType} para o cargo de ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Portuguese') {
+    prompt += `Estou estudando para ${studyMandatoryQuestion2} e meu nível educacional é ${studyMandatoryQuestion1}.\n`;
   }
 
   // Add file content context
@@ -269,6 +275,15 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   if (imageCaptionClaudeCaption && language === 'Polish') {
     prompt += `Oto dodatkowe informacje i kontekst z niektórych obrazów dla mojego przygotowania: ${imageCaptionClaudeCaption}\n`;
   }
+  if (pdfCaptionClaudeCaption && language === 'Portuguese') {
+    prompt += `Aqui estão informações adicionais e contexto de um arquivo PDF para minha preparação: ${pdfCaptionClaudeCaption}\n`;
+  }
+  if (extractedText && extractedText.trim() !== '' && language === 'Portuguese') {
+    prompt += `Aqui estão informações adicionais e contexto de um arquivo de texto para minha preparação: ${extractedText}\n`;
+  }
+  if (imageCaptionClaudeCaption && language === 'Portuguese') {
+    prompt += `Aqui estão informações adicionais e contexto de algumas imagens para minha preparação: ${imageCaptionClaudeCaption}\n`;
+  }
 
   // Add flashcard distribution and type prompts
   if (distribution) {
@@ -361,6 +376,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
         prompt += `Wygeneruj ${numQuestions} fiszek typu '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataPolish[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Portuguese') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Gere ${numQuestions} cartões do tipo '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataPortuguese[flashcardType].prompt}\n`;
       }
     }
   }
@@ -584,6 +605,21 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
     prompt += 'Przykłady, które podałem dla pytań i odpowiedzi, są TYLKO PRZYKŁADAMI, aby zademonstrować style pytań dla typów pytań, MUSISZ TYLKO GENEROWAĆ pytania i odpowiedzi, które są BEZPOŚREDNIO ZWIĄZANE z przedmiotami, których się uczę, i moim poziomem edukacji.\n';
     prompt += 'Niezwykle ważne jest, aby nie odbiegać od przedmiotów, których się uczę.\n';
     prompt += 'Wygeneruj tablicę JSON fiszek w tym formacie: [{"flashcardType": <>, "question": <>, "answer": <>}], gdzie każda {"flashcardType": <>, "question": <>, "answer": <>} reprezentuje fiszkę.';
+  }
+  if (language === 'Portuguese' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Certifique-se de gerar perguntas e respostas significativas, reflexivas e prováveis específicas para minha entrevista e para minha função de trabalho.\n';
+    prompt += 'Gere um array JSON de cartões neste formato: [{"flashcardType": <>, "question": <>, "answer": <>}], onde cada {"flashcardType": <>, "question": <>, "answer": <>} representa um cartão.';
+  }
+  if (language === 'Portuguese' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Certifique-se de gerar perguntas e respostas significativas, reflexivas e prováveis específicas para minha entrevista e para minha função de trabalho.\n';
+    prompt += 'No entanto, é EXTREMAMENTE CRUCIAL QUE VOCÊ NÃO SE DESVIE das informações e do contexto que forneci do arquivo PDF, arquivo de texto ou imagens. MANTENHA-SE APENAS NO CONTEÚDO DO ARQUIVO PDF, ARQUIVO DE TEXTO OU IMAGENS. ';
+    prompt += 'Gere um array JSON de cartões neste formato: [{"flashcardType": <>, "question": <>, "answer": <>}], onde cada {"flashcardType": <>, "question": <>, "answer": <>} representa um cartão.';
+  }
+  if (language === 'Portuguese' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Certifique-se de gerar perguntas e respostas significativas, reflexivas e prováveis específicas para as matérias que estou estudando e meu nível educacional.\n';
+    prompt += 'Os exemplos que dei para as perguntas e respostas são APENAS EXEMPLOS para demonstrar os estilos de perguntas para os tipos de perguntas, VOCÊ DEVE APENAS GERAR perguntas e respostas que estejam DIRETAMENTE RELACIONADAS às matérias que estou estudando e meu nível educacional.\n';
+    prompt += 'É extremamente crucial que você não se desvie das matérias que estou estudando.\n';
+    prompt += 'Gere um array JSON de cartões neste formato: [{"flashcardType": <>, "question": <>, "answer": <>}], onde cada {"flashcardType": <>, "question": <>, "answer": <>} representa um cartão.';
   }
 
   return prompt;

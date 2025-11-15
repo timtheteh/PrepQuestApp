@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface GenAIPromptParams {
@@ -46,7 +46,7 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
   // Build mode-specific prompt sections
   const modeStr = Array.isArray(mode) ? mode[0] : mode;
   // Default to English for languages not yet supported in prompts
-  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German' || language === 'Spanish' || language === 'French' || language === 'Italian' || language === 'Swahili' || language === 'Hungarian') ? language : 'English';
+  const effectiveLanguage = (language === 'Chinese' || language === 'Afrikaans' || language === 'Indonesian' || language === 'Malay' || language === 'Czech' || language === 'Dutch' || language === 'German' || language === 'Spanish' || language === 'French' || language === 'Italian' || language === 'Swahili' || language === 'Hungarian' || language === 'Norwegian') ? language : 'English';
   if (modeStr === 'interview' && effectiveLanguage === 'English') {
     prompt += `I am preparing for a ${interviewType} interview for the role of ${interviewMandatoryQuestion1}.\n`
     if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
@@ -385,6 +385,32 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     }
   }
 
+  if (modeStr === 'interview' && effectiveLanguage === 'Norwegian') {
+    prompt += `Jeg forbereder meg til et ${interviewType} intervju for rollen ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `Selskapet jeg forbereder meg til intervjuet for er ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `Erfaringsnivået for denne stillingen er ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Temaene jeg vil fokusere på er ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && effectiveLanguage === 'Norwegian') {
+    prompt += `Jeg studerer for ${studyMandatoryQuestion2} og min utdanningsnivå er ${studyMandatoryQuestion1}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Temaene jeg vil studere er ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Undertemaene jeg vil fokusere på er ${studyOptionalQuestion2}.\n`
+    }
+    if (studyOptionalQuestion3 && studyOptionalQuestion3.trim() !== '') {
+      prompt += `Eksamenen jeg forbereder meg til er ${studyOptionalQuestion3}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (effectiveLanguage === 'English') {
@@ -463,6 +489,12 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Generáljon ${numQuestions} kártyát '${flashcardType}' típusból.\n`
         prompt += `${promptAndDataHungarian[flashcardType as keyof typeof promptAndDataHungarian].prompt}\n`
+      }
+    }
+    if (effectiveLanguage === 'Norwegian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Generer ${numQuestions} kort av typen '${flashcardType}'.\n`
+        prompt += `${promptAndDataNorwegian[flashcardType as keyof typeof promptAndDataNorwegian].prompt}\n`
       }
     }
   }
@@ -618,6 +650,18 @@ export const generateGenAIPrompt = async (params: GenAIPromptParams): Promise<st
     prompt += "A példák, amelyeket a kérdésekre és válaszokra adtam, CSAK PÉLDÁK a kérdéstípusok kérdésstílusának bemutatásához, CSAK olyan kérdéseket és válaszokat generáljon, amelyek KÖZVETLENÜL KAPCSOLÓDNAK a tanult tárgyaimhoz és oktatási szintemhez.\n"
     prompt += "Rendkívül fontos, hogy ne térjen el a tanult tárgyaktól.\n"
     prompt += "Generáljon egy JSON tömböt kártyákból ebben a formátumban: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ahol minden {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} egy kártyát képvisel."
+  }
+
+  if (effectiveLanguage === 'Norwegian' && modeStr === 'interview') {
+    prompt += "Sørg for å generere meningsfulle, gjennomtenkte og sannsynlige spørsmål og svar spesifikke for mitt intervju og min jobbrolle.\n"
+    prompt += "Generer en JSON-array av kort i dette formatet: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], hvor hver {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} representerer et kort."
+  }
+
+  if (effectiveLanguage === 'Norwegian' && modeStr === 'study') {
+    prompt += "Sørg for å generere meningsfulle, gjennomtenkte og sannsynlige spørsmål og svar spesifikke for fagene jeg studerer og min utdanningsnivå.\n"
+    prompt += "Eksemplene jeg har gitt for spørsmålene og svarene er BARE EKSEMPLER for å demonstrere spørsmålsstilene for spørsmålstypene, DU MÅ BARE GENERERE spørsmål og svar som er DIREKTE RELATERT til fagene jeg studerer og min utdanningsnivå.\n"
+    prompt += "Det er ekstremt viktig at du ikke avviker fra fagene jeg studerer.\n"
+    prompt += "Generer en JSON-array av kort i dette formatet: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], hvor hver {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} representerer et kort."
   }
 
   return prompt;

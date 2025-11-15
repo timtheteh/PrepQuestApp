@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian } from '@/constants/promptEngineering';
 import { getDistributionOfFlashcardsForInterviewType } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
@@ -408,6 +408,29 @@ export const generateOnboardingPrompt = async (params: {
     }
   }
 
+  if (modeStr === 'interview' && language === 'Norwegian') {
+    prompt += `Jeg forbereder meg til et ${interviewType} intervju for rollen ${interviewMandatoryQuestion1}.\n`
+    if (interviewOptionalQuestion1 && interviewOptionalQuestion1.trim() !== '') {
+      prompt += `Erfaringsnivået for denne stillingen er ${interviewOptionalQuestion1}.\n`
+    }
+    if (interviewOptionalQuestion2 && interviewOptionalQuestion2.trim() !== '') {
+      prompt += `Selskapet jeg forbereder meg til intervjuet for er ${interviewOptionalQuestion2}.\n`
+    }
+    if (interviewOptionalQuestion3 && interviewOptionalQuestion3.trim() !== '') {
+      prompt += `Temaene jeg vil fokusere på er ${interviewOptionalQuestion3}.\n`
+    }
+  }
+
+  if (modeStr === 'study' && language === 'Norwegian') {
+    prompt += `Jeg studerer for ${studyMandatoryQuestion1} og min utdanningsnivå er ${studyMandatoryQuestion2}.\n`
+    if (studyOptionalQuestion1 && studyOptionalQuestion1.trim() !== '') {
+      prompt += `Eksamenen jeg forbereder meg til er ${studyOptionalQuestion1}.\n`
+    }
+    if (studyOptionalQuestion2 && studyOptionalQuestion2.trim() !== '') {
+      prompt += `Temaene jeg vil fokusere på er ${studyOptionalQuestion2}.\n`
+    }
+  }
+
   // Add flashcard distribution and type prompts
   if (distributionOfFlashcards) {   
     if (language === 'English') {
@@ -486,6 +509,12 @@ export const generateOnboardingPrompt = async (params: {
       for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
         prompt += `Generáljon ${numQuestions} kártyát '${flashcardType}' típusból.\n`
         prompt += `${promptAndDataHungarian[flashcardType as keyof typeof promptAndDataHungarian].prompt}\n`
+      }
+    }
+    if (language === 'Norwegian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distributionOfFlashcards)) {
+        prompt += `Generer ${numQuestions} kort av typen '${flashcardType}'.\n`
+        prompt += `${promptAndDataNorwegian[flashcardType as keyof typeof promptAndDataNorwegian].prompt}\n`
       }
     }
   }
@@ -643,6 +672,18 @@ export const generateOnboardingPrompt = async (params: {
     prompt += "Generáljon egy JSON tömböt kártyákból ebben a formátumban: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], ahol minden {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} egy kártyát képvisel."
   }
 
+  if (language === 'Norwegian' && modeStr === 'interview') {
+    prompt += "Sørg for å generere meningsfulle, gjennomtenkte og sannsynlige spørsmål og svar spesifikke for mitt intervju og min jobbrolle.\n"
+    prompt += "Generer en JSON-array av kort i dette formatet: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], hvor hver {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} representerer et kort."
+  }
+
+  if (language === 'Norwegian' && modeStr === 'study') {
+    prompt += "Sørg for å generere meningsfulle, gjennomtenkte og sannsynlige spørsmål og svar spesifikke for fagene jeg studerer og min utdanningsnivå.\n"
+    prompt += "Eksemplene jeg har gitt for spørsmålene og svarene er BARE EKSEMPLER for å demonstrere spørsmålsstilene for spørsmålstypene, DU MÅ BARE GENERERE spørsmål og svar som er DIREKTE RELATERT til fagene jeg studerer og min utdanningsnivå.\n"
+    prompt += "Det er ekstremt viktig at du ikke avviker fra fagene jeg studerer.\n"
+    prompt += "Generer en JSON-array av kort i dette formatet: [{\"flashcardType\": <>, \"question\": <>, \"answer\": <>}], hvor hver {\"flashcardType\": <>, \"question\": <>, \"answer\": <>} representerer et kort."
+  }
+
   return prompt;
 };
 
@@ -655,7 +696,7 @@ export const generateOnboardingPrompts = async (params: OnboardingPromptParams):
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian' || responses.language === 'Swahili' || responses.language === 'Hungarian') ? responses.language : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian' || responses.language === 'Swahili' || responses.language === 'Hungarian' || responses.language === 'Norwegian') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];
@@ -734,7 +775,7 @@ export const generateOnboardingPromptsWithFormFields = async (params: Onboarding
   
   // Determine the mode and language
   const mode = responses.selectedCard || 'study';
-  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian' || responses.language === 'Swahili' || responses.language === 'Hungarian') ? responses.language : 'English';
+  const language = (responses.language === 'Chinese' || responses.language === 'Afrikaans' || responses.language === 'Indonesian' || responses.language === 'Malay' || responses.language === 'Czech' || responses.language === 'Dutch' || responses.language === 'German' || responses.language === 'Spanish' || responses.language === 'French' || responses.language === 'Italian' || responses.language === 'Swahili' || responses.language === 'Hungarian' || responses.language === 'Norwegian') ? responses.language : 'English';
   
   // Create 3 different prompt variations by distributing the responses
   const prompts: string[] = [];

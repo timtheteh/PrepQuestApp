@@ -2651,6 +2651,162 @@ export const promptAndDataRomanian = {
     }
 }
 
+export const promptAndDataFinnish = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Muistamiskysymykset testaavat muistia kysymällä tiettyjä faktoja, määritelmiä tai tietoja. 'Recall Text Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Mikä on DNS (Domain Name System) -palvelimen pääasiallinen tarkoitus?', 'answer': 'DNS-palvelin kääntää ihmisten luettavat verkkotunnukset (kuten www.example.com) IP-osoitteiksi, joita tietokoneet käyttävät tunnistamaan toisiaan verkossa.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Muistamiskysymykset testaavat muistia kysymällä tiettyjä faktoja, määritelmiä tai tietoja. 'Recall Text Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Mikä HTTP-tilakoodi ilmaisee, että pyyntö onnistui?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Muistamiskysymykset testaavat muistia kysymällä tiettyjä faktoja, määritelmiä tai tietoja. 'Recall Cloze Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'JavaScriptissä <blank> -avainsanaa käytetään muuttujan julistamiseen lohkon laajuudella ja uudelleenmäärityksen estämiseen.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Muistamiskysymykset testaavat muistia kysymällä tiettyjä faktoja, määritelmiä tai tietoja. 'Recall Cloze Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'SQL:ssä <blank> -komentoa käytetään kaikkien tietueiden poistamiseen taulukosta ilman yksittäisten rivien poistojen kirjaamista.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Ymmärtämiskysymykset testaavat ymmärrystä kysymällä selityksiä, tulkintoja, yhteenvetoja tai vertailuja. 'Comprehension Text Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Selitä ero pinnallisen kopion ja syvän kopion välillä ohjelmoinnissa.', 'answer': 'Pinnallinen kopio kopioi vain objektin ylätason viittaukset, mikä tarkoittaa, että sisäkkäiset objektit ovat edelleen jaettuja. Syvä kopio kopioi rekursiivisesti kaikki sisäkkäiset objektit, luoden täysin itsenäisiä kopioita alkuperäisestä rakenteesta.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Ymmärtämiskysymykset testaavat ymmärrystä kysymällä selityksiä, tulkintoja, yhteenvetoja tai vertailuja. 'Comprehension Text Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Mikä selittää parhaiten eron HTTP:n ja HTTPS:n välillä?', 'answer': [{'option': 'HTTPS käyttää porttia 80, kun HTTP käyttää porttia 443.', 'ans': false}, {'option': 'HTTP salaa tiedot siirron aikana, kun HTTPS ei.', 'ans': false}, {'option': 'HTTP:n ja HTTPS:n välillä ei ole todellista eroa.', 'ans': false}, {'option': 'HTTPS lisää salauksen kerroksen SSL/TLS:n avulla turvatakseen tietojen siirron, toisin kuin HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Ymmärtämiskysymykset testaavat ymmärrystä kysymällä selityksiä, tulkintoja, yhteenvetoja tai vertailuja. 'Comprehension Text Question to Voice Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Miten kuormantasain parantaa verkkosovelluksen luotettavuutta ja skaalautuvuutta?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Soveltamiskysymykset testaavat kykyä soveltaa tietoa käytännöllisiin, uusiin tai todellisiin tilanteisiin. 'Application Text Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Sinun täytyy tallentaa käyttäjän istuntotiedot tilapäisesti taustajärjestelmään. Mitä tietorakennetta tai tallennusmenetelmää käyttäisit ja miksi?', 'answer': 'Muistissa oleva avain-arvo-tallennus kuten Redis on sopiva valinta, koska se mahdollistaa nopean luku/kirjoitus-pääsyn ja tukee istuntotietojen automaattista vanhentumista, mikä on ihanteellista tilapäiseen istunnon hallintaan.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Soveltamiskysymykset testaavat kykyä soveltaa tietoa käytännöllisiin, uusiin tai todellisiin tilanteisiin. 'Application Text Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Suunnittelet verkkolomakkeen, joka kerää arkaluontoisia käyttäjätietoja. Mikä seuraavista toimenpiteistä on sopivin parantamaan turvallisuutta tietojen siirron aikana?', 'answer': [{'option': 'Lähetä lomake HTTPS:n yli käyttäen POST-pyyntöä.', 'ans': true}, {'option': 'Käytä GET-pyyntöä lomakkeen lähettämiseen paremman nopeuden vuoksi.', 'ans': false}, {'option': 'Pienennä HTML:ää, jotta lähdekoodi on vaikeampi lukea.', 'ans': false}, {'option': 'Tallenna tiedot evästeisiin nopeaa pääsyä varten.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Soveltamiskysymykset testaavat kykyä soveltaa tietoa käytännöllisiin, uusiin tai todellisiin tilanteisiin. 'Application Text Question to Voice Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Sinulle on annettu tehtäväksi parantaa REST-API:n suorituskykyä, joka kärsii korkeasta viiveestä kuormituksen alaisena. Mitä käytännön toimenpiteitä tekisit ongelman tunnistamiseksi ja ratkaisemiseksi?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Analyysikysymykset testaavat kykyä hajottaa monimutkaiset ongelmat pienempiin osiin ja tutkia suhteita. 'Analysis Text Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'A/B-testaus osoittaa, että uusi kassasivu johtaa vähemmään valmiisiin ostoksiin, vaikka käyttäjät saavuttavat maksuvaiheen nopeammin. Miten analysoisit tämän tuloksen?', 'answer': 'Analysoisin käyttäjien matkaa yksityiskohtaisesti keskittyen siihen, missä käyttäjät luovuttavat uudessa virtauksessa. Analysoisin istuntotallenteita, suppilon tietoja ja lomakkeiden hylkäämismääriä. On mahdollista, että nopeampi virtaus aiheuttaa käytettävyysongelmia, hämmennystä tai luottamushuolia. Vertaisin virhemääriä, kenttien validointikäyttäytymistä ja latausaikoja. Tarkistaisin myös laadullista palautetta tai kyselyitä ymmärtääkseni käyttäjien käsityksen.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Analyysikysymykset testaavat kykyä hajottaa monimutkaiset ongelmat pienempiin osiin ja tutkia suhteita. 'Analysis Text Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Tiimisi tutkii, miksi äskettäin otettu käyttöön ominaisuus on aiheuttanut sivun latausaikojen merkittävän kasvun. Mikä on loogisin seuraava askel analyysiprosessissa?', 'answer': [{'option': 'Peruuta käyttöönotto välittömästi.', 'ans': false}, {'option': 'Profiloi etu- ja taustapään suorituskykyä löytääksesi erityiset pullonkaulat.', 'ans': true}, {'option': 'Lisää palvelimen kapasiteettia ja seuraa tuloksia.', 'ans': false}, {'option': 'Vaihda toiseen etupään kehysrakenteeseen.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Analyysikysymykset testaavat kykyä hajottaa monimutkaiset ongelmat pienempiin osiin ja tutkia suhteita. 'Analysis Text Question to Voice Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Havaitset useita aikakatkaisuja, kun käyttäjät käyttävät sovellustasi ruuhka-aikoina. Miten lähestyisit ongelman juurisyyn tunnistamista?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Synteesikysymykset testaavat kykyä yhdistää tai integroida erilaisia tietoja luodakseen uuden, johdonmukaisen kokonaisuuden tai ehdottaa ratkaisuja. 'Synthesis Text Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Suunnittele skaalautuva ilmoitusjärjestelmä, joka voi lähettää sähköposteja, tekstiviestejä ja push-ilmoituksia miljoonille käyttäjille. Mitä keskeisiä komponentteja sisällyttäisit ja miten ne vuorovaikuttaisivat?', 'answer': 'Suunnittelisin järjestelmän viestijonolla käsittelemään korkean läpimenon, ilmoituspalvelulla, joka käsittelee viestit ja lähettää ne sopivien kanavien kautta (sähköposti, tekstiviesti, push). Järjestelmä käyttäisi mikropalveluja jokaiselle ilmoitustyypille, tietokantaa toimitustilan seurantaan ja nopeusrajoitusta estämään ylikuormituksen. Kuormantasaimet ja automaattinen skaalausryhmät varmistaisivat saatavuuden ja skaalautuvuuden.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Synteesikysymykset testaavat kykyä yhdistää tai integroida erilaisia tietoja luodakseen uuden, johdonmukaisen kokonaisuuden tai ehdottaa ratkaisuja. 'Synthesis Text Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Sinun täytyy suunnitella järjestelmä, joka kerää reaaliaikaista tietoa useista antureista ja tarjoaa analytiikkakojetauluja. Mikä suunnittelupäätös parhaiten tasapainottaa skaalautuvuutta, luotettavuutta ja viivettä?', 'answer': [{'option': 'Käytä keskitettyä tietokantaa, johon kaikki anturitiedot kirjoitetaan synkronisesti.', 'ans': false}, {'option': 'Tallenna tiedot paikallisesti jokaisessa anturissa ja lähetä ne erämuodossa päivän päätteeksi.', 'ans': false}, {'option': 'Käytä asiakaspuolen käsittelyä kaikelle analytiikalle vähentääksesi palvelimen kuormaa.', 'ans': false}, {'option': 'Toteuta hajautetut viestijonot mikropalveluilla, jotka käsittelevät tietoja asynkronisesti.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Synteesikysymykset testaavat kykyä yhdistää tai integroida erilaisia tietoja luodakseen uuden, johdonmukaisen kokonaisuuden tai ehdottaa ratkaisuja. 'Synthesis Text Question to Voice Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Suunnittele järjestelmä, joka voi käsitellä reaaliaikaista chattia miljoonille käyttäjille, varmistaen viestien toimituksen, skaalautuvuuden ja tietojen johdonmukaisuuden. Kuvaile keskeiset komponentit ja miten ne vuorovaikuttaisivat.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Arviointikysymykset testaavat kykyä arvioida jonkin laatua, tarkkuutta tai tehokkuutta ja tekemään päätöksiä kriteerien perusteella sekä perustelemaan päätöksiä. 'Evaluation Text Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Valitset SQL- ja NoSQL-tietokantojen välillä korkean liikenteen verkkokauppa-alustalle. Minkä valitsisit ja miksi?', 'answer': 'Verkkokauppa-alustalle SQL-tietokanta on usein parempi valinta vahvan johdonmukaisuuden, monimutkaisten transaktioiden ja rakenteellisten relaatiotietojen, kuten tilausten, varaston ja käyttäjien, tarpeen vuoksi. Jos kuitenkin skaalautuvuus ja joustavuus ovat tärkeämpiä—kuten tuotearvostelujen tai istuntotietojen käsittelyssä—NoSQL-ratkaisu kuten MongoDB tai DynamoDB voitaisiin integroida SQL:n rinnalla monikielisessä arkkitehtuurissa.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Arviointikysymykset testaavat kykyä arvioida jonkin laatua, tarkkuutta tai tehokkuutta ja tekemään päätöksiä kriteerien perusteella sekä perustelemaan päätöksiä. 'Evaluation Text Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Tarkistat kahta mahdollista etupään kehysrakennetta suuren yritysverkkosovelluksen: React ja Angular. Mikä seuraavista on järkevin peruste valita React Angularin sijaan?', 'answer': [{'option': 'React ei vaadi oppimiskäyrää, joten se on aina parempi.', 'ans': false}, {'option': 'React pakottaa tiukan sovelluksen rakenteen, mikä on ihanteellista suurille tiimeille.', 'ans': false}, {'option': 'Reactin komponenttipohjainen arkkitehtuuri ja suuri ekosysteemi tarjoavat joustavuutta ja helppoa integraatiota muiden kirjastojen kanssa.', 'ans': true}, {'option': 'Angularia ei enää ylläpidetä, joten React on ainoa toimiva vaihtoehto.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Arviointikysymykset testaavat kykyä arvioida jonkin laatua, tarkkuutta tai tehokkuutta ja tekemään päätöksiä kriteerien perusteella sekä perustelemaan päätöksiä. 'Evaluation Text Question to Voice Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Tiimisi päättää rakentaa ominaisuuden sisäisesti vai käyttää kolmannen osapuolen SaaS-ratkaisua. Mitä tekijöitä arvioisit tehdäksesi suosituksen ja mikä ohjaisi lopullista päätöstäsi?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Ongelmanratkaisukysymykset keskittyvät monimutkaisten ongelmien tunnistamiseen, diagnosointiin ja ratkaisemiseen, ja ne vaativat usein luovaa tai strategista ajattelua. 'Problem-Solving Text Question to Text Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Rakennat hakutoimintoa, jonka täytyy palauttaa relevantteja tuloksia nopeasti, vaikka tietojoukko kasvaa. Miten lähestyisit tämän järjestelmän suunnittelua ylläpitääksesi nopean suorituskyvyn?', 'answer': 'Aloittaisin indeksoimalla haettavat kentät käyttäen täyden tekstin hakumoottoria kuten Elasticsearchia tai integroimalla tietokantaindeksointistrategioita. Parantaakseni suorituskykyä sivuttaisin tulokset, käyttäisin välimuistia usein kysytyille kysymyksille ja harkitsisin tietojen denormalisointia nopeampia lukuja varten. Lisäksi seurisin kyselyaikoja ja säätäisin indeksointia tai jakaisin tietoja tarvittaessa tietojoukon kasvaessa.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Ongelmanratkaisukysymykset keskittyvät monimutkaisten ongelmien tunnistamiseen, diagnosointiin ja ratkaisemiseen, ja ne vaativat usein luovaa tai strategista ajattelua. 'Problem-Solving Text Question to MCQ Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Mobiilisovelluksesi kaatuu satunnaisesti joillekin käyttäjille, mutta et voi toistaa ongelmaa omilla laitteillasi. Mikä on paras ensimmäinen askel ongelman diagnosoimiseksi?', 'answer': [{'option': 'Pyydä käyttäjiä poistamaan ja asentamaan sovelluksen uudelleen.', 'ans': false}, {'option': 'Lähetä hätäpäivitys minimaalisilla muutoksilla.', 'ans': false}, {'option': 'Tarkista kaatumislokit ja analytiikkatyökalut kuten Firebase Crashlytics tunnistaaksesi kuvioita.', 'ans': true}, {'option': 'Poista ominaisuudet käytöstä, kunnes kaatumiset loppuvat.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Ongelmanratkaisukysymykset keskittyvät monimutkaisten ongelmien tunnistamiseen, diagnosointiin ja ratkaisemiseen, ja ne vaativat usein luovaa tai strategista ajattelua. 'Problem-Solving Text Question to Voice Answer' -tyypille anna tulosteesi JSON-muodossa näin: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'Kriittinen ominaisuus verkkosovelluksessasi epäonnistuu ajoittain korkean liikenteen alaisena, mutta lokissa ei näy virheitä. Miten lähestyisit ongelman tunnistamista ja ratkaisemista?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

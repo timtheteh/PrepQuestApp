@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish, promptAndDataPortuguese, promptAndDataRomanian } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish, promptAndDataPortuguese, promptAndDataRomanian, promptAndDataFinnish } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -138,6 +138,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'Romanian') {
     prompt += `Studiez pentru ${studyMandatoryQuestion2} și nivelul meu de educație este ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Finnish') {
+    prompt += `Valmistan ${interviewType} -haastattelua varten roolia ${interviewMandatoryQuestion1} varten.\n`;
+  }
+  if (modeStr === 'study' && language === 'Finnish') {
+    prompt += `Opiskelen ${studyMandatoryQuestion2} -aihetta ja koulutustasoni on ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
@@ -174,6 +180,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Aqui estão informações adicionais e contexto de uma transcrição de vídeo do YouTube para minha preparação: ${transcript}\n`;
   } else if (language === 'Romanian') {
     prompt += `Iată informații și context suplimentare dintr-o transcriere video YouTube pentru pregătirea mea: ${transcript}\n`;
+  } else if (language === 'Finnish') {
+    prompt += `Tässä on lisätietoja ja kontekstia YouTube-videon tekstityksestä valmistautumistani varten: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -279,6 +287,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Generează ${numQuestions} carduri de tipul '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataRomanian[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Finnish') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Luo ${numQuestions} korttia tyyppiä '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataFinnish[flashcardType].prompt}\n`;
       }
     }
   }
@@ -532,6 +546,21 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Exemplele pe care le-am dat pentru întrebări și răspunsuri sunt DOAR EXEMPLE pentru a demonstra stilurile de întrebări pentru tipurile de întrebări, TREBUIE SĂ GENEREZI DOAR întrebări și răspunsuri care sunt DIRECT LEGATE de materiile pe care le studiez și nivelul meu de educație.\n';
     prompt += 'Este extrem de crucial să nu deviezi de la materiile pe care le studiez.\n';
     prompt += 'Generează un array JSON de carduri în acest format: [{"flashcardType": <>, "question": <>, "answer": <>}], unde fiecare {"flashcardType": <>, "question": <>, "answer": <>} reprezintă un card.';
+  }
+  if (language === 'Finnish' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Varmista, että luot merkityksellisiä, harkittuja ja todennäköisiä kysymyksiä ja vastauksia, jotka ovat erityisiä haastattelulleni ja työroolilleni.\n';
+    prompt += 'Luo JSON-taulukko kortteja tässä muodossa: [{"flashcardType": <>, "question": <>, "answer": <>}], jossa jokainen {"flashcardType": <>, "question": <>, "answer": <>} edustaa korttia.';
+  }
+  if (language === 'Finnish' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Varmista, että luot merkityksellisiä, harkittuja ja todennäköisiä kysymyksiä ja vastauksia, jotka ovat erityisiä haastattelulleni ja työroolilleni.\n';
+    prompt += 'On kuitenkin ERIITTÄIN TÄRKEÄÄ, ETTÄ ET POIKKEA tiedoista ja kontekstista, jonka olen antanut YouTube-videon tekstityksestä. PIDÄ KIINNI VAIN TEKSTITYKSEN SISÄLLÖSTÄ. ';
+    prompt += 'Luo JSON-taulukko kortteja tässä muodossa: [{"flashcardType": <>, "question": <>, "answer": <>}], jossa jokainen {"flashcardType": <>, "question": <>, "answer": <>} edustaa korttia.';
+  }
+  if (language === 'Finnish' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Varmista, että luot merkityksellisiä, harkittuja ja todennäköisiä kysymyksiä ja vastauksia, jotka ovat erityisiä opiskelemilleni aiheille ja koulutustasolleni.\n';
+    prompt += 'Esimerkit, jotka olen antanut kysymyksille ja vastauksille, ovat VAIN ESIMERKKEJÄ osoittamaan kysymystyylejä kysymystyypeille, SINUN TÄYTYY LUODA VAIN kysymyksiä ja vastauksia, jotka ovat SUORAAN LIITTYVÄT opiskelemiini aiheisiin ja koulutustasooni.\n';
+    prompt += 'On erittäin tärkeää, että et poikkea opiskelemistani aiheista.\n';
+    prompt += 'Luo JSON-taulukko kortteja tässä muodossa: [{"flashcardType": <>, "question": <>, "answer": <>}], jossa jokainen {"flashcardType": <>, "question": <>, "answer": <>} edustaa korttia.';
   }
 
   return prompt;

@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish, promptAndDataPortuguese } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish, promptAndDataPortuguese, promptAndDataRomanian } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface FileUploadPromptParams {
@@ -135,6 +135,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   }
   if (modeStr === 'study' && language === 'Portuguese') {
     prompt += `Estou estudando para ${studyMandatoryQuestion2} e meu nível educacional é ${studyMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'interview' && language === 'Romanian') {
+    prompt += `Mă pregătesc pentru un interviu ${interviewType} pentru rolul de ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Romanian') {
+    prompt += `Studiez pentru ${studyMandatoryQuestion2} și nivelul meu de educație este ${studyMandatoryQuestion1}.\n`;
   }
 
   // Add file content context
@@ -284,6 +290,15 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
   if (imageCaptionClaudeCaption && language === 'Portuguese') {
     prompt += `Aqui estão informações adicionais e contexto de algumas imagens para minha preparação: ${imageCaptionClaudeCaption}\n`;
   }
+  if (pdfCaptionClaudeCaption && language === 'Romanian') {
+    prompt += `Iată informații și context suplimentare dintr-un fișier PDF pentru pregătirea mea: ${pdfCaptionClaudeCaption}\n`;
+  }
+  if (extractedText && extractedText.trim() !== '' && language === 'Romanian') {
+    prompt += `Iată informații și context suplimentare dintr-un fișier text pentru pregătirea mea: ${extractedText}\n`;
+  }
+  if (imageCaptionClaudeCaption && language === 'Romanian') {
+    prompt += `Iată informații și context suplimentare din unele imagini pentru pregătirea mea: ${imageCaptionClaudeCaption}\n`;
+  }
 
   // Add flashcard distribution and type prompts
   if (distribution) {
@@ -382,6 +397,12 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
         prompt += `Gere ${numQuestions} cartões do tipo '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataPortuguese[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Romanian') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Generează ${numQuestions} carduri de tipul '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataRomanian[flashcardType].prompt}\n`;
       }
     }
   }
@@ -620,6 +641,21 @@ export const generateFileUploadPrompt = (params: FileUploadPromptParams): string
     prompt += 'Os exemplos que dei para as perguntas e respostas são APENAS EXEMPLOS para demonstrar os estilos de perguntas para os tipos de perguntas, VOCÊ DEVE APENAS GERAR perguntas e respostas que estejam DIRETAMENTE RELACIONADAS às matérias que estou estudando e meu nível educacional.\n';
     prompt += 'É extremamente crucial que você não se desvie das matérias que estou estudando.\n';
     prompt += 'Gere um array JSON de cartões neste formato: [{"flashcardType": <>, "question": <>, "answer": <>}], onde cada {"flashcardType": <>, "question": <>, "answer": <>} representa um cartão.';
+  }
+  if (language === 'Romanian' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Asigură-te că generezi întrebări și răspunsuri semnificative, gândite și probabile specifice pentru interviul meu și pentru rolul meu de muncă.\n';
+    prompt += 'Generează un array JSON de carduri în acest format: [{"flashcardType": <>, "question": <>, "answer": <>}], unde fiecare {"flashcardType": <>, "question": <>, "answer": <>} reprezintă un card.';
+  }
+  if (language === 'Romanian' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Asigură-te că generezi întrebări și răspunsuri semnificative, gândite și probabile specifice pentru interviul meu și pentru rolul meu de muncă.\n';
+    prompt += 'Cu toate acestea, este EXTREM DE CRUCIAL SĂ NU DEVIEZI de la informațiile și contextul pe care le-am furnizat din fișierul PDF, fișierul text sau imaginile. RĂMÂI DOAR LA CONȚINUTUL DIN FIȘIERUL PDF, FIȘIERUL TEXT SAU IMAGINILE. ';
+    prompt += 'Generează un array JSON de carduri în acest format: [{"flashcardType": <>, "question": <>, "answer": <>}], unde fiecare {"flashcardType": <>, "question": <>, "answer": <>} reprezintă un card.';
+  }
+  if (language === 'Romanian' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Asigură-te că generezi întrebări și răspunsuri semnificative, gândite și probabile specifice pentru materiile pe care le studiez și nivelul meu de educație.\n';
+    prompt += 'Exemplele pe care le-am dat pentru întrebări și răspunsuri sunt DOAR EXEMPLE pentru a demonstra stilurile de întrebări pentru tipurile de întrebări, TREBUIE SĂ GENEREZI DOAR întrebări și răspunsuri care sunt DIRECT LEGATE de materiile pe care le studiez și nivelul meu de educație.\n';
+    prompt += 'Este extrem de crucial să nu deviezi de la materiile pe care le studiez.\n';
+    prompt += 'Generează un array JSON de carduri în acest format: [{"flashcardType": <>, "question": <>, "answer": <>}], unde fiecare {"flashcardType": <>, "question": <>, "answer": <>} reprezintă un card.';
   }
 
   return prompt;

@@ -2495,6 +2495,162 @@ export const promptAndDataPortuguese = {
     }
 }
 
+export const promptAndDataRomanian = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Întrebările de amintire testează memoria prin cererea de fapte specifice, definiții sau informații. Pentru 'Recall Text Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Care este scopul principal al unui server DNS (Domain Name System)?', 'answer': 'Un server DNS traduce numele de domeniu ușor de citit de oameni (cum ar fi www.example.com) în adrese IP pe care computerele le folosesc pentru a se identifica reciproc pe rețea.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Întrebările de amintire testează memoria prin cererea de fapte specifice, definiții sau informații. Pentru 'Recall Text Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Care cod de stare HTTP indică faptul că o cerere a reușit?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Întrebările de amintire testează memoria prin cererea de fapte specifice, definiții sau informații. Pentru 'Recall Cloze Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'În JavaScript, cuvântul cheie <blank> este folosit pentru a declara o variabilă cu domeniu de aplicare la nivel de bloc și pentru a preveni reatribuirea.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Întrebările de amintire testează memoria prin cererea de fapte specifice, definiții sau informații. Pentru 'Recall Cloze Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'În SQL, comanda <blank> este folosită pentru a elimina toate înregistrările dintr-un tabel fără a înregistra ștergerile individuale de rânduri.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Întrebările de înțelegere testează înțelegerea prin cererea de explicații, interpretări, rezumate sau comparații. Pentru 'Comprehension Text Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Explică diferența dintre o copie superficială și o copie profundă în programare.', 'answer': 'O copie superficială copiază doar referințele de nivel superior ale unui obiect, ceea ce înseamnă că obiectele imbricate sunt încă partajate. O copie profundă copiază recursiv toate obiectele imbricate, creând duplicate complet independente ale structurii originale.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Întrebările de înțelegere testează înțelegerea prin cererea de explicații, interpretări, rezumate sau comparații. Pentru 'Comprehension Text Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Ce explică cel mai bine diferența dintre HTTP și HTTPS?', 'answer': [{'option': 'HTTPS folosește portul 80, în timp ce HTTP folosește portul 443.', 'ans': false}, {'option': 'HTTP criptează datele în timpul transmisiei, în timp ce HTTPS nu.', 'ans': false}, {'option': 'Nu există nicio diferență reală între HTTP și HTTPS.', 'ans': false}, {'option': 'HTTPS adaugă un strat de criptare prin SSL/TLS pentru a securiza transmiterea datelor, spre deosebire de HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Întrebările de înțelegere testează înțelegerea prin cererea de explicații, interpretări, rezumate sau comparații. Pentru 'Comprehension Text Question to Voice Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Cum îmbunătățește un echilibrator de sarcină fiabilitatea și scalabilitatea unei aplicații web?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Întrebările de aplicare testează capacitatea de a aplica cunoștințe în situații practice, noi sau din lumea reală. Pentru 'Application Text Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Trebuie să stochezi date de sesiune ale utilizatorului temporar într-un sistem backend. Ce structură de date sau metodă de stocare ai folosi și de ce?', 'answer': 'Un magazin cheie-valoare în memorie precum Redis este o alegere potrivită deoarece permite acces rapid de citire/scriere și suportă expirarea automată a datelor de sesiune, ceea ce este ideal pentru gestionarea temporară a sesiunilor.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Întrebările de aplicare testează capacitatea de a aplica cunoștințe în situații practice, noi sau din lumea reală. Pentru 'Application Text Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Proiectezi un formular web care colectează informații sensibile despre utilizatori. Care dintre următoarele acțiuni este cea mai potrivită pentru a îmbunătăți securitatea în timpul transmisiei datelor?', 'answer': [{'option': 'Trimite formularul prin HTTPS folosind o cerere POST.', 'ans': true}, {'option': 'Folosește o cerere GET pentru a trimite formularul pentru o viteză mai bună.', 'ans': false}, {'option': 'Minifică HTML-ul pentru a face codul sursă mai greu de citit.', 'ans': false}, {'option': 'Stochează datele în cookie-uri pentru acces rapid.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Întrebările de aplicare testează capacitatea de a aplica cunoștințe în situații practice, noi sau din lumea reală. Pentru 'Application Text Question to Voice Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Ai sarcina de a îmbunătăți performanța unei API REST care experimentează latență ridicată sub sarcină. Ce pași practici ai lua pentru a identifica și a aborda problema?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Întrebările de analiză testează capacitatea de a descompune probleme complexe în părți mai mici și de a examina relațiile. Pentru 'Analysis Text Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'Testarea A/B arată că o pagină nouă de checkout duce la mai puține achiziții finalizate, chiar dacă utilizatorii ajung la pasul de plată mai rapid. Cum ai analiza acest rezultat?', 'answer': 'Aș examina călătoria utilizatorului în detaliu, concentrându-mă pe locul în care utilizatorii renunță în noul flux. Aș analiza înregistrările de sesiune, datele de funnel și ratele de abandonare a formularelor. Este posibil ca fluxul mai rapid să introducă probleme de utilizabilitate, confuzie sau preocupări legate de încredere. Aș compara ratele de eroare, comportamentul de validare a câmpurilor și timpii de încărcare. Aș căuta și feedback calitativ sau sondaje pentru a înțelege percepția utilizatorilor.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Întrebările de analiză testează capacitatea de a descompune probleme complexe în părți mai mici și de a examina relațiile. Pentru 'Analysis Text Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Echipa ta investighează de ce o funcționalitate nou implementată a cauzat creșterea semnificativă a timpilor de încărcare a paginii. Care este următorul pas cel mai logic în procesul de analiză?', 'answer': [{'option': 'Anulează implementarea imediat.', 'ans': false}, {'option': 'Profilizează performanța frontend-ului și backend-ului pentru a localiza blocajele specifice.', 'ans': true}, {'option': 'Mărește capacitatea serverului și observă rezultatele.', 'ans': false}, {'option': 'Schimbă la un alt framework frontend.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Întrebările de analiză testează capacitatea de a descompune probleme complexe în părți mai mici și de a examina relațiile. Pentru 'Analysis Text Question to Voice Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Observi timeout-uri frecvente când utilizatorii accesează aplicația ta în orele de vârf. Cum ai proceda pentru a identifica cauza principală a problemei?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Întrebările de sinteză testează capacitatea de a combina sau integra diferite piese de informații pentru a crea un întreg nou și coerent, sau de a propune soluții. Pentru 'Synthesis Text Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Proiectează un sistem de notificări scalabil care poate trimite email-uri, SMS și notificări push către milioane de utilizatori. Ce componente cheie ai include și cum ar interacționa ele?', 'answer': 'Aș proiecta sistemul cu o coadă de mesaje pentru a gestiona un debit ridicat, un serviciu de notificări care procesează mesajele și le trimite prin canalele potrivite (email, SMS, push). Sistemul ar folosi microservicii pentru fiecare tip de notificare, o bază de date pentru a urmări starea livrării și limitarea ratei pentru a preveni suprasolicitarea. Echilibratoarele de sarcină și grupurile de scalare automată ar asigura disponibilitatea și scalabilitatea.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Întrebările de sinteză testează capacitatea de a combina sau integra diferite piese de informații pentru a crea un întreg nou și coerent, sau de a propune soluții. Pentru 'Synthesis Text Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Trebuie să proiectezi un sistem care agregă date în timp real de la mai mulți senzori și oferă tablouri de bord analitice. Ce alegere de proiectare echilibrează cel mai bine scalabilitatea, fiabilitatea și latența?', 'answer': [{'option': 'Folosește o bază de date centralizată unde toate datele senzorilor sunt scrise sincron.', 'ans': false}, {'option': 'Stochează datele local pe fiecare senzor și încarcă în lot la sfârșitul zilei.', 'ans': false}, {'option': 'Folosește procesarea pe partea clientului pentru toate analiticele pentru a reduce încărcarea serverului.', 'ans': false}, {'option': 'Implementează cozi de mesaje distribuite cu microservicii care procesează datele asincron.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Întrebările de sinteză testează capacitatea de a combina sau integra diferite piese de informații pentru a crea un întreg nou și coerent, sau de a propune soluții. Pentru 'Synthesis Text Question to Voice Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Proiectează un sistem care poate gestiona chat în timp real pentru milioane de utilizatori, asigurând livrarea mesajelor, scalabilitatea și consistența datelor. Descrie componentele cheie și cum interacționează ele.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Întrebările de evaluare testează capacitatea de a evalua calitatea, acuratețea sau eficacitatea a ceva, și de a face judecăți bazate pe criterii și de a justifica deciziile. Pentru 'Evaluation Text Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Alegi între baze de date SQL și NoSQL pentru o platformă de e-commerce cu trafic ridicat. Pe care ai alege și de ce?', 'answer': 'Pentru o platformă de e-commerce, o bază de date SQL este adesea o alegere mai bună din cauza nevoii de consistență puternică, tranzacții complexe și date relaționale structurate precum comenzi, inventar și utilizatori. Cu toate acestea, dacă scalabilitatea și flexibilitatea sunt mai importante—cum ar fi pentru gestionarea recenziilor produselor sau datelor de sesiune—o soluție NoSQL precum MongoDB sau DynamoDB ar putea fi integrată alături de SQL într-o arhitectură poliglotă.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Întrebările de evaluare testează capacitatea de a evalua calitatea, acuratețea sau eficacitatea a ceva, și de a face judecăți bazate pe criterii și de a justifica deciziile. Pentru 'Evaluation Text Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Revizuiești două framework-uri frontend posibile pentru o aplicație web enterprise la scară largă: React și Angular. Care dintre următoarele este cea mai rezonabilă bază pentru alegerea React în loc de Angular?', 'answer': [{'option': 'React nu necesită nicio curbă de învățare, deci este întotdeauna mai bun.', 'ans': false}, {'option': 'React impune o structură strictă a aplicației, ceea ce este ideal pentru echipe mari.', 'ans': false}, {'option': 'Arhitectura bazată pe componente a React-ului și ecosistemul mare oferă flexibilitate și ușurință de integrare cu alte biblioteci.', 'ans': true}, {'option': 'Angular nu mai este întreținut, deci React este singura opțiune viabilă.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Întrebările de evaluare testează capacitatea de a evalua calitatea, acuratețea sau eficacitatea a ceva, și de a face judecăți bazate pe criterii și de a justifica deciziile. Pentru 'Evaluation Text Question to Voice Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Echipa ta decide între construirea unei funcționalități intern sau folosirea unei soluții SaaS terță parte. Ce factori ai evalua pentru a face o recomandare și ce ar ghida decizia ta finală?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Întrebările de rezolvare a problemelor se concentrează pe identificarea, diagnosticarea și rezolvarea problemelor complexe, și adesea necesită gândire creativă sau strategică. Pentru 'Problem-Solving Text Question to Text Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Construiești o funcționalitate de căutare care trebuie să returneze rezultate relevante rapid, chiar și pe măsură ce setul de date crește. Cum ai aborda proiectarea acestui sistem pentru a menține performanța rapidă?', 'answer': 'Aș începe prin indexarea câmpurilor căutabile folosind un motor de căutare text complet precum Elasticsearch sau integrând strategii de indexare a bazei de date. Pentru a îmbunătăți performanța, aș pagina rezultatele, aș folosi cache pentru interogările frecvente și aș lua în considerare denormalizarea datelor pentru citiri mai rapide. În plus, aș monitoriza timpii de interogare și aș ajusta indexarea sau aș fragmenta datele dacă este necesar pe măsură ce setul de date crește.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Întrebările de rezolvare a problemelor se concentrează pe identificarea, diagnosticarea și rezolvarea problemelor complexe, și adesea necesită gândire creativă sau strategică. Pentru 'Problem-Solving Text Question to MCQ Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Aplicația ta mobilă se blochează aleatoriu pentru unii utilizatori, dar nu poți reproduce problema pe dispozitivele tale. Care este cel mai bun prim pas pentru a diagnostica problema?', 'answer': [{'option': 'Cere utilizatorilor să șteargă și să reinstaleze aplicația.', 'ans': false}, {'option': 'Trimite o actualizare de urgență cu modificări minime.', 'ans': false}, {'option': 'Verifică jurnalele de blocare și instrumentele analitice precum Firebase Crashlytics pentru a identifica modele.', 'ans': true}, {'option': 'Dezactivează funcționalitățile până când blocurile se opresc.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Întrebările de rezolvare a problemelor se concentrează pe identificarea, diagnosticarea și rezolvarea problemelor complexe, și adesea necesită gândire creativă sau strategică. Pentru 'Problem-Solving Text Question to Voice Answer', oferă rezultatul tău în format JSON astfel: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'O funcționalitate critică în aplicația ta web eșuează intermitent sub trafic ridicat, dar nu apar erori în jurnale. Cum ai aborda identificarea și rezolvarea problemei?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

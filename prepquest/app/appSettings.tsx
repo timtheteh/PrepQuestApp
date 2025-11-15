@@ -1422,8 +1422,8 @@ export default function AppSettingsScreen() {
   }, []);
 
   const handleLanguageSelect = React.useCallback((value: string) => {
-    // English, Chinese, Afrikaans, Indonesian, Malay, Czech, Dutch, German, Spanish, French, Italian, Swahili, Hungarian, Norwegian, Polish, Portuguese, and Romanian are fully supported, default to English for other languages
-    const selectedLanguage = (value === 'English' || value === 'Chinese' || value === 'Afrikaans' || value === 'Indonesian' || value === 'Malay' || value === 'Czech' || value === 'Dutch' || value === 'German' || value === 'Spanish' || value === 'French' || value === 'Italian' || value === 'Swahili' || value === 'Hungarian' || value === 'Norwegian' || value === 'Polish' || value === 'Portuguese' || value === 'Romanian') ? value : 'English';
+    // English, Chinese, Afrikaans, Indonesian, Malay, Czech, Dutch, German, Spanish, French, Italian, Swahili, Hungarian, Norwegian, Polish, Portuguese, Romanian, and Finnish are fully supported, default to English for other languages
+    const selectedLanguage = (value === 'English' || value === 'Chinese' || value === 'Afrikaans' || value === 'Indonesian' || value === 'Malay' || value === 'Czech' || value === 'Dutch' || value === 'German' || value === 'Spanish' || value === 'French' || value === 'Italian' || value === 'Swahili' || value === 'Hungarian' || value === 'Norwegian' || value === 'Polish' || value === 'Portuguese' || value === 'Romanian' || value === 'Finnish') ? value : 'English';
     setLanguage(selectedLanguage as Language);
     setIsLanguageModalOpen(false);
   }, [setLanguage]);

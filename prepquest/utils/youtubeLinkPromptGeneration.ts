@@ -1,4 +1,4 @@
-import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish, promptAndDataPortuguese, promptAndDataRomanian, promptAndDataFinnish, promptAndDataSwedish } from '@/constants/promptEngineering';
+import { promptAndData, promptAndDataChinese, promptAndDataAfrikaans, promptAndDataIndonesian, promptAndDataMalay, promptAndDataCzech, promptAndDataDutch, promptAndDataGerman, promptAndDataSpanish, promptAndDataFrench, promptAndDataItalian, promptAndDataSwahili, promptAndDataHungarian, promptAndDataNorwegian, promptAndDataPolish, promptAndDataPortuguese, promptAndDataRomanian, promptAndDataFinnish, promptAndDataSwedish, promptAndDataTagalog } from '@/constants/promptEngineering';
 import { Language } from '@/contexts/LanguageContext';
 
 export interface YouTubeLinkPromptParams {
@@ -150,6 +150,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
   if (modeStr === 'study' && language === 'Swedish') {
     prompt += `Jag studerar för ${studyMandatoryQuestion2} och min utbildningsnivå är ${studyMandatoryQuestion1}.\n`;
   }
+  if (modeStr === 'interview' && language === 'Tagalog') {
+    prompt += `Naghahanda ako para sa isang ${interviewType} interview para sa papel na ${interviewMandatoryQuestion1}.\n`;
+  }
+  if (modeStr === 'study' && language === 'Tagalog') {
+    prompt += `Nag-aaral ako para sa ${studyMandatoryQuestion2} at ang aking antas ng edukasyon ay ${studyMandatoryQuestion1}.\n`;
+  }
 
   // Add YouTube transcript context
   if (language === 'English') {
@@ -190,6 +196,8 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += `Tässä on lisätietoja ja kontekstia YouTube-videon tekstityksestä valmistautumistani varten: ${transcript}\n`;
   } else if (language === 'Swedish') {
     prompt += `Här är ytterligare information och kontext från en YouTube-videotranskript för min förberedelse: ${transcript}\n`;
+  } else if (language === 'Tagalog') {
+    prompt += `Narito ang karagdagang impormasyon at konteksto mula sa isang YouTube video transcript para sa aking paghahanda: ${transcript}\n`;
   }
 
   // Add flashcard distribution and type prompts
@@ -307,6 +315,12 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
         prompt += `Generera ${numQuestions} kort av typen '${flashcardType}'.\n`;
         // @ts-ignore
         prompt += `${promptAndDataSwedish[flashcardType].prompt}\n`;
+      }
+    } else if (language === 'Tagalog') {
+      for (const [flashcardType, numQuestions] of Object.entries(distribution)) {
+        prompt += `Lumikha ng ${numQuestions} na flashcards na uri ng '${flashcardType}'.\n`;
+        // @ts-ignore
+        prompt += `${promptAndDataTagalog[flashcardType].prompt}\n`;
       }
     }
   }
@@ -590,6 +604,21 @@ export const generateYouTubeLinkPrompt = (params: YouTubeLinkPromptParams): stri
     prompt += 'Exemplen jag har gett för frågorna och svaren är ENDAST EXEMPEL för att demonstrera frågestilarna för frågetyperna, DU MÅSTE ENDAST GENERERA frågor och svar som är DIREKT RELATERADE till ämnena jag studerar och min utbildningsnivå.\n';
     prompt += 'Det är extremt viktigt att du inte avviker från ämnena jag studerar.\n';
     prompt += 'Generera en JSON-array av kort i detta format: [{"flashcardType": <>, "question": <>, "answer": <>}], där varje {"flashcardType": <>, "question": <>, "answer": <>} representerar ett kort.';
+  }
+  if (language === 'Tagalog' && modeStr === 'interview' && isAIGenerate) {
+    prompt += 'Siguraduhing lumikha ng makabuluhan, maingat at malamang na mga tanong at sagot na partikular para sa aking interview at sa aking trabaho.\n';
+    prompt += 'Lumikha ng JSON array ng flashcards sa format na ito: [{"flashcardType": <>, "question": <>, "answer": <>}], kung saan ang bawat {"flashcardType": <>, "question": <>, "answer": <>} ay kumakatawan sa isang flashcard.';
+  }
+  if (language === 'Tagalog' && modeStr === 'interview' && !isAIGenerate) {
+    prompt += 'Siguraduhing lumikha ng makabuluhan, maingat at malamang na mga tanong at sagot na partikular para sa aking interview at sa aking trabaho.\n';
+    prompt += 'Gayunpaman, LUBHANG MAHALAGA NA HINDI KA LUMIHIS mula sa impormasyon at konteksto na ibinigay ko mula sa YouTube video transcript. MANATILI LAMANG SA NILALAMAN NG TRANSCRIPT. ';
+    prompt += 'Lumikha ng JSON array ng flashcards sa format na ito: [{"flashcardType": <>, "question": <>, "answer": <>}], kung saan ang bawat {"flashcardType": <>, "question": <>, "answer": <>} ay kumakatawan sa isang flashcard.';
+  }
+  if (language === 'Tagalog' && modeStr === 'study' && isAIGenerate) {
+    prompt += 'Siguraduhing lumikha ng makabuluhan, maingat at malamang na mga tanong at sagot na partikular para sa mga paksang aking pinag-aaralan at sa aking antas ng edukasyon.\n';
+    prompt += 'Ang mga halimbawa na ibinigay ko para sa mga tanong at sagot ay MGA HALIMBAWA LAMANG upang ipakita ang mga estilo ng tanong para sa mga uri ng tanong, DAPAT LAMANG KAYO LUMIKHA ng mga tanong at sagot na DIREKTANG KAUGNAY sa mga paksang aking pinag-aaralan at sa aking antas ng edukasyon.\n';
+    prompt += 'Lubhang mahalaga na hindi kayo lumihis mula sa mga paksang aking pinag-aaralan.\n';
+    prompt += 'Lumikha ng JSON array ng flashcards sa format na ito: [{"flashcardType": <>, "question": <>, "answer": <>}], kung saan ang bawat {"flashcardType": <>, "question": <>, "answer": <>} ay kumakatawan sa isang flashcard.';
   }
 
   return prompt;

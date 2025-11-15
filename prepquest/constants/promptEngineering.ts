@@ -2963,6 +2963,162 @@ export const promptAndDataSwedish = {
     }
 }
 
+export const promptAndDataTagalog = {
+    // Recall, Text to Text
+    "Recall Text Question to Text Answer":
+    {"prompt": "Ang mga tanong sa pag-alala ay sumusubok sa memorya sa pamamagitan ng pagtatanong ng mga tiyak na katotohanan, kahulugan, o impormasyon. Para sa 'Recall Text Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Recall Text Question to Text Answer', 'question': 'Ano ang pangunahing layunin ng isang DNS (Domain Name System) server?', 'answer': 'Ang isang DNS server ay nagsasalin ng mga domain name na nababasa ng tao (tulad ng www.example.com) sa IP addresses na ginagamit ng mga computer para makilala ang bawat isa sa network.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Text to MCQ
+    "Recall Text Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa pag-alala ay sumusubok sa memorya sa pamamagitan ng pagtatanong ng mga tiyak na katotohanan, kahulugan, o impormasyon. Para sa 'Recall Text Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Recall Text Question to MCQ Answer', 'question': 'Aling HTTP status code ang nagpapahiwatig na matagumpay ang isang request?', 'answer': [{'option': '404', 'ans': false}, {'option': '500', 'ans': false}, {'option': '200', 'ans': true}, {'option': '403', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to Text
+    "Recall Cloze Question to Text Answer":
+    {"prompt": "Ang mga tanong sa pag-alala ay sumusubok sa memorya sa pamamagitan ng pagtatanong ng mga tiyak na katotohanan, kahulugan, o impormasyon. Para sa 'Recall Cloze Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Recall Cloze Question to Text Answer', 'question': 'Sa JavaScript, ang keyword na <blank> ay ginagamit para mag-declare ng variable na may block scope at pigilan ang reassignment.', 'answer': 'const'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Recall"
+    },
+    // Recall, Cloze to MCQ
+    "Recall Cloze Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa pag-alala ay sumusubok sa memorya sa pamamagitan ng pagtatanong ng mga tiyak na katotohanan, kahulugan, o impormasyon. Para sa 'Recall Cloze Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Recall Cloze Question to MCQ Answer', 'question': 'Sa SQL, ang command na <blank> ay ginagamit para tanggalin ang lahat ng records mula sa isang table nang hindi naglo-log ng individual row deletions.', 'answer': [{'option': 'DELETE', 'ans': false}, {'option': 'TRUNCATE', 'ans': true}, {'option': 'REMOVE', 'ans': false}, {'option': 'DROP', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Recall"
+    },
+    // Comprehension, Text to Text
+    "Comprehension Text Question to Text Answer":
+    {"prompt": "Ang mga tanong sa pag-unawa ay sumusubok sa pagkaunawa sa pamamagitan ng pagtatanong ng mga paliwanag, interpretasyon, buod o paghahambing. Para sa 'Comprehension Text Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Comprehension Text Question to Text Answer', 'question': 'Ipaliwanag ang pagkakaiba sa pagitan ng shallow copy at deep copy sa programming.', 'answer': 'Ang shallow copy ay kumokopya lamang ng top-level references ng isang object, ibig sabihin ang nested objects ay shared pa rin. Ang deep copy ay recursively kumokopya ng lahat ng nested objects, na lumilikha ng ganap na independent duplicates ng original structure.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to MCQ
+    "Comprehension Text Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa pag-unawa ay sumusubok sa pagkaunawa sa pamamagitan ng pagtatanong ng mga paliwanag, interpretasyon, buod o paghahambing. Para sa 'Comprehension Text Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Comprehension Text Question to MCQ Answer', 'question': 'Ano ang pinakamahusay na nagpapaliwanag sa pagkakaiba sa pagitan ng HTTP at HTTPS?', 'answer': [{'option': 'Gumagamit ang HTTPS ng port 80, habang ang HTTP ay gumagamit ng port 443.', 'ans': false}, {'option': 'Nag-e-encrypt ang HTTP ng data habang nagta-transmit, habang ang HTTPS ay hindi.', 'ans': false}, {'option': 'Walang tunay na pagkakaiba sa pagitan ng HTTP at HTTPS.', 'ans': false}, {'option': 'Ang HTTPS ay nagdaragdag ng layer ng encryption sa pamamagitan ng SSL/TLS para ma-secure ang data transmission, hindi tulad ng HTTP.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Comprehension, Text to Voice
+    "Comprehension Text Question to Voice Answer":
+    {"prompt": "Ang mga tanong sa pag-unawa ay sumusubok sa pagkaunawa sa pamamagitan ng pagtatanong ng mga paliwanag, interpretasyon, buod o paghahambing. Para sa 'Comprehension Text Question to Voice Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Comprehension Text Question to Voice Answer', 'question': 'Paano pinapabuti ng load balancer ang reliability at scalability ng isang web application?', 'answer': ''}",
+      "questionType": "text",       
+      "answerType": "voice",
+      "cognitiveQnType": "Comprehension"
+    },
+    // Application, Text to Text
+    "Application Text Question to Text Answer":
+    {"prompt": "Ang mga tanong sa aplikasyon ay sumusubok sa kakayahang mag-apply ng kaalaman sa praktikal, bago o totoong mundo na sitwasyon. Para sa 'Application Text Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Application Text Question to Text Answer', 'question': 'Kailangan mong mag-store ng user session data nang pansamantala sa isang backend system. Aling data structure o storage method ang gagamitin mo at bakit?', 'answer': 'Ang in-memory key-value store tulad ng Redis ay isang angkop na pagpipilian dahil pinapayagan nito ang mabilis na read/write access at sumusuporta sa automatic expiration ng session data, na ideal para sa temporary session management.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to MCQ
+    "Application Text Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa aplikasyon ay sumusubok sa kakayahang mag-apply ng kaalaman sa praktikal, bago o totoong mundo na sitwasyon. Para sa 'Application Text Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Application Text Question to MCQ Answer', 'question': 'Nagde-design ka ng web form na nagko-collect ng sensitive user information. Alin sa sumusunod na aksyon ang pinaka-angkop para mapahusay ang seguridad habang nagta-transmit ng data?', 'answer': [{'option': 'I-submit ang form sa pamamagitan ng HTTPS gamit ang POST request.', 'ans': true}, {'option': 'Gumamit ng GET request para i-submit ang form para sa mas mabilis na bilis.', 'ans': false}, {'option': 'I-minify ang HTML para mas mahirap basahin ang source code.', 'ans': false}, {'option': 'I-store ang data sa cookies para sa mabilis na access.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Application"
+    },
+    // Application, Text to Voice
+    "Application Text Question to Voice Answer":
+    {"prompt": "Ang mga tanong sa aplikasyon ay sumusubok sa kakayahang mag-apply ng kaalaman sa praktikal, bago o totoong mundo na sitwasyon. Para sa 'Application Text Question to Voice Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Application Text Question to Voice Answer', 'question': 'Ikaw ay inatasan na mapabuti ang performance ng isang REST API na nakakaranas ng mataas na latency sa ilalim ng load. Anong praktikal na hakbang ang gagawin mo para makilala at matugunan ang isyu?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Application"
+    },
+    // Analysis, Text to Text
+    "Analysis Text Question to Text Answer":
+    {"prompt": "Ang mga tanong sa pagsusuri ay sumusubok sa kakayahang hatiin ang mga kumplikadong problema sa mas maliliit na bahagi at suriin ang mga relasyon. Para sa 'Analysis Text Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Analysis Text Question to Text Answer', 'question': 'Ang A/B testing ay nagpapakita na ang bagong checkout page ay humahantong sa mas kaunting natapos na mga purchase, kahit na mas mabilis na umabot ang mga user sa payment step. Paano mo susuriin ang resultang ito?', 'answer': 'Susuriin ko nang detalyado ang user journey, na nakatuon sa kung saan nag-drop off ang mga user sa bagong flow. Susuriin ko ang session recordings, funnel data, at form abandonment rates. Posible na ang mas mabilis na flow ay nagpapakilala ng usability issues, pagkalito, o trust concerns. Ihahambing ko ang error rates, field validation behavior, at loading times. Titingnan ko rin ang qualitative feedback o surveys para maintindihan ang user perception.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Analysis"
+    },
+    "Analysis Text Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa pagsusuri ay sumusubok sa kakayahang hatiin ang mga kumplikadong problema sa mas maliliit na bahagi at suriin ang mga relasyon. Para sa 'Analysis Text Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Analysis Text Question to MCQ Answer', 'question': 'Sinusuri ng iyong team kung bakit ang bagong deployed na feature ay nagdulot ng makabuluhang pagtaas sa page load times. Ano ang pinaka-lohikal na susunod na hakbang sa proseso ng pagsusuri?', 'answer': [{'option': 'I-roll back agad ang deployment.', 'ans': false}, {'option': 'I-profile ang frontend at backend performance para mahanap ang mga tiyak na bottlenecks.', 'ans': true}, {'option': 'Dagdagan ang server capacity at obserbahan ang mga resulta.', 'ans': false}, {'option': 'Lumipat sa ibang frontend framework.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Analysis"
+    },
+    // Analysis, Text to Voice
+    "Analysis Text Question to Voice Answer":
+    {"prompt": "Ang mga tanong sa pagsusuri ay sumusubok sa kakayahang hatiin ang mga kumplikadong problema sa mas maliliit na bahagi at suriin ang mga relasyon. Para sa 'Analysis Text Question to Voice Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Analysis Text Question to Voice Answer', 'question': 'Napapansin mo ang madalas na timeouts kapag na-access ng mga user ang iyong application sa peak hours. Paano mo makikilala ang root cause ng isyu?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Analysis"
+    },
+    // Synthesis, Text to Text
+    "Synthesis Text Question to Text Answer":
+    {"prompt": "Ang mga tanong sa synthesis ay sumusubok sa kakayahang pagsamahin o pagsama-samahin ang iba't ibang piraso ng impormasyon para lumikha ng bago, coherent na buo, o magmungkahi ng mga solusyon. Para sa 'Synthesis Text Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Synthesis Text Question to Text Answer', 'question': 'Mag-design ng scalable notification system na makakapagpadala ng emails, SMS, at push notifications sa milyun-milyong users. Anong key components ang isasama mo at paano sila mag-i-interact?', 'answer': 'Magde-design ako ng system na may message queue para ma-handle ang mataas na throughput, isang notification service na nagpo-process ng messages at nagpapadala sa pamamagitan ng naaangkop na channels (email, SMS, push). Gagamitin ng system ang microservices para sa bawat notification type, isang database para i-track ang delivery status, at rate limiting para maiwasan ang overload. Ang load balancers at auto-scaling groups ay magti-tiyak ng availability at scalability.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to MCQ
+    "Synthesis Text Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa synthesis ay sumusubok sa kakayahang pagsamahin o pagsama-samahin ang iba't ibang piraso ng impormasyon para lumikha ng bago, coherent na buo, o magmungkahi ng mga solusyon. Para sa 'Synthesis Text Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Synthesis Text Question to MCQ Answer', 'question': 'Kailangan mong mag-design ng system na nag-a-aggregate ng real-time data mula sa maraming sensors at nagbibigay ng analytics dashboards. Aling design choice ang pinakamahusay na nagba-balance ng scalability, reliability, at latency?', 'answer': [{'option': 'Gumamit ng centralized database kung saan lahat ng sensor data ay isinusulat nang synchronously.', 'ans': false}, {'option': 'I-store ang data nang lokal sa bawat sensor at batch upload sa pagtatapos ng araw.', 'ans': false}, {'option': 'Gumamit ng client-side processing para sa lahat ng analytics para mabawasan ang server load.', 'ans': false}, {'option': 'I-implement ang distributed message queues na may microservices na nagpo-process ng data nang asynchronously.', 'ans': true}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Synthesis, Text to Voice
+    "Synthesis Text Question to Voice Answer":
+    {"prompt": "Ang mga tanong sa synthesis ay sumusubok sa kakayahang pagsamahin o pagsama-samahin ang iba't ibang piraso ng impormasyon para lumikha ng bago, coherent na buo, o magmungkahi ng mga solusyon. Para sa 'Synthesis Text Question to Voice Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Synthesis Text Question to Voice Answer', 'question': 'Mag-design ng system na makakapag-handle ng real-time chat para sa milyun-milyong users, na tinitiyak ang message delivery, scalability, at data consistency. Ilarawan ang key components at paano sila mag-i-interact.', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Synthesis"
+    },
+    // Evaluation, Text to Text
+    "Evaluation Text Question to Text Answer":
+    {"prompt": "Ang mga tanong sa pagtatasa ay sumusubok sa kakayahang suriin ang kalidad, katumpakan, o pagiging epektibo ng isang bagay, at gumawa ng mga paghatol batay sa criteria at bigyang-katwiran ang mga desisyon. Para sa 'Evaluation Text Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Evaluation Text Question to Text Answer', 'question': 'Pumipili ka sa pagitan ng SQL at NoSQL databases para sa isang high-traffic e-commerce platform. Alin ang pipiliin mo at bakit?', 'answer': 'Para sa isang e-commerce platform, ang SQL database ay madalas na mas mahusay na pagpipilian dahil sa pangangailangan ng malakas na consistency, kumplikadong transactions, at structured relational data tulad ng orders, inventory, at users. Gayunpaman, kung ang scalability at flexibility ay mas mahalaga—tulad ng para sa pagha-handle ng product reviews o session data—ang NoSQL solution tulad ng MongoDB o DynamoDB ay maaaring ma-integrate kasama ng SQL sa isang polyglot architecture.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to MCQ
+    "Evaluation Text Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa pagtatasa ay sumusubok sa kakayahang suriin ang kalidad, katumpakan, o pagiging epektibo ng isang bagay, at gumawa ng mga paghatol batay sa criteria at bigyang-katwiran ang mga desisyon. Para sa 'Evaluation Text Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Evaluation Text Question to MCQ Answer', 'question': 'Nire-review mo ang dalawang posibleng frontend frameworks para sa isang large-scale enterprise web app: React at Angular. Alin sa sumusunod ang pinaka-makatwirang batayan para pumili ng React sa halip na Angular?', 'answer': [{'option': 'Ang React ay hindi nangangailangan ng learning curve, kaya palaging mas mahusay ito.', 'ans': false}, {'option': 'Ang React ay nagpapatupad ng mahigpit na application structure, na ideal para sa malalaking teams.', 'ans': false}, {'option': 'Ang component-based architecture ng React at malaking ecosystem ay nagbibigay ng flexibility at kadalian ng integration sa ibang libraries.', 'ans': true}, {'option': 'Ang Angular ay hindi na maintained, kaya ang React ay ang tanging viable option.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Evaluation, Text to Voice
+    "Evaluation Text Question to Voice Answer":
+    {"prompt": "Ang mga tanong sa pagtatasa ay sumusubok sa kakayahang suriin ang kalidad, katumpakan, o pagiging epektibo ng isang bagay, at gumawa ng mga paghatol batay sa criteria at bigyang-katwiran ang mga desisyon. Para sa 'Evaluation Text Question to Voice Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Evaluation Text Question to Voice Answer', 'question': 'Ang iyong team ay nagde-decide sa pagitan ng pagbuo ng feature in-house o paggamit ng third-party SaaS solution. Anong mga factors ang susuriin mo para makagawa ng rekomendasyon, at ano ang maggi-guide sa iyong final decision?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Evaluation"
+    },
+    // Problem-Solving, Text to Text
+    "Problem-Solving Text Question to Text Answer":
+    {"prompt": "Ang mga tanong sa paglutas ng problema ay nakatuon sa pagkilala, pag-diagnose at paglutas ng mga kumplikadong isyu, at madalas na nangangailangan ng malikhaing o estratehikong pag-iisip. Para sa 'Problem-Solving Text Question to Text Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Problem-Solving Text Question to Text Answer', 'question': 'Gumagawa ka ng search feature na kailangang magbalik ng relevant na results nang mabilis, kahit na lumalaki ang dataset. Paano mo lalapitan ang pagde-design ng system na ito para mapanatili ang mabilis na performance?', 'answer': 'Magsisimula ako sa pag-index ng searchable fields gamit ang full-text search engine tulad ng Elasticsearch o pag-integrate ng database indexing strategies. Para mapabuti ang performance, magpa-paginate ako ng results, gumamit ng caching para sa madalas na queries, at isaalang-alang ang denormalizing data para sa mas mabilis na reads. Karagdagan pa, susubaybayan ko ang query times at i-a-adjust ang indexing o shard data kung kinakailangan habang lumalaki ang dataset.'}",
+      "questionType": "text",
+      "answerType": "text",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to MCQ
+    "Problem-Solving Text Question to MCQ Answer":
+    {"prompt": "Ang mga tanong sa paglutas ng problema ay nakatuon sa pagkilala, pag-diagnose at paglutas ng mga kumplikadong isyu, at madalas na nangangailangan ng malikhaing o estratehikong pag-iisip. Para sa 'Problem-Solving Text Question to MCQ Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Problem-Solving Text Question to MCQ Answer', 'question': 'Ang iyong mobile app ay nag-crash nang random para sa ilang users, ngunit hindi mo ma-reproduce ang isyu sa iyong devices. Ano ang pinakamahusay na unang hakbang para ma-diagnose ang problema?', 'answer': [{'option': 'Hilingin sa users na i-delete at i-reinstall ang app.', 'ans': false}, {'option': 'I-push ang emergency update na may minimal na changes.', 'ans': false}, {'option': 'Suriin ang crash logs at analytics tools tulad ng Firebase Crashlytics para makilala ang mga pattern.', 'ans': true}, {'option': 'I-disable ang features hanggang tumigil ang crashes.', 'ans': false}]}",
+      "questionType": "text",
+      "answerType": "mcq",
+      "cognitiveQnType": "Problem-Solving"
+    },
+    // Problem-Solving, Text to Voice
+    "Problem-Solving Text Question to Voice Answer":
+    {"prompt": "Ang mga tanong sa paglutas ng problema ay nakatuon sa pagkilala, pag-diagnose at paglutas ng mga kumplikadong isyu, at madalas na nangangailangan ng malikhaing o estratehikong pag-iisip. Para sa 'Problem-Solving Text Question to Voice Answer', ibigay ang iyong output sa json format tulad nito: {'flashcardType': 'Problem-Solving Text Question to Voice Answer', 'question': 'Ang kritikal na feature sa iyong web application ay pansamantalang nabigo sa ilalim ng mataas na traffic, ngunit walang errors na lumilitaw sa logs. Paano mo lalapitan ang pagkilala at paglutas ng isyu?', 'answer': ''}",
+      "questionType": "text",
+      "answerType": "voice",
+      "cognitiveQnType": "Problem-Solving"
+    }
+}
+
 const cognitiveQnTypeWeightsForInterviewType = {
     "technical": {
         "Recall": 0.15,

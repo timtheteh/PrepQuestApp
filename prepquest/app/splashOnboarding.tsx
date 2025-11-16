@@ -1147,13 +1147,20 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
   };
 
   const handleLanguageChange = async (languageKey: string) => {
+    // Reflect the user's choice in UI
     setSelectedLanguage(languageKey as any);
-    // Also update the context language for the carousel
-    setLanguage(languageKey as any);
-    try {
-      await AsyncStorage.setItem('languagePreferenceOnboarding', languageKey);
-    } catch (error) {
-      console.error('Error saving language preference:', error);
+    // Only persist and set context for English/Chinese; otherwise show error toast
+    if (languageKey === 'English' || languageKey === 'Chinese') {
+      setLanguage(languageKey as any);
+      try {
+        await AsyncStorage.setItem('languagePreferenceOnboarding', languageKey);
+      } catch (error) {
+        console.error('Error saving language preference:', error);
+      }
+    } else {
+      const msg = strings[language]?.appSettingsPage?.languageNotAvailableYet 
+        || strings.English.appSettingsPage.languageNotAvailableYet;
+      showErrorToast(msg);
     }
   };
 
@@ -4287,13 +4294,20 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         {currentSection === 'languageSelection' ? (
           <>
             {/* Next button only for language selection */}
-            <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+            <TouchableOpacity 
+              style={[styles.nextButton, !(['English', 'Chinese'].includes(selectedLanguage)) && styles.disabledButton]} 
+              onPress={(['English', 'Chinese'].includes(selectedLanguage)) ? handleNextPress : undefined}
+              disabled={!(['English', 'Chinese'].includes(selectedLanguage))}
+            >
               <View style={styles.buttonWithIcon}>
-                <Text style={styles.nextButtonText}>{getTranslatedText(selectedLanguage, 'next')}</Text>
+                <Text style={[styles.nextButtonText, !(['English', 'Chinese'].includes(selectedLanguage)) && styles.disabledButtonText]}>
+                  {getTranslatedText(selectedLanguage, 'next')}
+                </Text>
                 <Svg width="12" height="12" viewBox="0 0 12 12">
                   <Polygon
                     points="12,6 0,0 0,12"
                     fill={Colors.light.text}
+                    opacity={!(['English', 'Chinese'].includes(selectedLanguage)) ? 0.8 : 1}
                   />
                 </Svg>
               </View>

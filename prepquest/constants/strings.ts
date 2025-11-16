@@ -467,7 +467,7 @@ export const strings: Record<string, any> = {
       backupFailed: 'Backup failed',
       importFailed: 'Import failed',
       clearDataFailed: 'Clear data failed',
-      languageNotAvailableYet: 'This language will be supported in the future.',
+      languageNotAvailableYet: 'This language will be supported in the future. Please select English or 中文.',
       noUserIdFound: 'No user ID found. Please try logging in again.',
       // Modal messages
       cancelImport: 'Cancel Import?',
@@ -2149,7 +2149,7 @@ export const strings: Record<string, any> = {
       backupFailed: '备份失败',
       importFailed: '导入失败',
       clearDataFailed: '清除数据失败',
-      languageNotAvailableYet: '此语言将在未来得到支持。',
+      languageNotAvailableYet: '此语言将在未来得到支持。\n请选择English或中文。',
       noUserIdFound: '未找到用户ID。请重新登录。',
       // Modal messages
       cancelImport: '取消导入?',

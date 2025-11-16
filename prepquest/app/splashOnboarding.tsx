@@ -283,6 +283,17 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
         const savedLanguage = await AsyncStorage.getItem('languagePreferenceOnboarding');
         if (savedLanguage) {
           setSelectedLanguage(savedLanguage);
+        } else {
+          // Default initial selection from device language (Chinese for zh*, else English)
+          try {
+            const locale = (Intl && typeof Intl.DateTimeFormat === 'function'
+              ? Intl.DateTimeFormat().resolvedOptions().locale
+              : 'en')?.toLowerCase?.() || 'en';
+            const initialLang = locale.startsWith('zh') ? 'Chinese' : 'English';
+            setSelectedLanguage(initialLang);
+          } catch {
+            setSelectedLanguage('English');
+          }
         }
       } catch (error) {
         console.error('Error loading language preference:', error);

@@ -9,6 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enUS, zhCN } from '@clerk/localizations';
 
 import { setupDatabase } from '@/db/index';
 import SplashScreen from './splash';
@@ -672,11 +673,24 @@ export default function RootLayout() {
     throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY environment variable is required');
   }
 
+  // Determine Clerk locale from device language (English default, Chinese if zh)
+  const clerkLocalization = (() => {
+    try {
+      // Dynamically require to avoid build-time type resolution issues if not installed
+      const Localization = require('expo-localization');
+      const code = (Localization?.locale || (Localization?.locales && Localization.locales[0]) || 'en').toLowerCase();
+      return code.startsWith('zh') ? zhCN : enUS;
+    } catch {
+      return enUS;
+    }
+  })();
+
   return (
     <SafeAreaProvider>
       <ClerkProvider
         publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}
         tokenCache={tokenCache}
+        localization={clerkLocalization}
       >
         <LanguageProvider>
           <HybridAuthProvider>

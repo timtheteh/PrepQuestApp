@@ -2083,6 +2083,15 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
             // Store userID in AsyncStorage for compatibility with existing database operations
             await AsyncStorage.setItem('userID', user.id);
             
+            // Persist selected language to users table now that userID is available
+            if (selectedLanguage === 'English' || selectedLanguage === 'Chinese') {
+              try {
+                await setLanguage(selectedLanguage as any);
+              } catch (e) {
+                console.warn('Failed to persist language after auth:', e);
+              }
+            }
+            
             // Check if user exists in local database, if not create them
             // This handles both new Clerk signups and social login users
             const dbSuccess = await createUser(user.id);

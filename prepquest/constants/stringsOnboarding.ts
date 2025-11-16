@@ -1,7 +1,7 @@
 // Onboarding strings for different languages
 export const stringsOnboarding = {
   English: {
-    skip: 'Skip',
+    skip: 'Skip Onboarding',
     next: 'Next',
     back: 'Back',
     welcomeTo: 'Welcome to',
@@ -152,7 +152,7 @@ export const stringsOnboarding = {
     resendingCode: 'Resending...',
   },
   Chinese: {
-    skip: '跳过',
+    skip: '跳过引导',
     next: '下一步',
     back: '返回',
     welcomeTo: '欢迎来到',

@@ -37,6 +37,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Fonts';
 import { BackgroundTaskNotification } from '@/components/inAppNotifications/BackgroundTaskNotification';
+import { Toast } from '@/components/general/Toast';
 
 
 const TitleToggleRow = React.memo(({ text, value, onValueChange, language }: { text: string; value: boolean; onValueChange: (value: boolean) => void; language: string }) => {
@@ -93,6 +94,10 @@ export default function AppSettingsScreen() {
 
   // language modal state
   const [isLanguageModalOpen, setIsLanguageModalOpen] = React.useState(false);
+  
+  // toast state
+  const [isToastVisible, setIsToastVisible] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState('');
 
   // backup progress state - now handled by background task context
   const { 
@@ -1422,11 +1427,15 @@ export default function AppSettingsScreen() {
   }, []);
 
   const handleLanguageSelect = React.useCallback((value: string) => {
-    // English, Chinese, Afrikaans, Indonesian, Malay, Czech, Dutch, German, Spanish, French, Italian, Swahili, Hungarian, Norwegian, Polish, Portuguese, Romanian, Finnish, Swedish, and Tagalog are fully supported, default to English for other languages
-    const selectedLanguage = (value === 'English' || value === 'Chinese' || value === 'Afrikaans' || value === 'Indonesian' || value === 'Malay' || value === 'Czech' || value === 'Dutch' || value === 'German' || value === 'Spanish' || value === 'French' || value === 'Italian' || value === 'Swahili' || value === 'Hungarian' || value === 'Norwegian' || value === 'Polish' || value === 'Portuguese' || value === 'Romanian' || value === 'Finnish' || value === 'Swedish' || value === 'Tagalog') ? value : 'English';
-    setLanguage(selectedLanguage as Language);
-    setIsLanguageModalOpen(false);
-  }, [setLanguage]);
+    // Only allow English or Chinese; otherwise show error toast and keep modal open
+    if (value === 'English' || value === 'Chinese') {
+      setLanguage(value as Language);
+      setIsLanguageModalOpen(false);
+    } else {
+      setToastMessage(strings[language]?.appSettingsPage?.languageNotAvailableYet || 'This language will be supported in the future.');
+      setIsToastVisible(true);
+    }
+  }, [setLanguage, language]);
 
   const handleBackupOnlyFormEntriesToggle = React.useCallback(async () => {
     if (shouldDisableOtherButtons) {
@@ -3823,6 +3832,11 @@ export default function AppSettingsScreen() {
 
         {/* In-app notifications */}
         <BackgroundTaskNotification />
+        <Toast 
+          visible={isToastVisible} 
+          message={toastMessage} 
+          onHide={() => setIsToastVisible(false)} 
+        />
     </View>
   );
 }

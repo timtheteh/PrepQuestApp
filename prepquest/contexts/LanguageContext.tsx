@@ -63,11 +63,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (userID) {
         const result = await db.getFirstAsync(`SELECT language FROM users WHERE userID = ?`, [userID]) as any;
         if (result && result.language && typeof result.language === 'string') {
-          // English, Chinese, Afrikaans, Indonesian, Malay, Czech, Dutch, German, Spanish, French, Italian, Swahili, Hungarian, Norwegian, Polish, Portuguese, Romanian, Finnish, Swedish, and Tagalog are fully supported, default to English for other languages
+          // Only allow English or Chinese; default to English otherwise
           const loadedLanguage = result.language as Language;
-          const supportedLanguage = (loadedLanguage === 'English' || loadedLanguage === 'Chinese' || loadedLanguage === 'Afrikaans' || loadedLanguage === 'Indonesian' || loadedLanguage === 'Malay' || loadedLanguage === 'Czech' || loadedLanguage === 'Dutch' || loadedLanguage === 'German' || loadedLanguage === 'Spanish' || loadedLanguage === 'French' || loadedLanguage === 'Italian' || loadedLanguage === 'Swahili' || loadedLanguage === 'Hungarian' || loadedLanguage === 'Norwegian' || loadedLanguage === 'Polish' || loadedLanguage === 'Portuguese' || loadedLanguage === 'Romanian' || loadedLanguage === 'Finnish' || loadedLanguage === 'Swedish' || loadedLanguage === 'Tagalog') 
-            ? loadedLanguage 
-            : 'English';
+          const supportedLanguage = (loadedLanguage === 'English' || loadedLanguage === 'Chinese') ? loadedLanguage : 'English';
           setLanguageState(supportedLanguage);
         }
       }
@@ -82,12 +80,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // When setLanguage is called, update both state and DB
   const setLanguage = async (lang: Language) => {
-    setLanguageState(lang);
+    const finalLang: Language = (lang === 'English' || lang === 'Chinese') ? lang : 'English';
+    setLanguageState(finalLang);
     try {
       // Try to get user ID from AsyncStorage as fallback
       const userID = await AsyncStorage.getItem('userID');
       if (userID) {
-        await db.runAsync(`UPDATE users SET language = ? WHERE userID = ?`, [lang, userID]);
+        await db.runAsync(`UPDATE users SET language = ? WHERE userID = ?`, [finalLang, userID]);
       }
     } catch (e) {}
   };

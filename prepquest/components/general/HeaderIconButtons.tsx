@@ -382,6 +382,7 @@ export const HeaderIconButtons = forwardRef<HeaderIconButtonsRef, HeaderIconButt
       <View
         ref={aiButtonWrapperRef}
         onLayout={measureAIDecksButton}
+        collapsable={false}
         style={styles.aiButtonWrapper}
       >
         <CircleIconButton 
@@ -517,8 +518,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: 9,
   },
   aiButtonWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    // Transparent wrapper for measurement only - doesn't affect button positioning
   },
   filterButton: {
     justifyContent: 'center',

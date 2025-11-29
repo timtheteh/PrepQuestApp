@@ -5,7 +5,17 @@ import { Asset } from 'expo-asset';
 // User ID variable - change this once to update all user references
 const DUMMY_USER_ID = 'user_35FI68f0L87Ctneo48PTRHvObeu';
 
+// Flag to control whether dummy data should be initialized
+// Set to true to enable dummy data initialization, false to disable it
+const ENABLE_DUMMY_DATA = false;
+
 export async function populateDummyData() {
+  // Early return if dummy data initialization is disabled
+  if (!ENABLE_DUMMY_DATA) {
+    console.log('⚠️ Dummy data initialization is disabled. Set ENABLE_DUMMY_DATA to true to enable it.');
+    return;
+  }
+
   try {
     console.log('📊 Starting to populate dummy data...');
     const startTime = Date.now();

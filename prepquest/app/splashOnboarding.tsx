@@ -875,7 +875,72 @@ export default function SplashOnboarding({ onComplete, onAuthComplete, onHideLoa
     }
   };
 
+  // Validation function for comma-separated text inputs
+  const validateTextInput = (input: string): boolean => {
+    if (!input || input.trim() === '') {
+      return true; // Empty input is valid (optional fields)
+    }
+    
+    // Split by various comma characters (including Unicode variants)
+    const items = input.split(/[\u002C\uFF0C\u060C\u201A\u201E\u2E41\u3001\uFE10\uFE11\uFE50\uFE51\uFF64]/).map(s => s.trim());
+    
+    // Check if there are any empty items after splitting and trimming
+    const hasEmptyItems = items.some(item => item === '');
+    
+    // Check if there are any items that are just whitespace or special characters
+    const hasInvalidItems = items.some(item => 
+      item === '' ||
+      !/^[\p{L}\p{N} '\u2019]+$/u.test(item) // Only letters, numbers, spaces, and apostrophes
+    );
+    
+    return !hasEmptyItems && !hasInvalidItems;
+  };
+
   const handleNextPress = () => {
+    // Validate text inputs before transitioning
+    if (currentSection === 'onboardingPage2') {
+      // Validate subject inputs
+      const subjectInput = selectedCard === 'study' ? studySubjectInput : interviewSubjectInput;
+      if (subjectInput.trim() !== '' && !validateTextInput(subjectInput)) {
+        showErrorToast(getTranslatedText(selectedLanguage, 'invalidTextInput'));
+        return;
+      }
+    } else if (currentSection === 'onboardingPage3') {
+      // Validate education inputs
+      const educationInput = selectedCard === 'study' ? studyEducationInput : interviewEducationInput;
+      if (educationInput.trim() !== '' && !validateTextInput(educationInput)) {
+        showErrorToast(getTranslatedText(selectedLanguage, 'invalidTextInput'));
+        return;
+      }
+    } else if (currentSection === 'onboardingPage4') {
+      // Validate optional inputs based on mode
+      if (selectedCard === 'study') {
+        // Validate exam and study topics
+        if (examInput.trim() !== '' && !validateTextInput(examInput)) {
+          showErrorToast(getTranslatedText(selectedLanguage, 'invalidTextInput'));
+          return;
+        }
+        if (studyTopicsInput.trim() !== '' && !validateTextInput(studyTopicsInput)) {
+          showErrorToast(getTranslatedText(selectedLanguage, 'invalidTextInput'));
+          return;
+        }
+      } else {
+        // Validate experience level, company, and topics
+        if (experienceLevelInput.trim() !== '' && !validateTextInput(experienceLevelInput)) {
+          showErrorToast(getTranslatedText(selectedLanguage, 'invalidTextInput'));
+          return;
+        }
+        if (companyInput.trim() !== '' && !validateTextInput(companyInput)) {
+          showErrorToast(getTranslatedText(selectedLanguage, 'invalidTextInput'));
+          return;
+        }
+        if (topicsInput.trim() !== '' && !validateTextInput(topicsInput)) {
+          showErrorToast(getTranslatedText(selectedLanguage, 'invalidTextInput'));
+          return;
+        }
+      }
+    }
+    
     if (currentSection === 'languageSelection') {
       // Start fade-out of language selector first
       Animated.timing(languageSelectorFadeAnim, {

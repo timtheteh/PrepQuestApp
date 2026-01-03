@@ -18,6 +18,7 @@
 ## 📖 Table of Contents
 
 - [Overview](#-overview)
+- [App Snapshots](#-app-snapshots)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
@@ -44,6 +45,16 @@ PrepQuest enables students and interview goers to better prepare for their tests
 - **Spaced Repetition**: Advanced FSRS algorithm for optimal learning retention
 - **Multi-Modal**: Support for text, images, audio, and handwritten content
 - **Cross-Platform**: Native iOS and Android support with shared codebase
+
+---
+
+## 🖼️ App Snapshots
+
+### Splash Screen, Onboarding, Login/Signup
+
+| Heading | Heading |
+| ------- | ------- | 
+| <image> | <image> |
 
 ---
 
@@ -262,6 +273,12 @@ The app supports multiple input methods for generating flashcards:
    - Automatic transcript extraction
    - Video metadata parsing
    - Smart content segmentation
+  
+4. **Manually Adding Flashcards** (`manualAddDeck.tsx`)
+   - Manually typing question and answers
+   - Adding custom images
+   - Adding custom drawings
+   - Adding custom voice input question and answers
 
 ### Background Task System
 
@@ -275,7 +292,6 @@ The app supports multiple input methods for generating flashcards:
 - **Internationalization**: Full i18n support via LanguageContext
 - **Dynamic Language Switching**: Change language on-the-fly
 - **Localized Content**: All UI strings and content localized
-- **RTL Support**: Right-to-left language support (where applicable)
 
 ---
 

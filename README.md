@@ -18,7 +18,7 @@
 ## 📖 Table of Contents
 
 - [Overview](#-overview)
-- [App Snapshots](#-app-snapshots)
+- [App Snapshots](#app-snapshots)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)

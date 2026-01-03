@@ -4,7 +4,7 @@
 
 **AI-Powered Interview & Study Preparation Platform**
 
-*Transform your learning journey with intelligent flashcards, spaced repetition, and comprehensive study tools*
+*Transform your learning journey with intelligent flashcards and comprehensive study tools*
 
 [![React Native](https://img.shields.io/badge/React%20Native-0.79.5-61DAFB?logo=react)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-53.0.22-000020?logo=expo)](https://expo.dev/)
@@ -447,41 +447,9 @@ The project uses EAS Build for native builds. Configuration is in `eas.json`:
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes** following the code style
-4. **Test thoroughly** on both iOS and Android
-5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-6. **Push to the branch** (`git push origin feature/amazing-feature`)
-7. **Open a Pull Request**
-
-### Contribution Guidelines
-
-- Follow TypeScript best practices
-- Write clear commit messages
-- Update documentation as needed
-- Add tests for new features (when test suite is implemented)
-- Ensure code works on both iOS and Android
-
----
-
 ## 📄 License
 
 This project is **private** and proprietary. All rights reserved.
-
----
-
-## 📞 Contact & Support
-
-For questions, issues, or feature requests:
-
-- **Issues**: Open an issue on the repository
-- **Email**: [Your contact email]
-- **Documentation**: See the `prepquest/README/` directory for detailed guides
 
 ---
 

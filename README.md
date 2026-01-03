@@ -47,7 +47,7 @@ PrepQuest enables students and interview goers to better prepare for their tests
 - **Cross-Platform**: Native iOS and Android support with shared codebase
 
 ---
-## 🖼️ App Snapshots
+## App Snapshots
 
 | Splash | Language | Onboarding | Onboarding | Onboarding | Onboarding |
 | ------- | ------- | ------- | ------- | ------- | ------- |

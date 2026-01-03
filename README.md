@@ -27,7 +27,6 @@
 - [Environment Setup](#-environment-setup)
 - [Authentication](#-authentication)
 - [Build & Deployment](#-build--deployment)
-- [Contributing](#-contributing)
 - [License](#-license)
 
 ---

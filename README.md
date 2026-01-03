@@ -52,31 +52,14 @@ PrepQuest enables students and interview goers to better prepare for their tests
 
 ### Splash Screen, Onboarding, Login/Signup
 
-| Heading | Heading | Heading | Heading | Heading | Heading | 
-| ------- | ------- | ------- | ------- | ------- | ------- | 
-| <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 57 52" src="https://github.com/user-attachments/assets/47ddf335-e9ac-49e3-8243-ec5c02cea602" />
- | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 57 58" src="https://github.com/user-attachments/assets/4185b87c-2445-4ec8-beb4-689db9295fb0" />
- | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 14" src="https://github.com/user-attachments/assets/dff6c8ee-8acb-4c59-9e02-adbf366bc6a2" /> |
- <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 22" src="https://github.com/user-attachments/assets/f132fea9-cba5-426c-8690-5374b5cfe9a9" /> | 
- <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 51" src="https://github.com/user-attachments/assets/1c3d71fa-7d7c-4ad0-a2cd-6c845cc818da" /> |
-<img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 56" src="https://github.com/user-attachments/assets/a309b56f-0ccb-44fd-a620-ae8071fb575d" /> |
-
-| Heading | Heading | Heading | Heading | Heading | Heading | 
-| ------- | ------- | ------- | ------- | ------- | ------- | 
-| <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 59" src="https://github.com/user-attachments/assets/71dacc72-528c-4629-a659-8775f8f36933" /> |
-<img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 59 03" src="https://github.com/user-attachments/assets/f63e2e32-4f84-4a8a-b3e2-d8f3de774a0a" /> |
-<img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 02 59" src="https://github.com/user-attachments/assets/eb5692b3-0d02-4668-8e9c-d6bd602ab4d1" /> | 
-<img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 03 12" src="https://github.com/user-attachments/assets/e155c9c9-5d62-425b-b52e-5b464b807cb6" /> |
-<img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 04 29" src="https://github.com/user-attachments/assets/4d180c71-5f68-4f3b-8c3c-b051f374423d" /> | 
-<img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 04 33" src="https://github.com/user-attachments/assets/ae58f4c0-286d-48ce-8a9c-98ff9980ee34" /> |
+| Heading | Heading | Heading | Heading | Heading | Heading |
+| ------- | ------- | ------- | ------- | ------- | ------- |
+| <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 57 52" src="https://github.com/user-attachments/assets/47ddf335-e9ac-49e3-8243-ec5c02cea602" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 57 58" src="https://github.com/user-attachments/assets/4185b87c-2445-4ec8-beb4-689db9295fb0" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 14" src="https://github.com/user-attachments/assets/dff6c8ee-8acb-4c59-9e02-adbf366bc6a2" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 22" src="https://github.com/user-attachments/assets/f132fea9-cba5-426c-8690-5374b5cfe9a9" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 51" src="https://github.com/user-attachments/assets/1c3d71fa-7d7c-4ad0-a2cd-6c845cc818da" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 56" src="https://github.com/user-attachments/assets/a309b56f-0ccb-44fd-a620-ae8071fb575d" /> |
 
 
-
-
-
-
-
-
+| Heading | Heading | Heading | Heading | Heading | Heading |
+| ------- | ------- | ------- | ------- | ------- | ------- |
+| <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 59" src="https://github.com/user-attachments/assets/71dacc72-528c-4629-a659-8775f8f36933" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 59 03" src="https://github.com/user-attachments/assets/f63e2e32-4f84-4a8a-b3e2-d8f3de774a0a" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 02 59" src="https://github.com/user-attachments/assets/eb5692b3-0d02-4668-8e9c-d6bd602ab4d1" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 03 12" src="https://github.com/user-attachments/assets/e155c9c9-5d62-425b-b52e-5b464b807cb6" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 04 29" src="https://github.com/user-attachments/assets/4d180c71-5f68-4f3b-8c3c-b051f374423d" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 16 04 33" src="https://github.com/user-attachments/assets/ae58f4c0-286d-48ce-8a9c-98ff9980ee34" /> |
 
 ---
 

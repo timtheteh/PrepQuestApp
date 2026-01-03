@@ -263,12 +263,6 @@ The app supports multiple input methods for generating flashcards:
    - Video metadata parsing
    - Smart content segmentation
 
-### Spaced Repetition System
-
-- **Adaptive Learning**: Adjusts difficulty based on performance
-- **Progress Tracking**: Detailed statistics on learning progress
-- **Review Scheduling**: Intelligent scheduling based on memory retention curves
-
 ### Background Task System
 
 - **Long-Running Operations**: Deck creation continues in background
@@ -308,32 +302,6 @@ npm run lint
 # Reset project (cleans example code)
 npm run reset-project
 ```
-
-### Code Style
-
-- **TypeScript**: Strict type checking enabled
-- **ESLint**: Expo ESLint configuration
-- **File Naming**: PascalCase for components, camelCase for utilities
-- **Component Structure**: Functional components with hooks
-
-### Testing
-
-```bash
-# Run tests (when implemented)
-npm test
-
-# Run tests in watch mode
-npm test -- --watch
-```
-
-### Debugging
-
-- **React Native Debugger**: Use for debugging React components
-- **Flipper**: Network inspection and debugging
-- **Expo Dev Tools**: Built-in debugging tools
-- **Console Logs**: Comprehensive logging throughout the app
-
----
 
 ## ⚙️ Environment Setup
 

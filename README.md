@@ -50,8 +50,6 @@ PrepQuest enables students and interview goers to better prepare for their tests
 
 ## 🖼️ App Snapshots
 
-### Splash Screen, Onboarding, Login/Signup
-
 | Splash | Language | Onboarding | Onboarding | Onboarding | Onboarding |
 | ------- | ------- | ------- | ------- | ------- | ------- |
 | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 57 52" src="https://github.com/user-attachments/assets/47ddf335-e9ac-49e3-8243-ec5c02cea602" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 57 58" src="https://github.com/user-attachments/assets/4185b87c-2445-4ec8-beb4-689db9295fb0" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 14" src="https://github.com/user-attachments/assets/dff6c8ee-8acb-4c59-9e02-adbf366bc6a2" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 22" src="https://github.com/user-attachments/assets/f132fea9-cba5-426c-8690-5374b5cfe9a9" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 51" src="https://github.com/user-attachments/assets/1c3d71fa-7d7c-4ad0-a2cd-6c845cc818da" /> | <img width="1170" height="2532" alt="Simulator Screenshot - iPhone 13 - 2026-01-03 at 15 58 56" src="https://github.com/user-attachments/assets/a309b56f-0ccb-44fd-a620-ae8071fb575d" /> |
